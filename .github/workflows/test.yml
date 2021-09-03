@@ -1,0 +1,80 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Dependencies
+        run: |
+          pip install black=="19.3b0"
+          pip install isort
+          pip install flake8 pep8-naming flake8-docstrings
+          
+      - name: Static Analysis
+        run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          pip install poetry
+          poetry --version
+          poetry config virtualenvs.in-project true
+          poetry install -vv
+          poetry install -E tests
+          
+      - name: PyTest ("not long")
+        run: |
+          poetry run pytest tests/ -v --junitxml=report.xml --cov=etna/ -m "not long"
+          poetry run coverage xml
+    
+  long-test:
+      runs-on: ubuntu-latest
+
+      steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Dependencies
+        run: |
+          pip install poetry
+          poetry --version
+          poetry config virtualenvs.in-project true
+          poetry install -vv
+          poetry install -E tests
+          
+      - name: PyTest ("long")
+        run: |
+          poetry run pytest tests/ -v --junitxml=report.xml --cov=etna/ -m long
+          poetry run coverage xml
+
