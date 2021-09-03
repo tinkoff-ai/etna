@@ -16,8 +16,12 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
     "Operating System :: Unix",
-    "Operating System :: MacOS X",
+    "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
+]
+
+packages = [
+    { include = "etna", from = "." },
 ]
 
 authors = [
