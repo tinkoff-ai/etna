@@ -1,6 +1,6 @@
 # ETNA Time Series Library
 
-[![Pipi version](https://img.shields.io/pypi/v/catalyst.svg)](https://pypi.org/project/etna-ts/)
+[![Pipi version](https://img.shields.io/pypi/v/etna-ts.svg)](https://pypi.org/project/etna-ts/)
 [![PyPI Status](https://static.pepy.tech/personalized-badge/etna-ts?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna-ts)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
