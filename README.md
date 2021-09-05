@@ -29,7 +29,7 @@ Contributions are welcome - check our [Contribution Guide](https://github.com/ti
 
 ## Installation 
 
-ETNA is on [PyPI](https://pypi.org/project/etna-ts/0.0.1/), so you can use `pip` to install it.
+ETNA is on [PyPI](https://pypi.org/project/etna-ts), so you can use `pip` to install it.
 
 ```bash
 pip install --upgrade pip
