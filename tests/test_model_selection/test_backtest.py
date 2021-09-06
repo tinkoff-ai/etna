@@ -16,6 +16,7 @@ from etna.model_selection.backtest import CrossValidationMode
 from etna.model_selection.backtest import TimeSeriesCrossValidation
 from etna.models.base import Model
 from etna.models.catboost import CatBoostModelMultiSegment
+from etna.models.linear import LinearPerSegmentModel
 from etna.models.prophet import ProphetModel
 from etna.transforms import DateFlagsTransform
 from etna.transforms.base import Transform
@@ -96,6 +97,23 @@ def big_example_tsdf() -> TSDataset:
     df.columns.names = ["segment", "feature"]
     df = TSDataset(df, freq="1D")
     return df
+
+
+def test_repr():
+    """Check __repr__ method of TimeSeriesCrossValidation."""
+    model = LinearPerSegmentModel(fit_intercept=True, normalize=False)
+    mode = CrossValidationMode.expand.value
+    tscv = TimeSeriesCrossValidation(model=model, horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=mode)
+    model_repr = model.__repr__()
+    metrics_repr_inner = ", ".join([metric.__repr__() for metric in DEFAULT_METRICS])
+    metrics_repr = f"[{metrics_repr_inner}]"
+    mode_repr = CrossValidationMode[mode].__repr__()
+    tscv_repr = tscv.__repr__()
+    true_repr = (
+        f"TimeSeriesCrossValidation(model = {model_repr}, horizon = 12, metrics = {metrics_repr}, "
+        f"n_folds = 3, mode = {mode_repr}, n_jobs = 1, )"
+    )
+    assert tscv_repr == true_repr
 
 
 @pytest.mark.parametrize("n_folds", (0, -1))

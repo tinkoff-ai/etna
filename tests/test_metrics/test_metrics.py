@@ -19,6 +19,21 @@ from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import MedAE
 
 
+@pytest.mark.parametrize(
+    "metric_class, metric_class_repr",
+    ((MAE, "MAE"), (MSE, "MSE"), (MedAE, "MedAE"), (MSLE, "MSLE"), (MAPE, "MAPE"), (SMAPE, "SMAPE"), (R2, "R2")),
+)
+def test_repr(metric_class, metric_class_repr):
+    """Check metrics __repr__ method"""
+    metric_mode = MetricAggregationMode.per_segment
+    kwargs = {"kwarg_1": "value_1", "kwarg_2": "value_2"}
+    kwargs_repr = "kwarg_1 = 'value_1', kwarg_2 = 'value_2'"
+    metric = metric_class(mode=metric_mode, **kwargs)
+    metric_repr = metric.__repr__()
+    true_repr = f"{metric_class_repr}(mode = '{metric_mode}', {kwargs_repr}, )"
+    assert metric_repr == true_repr
+
+
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
 def test_metrics_macro(metric_class, train_test_dfs):
     """Check metrics interface in 'macro' mode"""

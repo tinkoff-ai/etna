@@ -6,10 +6,11 @@ from typing import Union
 
 import pandas as pd
 
+from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 
 
-class Model(ABC):
+class Model(ABC, BaseMixin):
     """Class for holding specific models - autoregression and simple regressions."""
 
     def __init__(self):

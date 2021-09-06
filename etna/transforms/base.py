@@ -4,8 +4,10 @@ from copy import deepcopy
 
 import pandas as pd
 
+from etna.core import BaseMixin
 
-class Transform(ABC):
+
+class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     @abstractmethod

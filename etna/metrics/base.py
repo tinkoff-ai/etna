@@ -6,6 +6,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
+from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 
 
@@ -16,7 +17,7 @@ class MetricAggregationMode:
     per_segment = "per-segment"
 
 
-class Metric:
+class Metric(BaseMixin):
     """
     Base class for all the multi-segment metrics.
 
