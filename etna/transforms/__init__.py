@@ -12,4 +12,10 @@ from etna.transforms.scalers import MinMaxScalerTransform
 from etna.transforms.scalers import RobustScalerTransform
 from etna.transforms.scalers import StandardScalerTransform
 from etna.transforms.segment_encoder import SegmentEncoderTransform
+from etna.transforms.special_day_finder import SpecialDaysTransform
+from etna.transforms.statistics import MaxTransform
 from etna.transforms.statistics import MeanTransform
+from etna.transforms.statistics import MedianTransform
+from etna.transforms.statistics import MinTransform
+from etna.transforms.statistics import QuantileTransform
+from etna.transforms.statistics import StdTransform
