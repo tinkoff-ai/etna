@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms.detrend import OneSegmentLinearTrendBaseTransform
 from etna.transforms.detrend import LinearTrendTransform
+from etna.transforms.detrend import OneSegmentLinearTrendBaseTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.detrend import _OneSegmentLinearTrendTransform
 from etna.transforms.detrend import _OneSegmentTheilSenTrendTransform
