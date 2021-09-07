@@ -183,7 +183,7 @@ class _SARIMAXModel:
         exog_train = self._select_regressors(df)
         regressor_columns = None
         if not isinstance(exog_train, type(None)):
-            regressor_columns = [col for col in df.columns if col.startswith("regressor")]
+            regressor_columns = exog_train.columns
 
         if regressor_columns:
             addition_to_params = len(regressor_columns) * [0]
