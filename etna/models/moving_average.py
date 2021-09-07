@@ -13,6 +13,7 @@ class MovingAverageModel(SeasonalMovingAverageModel):
         window: int
             number of history points to average
         """
+        self.window = window
         super().__init__(window=window, seasonality=1)
 
 

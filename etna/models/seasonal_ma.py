@@ -106,6 +106,8 @@ class SeasonalMovingAverageModel(PerSegmentModel):
         seasonality: int
             Lag between values taken for forecast.
         """
+        self.window = window
+        self.seasonality = seasonality
         super(SeasonalMovingAverageModel, self).__init__(
             base_model=_SeasonalMovingAverageModel(window=window, seasonality=seasonality)
         )

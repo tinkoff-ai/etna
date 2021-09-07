@@ -117,7 +117,10 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
     """TimeSeriesImputerTransform fills the gaps in series from given dataframe."""
 
     def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
-        super().__init__(transform=_OneSegmentTimeSeriesImputerTransform(in_column, strategy, window))
+        self.in_column = in_column
+        self.strategy = strategy
+        self.window = window
+        super().__init__(transform=_OneSegmentTimeSeriesImputerTransform(self.in_column, self.strategy, self.window))
 
 
 __all__ = ["TimeSeriesImputerTransform"]

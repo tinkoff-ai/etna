@@ -42,4 +42,6 @@ class LagTransform(PerSegmentWrapper):
         lags
         in_column
         """
-        super().__init__(transform=_OneSegmentLagFeature(lags=lags, in_column=in_column))
+        self.lags = lags
+        self.in_column = in_column
+        super().__init__(transform=_OneSegmentLagFeature(lags=self.lags, in_column=self.in_column))

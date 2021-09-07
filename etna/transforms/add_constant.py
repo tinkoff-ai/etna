@@ -83,7 +83,12 @@ class AddConstTransform(PerSegmentWrapper):
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
         """
-        super().__init__(transform=_OneSegmentAddConstTransform(value=value, in_column=in_column, inplace=inplace))
+        self.value = value
+        self.in_column = in_column
+        self.inplace = inplace
+        super().__init__(
+            transform=_OneSegmentAddConstTransform(value=self.value, in_column=self.in_column, inplace=self.inplace)
+        )
 
 
 __all__ = ["AddConstTransform"]

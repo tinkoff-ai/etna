@@ -161,7 +161,11 @@ class SpecialDaysTransform(PerSegmentWrapper):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe."""
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
-        super().__init__(transform=_OneSegmentSpecialDaysTransform(find_special_weekday, find_special_month_day))
+        self.find_special_weekday = find_special_weekday
+        self.find_special_month_day = find_special_month_day
+        super().__init__(
+            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day)
+        )
 
 
 __all__ = ["SpecialDaysTransform"]
