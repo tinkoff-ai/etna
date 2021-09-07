@@ -97,7 +97,7 @@ def test_invalid_arguments_configuration():
         )
 
 
-def test_repr_default():
+def test_repr():
     """This test checks that __repr__ method works fine."""
     transform_class_repr = "DateFlagsTransform"
     transform = DateFlagsTransform(

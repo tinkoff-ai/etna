@@ -35,6 +35,18 @@ def int_df_two_segments(int_df_one_segment) -> pd.DataFrame:
     return TSDataset.to_dataset(df)
 
 
+def test_repr():
+    """This test checks that __repr__ method works fine."""
+    transform_class_repr = "LagTransform"
+    lags = list(range(8, 24, 1))
+    transform = LagTransform(lags=lags, in_column="target")
+    transform_repr = transform.__repr__()
+    true_repr = (
+        f"{transform_class_repr}(lags = {lags}, in_column = 'target', )"
+    )
+    assert transform_repr == true_repr
+
+
 @pytest.mark.parametrize(
     "lags,expected_columns",
     ((4, ["target_lag_1", "target_lag_2", "target_lag_3", "target_lag_4"]), ([5, 8], ["target_lag_5", "target_lag_8"])),
