@@ -182,7 +182,7 @@ class _SARIMAXModel:
 
         exog_train = self._select_regressors(df)
         regressor_columns = None
-        if not isinstance(exog_train, type(None)):
+        if exog_train is not None:
             regressor_columns = exog_train.columns.values
 
         if regressor_columns:
