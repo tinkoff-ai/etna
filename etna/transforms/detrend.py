@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pandas as pd
 from sklearn.base import RegressorMixin
 from sklearn.linear_model import LinearRegression
@@ -121,21 +123,21 @@ class _OneSegmentLinearTrendTransform(OneSegmentLinearTrendBaseTransform):
 
         Parameters
         ----------
-        regression_params: Dict[str, Any]
+        regression_params:
             params that should be used to init LinearRegression
         """
         super().__init__(in_column=in_column, regressor=LinearRegression(**regression_params))
 
 
 class _OneSegmentTheilSenTrendTransform(OneSegmentLinearTrendBaseTransform):
-    """Transform for one segment that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
+    """Transform for one segment that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
     def __init__(self, in_column, **regression_params):
         """Create instance of _OneSegmentTheilSenTrendTransform.
 
         Parameters
         ----------
-        regression_params: Dict[str, Any]
+        regression_params:
             params that should be used to init TheilSenRegressor
         """
         super().__init__(in_column=in_column, regressor=TheilSenRegressor(**regression_params))
@@ -149,7 +151,7 @@ class LinearTrendTransform(PerSegmentWrapper):
 
         Parameters
         ----------
-        regression_params: Dict[str, Any]
+        regression_params:
             params that should be used to init LinearRegression
         """
         self.in_column = in_column
@@ -161,11 +163,11 @@ class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
     def __init__(self, in_column: str, **regression_params):
-        """Create instance of TheilSenTrend.
+        """Create instance of TheilSenTrendTransform.
 
         Parameters
         ----------
-        regression_params: Dict[str, Any]
+        regression_params:
             params that should be used to init TheilSenRegressor
         """
         self.in_column = in_column
