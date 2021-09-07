@@ -39,7 +39,8 @@ class OneSegmentLinearTrendBaseTransform(Transform):
 
         Returns
         -------
-            LinearTrendBaseTransform instance with trained regressor
+        OneSegmentLinearTrendBaseTransform
+            instance with trained regressor
         """
         series_len = len(df)
         x = df.index.to_series()
@@ -62,6 +63,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
 
         Returns
         -------
+        pd.DataFrame
             residue after trend subtraction
         """
         result = df.copy()
@@ -86,6 +88,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
 
         Returns
         -------
+        pd.DataFrame
             residue after trend subtraction
         """
         return self.fit(df).transform(df)
@@ -101,6 +104,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
 
         Returns
         -------
+        pd.DataFrame
             data with reconstructed trend
         """
         result = df.copy()
