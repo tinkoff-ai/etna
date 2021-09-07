@@ -83,15 +83,22 @@ class CatBoostModelMultiSegment(Model):
         thread_count: int = 4,
         **kwargs,
     ):
+        self.iterations = iterations
+        self.depth = depth
+        self.learning_rate = learning_rate
+        self.logging_level = logging_level
+        self.l2_leaf_reg = l2_leaf_reg
+        self.thread_count = thread_count
+        self.kwargs = kwargs
         super(CatBoostModelMultiSegment, self).__init__()
         self._base_model = _CatBoostModel(
-            iterations=iterations,
-            depth=depth,
-            learning_rate=learning_rate,
-            logging_level=logging_level,
-            thread_count=thread_count,
-            l2_leaf_reg=l2_leaf_reg,
-            **kwargs,
+            iterations=self.iterations,
+            depth=self.depth,
+            learning_rate=self.learning_rate,
+            logging_level=self.logging_level,
+            thread_count=self.thread_count,
+            l2_leaf_reg=self.l2_leaf_reg,
+            **self.kwargs,
         )
 
     def fit(self, ts: TSDataset) -> "CatBoostModelMultiSegment":

@@ -95,7 +95,12 @@ class LogTransform(PerSegmentWrapper):
         inplace:
             if True, apply logarithm transformation inplace to in_column, if False, add column {in_column}_log_{base} to dataset.
         """
-        super().__init__(transform=_OneSegmentLogTransform(in_column=in_column, base=base, inplace=inplace))
+        self.in_column = in_column
+        self.base = base
+        self.inplace = inplace
+        super().__init__(
+            transform=_OneSegmentLogTransform(in_column=self.in_column, base=self.base, inplace=self.inplace)
+        )
 
 
 __all__ = ["LogTransform"]

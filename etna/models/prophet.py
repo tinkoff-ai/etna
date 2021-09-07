@@ -211,23 +211,40 @@ class ProphetModel(PerSegmentModel):
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
             'mode', 'condition_name' will be used for prophet.Prophet().add_seasonality method call.
         """
+        self.growth = growth
+        self.n_changepoints = n_changepoints
+        self.changepoints = changepoints
+        self.changepoint_range = changepoint_range
+        self.yearly_seasonality = yearly_seasonality
+        self.weekly_seasonality = weekly_seasonality
+        self.daily_seasonality = daily_seasonality
+        self.holidays = holidays
+        self.seasonality_mode = seasonality_mode
+        self.seasonality_prior_scale = seasonality_prior_scale
+        self.holidays_prior_scale = holidays_prior_scale
+        self.mcmc_samples = mcmc_samples
+        self.interval_width = interval_width
+        self.uncertainty_samples = uncertainty_samples
+        self.stan_backend = stan_backend
+        self.additional_seasonality_params = additional_seasonality_params
+
         super(ProphetModel, self).__init__(
             base_model=_ProphetModel(
-                growth=growth,
-                n_changepoints=n_changepoints,
-                changepoints=changepoints,
-                changepoint_range=changepoint_range,
-                yearly_seasonality=yearly_seasonality,
-                weekly_seasonality=weekly_seasonality,
-                daily_seasonality=daily_seasonality,
-                holidays=holidays,
-                seasonality_mode=seasonality_mode,
-                seasonality_prior_scale=seasonality_prior_scale,
-                holidays_prior_scale=holidays_prior_scale,
-                mcmc_samples=mcmc_samples,
-                interval_width=interval_width,
-                uncertainty_samples=uncertainty_samples,
-                stan_backend=stan_backend,
-                additional_seasonality_params=additional_seasonality_params,
+                growth=self.growth,
+                n_changepoints=self.n_changepoints,
+                changepoints=self.changepoints,
+                changepoint_range=self.changepoint_range,
+                yearly_seasonality=self.yearly_seasonality,
+                weekly_seasonality=self.weekly_seasonality,
+                daily_seasonality=self.daily_seasonality,
+                holidays=self.holidays,
+                seasonality_mode=self.seasonality_mode,
+                seasonality_prior_scale=self.seasonality_prior_scale,
+                holidays_prior_scale=self.holidays_prior_scale,
+                mcmc_samples=self.mcmc_samples,
+                interval_width=self.interval_width,
+                uncertainty_samples=self.uncertainty_samples,
+                stan_backend=self.stan_backend,
+                additional_seasonality_params=self.additional_seasonality_params,
             )
         )

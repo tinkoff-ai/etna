@@ -10,6 +10,7 @@ import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 
+from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
@@ -26,7 +27,7 @@ class CrossValidationMode(Enum):
     constant = "constant"
 
 
-class TimeSeriesCrossValidation:
+class TimeSeriesCrossValidation(BaseMixin):
     """Cross validation for time series."""
 
     def __init__(
@@ -48,8 +49,6 @@ class TimeSeriesCrossValidation:
             number of timestamp range splits
         mode:
             one of 'expand', 'constant' -- train generation policy
-        logger:
-            logger where events and metrics are logged
         n_jobs:
             number of jobs to run in parallel
 

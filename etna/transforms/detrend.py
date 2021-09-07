@@ -115,7 +115,7 @@ class LinearTrendBaseTransform(Transform):
 class _LinearTrendTransform(LinearTrendBaseTransform):
     """LinearTrend use sklearn.linear_model.LinearRegression to find linear trend in data."""
 
-    def __init__(self, in_column: str, *args, **regression_params):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of LinearTrend.
 
         Parameters
@@ -129,7 +129,7 @@ class _LinearTrendTransform(LinearTrendBaseTransform):
 class _TheilSenTrendTransform(LinearTrendBaseTransform):
     """TheilSenTrend use sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
-    def __init__(self, in_column, *args, **regression_params):
+    def __init__(self, in_column, **regression_params):
         """Create instance of TheilSenTrend.
 
         Parameters
@@ -143,7 +143,7 @@ class _TheilSenTrendTransform(LinearTrendBaseTransform):
 class LinearTrendTransform(PerSegmentWrapper):
     """LinearTrend use sklearn.linear_model.LinearRegression to find linear trend in data."""
 
-    def __init__(self, in_column: str, *args, **regression_params):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of LinearTrend.
 
         Parameters
@@ -151,13 +151,15 @@ class LinearTrendTransform(PerSegmentWrapper):
         regression_params: Dict[str, Any]
             params that should be used to init LinearRegression
         """
-        super().__init__(transform=_LinearTrendTransform(in_column, *args, **regression_params))
+        self.in_column = in_column
+        self.regression_params = regression_params
+        super().__init__(transform=_LinearTrendTransform(self.in_column, **self.regression_params))
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
     """TheilSenTrend use sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
-    def __init__(self, in_column: str, *args, **regression_params):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of TheilSenTrend.
 
         Parameters
@@ -165,4 +167,6 @@ class TheilSenTrendTransform(PerSegmentWrapper):
         regression_params: Dict[str, Any]
             params that should be used to init TheilSenRegressor
         """
-        super().__init__(transform=_TheilSenTrendTransform(in_column, *args, **regression_params))
+        self.in_column = in_column
+        self.regression_params = regression_params
+        super().__init__(transform=_TheilSenTrendTransform(self.in_column, **self.regression_params))
