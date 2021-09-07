@@ -46,11 +46,10 @@ from etna.models import ProphetModel
 
 # Read the data
 df = pd.read_csv("example_dataset.csv")
-df["timestamp"] = pd.to_datetime(df["timestamp"])
 
 # Create a TSDataset
 df = TSDataset.to_dataset(df)
-ts = TSDataset(df,freq='1d')
+ts = TSDataset(df,freq="D")
 
 # Choose a horizon
 HORIZON = 8
