@@ -49,11 +49,13 @@ def test_wrong_init_one_segment():
     with pytest.raises(ValueError):
         _ = _OneSegmentTimeSeriesImputerTransform(strategy="wrong_strategy")
 
+
 @pytest.mark.xfail
 def test_wrong_init_two_segments(all_date_present_df_two_segments):
     """Check that imputer for two segments fails to fit_transform with wrong imputing strategy."""
     with pytest.raises(ValueError):
         _ = TimeSeriesImputerTransform(strategy="wrong_strategy")
+
 
 @pytest.fixture()
 def df_with_missing_value_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:

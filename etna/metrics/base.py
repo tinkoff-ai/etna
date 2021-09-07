@@ -1,8 +1,9 @@
+from enum import Enum
 from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Union
-from enum import Enum
+
 import numpy as np
 import pandas as pd
 
@@ -19,11 +20,10 @@ class MetricAggregationMode(str, Enum):
     @classmethod
     def _missing_(cls, value):
         raise NotImplementedError(
-                '%r is not a valid %s. Only %s aggregation allowed' % (
-                    value,
-                    cls.__name__,
-                    ', '.join([repr(m.value) for m in cls]),
-                    ))
+            "%r is not a valid %s. Only %s aggregation allowed"
+            % (value, cls.__name__, ", ".join([repr(m.value) for m in cls]))
+        )
+
 
 class Metric(BaseMixin):
     """

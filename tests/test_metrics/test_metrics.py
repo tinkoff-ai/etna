@@ -25,7 +25,7 @@ from etna.metrics.metrics import MedAE
 )
 def test_repr(metric_class, metric_class_repr):
     """Check metrics __repr__ method"""
-    metric_mode = 'per-segment'
+    metric_mode = "per-segment"
     kwargs = {"kwarg_1": "value_1", "kwarg_2": "value_2"}
     kwargs_repr = "kwarg_1 = 'value_1', kwarg_2 = 'value_2'"
     metric = metric_class(mode=metric_mode, **kwargs)
