@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pandas as pd
 from sklearn.base import RegressorMixin
 from sklearn.linear_model import LinearRegression
@@ -118,7 +116,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
 class _OneSegmentLinearTrendTransform(OneSegmentLinearTrendBaseTransform):
     """Transform for one segment that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
 
-    def __init__(self, in_column: str, *args, **regression_params):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of _OneSegmentLinearTrendTransform.
 
         Parameters
@@ -132,7 +130,7 @@ class _OneSegmentLinearTrendTransform(OneSegmentLinearTrendBaseTransform):
 class _OneSegmentTheilSenTrendTransform(OneSegmentLinearTrendBaseTransform):
     """Transform for one segment that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
 
-    def __init__(self, in_column, *args, **regression_params):
+    def __init__(self, in_column, **regression_params):
         """Create instance of _OneSegmentTheilSenTrendTransform.
 
         Parameters
@@ -146,7 +144,7 @@ class _OneSegmentTheilSenTrendTransform(OneSegmentLinearTrendBaseTransform):
 class LinearTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
 
-    def __init__(self, in_column: str, *args, **regression_params):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of LinearTrendTransform.
 
         Parameters
@@ -154,18 +152,22 @@ class LinearTrendTransform(PerSegmentWrapper):
         regression_params: Dict[str, Any]
             params that should be used to init LinearRegression
         """
-        super().__init__(transform=_OneSegmentLinearTrendTransform(in_column, *args, **regression_params))
+        self.in_column = in_column
+        self.regression_params = regression_params
+        super().__init__(transform=_OneSegmentLinearTrendTransform(self.in_column, **self.regression_params))
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
-    def __init__(self, in_column: str, *args, **regression_params):
-        """Create instance of TheilSenTrendTransform.
+    def __init__(self, in_column: str, **regression_params):
+        """Create instance of TheilSenTrend.
 
         Parameters
         ----------
         regression_params: Dict[str, Any]
             params that should be used to init TheilSenRegressor
         """
-        super().__init__(transform=_OneSegmentTheilSenTrendTransform(in_column, *args, **regression_params))
+        self.in_column = in_column
+        self.regression_params = regression_params
+        super().__init__(transform=_OneSegmentTheilSenTrendTransform(self.in_column, **self.regression_params))

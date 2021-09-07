@@ -52,6 +52,36 @@ def linear_segments_ts_common():
     return linear_segments_by_parameters(alpha_values, intercept_values)
 
 
+@pytest.mark.parametrize(
+    "model_class, model_class_repr",
+    ((LinearPerSegmentModel, "LinearPerSegmentModel"), (LinearMultiSegmentModel, "LinearMultiSegmentModel")),
+)
+def test_repr_linear(model_class, model_class_repr):
+    """Check __repr__ method of LinearPerSegmentModel and LinearMultiSegmentModel."""
+    kwargs = {"copy_X": True, "positive": True}
+    kwargs_repr = "copy_X = True, positive = True"
+    model = model_class(fit_intercept=True, normalize=False, **kwargs)
+    model_repr = model.__repr__()
+    true_repr = f"{model_class_repr}(fit_intercept = True, normalize = False, {kwargs_repr}, )"
+    assert model_repr == true_repr
+
+
+@pytest.mark.parametrize(
+    "model_class, model_class_repr",
+    ((ElasticPerSegmentModel, "ElasticPerSegmentModel"), (ElasticMultiSegmentModel, "ElasticMultiSegmentModel")),
+)
+def test_repr_elastic(model_class, model_class_repr):
+    """Check __repr__ method of ElasticPerSegmentModel and ElasticMultiSegmentModel."""
+    kwargs = {"copy_X": True, "positive": True}
+    kwargs_repr = "copy_X = True, positive = True"
+    model = model_class(alpha=1.0, l1_ratio=0.5, fit_intercept=True, normalize=False, **kwargs)
+    model_repr = model.__repr__()
+    true_repr = (
+        f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, normalize = False, {kwargs_repr}, )"
+    )
+    assert model_repr == true_repr
+
+
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), ElasticPerSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
