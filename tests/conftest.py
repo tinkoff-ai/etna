@@ -149,6 +149,54 @@ def example_df_() -> pd.DataFrame:
     return df
 
 
+@pytest.fixture
+def example_tsds() -> TSDataset:
+    periods = 100
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df1["segment"] = "segment_1"
+    df1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df2["segment"] = "segment_2"
+    df2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    df = pd.concat([df1, df2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    tsds = TSDataset(df, freq="D")
+
+    return tsds
+
+
+@pytest.fixture
+def example_reg_tsds() -> TSDataset:
+    periods = 100
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df1["segment"] = "segment_1"
+    df1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df2["segment"] = "segment_2"
+    df2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    exog_weekend_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods + 7)})
+    exog_weekend_1["segment"] = "segment_1"
+    exog_weekend_1["regressor_exog_weekend"] = ((exog_weekend_1.timestamp.dt.dayofweek) // 5 == 1).astype("category")
+
+    exog_weekend_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods + 7)})
+    exog_weekend_2["segment"] = "segment_2"
+    exog_weekend_2["regressor_exog_weekend"] = ((exog_weekend_2.timestamp.dt.dayofweek) // 5 == 1).astype("category")
+
+    df = pd.concat([df1, df2]).reset_index(drop=True)
+    exog = pd.concat([exog_weekend_1, exog_weekend_2]).reset_index(drop=True)
+
+    df = TSDataset.to_dataset(df)
+    exog = TSDataset.to_dataset(exog)
+
+    tsds = TSDataset(df, freq="D", df_exog=exog)
+
+    return tsds
+
+
 @pytest.fixture()
 def outliers_tsds():
     timestamp1 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-01"))
