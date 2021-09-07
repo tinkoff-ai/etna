@@ -1,7 +1,7 @@
 import numpy as np
-from sklearn.metrics import mean_absolute_error
 
 from etna.datasets import TSDataset
+from etna.metrics import MAE
 from etna.models import SARIMAXModel
 from etna.transforms import TheilSenTrendTransform
 
@@ -62,7 +62,7 @@ def test_compare_sarimax_vanilla_reg(example_reg_tsds):
     future_ts = train.make_future(future_steps=horizon)
     reg_result = model.forecast(future_ts)
 
-    van_acc = mean_absolute_error(test[:, :, "target"], vanilla_result[:, :, "target"], multioutput="raw_values")
-    reg_acc = mean_absolute_error(test[:, :, "target"], reg_result[:, :, "target"], multioutput="raw_values")
+    van_acc = np.array(list(MAE()(test, vanilla_result).values()))
+    reg_acc = np.array(list(MAE()(test, reg_result).values()))
 
     assert np.all(van_acc < reg_acc)

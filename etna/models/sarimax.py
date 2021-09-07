@@ -183,7 +183,7 @@ class _SARIMAXModel:
         exog_train = self._select_regressors(df)
         regressor_columns = None
         if not isinstance(exog_train, type(None)):
-            regressor_columns = [col for col in df.columns if col.startswith("regressor")]
+            regressor_columns = exog_train.columns.values
 
         if regressor_columns:
             addition_to_params = len(regressor_columns) * [0]
@@ -249,7 +249,7 @@ class _SARIMAXModel:
         )
         return y_pred.reset_index(drop=True, inplace=False)
 
-    def _check_df(self, df, horizon=None):
+    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
         column_to_drop = [
             col for col in df.columns if not col.startswith("regressor") and col not in ["target", "timestamp"]
         ]
@@ -267,7 +267,7 @@ class _SARIMAXModel:
                     "Try lower horizon value, or drop this regressors."
                 )
 
-    def _select_regressors(self, df):
+    def _select_regressors(self, df: pd.DataFrame) -> pd.DataFrame:
         regressor_columns = [col for col in df.columns if col.startswith("regressor")]
         if regressor_columns:
             exog_future = df[regressor_columns]
