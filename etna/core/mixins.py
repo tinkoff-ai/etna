@@ -1,4 +1,5 @@
 import inspect
+import warnings
 
 
 class BaseMixin:
@@ -16,6 +17,10 @@ class BaseMixin:
                 for arg_, value in self.__dict__[arg].items():
                     args_str_representation += f"{arg_} = {value.__repr__()}, "
             else:
-                value = self.__dict__.get(arg)
+                try:
+                    value = self.__dict__[arg]
+                except KeyError as e:
+                    value = None
+                    warnings.warn(f"You haven't set all parameters inside class __init__ method: {e}")
                 args_str_representation += f"{arg} = {value.__repr__()}, "
         return f"{self.__class__.__name__}({args_str_representation})"
