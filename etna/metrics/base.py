@@ -18,7 +18,7 @@ class MetricAggregationMode(str, Enum):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError(
+        raise NotImplementedError(
                 '%r is not a valid %s. Only %s aggregation allowed' % (
                     value,
                     cls.__name__,
