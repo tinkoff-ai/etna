@@ -267,7 +267,7 @@ class _SARIMAXModel:
                     "Try lower horizon value, or drop this regressors."
                 )
 
-    def _select_regressors(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
         regressor_columns = [col for col in df.columns if col.startswith("regressor")]
         if regressor_columns:
             exog_future = df[regressor_columns]
