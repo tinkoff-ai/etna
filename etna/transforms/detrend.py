@@ -9,7 +9,7 @@ from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
 
-class OneSegmentLinearTrendBaseTransform(Transform):
+class _OneSegmentLinearTrendBaseTransform(Transform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
     is_categorical = False
@@ -18,7 +18,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
     def __init__(self, in_column: str, regressor: Optional[RegressorMixin] = None):
         # TODO: add inplace arg
         """
-        Create instance of OneSegmentLinearTrendBaseTransform.
+        Create instance of _OneSegmentLinearTrendBaseTransform.
 
         Parameters
         ----------
@@ -28,7 +28,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
         self._linear_model = regressor
         self.in_column = in_column
 
-    def fit(self, df: pd.DataFrame) -> "OneSegmentLinearTrendBaseTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":
         """
         Fit regression detrend_model with data from df.
 
@@ -39,7 +39,7 @@ class OneSegmentLinearTrendBaseTransform(Transform):
 
         Returns
         -------
-        OneSegmentLinearTrendBaseTransform
+        _OneSegmentLinearTrendBaseTransform
             instance with trained regressor
         """
         series_len = len(df)
@@ -119,34 +119,6 @@ class OneSegmentLinearTrendBaseTransform(Transform):
         return result
 
 
-class _OneSegmentLinearTrendTransform(OneSegmentLinearTrendBaseTransform):
-    """Transform for one segment that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
-
-    def __init__(self, in_column: str, **regression_params):
-        """Create instance of _OneSegmentLinearTrendTransform.
-
-        Parameters
-        ----------
-        regression_params:
-            params that should be used to init LinearRegression
-        """
-        super().__init__(in_column=in_column, regressor=LinearRegression(**regression_params))
-
-
-class _OneSegmentTheilSenTrendTransform(OneSegmentLinearTrendBaseTransform):
-    """Transform for one segment that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
-
-    def __init__(self, in_column, **regression_params):
-        """Create instance of _OneSegmentTheilSenTrendTransform.
-
-        Parameters
-        ----------
-        regression_params:
-            params that should be used to init TheilSenRegressor
-        """
-        super().__init__(in_column=in_column, regressor=TheilSenRegressor(**regression_params))
-
-
 class LinearTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
 
@@ -160,7 +132,11 @@ class LinearTrendTransform(PerSegmentWrapper):
         """
         self.in_column = in_column
         self.regression_params = regression_params
-        super().__init__(transform=_OneSegmentLinearTrendTransform(self.in_column, **self.regression_params))
+        super().__init__(
+            transform=_OneSegmentLinearTrendBaseTransform(
+                in_column=self.in_column, regressor=LinearRegression(**self.regression_params)
+            )
+        )
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
@@ -176,4 +152,8 @@ class TheilSenTrendTransform(PerSegmentWrapper):
         """
         self.in_column = in_column
         self.regression_params = regression_params
-        super().__init__(transform=_OneSegmentTheilSenTrendTransform(self.in_column, **self.regression_params))
+        super().__init__(
+            transform=_OneSegmentLinearTrendBaseTransform(
+                in_column=self.in_column, regressor=TheilSenRegressor(**self.regression_params)
+            )
+        )

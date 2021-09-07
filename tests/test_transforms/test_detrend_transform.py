@@ -1,13 +1,13 @@
 import numpy.testing as npt
 import pandas as pd
 import pytest
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import TheilSenRegressor
 
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.detrend import LinearTrendTransform
-from etna.transforms.detrend import OneSegmentLinearTrendBaseTransform
 from etna.transforms.detrend import TheilSenTrendTransform
-from etna.transforms.detrend import _OneSegmentLinearTrendTransform
-from etna.transforms.detrend import _OneSegmentTheilSenTrendTransform
+from etna.transforms.detrend import _OneSegmentLinearTrendBaseTransform
 
 DEFAULT_SEGMENT = "segment_1"
 
@@ -23,7 +23,7 @@ def df_two_segments(example_df) -> pd.DataFrame:
 
 
 def _test_fit_transform_one_segment(
-    trend_transform: OneSegmentLinearTrendBaseTransform, df: pd.DataFrame, **comparison_kwargs
+    trend_transform: _OneSegmentLinearTrendBaseTransform, df: pd.DataFrame, **comparison_kwargs
 ) -> None:
     """
     Test if residue after trend subtraction is close to zero in one segment.
@@ -63,7 +63,7 @@ def test_fit_transform_linear_trend_one_segment(df_one_segment: pd.DataFrame) ->
     """
     This test checks that LinearRegression predicts correct trend on one segment of slightly noised data.
     """
-    trend_transform = _OneSegmentLinearTrendTransform(in_column="target")
+    trend_transform = _OneSegmentLinearTrendBaseTransform(in_column="target", regressor=LinearRegression())
     _test_fit_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
 
 
@@ -71,10 +71,11 @@ def test_fit_transform_theil_sen_trend_one_segment(df_one_segment: pd.DataFrame)
     """
     This test checks that TheilSenRegressor predicts correct trend on one segment of slightly noised data.
     """
-    trend_feature = _OneSegmentTheilSenTrendTransform(
-        in_column="target", n_subsamples=int(len(df_one_segment) / 2), max_iter=3000, tol=1e-4
+    trend_transform = _OneSegmentLinearTrendBaseTransform(
+        in_column="target",
+        regressor=TheilSenRegressor(n_subsamples=int(len(df_one_segment) / 2), max_iter=3000, tol=1e-4),
     )
-    _test_fit_transform_one_segment(trend_transform=trend_feature, df=df_one_segment, decimal=0)
+    _test_fit_transform_one_segment(trend_transform=trend_transform, df=df_one_segment, decimal=0)
 
 
 def test_fit_transform_theil_sen_trend_all_data_one_segment(df_one_segment: pd.DataFrame) -> None:
@@ -83,8 +84,10 @@ def test_fit_transform_theil_sen_trend_all_data_one_segment(df_one_segment: pd.D
     using all the data to train model.
     """
     # Note that it is a corner case: we use all the data to predict trend
-    trend_feature = _OneSegmentTheilSenTrendTransform(in_column="target", n_subsamples=len(df_one_segment))
-    _test_fit_transform_one_segment(trend_transform=trend_feature, df=df_one_segment)
+    trend_transform = _OneSegmentLinearTrendBaseTransform(
+        in_column="target", regressor=TheilSenRegressor(n_subsamples=len(df_one_segment))
+    )
+    _test_fit_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
 
 
 def test_fit_transform_linear_trend_two_segments(df_two_segments: pd.DataFrame) -> None:
@@ -99,10 +102,10 @@ def test_fit_transform_theil_sen_trend_two_segments(df_two_segments: pd.DataFram
     """
     This test checks that TheilSenRegressor predicts correct trend on two segments of slightly noised data.
     """
-    trend_feature = TheilSenTrendTransform(
+    trend_transform = TheilSenTrendTransform(
         in_column="target", n_subsamples=int(len(df_two_segments) / 2), max_iter=3000, tol=1e-4
     )
-    _test_fit_transform_many_segments(trend_transform=trend_feature, df=df_two_segments, decimal=0)
+    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments, decimal=0)
 
 
 def test_fit_transform_theil_sen_trend_all_data_two_segments(df_two_segments: pd.DataFrame) -> None:
@@ -111,15 +114,15 @@ def test_fit_transform_theil_sen_trend_all_data_two_segments(df_two_segments: pd
     using all the data to train model.
     """
     # Note that it is a corner case: we use all the data to predict trend
-    trend_feature = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
-    _test_fit_transform_many_segments(trend_transform=trend_feature, df=df_two_segments)
+    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
+    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
 
 
 def _test_inverse_transform_one_segment(
-    trend_transform: OneSegmentLinearTrendBaseTransform, df: pd.DataFrame, **comparison_kwargs
+    trend_transform: _OneSegmentLinearTrendBaseTransform, df: pd.DataFrame, **comparison_kwargs
 ) -> None:
     """
-    Test that trend_feature can correctly make inverse_transform in one segment.
+    Test that trend_transform can correctly make inverse_transform in one segment.
 
     Parameters
     ----------
@@ -137,7 +140,7 @@ def _test_inverse_transform_one_segment(
 
 def _test_inverse_transform_many_segments(trend_transform, df: pd.DataFrame, **comparison_kwargs) -> None:
     """
-    Test that trend_feature can correctly make inverse_transform in all segments.
+    Test that trend_transform can correctly make inverse_transform in all segments.
 
     Parameters
     ----------
@@ -158,29 +161,31 @@ def test_inverse_transform_linear_trend_one_segment(df_one_segment: pd.DataFrame
     """
     Test that LinearTrend can correclty make inverse_transform for one segment.
     """
-    trend_feature = _OneSegmentLinearTrendTransform(in_column="target")
-    _test_inverse_transform_one_segment(trend_transform=trend_feature, df=df_one_segment)
+    trend_transform = _OneSegmentLinearTrendBaseTransform(in_column="target", regressor=LinearRegression())
+    _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
 
 
 def test_inverse_transform_theil_sen_trend_one_segment(df_one_segment: pd.DataFrame):
     """
     Test that TheilSenRegressor can correclty make inverse_transform for one segment.
     """
-    trend_feature = _OneSegmentTheilSenTrendTransform(in_column="target", n_subsamples=len(df_one_segment))
-    _test_inverse_transform_one_segment(trend_transform=trend_feature, df=df_one_segment)
+    trend_transform = _OneSegmentLinearTrendBaseTransform(
+        in_column="target", regressor=TheilSenRegressor(n_subsamples=len(df_one_segment))
+    )
+    _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
 
 
 def test_inverse_transform_linear_trend_two_segments(df_two_segments: pd.DataFrame):
     """
     Test that LinearTrend can correclty make inverse_transform for two segments.
     """
-    trend_feature = LinearTrendTransform(in_column="target")
-    _test_inverse_transform_many_segments(trend_transform=trend_feature, df=df_two_segments)
+    trend_transform = LinearTrendTransform(in_column="target")
+    _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
 
 
 def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.DataFrame):
     """
     Test that TheilSenRegressor can correclty make inverse_transform for two segments.
     """
-    trend_feature = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
-    _test_inverse_transform_many_segments(trend_transform=trend_feature, df=df_two_segments)
+    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
+    _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
