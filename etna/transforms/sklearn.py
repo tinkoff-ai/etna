@@ -1,5 +1,6 @@
 from typing import List
 from typing import Optional
+from typing import Union
 
 import pandas as pd
 from sklearn.base import TransformerMixin
@@ -12,21 +13,25 @@ class SklearnTransform(Transform):
     TODO: current transforms make per column transforamtion, next per feature transforms should be added
     """
 
-    def __init__(self, transformer: TransformerMixin, in_columns: Optional[List[str]] = None, inplace: bool = True):
+    def __init__(
+        self, transformer: TransformerMixin, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True
+    ):
         """
         Init SklearnTransform.
 
         Parameters
         ----------
-        transform:
+        transformer:
             sklearn.base.TransformerMixin instance.
-        in_columns:
+        in_column:
             columns to be transformed, if None - all columns will be scaled.
         inplace:
             features are changed by transformed.
         """
         self.transformer = transformer
-        self.in_columns: Optional[List[str]] = in_columns if in_columns is None else sorted(in_columns)
+        if isinstance(in_column, str):
+            in_column = [in_column]
+        self.in_column: Optional[List[str]] = in_column if in_column is None else sorted(in_column)
         self.inplace = inplace
 
     def fit(self, df: pd.DataFrame) -> "SklearnTransform":
@@ -42,9 +47,9 @@ class SklearnTransform(Transform):
         -------
         self
         """
-        if self.in_columns is None:
-            self.in_columns = sorted(set(df.columns.get_level_values("feature")))
-        x = df.loc[:, pd.IndexSlice[:, self.in_columns]].values
+        if self.in_column is None:
+            self.in_column = sorted(set(df.columns.get_level_values("feature")))
+        x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
         self.transformer.fit(X=x)
         return self
 
@@ -61,13 +66,13 @@ class SklearnTransform(Transform):
         -------
         transformed DataFrame.
         """
-        x = df.loc[:, pd.IndexSlice[:, self.in_columns]].values
+        x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
         transformed = self.transformer.transform(X=x)
         if self.inplace:
-            df.loc[:, pd.IndexSlice[:, self.in_columns]] = transformed
+            df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         else:
             transformed_features = pd.DataFrame(
-                transformed, columns=df.loc[:, pd.IndexSlice[:, self.in_columns]].columns, index=df.index
+                transformed, columns=df.loc[:, pd.IndexSlice[:, self.in_column]].columns, index=df.index
             )
             transformed_features.columns = pd.MultiIndex.from_tuples(
                 [
@@ -94,9 +99,9 @@ class SklearnTransform(Transform):
         transformed DataFrame.
         """
         if self.inplace:
-            x = df.loc[:, pd.IndexSlice[:, self.in_columns]].values
+            x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
             transformed = self.transformer.inverse_transform(X=x)
-            df.loc[:, pd.IndexSlice[:, self.in_columns]] = transformed
+            df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         return df
 
     def __str__(self) -> str:

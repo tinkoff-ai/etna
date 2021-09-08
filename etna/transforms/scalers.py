@@ -19,7 +19,7 @@ class StandardScalerTransform(SklearnTransform):
 
     def __init__(
         self,
-        in_columns: Optional[List[str]] = None,
+        in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         with_mean: bool = True,
         with_std: bool = True,
@@ -29,7 +29,7 @@ class StandardScalerTransform(SklearnTransform):
 
         Parameters
         ----------
-        in_columns:
+        in_column:
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
@@ -40,7 +40,7 @@ class StandardScalerTransform(SklearnTransform):
         """
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
-            in_columns=in_columns,
+            in_column=in_column,
             inplace=inplace,
         )
         self.with_mean = with_mean
@@ -55,7 +55,7 @@ class RobustScalerTransform(SklearnTransform):
 
     def __init__(
         self,
-        in_columns: Optional[Union[str, List[str]]] = None,
+        in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         with_centering: bool = True,
         with_scaling: bool = True,
@@ -67,7 +67,7 @@ class RobustScalerTransform(SklearnTransform):
 
         Parameters
         ----------
-        in_columns:
+        in_column:
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
@@ -84,7 +84,7 @@ class RobustScalerTransform(SklearnTransform):
             the dataset will be scaled up.
         """
         super().__init__(
-            in_columns=in_columns,
+            in_column=in_column,
             inplace=inplace,
             transformer=RobustScaler(
                 with_centering=with_centering,
@@ -108,7 +108,7 @@ class MinMaxScalerTransform(SklearnTransform):
 
     def __init__(
         self,
-        in_columns: Optional[List[str]] = None,
+        in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         feature_range: Tuple[float, float] = (0, 1),
         clip: bool = True,
@@ -118,7 +118,7 @@ class MinMaxScalerTransform(SklearnTransform):
 
         Parameters
         ----------
-        in_columns:
+        in_column:
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
@@ -128,7 +128,7 @@ class MinMaxScalerTransform(SklearnTransform):
             set to True to clip transformed values of held-out data to provided feature range.
         """
         super().__init__(
-            in_columns=in_columns,
+            in_column=in_column,
             inplace=inplace,
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
         )
@@ -142,17 +142,17 @@ class MaxAbsScalerTransform(SklearnTransform):
     Uses sklearn.preprocessing.MaxAbsScaler inside.
     """
 
-    def __init__(self, in_columns: Optional[List[str]] = None, inplace: bool = True):
+    def __init__(self, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True):
         """Init MinMaxScalerPreprocess.
 
         Parameters
         ----------
-        in_columns:
+        in_column:
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
         """
-        super().__init__(in_columns=in_columns, inplace=inplace, transformer=MaxAbsScaler(copy=True))
+        super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True))
 
 
 __all__ = [
