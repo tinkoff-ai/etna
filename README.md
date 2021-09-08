@@ -5,8 +5,7 @@
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
 
-
-[Homepage](https://etna.tinkoff.ru) |
+[//]: <> (Homepage |)
 [Documentation](https://etna-docs.netlify.app/) |
 [Tutorials](https://github.com/tinkoff-ai/etna-ts/tree/master/examples) | 
 [Contribution Guide](https://github.com/tinkoff-ai/etna-ts/blob/master/CONTRIBUTING.md) |
