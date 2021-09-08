@@ -50,7 +50,6 @@ def test_wrong_init_one_segment():
         _ = _OneSegmentTimeSeriesImputerTransform(strategy="wrong_strategy")
 
 
-@pytest.mark.xfail
 def test_wrong_init_two_segments(all_date_present_df_two_segments):
     """Check that imputer for two segments fails to fit_transform with wrong imputing strategy."""
     with pytest.raises(ValueError):
