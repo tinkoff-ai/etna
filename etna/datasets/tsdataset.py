@@ -152,7 +152,7 @@ class TSDataset:
                         f"{target.index.max()} >= {exog_series.index.max()}."
                     )
 
-    def _merge_exog(self, df: pd.DataFrame):
+    def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         self._check_exog(df=df, df_exog=self.df_exog)
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1)
         return df
