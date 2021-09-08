@@ -45,7 +45,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
 
 # Read the data
-df = pd.read_csv("example_dataset.csv")
+df = pd.read_csv("examples/data/example_dataset.csv")
 
 # Create a TSDataset
 df = TSDataset.to_dataset(df)
