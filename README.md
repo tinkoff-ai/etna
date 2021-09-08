@@ -49,7 +49,7 @@ df = pd.read_csv("examples/data/example_dataset.csv")
 
 # Create a TSDataset
 df = TSDataset.to_dataset(df)
-ts = TSDataset(df,freq="D")
+ts = TSDataset(df, freq="D")
 
 # Choose a horizon
 HORIZON = 8
