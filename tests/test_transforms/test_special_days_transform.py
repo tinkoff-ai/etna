@@ -3,8 +3,8 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from etna.transforms.special_day_finder import SpecialDaysTransform
-from etna.transforms.special_day_finder import _OneSegmentSpecialDaysTransform
+from etna.transforms.special_days import SpecialDaysTransform
+from etna.transforms.special_days import _OneSegmentSpecialDaysTransform
 
 
 @pytest.fixture()
