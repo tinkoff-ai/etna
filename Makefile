@@ -19,6 +19,6 @@ release:
 	@bash scripts/release.sh minor
 
 
-.PHONY: hotrix
+.PHONY: hotfix
 hotfix:
 	@bash scripts/release.sh patch
