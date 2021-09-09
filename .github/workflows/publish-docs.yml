@@ -1,0 +1,55 @@
+name: Publish Docs
+
+on:
+  workflow_run:
+    workflows:
+      - Publish
+    types: 
+      - completed
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Check tag is latest
+        id: check-tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git tag -l --sort=-version:refname '1.*' | head -n 1)
+          if [[ ${{ github.event.workflow_run.head_branch }} == $LATEST_TAG ]]; then
+            echo "::set-output name=IS_LATEST::true"
+          else
+            echo "::set-output name=IS_LATEST::false"
+          fi
+      - name: Install dependencies
+        if: steps.check-tag.outputs.IS_LATEST == 'true'
+        run: poetry install -E docs
+      - name: Build docs
+        if: steps.check-tag.outputs.IS_LATEST == 'true'
+        run: |
+          cd docs
+          cp ../examples/*.ipynb source/tutorials
+          poetry run make clean ; poetry run make html
+          mv build/html/ ../site
+      - name: Deploy to Netlify
+        if: steps.check-tag.outputs.IS_LATEST == 'true'
+        uses: nwtgck/actions-netlify@v1.2
+        with:
+          publish-dir: './site'
+          production-branch: master
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-commit-comment: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
