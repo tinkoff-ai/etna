@@ -189,4 +189,3 @@ def test_getitem_first_ellipsis(tsdf_with_exog):
     df_slice = tsdf_with_exog[..., "target"]
     df_expected = tsdf_with_exog.df.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
     pd.testing.assert_frame_equal(df_expected, df_slice)
-
