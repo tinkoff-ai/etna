@@ -58,8 +58,9 @@ class _OneSegmentLogTransform(Transform):
         """
         if (df[self.in_column] < 0).any():
             raise ValueError("LogPreprocess can be applied only to non-negative series")
-        df[self.out_column] = df[self.in_column].apply(lambda x: log(x + 1, self.base))
-        return df
+        df_result = df.copy()
+        df_result[self.out_column] = df_result[self.in_column].apply(lambda x: log(x + 1, self.base))
+        return df_result
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -74,9 +75,10 @@ class _OneSegmentLogTransform(Transform):
         -------
         transformed series
         """
+        result_df = df.copy()
         if self.inplace:
-            df[self.in_column] = df[self.out_column].apply(lambda x: pow(self.base, x) - 1)
-        return df
+            result_df[self.in_column] = result_df[self.out_column].apply(lambda x: pow(self.base, x) - 1)
+        return result_df
 
 
 class LogTransform(PerSegmentWrapper):
