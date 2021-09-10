@@ -90,11 +90,11 @@ class TSDataset:
         return self.df._repr_html_()
 
     def __getitem__(self, item):
-        if isinstance(item, slice):
+        if isinstance(item, slice) or isinstance(item, str):
             df = self.df.loc[self.idx[item]]
-        if len(item) == 2 and item[0] is Ellipsis:
+        elif len(item) == 2 and item[0] is Ellipsis:
             df = self.df.loc[self.idx[:], self.idx[:, item[1]]]
-        if len(item) == 2 and item[1] is Ellipsis:
+        elif len(item) == 2 and item[1] is Ellipsis:
             df = self.df.loc[self.idx[item[0]]]
         else:
             df = self.df.loc[self.idx[item[0]], self.idx[item[1], item[2]]]
