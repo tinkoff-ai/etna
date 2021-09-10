@@ -43,7 +43,6 @@ class TSDataset:
         self.df_exog = None
 
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
-        self._check_endings()
 
         if (pd.infer_freq(self.raw_df.index) is not None) and (pd.infer_freq(self.raw_df.index) != self.freq):
             warnings.warn(
@@ -67,12 +66,14 @@ class TSDataset:
 
     def transform(self, transforms: Iterable[Transform]):
         """Apply given transform to the data."""
+        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.transform(self.df)
 
     def fit_transform(self, transforms: Iterable[Transform]):
         """Fit and apply given transforms to the data."""
+        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.fit_transform(self.df)

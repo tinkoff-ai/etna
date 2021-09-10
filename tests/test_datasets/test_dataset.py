@@ -38,9 +38,10 @@ def test_same_ending_error_raise():
     df2 = pd.DataFrame({"timestamp": timestamp[:-5], "target": 12, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
 
     with pytest.raises(ValueError):
-        TSDataset(df=df, freq="D")
+        ts.fit_transform([])
 
 
 def test_same_ending_error_pass():
@@ -49,7 +50,8 @@ def test_same_ending_error_pass():
     df2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
-    TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq="D")
+    ts.fit_transform([])
 
 
 def test_categorical_after_call_to_pandas():
