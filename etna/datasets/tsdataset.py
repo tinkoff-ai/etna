@@ -43,6 +43,7 @@ class TSDataset:
         self.df_exog = None
 
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
+        self._check_endings()
 
         if (pd.infer_freq(self.raw_df.index) is not None) and (pd.infer_freq(self.raw_df.index) != self.freq):
             warnings.warn(
@@ -138,6 +139,13 @@ class TSDataset:
             raise ValueError(f"Exog data does not have enough future:" f"{df.index.max()} > {self.df_exog.index.max()}")
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1)
         return df
+
+    def _check_endings(self):
+        """Check that all targets ends at the same timestamp."""
+        max_index = self.raw_df.index.max()
+        for segment in self.raw_df.columns.get_level_values("segment"):
+            if np.isnan(self.raw_df.loc[max_index, pd.IndexSlice[segment, "target"]]):
+                raise ValueError(f"All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
