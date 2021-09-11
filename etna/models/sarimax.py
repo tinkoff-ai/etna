@@ -28,7 +28,7 @@ class _SARIMAXModel:
     def __init__(
         self,
         order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int] = (1, 1, 0, 12),
+        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
         trend: Optional[str] = "c",
         measurement_error: bool = False,
         time_varying_regression: bool = False,
@@ -149,8 +149,8 @@ class _SARIMAXModel:
         self.missing = missing
         self.validate_specification = validate_specification
         self.kwargs = kwargs
-        self._model = None
-        self._result = None
+        self._model: SARIMAX = None
+        self._result: SARIMAX = None
 
     def fit(self, df: pd.DataFrame) -> "_SARIMAXModel":
         """
@@ -249,7 +249,7 @@ class _SARIMAXModel:
         )
         return y_pred.reset_index(drop=True, inplace=False)
 
-    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
+    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None) -> None:
         column_to_drop = [
             col for col in df.columns if not col.startswith("regressor") and col not in ["target", "timestamp"]
         ]
@@ -272,9 +272,9 @@ class _SARIMAXModel:
         if regressor_columns:
             exog_future = df[regressor_columns]
             exog_future.index = df["timestamp"]
+            return exog_future
         else:
-            exog_future = None
-        return exog_future
+            return None
 
 
 class SARIMAXModel(PerSegmentModel):
@@ -295,7 +295,7 @@ class SARIMAXModel(PerSegmentModel):
     def __init__(
         self,
         order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int] = (1, 1, 0, 12),
+        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
         trend: Optional[str] = "c",
         measurement_error: bool = False,
         time_varying_regression: bool = False,

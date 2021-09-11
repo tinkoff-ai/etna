@@ -19,8 +19,7 @@ class _SklearnModel:
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         features = df.drop(columns=["timestamp", "target"])
-        pred = self.model.predict(features)
-        return pred
+        return self.model.predict(features)
 
 
 class SklearnPerSegmentModel(PerSegmentModel):
@@ -57,7 +56,7 @@ class SklearnMultiSegmentModel(Model):
         DataFrame
             Models result
         """
-        result_list = list()
+        result_list = []
         for segment in ts.segments:
             segment_predict = self._forecast_segment(self._base_model, segment, ts)
             result_list.append(segment_predict)

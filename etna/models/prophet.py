@@ -91,7 +91,7 @@ class _ProphetModel:
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame):
+    def predict(self, df: pd.DataFrame) -> list:
         """
         Compute Prophet predictions.
 
@@ -114,8 +114,7 @@ class _ProphetModel:
                 prophet_df[column_name] = df[column_name]
         forecast = self.model.predict(prophet_df)
         y_pred = forecast["yhat"]
-        y_pred = y_pred.tolist()
-        return y_pred
+        return y_pred.tolist()
 
 
 class ProphetModel(PerSegmentModel):

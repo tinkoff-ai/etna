@@ -16,6 +16,19 @@ class Model(ABC, BaseMixin):
     def __init__(self):
         self._models = None
 
+    @staticmethod
+    def _forecast_segment(model, segment: Union[str, List[str]], ts: TSDataset) -> pd.DataFrame:
+        segment_features = ts[:, segment, :]
+        segment_features = segment_features.droplevel("segment", axis=1)
+        segment_features = segment_features.reset_index()
+        dates = segment_features["timestamp"]
+        dates.reset_index(drop=True, inplace=True)
+        segment_predict = model.predict(df=segment_features)
+        segment_predict = pd.DataFrame({"target": segment_predict})
+        segment_predict["segment"] = segment
+        segment_predict["timestamp"] = dates
+        return segment_predict
+
     @abstractmethod
     def fit(self, ts: TSDataset) -> "Model":
         """Fit model.
@@ -43,19 +56,6 @@ class Model(ABC, BaseMixin):
             Models result
         """
         pass
-
-    @staticmethod
-    def _forecast_segment(model, segment: Union[str, List[str]], ts: TSDataset) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features)
-        segment_predict = pd.DataFrame({"target": segment_predict})
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
 
 
 class PerSegmentModel(Model):
@@ -98,7 +98,7 @@ class PerSegmentModel(Model):
             raise ValueError("Dataset contains NaN values on the forecast side", df.columns[df.isna().any()].tolist())
         df.sort_values(by=["segment", "timestamp"], inplace=True)"""
 
-        result_list = list()
+        result_list = []
         for segment in self._segments:
             model = self._models[segment]
 
@@ -117,7 +117,7 @@ class PerSegmentModel(Model):
         ts.inverse_transform()
         return ts
 
-    def _build_models(self):
+    def _build_models(self) -> None:
         """Create a dict with models for each segment (if required)."""
         self._models = {}
         for segment in self._segments:

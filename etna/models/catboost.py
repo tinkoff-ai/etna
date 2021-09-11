@@ -40,8 +40,7 @@ class _CatBoostModel:
     def predict(self, df: pd.DataFrame) -> list:
         features = df.drop(columns=["timestamp", "target"])
         predict_pool = Pool(features, cat_features=self._categorical)
-        pred = self.model.predict(predict_pool)
-        return pred
+        return self.model.predict(predict_pool)
 
 
 class CatBoostModelPerSegment(PerSegmentModel):
@@ -121,7 +120,7 @@ class CatBoostModelMultiSegment(Model):
         DataFrame
             Models result
         """
-        result_list = list()
+        result_list = []
         for segment in ts.segments:
             segment_predict = self._forecast_segment(self._base_model, segment, ts)
             result_list.append(segment_predict)

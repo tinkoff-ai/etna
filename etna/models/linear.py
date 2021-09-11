@@ -33,7 +33,7 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
     """Class holding per segment sklearn.linear_model.ElasticNet."""
 
     def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs
+        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs,
     ):
         """
         Create instance of ElasticNet with given parameters.
@@ -99,7 +99,7 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
     """Class holding sklearn.linear_model.ElasticNet for all segments."""
 
     def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs
+        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs,
     ):
         """
         Create instance of ElasticNet with given parameters.

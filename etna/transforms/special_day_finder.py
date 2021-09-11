@@ -1,4 +1,5 @@
 import datetime
+from typing import Callable
 from typing import Tuple
 
 import pandas as pd
@@ -113,7 +114,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
         return to_return
 
     @staticmethod
-    def _find_anomaly_day_in_week(df: pd.DataFrame, agg_func=pd.core.groupby.SeriesGroupBy.mean) -> Tuple[int]:
+    def _find_anomaly_day_in_week(df: pd.DataFrame, agg_func: Callable = pd.core.groupby.SeriesGroupBy.mean) -> Tuple[int]:
         cp_df = df.copy()
 
         cp_df = pd.concat(
