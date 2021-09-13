@@ -124,9 +124,14 @@ class TSDataset:
 
         # check if we have enough regressors
         for segment in self.segments:
-            regressor_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
-            if self.df_exog.loc[new_index, pd.IndexSlice[segment, regressor_columns]].isna().sum():
-                warnings.warn(f"Some regressors haven't enough values, NaN-s will be used instead")
+            regressors_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
+            if regressors_columns:
+                regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
+                if not np.all(future_dates.isin(regressors_index)):
+                    warnings.warn(
+                        f"Some regressors don't have enough values in segment {segment}, "
+                        f"NaN-s will be used for missing values"
+                    )
 
         if self.transforms is not None:
             for transform in self.transforms:
