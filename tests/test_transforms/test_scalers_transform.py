@@ -3,6 +3,7 @@ import numpy.testing as npt
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MinMaxScalerTransform
 from etna.transforms import RobustScalerTransform
@@ -19,12 +20,7 @@ def normal_distributed_df() -> pd.DataFrame:
     df_2["segment"] = "Omsk"
     df_2["target"] = generator.normal(loc=5, scale=1, size=len(df_1))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    return df
+    return TSDataset.to_dataset(classic_df)
 
 
 @pytest.mark.parametrize(
@@ -39,8 +35,27 @@ def normal_distributed_df() -> pd.DataFrame:
         MinMaxScalerTransform(feature_range=(5, 10)),
     ),
 )
-def test_dummy_inverse_transform(normal_distributed_df, scaler):
-    """Check that inverse_transform(transform(df)) == df"""
+def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler):
+    """Check that `inverse_transform(transform(df)) == df` for all columns."""
+    feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
+    inversed_df = scaler.inverse_transform(df=feature_df)
+    npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
+
+
+@pytest.mark.parametrize(
+    "scaler",
+    (
+        StandardScalerTransform(in_column="target"),
+        RobustScalerTransform(in_column="target"),
+        MinMaxScalerTransform(in_column="target"),
+        MaxAbsScalerTransform(in_column="target"),
+        StandardScalerTransform(in_column="target", with_std=False),
+        RobustScalerTransform(in_column="target", with_centering=False, with_scaling=False),
+        MinMaxScalerTransform(in_column="target", feature_range=(5, 10)),
+    ),
+)
+def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler):
+    """Check that `inverse_transform(transform(df)) == df` for one column."""
     feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
     inversed_df = scaler.inverse_transform(df=feature_df)
     npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
