@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.analysis import get_anomalies_density
@@ -34,9 +35,9 @@ def test_outliers_detection(transform, method, outliers_tsds, recwarn):
     for segment in outliers_tsds.segments:
         non_nan_index[segment] = outliers_tsds[:, segment, "target"].dropna().index
 
-    # make transform and compare nans
-    outliers_tsds.fit_transform(transforms=[transform])
+    # convert to df to ignore different lengths of series
+    transformed_df = transform.fit_transform(outliers_tsds.to_pandas())
     for segment in outliers_tsds.segments:
         nan_timestamps = detectiom_method_results[segment]
-        transformed_column = outliers_tsds[non_nan_index[segment], segment, "target"]
+        transformed_column = transformed_df.loc[non_nan_index[segment], pd.IndexSlice[segment, "target"]]
         assert np.all(transformed_column[transformed_column.isna()].index == nan_timestamps)
