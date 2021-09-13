@@ -122,16 +122,16 @@ class TSDataset:
         if self.df_exog is not None:
             df = self._merge_exog(df)
 
-        # check if we have enough regressors
-        for segment in self.segments:
-            regressors_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
-            if regressors_columns:
-                regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
-                if not np.all(future_dates.isin(regressors_index)):
-                    warnings.warn(
-                        f"Some regressors don't have enough values in segment {segment}, "
-                        f"NaN-s will be used for missing values"
-                    )
+            # check if we have enough values in regressors
+            for segment in self.segments:
+                regressors_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
+                if regressors_columns:
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
+                    if not np.all(future_dates.isin(regressors_index)):
+                        warnings.warn(
+                            f"Some regressors don't have enough values in segment {segment}, "
+                            f"NaN-s will be used for missing values"
+                        )
 
         if self.transforms is not None:
             for transform in self.transforms:
