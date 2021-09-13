@@ -44,22 +44,24 @@ class TSDataset:
 
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
 
-        if (pd.infer_freq(self.raw_df.index) is not None) and (pd.infer_freq(self.raw_df.index) != self.freq):
+        try:
+            infered_freq = pd.infer_freq(self.raw_df.index)
+        except ValueError:
+            warnings.warn("TSDataset freq can't be inferred")
+            infered_freq = None
+
+        if infered_freq != self.freq:
             warnings.warn(
-                f"You probably set wrong freq. Discovered freq in you data is {pd.infer_freq(self.raw_df.index)}, "
-                f"you set {self.freq}"
+                f"You probably set wrong freq. Discovered freq in you data is {infered_freq}, " f"you set {self.freq}"
             )
 
-        if not pd.infer_freq(self.raw_df.index):
-            warnings.warn("Applying resampling to df")
-            self.raw_df = self.raw_df.asfreq(self.freq)
+        self.raw_df = self.raw_df.asfreq(self.freq)
+
         self.df = self.raw_df.copy(deep=True)
 
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
-            if not pd.infer_freq(self.df_exog.index):
-                warnings.warn("df_exog does not have freq")
             self.df = self._merge_exog(self.df)
 
         self.transforms = None
