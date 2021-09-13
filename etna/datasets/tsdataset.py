@@ -122,6 +122,12 @@ class TSDataset:
         if self.df_exog is not None:
             df = self._merge_exog(df)
 
+        # check if we have enough regressors
+        for segment in self.segments:
+            regressor_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
+            if self.df_exog.loc[new_index, pd.IndexSlice[segment, regressor_columns]].isna().sum():
+                warnings.warn(f"Some regressors haven't enough values, NaN-s will be used instead")
+
         if self.transforms is not None:
             for transform in self.transforms:
                 df = transform.transform(df)
