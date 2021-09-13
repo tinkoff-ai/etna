@@ -46,8 +46,9 @@ class _OneSegmentAddConstTransform(Transform):
         -------
         transformed series
         """
-        df[self.out_column] = df[self.in_column] + self.value
-        return df
+        result_df = df.copy()
+        result_df[self.out_column] = result_df[self.in_column] + self.value
+        return result_df
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -62,9 +63,10 @@ class _OneSegmentAddConstTransform(Transform):
         -------
         transformed series
         """
+        result_df = df.copy()
         if self.inplace:
-            df[self.in_column] = df[self.out_column] - self.value
-        return df
+            result_df[self.in_column] = result_df[self.out_column] - self.value
+        return result_df
 
 
 class AddConstTransform(PerSegmentWrapper):
