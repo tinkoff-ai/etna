@@ -22,6 +22,8 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
 
         Parameters
         ----------
+        in_column:
+            name of processed column
         regressor:
             instance of sklearn RegressorMixin to predict trend
         """
@@ -127,6 +129,8 @@ class LinearTrendTransform(PerSegmentWrapper):
 
         Parameters
         ----------
+        in_column:
+            name of processed column
         regression_params:
             params that should be used to init LinearRegression
         """
@@ -147,6 +151,8 @@ class TheilSenTrendTransform(PerSegmentWrapper):
 
         Parameters
         ----------
+        in_column:
+            name of processed column
         regression_params:
             params that should be used to init TheilSenRegressor
         """
