@@ -59,7 +59,7 @@ class OutliersTransform(Transform, ABC):
             dataframe with in_column series with filled with NaNs
         """
         result_df = df.copy()
-        for segment in df.columns.get_level_values("segment"):
+        for segment in df.columns.get_level_values("segment").unique():
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
 
