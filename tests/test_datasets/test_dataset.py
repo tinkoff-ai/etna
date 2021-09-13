@@ -32,6 +32,28 @@ def tsdf_with_exog() -> TSDataset:
     return ts
 
 
+def test_same_ending_error_raise():
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp[:-5], "target": 12, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+
+    with pytest.raises(ValueError):
+        ts.fit_transform([])
+
+
+def test_same_ending_error_pass():
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+    ts.fit_transform([])
+
+
 def test_categorical_after_call_to_pandas():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["categorical_column"] = [0] * 30 + [1] * 30

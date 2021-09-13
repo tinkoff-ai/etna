@@ -66,12 +66,14 @@ class TSDataset:
 
     def transform(self, transforms: Iterable[Transform]):
         """Apply given transform to the data."""
+        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.transform(self.df)
 
     def fit_transform(self, transforms: Iterable[Transform]):
         """Fit and apply given transforms to the data."""
+        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.fit_transform(self.df)
@@ -138,6 +140,13 @@ class TSDataset:
             raise ValueError(f"Exog data does not have enough future:" f"{df.index.max()} > {self.df_exog.index.max()}")
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1)
         return df
+
+    def _check_endings(self):
+        """Check that all targets ends at the same timestamp."""
+        max_index = self.df.index.max()
+        for segment in self.df.columns.get_level_values("segment"):
+            if np.isnan(self.df.loc[max_index, pd.IndexSlice[segment, "target"]]):
+                raise ValueError(f"All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
