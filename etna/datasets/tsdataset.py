@@ -1,11 +1,11 @@
 import math
 import warnings
+from typing import TYPE_CHECKING
 from typing import Iterable
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
