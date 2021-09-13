@@ -5,6 +5,7 @@ lint:
 	black --check tests/
 	flake8 etna/
 	flake8 tests/ --select E,W,C,F401,N
+
 format:
 	isort --sl etna/
 	isort --sl tests/
@@ -12,3 +13,12 @@ format:
 	black tests/
 	flake8 etna/
 	flake8 tests/ --select E,W,C,F401,N
+
+.PHONY: release
+release:
+	@bash scripts/release.sh minor
+
+
+.PHONY: hotfix
+hotfix:
+	@bash scripts/release.sh patch

@@ -35,7 +35,7 @@ class TSDataset:
             frequency of timestamp in df
         df_exog:
             dataframe with exogenous data;
-            if the series is known in the future features' names should start wuth prefix 'regressor_`.
+            if the series is known in the future features' names should start with prefix 'regressor_`.
         """
         self.raw_df = df.copy(deep=True)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)

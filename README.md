@@ -5,8 +5,7 @@
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
 
-
-[Homepage](https://etna.tinkoff.ru) |
+[//]: <> (Homepage |)
 [Documentation](https://etna-docs.netlify.app/) |
 [Tutorials](https://github.com/tinkoff-ai/etna-ts/tree/master/examples) | 
 [Contribution Guide](https://github.com/tinkoff-ai/etna-ts/blob/master/CONTRIBUTING.md) |
@@ -45,12 +44,11 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
 
 # Read the data
-df = pd.read_csv("example_dataset.csv")
-df["timestamp"] = pd.to_datetime(df["timestamp"])
+df = pd.read_csv("examples/data/example_dataset.csv")
 
 # Create a TSDataset
 df = TSDataset.to_dataset(df)
-ts = TSDataset(df,freq='1d')
+ts = TSDataset(df, freq="D")
 
 # Choose a horizon
 HORIZON = 8
