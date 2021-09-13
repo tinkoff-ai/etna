@@ -4,6 +4,8 @@ from etna.transforms.datetime_flags import TimeFlagsTransform
 from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
+from etna.transforms.outliers import MedianOutliersTransform
+from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform
 from etna.transforms.power import BoxCoxTransform
