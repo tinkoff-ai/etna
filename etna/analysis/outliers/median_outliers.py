@@ -2,13 +2,14 @@ import math
 import typing
 
 import numpy as np
+import pandas as pd
 
 from etna.datasets.tsdataset import TSDataset
 
 
 def get_anomalies_median(
     ts: TSDataset, window_size: int = 10, alpha: float = 3
-) -> typing.Dict[str, typing.List[np.datetime64]]:
+) -> typing.Dict[str, typing.List[pd.Timestamp]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
     Outliers are all points deviating from the median by more than alpha * std, where std is the sample variance in the window.
