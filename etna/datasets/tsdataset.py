@@ -1,6 +1,7 @@
 import math
 import warnings
 from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -44,22 +45,24 @@ class TSDataset:
 
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
 
-        if (pd.infer_freq(self.raw_df.index) is not None) and (pd.infer_freq(self.raw_df.index) != self.freq):
+        try:
+            infered_freq = pd.infer_freq(self.raw_df.index)
+        except ValueError:
+            warnings.warn("TSDataset freq can't be inferred")
+            infered_freq = None
+
+        if infered_freq != self.freq:
             warnings.warn(
-                f"You probably set wrong freq. Discovered freq in you data is {pd.infer_freq(self.raw_df.index)}, "
-                f"you set {self.freq}"
+                f"You probably set wrong freq. Discovered freq in you data is {infered_freq}, you set {self.freq}"
             )
 
-        if not pd.infer_freq(self.raw_df.index):
-            warnings.warn("Applying resampling to df")
-            self.raw_df = self.raw_df.asfreq(self.freq)
+        self.raw_df = self.raw_df.asfreq(self.freq)
+
         self.df = self.raw_df.copy(deep=True)
 
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
-            if not pd.infer_freq(self.df_exog.index):
-                warnings.warn("df_exog does not have freq")
             self.df = self._merge_exog(self.df)
 
         self.transforms = None
@@ -131,13 +134,30 @@ class TSDataset:
         future_ts.df_exog = self.df_exog
         return future_ts
 
-    def _merge_exog(self, df):
-        if df.index.min() < self.df_exog.index.min():
-            raise ValueError(
-                f"Exog data does not have enough history:" f"{df.index.min()} < {self.df_exog.index.min()}"
-            )
-        if df.index.max() > self.df_exog.index.max():
-            raise ValueError(f"Exog data does not have enough future:" f"{df.index.max()} > {self.df_exog.index.max()}")
+    @staticmethod
+    def _check_exog(df: pd.DataFrame, df_exog: pd.DataFrame):
+        """Check that df_exog have more timestamps than df."""
+        df_segments = df.columns.get_level_values("segment")
+        for segment in df_segments:
+            target = df[segment]["target"].dropna()
+            exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
+            for series in exog_regressor_columns:
+                exog_series = df_exog[segment][series].dropna()
+                if target.index.min() < exog_series.index.min():
+                    raise ValueError(
+                        f"All the regressor series should start not later than corresponding 'target'."
+                        f"Series {series} of segment {segment} have not enough history: "
+                        f"{target.index.min()} < {exog_series.index.min()}."
+                    )
+                if target.index.max() >= exog_series.index.max():
+                    raise ValueError(
+                        f"All the regressor series should finish later than corresponding 'target'."
+                        f"Series {series} of segment {segment} have not enough history: "
+                        f"{target.index.max()} >= {exog_series.index.max()}."
+                    )
+
+    def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
+        self._check_exog(df=df, df_exog=self.df_exog)
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1)
         return df
 
@@ -157,7 +177,7 @@ class TSDataset:
                 self.df = transform.inverse_transform(self.df)
 
     @property
-    def segments(self) -> list:
+    def segments(self) -> List[str]:
         """Get list of all segments in dataset."""
         return self.df.columns.get_level_values("segment").unique().tolist()
 

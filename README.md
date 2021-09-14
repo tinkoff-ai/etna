@@ -2,10 +2,11 @@
 
 [![Pipi version](https://img.shields.io/pypi/v/etna-ts.svg)](https://pypi.org/project/etna-ts/)
 [![PyPI Status](https://static.pepy.tech/personalized-badge/etna-ts?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna-ts)
+[![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna-ts)](https://codecov.io/gh/tinkoff-ai/etna-ts)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
 
-[//]: <> (Homepage |)
+[Homepage](https://etna.tinkoff.ru) |
 [Documentation](https://etna-docs.netlify.app/) |
 [Tutorials](https://github.com/tinkoff-ai/etna-ts/tree/master/examples) | 
 [Contribution Guide](https://github.com/tinkoff-ai/etna-ts/blob/master/CONTRIBUTING.md) |

@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Callable
 from typing import Dict
 from typing import Optional
@@ -10,11 +11,17 @@ from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 
 
-class MetricAggregationMode:
+class MetricAggregationMode(str, Enum):
     """Enum for different metric aggregation modes."""
 
     macro = "macro"
     per_segment = "per-segment"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregation allowed"
+        )
 
 
 class Metric(BaseMixin):
@@ -44,15 +51,10 @@ class Metric(BaseMixin):
         """
         self.metric_fn = metric_fn
         self.kwargs = kwargs
-
-        if mode == MetricAggregationMode.macro:
+        if MetricAggregationMode(mode) == MetricAggregationMode.macro:
             self._aggregate_metrics = self._macro_average
-        elif mode == MetricAggregationMode.per_segment:
+        elif MetricAggregationMode(mode) == MetricAggregationMode.per_segment:
             self._aggregate_metrics = lambda x: x
-        else:
-            raise NotImplementedError(
-                f"Only '{MetricAggregationMode.macro}' and '{MetricAggregationMode.per_segment}' aggregation allowed"
-            )
         self.mode = mode
 
     @staticmethod

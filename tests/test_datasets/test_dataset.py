@@ -99,3 +99,53 @@ def test_dataset_datetime_convertion_during_init():
     exog.index = df.index.astype(str)
     ts = TSDataset(df, "1d", exog)
     assert ts.df.index.dtype == "datetime64[ns]"
+
+
+def test_make_future_small_horizon():
+    timestamp = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-01"))
+    target1 = [np.sin(i) for i in range(len(timestamp))]
+    target2 = [np.cos(i) for i in range(len(timestamp))]
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": target1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": target2, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    train = TSDataset(ts[: ts.index[10], :, :], freq="D")
+    with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
+        assert len(train.make_future(1).df) == 1
+
+
+@pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
+def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earlier: bool):
+    start_time = "2021-01-10" if exog_starts_later else "2021-01-01"
+    end_time = "2021-01-20" if exog_ends_earlier else "2021-02-01"
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    timestamp = pd.date_range(start_time, end_time)
+    df1 = pd.DataFrame({"timestamp": timestamp, "regressor_aaa": 1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_aaa": 2, "segment": "2"})
+    dfexog = pd.concat([df1, df2], ignore_index=True)
+    dfexog = TSDataset.to_dataset(dfexog)
+
+    with pytest.raises(ValueError):
+        TSDataset._check_exog(df=df, df_exog=dfexog)
+
+
+def test_dataset_check_exog_pass():
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    timestamp = pd.date_range("2021-01-01", "2021-02-11")
+    df1 = pd.DataFrame({"timestamp": timestamp, "regressor_aaa": 1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_aaa": 2, "segment": "2"})
+    dfexog = pd.concat([df1, df2], ignore_index=True)
+    dfexog = TSDataset.to_dataset(dfexog)
+
+    _ = TSDataset._check_exog(df=df, df_exog=dfexog)

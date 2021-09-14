@@ -34,7 +34,7 @@ def test_get_segment_density_outliers_indices(
 
 
 def test_get_anomalies_density_interface(outliers_tsds: TSDataset):
-    outliers = get_anomalies_density(ts=outliers_tsds, window_size=7, distance_threshold=2, n_neighbors=3)
+    outliers = get_anomalies_density(ts=outliers_tsds, window_size=7, distance_coef=2, n_neighbors=3)
     for segment in ["1", "2"]:
         assert segment in outliers
         assert isinstance(outliers[segment], list)
@@ -42,7 +42,7 @@ def test_get_anomalies_density_interface(outliers_tsds: TSDataset):
 
 def test_get_anomalies_density(outliers_tsds: TSDataset):
     """Check if get_anomalies_density works correctly."""
-    outliers = get_anomalies_density(ts=outliers_tsds, window_size=7, distance_threshold=2.1, n_neighbors=3)
+    outliers = get_anomalies_density(ts=outliers_tsds, window_size=7, distance_coef=2.1, n_neighbors=3)
     expected = {"1": [np.datetime64("2021-01-11")], "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-27")]}
     for key in expected:
         assert key in outliers
