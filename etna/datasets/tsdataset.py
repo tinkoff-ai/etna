@@ -1,5 +1,6 @@
 import math
 import warnings
+from typing import TYPE_CHECKING
 from typing import Iterable
 from typing import List
 from typing import Optional
@@ -11,7 +12,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from etna.transforms.base import Transform
+if TYPE_CHECKING:
+    from etna.transforms.base import Transform
 
 TTimestamp = Union[str, pd.Timestamp]
 
@@ -67,14 +69,14 @@ class TSDataset:
 
         self.transforms = None
 
-    def transform(self, transforms: Iterable[Transform]):
+    def transform(self, transforms: Iterable["Transform"]):
         """Apply given transform to the data."""
         self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.transform(self.df)
 
-    def fit_transform(self, transforms: Iterable[Transform]):
+    def fit_transform(self, transforms: Iterable["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings()
         self.transforms = transforms
