@@ -2,10 +2,10 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Iterable
 from typing import Union
 
 import pandas as pd
@@ -14,12 +14,12 @@ from joblib import delayed
 
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
 from etna.transforms.base import Transform
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 
 TTimeRanges = Tuple[Tuple[Optional[str], str], Tuple[str, str]]
 
@@ -35,8 +35,14 @@ class TimeSeriesCrossValidation(BaseMixin):
     """Cross validation for time series."""
 
     def __init__(
-        self, model: Model, horizon: int, metrics: List[Metric], n_folds: int = 5, mode: str = "expand", n_jobs: int = 1,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite()
+        self,
+        model: Model,
+        horizon: int,
+        metrics: List[Metric],
+        n_folds: int = 5,
+        mode: str = "expand",
+        n_jobs: int = 1,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """
         Init TimeSeriesCrossValidation.

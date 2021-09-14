@@ -8,6 +8,8 @@ from typing import Union
 import pandas as pd
 from prophet import Prophet
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.models.base import PerSegmentModel
 
 
@@ -139,6 +141,7 @@ class ProphetModel(PerSegmentModel):
         uncertainty_samples: Union[int, bool] = 1000,
         stan_backend: Optional[str] = None,
         additional_seasonality_params: Iterable[Dict[str, Union[str, float, int]]] = (),
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """
         Create instance of Prophet model.
@@ -246,5 +249,6 @@ class ProphetModel(PerSegmentModel):
                 uncertainty_samples=self.uncertainty_samples,
                 stan_backend=self.stan_backend,
                 additional_seasonality_params=self.additional_seasonality_params,
-            )
+            ),
+            logger=logger,
         )

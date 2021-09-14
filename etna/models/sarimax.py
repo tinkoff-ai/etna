@@ -1,12 +1,16 @@
 import warnings
 from datetime import datetime
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.models.base import PerSegmentModel
 
 
@@ -311,6 +315,7 @@ class SARIMAXModel(PerSegmentModel):
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
         **kwargs,
     ):
         """
@@ -422,5 +427,6 @@ class SARIMAXModel(PerSegmentModel):
                 missing=missing,
                 validate_specification=validate_specification,
                 **kwargs,
-            )
+            ),
+            logger=logger,
         )
