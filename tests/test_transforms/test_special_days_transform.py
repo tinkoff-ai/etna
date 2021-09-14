@@ -150,6 +150,7 @@ def test_interface_two_segments_noweek_nomonth(constant_days_two_segments_df: pd
     with pytest.raises(ValueError):
         _ = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
+
 def test_week_feature(df_with_specials: pd.DataFrame):
     """This test checks that _OneSegmentSpecialDaysTransform computes weekday feature correctly."""
     special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
