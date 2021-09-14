@@ -27,6 +27,7 @@ class MetricAggregationMode(str, Enum):
 class Metric(BaseMixin):
     """
     Base class for all the multi-segment metrics.
+
     How it works: Metric computes metric_fn value for each segment in given forecast
     dataset and aggregates it according to mode.
     """
@@ -36,6 +37,7 @@ class Metric(BaseMixin):
     ):
         """
         Init Metric.
+
         Parameters
         ----------
         mode:
@@ -59,12 +61,14 @@ class Metric(BaseMixin):
     def _validate_segment_columns(y_true: TSDataset, y_pred: TSDataset):
         """
         Check if all the segments from y_true are in y_pred and vice versa.
+
         Parameters
         ----------
         y_true:
             y_true dataset
         y_pred:
             y_pred dataset
+
         Raises
         ------
         ValueError:
@@ -97,12 +101,14 @@ class Metric(BaseMixin):
     def _validate_timestamp_columns(timestamp_true: pd.Series, timestamp_pred: pd.Series):
         """
         Check that y_true and y_pred have the same timestamp.
+
         Parameters
         ----------
         timestamp_true:
             y_true's timestamp column
         timestamp_pred:
             y_pred's timestamp column
+
         Raises
         ------
         ValueError:
@@ -115,9 +121,11 @@ class Metric(BaseMixin):
     def _macro_average(metrics_per_segments: Dict[str, float]) -> float:
         """
         Compute macro averaging of metrics over segment.
+
         Parameters
         ----------
         metrics_per_segments: dict of {segment: metric_value} for segments to aggregate
+
         Returns
         -------
         aggregated value of metric
@@ -127,15 +135,18 @@ class Metric(BaseMixin):
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
         """
         Compute metric's value with y_true and y_pred.
+
         Notes
         -----
         Note that if y_true and y_pred are not sorted Metric will sort it anyway
+
         Parameters
         ----------
         y_true:
             dataset with true time series values
         y_pred:
             dataset with predicted time series values
+
         Returns
         -------
             metric's value aggregated over segments or not (depends on mode)
