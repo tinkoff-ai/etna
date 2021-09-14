@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import List
 from typing import Union
 
 import pandas as pd
@@ -8,7 +8,7 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentLagFeature(Transform):
-    def __init__(self, lags: Union[Sequence[int], int], in_column: str):
+    def __init__(self, lags: Union[List[int], int], in_column: str):
         if isinstance(lags, int):
             if lags < 1:
                 raise ValueError(f"{type(self).__name__} works only with positive lags values, {lags} given")
@@ -35,9 +35,8 @@ class _OneSegmentLagFeature(Transform):
 class LagTransform(PerSegmentWrapper):
     """Generates series of lags from given dataframe. Creates columns 'regressor_<column>_lag_<number>'. """
 
-    def __init__(self, lags: Union[Sequence[int], int], in_column: str):
-        """
-        Create instance of LagTransform.
+    def __init__(self, lags: Union[List[int], int], in_column: str):
+        """Create instance of LagTransform.
 
         Parameters
         ----------

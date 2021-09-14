@@ -6,6 +6,7 @@ import pandas as pd
 import pytorch_lightning as pl
 from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import TemporalFusionTransformer
+from pytorch_lightning import LightningModule
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
@@ -79,14 +80,13 @@ class TFTModel(Model):
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
 
-    def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> TemporalFusionTransformer:
+    def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
         Construct TemporalFusionTransformer.
 
         Returns
         -------
-        TemporalFusionTransformer
-            Class instance.
+        LightningModule class instance.
         """
         return TemporalFusionTransformer.from_dataset(
             ts_dataset,

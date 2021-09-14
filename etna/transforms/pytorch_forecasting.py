@@ -1,6 +1,7 @@
 import inspect
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -24,27 +25,27 @@ class PytorchForecastingTransform(Transform):
     def __init__(
         self,
         max_encoder_length: int = 30,
-        min_encoder_length: int = None,
-        min_prediction_idx: int = None,
-        min_prediction_length: int = None,
+        min_encoder_length: Optional[int] = None,
+        min_prediction_idx: Optional[int] = None,
+        min_prediction_length: Optional[int] = None,
         max_prediction_length: int = 1,
-        static_categoricals: List[str] = [],
-        static_reals: List[str] = [],
-        time_varying_known_categoricals: List[str] = [],
-        time_varying_known_reals: List[str] = [],
-        time_varying_unknown_categoricals: List[str] = [],
-        time_varying_unknown_reals: List[str] = [],
-        variable_groups: Dict[str, List[int]] = {},
-        dropout_categoricals: List[str] = [],
-        constant_fill_strategy: Dict[str, Union[str, float, int, bool]] = {},
+        static_categoricals: Optional[List[str]] = None,
+        static_reals: Optional[List[str]] = None,
+        time_varying_known_categoricals: Optional[List[str]] = None,
+        time_varying_known_reals: Optional[List[str]] = None,
+        time_varying_unknown_categoricals: Optional[List[str]] = None,
+        time_varying_unknown_reals: Optional[List[str]] = None,
+        variable_groups: Optional[Dict[str, List[int]]] = None,
+        dropout_categoricals: Optional[List[str]] = None,
+        constant_fill_strategy: Optional[Dict[str, Union[str, float, int, bool]]] = None,
         allow_missings: bool = True,
-        lags: Dict[str, List[int]] = {},
+        lags: Optional[Dict[str, List[int]]] = None,
         add_relative_time_idx: bool = True,
         add_target_scales: bool = True,
         add_encoder_length: Union[bool, str] = True,
         target_normalizer: Union[NORMALIZER, str, List[NORMALIZER], Tuple[NORMALIZER]] = "auto",
-        categorical_encoders: Dict[str, NaNLabelEncoder] = None,
-        scalers: Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]] = {},
+        categorical_encoders: Optional[Dict[str, NaNLabelEncoder]] = None,
+        scalers: Optional[Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]]] = None,
     ):
         """Parameters for TimeSeriesDataSet object.
 
@@ -79,6 +80,7 @@ class PytorchForecastingTransform(Transform):
         self.constant_fill_strategy = constant_fill_strategy
         self.lags = lags
         self.scalers = scalers
+        self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
 
     @staticmethod
     def _calculate_freq_unit(freq: str) -> pd.Timedelta:
