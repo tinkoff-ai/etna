@@ -1,7 +1,6 @@
 import math
 import warnings
 from typing import TYPE_CHECKING
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
