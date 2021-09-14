@@ -66,14 +66,14 @@ def get_segment_density_outliers_indices(
 def get_anomalies_density(
     ts: TSDataset,
     window_size: int = 15,
-    distance_threshold: float = 100,
+    distance_coef: float = 3,
     n_neighbors: int = 3,
     distance_func: Callable[[float, float], float] = lambda x, y: abs(x - y),
 ) -> Dict[str, List[pd.Timestamp]]:
     """Compute outliers according to density rule.
 
     For each element in the series build all the windows of size window_size containing this point.
-    If any of the windows contains at least n_neighbors that are closer than distance_threshold
+    If any of the windows contains at least n_neighbors that are closer than distance_coef * std(series)
     to target point according to distance_func target point is not an outlier.
 
     Parameters
@@ -82,8 +82,8 @@ def get_anomalies_density(
         TSDataset with timeseries data
     window_size:
         size of windows to build
-    distance_threshold:
-        distance threshold to determine points are close to each other
+    distance_coef:
+        factor for standard deviation that forms distance threshold to determine points are close to each other
     n_neighbors:
         min number of close neighbors of point not to be outlier
     distance_func:
@@ -101,14 +101,15 @@ def get_anomalies_density(
     segments = ts.segments
     outliers_per_segment = {}
     for seg in segments:
-        # TODO: убрать dropna, когда TSDataset.slice не будет возвращать NaNs в начале ряда
+        # TODO: dropna() now is responsible for removing nan-s at the end of the sequence and in the middle of it
+        #   May be error or warning should be raised in this case
         segment_df = ts[:, seg, :][seg].dropna().reset_index()
         series = segment_df["target"].values
         timestamps = segment_df["timestamp"].values
         outliers_idxs = get_segment_density_outliers_indices(
             series=series,
             window_size=window_size,
-            distance_threshold=distance_threshold,
+            distance_threshold=distance_coef * np.std(series),
             n_neighbors=n_neighbors,
             distance_func=distance_func,
         )
