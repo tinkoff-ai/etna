@@ -1,0 +1,31 @@
+---
+name: "How to question"
+description: Asking how-to questions
+labels: help wanted, question
+assignees: iKintosh, julia-shenshina, martins0n
+
+body:
+- type: checkboxes
+  attributes:
+    label: Checklist
+    description: |
+      Search the [Issues][issues] first.
+      Search the [Documentation][docs] second.
+
+      [issues]: https://github.com/tinkoff-ai/etna-ts/issues
+      [docs]: https://etna-docs.netlify.app
+    options:
+      - label: I have searched the issues.
+        required: true
+      - label: I have searched the docs.
+        required: true
+
+- type: textarea
+  attributes:
+    label: ❓ Questions and Help
+    description: |
+      What is your question? What have you tried?
+      *Please paste a code snippet if your question requires it!*
+  validations:
+    required: true
+...
