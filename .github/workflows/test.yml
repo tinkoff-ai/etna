@@ -21,9 +21,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install black=="19.3b0"
-          pip install isort
-          pip install flake8 pep8-naming flake8-docstrings
+          pip install poetry
+          poetry --version
+          poetry config virtualenvs.in-project true
+          poetry install -E style
           
       - name: Static Analysis
         run: make lint
