@@ -1,8 +1,12 @@
 import datetime
+from typing import Iterable
 from typing import Tuple
+from typing import Union
 
 import pandas as pd
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -160,11 +164,17 @@ class _OneSegmentSpecialDaysTransform(Transform):
 class SpecialDaysTransform(PerSegmentWrapper):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe."""
 
-    def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
+    def __init__(
+        self,
+        find_special_weekday: bool = True,
+        find_special_month_day: bool = True,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+    ):
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
         super().__init__(
-            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day)
+            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day),
+            logger=logger,
         )
 
 

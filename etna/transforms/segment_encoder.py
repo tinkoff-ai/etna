@@ -1,6 +1,11 @@
+from typing import Iterable
+from typing import Union
+
 import pandas as pd
 from sklearn import preprocessing
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.base import Transform
 
 
@@ -9,7 +14,8 @@ class SegmentEncoderTransform(Transform):
 
     idx = pd.IndexSlice
 
-    def __init__(self):
+    def __init__(self, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
+        super().__init__(logger=logger)
         self._le = preprocessing.LabelEncoder()
 
     def fit(self, df: pd.DataFrame) -> "SegmentEncoderTransform":

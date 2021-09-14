@@ -1,5 +1,6 @@
 import inspect
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Tuple
 from typing import Union
@@ -13,6 +14,8 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.base import Transform
 
 NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
@@ -45,6 +48,7 @@ class PytorchForecastingTransform(Transform):
         target_normalizer: Union[NORMALIZER, str, List[NORMALIZER], Tuple[NORMALIZER]] = "auto",
         categorical_encoders: Dict[str, NaNLabelEncoder] = None,
         scalers: Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]] = {},
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """Parameters for TimeSeriesDataSet object.
 
@@ -52,7 +56,7 @@ class PytorchForecastingTransform(Transform):
         ---------
         https://github.com/jdb78/pytorch-forecasting/blob/v0.8.5/pytorch_forecasting/data/timeseries.py#L117
         """
-        super().__init__()
+        super().__init__(logger=logger)
         self.max_encoder_length = max_encoder_length
         self.min_encoder_length = min_encoder_length
         self.min_prediction_idx = min_prediction_idx

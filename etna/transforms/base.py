@@ -1,14 +1,29 @@
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Iterable
+from typing import Union
 
 import pandas as pd
 
 from etna.core import BaseMixin
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 
 
 class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
+
+    def __init__(self, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
+        """Init transform.
+
+        Parameters
+        ----------
+        logger:
+            write description of some processes to some place
+        """
+        self.logger = logger
+        self.logger = LoggerComposite(logger)
 
     @abstractmethod
     def fit(self, df: pd.DataFrame) -> "Transform":
@@ -73,7 +88,8 @@ class Transform(ABC, BaseMixin):
 class PerSegmentWrapper(Transform):
     """Class to apply transform in per segment manner."""
 
-    def __init__(self, transform):
+    def __init__(self, transform, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
+        super().__init__(logger=logger)
         self._base_transform = transform
         self.segment_transforms = {}
         self.segments = None

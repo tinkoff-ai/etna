@@ -1,3 +1,4 @@
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Union
@@ -5,6 +6,8 @@ from typing import Union
 import pandas as pd
 from sklearn.base import TransformerMixin
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.base import Transform
 
 
@@ -14,7 +17,11 @@ class SklearnTransform(Transform):
     """
 
     def __init__(
-        self, transformer: TransformerMixin, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True
+        self,
+        transformer: TransformerMixin,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """
         Init SklearnTransform.
@@ -28,6 +35,7 @@ class SklearnTransform(Transform):
         inplace:
             features are changed by transformed.
         """
+        super().__init__(logger=logger)
         self.transformer = transformer
         if isinstance(in_column, str):
             in_column = [in_column]

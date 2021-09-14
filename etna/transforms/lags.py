@@ -1,8 +1,11 @@
+from typing import Iterable
 from typing import Sequence
 from typing import Union
 
 import pandas as pd
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -34,7 +37,12 @@ class _OneSegmentLagFeature(Transform):
 class LagTransform(PerSegmentWrapper):
     """LagFeatures generates series of lags from given dataframe."""
 
-    def __init__(self, lags: Union[Sequence[int], int], in_column: str):
+    def __init__(
+        self,
+        lags: Union[Sequence[int], int],
+        in_column: str,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+    ):
         """Create LagFeature.
 
         Parameters
@@ -44,4 +52,4 @@ class LagTransform(PerSegmentWrapper):
         """
         self.lags = lags
         self.in_column = in_column
-        super().__init__(transform=_OneSegmentLagFeature(lags=self.lags, in_column=self.in_column))
+        super().__init__(transform=_OneSegmentLagFeature(lags=self.lags, in_column=self.in_column), logger=logger)

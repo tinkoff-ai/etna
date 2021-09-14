@@ -1,10 +1,14 @@
 from math import ceil
+from typing import Iterable
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.base import Transform
 
 
@@ -26,6 +30,7 @@ class DateFlagsTransform(Transform):
         year_number: Optional[bool] = False,
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """Create instance of DateFlags.
 
@@ -68,6 +73,7 @@ class DateFlagsTransform(Transform):
         2020-01-11     0                       3                         2
         =============  ======================  ========================  ========================
         """
+        super().__init__(logger=logger)
         if not any(
             [
                 day_number_in_week,
@@ -243,6 +249,7 @@ class TimeFlagsTransform(Transform):
         half_hour_number: bool = False,
         half_day_number: bool = False,
         one_third_day_number: bool = False,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """Initialise class attributes.
 
@@ -265,6 +272,7 @@ class TimeFlagsTransform(Transform):
         ------
         ValueError: if feature has invalid initial params
         """
+        super().__init__(logger=logger)
         if not any(
             [
                 minute_in_hour_number,
@@ -378,4 +386,4 @@ class TimeFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.hour // period_in_hours).values
 
 
-__all__ = ["TimeFlagsTransform", "TimeFlagsTransform", "DateFlagsTransform"]
+__all__ = ["TimeFlagsTransform", "DateFlagsTransform"]

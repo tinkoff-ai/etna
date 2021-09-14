@@ -1,3 +1,4 @@
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -8,6 +9,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.transforms.sklearn import SklearnTransform
 
 
@@ -23,6 +26,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace: bool = True,
         with_mean: bool = True,
         with_std: bool = True,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """
         Init StandardScalerPreprocess.
@@ -42,6 +46,7 @@ class StandardScalerTransform(SklearnTransform):
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
             inplace=inplace,
+            logger=logger,
         )
         self.with_mean = with_mean
         self.with_std = with_std
@@ -61,6 +66,7 @@ class RobustScalerTransform(SklearnTransform):
         with_scaling: bool = True,
         quantile_range: Tuple[float, float] = (25, 75),
         unit_variance: bool = False,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """
         Init RobustScalerPreprocess.
@@ -93,6 +99,7 @@ class RobustScalerTransform(SklearnTransform):
                 unit_variance=unit_variance,
                 copy=True,
             ),
+            logger=logger,
         )
         self.with_centering = with_centering
         self.with_scaling = with_scaling
@@ -112,6 +119,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace: bool = True,
         feature_range: Tuple[float, float] = (0, 1),
         clip: bool = True,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """
         Init MinMaxScalerPreprocess.
@@ -131,6 +139,7 @@ class MinMaxScalerTransform(SklearnTransform):
             in_column=in_column,
             inplace=inplace,
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
+            logger=logger,
         )
         self.feature_range = feature_range
         self.clip = clip
@@ -142,7 +151,12 @@ class MaxAbsScalerTransform(SklearnTransform):
     Uses sklearn.preprocessing.MaxAbsScaler inside.
     """
 
-    def __init__(self, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True):
+    def __init__(
+        self,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+    ):
         """Init MinMaxScalerPreprocess.
 
         Parameters
@@ -152,7 +166,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         """
-        super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True))
+        super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True), logger=logger)
 
 
 __all__ = [
