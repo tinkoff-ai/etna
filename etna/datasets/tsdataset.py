@@ -1,5 +1,6 @@
 import math
 import warnings
+from typing import TYPE_CHECKING
 from typing import Iterable
 from typing import List
 from typing import Optional
@@ -11,7 +12,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from etna.transforms.base import Transform
+if TYPE_CHECKING:
+    from etna.transforms.base import Transform
 
 TTimestamp = Union[str, pd.Timestamp]
 
@@ -67,14 +69,14 @@ class TSDataset:
 
         self.transforms = None
 
-    def transform(self, transforms: Iterable[Transform]):
+    def transform(self, transforms: Iterable["Transform"]):
         """Apply given transform to the data."""
         self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.transform(self.df)
 
-    def fit_transform(self, transforms: Iterable[Transform]):
+    def fit_transform(self, transforms: Iterable["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings()
         self.transforms = transforms
@@ -123,6 +125,17 @@ class TSDataset:
 
         if self.df_exog is not None:
             df = self._merge_exog(df)
+
+            # check if we have enough values in regressors
+            for segment in self.segments:
+                regressors_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
+                if regressors_columns:
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
+                    if not np.all(future_dates.isin(regressors_index)):
+                        warnings.warn(
+                            f"Some regressors don't have enough values in segment {segment}, "
+                            f"NaN-s will be used for missing values"
+                        )
 
         if self.transforms is not None:
             for transform in self.transforms:
