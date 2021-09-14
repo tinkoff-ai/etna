@@ -28,7 +28,7 @@ class _SARIMAXModel:
     def __init__(
         self,
         order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int] = (1, 1, 0, 12),
+        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
         trend: Optional[str] = "c",
         measurement_error: bool = False,
         time_varying_regression: bool = False,
@@ -149,8 +149,8 @@ class _SARIMAXModel:
         self.missing = missing
         self.validate_specification = validate_specification
         self.kwargs = kwargs
-        self._model = None
-        self._result = None
+        self._model: Optional[SARIMAX] = None
+        self._result: Optional[SARIMAX] = None
 
     def fit(self, df: pd.DataFrame) -> "_SARIMAXModel":
         """
@@ -295,7 +295,7 @@ class SARIMAXModel(PerSegmentModel):
     def __init__(
         self,
         order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int] = (1, 1, 0, 12),
+        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
         trend: Optional[str] = "c",
         measurement_error: bool = False,
         time_varying_regression: bool = False,

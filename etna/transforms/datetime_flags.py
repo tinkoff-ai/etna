@@ -289,7 +289,7 @@ class TimeFlagsTransform(Transform):
         self.half_day_number: bool = half_day_number
         self.one_third_day_number: bool = one_third_day_number
 
-    def fit(self, *args, **kwargs) -> "_OneModelTimeFlagsFeatures":
+    def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
         return self
 
@@ -370,7 +370,7 @@ class TimeFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.hour).values
 
     @staticmethod
-    def _get_period_in_day(timestamp_series: pd.DataFrame, period_in_hours: int = 12) -> np.array:
+    def _get_period_in_day(timestamp_series: pd.Series, period_in_hours: int = 12) -> np.array:
         """Generate an array with the period number in the day.
 
         Accepts a period lenght in hours as input and returns array where timestamps marked by period number.

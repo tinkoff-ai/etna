@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 import pandas as pd
 
@@ -45,7 +46,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.in_column = in_column
         self.strategy = ImputerMode(strategy)
         self.window = window
-        self.fill_value = None
+        self.fill_value: Optional[int] = None
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
         """

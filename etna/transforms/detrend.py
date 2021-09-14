@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import Union
 
 import pandas as pd
 from sklearn.base import RegressorMixin
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
+from sklearn.linear_model._base import LinearModel
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
@@ -15,7 +16,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
     is_categorical = False
     is_static = False
 
-    def __init__(self, in_column: str, regressor: Optional[RegressorMixin] = None):
+    def __init__(self, in_column: str, regressor: Union[LinearModel, RegressorMixin] = None):
         # TODO: add inplace arg
         """
         Create instance of _OneSegmentLinearTrendBaseTransform.

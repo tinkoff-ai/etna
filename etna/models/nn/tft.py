@@ -6,6 +6,7 @@ import pandas as pd
 import pytorch_lightning as pl
 from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import TemporalFusionTransformer
+from pytorch_lightning import LightningModule
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
@@ -78,14 +79,13 @@ class TFTModel(Model):
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
 
-    def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> TemporalFusionTransformer:
+    def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
         Construct TemporalFusionTransformer.
 
         Returns
         -------
-        TemporalFusionTransformer
-            Class instance.
+        LightningModule class instance.
         """
         return TemporalFusionTransformer.from_dataset(
             ts_dataset,
@@ -111,7 +111,7 @@ class TFTModel(Model):
         -------
         TFTModel
         """
-        self.model = self._from_dataset(ts.transforms[-1].pf_dataset_train)
+        self.model: TemporalFusionTransformer = self._from_dataset(ts.transforms[-1].pf_dataset_train)  # type: ignore
 
         self.trainer = pl.Trainer(
             logger=tslogger.pl_loggers,
@@ -121,16 +121,17 @@ class TFTModel(Model):
             gradient_clip_val=self.gradient_clip_val,
         )
 
-        train_dataloader = ts.transforms[-1].pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
+        train_dataloader = ts.transforms[-1].pf_dataset_train.to_dataloader(  # type: ignore
+            train=True, batch_size=self.batch_size
+        )
 
         self.trainer.fit(self.model, train_dataloader)
 
         return self
 
     @log_decorator
-    def forecast(self, ts: TSDataset) -> pd.DataFrame:
-        """
-        Predict future.
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """ Predict future.
 
         Parameters
         ----------
@@ -142,7 +143,7 @@ class TFTModel(Model):
         TSDataset
             TSDataset with predictions.
         """
-        prediction_dataloader = ts.transforms[-1].pf_dataset_predict.to_dataloader(
+        prediction_dataloader = ts.transforms[-1].pf_dataset_predict.to_dataloader(  # type: ignore
             train=False, batch_size=self.batch_size * 2
         )
 
