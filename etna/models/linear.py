@@ -1,6 +1,11 @@
+from typing import Iterable
+from typing import Union
+
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.models.sklearn import SklearnMultiSegmentModel
 from etna.models.sklearn import SklearnPerSegmentModel
 
@@ -8,7 +13,13 @@ from etna.models.sklearn import SklearnPerSegmentModel
 class LinearPerSegmentModel(SklearnPerSegmentModel):
     """Class holding per segment sklearn.linear_model.LinearRegressio."""
 
-    def __init__(self, fit_intercept: bool = True, normalize: bool = False, **kwargs):
+    def __init__(
+        self,
+        fit_intercept: bool = True,
+        normalize: bool = False,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+        **kwargs,
+    ):
         """
         Create instance of LinearModel with given parameters.
 
@@ -25,7 +36,8 @@ class LinearPerSegmentModel(SklearnPerSegmentModel):
         self.normalize = normalize
         self.kwargs = kwargs
         super().__init__(
-            regressor=LinearRegression(fit_intercept=self.fit_intercept, normalize=self.normalize, **self.kwargs)
+            regressor=LinearRegression(fit_intercept=self.fit_intercept, normalize=self.normalize, **self.kwargs),
+            logger=logger,
         )
 
 
@@ -33,7 +45,13 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
     """Class holding per segment sklearn.linear_model.ElasticNet."""
 
     def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs
+        self,
+        alpha: float = 1.0,
+        l1_ratio: float = 0.5,
+        fit_intercept: bool = True,
+        normalize: bool = False,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+        **kwargs,
     ):
         """
         Create instance of ElasticNet with given parameters.
@@ -67,14 +85,21 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
                 fit_intercept=self.fit_intercept,
                 normalize=self.normalize,
                 **self.kwargs,
-            )
+            ),
+            logger=logger,
         )
 
 
 class LinearMultiSegmentModel(SklearnMultiSegmentModel):
     """Class holding sklearn.linear_model.LinearRegression for all segments."""
 
-    def __init__(self, fit_intercept: bool = True, normalize: bool = False, **kwargs):
+    def __init__(
+        self,
+        fit_intercept: bool = True,
+        normalize: bool = False,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+        **kwargs,
+    ):
         """
         Create instance of LinearModel with given parameters.
 
@@ -91,7 +116,8 @@ class LinearMultiSegmentModel(SklearnMultiSegmentModel):
         self.normalize = normalize
         self.kwargs = kwargs
         super().__init__(
-            regressor=LinearRegression(fit_intercept=self.fit_intercept, normalize=self.normalize, **self.kwargs)
+            regressor=LinearRegression(fit_intercept=self.fit_intercept, normalize=self.normalize, **self.kwargs),
+            logger=logger,
         )
 
 
@@ -99,7 +125,13 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
     """Class holding sklearn.linear_model.ElasticNet for all segments."""
 
     def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs
+        self,
+        alpha: float = 1.0,
+        l1_ratio: float = 0.5,
+        fit_intercept: bool = True,
+        normalize: bool = False,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+        **kwargs,
     ):
         """
         Create instance of ElasticNet with given parameters.
@@ -133,5 +165,6 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
                 fit_intercept=self.fit_intercept,
                 normalize=self.normalize,
                 **self.kwargs,
-            )
+            ),
+            logger=logger,
         )

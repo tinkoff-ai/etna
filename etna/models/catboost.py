@@ -1,8 +1,13 @@
+from typing import Iterable
+from typing import Union
+
 import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
 
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.models.base import Model
 from etna.models.base import PerSegmentModel
 
@@ -55,6 +60,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         logging_level: str = "Silent",
         l2_leaf_reg: float = 6.735163225977638,
         thread_count: int = 4,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
         **kwargs,
     ):
         super(CatBoostModelPerSegment, self).__init__(
@@ -66,7 +72,8 @@ class CatBoostModelPerSegment(PerSegmentModel):
                 thread_count=thread_count,
                 l2_leaf_reg=l2_leaf_reg,
                 **kwargs,
-            )
+            ),
+            logger=logger,
         )
 
 
@@ -81,8 +88,10 @@ class CatBoostModelMultiSegment(Model):
         logging_level: str = "Silent",
         l2_leaf_reg: float = 6.735163225977638,
         thread_count: int = 4,
+        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
         **kwargs,
     ):
+        super(CatBoostModelMultiSegment, self).__init__(logger=logger)
         self.iterations = iterations
         self.depth = depth
         self.learning_rate = learning_rate
@@ -90,7 +99,6 @@ class CatBoostModelMultiSegment(Model):
         self.l2_leaf_reg = l2_leaf_reg
         self.thread_count = thread_count
         self.kwargs = kwargs
-        super(CatBoostModelMultiSegment, self).__init__()
         self._base_model = _CatBoostModel(
             iterations=self.iterations,
             depth=self.depth,

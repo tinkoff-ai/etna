@@ -1,8 +1,13 @@
+from typing import Iterable
+from typing import Union
+
 import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
 
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers.base import Logger
+from etna.loggers.base import LoggerComposite
 from etna.models.base import Model
 from etna.models.base import PerSegmentModel
 
@@ -26,15 +31,15 @@ class _SklearnModel:
 class SklearnPerSegmentModel(PerSegmentModel):
     """Class for holding per segment Sklearn model."""
 
-    def __init__(self, regressor: RegressorMixin):
-        super().__init__(base_model=_SklearnModel(regressor=regressor))
+    def __init__(self, regressor: RegressorMixin, **kwargs):
+        super().__init__(base_model=_SklearnModel(regressor=regressor), **kwargs)
 
 
 class SklearnMultiSegmentModel(Model):
     """Class for holding Sklearn model for all segments."""
 
-    def __init__(self, regressor: RegressorMixin):
-        super().__init__()
+    def __init__(self, regressor: RegressorMixin, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
+        super().__init__(logger=logger)
         self._base_model = _SklearnModel(regressor=regressor)
 
     def fit(self, ts: TSDataset) -> "SklearnMultiSegmentModel":
