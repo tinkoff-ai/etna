@@ -1,0 +1,71 @@
+---
+name: "Bug report"
+title: "[BUG] "
+description: If something isn't working as expected \U0001F914
+labels: bug
+
+body:
+- type: textarea
+  attributes:
+    label: 🐛 Bug Report
+    description: |
+      A clear and concise description of what the bug is.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Expected behavior
+    description: |
+      A clear and concise description of what you expected to happen.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: How To Reproduce
+    description: |
+      Steps to reproduce the bug. Ideally attach a minimal code sample to reproduce the issue.
+      Minimal means having the shortest code but still preserving the bug.
+    value: |
+      1. Go to '...'
+      2. Run '....'
+      3. See error
+
+      ### Code
+
+      ### Screenshots
+
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: Environment
+    description: |
+      OS, version of library, etc.
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: Additional context
+    description: |
+      Add any other context about the problem here.
+  validations:
+    required: false
+
+- type: checkboxes
+  attributes:
+    label: Checklist
+    description: |
+    options:
+    - label: Bug appears at the latest library version
+      required: true
+    - label: Bug description added
+      required: true
+    - label: Steps to reproduce added
+      required: true
+    - label: Expected behavior added
+      required: true
+...

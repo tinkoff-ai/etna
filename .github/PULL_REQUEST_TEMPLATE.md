@@ -25,7 +25,8 @@
 
 
 ## Proposed Changes
-<!-- Add a more detailed description of the changes if needed. -->
+<!-- Add a more detailed description of the changes if needed. 
+No need for typos and docs improvements  -->
 
   -
   -
