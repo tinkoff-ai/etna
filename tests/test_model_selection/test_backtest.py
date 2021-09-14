@@ -108,10 +108,11 @@ def test_repr():
     metrics_repr_inner = ", ".join([metric.__repr__() for metric in DEFAULT_METRICS])
     metrics_repr = f"[{metrics_repr_inner}]"
     mode_repr = CrossValidationMode[mode].__repr__()
+    logger_repr = "logger = LoggerComposite()"
     tscv_repr = tscv.__repr__()
     true_repr = (
         f"TimeSeriesCrossValidation(model = {model_repr}, horizon = 12, metrics = {metrics_repr}, "
-        f"n_folds = 3, mode = {mode_repr}, n_jobs = 1, )"
+        f"n_folds = 3, mode = {mode_repr}, n_jobs = 1, {logger_repr}, )"
     )
     assert tscv_repr == true_repr
 
