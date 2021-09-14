@@ -3,8 +3,8 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from etna.transforms.special_day_finder import SpecialDaysTransform
-from etna.transforms.special_day_finder import _OneSegmentSpecialDaysTransform
+from etna.transforms.special_days import SpecialDaysTransform
+from etna.transforms.special_days import _OneSegmentSpecialDaysTransform
 
 
 @pytest.fixture()
@@ -145,14 +145,10 @@ def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.Dat
         assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
-# TODO: fix the test after changing behaviour of PerSegmentWrapper to fail in __init__
-@pytest.mark.xfail
 def test_interface_two_segments_noweek_nomonth(constant_days_two_segments_df: pd.DataFrame):
     """This test checks that bad-inited SpecialDaysTransform raises AssertionError during fit_transform."""
-    special_days_finder = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
     with pytest.raises(ValueError):
-        _ = special_days_finder.fit_transform(constant_days_two_segments_df)
-
+        _ = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 def test_week_feature(df_with_specials: pd.DataFrame):
     """This test checks that _OneSegmentSpecialDaysTransform computes weekday feature correctly."""
