@@ -61,9 +61,13 @@ class PytorchForecastingTransform(Transform):
         self.max_prediction_length = max_prediction_length
         self.static_categoricals = static_categoricals if static_categoricals else []
         self.static_reals = static_reals if static_reals else []
-        self.time_varying_known_categoricals = time_varying_known_categoricals if time_varying_known_categoricals else []
+        self.time_varying_known_categoricals = (
+            time_varying_known_categoricals if time_varying_known_categoricals else []
+        )
         self.time_varying_known_reals = time_varying_known_reals if time_varying_known_reals else []
-        self.time_varying_unknown_categoricals = time_varying_unknown_categoricals if time_varying_unknown_categoricals else []
+        self.time_varying_unknown_categoricals = (
+            time_varying_unknown_categoricals if time_varying_unknown_categoricals else []
+        )
         self.time_varying_unknown_reals = time_varying_unknown_reals if time_varying_unknown_reals else []
         self.variable_groups = variable_groups if variable_groups else {}
         self.add_relative_time_idx = add_relative_time_idx
