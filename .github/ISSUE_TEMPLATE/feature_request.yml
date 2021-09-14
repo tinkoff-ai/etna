@@ -1,5 +1,5 @@
 ---
-name: "Feature request"
+name: Feature request
 description: Suggest an idea for this project
 labels: enhancement
 
@@ -55,10 +55,10 @@ body:
   attributes:
     label: Checklist
     options:
-    - label: Feature proposal description
-      required: true
-    - label: Motivation
-      required: true
-    - label: Proposal
-      required: true
+      - label: Feature proposal description
+        required: true
+      - label: Motivation
+        required: true
+      - label: Proposal
+        required: true
 ...
