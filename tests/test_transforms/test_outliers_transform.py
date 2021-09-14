@@ -26,7 +26,7 @@ def test_interface(transform, example_tsds: TSDataset):
         (DensityOutliersTransform(in_column="target"), get_anomalies_density),
     ],
 )
-def test_outliers_detection(transform, method, outliers_tsds, recwarn):
+def test_outliers_detection(transform, method, outliers_tsds):
     """Checks that MedianOutliersTransform detect anomalies according to `get_anomalies_median`."""
     detectiom_method_results = method(outliers_tsds)
 

@@ -125,7 +125,7 @@ class DensityOutliersTransform(OutliersTransform):
         self,
         in_column: str,
         window_size: int = 15,
-        distance_threshold: float = 100,
+        distance_coef: float = 3,
         n_neighbors: int = 3,
         distance_func: Callable[[float, float], float] = lambda x, y: abs(x - y),
     ):
@@ -137,8 +137,8 @@ class DensityOutliersTransform(OutliersTransform):
             name of processed column
         window_size:
             size of windows to build
-        distance_threshold:
-            distance threshold to determine points are close to each other
+        distance_coef:
+            factor for standard deviation that forms distance threshold to determine points are close to each other
         n_neighbors:
             min number of close neighbors of point not to be outlier
         distance_func:
@@ -146,7 +146,7 @@ class DensityOutliersTransform(OutliersTransform):
         """
         self.in_column = in_column
         self.window_size = window_size
-        self.distance_threshold = distance_threshold
+        self.distance_coef = distance_coef
         self.n_neighbors = n_neighbors
         self.distance_func = distance_func
         super().__init__(in_column=self.in_column)
@@ -164,9 +164,7 @@ class DensityOutliersTransform(OutliersTransform):
         dict of outliers:
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        return get_anomalies_density(
-            ts, self.window_size, self.distance_threshold, self.n_neighbors, self.distance_func
-        )
+        return get_anomalies_density(ts, self.window_size, self.distance_coef, self.n_neighbors, self.distance_func)
 
 
 __all__ = ["MedianOutliersTransform", "DensityOutliersTransform"]
