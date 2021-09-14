@@ -55,10 +55,10 @@ body:
   attributes:
     label: Checklist
     options:
-      - label: Feature proposal description
+      - label: Added feature request 
         required: true
-      - label: Motivation
+      - label: Added motivation
         required: true
-      - label: Proposal
+      - label: Added proposal
         required: true
 ...
