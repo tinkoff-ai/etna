@@ -145,11 +145,9 @@ def test_dataset_check_exog_pass(df_and_regressors):
     _ = TSDataset._check_exog(df=df, df_exog=df_exog)
 
 
-def test_warn_not_enough_exog(df_and_regressors, recwarn):
+def test_warn_not_enough_exog(df_and_regressors):
     """Check that warning is thrown if regressors don't have enough values."""
     df, df_exog = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
-    ts.make_future(ts.df_exog.shape[0] + 100)
-    assert len(recwarn) == 2
-    for warn in recwarn:
-        assert str(warn.message).startswith("Some regressors don't have enough values")
+    with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
+        ts.make_future(ts.df_exog.shape[0] + 100)
