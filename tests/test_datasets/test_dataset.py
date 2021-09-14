@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,7 +8,7 @@ from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 
 
-@pytest.fixture
+@pytest.fixture()
 def tsdf_with_exog() -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
@@ -30,6 +32,23 @@ def tsdf_with_exog() -> TSDataset:
 
     ts = TSDataset(df=df, df_exog=exog, freq="1D")
     return ts
+
+
+@pytest.fixture()
+def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    timestamp = pd.date_range("2021-01-01", "2021-02-11")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_aaa": 1, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_aaa": 2, "segment": "2"})
+    df_exog = pd.concat([df_1, df_2], ignore_index=True)
+    df_exog = TSDataset.to_dataset(df_exog)
+
+    return df, df_exog
 
 
 def test_same_ending_error_raise():
@@ -135,17 +154,14 @@ def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earli
         TSDataset._check_exog(df=df, df_exog=dfexog)
 
 
-def test_dataset_check_exog_pass():
-    timestamp = pd.date_range("2021-01-01", "2021-02-01")
-    df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
-    df2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
-    df = pd.concat([df1, df2], ignore_index=True)
-    df = TSDataset.to_dataset(df)
+def test_dataset_check_exog_pass(df_and_regressors):
+    df, df_exog = df_and_regressors
+    _ = TSDataset._check_exog(df=df, df_exog=df_exog)
 
-    timestamp = pd.date_range("2021-01-01", "2021-02-11")
-    df1 = pd.DataFrame({"timestamp": timestamp, "regressor_aaa": 1, "segment": "1"})
-    df2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_aaa": 2, "segment": "2"})
-    dfexog = pd.concat([df1, df2], ignore_index=True)
-    dfexog = TSDataset.to_dataset(dfexog)
 
-    _ = TSDataset._check_exog(df=df, df_exog=dfexog)
+def test_warn_not_enough_exog(df_and_regressors):
+    """Check that warning is thrown if regressors don't have enough values."""
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
+        ts.make_future(ts.df_exog.shape[0] + 100)
