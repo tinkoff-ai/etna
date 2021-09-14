@@ -1,7 +1,7 @@
 ---
 name: "Bug report"
 title: "[BUG] "
-description: If something isn't working as expected \U0001F914
+description: If something isn't working as expected 🤔
 labels: bug
 
 body:
@@ -58,14 +58,13 @@ body:
 - type: checkboxes
   attributes:
     label: Checklist
-    description: |
     options:
-    - label: Bug appears at the latest library version
-      required: true
-    - label: Bug description added
-      required: true
-    - label: Steps to reproduce added
-      required: true
-    - label: Expected behavior added
-      required: true
+      - label: Bug appears at the latest library version
+        required: true
+      - label: Bug description added
+        required: true
+      - label: Steps to reproduce added
+        required: true
+      - label: Expected behavior added
+        required: true
 ...
