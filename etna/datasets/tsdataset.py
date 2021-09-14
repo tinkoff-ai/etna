@@ -52,7 +52,7 @@ class TSDataset:
 
         if infered_freq != self.freq:
             warnings.warn(
-                f"You probably set wrong freq. Discovered freq in you data is {infered_freq}, " f"you set {self.freq}"
+                f"You probably set wrong freq. Discovered freq in you data is {infered_freq}, you set {self.freq}"
             )
 
         self.raw_df = self.raw_df.asfreq(self.freq)

@@ -89,4 +89,5 @@ def test_make_future_small_horizon():
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     train = TSDataset(ts[: ts.index[10], :, :], freq="D")
-    assert len(train.make_future(1).df) == 1
+    with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
+        assert len(train.make_future(1).df) == 1
