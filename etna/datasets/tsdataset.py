@@ -1,6 +1,7 @@
 import math
 import warnings
 from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -68,12 +69,14 @@ class TSDataset:
 
     def transform(self, transforms: Iterable[Transform]):
         """Apply given transform to the data."""
+        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.transform(self.df)
 
     def fit_transform(self, transforms: Iterable[Transform]):
         """Fit and apply given transforms to the data."""
+        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             self.df = transform.fit_transform(self.df)
@@ -131,15 +134,39 @@ class TSDataset:
         future_ts.df_exog = self.df_exog
         return future_ts
 
-    def _merge_exog(self, df):
-        if df.index.min() < self.df_exog.index.min():
-            raise ValueError(
-                f"Exog data does not have enough history:" f"{df.index.min()} < {self.df_exog.index.min()}"
-            )
-        if df.index.max() > self.df_exog.index.max():
-            raise ValueError(f"Exog data does not have enough future:" f"{df.index.max()} > {self.df_exog.index.max()}")
+    @staticmethod
+    def _check_exog(df: pd.DataFrame, df_exog: pd.DataFrame):
+        """Check that df_exog have more timestamps than df."""
+        df_segments = df.columns.get_level_values("segment")
+        for segment in df_segments:
+            target = df[segment]["target"].dropna()
+            exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
+            for series in exog_regressor_columns:
+                exog_series = df_exog[segment][series].dropna()
+                if target.index.min() < exog_series.index.min():
+                    raise ValueError(
+                        f"All the regressor series should start not later than corresponding 'target'."
+                        f"Series {series} of segment {segment} have not enough history: "
+                        f"{target.index.min()} < {exog_series.index.min()}."
+                    )
+                if target.index.max() >= exog_series.index.max():
+                    raise ValueError(
+                        f"All the regressor series should finish later than corresponding 'target'."
+                        f"Series {series} of segment {segment} have not enough history: "
+                        f"{target.index.max()} >= {exog_series.index.max()}."
+                    )
+
+    def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
+        self._check_exog(df=df, df_exog=self.df_exog)
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1)
         return df
+
+    def _check_endings(self):
+        """Check that all targets ends at the same timestamp."""
+        max_index = self.df.index.max()
+        for segment in self.df.columns.get_level_values("segment"):
+            if np.isnan(self.df.loc[max_index, pd.IndexSlice[segment, "target"]]):
+                raise ValueError(f"All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
@@ -150,7 +177,7 @@ class TSDataset:
                 self.df = transform.inverse_transform(self.df)
 
     @property
-    def segments(self) -> list:
+    def segments(self) -> List[str]:
         """Get list of all segments in dataset."""
         return self.df.columns.get_level_values("segment").unique().tolist()
 

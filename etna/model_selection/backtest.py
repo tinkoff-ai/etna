@@ -43,7 +43,7 @@ class TimeSeriesCrossValidation(BaseMixin):
         horizon:
             forecasting horizon
         metrics:
-            dict of metric to compute in validation in format {"metric_name": metric};
+            list of metrics to compute on validation set
             note that all the metrics should be in 'per-segment' mode
         n_folds:
             number of timestamp range splits
