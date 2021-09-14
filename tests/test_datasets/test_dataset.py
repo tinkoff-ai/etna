@@ -101,6 +101,20 @@ def test_dataset_datetime_convertion_during_init():
     assert ts.df.index.dtype == "datetime64[ns]"
 
 
+def test_make_future_small_horizon():
+    timestamp = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-01"))
+    target1 = [np.sin(i) for i in range(len(timestamp))]
+    target2 = [np.cos(i) for i in range(len(timestamp))]
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": target1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": target2, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    train = TSDataset(ts[: ts.index[10], :, :], freq="D")
+    with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
+        assert len(train.make_future(1).df) == 1
+
+
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
 def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earlier: bool):
     start_time = "2021-01-10" if exog_starts_later else "2021-01-01"
