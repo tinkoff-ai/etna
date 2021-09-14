@@ -91,9 +91,9 @@ class TSDataset:
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.df = self._merge_exog(self.df)
 
-        self.transforms: Optional[Sequence[Transform]] = None
+        self.transforms: Optional[Sequence["Transform"]] = None
 
-    def transform(self, transforms: Sequence[Transform]):
+    def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings()
         self.transforms = transforms
@@ -101,7 +101,7 @@ class TSDataset:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
 
-    def fit_transform(self, transforms: Sequence[Transform]):
+    def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings()
         self.transforms = transforms
