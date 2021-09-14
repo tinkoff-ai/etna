@@ -53,4 +53,4 @@ def test_tft_model_run_weekly_overfit(weekly_period_df, horizon):
     ts_pred = tftmodel.forecast(ts_pred)
 
     mae = MAE("macro")
-    assert mae(ts_test, ts_pred) < 0.23
+    assert mae(ts_test, ts_pred) < 0.24

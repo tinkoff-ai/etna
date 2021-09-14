@@ -59,23 +59,23 @@ class PytorchForecastingTransform(Transform):
         self.min_prediction_idx = min_prediction_idx
         self.min_prediction_length = min_prediction_length
         self.max_prediction_length = max_prediction_length
-        self.static_categoricals = static_categoricals
-        self.static_reals = static_reals
-        self.time_varying_known_categoricals = time_varying_known_categoricals
-        self.time_varying_known_reals = time_varying_known_reals
-        self.time_varying_unknown_categoricals = time_varying_unknown_categoricals
-        self.time_varying_unknown_reals = time_varying_unknown_reals
-        self.variable_groups = variable_groups
+        self.static_categoricals = static_categoricals if static_categoricals else []
+        self.static_reals = static_reals if static_reals else []
+        self.time_varying_known_categoricals = time_varying_known_categoricals if time_varying_known_categoricals else []
+        self.time_varying_known_reals = time_varying_known_reals if time_varying_known_reals else []
+        self.time_varying_unknown_categoricals = time_varying_unknown_categoricals if time_varying_unknown_categoricals else []
+        self.time_varying_unknown_reals = time_varying_unknown_reals if time_varying_unknown_reals else []
+        self.variable_groups = variable_groups if variable_groups else {}
         self.add_relative_time_idx = add_relative_time_idx
         self.add_target_scales = add_target_scales
         self.add_encoder_length = add_encoder_length
         self.allow_missings = allow_missings
         self.target_normalizer = target_normalizer
-        self.categorical_encoders = categorical_encoders
-        self.dropout_categoricals = dropout_categoricals
-        self.constant_fill_strategy = constant_fill_strategy
-        self.lags = lags
-        self.scalers = scalers
+        self.categorical_encoders = categorical_encoders if categorical_encoders else {}
+        self.dropout_categoricals = dropout_categoricals if dropout_categoricals else []
+        self.constant_fill_strategy = constant_fill_strategy if constant_fill_strategy else []
+        self.lags = lags if lags else {}
+        self.scalers = scalers if scalers else {}
         self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
 
     def fit(self, df: pd.DataFrame) -> "PytorchForecastingTransform":
