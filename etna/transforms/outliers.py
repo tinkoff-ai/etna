@@ -7,6 +7,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 
+from etna.analysis import get_anomalies_density
+from etna.analysis import get_anomalies_median
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
 
@@ -113,8 +115,6 @@ class MedianOutliersTransform(OutliersTransform):
         dict of outliers:
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        from etna.analysis import get_anomalies_median
-
         return get_anomalies_median(ts, self.window_size, self.alpha)
 
 
@@ -164,8 +164,6 @@ class DensityOutliersTransform(OutliersTransform):
         dict of outliers:
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        from etna.analysis import get_anomalies_density
-
         return get_anomalies_density(
             ts, self.window_size, self.distance_threshold, self.n_neighbors, self.distance_func
         )
