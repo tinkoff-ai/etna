@@ -129,9 +129,7 @@ class TimeSeriesCrossValidation(BaseMixin):
                     f"series {segment} does not."
                 )
 
-    def _generate_folds_dataframes(
-        self, ts: TSDataset
-    ) -> Tuple[TSDataset, TSDataset]:
+    def _generate_folds_dataframes(self, ts: TSDataset) -> Tuple[TSDataset, TSDataset]:
         """
         Generate a sequence of train-test pairs according to timestamp.
 
@@ -284,12 +282,8 @@ class TimeSeriesCrossValidation(BaseMixin):
         """
         self._validate_features(ts=ts)
         folds = Parallel(n_jobs=self.n_jobs, verbose=11)(
-            delayed(self._run_fold)(
-                train=train, test=test, fold_number=i, transforms=transforms
-            )
-            for i, (train, test) in enumerate(
-                self._generate_folds_dataframes(ts=ts)
-            )
+            delayed(self._run_fold)(train=train, test=test, fold_number=i, transforms=transforms)
+            for i, (train, test) in enumerate(self._generate_folds_dataframes(ts=ts))
         )
 
         for i, fold in folds:
