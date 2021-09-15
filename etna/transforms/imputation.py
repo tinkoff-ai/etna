@@ -24,15 +24,15 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 
         Parameters
         ----------
-        in_column : string, default="target"
+        in_column:
             name of processed column
-        strategy : string, default="zero"
+        strategy:
             filling value in missed dates:
             - If "zero", then replace missing dates with zeros
             - If "mean", then replace missing dates using the mean in fit stage.
             - If "running_mean" then replace missing dates using mean of subset of data
             - If "forward_fill" then replace missing dates using last existing value
-        window : int, default=-1
+        window:
             In case of moving average.
             If window=-1 all previous dates are taken in account
             Otherwise only window previous dates
@@ -117,6 +117,29 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
     """TimeSeriesImputerTransform fills the gaps in series from given dataframe."""
 
     def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
+        """
+        Create instance of TimeSeriesImputerTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of processed column
+        strategy:
+            filling value in missed dates:
+            - If "zero", then replace missing dates with zeros
+            - If "mean", then replace missing dates using the mean in fit stage.
+            - If "running_mean" then replace missing dates using mean of subset of data
+            - If "forward_fill" then replace missing dates using last existing value
+        window:
+            In case of moving average.
+            If window=-1 all previous dates are taken in account
+            Otherwise only window previous dates
+
+        Raises
+        ------
+        ValueError:
+            if incorrect strategy given
+        """
         self.in_column = in_column
         self.strategy = strategy
         self.window = window

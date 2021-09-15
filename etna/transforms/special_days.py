@@ -30,14 +30,15 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
         Parameters
         ----------
-        find_special_weekday: bool
+        find_special_weekday:
             flag, if True, find special weekdays in transform
-        find_special_month_day: bool
+        find_special_month_day:
             flag, if True, find special monthdays in transform
 
         Raises
         ----------
-        ValueError: if all the modes are False
+        ValueError:
+            if all the modes are False
         """
         if not any([find_special_weekday, find_special_month_day]):
             raise ValueError(
@@ -161,6 +162,21 @@ class SpecialDaysTransform(PerSegmentWrapper):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe."""
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
+        """
+        Create instance of SpecialDaysTransform.
+
+        Parameters
+        ----------
+        find_special_weekday:
+            flag, if True, find special weekdays in transform
+        find_special_month_day:
+            flag, if True, find special monthdays in transform
+
+        Raises
+        ----------
+        ValueError:
+            if all the modes are False
+        """
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
         super().__init__(
