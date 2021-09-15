@@ -44,7 +44,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         _OneSegmentLinearTrendBaseTransform
             instance with trained regressor
         """
-        df = df.dropna()
+        df = df[df.first_valid_index() :]
         series_len = len(df)
         x = df.index.to_series()
         if isinstance(type(x.dtype), pd.Timestamp):
@@ -148,6 +148,7 @@ class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
     def __init__(self, in_column: str, **regression_params):
+        # TODO: Parametre n_subsamples is the same for all segmetns, raises error if n_subsamples > length of the sortest segment
         """Create instance of TheilSenTrendTransform.
 
         Parameters

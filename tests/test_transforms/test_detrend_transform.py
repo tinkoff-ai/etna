@@ -22,6 +22,13 @@ def df_two_segments(example_df) -> pd.DataFrame:
     return TSDataset.to_dataset(example_df)
 
 
+@pytest.fixture
+def df_two_segments_diff_size(example_df) -> pd.DataFrame:
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
+    return df
+
+
 def _test_fit_transform_one_segment(
     trend_transform: _OneSegmentLinearTrendBaseTransform, df: pd.DataFrame, **comparison_kwargs
 ) -> None:
@@ -189,3 +196,35 @@ def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.Data
     """
     trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
     _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
+
+
+def test_fit_transform_linear_trend_two_segments_diff_size(df_two_segments_diff_size: pd.DataFrame):
+    """
+    Test that LinearTrend can correclty make fit_transform for two segments of different size.
+    """
+    trend_transform = LinearTrendTransform(in_column="target")
+    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments_diff_size)
+
+
+def test_inverse_transform_linear_trend_two_segments_diff_size(df_two_segments_diff_size: pd.DataFrame):
+    """
+    Test that LinearTrend can correclty make inverse_transform for two segments of different size.
+    """
+    trend_transform = LinearTrendTransform(in_column="target")
+    _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments_diff_size)
+
+
+def test_fit_transform_theil_sen_trend_two_segments_diff_size(df_two_segments_diff_size: pd.DataFrame):
+    """
+    Test that TheilSenRegressor can correclty make fit_transform for two segments of different size.
+    """
+    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments_diff_size) - 4)
+    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments_diff_size, decimal=0)
+
+
+def test_inverse_transform_theil_sen_trend_two_segments_diff_size(df_two_segments_diff_size: pd.DataFrame):
+    """
+    Test that TheilSenRegressor can correclty make inverse_transform for two segments of different size.
+    """
+    trend_transform = TheilSenTrendTransform(in_column="target")
+    _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments_diff_size)
