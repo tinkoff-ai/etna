@@ -159,8 +159,7 @@ def test_generate_expandable_timeranges_days():
     tscv = TimeSeriesCrossValidation(
         model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.expand.value
     )
-    for i in range(tscv.n_folds):
-        stage_dfs = tscv._generate_fold_dataframes(i, df)
+    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d").date()
@@ -183,8 +182,7 @@ def test_generate_expandable_timerange_hours():
     tscv = TimeSeriesCrossValidation(
         model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.expand.value
     )
-    for i in range(tscv.n_folds):
-        stage_dfs = tscv._generate_fold_dataframes(i, df)
+    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d %H:%M:%S").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()
@@ -207,8 +205,7 @@ def test_generate_constant_timeranges_days():
     tscv = TimeSeriesCrossValidation(
         model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.constant.value
     )
-    for i in range(tscv.n_folds):
-        stage_dfs = tscv._generate_fold_dataframes(i, df)
+    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d").date()
@@ -230,8 +227,7 @@ def test_generate_constant_timeranges_hours():
     tscv = TimeSeriesCrossValidation(
         model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.constant.value
     )
-    for i in range(tscv.n_folds):
-        stage_dfs = tscv._generate_fold_dataframes(i, df)
+    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d %H:%M:%S").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()

@@ -129,20 +129,16 @@ class TimeSeriesCrossValidation(BaseMixin):
                     f"series {segment} does not."
                 )
 
-    def _generate_fold_dataframes(
-        self, fold_number: int, ts: TSDataset, transforms: List[Transform] = []
+    def _generate_folds_dataframes(
+        self, ts: TSDataset, transforms: List[Transform] = []
     ) -> Tuple[TSDataset, TSDataset, TSDataset]:
         """
         Generate a sequence of train-test pairs according to timestamp.
 
         Parameters
         ----------
-        fold_number:
-            number of fold to generate
         ts:
             dataset to split
-        transforms:
-            list of transforms that should be applied to df in backtest pipeline
 
         Returns
         -------
@@ -150,24 +146,24 @@ class TimeSeriesCrossValidation(BaseMixin):
         """
         timestamps = ts.index
         min_timestamp_idx, max_timestamp_idx = 0, len(timestamps)
-        offset = self.n_folds - fold_number
-        # if not self._constant_history_length, left border of train df is always equal to minimal timestamp value;
-        # it means that all the given data is used.
-        # if self._constant_history_length, left border of train df moves to one horizon steps on each split
-        min_train_idx = min_timestamp_idx + (self.n_folds - offset) * self.horizon * self._constant_history_length
-        max_train_idx = max_timestamp_idx - self.horizon * offset - 1
-        min_test_idx = max_train_idx + 1
-        max_test_idx = max_train_idx + self.horizon
+        for offset in range(self.n_folds, 0, -1):
+            # if not self._constant_history_length, left border of train df is always equal to minimal timestamp value;
+            # it means that all the given data is used.
+            # if self._constant_history_length, left border of train df moves to one horizon steps on each split
+            min_train_idx = min_timestamp_idx + (self.n_folds - offset) * self.horizon * self._constant_history_length
+            max_train_idx = max_timestamp_idx - self.horizon * offset - 1
+            min_test_idx = max_train_idx + 1
+            max_test_idx = max_train_idx + self.horizon
 
-        min_train, max_train = timestamps[min_train_idx], timestamps[max_train_idx]
-        min_test, max_test = timestamps[min_test_idx], timestamps[max_test_idx]
+            min_train, max_train = timestamps[min_train_idx], timestamps[max_train_idx]
+            min_test, max_test = timestamps[min_test_idx], timestamps[max_test_idx]
 
-        train, test = ts.train_test_split(
-            train_start=min_train, train_end=max_train, test_start=min_test, test_end=max_test
-        )
-        train.fit_transform(transforms=deepcopy(transforms))
-        forecast_base = train.make_future(future_steps=self.horizon)
-        return train, test, forecast_base
+            train, test = ts.train_test_split(
+                train_start=min_train, train_end=max_train, test_start=min_test, test_end=max_test
+            )
+            train.fit_transform(transforms=deepcopy(transforms))
+            forecast_base = train.make_future(future_steps=self.horizon)
+            yield train, test, forecast_base
 
     def _compute_metrics(self, y_true: TSDataset, y_pred: TSDataset) -> Dict[str, float]:
         """
@@ -269,15 +265,6 @@ class TimeSeriesCrossValidation(BaseMixin):
 
         return fold_number, fold
 
-    def _joblib_delayed_step(
-        self, fold_number: int, ts: TSDataset, transforms: List[Transform] = []
-    ) -> Tuple[int, Dict[int, Any]]:
-        """Connect generating data for split and running backtest for it."""
-        train, test, forecast_base = self._generate_fold_dataframes(
-            fold_number=fold_number, ts=ts, transforms=transforms
-        )
-        return self._run_fold(train=train, test=test, forecast_base=forecast_base, fold_number=fold_number)
-
     def backtest(
         self, ts: TSDataset, transforms: List[Transform] = ()
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -296,8 +283,10 @@ class TimeSeriesCrossValidation(BaseMixin):
         """
         self._validate_features(ts=ts)
         folds = Parallel(n_jobs=self.n_jobs, verbose=11)(
-            delayed(self._joblib_delayed_step)(fold_number=fold_number, ts=ts, transforms=transforms)
-            for fold_number in range(self.n_folds)
+            delayed(self._run_fold)(train=train, test=test, forecast_base=forecast_base, fold_number=i)
+            for i, (train, test, forecast_base) in enumerate(
+                self._generate_folds_dataframes(ts=ts, transforms=transforms)
+            )
         )
 
         for i, fold in folds:
