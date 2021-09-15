@@ -44,6 +44,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         _OneSegmentLinearTrendBaseTransform
             instance with trained regressor
         """
+        df = df.dropna()
         series_len = len(df)
         x = df.index.to_series()
         if isinstance(type(x.dtype), pd.Timestamp):
