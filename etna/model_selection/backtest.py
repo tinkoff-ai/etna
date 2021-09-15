@@ -243,9 +243,7 @@ class TimeSeriesCrossValidation(BaseMixin):
             timerange_df = timerange_df.append(tmp_df)
         return timerange_df
 
-    def _run_fold(
-        self, train: TSDataset, test: TSDataset, fold_number: int, transforms: List[Transform] = []
-    ) -> Tuple[int, Dict[int, Any]]:
+    def _run_fold(self, train: TSDataset, test: TSDataset, transforms: List[Transform] = []) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         train.fit_transform(transforms=deepcopy(transforms))
         forecast_base = train.make_future(future_steps=self.horizon)
@@ -262,7 +260,7 @@ class TimeSeriesCrossValidation(BaseMixin):
 
         fold["metrics"] = deepcopy(self._compute_metrics(y_true=test, y_pred=forecast))
 
-        return fold_number, fold
+        return fold
 
     def backtest(
         self, ts: TSDataset, transforms: List[Transform] = ()
@@ -282,11 +280,11 @@ class TimeSeriesCrossValidation(BaseMixin):
         """
         self._validate_features(ts=ts)
         folds = Parallel(n_jobs=self.n_jobs, verbose=11)(
-            delayed(self._run_fold)(train=train, test=test, fold_number=i, transforms=transforms)
-            for i, (train, test) in enumerate(self._generate_folds_dataframes(ts=ts))
+            delayed(self._run_fold)(train=train, test=test, transforms=transforms)
+            for train, test in self._generate_folds_dataframes(ts=ts)
         )
 
-        for i, fold in folds:
+        for i, fold in enumerate(folds):
             self._folds[i] = fold
 
         metrics_df = self.get_metrics()
