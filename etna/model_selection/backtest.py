@@ -284,8 +284,7 @@ class TimeSeriesCrossValidation(BaseMixin):
             for train, test in self._generate_folds_dataframes(ts=ts)
         )
 
-        for i, fold in enumerate(folds):
-            self._folds[i] = fold
+        self._folds = {i: fold for i, fold in enumerate(folds)}
 
         metrics_df = self.get_metrics()
         forecast_df = self.get_forecasts()
