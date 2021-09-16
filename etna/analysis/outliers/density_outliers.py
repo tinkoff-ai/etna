@@ -91,7 +91,7 @@ def get_anomalies_density(
 
     Returns
     -------
-    dict of outliers:
+    dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
         dict of outliers in format {segment: [outliers_timestamps]}
 
     Notes
