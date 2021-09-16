@@ -27,6 +27,14 @@ class SklearnPerSegmentModel(PerSegmentModel):
     """Class for holding per segment Sklearn model."""
 
     def __init__(self, regressor: RegressorMixin):
+        """
+        Create instance of SklearnPerSegmentModel with given parameters.
+
+        Parameters
+        ----------
+        regressor:
+            sklearn model for regression
+        """
         super().__init__(base_model=_SklearnModel(regressor=regressor))
 
 
@@ -34,6 +42,14 @@ class SklearnMultiSegmentModel(Model):
     """Class for holding Sklearn model for all segments."""
 
     def __init__(self, regressor: RegressorMixin):
+        """
+        Create instance of SklearnMultiSegmentModel with given parameters.
+
+        Parameters
+        ----------
+        regressor:
+            sklearn model for regression
+        """
         super().__init__()
         self._base_model = _SklearnModel(regressor=regressor)
 
