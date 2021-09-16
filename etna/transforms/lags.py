@@ -32,15 +32,23 @@ class _OneSegmentLagFeature(Transform):
 
 
 class LagTransform(PerSegmentWrapper):
-    """LagFeatures generates series of lags from given dataframe."""
+    """Generates series of lags from given dataframe."""
 
     def __init__(self, lags: Union[Sequence[int], int], in_column: str):
-        """Create LagFeature.
+        """
+        Create instance of LagTransform.
 
         Parameters
         ----------
-        lags
-        in_column
+        lags:
+            int value or list of values for lags computation; if int, generate range of lags from 1 to given value
+        in_column:
+            name of processed column
+
+        Raises
+        ------
+        ValueError:
+            if lags value contains non-positive values
         """
         self.lags = lags
         self.in_column = in_column
