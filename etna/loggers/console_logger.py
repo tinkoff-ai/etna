@@ -1,3 +1,4 @@
+import sys
 from typing import Any
 from typing import Dict
 from typing import Union
@@ -16,6 +17,7 @@ class ConsoleLogger(BaseLogger):
         super().__init__()
         if 0 in _logger._core.handlers:
             _logger.remove(0)
+        _logger.add(sink=sys.stderr)
         self.logger = _logger.opt(depth=1, lazy=True, colors=True)
 
     def log(self, msg: Union[str, Dict[str, Any]]):
