@@ -5,13 +5,18 @@ from typing import Union
 from sklearn.preprocessing import PowerTransformer
 
 from etna.transforms.sklearn import SklearnTransform
+from etna.transforms.sklearn import TransformMode
 
 
 class YeoJohnsonTransform(SklearnTransform):
     """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame."""
 
     def __init__(
-        self, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True, standardize: bool = True
+        self,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        standardize: bool = True,
+        mode: TransformMode = "per-segment",
     ):
         """
         Create instance of YeoJohnsonTransform.
@@ -32,6 +37,7 @@ class YeoJohnsonTransform(SklearnTransform):
             in_column=in_column,
             inplace=inplace,
             transformer=PowerTransformer(method="yeo-johnson", standardize=self.standardize),
+            mode=mode,
         )
 
 
@@ -39,7 +45,11 @@ class BoxCoxTransform(SklearnTransform):
     """BoxCoxTransform applies Box-Cox transformation to DataFrame."""
 
     def __init__(
-        self, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True, standardize: bool = True
+        self,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        standardize: bool = True,
+        mode: TransformMode = "per-segment",
     ):
         """
         Create instance of BoxCoxTransform.
@@ -60,6 +70,7 @@ class BoxCoxTransform(SklearnTransform):
             in_column=in_column,
             inplace=inplace,
             transformer=PowerTransformer(method="box-cox", standardize=self.standardize),
+            mode=mode,
         )
 
 
