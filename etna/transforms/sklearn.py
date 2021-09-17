@@ -1,20 +1,31 @@
+from enum import Enum
 from typing import List
 from typing import Optional
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from sklearn.base import TransformerMixin
 
 from etna.transforms.base import Transform
 
 
+class TransformMode(str, Enum):
+    """Enum for different metric aggregation modes."""
+
+    macro = "macro"
+    per_segment = "per-segment"
+
+
 class SklearnTransform(Transform):
-    """Base class for different sklearn transforms.
-    TODO: current transforms make per column transforamtion, next per feature transforms should be added
-    """
+    """Base class for different sklearn transforms."""
 
     def __init__(
-        self, transformer: TransformerMixin, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True
+        self,
+        transformer: TransformerMixin,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        mode: TransformMode = "per-segment",
     ):
         """
         Init SklearnTransform.
@@ -27,12 +38,22 @@ class SklearnTransform(Transform):
             columns to be transformed, if None - all columns will be scaled.
         inplace:
             features are changed by transformed.
+        mode:
+            "macro" or "per-segment", way to transform features over segments.
+            If "macro", transforms features globally, gluing the corresponding ones for all segments.
+            If "per-segment", transforms features for each segment separately.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect mode given
         """
         self.transformer = transformer
         if isinstance(in_column, str):
             in_column = [in_column]
         self.in_column: Optional[List[str]] = in_column if in_column is None else sorted(in_column)
         self.inplace = inplace
+        self.mode = TransformMode(mode)
 
     def fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
@@ -49,7 +70,12 @@ class SklearnTransform(Transform):
         """
         if self.in_column is None:
             self.in_column = sorted(set(df.columns.get_level_values("feature")))
-        x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
+        if self.mode == TransformMode.per_segment:
+            x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
+        elif self.mode == TransformMode.macro:
+            x = self._reshape(df)
+        else:
+            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
         self.transformer.fit(X=x)
         return self
 
@@ -66,8 +92,16 @@ class SklearnTransform(Transform):
         -------
         transformed DataFrame.
         """
-        x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
-        transformed = self.transformer.transform(X=x)
+        if self.mode == TransformMode.per_segment:
+            x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
+            transformed = self.transformer.transform(X=x)
+
+        elif self.mode == TransformMode.macro:
+            x = self._reshape(df)
+            transformed = self.transformer.transform(X=x)
+            transformed = self._inverse_reshape(df, transformed)
+        else:
+            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
         if self.inplace:
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         else:
@@ -99,10 +133,32 @@ class SklearnTransform(Transform):
         transformed DataFrame.
         """
         if self.inplace:
-            x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
-            transformed = self.transformer.inverse_transform(X=x)
+            if self.mode == TransformMode.per_segment:
+                x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
+                transformed = self.transformer.inverse_transform(X=x)
+
+            elif self.mode == TransformMode.macro:
+                x = self._reshape(df)
+                transformed = self.transformer.inverse_transform(X=x)
+                transformed = self._inverse_reshape(df, transformed)
+            else:
+                raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         return df
+
+    def _reshape(self, df: pd.DataFrame) -> np.ndarray:
+        segments = sorted(set(df.columns.get_level_values("segment")))
+        x = df.loc[:, pd.IndexSlice[:, self.in_column]]
+        x = pd.concat([x[segment] for segment in segments]).values
+        return x
+
+    def _inverse_reshape(self, df: pd.DataFrame, transformed: np.ndarray) -> np.ndarray:
+        time_period_len = len(df)
+        n_segments = len(set(df.columns.get_level_values("segment")))
+        transformed = np.concatenate(
+            [transformed[i * time_period_len : (i + 1) * time_period_len, :] for i in range(n_segments)], axis=1
+        )
+        return transformed
 
     def __str__(self) -> str:
         return self.__class__.__name__.lower()
