@@ -12,6 +12,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 
 
+# TODO: make PyCharm see signature of decorated method
 def log_decorator(f):
     """Add logging for method of the model."""
 
