@@ -207,7 +207,7 @@ def test_fit_transform_two_segments_diff_size(
     df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper, decimal: int
 ):
     """
-    Test that LinearTrend can correclty make fit_transform for two segments of different size.
+    Test that TrendTransform can correclty make fit_transform for two segments of different size.
     """
     _test_fit_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size, decimal=decimal)
 
@@ -217,6 +217,6 @@ def test_fit_transform_two_segments_diff_size(
 )
 def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper):
     """
-    Test that LinearTrend can correclty make inverse_transform for two segments of different size.
+    Test that TrendTransform can correclty make inverse_transform for two segments of different size.
     """
     _test_inverse_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size)
