@@ -68,9 +68,13 @@ def test_transform_value_all_columns(positive_df: pd.DataFrame, preprocessing_cl
 def test_transform_value_one_column(positive_df: pd.DataFrame, preprocessing_class: Any, method: str):
     """Check the value of transform result."""
     preprocess = preprocessing_class(in_column="target")
-    value = preprocess.fit_transform(df=positive_df.copy())
+    processed_values = preprocess.fit_transform(df=positive_df.copy())
+    target_processed_values = processed_values.loc[:, pd.IndexSlice[:, "target"]].values
+    rest_processed_values = processed_values.drop("target", axis=1, level="feature").values
+    untouched_values = positive_df.drop("target", axis=1, level="feature").values
     true_values = PowerTransformer(method=method).fit_transform(positive_df.loc[:, pd.IndexSlice[:, "target"]].values)
-    npt.assert_array_almost_equal(value.values, true_values)
+    npt.assert_array_almost_equal(target_processed_values, true_values)
+    npt.assert_array_almost_equal(rest_processed_values, untouched_values)
 
 
 @pytest.mark.parametrize("preprocessing_class", (BoxCoxTransform, YeoJohnsonTransform))
