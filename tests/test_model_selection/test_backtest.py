@@ -305,6 +305,7 @@ def test_get_fold_info_interface_hours(example_tsdf: TSDataset):
 
 
 def test_logging(big_daily_example_tsdf: TSDataset):
+    """Check working of logging inside backtest."""
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
     file = NamedTemporaryFile()
     logger.add(file.name)
@@ -315,6 +316,8 @@ def test_logging(big_daily_example_tsdf: TSDataset):
     tsvc.backtest(ts=big_daily_example_tsdf, transforms=[date_flags])
     with open(file.name, "r") as in_file:
         lines = in_file.readlines()
+        # remain lines only about backtest
+        lines = [line for line in lines if "backtest" in line]
         assert len(lines) == len(metrics) * tsvc.n_folds * len(big_daily_example_tsdf.segments)
         assert all([any([metric_str in line for metric_str in metrics_str]) for line in lines])
     tslogger.remove(idx)

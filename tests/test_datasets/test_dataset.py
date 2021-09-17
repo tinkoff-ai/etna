@@ -1,11 +1,17 @@
+from tempfile import NamedTemporaryFile
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import pytest
+from loguru import logger
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import ConsoleLogger
+from etna.loggers import tslogger
+from etna.transforms import AddConstTransform
+from etna.transforms import LagTransform
 
 
 @pytest.fixture()
@@ -165,3 +171,18 @@ def test_warn_not_enough_exog(df_and_regressors):
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
         ts.make_future(ts.df_exog.shape[0] + 100)
+
+
+def test_transform_logging_fit_transform(example_tsds: TSDataset):
+    """Check working of logging inside fit_transform."""
+    transforms = [LagTransform(lags=5, in_column="target"), AddConstTransform(value=5, in_column="target")]
+    file = NamedTemporaryFile()
+    logger.add(file.name)
+    idx = tslogger.add(ConsoleLogger())
+    example_tsds.fit_transform(transforms=transforms)
+    with open(file.name, "r") as in_file:
+        lines = in_file.readlines()
+        assert len(lines) == len(transforms)
+        for line, transform in zip(lines, transforms):
+            assert type(transform).__name__ in line
+    tslogger.remove(idx)
