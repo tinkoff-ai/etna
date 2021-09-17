@@ -2,11 +2,9 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 import pandas as pd
 from joblib import Parallel
@@ -14,8 +12,7 @@ from joblib import delayed
 
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
+from etna.loggers import tslogger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
@@ -35,14 +32,7 @@ class TimeSeriesCrossValidation(BaseMixin):
     """Cross validation for time series."""
 
     def __init__(
-        self,
-        model: Model,
-        horizon: int,
-        metrics: List[Metric],
-        n_folds: int = 5,
-        mode: str = "expand",
-        n_jobs: int = 1,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
+        self, model: Model, horizon: int, metrics: List[Metric], n_folds: int = 5, mode: str = "expand", n_jobs: int = 1
     ):
         """
         Init TimeSeriesCrossValidation.
@@ -110,7 +100,6 @@ class TimeSeriesCrossValidation(BaseMixin):
                 f"Only '{CrossValidationMode.expand}' and '{CrossValidationMode.constant}' modes allowed"
             )
 
-        self.logger = LoggerComposite(logger)
         self._fold_column = "fold_number"
         self._folds = {}
 
@@ -174,7 +163,7 @@ class TimeSeriesCrossValidation(BaseMixin):
             )
             transforms_to_apply = deepcopy(transforms)
             for transform in transforms_to_apply:
-                transform.set_logger(self.logger)
+                transform.set_logger(tslogger)
             train.fit_transform(transforms=transforms_to_apply)
             forecast_base = train.make_future(future_steps=self.horizon)
             yield train, test, forecast_base
@@ -264,22 +253,22 @@ class TimeSeriesCrossValidation(BaseMixin):
         self, train: TSDataset, test: TSDataset, forecast_base: TSDataset, fold_number: int
     ) -> Tuple[int, Dict[int, Any]]:
         """Run fit-forecast pipeline of forecaster for one fold."""
-        self.logger.start_experiment(job_type="crossval", group=str(fold_number))
+        tslogger.start_experiment(job_type="crossval", group=str(fold_number))
         fold = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
             fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
             fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
         model = deepcopy(self.model)
-        model.set_logger(self.logger)
+        model.set_logger(tslogger)
         model.fit(ts=train)
         forecast = model.forecast(ts=forecast_base)
         fold["forecast"] = forecast
 
         fold["metrics"] = deepcopy(self._compute_metrics(y_true=test, y_pred=forecast))
 
-        self.logger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
-        self.logger.finish_experiment()
+        tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
+        tslogger.finish_experiment()
 
         return fold_number, fold
 
@@ -314,8 +303,8 @@ class TimeSeriesCrossValidation(BaseMixin):
         forecast_df = self.get_forecasts()
         fold_info_df = self.get_fold_info()
 
-        self.logger.start_experiment(job_type="crossval_results")
-        self.logger.log_backtest_metrics(ts.to_pandas(), metrics_df, forecast_df, fold_info_df)
-        self.logger.finish_experiment()
+        tslogger.start_experiment(job_type="crossval_results")
+        tslogger.log_backtest_metrics(ts.to_pandas(), metrics_df, forecast_df, fold_info_df)
+        tslogger.finish_experiment()
 
         return metrics_df, forecast_df, fold_info_df

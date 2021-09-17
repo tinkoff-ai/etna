@@ -93,6 +93,34 @@ class LoggerComposite(Logger):
         else:
             self.loggers = []
 
+    def add(self, logger: Logger) -> int:
+        """
+        Add new logger.
+
+        Parameters
+        ----------
+        logger:
+            logger to be added
+
+        Returns
+        -------
+        result: int
+            identifier of added logger
+        """
+        self.loggers.append(logger)
+        return len(self.loggers) - 1
+
+    def remove(self, idx: int):
+        """
+        Remove logger by identifier.
+
+        Parameters
+        ----------
+        idx:
+            identifier of added logger
+        """
+        self.loggers.pop(idx)
+
     def log(self, msg: str):
         """Log any event."""
         for logger in self.loggers:

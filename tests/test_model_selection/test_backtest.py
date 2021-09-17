@@ -11,6 +11,7 @@ from loguru import logger
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import ConsoleLogger
+from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -111,11 +112,10 @@ def test_repr():
     metrics_repr_inner = ", ".join([metric.__repr__() for metric in DEFAULT_METRICS])
     metrics_repr = f"[{metrics_repr_inner}]"
     mode_repr = CrossValidationMode[mode].__repr__()
-    logger_repr = "logger = LoggerComposite()"
     tscv_repr = tscv.__repr__()
     true_repr = (
         f"TimeSeriesCrossValidation(model = {model_repr}, horizon = 12, metrics = {metrics_repr}, "
-        f"n_folds = 3, mode = {mode_repr}, n_jobs = 1, {logger_repr}, )"
+        f"n_folds = 3, mode = {mode_repr}, n_jobs = 1, )"
     )
     assert tscv_repr == true_repr
 
@@ -308,17 +308,16 @@ def test_logging(big_daily_example_tsdf: TSDataset):
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
     file = NamedTemporaryFile()
     logger.add(file.name)
-    console_logger = ConsoleLogger()
+    idx = tslogger.add(ConsoleLogger())
     metrics = [MAE(), MSE(), SMAPE()]
     metrics_str = ["MAE", "MSE", "SMAPE"]
-    tsvc = TimeSeriesCrossValidation(
-        model=CatBoostModelMultiSegment(), horizon=24, metrics=metrics, n_jobs=1, logger=console_logger
-    )
+    tsvc = TimeSeriesCrossValidation(model=CatBoostModelMultiSegment(), horizon=24, metrics=metrics, n_jobs=1)
     tsvc.backtest(ts=big_daily_example_tsdf, transforms=[date_flags])
     with open(file.name, "r") as in_file:
         lines = in_file.readlines()
         assert len(lines) == len(metrics) * tsvc.n_folds * len(big_daily_example_tsdf.segments)
         assert all([any([metric_str in line for metric_str in metrics_str]) for line in lines])
+    tslogger.remove(idx)
 
 
 @pytest.mark.long
