@@ -24,6 +24,29 @@ class TSDataset:
     """TSDataset is the main class to handle your time series data.
     It prepares the series for exploration analyzing, implements feature generation with Transforms
     and generation of future points.
+
+    Notes
+    -----
+    TSDataset supports custom indexing and slicing method.
+    It maybe done through these interface: TSDataset[timestamp, segment, column]
+    If at the start of the period dataset contains NaN those timestamps will be removed.
+
+    Examples
+    --------
+    >>> from etna.datasets import generate_const_df
+    >>> classic_df = generate_const_df(periods=30, start_time="2021-06-01", n_segments=2, scale=1)
+    >>> df = TSDataset.to_dataset(classic_df)
+    >>> ts = TSDataset(df, "D")
+    >>> ts["2021-06-01":"2021-06-07", "segment_0", "target"]
+    timestamp
+    2021-06-01    1.0
+    2021-06-02    1.0
+    2021-06-03    1.0
+    2021-06-04    1.0
+    2021-06-05    1.0
+    2021-06-06    1.0
+    2021-06-07    1.0
+    Freq: D, Name: (segment_0, target), dtype: float64
     """
 
     idx = pd.IndexSlice
@@ -94,11 +117,11 @@ class TSDataset:
         return self.df._repr_html_()
 
     def __getitem__(self, item):
-        if isinstance(item, slice):
+        if isinstance(item, slice) or isinstance(item, str):
             df = self.df.loc[self.idx[item]]
-        if len(item) == 2 and item[0] is Ellipsis:
+        elif len(item) == 2 and item[0] is Ellipsis:
             df = self.df.loc[self.idx[:], self.idx[:, item[1]]]
-        if len(item) == 2 and item[1] is Ellipsis:
+        elif len(item) == 2 and item[1] is Ellipsis:
             df = self.df.loc[self.idx[item[0]]]
         else:
             df = self.df.loc[self.idx[item[0]], self.idx[item[1], item[2]]]

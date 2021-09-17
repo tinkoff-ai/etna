@@ -186,3 +186,35 @@ def test_transform_logging_fit_transform(example_tsds: TSDataset):
         for line, transform in zip(lines, transforms):
             assert transform.__class__.__name__ in line
     tslogger.remove(idx)
+
+
+def test_getitem_only_date(tsdf_with_exog):
+    df_date_only = tsdf_with_exog["2021-02-01"]
+    assert df_date_only.name == pd.Timestamp("2021-02-01")
+    pd.testing.assert_series_equal(tsdf_with_exog.df.loc["2021-02-01"], df_date_only)
+
+
+def test_getitem_slice_date(tsdf_with_exog):
+    df_slice = tsdf_with_exog["2021-02-01":"2021-02-03"]
+    expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
+    pd.testing.assert_index_equal(df_slice.index, expected_index)
+    pd.testing.assert_frame_equal(tsdf_with_exog.df.loc["2021-02-01":"2021-02-03"], df_slice)
+
+
+def test_getitem_second_ellipsis(tsdf_with_exog):
+    df_slice = tsdf_with_exog["2021-02-01":"2021-02-03", ...]
+    expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
+    pd.testing.assert_index_equal(df_slice.index, expected_index)
+    pd.testing.assert_frame_equal(tsdf_with_exog.df.loc["2021-02-01":"2021-02-03"], df_slice)
+
+
+def test_getitem_first_ellipsis(tsdf_with_exog):
+    df_slice = tsdf_with_exog[..., "target"]
+    df_expected = tsdf_with_exog.df.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
+    pd.testing.assert_frame_equal(df_expected, df_slice)
+
+
+def test_getitem_all_indexes(tsdf_with_exog):
+    df_slice = tsdf_with_exog[:, :, :]
+    df_expected = tsdf_with_exog.df
+    pd.testing.assert_frame_equal(df_expected, df_slice)
