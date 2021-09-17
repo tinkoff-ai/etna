@@ -47,7 +47,7 @@ class StandardScalerTransform(SklearnTransform):
         Raises
         ------
         ValueError:
-            if incorrect strategy given
+            if incorrect mode given
         """
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
@@ -103,7 +103,7 @@ class RobustScalerTransform(SklearnTransform):
         Raises
         ------
         ValueError:
-            if incorrect strategy given
+            if incorrect mode given
         """
         super().__init__(
             in_column=in_column,
@@ -158,7 +158,7 @@ class MinMaxScalerTransform(SklearnTransform):
         Raises
         ------
         ValueError:
-            if incorrect strategy given
+            if incorrect mode given
         """
         super().__init__(
             in_column=in_column,
@@ -198,7 +198,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         Raises
         ------
         ValueError:
-            if incorrect strategy given
+            if incorrect mode given
         """
         super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True), mode=mode)
 
