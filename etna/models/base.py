@@ -1,7 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Iterable
 from typing import List
 from typing import Union
 
@@ -9,16 +8,13 @@ import pandas as pd
 
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 
 
 class Model(ABC, BaseMixin):
     """Class for holding specific models - autoregression and simple regressions."""
 
-    def __init__(self, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
+    def __init__(self):
         self._models = None
-        self.logger = LoggerComposite(logger)
 
     @abstractmethod
     def fit(self, ts: TSDataset) -> "Model":
@@ -65,8 +61,8 @@ class Model(ABC, BaseMixin):
 class PerSegmentModel(Model):
     """Class for holding specific models for persegment prediction."""
 
-    def __init__(self, base_model, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
-        super(PerSegmentModel, self).__init__(logger=logger)
+    def __init__(self, base_model):
+        super(PerSegmentModel, self).__init__()
         self._base_model = base_model
         self._segments = None
 
