@@ -95,7 +95,8 @@ class LogTransform(PerSegmentWrapper):
         base:
             base of logarithm to apply to series.
         inplace:
-            if True, apply logarithm transformation inplace to in_column, if False, add column {in_column}_log_{base} to dataset.
+            if True, apply logarithm transformation inplace to in_column,
+            if False, add column {in_column}_log_{base} to dataset.
         """
         self.in_column = in_column
         self.base = base
