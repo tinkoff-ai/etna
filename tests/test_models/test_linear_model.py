@@ -130,8 +130,8 @@ def test_model_per_segment_logging(linear_segments_ts_unique, model):
     with open(file.name, "r") as in_file:
         lines = in_file.readlines()
         assert len(lines) == 2
-        assert "Fitting" in lines[0]
-        assert "Forecasting" in lines[1]
+        assert "fit" in lines[0]
+        assert "forecast" in lines[1]
 
     tslogger.remove(idx)
 
@@ -179,7 +179,7 @@ def test_model_multi_segment_logging(linear_segments_ts_common, model):
     with open(file.name, "r") as in_file:
         lines = in_file.readlines()
         assert len(lines) == 2
-        assert "Fitting" in lines[0]
-        assert "Forecasting" in lines[1]
+        assert "fit" in lines[0]
+        assert "forecast" in lines[1]
 
     tslogger.remove(idx)

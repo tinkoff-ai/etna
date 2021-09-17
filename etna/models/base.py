@@ -18,10 +18,7 @@ def log_decorator(f):
 
     @functools.wraps(f)
     def wrapper(self, *args, **kwargs):
-        if f.__name__ == "fit":
-            tslogger.log(f"Fitting model {self.__class__.__name__}")
-        elif f.__name__ == "forecast":
-            tslogger.log(f"Forecasting with model {self.__class__.__name__}")
+        tslogger.log(f"Calling method {f.__name__} of {self.__class__.__name__}")
         result = f(self, *args, **kwargs)
         return result
 
