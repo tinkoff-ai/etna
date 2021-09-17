@@ -243,7 +243,9 @@ class TimeSeriesCrossValidation(BaseMixin):
             timerange_df = timerange_df.append(tmp_df)
         return timerange_df
 
-    def _run_fold(self, train: TSDataset, test: TSDataset, transforms: List[Transform] = []) -> Dict[str, Any]:
+    def _run_fold(
+        self, train: TSDataset, test: TSDataset, fold_number: int, transforms: List[Transform] = []
+    ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
         train.fit_transform(transforms=deepcopy(transforms))
@@ -255,11 +257,9 @@ class TimeSeriesCrossValidation(BaseMixin):
             fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
             fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
         model = deepcopy(self.model)
-        model.set_logger(tslogger)
         model.fit(ts=train)
         forecast = model.forecast(ts=forecast_base)
         fold["forecast"] = forecast
-
         fold["metrics"] = deepcopy(self._compute_metrics(y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
@@ -285,8 +285,8 @@ class TimeSeriesCrossValidation(BaseMixin):
         """
         self._validate_features(ts=ts)
         folds = Parallel(n_jobs=self.n_jobs, verbose=11)(
-            delayed(self._run_fold)(train=train, test=test, transforms=transforms)
-            for train, test in self._generate_folds_dataframes(ts=ts)
+            delayed(self._run_fold)(train=train, test=test, fold_number=fold_number, transforms=transforms)
+            for fold_number, (train, test) in enumerate(self._generate_folds_dataframes(ts=ts))
         )
 
         self._folds = {i: fold for i, fold in enumerate(folds)}
