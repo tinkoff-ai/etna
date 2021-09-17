@@ -76,7 +76,7 @@ class TSDataset:
         self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
-            tslogger.log(f"Transform {type(transform).__name__} is applied to dataset")
+            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
 
     def fit_transform(self, transforms: Iterable["Transform"]):
@@ -84,7 +84,7 @@ class TSDataset:
         self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
-            tslogger.log(f"Transform {type(transform).__name__} is applied to dataset")
+            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
 
     def __repr__(self):

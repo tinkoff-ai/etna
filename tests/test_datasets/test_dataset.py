@@ -184,5 +184,5 @@ def test_transform_logging_fit_transform(example_tsds: TSDataset):
         lines = in_file.readlines()
         assert len(lines) == len(transforms)
         for line, transform in zip(lines, transforms):
-            assert type(transform).__name__ in line
+            assert transform.__class__.__name__ in line
     tslogger.remove(idx)
