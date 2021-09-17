@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
-from loguru import logger
+from loguru import logger as _logger
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
@@ -177,7 +177,7 @@ def test_transform_logging_fit_transform(example_tsds: TSDataset):
     """Check working of logging inside fit_transform."""
     transforms = [LagTransform(lags=5, in_column="target"), AddConstTransform(value=5, in_column="target")]
     file = NamedTemporaryFile()
-    logger.add(file.name)
+    _logger.add(file.name)
     idx = tslogger.add(ConsoleLogger())
     example_tsds.fit_transform(transforms=transforms)
     with open(file.name, "r") as in_file:

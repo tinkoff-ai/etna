@@ -7,7 +7,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import pytest
-from loguru import logger
+from loguru import logger as _logger
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import ConsoleLogger
@@ -308,7 +308,7 @@ def test_logging(big_daily_example_tsdf: TSDataset):
     """Check working of logging inside backtest."""
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
     file = NamedTemporaryFile()
-    logger.add(file.name)
+    _logger.add(file.name)
     idx = tslogger.add(ConsoleLogger())
     metrics = [MAE(), MSE(), SMAPE()]
     metrics_str = ["MAE", "MSE", "SMAPE"]

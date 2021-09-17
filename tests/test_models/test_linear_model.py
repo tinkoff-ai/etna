@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 import pandas as pd
 import pytest
-from loguru import logger
+from loguru import logger as _logger
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import ConsoleLogger
@@ -120,7 +120,7 @@ def test_model_per_segment_logging(linear_segments_ts_unique, model):
     test.fit_transform([lags])
 
     file = NamedTemporaryFile()
-    logger.add(file.name)
+    _logger.add(file.name)
     idx = tslogger.add(ConsoleLogger())
 
     model.fit(train)
@@ -169,7 +169,7 @@ def test_model_multi_segment_logging(linear_segments_ts_common, model):
     test.fit_transform([lags])
 
     file = NamedTemporaryFile()
-    logger.add(file.name)
+    _logger.add(file.name)
     idx = tslogger.add(ConsoleLogger())
 
     model.fit(train)

@@ -2,7 +2,6 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import Union
 
 import pandas as pd
@@ -74,27 +73,14 @@ class BaseLogger(ABC, BaseMixin):
         """
         pass
 
-    def set_config(self, forecaster):
-        """Pass forecaster config to loggers."""
-        pass
 
-
-class LoggerComposite(BaseLogger):
+class _Logger(BaseLogger):
     """Composite for loggers."""
 
-    def __init__(self, *args):
+    def __init__(self):
         """Create instance for composite of loggers."""
         super().__init__()
-        if args == (None,):
-            self.loggers = []
-        elif len(args) == 1 and isinstance(args[0], LoggerComposite):
-            self.loggers = args[0].loggers
-        elif len(args) == 1 and isinstance(args[0], BaseLogger):
-            self.loggers = [args[0]]
-        elif isinstance(args, Iterable):
-            self.loggers = flatten(args)
-        else:
-            self.loggers = []
+        self.loggers = []
 
     def add(self, logger: BaseLogger) -> int:
         """

@@ -1,10 +1,9 @@
-import sys
 from typing import Any
 from typing import Dict
 from typing import Union
 
 import pandas as pd
-from loguru import logger
+from loguru import logger as _logger
 
 from etna.loggers.base import BaseLogger
 
@@ -15,9 +14,9 @@ class ConsoleLogger(BaseLogger):
     def __init__(self):
         """Create instance of ConsoleLogger."""
         super().__init__()
-        if 0 in logger._core.handlers:
-            logger.remove(0)
-        logger.add(sink=sys.stderr)
+        if 0 in _logger._core.handlers:
+            _logger.remove(0)
+        self.logger = _logger.opt(depth=1, lazy=True, colors=True)
 
     def log(self, msg: Union[str, Dict[str, Any]]):
         """
@@ -30,7 +29,7 @@ class ConsoleLogger(BaseLogger):
         msg:
             Message or dict to log
         """
-        logger.opt(depth=1, lazy=True, colors=True).info(msg)
+        self.logger.info(msg)
 
     def log_backtest_metrics(
         self, df: pd.DataFrame, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
@@ -52,7 +51,7 @@ class ConsoleLogger(BaseLogger):
         for _, row in metrics_df.iterrows():
             for metric in metrics_df.columns[1:-1]:
                 msg = f'Fold {row["fold_number"]}:{row["segment"]}:{metric} = {row[metric]}'
-                logger.opt(depth=1, lazy=True, colors=True).info(msg)
+                self.logger.info(msg)
 
     @property
     def pl_logger(self):
