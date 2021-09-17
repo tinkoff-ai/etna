@@ -27,6 +27,7 @@ class TSDataset:
     -----
     TSDataset supports custom indexing and slicing method.
     It maybe done through these interface: TSDataset[timestamp, segment, column]
+    If at the start of the period dataset contains NaN those timestamp will be removed.
 
     Examples
     --------
