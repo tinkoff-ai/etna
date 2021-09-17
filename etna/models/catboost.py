@@ -83,7 +83,6 @@ class CatBoostModelMultiSegment(Model):
         thread_count: int = 4,
         **kwargs,
     ):
-        super(CatBoostModelMultiSegment, self).__init__()
         self.iterations = iterations
         self.depth = depth
         self.learning_rate = learning_rate
@@ -91,6 +90,7 @@ class CatBoostModelMultiSegment(Model):
         self.l2_leaf_reg = l2_leaf_reg
         self.thread_count = thread_count
         self.kwargs = kwargs
+        super(CatBoostModelMultiSegment, self).__init__()
         self._base_model = _CatBoostModel(
             iterations=self.iterations,
             depth=self.depth,

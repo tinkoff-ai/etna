@@ -26,8 +26,8 @@ class _SklearnModel:
 class SklearnPerSegmentModel(PerSegmentModel):
     """Class for holding per segment Sklearn model."""
 
-    def __init__(self, regressor: RegressorMixin, **kwargs):
-        super().__init__(base_model=_SklearnModel(regressor=regressor), **kwargs)
+    def __init__(self, regressor: RegressorMixin):
+        super().__init__(base_model=_SklearnModel(regressor=regressor))
 
 
 class SklearnMultiSegmentModel(Model):
