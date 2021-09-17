@@ -12,24 +12,15 @@ from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 
 
-def logging_fit(f):
-    """Add logging of fitting the model."""
+def log_decorator(f):
+    """Add logging for method of the model."""
 
     @functools.wraps(f)
     def wrapper(self, *args, **kwargs):
-        tslogger.log(f"Fitting model {self.__class__.__name__}")
-        result = f(self, *args, **kwargs)
-        return result
-
-    return wrapper
-
-
-def logging_forecast(f):
-    """Add logging of forecasting the model."""
-
-    @functools.wraps(f)
-    def wrapper(self, *args, **kwargs):
-        tslogger.log(f"Forecasting with model {self.__class__.__name__}")
+        if f.__name__ == "fit":
+            tslogger.log(f"Fitting model {self.__class__.__name__}")
+        elif f.__name__ == "forecast":
+            tslogger.log(f"Forecasting with model {self.__class__.__name__}")
         result = f(self, *args, **kwargs)
         return result
 
@@ -92,7 +83,7 @@ class PerSegmentModel(Model):
         self._base_model = base_model
         self._segments = None
 
-    @logging_fit
+    @log_decorator
     def fit(self, ts: TSDataset) -> "PerSegmentModel":
         """Fit model."""
         self._segments = ts.segments
@@ -107,7 +98,7 @@ class PerSegmentModel(Model):
             model.fit(df=segment_features)
         return self
 
-    @logging_forecast
+    @log_decorator
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
