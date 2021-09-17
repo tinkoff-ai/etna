@@ -1,12 +1,8 @@
 from math import log
 from math import pow
-from typing import Iterable
-from typing import Union
 
 import pandas as pd
 
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -88,13 +84,7 @@ class _OneSegmentLogTransform(Transform):
 class LogTransform(PerSegmentWrapper):
     """LogTransform applies logarithm transformation for given series."""
 
-    def __init__(
-        self,
-        in_column: str,
-        base: int = 10,
-        inplace: bool = True,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
-    ):
+    def __init__(self, in_column: str, base: int = 10, inplace: bool = True):
         """
         Init LogTransform.
 
@@ -111,8 +101,7 @@ class LogTransform(PerSegmentWrapper):
         self.base = base
         self.inplace = inplace
         super().__init__(
-            transform=_OneSegmentLogTransform(in_column=self.in_column, base=self.base, inplace=self.inplace),
-            logger=logger,
+            transform=_OneSegmentLogTransform(in_column=self.in_column, base=self.base, inplace=self.inplace)
         )
 
 

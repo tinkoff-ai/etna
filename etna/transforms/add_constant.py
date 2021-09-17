@@ -1,10 +1,5 @@
-from typing import Iterable
-from typing import Union
-
 import pandas as pd
 
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -77,13 +72,7 @@ class _OneSegmentAddConstTransform(Transform):
 class AddConstTransform(PerSegmentWrapper):
     """AddConstTransform add constant for given series."""
 
-    def __init__(
-        self,
-        value: float,
-        in_column: str,
-        inplace: bool = True,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
-    ):
+    def __init__(self, value: float, in_column: str, inplace: bool = True):
         """
         Init AddConstTransform.
 
@@ -100,8 +89,7 @@ class AddConstTransform(PerSegmentWrapper):
         self.in_column = in_column
         self.inplace = inplace
         super().__init__(
-            transform=_OneSegmentAddConstTransform(value=self.value, in_column=self.in_column, inplace=self.inplace),
-            logger=logger,
+            transform=_OneSegmentAddConstTransform(value=self.value, in_column=self.in_column, inplace=self.inplace)
         )
 
 

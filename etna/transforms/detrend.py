@@ -1,14 +1,10 @@
-from typing import Iterable
 from typing import Optional
-from typing import Union
 
 import pandas as pd
 from sklearn.base import RegressorMixin
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -128,9 +124,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
 class LinearTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
 
-    def __init__(
-        self, in_column: str, logger: Union[Logger, Iterable[Logger]] = LoggerComposite(), **regression_params
-    ):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of LinearTrendTransform.
 
         Parameters
@@ -145,17 +139,14 @@ class LinearTrendTransform(PerSegmentWrapper):
         super().__init__(
             transform=_OneSegmentLinearTrendBaseTransform(
                 in_column=self.in_column, regressor=LinearRegression(**self.regression_params)
-            ),
-            logger=logger,
+            )
         )
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
-    def __init__(
-        self, in_column: str, logger: Union[Logger, Iterable[Logger]] = LoggerComposite(), **regression_params
-    ):
+    def __init__(self, in_column: str, **regression_params):
         """Create instance of TheilSenTrendTransform.
 
         Parameters
@@ -170,6 +161,5 @@ class TheilSenTrendTransform(PerSegmentWrapper):
         super().__init__(
             transform=_OneSegmentLinearTrendBaseTransform(
                 in_column=self.in_column, regressor=TheilSenRegressor(**self.regression_params)
-            ),
-            logger=logger,
+            )
         )

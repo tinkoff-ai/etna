@@ -1,14 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
-from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Union
 
 import pandas as pd
 
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.transforms.base import Transform
 
 
@@ -26,7 +22,6 @@ class WindowStatisticsTransform(Transform, ABC):
         offset: int = 0,
         out_postfix: Optional[str] = None,
         fillna: float = 0,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
         **kwargs,
     ):
         """Init WindowStatisticsTransform.
@@ -47,7 +42,6 @@ class WindowStatisticsTransform(Transform, ABC):
         fillna: float
             value to fill results NaNs with
         """
-        super().__init__(logger=logger)
         self.window = window
         self.seasonality = seasonality
         self.min_periods = min_periods
@@ -129,7 +123,6 @@ class MeanTransform(WindowStatisticsTransform):
         offset: int = 0,
         out_postfix: Optional[str] = None,
         fillna: float = 0,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """Init MeanTransform.
 
@@ -159,7 +152,6 @@ class MeanTransform(WindowStatisticsTransform):
             offset=offset,
             out_postfix=out_postfix,
             fillna=fillna,
-            logger=logger,
         )
         self.alpha = alpha
         self._alpha_range: Optional[List[float]] = None
@@ -220,7 +212,6 @@ class QuantileTransform(WindowStatisticsTransform):
         offset: int = 0,
         out_postfix: Optional[str] = None,
         fillna: float = 0,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
     ):
         """Init QuantileTransform.
 
@@ -251,7 +242,6 @@ class QuantileTransform(WindowStatisticsTransform):
             offset=offset,
             out_postfix=out_postfix,
             fillna=fillna,
-            logger=logger,
         )
         self.out_postfix = f"{self.out_postfix}_{self.quantile}"
 

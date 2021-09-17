@@ -1,11 +1,7 @@
 from enum import Enum
-from typing import Iterable
-from typing import Union
 
 import pandas as pd
 
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -120,19 +116,11 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 class TimeSeriesImputerTransform(PerSegmentWrapper):
     """TimeSeriesImputerTransform fills the gaps in series from given dataframe."""
 
-    def __init__(
-        self,
-        in_column: str = "target",
-        strategy: str = ImputerMode.zero,
-        window: int = -1,
-        logger: Union[Logger, Iterable[Logger]] = LoggerComposite(),
-    ):
+    def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
         self.in_column = in_column
         self.strategy = strategy
         self.window = window
-        super().__init__(
-            transform=_OneSegmentTimeSeriesImputerTransform(self.in_column, self.strategy, self.window), logger=logger
-        )
+        super().__init__(transform=_OneSegmentTimeSeriesImputerTransform(self.in_column, self.strategy, self.window))
 
 
 __all__ = ["TimeSeriesImputerTransform"]

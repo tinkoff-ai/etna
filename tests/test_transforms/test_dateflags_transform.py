@@ -110,12 +110,11 @@ def test_repr():
         special_days_in_week=(1, 2),
         special_days_in_month=(12,),
     )
-    logger_repr = "logger = LoggerComposite()"
     transform_repr = transform.__repr__()
     true_repr = (
         f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, week_number_in_month = False, "
         f"week_number_in_year = False, month_number_in_year = True, year_number = True, special_days_in_week = (1, 2), "
-        f"special_days_in_month = (12,), {logger_repr}, )"
+        f"special_days_in_month = (12,), )"
     )
     assert transform_repr == true_repr
 
