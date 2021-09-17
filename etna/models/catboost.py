@@ -5,6 +5,8 @@ from catboost import Pool
 from etna.datasets.tsdataset import TSDataset
 from etna.models.base import Model
 from etna.models.base import PerSegmentModel
+from etna.models.base import logging_fit
+from etna.models.base import logging_forecast
 
 
 class _CatBoostModel:
@@ -179,6 +181,7 @@ class CatBoostModelMultiSegment(Model):
             **self.kwargs,
         )
 
+    @logging_fit
     def fit(self, ts: TSDataset) -> "CatBoostModelMultiSegment":
         """Fit model."""
         df = ts.to_pandas(flatten=True)
@@ -187,6 +190,7 @@ class CatBoostModelMultiSegment(Model):
         self._base_model.fit(df=df)
         return self
 
+    @logging_forecast
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 

@@ -1,8 +1,13 @@
+from tempfile import NamedTemporaryFile
+
 import numpy as np
 import pandas as pd
 import pytest
+from loguru import logger
 
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import ConsoleLogger
+from etna.loggers import tslogger
 from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
@@ -105,6 +110,32 @@ def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
 
 
+@pytest.mark.parametrize("model", [LinearPerSegmentModel(), ElasticPerSegmentModel()])
+def test_model_per_segment_logging(linear_segments_ts_unique, model):
+    """Check working of logging in fit/forecast of per segment model."""
+    horizon = 7
+    train, test = linear_segments_ts_unique
+    lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, 5 + 1)])
+    train.fit_transform([lags])
+    test.fit_transform([lags])
+
+    file = NamedTemporaryFile()
+    logger.add(file.name)
+    idx = tslogger.add(ConsoleLogger())
+
+    model.fit(train)
+    to_forecast = train.make_future(horizon)
+    model.forecast(to_forecast)
+
+    with open(file.name, "r") as in_file:
+        lines = in_file.readlines()
+        assert len(lines) == 2
+        assert "Fitting" in lines[0]
+        assert "Forecasting" in lines[1]
+
+    tslogger.remove(idx)
+
+
 @pytest.mark.parametrize("model", [LinearMultiSegmentModel(), ElasticMultiSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
@@ -126,3 +157,29 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
+
+
+@pytest.mark.parametrize("model", [LinearMultiSegmentModel(), ElasticMultiSegmentModel()])
+def test_model_multi_segment_logging(linear_segments_ts_common, model):
+    """Check working of logging in fit/forecast of multi segment model."""
+    horizon = 7
+    train, test = linear_segments_ts_common
+    lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, 5 + 1)])
+    train.fit_transform([lags])
+    test.fit_transform([lags])
+
+    file = NamedTemporaryFile()
+    logger.add(file.name)
+    idx = tslogger.add(ConsoleLogger())
+
+    model.fit(train)
+    to_forecast = train.make_future(horizon)
+    model.forecast(to_forecast)
+
+    with open(file.name, "r") as in_file:
+        lines = in_file.readlines()
+        assert len(lines) == 2
+        assert "Fitting" in lines[0]
+        assert "Forecasting" in lines[1]
+
+    tslogger.remove(idx)

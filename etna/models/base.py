@@ -1,3 +1,4 @@
+import functools
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
@@ -8,6 +9,31 @@ import pandas as pd
 
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import tslogger
+
+
+def logging_fit(f):
+    """Add logging of fitting the model."""
+
+    @functools.wraps(f)
+    def wrapper(self, *args, **kwargs):
+        tslogger.log(f"Fitting model {self.__class__.__name__}")
+        result = f(self, *args, **kwargs)
+        return result
+
+    return wrapper
+
+
+def logging_forecast(f):
+    """Add logging of forecasting the model."""
+
+    @functools.wraps(f)
+    def wrapper(self, *args, **kwargs):
+        tslogger.log(f"Forecasting with model {self.__class__.__name__}")
+        result = f(self, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
 class Model(ABC, BaseMixin):
@@ -66,6 +92,7 @@ class PerSegmentModel(Model):
         self._base_model = base_model
         self._segments = None
 
+    @logging_fit
     def fit(self, ts: TSDataset) -> "PerSegmentModel":
         """Fit model."""
         self._segments = ts.segments
@@ -80,6 +107,7 @@ class PerSegmentModel(Model):
             model.fit(df=segment_features)
         return self
 
+    @logging_forecast
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
