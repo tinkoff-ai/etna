@@ -1,12 +1,8 @@
 import warnings
-from typing import Iterable
-from typing import Union
 
 import numpy as np
 import pandas as pd
 
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.models.base import PerSegmentModel
 
 
@@ -97,9 +93,7 @@ class SeasonalMovingAverageModel(PerSegmentModel):
     y_{t - n * s} where s is seasonality, n is window size (how many history values are taken for forecast).
     """
 
-    def __init__(
-        self, window: int = 5, seasonality: int = 7, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()
-    ):
+    def __init__(self, window: int = 5, seasonality: int = 7):
         """
         Initialize seasonal moving average model.
 
@@ -115,7 +109,7 @@ class SeasonalMovingAverageModel(PerSegmentModel):
         self.window = window
         self.seasonality = seasonality
         super(SeasonalMovingAverageModel, self).__init__(
-            base_model=_SeasonalMovingAverageModel(window=window, seasonality=seasonality), logger=logger
+            base_model=_SeasonalMovingAverageModel(window=window, seasonality=seasonality)
         )
 
 

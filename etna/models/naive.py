@@ -1,15 +1,10 @@
-from typing import Iterable
-from typing import Union
-
-from etna.loggers.base import Logger
-from etna.loggers.base import LoggerComposite
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 
 
 class NaiveModel(SeasonalMovingAverageModel):
     """Naive model predicts t-th value of series with its (t - lag) value."""
 
-    def __init__(self, lag: int = 1, logger: Union[Logger, Iterable[Logger]] = LoggerComposite()):
+    def __init__(self, lag: int = 1):
         """
         Init NaiveModel.
 
@@ -19,7 +14,7 @@ class NaiveModel(SeasonalMovingAverageModel):
             lag for new value prediction
         """
         self.lag = lag
-        super().__init__(window=1, seasonality=lag, logger=logger)
+        super().__init__(window=1, seasonality=lag)
 
 
 __all__ = ["NaiveModel"]
