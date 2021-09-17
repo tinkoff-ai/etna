@@ -16,12 +16,6 @@ class TransformMode(str, Enum):
     macro = "macro"
     per_segment = "per-segment"
 
-    @classmethod
-    def _missing_(cls, value):
-        raise NotImplementedError(
-            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregation allowed"
-        )
-
 
 class SklearnTransform(Transform):
     """Base class for different sklearn transforms."""
@@ -48,6 +42,11 @@ class SklearnTransform(Transform):
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
             If "per-segment", transforms features for each segment separately.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect mode given
         """
         self.transformer = transformer
         if isinstance(in_column, str):

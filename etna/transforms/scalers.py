@@ -43,6 +43,11 @@ class StandardScalerTransform(SklearnTransform):
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
             If "per-segment", transforms features for each segment separately.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect strategy given
         """
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
@@ -94,6 +99,11 @@ class RobustScalerTransform(SklearnTransform):
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
             If "per-segment", transforms features for each segment separately.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect strategy given
         """
         super().__init__(
             in_column=in_column,
@@ -144,6 +154,11 @@ class MinMaxScalerTransform(SklearnTransform):
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
             If "per-segment", transforms features for each segment separately.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect strategy given
         """
         super().__init__(
             in_column=in_column,
@@ -179,6 +194,11 @@ class MaxAbsScalerTransform(SklearnTransform):
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
             If "per-segment", transforms features for each segment separately.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect strategy given
         """
         super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True), mode=mode)
 

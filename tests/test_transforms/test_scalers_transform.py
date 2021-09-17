@@ -40,7 +40,7 @@ def normal_distributed_df() -> pd.DataFrame:
 )
 def test_transform_invalid_mode(scaler):
     """Check scaler behavior in case of invalid transform mode"""
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         _ = scaler(mode="a")
 
 
