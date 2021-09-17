@@ -9,6 +9,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
 from etna.transforms.sklearn import SklearnTransform
+from etna.transforms.sklearn import TransformMode
 
 
 class StandardScalerTransform(SklearnTransform):
@@ -23,6 +24,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace: bool = True,
         with_mean: bool = True,
         with_std: bool = True,
+        mode: str = TransformMode.per_segment,
     ):
         """
         Init StandardScalerPreprocess.
@@ -37,11 +39,16 @@ class StandardScalerTransform(SklearnTransform):
             if True, center the data before scaling.
         with_std:
             if True, scale the data to unit standard deviation.
+        mode:
+            "macro" or "per-segment", way to transform features over segments.
+            If "macro", transforms features globally, gluing the corresponding ones for all segments.
+            If "per-segment", transforms features for each segment separately.
         """
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
             inplace=inplace,
+            mode=mode,
         )
         self.with_mean = with_mean
         self.with_std = with_std
@@ -61,6 +68,7 @@ class RobustScalerTransform(SklearnTransform):
         with_scaling: bool = True,
         quantile_range: Tuple[float, float] = (25, 75),
         unit_variance: bool = False,
+        mode: str = TransformMode.per_segment,
     ):
         """
         Init RobustScalerPreprocess.
@@ -82,6 +90,10 @@ class RobustScalerTransform(SklearnTransform):
             In general, if the difference between the x-values of q_max and q_min for a standard normal
             distribution is greater than 1, the dataset will be scaled down. If less than 1,
             the dataset will be scaled up.
+        mode:
+            "macro" or "per-segment", way to transform features over segments.
+            If "macro", transforms features globally, gluing the corresponding ones for all segments.
+            If "per-segment", transforms features for each segment separately.
         """
         super().__init__(
             in_column=in_column,
@@ -93,6 +105,7 @@ class RobustScalerTransform(SklearnTransform):
                 unit_variance=unit_variance,
                 copy=True,
             ),
+            mode=mode,
         )
         self.with_centering = with_centering
         self.with_scaling = with_scaling
@@ -112,6 +125,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace: bool = True,
         feature_range: Tuple[float, float] = (0, 1),
         clip: bool = True,
+        mode: str = TransformMode.per_segment,
     ):
         """
         Init MinMaxScalerPreprocess.
@@ -126,11 +140,16 @@ class MinMaxScalerTransform(SklearnTransform):
             desired range of transformed data.
         clip:
             set to True to clip transformed values of held-out data to provided feature range.
+        mode:
+            "macro" or "per-segment", way to transform features over segments.
+            If "macro", transforms features globally, gluing the corresponding ones for all segments.
+            If "per-segment", transforms features for each segment separately.
         """
         super().__init__(
             in_column=in_column,
             inplace=inplace,
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
+            mode=mode,
         )
         self.feature_range = feature_range
         self.clip = clip
@@ -142,7 +161,12 @@ class MaxAbsScalerTransform(SklearnTransform):
     Uses sklearn.preprocessing.MaxAbsScaler inside.
     """
 
-    def __init__(self, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True):
+    def __init__(
+        self,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        mode: str = TransformMode.per_segment,
+    ):
         """Init MinMaxScalerPreprocess.
 
         Parameters
@@ -151,14 +175,12 @@ class MaxAbsScalerTransform(SklearnTransform):
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
+        mode:
+            "macro" or "per-segment", way to transform features over segments.
+            If "macro", transforms features globally, gluing the corresponding ones for all segments.
+            If "per-segment", transforms features for each segment separately.
         """
-        super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True))
+        super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True), mode=mode)
 
 
-__all__ = [
-    "MaxAbsScalerTransform",
-    "MinMaxScalerTransform",
-    "RobustScalerTransform",
-    "StandardScalerTransform",
-    "MaxAbsScalerTransform",
-]
+__all__ = ["MaxAbsScalerTransform", "MinMaxScalerTransform", "RobustScalerTransform", "StandardScalerTransform"]

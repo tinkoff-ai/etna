@@ -8,6 +8,7 @@ from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MinMaxScalerTransform
 from etna.transforms import RobustScalerTransform
 from etna.transforms import StandardScalerTransform
+from etna.transforms.sklearn import TransformMode
 
 
 @pytest.fixture
@@ -17,10 +18,30 @@ def normal_distributed_df() -> pd.DataFrame:
     generator = np.random.RandomState(seed=1)
     df_1["segment"] = "Moscow"
     df_1["target"] = generator.normal(loc=0, scale=10, size=len(df_1))
+    df_1["exog"] = generator.normal(loc=2, scale=10, size=len(df_1))
     df_2["segment"] = "Omsk"
-    df_2["target"] = generator.normal(loc=5, scale=1, size=len(df_1))
+    df_2["target"] = generator.normal(loc=5, scale=1, size=len(df_2))
+    df_2["exog"] = generator.normal(loc=3, scale=1, size=len(df_2))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     return TSDataset.to_dataset(classic_df)
+
+
+@pytest.mark.parametrize(
+    "scaler",
+    (
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ),
+)
+def test_transform_invalid_mode(scaler):
+    """Check scaler behavior in case of invalid transform mode"""
+    with pytest.raises(NotImplementedError):
+        _ = scaler(mode="a")
 
 
 @pytest.mark.parametrize(
@@ -35,8 +56,10 @@ def normal_distributed_df() -> pd.DataFrame:
         MinMaxScalerTransform(feature_range=(5, 10)),
     ),
 )
-def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler):
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler, mode):
     """Check that `inverse_transform(transform(df)) == df` for all columns."""
+    scaler.mode = TransformMode(mode)
     feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
     inversed_df = scaler.inverse_transform(df=feature_df)
     npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
@@ -54,8 +77,10 @@ def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler):
         MinMaxScalerTransform(in_column="target", feature_range=(5, 10)),
     ),
 )
-def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler):
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler, mode):
     """Check that `inverse_transform(transform(df)) == df` for one column."""
+    scaler.mode = TransformMode(mode)
     feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
     inversed_df = scaler.inverse_transform(df=feature_df)
     npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
@@ -73,10 +98,11 @@ def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler):
         MinMaxScalerTransform,
     ),
 )
-def test_dummy_inverse_transform_not_inplace(normal_distributed_df, scaler):
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_dummy_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
     """Check that inversed values the same for not inplace version."""
-    inplace_scaler = scaler()
-    not_inplace_scaler = scaler(inplace=False)
+    inplace_scaler = scaler(mode=mode)
+    not_inplace_scaler = scaler(inplace=False, mode=mode)
     inplace_feature_df = inplace_scaler.fit_transform(df=normal_distributed_df.copy())
     not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
     columns_to_compare = pd.MultiIndex.from_tuples(
