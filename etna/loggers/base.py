@@ -10,7 +10,7 @@ import pandas as pd
 from etna.core.mixins import BaseMixin
 
 
-class Logger(ABC, BaseMixin):
+class BaseLogger(ABC, BaseMixin):
     """Abstract class for implementing loggers."""
 
     def __init__(self):
@@ -79,7 +79,7 @@ class Logger(ABC, BaseMixin):
         pass
 
 
-class LoggerComposite(Logger):
+class LoggerComposite(BaseLogger):
     """Composite for loggers."""
 
     def __init__(self, *args):
@@ -89,14 +89,14 @@ class LoggerComposite(Logger):
             self.loggers = []
         elif len(args) == 1 and isinstance(args[0], LoggerComposite):
             self.loggers = args[0].loggers
-        elif len(args) == 1 and isinstance(args[0], Logger):
+        elif len(args) == 1 and isinstance(args[0], BaseLogger):
             self.loggers = [args[0]]
         elif isinstance(args, Iterable):
             self.loggers = flatten(args)
         else:
             self.loggers = []
 
-    def add(self, logger: Logger) -> int:
+    def add(self, logger: BaseLogger) -> int:
         """
         Add new logger.
 

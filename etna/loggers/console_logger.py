@@ -6,10 +6,10 @@ from typing import Union
 import pandas as pd
 from loguru import logger
 
-from etna.loggers.base import Logger
+from etna.loggers.base import BaseLogger
 
 
-class ConsoleLogger(Logger):
+class ConsoleLogger(BaseLogger):
     """Log any events and metrics to stderr output. Uses loguru."""
 
     def __init__(self):
