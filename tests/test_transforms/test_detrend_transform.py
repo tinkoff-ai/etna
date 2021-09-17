@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 
 from etna.datasets.tsdataset import TSDataset
+from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.detrend import _OneSegmentLinearTrendBaseTransform
@@ -20,6 +21,13 @@ def df_one_segment(example_df) -> pd.DataFrame:
 @pytest.fixture
 def df_two_segments(example_df) -> pd.DataFrame:
     return TSDataset.to_dataset(example_df)
+
+
+@pytest.fixture
+def df_two_segments_diff_size(example_df) -> pd.DataFrame:
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
+    return df
 
 
 def _test_fit_transform_one_segment(
@@ -189,3 +197,26 @@ def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.Data
     """
     trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
     _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
+
+
+@pytest.mark.parametrize(
+    "transformer,decimal",
+    [(LinearTrendTransform(in_column="target"), 7), (TheilSenTrendTransform(in_column="target"), 0)],
+)
+def test_fit_transform_two_segments_diff_size(
+    df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper, decimal: int
+):
+    """
+    Test that TrendTransform can correclty make fit_transform for two segments of different size.
+    """
+    _test_fit_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size, decimal=decimal)
+
+
+@pytest.mark.parametrize(
+    "transformer", [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")]
+)
+def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper):
+    """
+    Test that TrendTransform can correclty make inverse_transform for two segments of different size.
+    """
+    _test_inverse_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size)
