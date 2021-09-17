@@ -25,7 +25,7 @@ class SklearnTransform(Transform):
         transformer: TransformerMixin,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
-        mode: str = TransformMode.per_segment,
+        mode: str = "per-segment",
     ):
         """
         Init SklearnTransform.
@@ -74,6 +74,8 @@ class SklearnTransform(Transform):
             x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
         elif self.mode == TransformMode.macro:
             x = self._reshape(df)
+        else:
+            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
         self.transformer.fit(X=x)
         return self
 
@@ -98,7 +100,8 @@ class SklearnTransform(Transform):
             x = self._reshape(df)
             transformed = self.transformer.transform(X=x)
             transformed = self._inverse_reshape(df, transformed)
-
+        else:
+            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
         if self.inplace:
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         else:
@@ -138,11 +141,12 @@ class SklearnTransform(Transform):
                 x = self._reshape(df)
                 transformed = self.transformer.inverse_transform(X=x)
                 transformed = self._inverse_reshape(df, transformed)
-
+            else:
+                raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         return df
 
-    def _reshape(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _reshape(self, df: pd.DataFrame) -> np.ndarray:
         segments = sorted(set(df.columns.get_level_values("segment")))
         x = df.loc[:, pd.IndexSlice[:, self.in_column]]
         x = pd.concat([x[segment] for segment in segments]).values

@@ -9,7 +9,6 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
 from etna.transforms.sklearn import SklearnTransform
-from etna.transforms.sklearn import TransformMode
 
 
 class StandardScalerTransform(SklearnTransform):
@@ -24,7 +23,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace: bool = True,
         with_mean: bool = True,
         with_std: bool = True,
-        mode: str = TransformMode.per_segment,
+        mode: str = "per-segment",
     ):
         """
         Init StandardScalerPreprocess.
@@ -73,7 +72,7 @@ class RobustScalerTransform(SklearnTransform):
         with_scaling: bool = True,
         quantile_range: Tuple[float, float] = (25, 75),
         unit_variance: bool = False,
-        mode: str = TransformMode.per_segment,
+        mode: str = "per-segment",
     ):
         """
         Init RobustScalerPreprocess.
@@ -135,7 +134,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace: bool = True,
         feature_range: Tuple[float, float] = (0, 1),
         clip: bool = True,
-        mode: str = TransformMode.per_segment,
+        mode: str = "per-segment",
     ):
         """
         Init MinMaxScalerPreprocess.
@@ -177,10 +176,7 @@ class MaxAbsScalerTransform(SklearnTransform):
     """
 
     def __init__(
-        self,
-        in_column: Optional[Union[str, List[str]]] = None,
-        inplace: bool = True,
-        mode: str = TransformMode.per_segment,
+        self, in_column: Optional[Union[str, List[str]]] = None, inplace: bool = True, mode: str = "per-segment"
     ):
         """Init MinMaxScalerPreprocess.
 
