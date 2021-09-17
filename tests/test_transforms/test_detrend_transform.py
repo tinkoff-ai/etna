@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 
 from etna.datasets.tsdataset import TSDataset
+from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.detrend import _OneSegmentLinearTrendBaseTransform
@@ -202,7 +203,9 @@ def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.Data
     "transformer,decimal",
     [(LinearTrendTransform(in_column="target"), 7), (TheilSenTrendTransform(in_column="target"), 0)],
 )
-def test_fit_transform_two_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer, decimal):
+def test_fit_transform_two_segments_diff_size(
+    df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper, decimal: int
+):
     """
     Test that LinearTrend can correclty make fit_transform for two segments of different size.
     """
@@ -212,7 +215,7 @@ def test_fit_transform_two_segments_diff_size(df_two_segments_diff_size: pd.Data
 @pytest.mark.parametrize(
     "transformer", [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")]
 )
-def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer):
+def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper):
     """
     Test that LinearTrend can correclty make inverse_transform for two segments of different size.
     """
