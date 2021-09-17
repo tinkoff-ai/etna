@@ -5,6 +5,7 @@ from typing import Union
 from sklearn.preprocessing import PowerTransformer
 
 from etna.transforms.sklearn import SklearnTransform
+from etna.transforms.sklearn import TransformMode
 
 
 class YeoJohnsonTransform(SklearnTransform):
@@ -15,7 +16,7 @@ class YeoJohnsonTransform(SklearnTransform):
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         standardize: bool = True,
-        mode: str = "per-segment",
+        mode: TransformMode = "per-segment",
     ):
         self.standardize = standardize
         super().__init__(
@@ -34,7 +35,7 @@ class BoxCoxTransform(SklearnTransform):
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         standardize: bool = True,
-        mode: str = "per-segment",
+        mode: TransformMode = "per-segment",
     ):
         self.standardize = standardize
         super().__init__(
