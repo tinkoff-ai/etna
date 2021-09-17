@@ -1,4 +1,7 @@
 import sys
+from typing import Any
+from typing import Dict
+from typing import Union
 
 import pandas as pd
 from loguru import logger
@@ -16,7 +19,7 @@ class ConsoleLogger(Logger):
             logger.remove(0)
         logger.add(sink=sys.stderr)
 
-    def log(self, msg: str):
+    def log(self, msg: Union[str, Dict[str, Any]]):
         """
         Log any event.
 
@@ -24,8 +27,8 @@ class ConsoleLogger(Logger):
 
         Parameters
         ----------
-        msg: str
-            Message to log
+        msg:
+            Message or dict to log
         """
         logger.opt(depth=1, lazy=True, colors=True).info(msg)
 

@@ -1,6 +1,9 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Any
+from typing import Dict
 from typing import Iterable
+from typing import Union
 
 import pandas as pd
 
@@ -15,7 +18,7 @@ class Logger(ABC, BaseMixin):
         pass
 
     @abstractmethod
-    def log(self, msg: str):
+    def log(self, msg: Union[str, Dict[str, Any]]):
         """
         Log any event.
 
@@ -23,8 +26,8 @@ class Logger(ABC, BaseMixin):
 
         Parameters
         ----------
-        msg: str
-            Message to log
+        msg:
+            Message or dict to log
         """
         pass
 
@@ -121,7 +124,7 @@ class LoggerComposite(Logger):
         """
         self.loggers.pop(idx)
 
-    def log(self, msg: str):
+    def log(self, msg: Union[str, Dict[str, Any]]):
         """Log any event."""
         for logger in self.loggers:
             logger.log(msg)
