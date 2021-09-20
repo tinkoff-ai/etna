@@ -167,14 +167,3 @@ class _Logger(BaseLogger):
     def pl_loggers(self):
         """Pytorch lightning loggers."""
         return [logger.pl_logger for logger in self.loggers if "_pl_logger" in vars(logger)]
-
-
-def flatten(*args):
-    """Flatten nested args."""
-    output = []
-    for arg in args:
-        if hasattr(arg, "__iter__"):
-            output.extend(flatten(*arg))
-        else:
-            output.append(arg)
-    return output
