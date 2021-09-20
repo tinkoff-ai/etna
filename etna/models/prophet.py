@@ -87,7 +87,7 @@ class _ProphetModel:
         for column_name in df.columns:
             if column_name.startswith("regressor"):
                 if column_name in ["regressor_cap", "regressor_floor"]:
-                    prophet_column_name = column_name[len("regressor_"):]
+                    prophet_column_name = column_name[len("regressor_") :]
                 else:
                     self.model.add_regressor(column_name)
                     prophet_column_name = column_name
@@ -116,7 +116,7 @@ class _ProphetModel:
         for column_name in df.columns:
             if column_name.startswith("regressor"):
                 if column_name in ["regressor_cap", "regressor_floor"]:
-                    prophet_column_name = column_name[len("regressor_"):]
+                    prophet_column_name = column_name[len("regressor_") :]
                 else:
                     prophet_column_name = column_name
                 prophet_df[prophet_column_name] = df[column_name]
