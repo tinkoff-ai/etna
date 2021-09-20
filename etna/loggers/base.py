@@ -18,7 +18,7 @@ class BaseLogger(ABC, BaseMixin):
         pass
 
     @abstractmethod
-    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str]):
+    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str] = None):
         """
         Log any event.
 
@@ -113,7 +113,7 @@ class _Logger(BaseLogger):
         """
         self.loggers.pop(idx)
 
-    def log(self, msg: Union[str, Dict[str, Any]], name=Optional[str]):
+    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str] = None):
         """Log any event."""
         for logger in self.loggers:
             logger.log(msg, name)

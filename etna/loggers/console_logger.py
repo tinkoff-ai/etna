@@ -21,7 +21,7 @@ class ConsoleLogger(BaseLogger):
         _logger.add(sink=sys.stderr)
         self.logger = _logger.opt(depth=1, lazy=True, colors=True)
 
-    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str]):
+    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str] = None):
         """
         Log any event.
 
