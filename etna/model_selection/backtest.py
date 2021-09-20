@@ -296,7 +296,7 @@ class TimeSeriesCrossValidation(BaseMixin):
         fold_info_df = self.get_fold_info()
 
         tslogger.start_experiment(job_type="crossval_results")
-        tslogger.log_backtest_metrics(ts.to_pandas(), metrics_df, forecast_df, fold_info_df)
+        tslogger.log_backtest_metrics(ts, metrics_df, forecast_df, fold_info_df)
         tslogger.finish_experiment()
 
         return metrics_df, forecast_df, fold_info_df

@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import Union
@@ -7,6 +8,9 @@ from typing import Union
 import pandas as pd
 
 from etna.core.mixins import BaseMixin
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 class BaseLogger(ABC, BaseMixin):
@@ -34,15 +38,15 @@ class BaseLogger(ABC, BaseMixin):
 
     @abstractmethod
     def log_backtest_metrics(
-        self, df: pd.DataFrame, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
 
         Parameters
         ----------
-        df:
-            Dataframe to train
+        ts:
+            TSDataset to with backtest data
         metrics_df:
             Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
         forecast_df

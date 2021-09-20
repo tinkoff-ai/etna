@@ -1,4 +1,5 @@
 import sys
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import Union
@@ -7,6 +8,9 @@ import pandas as pd
 from loguru import logger as _logger
 
 from etna.loggers.base import BaseLogger
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 class ConsoleLogger(BaseLogger):
@@ -36,21 +40,21 @@ class ConsoleLogger(BaseLogger):
         self.logger.patch(lambda r: r.update(**kwargs)).info(msg)
 
     def log_backtest_metrics(
-        self, df: pd.DataFrame, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
 
         Parameters
         ----------
-        df:
-            Dataframe to train
+        ts:
+            TSDataset to with backtest data
         metrics_df:
             Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
         forecast_df:
             Forecast from backtest
         fold_info_df:
-            Fold inforamtion from backtest
+            Fold information from backtest
         """
         for _, row in metrics_df.iterrows():
             for metric in metrics_df.columns[1:-1]:
