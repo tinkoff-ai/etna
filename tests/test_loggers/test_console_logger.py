@@ -3,15 +3,19 @@ from tempfile import NamedTemporaryFile
 import pytest
 from loguru import logger as _logger
 
-from etna.models import LinearPerSegmentModel, LinearMultiSegmentModel
-from etna.model_selection import TimeSeriesCrossValidation
-from etna.models import CatBoostModelMultiSegment
-from etna.metrics import MAE, MSE, SMAPE
-from etna.transforms import LagTransform
-from etna.transforms import AddConstTransform, DateFlagsTransform
 from etna.datasets import TSDataset
 from etna.loggers import ConsoleLogger
 from etna.loggers import tslogger
+from etna.metrics import MAE
+from etna.metrics import MSE
+from etna.metrics import SMAPE
+from etna.model_selection import TimeSeriesCrossValidation
+from etna.models import CatBoostModelMultiSegment
+from etna.models import LinearMultiSegmentModel
+from etna.models import LinearPerSegmentModel
+from etna.transforms import AddConstTransform
+from etna.transforms import DateFlagsTransform
+from etna.transforms import LagTransform
 
 
 def test_tsdataset_fit_transform_logging(example_tsds: TSDataset):
