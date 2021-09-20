@@ -121,9 +121,7 @@ class _ProphetModel:
         for column_name in columns:
             if column_name.startswith("regressor"):
                 regressors_columns.append(column_name)
-            elif column_name == "cap":
-                regressors_columns.append(column_name)
-            elif column_name == "floor":
+            elif column_name in ["cap", "floor"]:
                 regressors_columns.append(column_name)
         return regressors_columns
 
