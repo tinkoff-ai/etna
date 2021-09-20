@@ -1,8 +1,8 @@
 import sys
 from typing import Any
 from typing import Dict
-from typing import Union
 from typing import Optional
+from typing import Union
 
 import pandas as pd
 from loguru import logger as _logger
@@ -19,7 +19,7 @@ class ConsoleLogger(BaseLogger):
         if 0 in _logger._core.handlers:
             _logger.remove(0)
         _logger.add(sink=sys.stderr)
-        self.logger = _logger.opt(depth=1, lazy=True, colors=True)
+        self.logger = _logger.opt(depth=2, lazy=True, colors=True)
 
     def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str] = None):
         """
