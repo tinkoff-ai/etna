@@ -84,9 +84,10 @@ class _ProphetModel:
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
         prophet_df["ds"] = df["timestamp"]
-        for column_name in self._find_regressor_columns(df.columns):
-            self.model.add_regressor(column_name)
-            prophet_df[column_name] = df[column_name]
+        for column_name in df.columns:
+            if column_name.startswith("regressor"):
+                self.model.add_regressor(column_name)
+                prophet_df[column_name] = df[column_name]
         self.model.fit(prophet_df)
         return self
 
@@ -108,22 +109,13 @@ class _ProphetModel:
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
         prophet_df["ds"] = df["timestamp"]
-        for column_name in self._find_regressor_columns(df.columns):
-            prophet_df[column_name] = df[column_name]
+        for column_name in df.columns:
+            if column_name.startswith("regressor"):
+                prophet_df[column_name] = df[column_name]
         forecast = self.model.predict(prophet_df)
         y_pred = forecast["yhat"]
         y_pred = y_pred.tolist()
         return y_pred
-
-    @staticmethod
-    def _find_regressor_columns(columns: Iterable[str]) -> List[str]:
-        regressors_columns = []
-        for column_name in columns:
-            if column_name.startswith("regressor"):
-                regressors_columns.append(column_name)
-            elif column_name in ["cap", "floor"]:
-                regressors_columns.append(column_name)
-        return regressors_columns
 
 
 class ProphetModel(PerSegmentModel):
