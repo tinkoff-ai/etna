@@ -1,17 +1,13 @@
 from copy import deepcopy
 from datetime import datetime
-from tempfile import NamedTemporaryFile
 from typing import List
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 import pytest
-from loguru import logger as _logger
 
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers import ConsoleLogger
-from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -302,25 +298,6 @@ def test_get_fold_info_interface_hours(example_tsdf: TSDataset):
     forecast_df = tsvc.get_fold_info()
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
     assert expected_columns == list(sorted(forecast_df.columns))
-
-
-def test_logging(big_daily_example_tsdf: TSDataset):
-    """Check working of logging inside backtest."""
-    date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    file = NamedTemporaryFile()
-    _logger.add(file.name)
-    idx = tslogger.add(ConsoleLogger())
-    metrics = [MAE(), MSE(), SMAPE()]
-    metrics_str = ["MAE", "MSE", "SMAPE"]
-    tsvc = TimeSeriesCrossValidation(model=CatBoostModelMultiSegment(), horizon=24, metrics=metrics, n_jobs=1)
-    tsvc.backtest(ts=big_daily_example_tsdf, transforms=[date_flags])
-    with open(file.name, "r") as in_file:
-        lines = in_file.readlines()
-        # remain lines only about backtest
-        lines = [line for line in lines if "backtest" in line]
-        assert len(lines) == len(metrics) * tsvc.n_folds * len(big_daily_example_tsdf.segments)
-        assert all([any([metric_str in line for metric_str in metrics_str]) for line in lines])
-    tslogger.remove(idx)
 
 
 @pytest.mark.long
