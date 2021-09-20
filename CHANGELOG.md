@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TSDataset checks ([#24](https://github.com/tinkoff-ai/etna-ts/pull/24), [#20](https://github.com/tinkoff-ai/etna-ts/pull/20))\
 - Pytorch-Forecasting models ([#29](https://github.com/tinkoff-ai/etna-ts/pull/29))
 - SARIMAX model ([#10](https://github.com/tinkoff-ai/etna-ts/pull/10))
-- ConsoleLogger ([#46](https://github.com/tinkoff-ai/etna-ts/pull/46))
+- Logging, including ConsoleLogger ([#46](https://github.com/tinkoff-ai/etna-ts/pull/46))
 
 ### Changed
 - Backtest is fully parallel 
