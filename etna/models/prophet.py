@@ -86,12 +86,12 @@ class _ProphetModel:
         prophet_df["ds"] = df["timestamp"]
         for column_name in df.columns:
             if column_name.startswith("regressor"):
-                self.model.add_regressor(column_name)
-                prophet_df[column_name] = df[column_name]
-            elif column_name in ["cap", "floor"]:
-                new_column_name = f"regressor_{column_name}"
-                self.model.add_regressor(column_name)
-                prophet_df[new_column_name] = df[column_name]
+                if column_name in ["regressor_cap", "regressor_floor"]:
+                    prophet_column_name = column_name[len("regressor_"):]
+                else:
+                    self.model.add_regressor(column_name)
+                    prophet_column_name = column_name
+                prophet_df[prophet_column_name] = df[column_name]
         self.model.fit(prophet_df)
         return self
 
@@ -115,10 +115,11 @@ class _ProphetModel:
         prophet_df["ds"] = df["timestamp"]
         for column_name in df.columns:
             if column_name.startswith("regressor"):
-                prophet_df[column_name] = df[column_name]
-            elif column_name in ["cap", "floor"]:
-                new_column_name = f"regressor_{column_name}"
-                prophet_df[new_column_name] = df[column_name]
+                if column_name in ["regressor_cap", "regressor_floor"]:
+                    prophet_column_name = column_name[len("regressor_"):]
+                else:
+                    prophet_column_name = column_name
+                prophet_df[prophet_column_name] = df[column_name]
         forecast = self.model.predict(prophet_df)
         y_pred = forecast["yhat"]
         y_pred = y_pred.tolist()
