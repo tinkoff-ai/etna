@@ -2,6 +2,7 @@ import sys
 from typing import Any
 from typing import Dict
 from typing import Union
+from typing import Optional
 
 import pandas as pd
 from loguru import logger as _logger
@@ -20,7 +21,7 @@ class ConsoleLogger(BaseLogger):
         _logger.add(sink=sys.stderr)
         self.logger = _logger.opt(depth=1, lazy=True, colors=True)
 
-    def log(self, msg: Union[str, Dict[str, Any]]):
+    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str]):
         """
         Log any event.
 
@@ -30,8 +31,13 @@ class ConsoleLogger(BaseLogger):
         ----------
         msg:
             Message or dict to log
+        name:
+            Name of function to show
         """
-        self.logger.info(msg)
+        if name is not None:
+            self.logger.patch(lambda r: r.update(function=name)).info(msg)
+        else:
+            self.logger.info(msg)
 
     def log_backtest_metrics(
         self, df: pd.DataFrame, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame

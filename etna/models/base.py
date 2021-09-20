@@ -18,7 +18,7 @@ def log_decorator(f):
 
     @functools.wraps(f)
     def wrapper(self, *args, **kwargs):
-        tslogger.log(f"Calling method {f.__name__} of {self.__class__.__name__}")
+        tslogger.log(f"Calling method {f.__name__} of {self.__class__.__name__}", f.__name__)
         result = f(self, *args, **kwargs)
         return result
 

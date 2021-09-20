@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import Union
+from typing import Optional
 
 import pandas as pd
 
@@ -17,7 +18,7 @@ class BaseLogger(ABC, BaseMixin):
         pass
 
     @abstractmethod
-    def log(self, msg: Union[str, Dict[str, Any]]):
+    def log(self, msg: Union[str, Dict[str, Any]], name: Optional[str]):
         """
         Log any event.
 
@@ -27,6 +28,8 @@ class BaseLogger(ABC, BaseMixin):
         ----------
         msg:
             Message or dict to log
+        name:
+            Name of function to show
         """
         pass
 
@@ -110,10 +113,10 @@ class _Logger(BaseLogger):
         """
         self.loggers.pop(idx)
 
-    def log(self, msg: Union[str, Dict[str, Any]]):
+    def log(self, msg: Union[str, Dict[str, Any]], name=Optional[str]):
         """Log any event."""
         for logger in self.loggers:
-            logger.log(msg)
+            logger.log(msg, name)
 
     def log_backtest_metrics(
         self, df: pd.DataFrame, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
