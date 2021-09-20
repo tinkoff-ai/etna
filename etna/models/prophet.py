@@ -86,9 +86,11 @@ class _ProphetModel:
         prophet_df["ds"] = df["timestamp"]
         for column_name in df.columns:
             if column_name.startswith("regressor"):
+                self.model.add_regressor(column_name)
                 prophet_df[column_name] = df[column_name]
             elif column_name in ["cap", "floor"]:
                 new_column_name = f"regressor_{column_name}"
+                self.model.add_regressor(column_name)
                 prophet_df[new_column_name] = df[column_name]
         self.model.fit(prophet_df)
         return self
