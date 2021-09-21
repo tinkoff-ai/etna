@@ -33,9 +33,6 @@ def percentile(n: int):
 class WBLogger(BaseLogger):
     """Weights&Biases logger."""
 
-    name = "wblogger"
-
-    # TODO: write documentation
     def __init__(
         self,
         name: Optional[str] = None,
@@ -49,6 +46,34 @@ class WBLogger(BaseLogger):
         name_prefix: str = "",
         config: Optional[Union[Dict, str, None]] = None,
     ):
+        """
+        Create instance of ConsoleLogger.
+
+        Parameters
+        ----------
+        name:
+            A short display name for logger results
+        entity:
+            An entity is a username or team name where you're sending runs.
+        project:
+            The name of the project where you're sending the new run
+        job_type:
+            Specify the type of run, which is useful when you're grouping runs together
+            into larger experiments using group.
+        group:
+            Specify a group to organize individual runs into a larger experiment.
+        tags:
+            A list of strings, which will populate the list of tags on this run in the UI.
+        plot:
+            Indicator for making and sending plots.
+        table:
+            Indicator for making and sending tables.
+        name_prefix:
+            Prefix for the name field.
+        config:
+            This sets `wandb.config`, a dictionary-like object for saving inputs to your job,
+            like hyperparameters for a model or settings for a data preprocessing job.
+        """
         super().__init__()
         self.name = (
             name_prefix + base64.urlsafe_b64encode(uuid4().bytes).decode("utf8").rstrip("=\n")[:8]
@@ -85,12 +110,12 @@ class WBLogger(BaseLogger):
     @staticmethod
     def _prepare_table(df_raw: pd.DataFrame) -> pd.DataFrame:
         """
-        Method to prepare dataframe to send to wandb.
+        Prepare dataframe to be sent to wandb.
 
         Parameters
         ----------
         df_raw:
-            dataframe to change
+            Dataframe to change
 
         Returns
         -------
@@ -175,12 +200,17 @@ class WBLogger(BaseLogger):
             for statistics_key, value in values.items():
                 self.experiment.summary[f"{metrics_key}_{statistics_key}"] = value
 
-    def set_config(self, forecaster):
-        """Pass forecaster config to loggers."""
-        self.config = forecaster.to_json()
+    def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
+        """Start experiment(logger post init or reinit next experiment with the same name).
 
-    def start_experiment(self, job_type: str = None, group: str = None, *args, **kwargs):
-        """Start experiment(logger post init or reinit next experiment with the same name)."""
+        Parameters
+        ----------
+        job_type:
+            Specify the type of run, which is useful when you're grouping runs together
+            into larger experiments using group.
+        group:
+            Specify a group to organize individual runs into a larger experiment.
+        """
         self.job_type = job_type
         self.group = group
         self.reinit_experiment()
@@ -191,6 +221,7 @@ class WBLogger(BaseLogger):
         self._experiment = wandb.init(
             name=self.name,
             project=self.project,
+            entity=self.entity,
             group=self.group,
             config=self.config,
             reinit=True,
