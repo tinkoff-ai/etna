@@ -122,24 +122,24 @@ class _Logger(BaseLogger):
             logger.log(msg, **kwargs)
 
     def log_backtest_metrics(
-        self, df: pd.DataFrame, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
 
         Parameters
         ----------
-        df:
-            Dataframe to train
+        ts:
+            TSDataset to with backtest data
         metrics_df:
             Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
-        forecast_df:
+        forecast_df
             Forecast from backtest
         fold_info_df:
             Fold information from backtest
         """
         for logger in self.loggers:
-            logger.log_backtest_metrics(df, metrics_df, forecast_df, fold_info_df)
+            logger.log_backtest_metrics(ts, metrics_df, forecast_df, fold_info_df)
 
     def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
         """
