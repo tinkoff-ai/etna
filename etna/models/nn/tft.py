@@ -9,6 +9,7 @@ from pytorch_forecasting.models import TemporalFusionTransformer
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models.base import Model
+from etna.models.base import log_decorator
 
 
 class TFTModel(Model):
@@ -95,6 +96,7 @@ class TFTModel(Model):
             hidden_continuous_size=self.hidden_continuous_size,
         )
 
+    @log_decorator
     def fit(self, ts: TSDataset) -> "TFTModel":
         """
         Fit model.
@@ -124,6 +126,7 @@ class TFTModel(Model):
 
         return self
 
+    @log_decorator
     def forecast(self, ts: TSDataset) -> pd.DataFrame:
         """
         Predict future.
