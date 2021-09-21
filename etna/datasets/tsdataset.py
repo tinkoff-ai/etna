@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from etna.loggers import tslogger
+
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
 
@@ -97,6 +99,7 @@ class TSDataset:
         self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
+            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
 
     def fit_transform(self, transforms: Iterable["Transform"]):
@@ -104,6 +107,7 @@ class TSDataset:
         self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
+            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
 
     def __repr__(self):
