@@ -9,6 +9,7 @@ from pytorch_forecasting.models import DeepAR
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models.base import Model
+from etna.models.base import log_decorator
 
 
 class DeepARModel(Model):
@@ -87,6 +88,7 @@ class DeepARModel(Model):
             dropout=self.dropout,
         )
 
+    @log_decorator
     def fit(self, ts: TSDataset) -> "DeepARModel":
         """
         Fit model.
@@ -116,6 +118,7 @@ class DeepARModel(Model):
 
         return self
 
+    @log_decorator
     def forecast(self, ts: TSDataset) -> TSDataset:
         """
         Predict future.
