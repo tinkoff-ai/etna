@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
@@ -12,7 +14,7 @@ class _CatBoostModel:
         self,
         iterations: int = 1000,
         depth: int = 6,
-        learning_rate: float = None,
+        learning_rate: Optional[float] = None,
         logging_level: str = "Silent",
         l2_leaf_reg: float = 3,
         thread_count: int = -1,
@@ -54,7 +56,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         self,
         iterations: int = 1000,
         depth: int = 6,
-        learning_rate: float = None,
+        learning_rate: Optional[float] = None,
         logging_level: str = "Silent",
         l2_leaf_reg: float = 3,
         thread_count: int = -1,
@@ -100,6 +102,13 @@ class CatBoostModelPerSegment(PerSegmentModel):
             not affect the training.
             During the training one main thread and one thread for each GPU are used.
         """
+        self.iterations = iterations
+        self.depth = depth
+        self.learning_rate = learning_rate
+        self.logging_level = logging_level
+        self.l2_leaf_reg = l2_leaf_reg
+        self.thread_count = thread_count
+        self.kwargs = kwargs
         super(CatBoostModelPerSegment, self).__init__(
             base_model=_CatBoostModel(
                 iterations=iterations,
@@ -120,7 +129,7 @@ class CatBoostModelMultiSegment(Model):
         self,
         iterations: int = 1000,
         depth: int = 6,
-        learning_rate: float = None,
+        learning_rate: Optional[float] = None,
         logging_level: str = "Silent",
         l2_leaf_reg: float = 3,
         thread_count: int = -1,
@@ -166,6 +175,13 @@ class CatBoostModelMultiSegment(Model):
             not affect the training.
             During the training one main thread and one thread for each GPU are used.
         """
+        self.iterations = iterations
+        self.depth = depth
+        self.learning_rate = learning_rate
+        self.logging_level = logging_level
+        self.l2_leaf_reg = l2_leaf_reg
+        self.thread_count = thread_count
+        self.kwargs = kwargs
         super(CatBoostModelMultiSegment, self).__init__()
         self._base_model = _CatBoostModel(
             iterations=iterations,
