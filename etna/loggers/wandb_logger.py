@@ -35,6 +35,7 @@ class WBLogger(BaseLogger):
 
     name = "wblogger"
 
+    # TODO: write documentation
     def __init__(
         self,
         name: Optional[str] = None,
@@ -46,6 +47,7 @@ class WBLogger(BaseLogger):
         plot: bool = True,
         table: bool = True,
         name_prefix: str = "",
+        config: Optional[Union[Dict, str, None]] = None,
     ):
         super().__init__()
         self.name = (
@@ -56,7 +58,7 @@ class WBLogger(BaseLogger):
         self.project = project
         self.entity = entity
         self.group = group
-        self.config = None
+        self.config = config
         self._experiment = None
         self._pl_logger = None
         self.job_type = job_type
@@ -80,6 +82,31 @@ class WBLogger(BaseLogger):
         """
         pass
 
+    @staticmethod
+    def _prepare_table(df_raw: pd.DataFrame) -> pd.DataFrame:
+        """
+        Method to prepare dataframe to send to wandb.
+
+        Parameters
+        ----------
+        df_raw:
+            dataframe to change
+
+        Returns
+        -------
+        result: pd.DataFrame
+        """
+        df = df_raw.copy()
+        squashed_columns = [
+            f"{segment_column}/{feature_column}"
+            for segment_column, feature_column in zip(
+                df.columns.get_level_values("segment"), df.columns.get_level_values("feature")
+            )
+        ]
+        df.columns = squashed_columns
+        df.reset_index(inplace=True)
+        return df
+
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
     ):
@@ -97,12 +124,13 @@ class WBLogger(BaseLogger):
         """
         if self.table:
             self.experiment.summary["metrics"] = wandb.Table(data=metrics_df)
-            self.experiment.summary["forecast"] = wandb.Table(data=forecast_df)
+            self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast_df))
             self.experiment.summary["fold_info"] = wandb.Table(data=fold_info_df)
 
-        # TODO: make it faster
+        # TODO: make it show correctly
         if self.plot:
             plot_backtest(forecast_df, ts, history_len=100)
+            plt.savefig("picture.png", bbox_inches="tight")
             self.experiment.log({"backtest": plt})
 
         metrics_dict = (
@@ -135,12 +163,8 @@ class WBLogger(BaseLogger):
         metrics.columns = ["segment"] + columns_name
         if self.table:
             self.experiment.summary["metrics"] = wandb.Table(data=metrics)
-            self.experiment.summary["forecast"] = wandb.Table(data=forecast)
-            self.experiment.summary["test"] = wandb.Table(data=test)
-
-        # too slow
-        # plot_forecast(forecast, test)
-        # self.experiment.log({"train vs test": plt})
+            self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast))
+            self.experiment.summary["test"] = wandb.Table(data=self._prepare_table(test))
 
         metrics_dict = (
             metrics.drop(["segment"], axis=1)

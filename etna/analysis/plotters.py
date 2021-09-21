@@ -1,4 +1,5 @@
 import math
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -7,13 +8,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from etna.datasets.tsdataset import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def plot_forecast(
-    forecast_ts: TSDataset,
-    test_ts: TSDataset,
-    train_ts: Optional[TSDataset] = None,
+    forecast_ts: "TSDataset",
+    test_ts: "TSDataset",
+    train_ts: Optional["TSDataset"] = None,
     segments: Optional[List[str]] = None,
     n_train_samples: Optional[int] = None,
     columns_num: int = 2,
@@ -78,7 +80,7 @@ def plot_forecast(
 
 def plot_backtest(
     forecast_df: pd.DataFrame,
-    ts: TSDataset,
+    ts: "TSDataset",
     segments: Optional[List[str]] = None,
     folds: Optional[List[int]] = None,
     columns_num: int = 2,
@@ -147,7 +149,7 @@ def plot_backtest(
 
 
 def plot_anomalies(
-    ts: TSDataset,
+    ts: "TSDataset",
     anomaly_dict: Dict[str, List[np.datetime64]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
