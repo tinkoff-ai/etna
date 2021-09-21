@@ -5,6 +5,7 @@ from sklearn.base import RegressorMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.models.base import Model
 from etna.models.base import PerSegmentModel
+from etna.models.base import log_decorator
 
 
 class _SklearnModel:
@@ -53,6 +54,7 @@ class SklearnMultiSegmentModel(Model):
         super().__init__()
         self._base_model = _SklearnModel(regressor=regressor)
 
+    @log_decorator
     def fit(self, ts: TSDataset) -> "SklearnMultiSegmentModel":
         """Fit model."""
         df = ts.to_pandas(flatten=True)
@@ -61,6 +63,7 @@ class SklearnMultiSegmentModel(Model):
         self._base_model.fit(df=df)
         return self
 
+    @log_decorator
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 

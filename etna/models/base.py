@@ -1,3 +1,5 @@
+import functools
+import inspect
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
@@ -8,6 +10,21 @@ import pandas as pd
 
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import tslogger
+
+
+# TODO: make PyCharm see signature of decorated method
+def log_decorator(f):
+    """Add logging for method of the model."""
+    patch_dict = {"function": f.__name__, "line": inspect.getsourcelines(f)[1], "name": inspect.getmodule(f).__name__}
+
+    @functools.wraps(f)
+    def wrapper(self, *args, **kwargs):
+        tslogger.log(f"Calling method {f.__name__} of {self.__class__.__name__}", **patch_dict)
+        result = f(self, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
 class Model(ABC, BaseMixin):
@@ -66,6 +83,7 @@ class PerSegmentModel(Model):
         self._base_model = base_model
         self._segments = None
 
+    @log_decorator
     def fit(self, ts: TSDataset) -> "PerSegmentModel":
         """Fit model."""
         self._segments = ts.segments
@@ -80,6 +98,7 @@ class PerSegmentModel(Model):
             model.fit(df=segment_features)
         return self
 
+    @log_decorator
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
