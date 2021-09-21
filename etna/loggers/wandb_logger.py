@@ -155,7 +155,6 @@ class WBLogger(BaseLogger):
         # TODO: make it show correctly
         if self.plot:
             plot_backtest(forecast_df, ts, history_len=100)
-            plt.savefig("picture.png", bbox_inches="tight")
             self.experiment.log({"backtest": plt})
 
         metrics_dict = (
