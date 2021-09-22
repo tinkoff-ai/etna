@@ -8,6 +8,7 @@ from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import TemporalFusionTransformer
 
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import tslogger
 from etna.models.base import Model
 from etna.models.base import log_decorator
 
@@ -113,7 +114,7 @@ class TFTModel(Model):
         self.model = self._from_dataset(ts.transforms[-1].pf_dataset_train)
 
         self.trainer = pl.Trainer(
-            logger=False,
+            logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
             checkpoint_callback=False,

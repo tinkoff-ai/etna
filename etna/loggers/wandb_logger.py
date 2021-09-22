@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import wandb
-from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
 
 from etna.analysis import plot_backtest
 from etna.loggers.base import BaseLogger
@@ -30,7 +30,7 @@ def percentile(n: int):
     return percentile_
 
 
-class WBLogger(BaseLogger):
+class WandbLogger(BaseLogger):
     """Weights&Biases logger."""
 
     def __init__(
@@ -213,7 +213,7 @@ class WBLogger(BaseLogger):
         self.job_type = job_type
         self.group = group
         self.reinit_experiment()
-        self._pl_logger = WandbLogger(experiment=self.experiment)
+        self._pl_logger = PLWandbLogger(experiment=self.experiment)
 
     def reinit_experiment(self):
         """Reinit experiment."""
@@ -236,7 +236,7 @@ class WBLogger(BaseLogger):
     @property
     def pl_logger(self):
         """Pytorch lightning loggers."""
-        self._pl_logger = WandbLogger(experiment=self.experiment, log_model=True)
+        self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=True)
         return self._pl_logger
 
     @property
@@ -244,5 +244,5 @@ class WBLogger(BaseLogger):
         """Init experiment."""
         if self._experiment is None:
             self.reinit_experiment()
-            self._pl_logger = WandbLogger(experiment=self.experiment)
+            self._pl_logger = PLWandbLogger(experiment=self.experiment)
         return self._experiment
