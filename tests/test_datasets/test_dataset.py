@@ -43,8 +43,8 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = TSDataset.to_dataset(df)
 
     timestamp = pd.date_range("2021-01-01", "2021-02-11")
-    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_aaa": 1, "segment": "1"})
-    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_aaa": 2, "segment": "2"})
+    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_1": 3, "regressor_2": 4, "segment": "2"})
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
     df_exog = TSDataset.to_dataset(df_exog)
 
@@ -197,3 +197,10 @@ def test_getitem_all_indexes(tsdf_with_exog):
     df_slice = tsdf_with_exog[:, :, :]
     df_expected = tsdf_with_exog.df
     pd.testing.assert_frame_equal(df_expected, df_slice)
+
+
+def test_finding_regressors(df_and_regressors):
+    """Check that ts.regressors property works correctly."""
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    assert ts.regressors == {"1": ["regressor_1", "regressor_2"], "2": ["regressor_1", "regressor_2"]}

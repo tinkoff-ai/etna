@@ -1,6 +1,8 @@
 import math
 import warnings
+from collections import defaultdict
 from typing import TYPE_CHECKING
+from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
@@ -154,15 +156,13 @@ class TSDataset:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
-            for segment in self.segments:
-                regressors_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
-                if regressors_columns:
-                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
-                    if not np.all(future_dates.isin(regressors_index)):
-                        warnings.warn(
-                            f"Some regressors don't have enough values in segment {segment}, "
-                            f"NaN-s will be used for missing values"
-                        )
+            for segment, regressors_columns in self.regressors.items():
+                regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
+                if not np.all(future_dates.isin(regressors_index)):
+                    warnings.warn(
+                        f"Some regressors don't have enough values in segment {segment}, "
+                        f"NaN-s will be used for missing values"
+                    )
 
         if self.transforms is not None:
             for transform in self.transforms:
@@ -220,6 +220,16 @@ class TSDataset:
     def segments(self) -> List[str]:
         """Get list of all segments in dataset."""
         return self.df.columns.get_level_values("segment").unique().tolist()
+
+    @property
+    def regressors(self) -> Dict[str, List[str]]:
+        """Get list of all regressors of segments in dataset."""
+        columns = self.df.columns.values
+        result = defaultdict(list)
+        for segment_name, feature_name in columns:
+            if feature_name.startswith("regressor"):
+                result[segment_name].append(feature_name)
+        return dict(result)
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
         """ Plot of random or chosen segments.
