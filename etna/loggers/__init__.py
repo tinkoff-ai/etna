@@ -1,4 +1,4 @@
-"""Implementation of global logger `tslogger` inspired with loguru. 
+"""Implementation of global logger `tslogger` inspired with loguru.
 
 Examples
 --------
@@ -8,7 +8,7 @@ Examples
 Notes
 -----
 Global objects behavior could be different while parallel usage because platform dependent new process start.
-Be sure that new process is started with ``fork``. 
+Be sure that new process is started with ``fork``.
 If it's not possible you should try define all globals before ``if __name__ == "__main__"`` scope.
 """
 from etna.loggers.base import _Logger
