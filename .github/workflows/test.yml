@@ -24,7 +24,7 @@ jobs:
           pip install poetry
           poetry --version
           poetry config virtualenvs.in-project true
-          poetry install -E style
+          poetry install -E style --no-root
           
       - name: Static Analysis
         run: poetry run make lint
