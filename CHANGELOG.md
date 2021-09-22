@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SARIMAX model ([#10](https://github.com/tinkoff-ai/etna-ts/pull/10))
 - Logging, including ConsoleLogger ([#46](https://github.com/tinkoff-ai/etna-ts/pull/46))
 - Correlation heatmap plotter ([#77](https://github.com/tinkoff-ai/etna-ts/pull/77))
+- Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna-ts/pull/82))
 
 ### Changed
 - Backtest is fully parallel 
