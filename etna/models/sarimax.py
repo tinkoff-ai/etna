@@ -402,25 +402,43 @@ class SARIMAXModel(PerSegmentModel):
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
         """
+        self.order = order
+        self.seasonal_order = seasonal_order
+        self.trend = trend
+        self.measurement_error = measurement_error
+        self.time_varying_regression = time_varying_regression
+        self.mle_regression = mle_regression
+        self.simple_differencing = simple_differencing
+        self.enforce_stationarity = enforce_stationarity
+        self.enforce_invertibility = enforce_invertibility
+        self.hamilton_representation = hamilton_representation
+        self.concentrate_scale = concentrate_scale
+        self.trend_offset = trend_offset
+        self.use_exact_diffuse = use_exact_diffuse
+        self.dates = dates
+        self.freq = freq
+        self.missing = missing
+        self.validate_specification = validate_specification
+        self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXModel(
-                order=order,
-                seasonal_order=seasonal_order,
-                trend=trend,
-                measurement_error=measurement_error,
-                time_varying_regression=time_varying_regression,
-                mle_regression=mle_regression,
-                simple_differencing=simple_differencing,
-                enforce_stationarity=enforce_stationarity,
-                enforce_invertibility=enforce_invertibility,
-                hamilton_representation=hamilton_representation,
-                concentrate_scale=concentrate_scale,
-                trend_offset=trend_offset,
-                use_exact_diffuse=use_exact_diffuse,
-                dates=dates,
-                freq=freq,
-                missing=missing,
-                validate_specification=validate_specification,
-                **kwargs,
+                order=self.order,
+                seasonal_order=self.seasonal_order,
+                trend=self.trend,
+                measurement_error=self.measurement_error,
+                time_varying_regression=self.time_varying_regression,
+                mle_regression=self.mle_regression,
+                simple_differencing=self.simple_differencing,
+                enforce_stationarity=self.enforce_stationarity,
+                enforce_invertibility=self.enforce_invertibility,
+                hamilton_representation=self.hamilton_representation,
+                concentrate_scale=self.concentrate_scale,
+                trend_offset=self.trend_offset,
+                use_exact_diffuse=self.use_exact_diffuse,
+                dates=self.dates,
+                freq=self.freq,
+                missing=self.missing,
+                validate_specification=self.validate_specification,
+                **self.kwargs,
             )
         )

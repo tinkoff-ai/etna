@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regressors does not have enough history bug ([#35](https://github.com/tinkoff-ai/etna-ts/pull/35))
 - make_future(1) and make_future(2) bug
 - Fix working with 'cap' and 'floor' features in Prophet model ([#62](https://github.com/tinkoff-ai/etna-ts/pull/62)))
+- Fix saving init params for SARIMAXModel ([#81](https://github.com/tinkoff-ai/etna-ts/pull/81))
 - Imports of nn models, PytorchForecastingTransform and Transform ([#80](https://github.com/tinkoff-ai/etna-ts/pull/80)))
 
 ## [1.0.0] - 2021-09-05
