@@ -86,8 +86,12 @@ class _ProphetModel:
         prophet_df["ds"] = df["timestamp"]
         for column_name in df.columns:
             if column_name.startswith("regressor"):
-                self.model.add_regressor(column_name)
-                prophet_df[column_name] = df[column_name]
+                if column_name in ["regressor_cap", "regressor_floor"]:
+                    prophet_column_name = column_name[len("regressor_") :]
+                else:
+                    self.model.add_regressor(column_name)
+                    prophet_column_name = column_name
+                prophet_df[prophet_column_name] = df[column_name]
         self.model.fit(prophet_df)
         return self
 
@@ -111,7 +115,11 @@ class _ProphetModel:
         prophet_df["ds"] = df["timestamp"]
         for column_name in df.columns:
             if column_name.startswith("regressor"):
-                prophet_df[column_name] = df[column_name]
+                if column_name in ["regressor_cap", "regressor_floor"]:
+                    prophet_column_name = column_name[len("regressor_") :]
+                else:
+                    prophet_column_name = column_name
+                prophet_df[prophet_column_name] = df[column_name]
         forecast = self.model.predict(prophet_df)
         y_pred = forecast["yhat"]
         y_pred = y_pred.tolist()
@@ -210,6 +218,12 @@ class ProphetModel(PerSegmentModel):
             parameters that describe additional (not 'daily', 'weekly', 'yearly') seasonality that should be
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
             'mode', 'condition_name' will be used for prophet.Prophet().add_seasonality method call.
+
+        Notes
+        -----
+        Original Prophet can use features 'cap' and 'floor',
+        but our wrapper expects it under names 'regressor_cap' and 'regressor_floor'.
+
         """
         self.growth = growth
         self.n_changepoints = n_changepoints
