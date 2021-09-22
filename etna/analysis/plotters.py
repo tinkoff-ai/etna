@@ -191,12 +191,12 @@ def plot_anomalies(
         ax[i].tick_params("x", rotation=45)
 
 
-def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
+def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
     -----------
-    ts :
+    ts:
         TSDataset with timeseries data
     segments:
         Segments to use
@@ -219,13 +219,13 @@ def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, 
 
 
 def plot_correlation_matrix(
-    ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
+    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
 ):
     """Plot pairwise correlation heatmap for selected segments.
 
     Parameters
     -----------
-    ts :
+    ts:
         TSDataset with timeseries data
     segments:
         Segments to use
