@@ -16,7 +16,7 @@ class YeoJohnsonTransform(SklearnTransform):
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         standardize: bool = True,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """
         Create instance of YeoJohnsonTransform.
@@ -49,7 +49,7 @@ class BoxCoxTransform(SklearnTransform):
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         standardize: bool = True,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """
         Create instance of BoxCoxTransform.

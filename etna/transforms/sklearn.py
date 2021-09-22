@@ -25,7 +25,7 @@ class SklearnTransform(Transform):
         transformer: TransformerMixin,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """
         Init SklearnTransform.
