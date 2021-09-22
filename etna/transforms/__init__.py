@@ -10,6 +10,7 @@ from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform
+from etna.transforms.pytorch_forecasting import PytorchForecastingTransform
 from etna.transforms.scalers import MaxAbsScalerTransform
 from etna.transforms.scalers import MinMaxScalerTransform
 from etna.transforms.scalers import RobustScalerTransform
