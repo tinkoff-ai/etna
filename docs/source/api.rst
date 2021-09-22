@@ -14,4 +14,5 @@ API
    transforms
    analysis
    model_selection
+   loggers
 

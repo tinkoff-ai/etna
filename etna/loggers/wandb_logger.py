@@ -47,12 +47,12 @@ class WandbLogger(BaseLogger):
         config: Optional[Union[Dict, str, None]] = None,
     ):
         """
-        Create instance of ConsoleLogger.
+        Create instance of WandbLogger.
 
         Parameters
         ----------
         name:
-            A short display name for logger results
+            Wandb run name.
         entity:
             An entity is a username or team name where you're sending runs.
         project:
@@ -104,6 +104,11 @@ class WandbLogger(BaseLogger):
             Message or dict to log
         kwargs:
             Parameters for changing additional info in log message
+        
+        Notes
+        -----
+        We log nothing via current method in wandb case.
+        Currently you could call ``wandb.log`` by hand if you need this.
         """
         pass
 
@@ -140,11 +145,11 @@ class WandbLogger(BaseLogger):
 
         Parameters
         ----------
-        metrics_df: pd.DataFrame
+        metrics_df:
             Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
-        forecast_df: pd.DataFrame
+        forecast_df:
             Forecast from backtest
-        fold_info_df: pd.DataFrame
+        fold_info_df:
             Fold information from backtest
         """
         if self.table:
@@ -152,7 +157,7 @@ class WandbLogger(BaseLogger):
             self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast_df))
             self.experiment.summary["fold_info"] = wandb.Table(data=fold_info_df)
 
-        # TODO: make it show correctly
+        # TODO: current plot behaviour uses conversion matplotlib to plotly. We should use native plotly. ETNA-674
         if self.plot:
             plot_backtest(forecast_df, ts, history_len=100)
             self.experiment.log({"backtest": plt})
@@ -175,11 +180,11 @@ class WandbLogger(BaseLogger):
 
         Parameters
         ----------
-        metrics: pd.DataFrame
+        metrics:
             Dataframe with metrics from backtest fold
-        forecast: pd.DataFrame
+        forecast:
             Dataframe with forecast
-        test: pd.DataFrame
+        test:
             Dataframe with ground trouth
         """
         columns_name = list(metrics.columns)
