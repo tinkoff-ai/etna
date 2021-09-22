@@ -104,7 +104,7 @@ class WandbLogger(BaseLogger):
             Message or dict to log
         kwargs:
             Parameters for changing additional info in log message
-        
+
         Notes
         -----
         We log nothing via current method in wandb case.
