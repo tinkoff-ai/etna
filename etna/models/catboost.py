@@ -12,16 +12,14 @@ from etna.models.base import PerSegmentModel
 class _CatBoostModel:
     def __init__(
         self,
-        iterations: int = 1000,
-        depth: int = 6,
+        iterations: Optional[int] = None,
+        depth: Optional[int] = None,
         learning_rate: Optional[float] = None,
-        logging_level: str = "Silent",
-        l2_leaf_reg: float = 3,
-        thread_count: int = -1,
+        logging_level: Optional[str] = "Silent",
+        l2_leaf_reg: Optional[float] = None,
+        thread_count: Optional[int] = None,
         **kwargs,
     ):
-        if l2_leaf_reg == 3:
-            l2_leaf_reg = None
 
         self.model = CatBoostRegressor(
             iterations=iterations,
@@ -54,12 +52,12 @@ class CatBoostModelPerSegment(PerSegmentModel):
 
     def __init__(
         self,
-        iterations: int = 1000,
-        depth: int = 6,
+        iterations: Optional[int] = None,
+        depth: Optional[int] = None,
         learning_rate: Optional[float] = None,
-        logging_level: str = "Silent",
-        l2_leaf_reg: float = 3,
-        thread_count: int = -1,
+        logging_level: Optional[str] = "Silent",
+        l2_leaf_reg: Optional[float] = None,
+        thread_count: Optional[int] = None,
         **kwargs,
     ):
         """Create instance of CatBoostModelPerSegment with given parameters.
@@ -127,12 +125,12 @@ class CatBoostModelMultiSegment(Model):
 
     def __init__(
         self,
-        iterations: int = 1000,
-        depth: int = 6,
+        iterations: Optional[int] = None,
+        depth: Optional[int] = None,
         learning_rate: Optional[float] = None,
-        logging_level: str = "Silent",
-        l2_leaf_reg: float = 3,
-        thread_count: int = -1,
+        logging_level: Optional[str] = "Silent",
+        l2_leaf_reg: Optional[float] = None,
+        thread_count: Optional[int] = None,
         **kwargs,
     ):
         """Create instance of CatBoostModelMultiSegment with given parameters.
