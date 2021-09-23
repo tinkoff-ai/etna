@@ -107,8 +107,6 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             if tmp_series.empty:
                 continue
             x = self._get_timestamps(series=tmp_series)
-            # import ipdb
-            # ipdb.set_trace()
             trend = self.per_interval_models[interval].predict(x)
             trend_series[tmp_series.index] = trend
         return trend_series
