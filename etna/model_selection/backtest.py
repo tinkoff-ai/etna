@@ -45,13 +45,17 @@ class TimeSeriesCrossValidation(BaseMixin):
             forecasting horizon
         metrics:
             list of metrics to compute on validation set
-            note that all the metrics should be in 'per-segment' mode
+            Note that all the metrics should be in 'per-segment' mode.
         n_folds:
             number of timestamp range splits
         mode:
             one of 'expand', 'constant' -- train generation policy
         n_jobs:
             number of jobs to run in parallel
+            If `n_jobs` > 1 then it is impossible to see logging results if
+            `multiprocessing.get_start_method()` returns not 'fork' value.
+            For macOS and Windows the default value is 'spawn'.
+            On macOS you can change it by `multiprocessing.set_start_method`.
 
         Raises
         ------
@@ -284,7 +288,7 @@ class TimeSeriesCrossValidation(BaseMixin):
             three dataframes: metrics dataframe, forecast dataframe and dataframe with information about folds
         """
         self._validate_features(ts=ts)
-        folds = Parallel(n_jobs=self.n_jobs, verbose=11)(
+        folds = Parallel(n_jobs=self.n_jobs, verbose=11, backend="multiprocessing")(
             delayed(self._run_fold)(train=train, test=test, fold_number=fold_number, transforms=transforms)
             for fold_number, (train, test) in enumerate(self._generate_folds_dataframes(ts=ts))
         )
@@ -295,7 +299,7 @@ class TimeSeriesCrossValidation(BaseMixin):
         forecast_df = self.get_forecasts()
         fold_info_df = self.get_fold_info()
 
-        tslogger.start_experiment(job_type="crossval_results")
+        tslogger.start_experiment(job_type="crossval_results", group="all")
         tslogger.log_backtest_metrics(ts, metrics_df, forecast_df, fold_info_df)
         tslogger.finish_experiment()
 
