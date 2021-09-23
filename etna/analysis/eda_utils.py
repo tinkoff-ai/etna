@@ -1,6 +1,7 @@
 import math
 import warnings
 from itertools import combinations
+from typing import TYPE_CHECKING
 from typing import Optional
 from typing import Sequence
 
@@ -11,13 +12,14 @@ import statsmodels.api as sm
 from matplotlib.ticker import MaxNLocator
 from statsmodels.graphics import utils
 
-from etna.datasets.tsdataset import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 plot_acf = sm.graphics.tsa.plot_acf
 plot_pacf = sm.graphics.tsa.plot_pacf
 
 
-def cross_corr_plot(ts: TSDataset, n_segments: int = 10, maxlags: int = 21, segments: Optional[Sequence] = None):
+def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, segments: Optional[Sequence] = None):
     """
     Cross-correlation plot between multiple timeseries.
 
@@ -63,7 +65,7 @@ def cross_corr_plot(ts: TSDataset, n_segments: int = 10, maxlags: int = 21, segm
     plt.show()
 
 
-def sample_pacf_plot(ts: TSDataset, n_segments: int = 10, lags: int = 21, segments: Sequence = None):
+def sample_pacf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None):
     """
     Partial autocorrelation plot for multiple timeseries.
 
@@ -99,7 +101,7 @@ def sample_pacf_plot(ts: TSDataset, n_segments: int = 10, lags: int = 21, segmen
 
 
 def distribution_plot(
-    ts: TSDataset,
+    ts: "TSDataset",
     n_segments: int = 10,
     segments: Sequence = None,
     shift: int = 30,

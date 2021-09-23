@@ -1,4 +1,5 @@
 import math
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -8,13 +9,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from etna.datasets.tsdataset import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def plot_forecast(
-    forecast_ts: TSDataset,
-    test_ts: TSDataset,
-    train_ts: Optional[TSDataset] = None,
+    forecast_ts: "TSDataset",
+    test_ts: "TSDataset",
+    train_ts: Optional["TSDataset"] = None,
     segments: Optional[List[str]] = None,
     n_train_samples: Optional[int] = None,
     columns_num: int = 2,
@@ -79,7 +81,7 @@ def plot_forecast(
 
 def plot_backtest(
     forecast_df: pd.DataFrame,
-    ts: TSDataset,
+    ts: "TSDataset",
     segments: Optional[List[str]] = None,
     folds: Optional[List[int]] = None,
     columns_num: int = 2,
@@ -148,7 +150,7 @@ def plot_backtest(
 
 
 def plot_anomalies(
-    ts: TSDataset,
+    ts: "TSDataset",
     anomaly_dict: Dict[str, List[np.datetime64]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
@@ -189,12 +191,12 @@ def plot_anomalies(
         ax[i].tick_params("x", rotation=45)
 
 
-def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
+def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
     -----------
-    ts :
+    ts:
         TSDataset with timeseries data
     segments:
         Segments to use
@@ -217,13 +219,13 @@ def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, 
 
 
 def plot_correlation_matrix(
-    ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
+    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
 ):
     """Plot pairwise correlation heatmap for selected segments.
 
     Parameters
     -----------
-    ts :
+    ts:
         TSDataset with timeseries data
     segments:
         Segments to use
