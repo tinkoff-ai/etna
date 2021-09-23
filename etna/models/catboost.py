@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
@@ -11,14 +13,15 @@ from etna.models.base import log_decorator
 class _CatBoostModel:
     def __init__(
         self,
-        iterations: int = 100,
-        depth: int = 4,
-        learning_rate: float = 0.23,
-        logging_level: str = "Silent",
-        l2_leaf_reg: float = 6.735163225977638,
-        thread_count: int = 4,
+        iterations: Optional[int] = None,
+        depth: Optional[int] = None,
+        learning_rate: Optional[float] = None,
+        logging_level: Optional[str] = "Silent",
+        l2_leaf_reg: Optional[float] = None,
+        thread_count: Optional[int] = None,
         **kwargs,
     ):
+
         self.model = CatBoostRegressor(
             iterations=iterations,
             depth=depth,
@@ -50,12 +53,12 @@ class CatBoostModelPerSegment(PerSegmentModel):
 
     def __init__(
         self,
-        iterations: int = 100,
-        depth: int = 4,
-        learning_rate: float = 0.23,
-        logging_level: str = "Silent",
-        l2_leaf_reg: float = 6.735163225977638,
-        thread_count: int = 4,
+        iterations: Optional[int] = None,
+        depth: Optional[int] = None,
+        learning_rate: Optional[float] = None,
+        logging_level: Optional[str] = "Silent",
+        l2_leaf_reg: Optional[float] = None,
+        thread_count: Optional[int] = None,
         **kwargs,
     ):
         """Create instance of CatBoostModelPerSegment with given parameters.
@@ -75,6 +78,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
             QueryCrossEntropy) and up to   16 for all other loss functions.
         learning_rate:
             The learning rate. Used for reducing the gradient step.
+            If None the value is defined automatically depending on the number of iterations.
         logging_level:
             The logging level to output to stdout.
             Possible values:
@@ -97,6 +101,13 @@ class CatBoostModelPerSegment(PerSegmentModel):
             not affect the training.
             During the training one main thread and one thread for each GPU are used.
         """
+        self.iterations = iterations
+        self.depth = depth
+        self.learning_rate = learning_rate
+        self.logging_level = logging_level
+        self.l2_leaf_reg = l2_leaf_reg
+        self.thread_count = thread_count
+        self.kwargs = kwargs
         super(CatBoostModelPerSegment, self).__init__(
             base_model=_CatBoostModel(
                 iterations=iterations,
@@ -115,12 +126,12 @@ class CatBoostModelMultiSegment(Model):
 
     def __init__(
         self,
-        iterations: int = 100,
-        depth: int = 4,
-        learning_rate: float = 0.23,
-        logging_level: str = "Silent",
-        l2_leaf_reg: float = 6.735163225977638,
-        thread_count: int = 4,
+        iterations: Optional[int] = None,
+        depth: Optional[int] = None,
+        learning_rate: Optional[float] = None,
+        logging_level: Optional[str] = "Silent",
+        l2_leaf_reg: Optional[float] = None,
+        thread_count: Optional[int] = None,
         **kwargs,
     ):
         """Create instance of CatBoostModelMultiSegment with given parameters.
@@ -140,6 +151,7 @@ class CatBoostModelMultiSegment(Model):
             QueryCrossEntropy) and up to   16 for all other loss functions.
         learning_rate:
             The learning rate. Used for reducing the gradient step.
+            If None the value is defined automatically depending on the number of iterations.
         logging_level:
             The logging level to output to stdout.
             Possible values:
@@ -171,13 +183,13 @@ class CatBoostModelMultiSegment(Model):
         self.kwargs = kwargs
         super(CatBoostModelMultiSegment, self).__init__()
         self._base_model = _CatBoostModel(
-            iterations=self.iterations,
-            depth=self.depth,
-            learning_rate=self.learning_rate,
-            logging_level=self.logging_level,
-            thread_count=self.thread_count,
-            l2_leaf_reg=self.l2_leaf_reg,
-            **self.kwargs,
+            iterations=iterations,
+            depth=depth,
+            learning_rate=learning_rate,
+            logging_level=logging_level,
+            thread_count=thread_count,
+            l2_leaf_reg=l2_leaf_reg,
+            **kwargs,
         )
 
     @log_decorator

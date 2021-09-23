@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -5,7 +6,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from etna.datasets.tsdataset import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def get_segment_density_outliers_indices(
@@ -64,7 +66,7 @@ def get_segment_density_outliers_indices(
 
 
 def get_anomalies_density(
-    ts: TSDataset,
+    ts: "TSDataset",
     window_size: int = 15,
     distance_coef: float = 3,
     n_neighbors: int = 3,

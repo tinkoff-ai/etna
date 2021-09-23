@@ -1,4 +1,5 @@
 import math
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -6,14 +7,16 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
-from etna.datasets.tsdataset import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def plot_forecast(
-    forecast_ts: TSDataset,
-    test_ts: TSDataset,
-    train_ts: Optional[TSDataset] = None,
+    forecast_ts: "TSDataset",
+    test_ts: "TSDataset",
+    train_ts: Optional["TSDataset"] = None,
     segments: Optional[List[str]] = None,
     n_train_samples: Optional[int] = None,
     columns_num: int = 2,
@@ -78,7 +81,7 @@ def plot_forecast(
 
 def plot_backtest(
     forecast_df: pd.DataFrame,
-    ts: TSDataset,
+    ts: "TSDataset",
     segments: Optional[List[str]] = None,
     folds: Optional[List[int]] = None,
     columns_num: int = 2,
@@ -147,7 +150,7 @@ def plot_backtest(
 
 
 def plot_anomalies(
-    ts: TSDataset,
+    ts: "TSDataset",
     anomaly_dict: Dict[str, List[np.datetime64]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
@@ -186,3 +189,58 @@ def plot_anomalies(
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)]["target"].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
+
+
+def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
+    """Compute pairwise correlation of timeseries for selected segments.
+
+    Parameters
+    -----------
+    ts:
+        TSDataset with timeseries data
+    segments:
+        Segments to use
+    method:
+        Method of correlation:
+        pearson : standard correlation coefficient
+        kendall : Kendall Tau correlation coefficient
+        spearman : Spearman rank correlation
+
+    Returns
+    -------
+    Correlation matrix
+    """
+    if method not in ["pearson", "kendall", "spearman"]:
+        raise ValueError(f"'{method}' is not a valid method of correlation.")
+    if segments is None:
+        segments = sorted(ts.segments)
+    correlation_matrix = ts[:, segments, :].corr(method=method).values
+    return correlation_matrix
+
+
+def plot_correlation_matrix(
+    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
+):
+    """Plot pairwise correlation heatmap for selected segments.
+
+    Parameters
+    -----------
+    ts:
+        TSDataset with timeseries data
+    segments:
+        Segments to use
+    method:
+        Method of correlation:
+        pearson : standard correlation coefficient
+        kendall : Kendall Tau correlation coefficient
+        spearman : Spearman rank correlation
+    """
+    if segments is None:
+        segments = sorted(ts.segments)
+
+    correlation_matrix = get_correlation_matrix(ts, segments, method)
+    ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, **heatmap_kwargs)
+    labels = list(ts[:, segments, :].columns.values)
+    ax.set_xticklabels(labels, rotation=45, horizontalalignment="right")
+    ax.set_yticklabels(labels, rotation=0, horizontalalignment="right")
+    ax.set_title("Correlation Heatmap")

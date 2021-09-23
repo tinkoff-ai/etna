@@ -1,4 +1,5 @@
 from etna.transforms.add_constant import AddConstTransform
+from etna.transforms.base import Transform
 from etna.transforms.binseg import BinsegTrendTransform
 from etna.transforms.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.datetime_flags import DateFlagsTransform
@@ -12,6 +13,7 @@ from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform
+from etna.transforms.pytorch_forecasting import PytorchForecastingTransform
 from etna.transforms.scalers import MaxAbsScalerTransform
 from etna.transforms.scalers import MinMaxScalerTransform
 from etna.transforms.scalers import RobustScalerTransform
