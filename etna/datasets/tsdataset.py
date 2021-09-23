@@ -314,7 +314,7 @@ class TSDataset:
         return self._regressors
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
-        """ Plot of random or chosen segments.
+        """Plot of random or chosen segments.
 
         Parameters
         ----------
