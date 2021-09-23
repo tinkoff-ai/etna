@@ -24,6 +24,10 @@ class MetricAggregationMode(str, Enum):
         )
 
 
+def identity(x):
+    return x
+
+
 class Metric(BaseMixin):
     """
     Base class for all the multi-segment metrics.
@@ -54,7 +58,8 @@ class Metric(BaseMixin):
         if MetricAggregationMode(mode) == MetricAggregationMode.macro:
             self._aggregate_metrics = self._macro_average
         elif MetricAggregationMode(mode) == MetricAggregationMode.per_segment:
-            self._aggregate_metrics = lambda x: x
+            # self._aggregate_metrics = lambda x: x
+            self._aggregate_metrics = identity
         self.mode = mode
 
     @staticmethod
