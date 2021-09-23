@@ -54,6 +54,7 @@ jobs:
       - name: PyTest ("not long")
         run: |
           poetry run pytest tests -v --cov=etna -m "not long" --cov-report=xml
+          poetry run pytest etna -v --doctest-modules
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
