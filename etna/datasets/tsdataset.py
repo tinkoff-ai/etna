@@ -47,7 +47,7 @@ class TSDataset:
     2021-06-06    1.0
     2021-06-07    1.0
     Freq: D, Name: (segment_0, target), dtype: float64
-    
+
     >>> from etna.datasets import generate_ar_df
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> df_to_forecast = generate_ar_df(100, start_time="2021-01-01", n_segments=1)
@@ -59,9 +59,9 @@ class TSDataset:
     >>> df_regressors = TSDataset.to_dataset(df_regressors)
     >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
     >>> tsdataset.df.iloc[:5]
-    segment      segment_0                                                       
+    segment      segment_0
     feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
-    timestamp                                                                    
+    timestamp
     2021-01-01        1.62       -0.02       -0.50       -0.56        0.52   1.62
     2021-01-02        1.01       -0.80       -0.81        0.38       -0.60   1.01
     2021-01-03        0.48        0.47       -0.81       -1.56       -1.37   0.48
@@ -173,7 +173,7 @@ class TSDataset:
         >>> ts.make_future(4)
         segment    segment_0 segment_1
         feature       target    target
-        timestamp                     
+        timestamp
         2021-07-01       nan       nan
         2021-07-02       nan       nan
         2021-07-03       nan       nan
@@ -257,7 +257,7 @@ class TSDataset:
     @property
     def segments(self) -> List[str]:
         """Get list of all segments in dataset.
-        
+
         Examples
         --------
         >>> from etna.datasets import generate_const_df
@@ -338,7 +338,7 @@ class TSDataset:
         >>> ts.to_pandas(False).head()
         segment    segment_0 segment_1
         feature       target    target
-        timestamp                     
+        timestamp
         2021-06-01      1.00      1.00
         2021-06-02      1.00      1.00
         2021-06-03      1.00      1.00
@@ -369,7 +369,7 @@ class TSDataset:
         ----------
             df:
                 DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
-        
+
         Examples
         --------
         >>> from etna.datasets import generate_const_df
@@ -388,7 +388,7 @@ class TSDataset:
         >>> df_ts_format.head()
         segment    segment_0 segment_1
         feature       target    target
-        timestamp                     
+        timestamp
         2021-06-01      1.00      1.00
         2021-06-02      1.00      1.00
         2021-06-03      1.00      1.00
@@ -401,9 +401,9 @@ class TSDataset:
         ...     "segment": ["segment_0"]*10
         ... })
         >>> TSDataset.to_dataset(df_regressors).iloc[:5]
-        segment      segment_0            
+        segment      segment_0
         feature    regressor_1 regressor_2
-        timestamp                         
+        timestamp
         2021-01-01           0           5
         2021-01-02           1           6
         2021-01-03           2           7
@@ -458,7 +458,7 @@ class TSDataset:
         >>> train_ts.df.iloc[-5:]
         segment    segment_0 segment_1 segment_2
         feature       target    target    target
-        timestamp                               
+        timestamp
         2021-01-28     -2.06      2.03      1.51
         2021-01-29     -2.33      0.83      0.81
         2021-01-30     -1.80      1.69      0.61
@@ -467,7 +467,7 @@ class TSDataset:
         >>> test_ts.df.iloc[:5]
         segment    segment_0 segment_1 segment_2
         feature       target    target    target
-        timestamp                               
+        timestamp
         2021-02-02     -3.57     -0.32      1.72
         2021-02-03     -4.42      0.23      3.51
         2021-02-04     -5.09      1.02      3.39
