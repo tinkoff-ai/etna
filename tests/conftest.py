@@ -225,3 +225,24 @@ def outliers_tsds():
     tsds = TSDataset(df, "1d", exog)
 
     return tsds
+
+
+@pytest.fixture
+def multitrend_df() -> pd.DataFrame:
+    """Generate one segment pd.DataFrame with multiple linear trend."""
+    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-05-31")})
+    ns = [100, 150, 80, 187]
+    ks = [0.4, -0.3, 0.8, -0.6]
+    x = np.zeros(shape=(len(df)))
+    left = 0
+    right = 0
+    for i, (n, k) in enumerate(zip(ns, ks)):
+        right += n
+        x[left:right] = np.arange(0, n, 1) * k
+        for _n, _k in zip(ns[:i], ks[:i]):
+            x[left:right] += _n * _k
+        left = right
+    df["target"] = x
+    df["segment"] = "segment_1"
+    df = TSDataset.to_dataset(df=df)
+    return df

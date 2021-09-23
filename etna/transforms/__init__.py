@@ -1,4 +1,6 @@
 from etna.transforms.add_constant import AddConstTransform
+from etna.transforms.binseg import BinsegTrendTransform
+from etna.transforms.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.datetime_flags import DateFlagsTransform
 from etna.transforms.datetime_flags import TimeFlagsTransform
 from etna.transforms.detrend import LinearTrendTransform
