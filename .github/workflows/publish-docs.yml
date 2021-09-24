@@ -35,6 +35,7 @@ jobs:
       - name: Install dependencies
         if: steps.check-tag.outputs.IS_LATEST == 'true'
         run: |
+          sudo apt install pandoc
           pip install poetry
           poetry --version
           poetry config virtualenvs.in-project true
