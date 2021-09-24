@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import Any
 
+import numpy as np
 import pytest
 from ruptures.costs import CostAR
 from ruptures.costs import CostL1
@@ -42,3 +43,12 @@ def test_binseg_run_with_model(example_tsds: TSDataset, model: Any):
     ts.fit_transform([bs])
     ts.inverse_transform()
     assert (ts.df == example_tsds.df).all().all()
+
+
+def test_binseg_runs_with_different_series_length(ts_with_different_series_length: TSDataset):
+    """Check that binseg works with datasets with different length series."""
+    bs = BinsegTrendTransform(in_column="target")
+    ts = deepcopy(ts_with_different_series_length)
+    ts.fit_transform([bs])
+    ts.inverse_transform()
+    np.allclose(ts.df.values, ts_with_different_series_length.df.values, equal_nan=True)

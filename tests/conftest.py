@@ -246,3 +246,12 @@ def multitrend_df() -> pd.DataFrame:
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df=df)
     return df
+
+
+@pytest.fixture
+def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
+    """Generate TSDataset with different lengths series."""
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    ts = TSDataset(df=df, freq="H")
+    return ts
