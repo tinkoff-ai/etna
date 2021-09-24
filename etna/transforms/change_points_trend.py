@@ -123,7 +123,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         -------
         self
         """
-        series = df[df[self.in_column].first_valid_index():][self.in_column]
+        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column].copy(deep=True)
         change_points = self._get_change_points(series=series)
         self.intervals = self._build_trend_intervals(change_points=change_points)
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
@@ -144,7 +144,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             df with detrended in_column series
         """
         df._is_copy = False
-        series = df.loc[:, self.in_column].dropna()
+        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df.loc[:, self.in_column] -= trend_series
         return df
@@ -162,9 +162,10 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         df: pd.DataFrame
             df with restored trend in in_column
         """
-        series = df[self.in_column].dropna()
+        df._is_copy = False
+        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
-        df[self.in_column] += trend_series
+        df.loc[:, self.in_column] += trend_series
         return df
 
 
