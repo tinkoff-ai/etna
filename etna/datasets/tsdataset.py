@@ -168,16 +168,22 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
+        >>> df_regressors = pd.DataFrame({
+        ...     "timestamp": list(pd.date_range("2021-06-01", periods=40))*2,
+        ...     "regressor_1": np.arange(80), "regressor_2": np.arange(80) + 5,
+        ...     "segment": ["segment_0"]*40 + ["segment_1"]*40
+        ... })
         >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> ts = TSDataset(df_ts_format, "D")
+        >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
+        >>> ts = TSDataset(df_ts_format, "D", df_exog=df_regressors_ts_format)
         >>> ts.make_future(4)
-        segment    segment_0 segment_1
-        feature       target    target
-        timestamp
-        2021-07-01       nan       nan
-        2021-07-02       nan       nan
-        2021-07-03       nan       nan
-        2021-07-04       nan       nan
+        segment      segment_0                      segment_1                   
+        feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
+        timestamp                                                               
+        2021-07-01          30          35    nan          70          75    nan
+        2021-07-02          31          36    nan          71          76    nan
+        2021-07-03          32          37    nan          72          77    nan
+        2021-07-04          33          38    nan          73          78    nan
         """
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
@@ -367,8 +373,8 @@ class TSDataset:
 
         Parameters
         ----------
-            df:
-                DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+        df:
+            DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
 
         Examples
         --------
