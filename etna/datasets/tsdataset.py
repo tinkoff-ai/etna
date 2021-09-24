@@ -177,9 +177,9 @@ class TSDataset:
         >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
         >>> ts = TSDataset(df_ts_format, "D", df_exog=df_regressors_ts_format)
         >>> ts.make_future(4)
-        segment      segment_0                      segment_1                   
+        segment      segment_0                      segment_1
         feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
-        timestamp                                                               
+        timestamp
         2021-07-01          30          35    nan          70          75    nan
         2021-07-02          31          36    nan          71          76    nan
         2021-07-03          32          37    nan          72          77    nan
