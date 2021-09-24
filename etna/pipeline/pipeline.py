@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Iterable
 
 from etna.datasets import TSDataset
@@ -9,7 +8,7 @@ from etna.transforms.base import Transform
 class Pipeline:
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(self, model: Model, transforms: Iterable[Transform] = [], horizon: int = 1):
+    def __init__(self, model: Model, transforms: Iterable[Transform] = (), horizon: int = 1):
         """
         Create instance of Pipeline with given parameters.
 
@@ -37,13 +36,12 @@ class Pipeline:
             Dataset with timeseries data
         Returns
         -------
-        self :
+        Pipeline:
             Fitted Pipeline instance
         """
-        ts = deepcopy(ts)
-        ts.fit_transform(self.transforms)
-        self.model.fit(ts)
         self.ts = ts
+        self.ts.fit_transform(self.transforms)
+        self.model.fit(self.ts)
         return self
 
     def forecast(self) -> TSDataset:
