@@ -14,11 +14,26 @@ format:
 	flake8 etna/
 	flake8 tests/ --select E,W,C,F401,N
 
-.PHONY: release
-release:
-	@bash scripts/release.sh minor
+.PHONY: deps/release
+deps/release:
+	@poetry install -E release
 
+.PHONY: release/prerelease
+release/prerelease:
+	@poetry run python scripts/release.py prerelease
 
-.PHONY: hotfix
-hotfix:
-	@bash scripts/release.sh patch
+.PHONY: release/prepatch
+release/prepatch:
+	@poetry run python scripts/release.py prepatch
+
+.PHONY: release/preminor
+release/preminor:
+	@poetry run python scripts/release.py preminor
+
+.PHONY: release/patch
+release/patch:
+	@poetry run python scripts/release.py patch
+
+.PHONY: release/minor
+release/minor:
+	@poetry run python scripts/release.py minor
