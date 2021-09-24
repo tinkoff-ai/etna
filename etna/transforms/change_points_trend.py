@@ -123,6 +123,8 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         -------
         self
         """
+        # we need copy here because Binseg with CostAR (model="ar") changes given signal inplace; if it is fixed
+        # @TODO: delete copy
         series = df.loc[df[self.in_column].first_valid_index() :, self.in_column].copy(deep=True)
         change_points = self._get_change_points(series=series)
         self.intervals = self._build_trend_intervals(change_points=change_points)
