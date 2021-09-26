@@ -2,6 +2,7 @@ import math
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -185,6 +186,50 @@ def plot_anomalies(
 
         anomaly = sorted(anomaly)
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)]["target"].values, c="r")
+
+        ax[i].tick_params("x", rotation=45)
+
+
+def plot_sequence_anomalies(
+    ts: "TSDataset",
+    anomaly_dict: Dict[str, List[Tuple[pd.Timestamp, pd.Timestamp]]],
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+):
+    """Plot a time series with indicated anomalies.
+    Parameters
+    ----------
+    ts:
+        TSDataset of timeseries that was used for detect anomalies
+    anomaly_dict:
+        dictionary derived from sequence anomaly detection function
+    segments: list of str, optional
+        segments to plot
+    columns_num: int
+        number of subplots columns
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    segments_number = len(segments)
+    columns_num = min(columns_num, len(segments))
+    rows_num = math.ceil(segments_number / columns_num)
+
+    _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True)
+    ax = np.array([ax]).ravel()
+
+    for i, segment in enumerate(segments):
+        segment_df = ts[:, segment, :][segment]
+        anomaly = anomaly_dict[segment]
+        timedelta = pd.to_timedelta(segment_df.index.freq)
+
+        ax[i].set_title(segment)
+        ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
+
+        for start, end in anomaly:
+            anomaly_time = np.arange(start, end, timedelta)
+            anomaly_val =  segment_df[segment_df.index.isin(anomaly_time)]["target"].values
+            ax[i].plot(anomaly_time, anomaly_val, c = 'r')
 
         ax[i].tick_params("x", rotation=45)
 
