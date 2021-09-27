@@ -45,13 +45,10 @@ def get_segment_sequence_anomalies(
 def get_sequence_anomalies(
     ts: "TSDataset", num_anomalies: int = 1, anomaly_lenght: int = 100, alphabet_size: int = 3, word_lenght: int = 3
 ) -> Dict[str, List[Tuple[pd.Timestamp, pd.Timestamp]]]:
-    """Finds the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
+    """Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
 
-    For each subsequence of length anomaly_lenght, how far is it from the others
-    after reduction to N (0,1).
-    The outermost subsequences are considered outliers.
     We use saxpy under the hood.
-    repository link: https://github.com/seninp/saxpy.
+    Repository link: https://github.com/seninp/saxpy.
     Parameters
     ----------
     ts:
