@@ -58,7 +58,6 @@ def test_not_fitted(model, linear_segments_ts_unique):
     train, test = linear_segments_ts_unique
     lags = LagTransform(in_column="target", lags=[3, 4, 5])
     train.fit_transform([lags])
-    test.fit_transform([lags])
 
     to_forecast = train.make_future(3)
     with pytest.raises(ValueError, match="model is not fitted"):
