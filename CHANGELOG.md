@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
+- Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
 
 ### Changed
 
@@ -25,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
 - Correlation heatmap plotter ([#77](https://github.com/tinkoff-ai/etna-ts/pull/77))
 - Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
-- Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
 
 ### Changed
 - Backtest is fully parallel 
