@@ -1,9 +1,11 @@
 import math
 from typing import TYPE_CHECKING
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -250,8 +252,15 @@ def plot_correlation_matrix(
     ax.set_title("Correlation Heatmap")
 
 
-def plot_anomalies_interactive(ts: "TSDataset", segment: str, method: callable, params_bounds: Dict[str, Tuple]):
+def plot_anomalies_interactive(
+    ts: "TSDataset",
+    segment: str,
+    method: Callable[..., Dict[str, List[pd.Timestamp]]],
+    params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
+):
     """Plot a time series with indicated anomalies.
+    Anomalies are obtained using the specified method. The method parameters values
+    can be changed using the corresponding sliders.
 
     Parameters
     ----------
@@ -264,27 +273,34 @@ def plot_anomalies_interactive(ts: "TSDataset", segment: str, method: callable, 
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
     """
+    from etna.datasets import TSDataset
+
     df = ts[:, segment, "target"]
+    ts = TSDataset(ts[:, segment, :], ts.freq)
     x, y = df.index.values, df.values
+    cache = {}
 
     sliders = dict()
     for param, bounds in params_bounds.items():
         min_, max_, step = bounds
-        if type(min_) == float or type(max_) == float or type(step) == float:
+        if isinstance(min_, float) or isinstance(max_, float) or isinstance(step, float):
             sliders[param] = FloatSlider(min=min_, max=max_, step=step, continuous_update=False)
         else:
             sliders[param] = IntSlider(min=min_, max=max_, step=step, continuous_update=False)
 
     def update(**kwargs):
-        anomalies_dict = method(ts, **kwargs)
-        anomaly = anomalies_dict[segment]
-        anomaly = sorted(anomaly)
+        key = "_".join([str(val) for val in kwargs.values()])
+        if key not in cache:
+            anomalies = method(ts, **kwargs)[segment]
+            anomalies = sorted(anomalies)
+            cache[key] = anomalies
+        else:
+            anomalies = cache[key]
+        plt.figure(figsize=(20, 10))
         plt.cla()
         plt.plot(x, y)
-        plt.scatter(anomaly, y[pd.to_datetime(x).isin(anomaly)], c="r")
+        plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
         plt.xticks(rotation=45)
         plt.show()
 
-    fig = plt.figure()
-    fig.canvas.draw()
     interact(update, **sliders)
