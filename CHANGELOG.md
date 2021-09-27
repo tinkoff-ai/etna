@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
 
 ### Changed
+- SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
 
 ### Fixed
 
