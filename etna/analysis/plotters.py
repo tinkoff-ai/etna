@@ -230,8 +230,8 @@ def plot_sequence_anomalies(
 
         for start, end in anomaly:
             anomaly_time = np.arange(start, end, timedelta)
-            anomaly_val =  segment_df[segment_df.index.isin(anomaly_time)]["target"].values
-            ax[i].plot(anomaly_time, anomaly_val, c = 'r')
+            anomaly_val = segment_df[segment_df.index.isin(anomaly_time)]["target"].values
+            ax[i].plot(anomaly_time, anomaly_val, c="r")
 
         ax[i].tick_params("x", rotation=45)
 

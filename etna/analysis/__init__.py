@@ -7,5 +7,5 @@ from etna.analysis.plotters import get_correlation_matrix
 from etna.analysis.plotters import plot_anomalies
 from etna.analysis.plotters import plot_backtest
 from etna.analysis.plotters import plot_correlation_matrix
-from etna.analysis.plotters import plot_sequence_anomalies
 from etna.analysis.plotters import plot_forecast
+from etna.analysis.plotters import plot_sequence_anomalies

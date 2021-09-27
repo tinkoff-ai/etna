@@ -222,7 +222,7 @@ class TSDataset:
         return self.df.columns.get_level_values("segment").unique().tolist()
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
-        """ Plot of random or chosen segments.
+        """Plot of random or chosen segments.
 
         Parameters
         ----------
