@@ -45,7 +45,7 @@ class Pipeline:
         return self
 
     def forecast(self) -> TSDataset:
-        """Make predictions.
+        """ Make predictions.
 
         Returns
         -------
