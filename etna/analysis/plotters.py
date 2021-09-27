@@ -1,6 +1,9 @@
 import math
 from typing import TYPE_CHECKING
+<<<<<<< HEAD
 from typing import Callable
+=======
+>>>>>>> fix plotters
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -244,8 +247,12 @@ def plot_sequence_anomalies(
         ax[i].tick_params("x", rotation=45)
 
 
+<<<<<<< HEAD
 def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
 >>>>>>> add seq outliers
+=======
+def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
+>>>>>>> fix plotters
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
