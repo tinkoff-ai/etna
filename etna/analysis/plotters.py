@@ -7,11 +7,14 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+<<<<<<< HEAD
 from typing import Tuple
 <<<<<<< HEAD
 from typing import Union
 =======
 >>>>>>> add seq outliers
+=======
+>>>>>>> update seq anomalies
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -201,6 +204,7 @@ def plot_anomalies(
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
 =======
 def plot_sequence_anomalies(
@@ -251,6 +255,8 @@ def plot_sequence_anomalies(
 def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
 >>>>>>> add seq outliers
 =======
+=======
+>>>>>>> update seq anomalies
 def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
 >>>>>>> fix plotters
     """Compute pairwise correlation of timeseries for selected segments.

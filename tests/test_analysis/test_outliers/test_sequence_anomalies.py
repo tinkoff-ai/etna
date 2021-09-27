@@ -11,15 +11,15 @@ from etna.datasets.tsdataset import TSDataset
 
 @pytest.fixture
 def test_sequence_anomalies_interface(outliers_tsds: TSDataset):
-    anomaly_seq_dict = get_sequence_anomalies(ts=outliers_tsds, num_anomalies=1, anomaly_lenght=5)
+    lenght = 5
+    anomaly_seq_dict = get_sequence_anomalies(ts=outliers_tsds, num_anomalies=1, anomaly_lenght=lenght)
 
     for segment in ["1", "2"]:
         assert segment in anomaly_seq_dict
         assert isinstance(anomaly_seq_dict[segment], list)
-        for pair in anomaly_seq_dict[segment]:
-            assert isinstance(pair, tuple)
-            assert len(pair) == 2
-            assert isinstance(pair[0], np.datetime64) and isinstance(pair[1], np.datetime64)
+        assert len(anomaly_seq_dict[segment]) == lenght
+        for timestamp in anomaly_seq_dict[segment]:
+            assert isinstance(timestamp, np.datetime64)
 
 
 @pytest.mark.parametrize(
@@ -44,10 +44,13 @@ def test_segment_sequence_anomalies(arr: List[int], expected: List[Tuple[int, in
 
 @pytest.fixture
 def test_sequence_anomalies(outliers_tsds: TSDataset):
-    test_sequence_anomalies_interface(tsds)
-    expected = {
-        "1": [(np.datetime64("2021-01-01"), np.datetime64("2021-01-16"))],
-        "2": [(np.datetime64("2021-01-17"), np.datetime64("2021-02-01"))],
+    bounds_dict = {
+        "1": [np.datetime64("2021-01-01"), np.datetime64("2021-01-16")],
+        "2": [np.datetime64("2021-01-17"), np.datetime64("2021-02-01")],
     }
+    delta = pd.to_timedelta(ts.index.freq)
+    expected = dict([(seg, np.arange(bounds[0], bounds[1], delta)) for seg, bounds in bounds_dict.items()])
+    anomaly_seq_dict = get_sequence_anomalies(outliers_tsds, num_anomalies = 1, anomaly_lenght = 15)
+
     for segment in expected:
-        assert expected[segment][0] == anomaly_seq_dict[segment][0]
+        assert (anomaly_seq_dict[segment]==expected[segment]).all()

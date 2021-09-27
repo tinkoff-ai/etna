@@ -44,7 +44,7 @@ def get_segment_sequence_anomalies(
 
 def get_sequence_anomalies(
     ts: "TSDataset", num_anomalies: int = 1, anomaly_lenght: int = 100, alphabet_size: int = 3, word_lenght: int = 3
-) -> Dict[str, List[Tuple[pd.Timestamp, pd.Timestamp]]]:
+) -> Dict[str, List[pd.Timestamp]]:
     """Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
 
     We use saxpy under the hood.
@@ -63,8 +63,8 @@ def get_sequence_anomalies(
         the number of segments into which the subsequence will be divided by the paa algorithm
     Returns
     -------
-    dict of sequence outliers in format {segment_name: [start, end]}, where start and end
-    is a pd.Timestamp.
+    dict of sequence outliers in format {segment_name: [outliers]}, where outliers
+    are a pd.Timestamp.
     """
     segments = ts.segments
     outliers_per_segment = dict()
@@ -90,8 +90,9 @@ def get_sequence_anomalies(
         )
 
         timestamps = segment_df["timestamp"].values
-        outliers = [(timestamps[idx[0]], timestamps[idx[1]]) for idx in outliers_idxs]
-        outliers_per_segment[seg] = outliers
+        outliers_per_segment[seg] = []
+        for left_bound, right_bound in outliers_idxs:
+            outliers_per_segment[seg].extend(timestamps[left_bound:right_bound])
 
     return outliers_per_segment
 
