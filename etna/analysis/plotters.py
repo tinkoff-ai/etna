@@ -11,9 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from ipywidgets import FloatSlider
-from ipywidgets import IntSlider
-from ipywidgets import interact
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -272,7 +269,23 @@ def plot_anomalies_interactive(
         Method for outliers detection
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
+
+    Examples
+    --------
+    >>> from etna.datasets import TSDataset
+    >>> from etna.datasets import generate_ar_df
+    >>> from etna.analysis import plot_anomalies_interactive, get_anomalies_density
+    >>> classic_df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
+    >>> df = TSDataset.to_dataset(classic_df)
+    >>> ts = TSDataset(df, "D")
+    >>> params_bounds = {"window_size": (5, 20, 1), "distance_coef": (0.1, 3, 0.25)}
+    >>> method = get_anomalies_density
+    >>> plot_anomalies_interactive(ts=ts, segment="segment_1", method=method, params_bounds=params_bounds)
     """
+    from ipywidgets import FloatSlider
+    from ipywidgets import IntSlider
+    from ipywidgets import interact
+
     from etna.datasets import TSDataset
 
     df = ts[:, segment, "target"]
