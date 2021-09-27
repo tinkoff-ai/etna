@@ -7,13 +7,19 @@ from etna.analysis import get_anomalies_median
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
+from etna.transforms import SAXOutliersTransform
 
 
 @pytest.mark.parametrize(
-    "transform", [MedianOutliersTransform(in_column="target"), DensityOutliersTransform(in_column="target")]
+    "transform",
+    [
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        SAXOutliersTransform(in_column="target"),
+    ],
 )
 def test_interface(transform, example_tsds: TSDataset):
-    """Checks that MedianOutliersTransform and DensityOutliersTransform doesn't change structure of dataframe."""
+    """Checks outliers transforms doesn't change structure of dataframe."""
     start_columnns = example_tsds.columns
     example_tsds.fit_transform(transforms=[transform])
     assert np.all(start_columnns == example_tsds.columns)
@@ -24,17 +30,17 @@ def test_interface(transform, example_tsds: TSDataset):
     [
         (MedianOutliersTransform(in_column="target"), get_anomalies_median),
         (DensityOutliersTransform(in_column="target"), get_anomalies_density),
+        (SAXOutliersTransform(in_column="target"), get_sequence_anomalies),
     ],
 )
 def test_outliers_detection(transform, method, outliers_tsds):
-    """Checks that MedianOutliersTransform detect anomalies according to `get_anomalies_median`."""
+    """Checks that outliers transforms detect anomalies according to methods from etna.analysis."""
     detectiom_method_results = method(outliers_tsds)
 
     # save for each segment index without existing nans
     non_nan_index = {}
     for segment in outliers_tsds.segments:
         non_nan_index[segment] = outliers_tsds[:, segment, "target"].dropna().index
-
     # convert to df to ignore different lengths of series
     transformed_df = transform.fit_transform(outliers_tsds.to_pandas())
     for segment in outliers_tsds.segments:
