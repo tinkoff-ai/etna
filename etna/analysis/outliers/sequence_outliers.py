@@ -7,14 +7,13 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from saxpy.hotsax import find_discords_hotsax
-from tqdm import tqdm
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
 def get_segment_sequence_anomalies(
-    series: np.ndarray, num_anomalies: int = 1, anomaly_lenght: int = 100, alphabet_size: int = 3, word_lenght: int = 3
+    series: np.ndarray, num_anomalies: int = 1, anomaly_lenght: int = 15, alphabet_size: int = 3, word_lenght: int = 3
 ) -> List[Tuple[int, int]]:
     """Get indices of start and end of sequence outliers for one segment using SAX HOT algorithm.
     Parameters
@@ -43,7 +42,7 @@ def get_segment_sequence_anomalies(
 
 
 def get_sequence_anomalies(
-    ts: "TSDataset", num_anomalies: int = 1, anomaly_lenght: int = 100, alphabet_size: int = 3, word_lenght: int = 3
+    ts: "TSDataset", num_anomalies: int = 1, anomaly_lenght: int = 15, alphabet_size: int = 3, word_lenght: int = 3
 ) -> Dict[str, List[pd.Timestamp]]:
     """Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
 
@@ -69,10 +68,8 @@ def get_sequence_anomalies(
     segments = ts.segments
     outliers_per_segment = dict()
 
-    for seg in tqdm(segments):
+    for seg in segments:
         segment_df = ts[:, seg, :][seg]
-        if "target" not in segment_df.columns:
-            raise ValueError(f"Each segment must contain a column 'target'. {seg} does not contain.")
         if segment_df["target"].isnull().sum():
             warnings.warn(
                 f"Segment {seg} contains nan-s. They will be removed when calculating outliers."

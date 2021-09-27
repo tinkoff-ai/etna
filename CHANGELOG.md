@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
+<<<<<<< HEAD
 - Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
 
 ### Changed
@@ -15,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 =======
 - Add methods for finding and displaying sequence anomalies: get_sequence_anomalies, plot_sequence_anomalies 
+=======
+- Add methods for finding and displaying sequence anomalies: get_sequence_anomalies, plot_sequence_anomalies ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
+>>>>>>> minor fixes
 
 ### Changed
 - Update EDA notebook
