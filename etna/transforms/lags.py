@@ -20,6 +20,7 @@ class _OneSegmentLagFeature(Transform):
 
         self.in_column = in_column
         self.out_postfix = "_lag"
+        self.out_prefix = "regressor_"
 
     def fit(self, *args) -> "_OneSegmentLagFeature":
         return self
@@ -27,7 +28,7 @@ class _OneSegmentLagFeature(Transform):
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         result = df.copy()
         for lag in self.lags:
-            result[f"{self.in_column}{self.out_postfix}_{lag}"] = df[self.in_column].shift(lag)
+            result[f"{self.out_prefix}{self.in_column}{self.out_postfix}_{lag}"] = df[self.in_column].shift(lag)
         return result
 
 

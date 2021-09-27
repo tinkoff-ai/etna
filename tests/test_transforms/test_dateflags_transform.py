@@ -49,6 +49,7 @@ def dateflags_true_df() -> pd.DataFrame:
         df["special_days_in_week"] = df["day_number_in_week"].apply(lambda x: x in SPECIAL_DAYS)
         df["special_days_in_month"] = df["day_number_in_month"].apply(lambda x: x in SPECIAL_DAYS)
 
+        df.columns = df.columns.map(lambda col: "regressor_" + col if col != "timestamp" else col)
         df["segment"] = f"segment_{i}"
         df["target"] = 2
 
@@ -150,6 +151,7 @@ def test_interface_correct_args(true_params: List[str], train_df: pd.DataFrame):
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
+    true_params = ["regressor_" + param for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
@@ -173,6 +175,7 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
+    true_params = ["regressor_" + param for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
@@ -207,8 +210,9 @@ def test_feature_values(
 
     assert sorted(segment_result) == sorted(segments_true)
 
+    true_params = ["regressor_" + param for param in true_params.keys()]
     for seg in segment_result:
         segment_true = dateflags_true_df[seg]
-        true_df = segment_true[list(true_params.keys()) + ["target"]].sort_index(axis=1)
+        true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
         result_df = result[seg].sort_index(axis=1)
         assert (true_df == result_df).all().all()
