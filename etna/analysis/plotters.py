@@ -281,12 +281,13 @@ def plot_anomalies_interactive(
     cache = {}
 
     sliders = dict()
+    style = {"description_width": "initial"}
     for param, bounds in params_bounds.items():
         min_, max_, step = bounds
         if isinstance(min_, float) or isinstance(max_, float) or isinstance(step, float):
-            sliders[param] = FloatSlider(min=min_, max=max_, step=step, continuous_update=False)
+            sliders[param] = FloatSlider(min=min_, max=max_, step=step, continuous_update=False, style=style)
         else:
-            sliders[param] = IntSlider(min=min_, max=max_, step=step, continuous_update=False)
+            sliders[param] = IntSlider(min=min_, max=max_, step=step, continuous_update=False, style=style)
 
     def update(**kwargs):
         key = "_".join([str(val) for val in kwargs.values()])
