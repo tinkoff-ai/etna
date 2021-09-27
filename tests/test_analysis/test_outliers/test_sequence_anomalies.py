@@ -50,7 +50,7 @@ def test_sequence_anomalies(outliers_tsds: TSDataset):
     }
     delta = pd.to_timedelta(ts.index.freq)
     expected = dict([(seg, np.arange(bounds[0], bounds[1], delta)) for seg, bounds in bounds_dict.items()])
-    anomaly_seq_dict = get_sequence_anomalies(outliers_tsds, num_anomalies = 1, anomaly_lenght = 15)
+    anomaly_seq_dict = get_sequence_anomalies(outliers_tsds, num_anomalies=1, anomaly_lenght=15)
 
     for segment in expected:
-        assert (anomaly_seq_dict[segment]==expected[segment]).all()
+        assert (anomaly_seq_dict[segment] == expected[segment]).all()
