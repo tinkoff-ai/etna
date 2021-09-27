@@ -1,0 +1,119 @@
+[tool.poetry]
+name = "etna-ts"
+version = "1.1.0"
+repository = "https://github.com/tinkoff-ai/etna-ts"
+readme = "README.md"
+description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
+license = "Apache 2.0"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+]
+
+packages = [
+    { include = "etna", from = "." },
+]
+
+authors = [
+    "Andrey Alekseev <an.alekseev@tinkoff.ru>",
+    "Julia Shenshina <y.a.shenshina@tinkoff.ru>",
+    "Martin Gabdushev <m.gabdushev@tinkoff.ru>",
+    "Albina Munirova <a.i.munirova@tinkoff.ru>",
+    "Artem Levashov <levashov.as@phystech.edu>",
+    "Alexey Podkidyshev <podkidyshev.as@phystech.edu>",
+    "Nikita Barinov <n.barinov@tinkoff.ru>",
+    "Dmitry Bunin <d.a.bunin@tinkoff.ru>",
+    "Alexander Chikov <a.p.chikov@tinkoff.ru>"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6.2, <3.9.0"
+scikit-learn = "^0.24.1"
+prophet = "^1.0"
+pandas = "^1"
+catboost = "^0.25"
+ruptures = "1.1.3"
+torch = "1.8.*"
+pytorch-forecasting = "0.8.5"
+numba = "^0.53.1"
+seaborn = "^0.11.1"
+statsmodels = "^0.12.2"
+dill = "^0.3.4"
+toml = "^0.10.2"
+loguru = "^0.5.3"
+wandb = "^0.12.2"
+
+sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
+nbsphinx = {version = "^0.8.2", optional = true}
+Sphinx = {version = "^3.5.1", optional = true}
+numpydoc = {version = "^1.1.0", optional = true}
+sphinx-rtd-theme = {version = "^0.5.1", optional = true}
+myst-parser = {version = "^0.14.0", optional = true}
+GitPython = {version = "^3.1.20", optional = true}
+
+pytest = {version = "^6.2", optional = true}
+coverage = {version = "^5.4", optional = true}
+pytest-cov = {version = "^2.11.1", optional = true}
+
+black = {version = "19.3b0", optional = true}
+isort = {version = "^5.8.0", optional = true}
+flake8 = {version = "^3.9.2", optional = true}
+pep8-naming = {version = "^0.11.1", optional = true}
+flake8-docstrings = {version = "^1.6.0", optional = true}
+
+click = {version = "^8.0.1", optional = true}
+typer = {version = "^0.4.0", optional = true}
+semver = {version = "^2.13.0", optional = true}
+ipywidgets = {version = "^7.6.5", optional = true}
+
+[tool.poetry.extras]
+release = ["click", "typer", "semver"]
+docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
+tests = ["pytest-cov", "coverage", "pytest"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings"]
+all = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
+    "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings","ipywidgets"]
+
+[tool.black]
+line-length = 120
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+
+  # The following are specific to Black, you probably don't want those.
+  | blib2to3
+  | tests/data
+)/
+'''
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 120
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
