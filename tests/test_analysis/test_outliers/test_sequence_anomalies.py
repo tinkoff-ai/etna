@@ -35,7 +35,7 @@ def test_segment_sequence_anomalies(arr: List[int], expected: List[Tuple[int, in
     anomaly_lenght = 3
     num_anomalies = len(expected)
     expected = sorted(expected)
-    
+
     result = get_segment_sequence_anomalies(series=arr, num_anomalies=num_anomalies, anomaly_lenght=3)
     result = sorted(result)
     for idx in range(num_anomalies):
