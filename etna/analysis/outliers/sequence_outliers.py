@@ -42,7 +42,12 @@ def get_segment_sequence_anomalies(
 
 
 def get_sequence_anomalies(
-    ts: "TSDataset", num_anomalies: int = 1, anomaly_lenght: int = 15, alphabet_size: int = 3, word_lenght: int = 3
+    ts: "TSDataset",
+    num_anomalies: int = 1,
+    anomaly_lenght: int = 15,
+    alphabet_size: int = 3,
+    word_lenght: int = 3,
+    in_column: str = "target",
 ) -> Dict[str, List[pd.Timestamp]]:
     """Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
 
@@ -60,6 +65,8 @@ def get_sequence_anomalies(
         the number of letters with which the subsequence will be encrypted
     word_lenght:
         the number of segments into which the subsequence will be divided by the paa algorithm
+    in_column:
+        name of the column in which the anomaly is searching
     Returns
     -------
     dict of sequence outliers in format {segment_name: [outliers]}, where outliers
@@ -70,16 +77,15 @@ def get_sequence_anomalies(
 
     for seg in segments:
         segment_df = ts[:, seg, :][seg]
-        if segment_df["target"].isnull().sum():
+        if segment_df[in_column].isnull().sum():
             warnings.warn(
                 f"Segment {seg} contains nan-s. They will be removed when calculating outliers."
                 + "Make sure this behavior is acceptable",
                 RuntimeWarning,
             )
-
         segment_df = segment_df.dropna().reset_index()
         outliers_idxs = get_segment_sequence_anomalies(
-            series=segment_df["target"].values,
+            series=segment_df[in_column].values,
             num_anomalies=num_anomalies,
             anomaly_lenght=anomaly_lenght,
             alphabet_size=alphabet_size,
@@ -90,7 +96,6 @@ def get_sequence_anomalies(
         outliers_per_segment[seg] = []
         for left_bound, right_bound in outliers_idxs:
             outliers_per_segment[seg].extend(timestamps[left_bound:right_bound])
-
     return outliers_per_segment
 
 
