@@ -11,10 +11,7 @@ from etna.datasets.tsdataset import TSDataset
 
 @pytest.fixture
 def test_sequence_anomalies_interface(outliers_tsds: TSDataset):
-    anomaly_lenght = 5
-    anomaly_seq_dict = get_sequence_anomalies(
-        ts=outliers_tsds, num_anomalies=1, anomaly_lenght=anomaly_lenght
-    )
+    anomaly_seq_dict = get_sequence_anomalies(ts=outliers_tsds, num_anomalies=1, anomaly_lenght=5)
 
     for segment in ["1", "2"]:
         assert segment in anomaly_seq_dict
@@ -22,9 +19,7 @@ def test_sequence_anomalies_interface(outliers_tsds: TSDataset):
         for pair in anomaly_seq_dict[segment]:
             assert isinstance(pair, tuple)
             assert len(pair) == 2
-            assert isinstance(pair[0], np.datetime64) and isinstance(
-                pair[1], np.datetime64
-            )
+            assert isinstance(pair[0], np.datetime64) and isinstance(pair[1], np.datetime64)
 
 
 @pytest.mark.parametrize(
@@ -40,15 +35,11 @@ def test_segment_sequence_anomalies(arr: List[int], expected: List[Tuple[int, in
     anomaly_lenght = 3
     num_anomalies = len(expected)
     expected = sorted(expected)
-    result = sorted(
-        get_segment_sequence_anomalies(
-            series=arr, num_anomalies=num_anomalies, anomaly_lenght=3
-        )
-    )
+    
+    result = get_segment_sequence_anomalies(series=arr, num_anomalies=num_anomalies, anomaly_lenght=3)
+    result = sorted(result)
     for idx in range(num_anomalies):
-        assert (result[idx][0] == expected[idx][0]) and (
-            result[idx][1] == expected[idx][1]
-        )
+        assert (result[idx][0] == expected[idx][0]) and (result[idx][1] == expected[idx][1])
 
 
 @pytest.fixture
