@@ -9,4 +9,3 @@ from etna.analysis.plotters import plot_anomalies_interactive
 from etna.analysis.plotters import plot_backtest
 from etna.analysis.plotters import plot_correlation_matrix
 from etna.analysis.plotters import plot_forecast
-from etna.analysis.plotters import plot_sequence_anomalies
