@@ -75,6 +75,7 @@ click = {version = "^8.0.1", optional = true}
 typer = {version = "^0.4.0", optional = true}
 semver = {version = "^2.13.0", optional = true}
 ipywidgets = {version = "^7.6.5", optional = true}
+saxpy = "^1.0.1-alpha.167"
 
 [tool.poetry.extras]
 release = ["click", "typer", "semver"]
