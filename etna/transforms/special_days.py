@@ -162,7 +162,9 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
 
 class SpecialDaysTransform(PerSegmentWrapper):
-    """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe."""
+    """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
+    Creates columns 'regressor_anomaly_weekdays' and 'regressor_anomaly_monthdays'.
+    """
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
         """

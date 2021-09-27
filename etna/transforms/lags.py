@@ -33,7 +33,7 @@ class _OneSegmentLagFeature(Transform):
 
 
 class LagTransform(PerSegmentWrapper):
-    """Generates series of lags from given dataframe."""
+    """Generates series of lags from given dataframe. Creates columns 'regressor_<column>_lag_<number>'. """
 
     def __init__(self, lags: Union[Sequence[int], int], in_column: str):
         """

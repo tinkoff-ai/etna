@@ -10,6 +10,7 @@ from etna.transforms.base import Transform
 
 class DateFlagsTransform(Transform):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
+    Creates columns 'regressor_<feature_name>'.
 
     Notes
     -----

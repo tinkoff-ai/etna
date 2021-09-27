@@ -5,7 +5,7 @@ from etna.transforms.base import Transform
 
 
 class SegmentEncoderTransform(Transform):
-    """Encode segment label to categorical."""
+    """Encode segment label to categorical. Creates column 'regressor_segment_code'."""
 
     idx = pd.IndexSlice
 
