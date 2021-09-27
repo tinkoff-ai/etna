@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna-ts"
-version = "1.1.0"
+version = "1.0.0"
 repository = "https://github.com/tinkoff-ai/etna-ts"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -51,7 +51,6 @@ statsmodels = "^0.12.2"
 dill = "^0.3.4"
 toml = "^0.10.2"
 loguru = "^0.5.3"
-wandb = "^0.12.2"
 
 sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
 nbsphinx = {version = "^0.8.2", optional = true}
@@ -70,6 +69,7 @@ isort = {version = "^5.8.0", optional = true}
 flake8 = {version = "^3.9.2", optional = true}
 pep8-naming = {version = "^0.11.1", optional = true}
 flake8-docstrings = {version = "^1.6.0", optional = true}
+saxpy = "^1.0.1-alpha.167"
 
 click = {version = "^8.0.1", optional = true}
 typer = {version = "^0.4.0", optional = true}
@@ -77,7 +77,6 @@ semver = {version = "^2.13.0", optional = true}
 ipywidgets = {version = "^7.6.5", optional = true}
 
 [tool.poetry.extras]
-release = ["click", "typer", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings"]
