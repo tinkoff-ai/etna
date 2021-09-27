@@ -4,6 +4,7 @@ import pytest
 
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
+from etna.analysis import get_sequence_anomalies
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
