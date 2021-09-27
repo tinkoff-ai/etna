@@ -26,6 +26,7 @@ class DateFlagsTransform(Transform):
         year_number: Optional[bool] = False,
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
+        is_weekend: Optional[bool] = True,
     ):
         """Create instance of DateFlags.
 
@@ -51,6 +52,8 @@ class DateFlagsTransform(Transform):
         special_days_in_month:
             list of days number (from [1, 31]) that should be interpreted as special ones, if given add column
             "special_days_in_month" with flag that shows given date is a special day
+         is_weekend:
+            if True: add column "regressor_is_weekend" with weekends flags to feature dataframe in transform
 
         Notes
         -----
@@ -78,12 +81,13 @@ class DateFlagsTransform(Transform):
                 year_number,
                 special_days_in_week,
                 special_days_in_month,
+                is_weekend,
             ]
         ):
             raise ValueError(
                 f"{type(self).__name__} feature does nothing with given init args configuration, "
                 f"at least one of day_number_in_week, day_number_in_month, week_number_in_month, "
-                f"week_number_in_year, month_number_in_year, year_number should be True or any of "
+                f"week_number_in_year, month_number_in_year, year_number, is_weekend should be True or any of "
                 f"specyal_days_in_week, special_days_in_month should be not empty."
             )
 
@@ -93,6 +97,7 @@ class DateFlagsTransform(Transform):
         self.week_number_in_year = week_number_in_year
         self.month_number_in_year = month_number_in_year
         self.year_number = year_number
+        self.is_weekend = is_weekend
 
         self.special_days_in_week = special_days_in_week
         self.special_days_in_month = special_days_in_month
@@ -133,6 +138,9 @@ class DateFlagsTransform(Transform):
 
         if self.year_number:
             features["year_number"] = self._get_year(timestamp_series=timestamp_series)
+
+        if self.is_weekend:
+            features["is_weekend"] = self._get_weekends(timestamp_series=timestamp_series)
 
         if self.special_days_in_week:
             features["special_days_in_week"] = self._get_special_day_in_week(
@@ -228,6 +236,12 @@ class DateFlagsTransform(Transform):
     def _get_year(timestamp_series: pd.Series) -> np.array:
         """Generate an array with the week number in the year."""
         return timestamp_series.apply(lambda x: x.year).values
+
+    @staticmethod
+    def _get_weekends(timestamp_series: pd.Series) -> np.array:
+        """Generate an array with the weekends flags."""
+        weekend_days = (5, 6)
+        return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
 
 
 class TimeFlagsTransform(Transform):
