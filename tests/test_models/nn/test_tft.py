@@ -39,7 +39,7 @@ def test_tft_model_run_weekly_overfit(weekly_period_df, horizon):
         min_encoder_length=21,
         max_prediction_length=horizon,
         time_varying_known_reals=["time_idx"],
-        time_varying_known_categoricals=["day_number_in_week"],
+        time_varying_known_categoricals=["regressor_day_number_in_week"],
         time_varying_unknown_reals=["target"],
         static_categoricals=["segment"],
         target_normalizer=None,
@@ -53,4 +53,4 @@ def test_tft_model_run_weekly_overfit(weekly_period_df, horizon):
     ts_pred = tftmodel.forecast(ts_pred)
 
     mae = MAE("macro")
-    assert mae(ts_test, ts_pred) < 0.23
+    assert mae(ts_test, ts_pred) < 0.24

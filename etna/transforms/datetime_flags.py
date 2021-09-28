@@ -10,6 +10,7 @@ from etna.transforms.base import Transform
 
 class DateFlagsTransform(Transform):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
+    Creates columns 'regressor_<feature_name>'.
 
     Notes
     -----
@@ -97,6 +98,8 @@ class DateFlagsTransform(Transform):
         self.special_days_in_week = special_days_in_week
         self.special_days_in_month = special_days_in_month
 
+        self.out_prefix = "regressor_"
+
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
         return self
@@ -146,6 +149,7 @@ class DateFlagsTransform(Transform):
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
+        features = features.add_prefix(self.out_prefix)
 
         dataframes = []
         for seg in df.columns.get_level_values("segment").unique():
