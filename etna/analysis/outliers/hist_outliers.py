@@ -1,15 +1,17 @@
 import typing
-from typing import TYPE_CHECKING
 from copy import deepcopy
+from typing import TYPE_CHECKING
 from typing import List
 
-import pandas as pd
+import numba
 import numpy as np
+import pandas as pd
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
+@numba.jit(nopython=True)
 def SSE(i: int, j: int, p: List[float], pp: List[float]):
     """
     Count the approximation error by 1 bin from i to j elements.
@@ -35,6 +37,7 @@ def SSE(i: int, j: int, p: List[float], pp: List[float]):
     return pp[j] - pp[i - 1] - avg ** 2 / (j - i + 1)
 
 
+@numba.jit(nopython=True)
 def v_optimal_hist(series: List[float], B: int):
     """
     Count an approximation error of a series with B bins.
@@ -96,7 +99,7 @@ def v_optimal_hist(series: List[float], B: int):
                 if now < now_min:
                     now_min = now
             sse[i][k] = now_min
-    return sse[len(series) - 1][B - 1]
+    return sse
 
 
 def computeF(series: List[float], k: int, p: List[float], pp: List[float]):
@@ -165,8 +168,8 @@ def computeF(series: List[float], k: int, p: List[float], pp: List[float]):
 
                 if F1 < now_min:  # ошибка меньше в предположении bi выброс
                     F[ai][bi][ci] = F1
-                    S[ai][bi][ci] = S[ai][bi - 1][ci - 1]
-                    SS[ai][bi][ci] = SS[ai][bi - 1][ci - 1]
+                    S[ai][bi][ci] = deepcopy(S[ai][bi - 1][ci - 1])
+                    SS[ai][bi][ci] = deepcopy(SS[ai][bi - 1][ci - 1])
                     idx[ai][bi][ci] = deepcopy(idx[ai][bi - 1][ci - 1])
                     if len(idx[ai][bi][ci]):
                         for i in range(len(idx[ai][bi][ci])):
@@ -240,9 +243,7 @@ def hist(
     F, idx = computeF(series, B - 1, p, pp)
 
     # граничные условия
-    for i in range(len(series)):
-        for j in range(1, B + 1):
-            E[i][j][0] = v_optimal_hist(series[: i + 1], j)
+    E[:, 1:, 0] = v_optimal_hist(series, B)
 
     E[:, 1, :] = F[0]
     for i in range(len(series)):
