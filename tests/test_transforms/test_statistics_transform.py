@@ -59,16 +59,14 @@ def test_interface_quantile(simple_df_for_agg: pd.DataFrame, quantile: float, ou
 
 
 @pytest.mark.parametrize(
-    "window,seasonality,alpha,periods,offset,fill_na,expected",
+    "window,seasonality,alpha,periods,fill_na,expected",
     (
-        (10, 1, 1, 1, 0, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
-        (-1, 1, 1, 1, 0, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
-        (3, 1, 1, 1, 0, -17, np.array([-17, 0, 0.5, 1, 2, 3, 4, 5, 6, 7])),
-        (3, 1, 1, 1, 1, -17, np.array([-17, -17, 0, 0.5, 1, 2, 3, 4, 5, 6])),
-        (3, 1, 0.5, 1, 0, -17, np.array([-17, 0, 0.5, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
-        (3, 1, 0.5, 3, 0, -12, np.array([-12, -12, -12, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
-        (3, 2, 1, 1, 0, -17, np.array([-17, 0, 1, 1, 2, 2, 3, 4, 5, 6])),
-        (-1, 3, 1, 1, 1, -17, np.array([-17, -17, 0, 1, 2, 1.5, 2.5, 3.5, 3, 4])),
+        (10, 1, 1, 1, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
+        (-1, 1, 1, 1, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
+        (3, 1, 1, 1, -17, np.array([-17, 0, 0.5, 1, 2, 3, 4, 5, 6, 7])),
+        (3, 1, 0.5, 1, -17, np.array([-17, 0, 0.5, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
+        (3, 1, 0.5, 3, -12, np.array([-12, -12, -12, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
+        (3, 2, 1, 1, -17, np.array([-17, 0, 1, 1, 2, 2, 3, 4, 5, 6])),
     ),
 )
 def test_mean_feature(
@@ -77,7 +75,6 @@ def test_mean_feature(
     seasonality: int,
     alpha: float,
     periods: int,
-    offset: int,
     fill_na: float,
     expected: np.array,
 ):
@@ -86,7 +83,6 @@ def test_mean_feature(
         seasonality=seasonality,
         alpha=alpha,
         min_periods=periods,
-        offset=offset,
         fillna=fill_na,
         in_column="target",
     )
@@ -96,13 +92,12 @@ def test_mean_feature(
 
 
 @pytest.mark.parametrize(
-    "window,seasonality,periods,offset,fill_na,expected",
+    "window,seasonality,periods,fill_na,expected",
     (
-        (10, 1, 1, 0, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
-        (-1, 1, 1, 0, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
-        (3, 1, 1, 0, -17, np.array([-17, 0, 0, 0, 1, 2, 3, 4, 5, 6])),
-        (3, 1, 1, 2, -17, np.array([-17, -17, -17, 0, 0, 0, 1, 2, 3, 4])),
-        (3, 2, 1, 0, -17, np.array([-17, 0, 1, 0, 1, 0, 1, 2, 3, 4])),
+        (10, 1, 1, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        (-1, 1, 1, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        (3, 1, 1, -17, np.array([-17, 0, 0, 0, 1, 2, 3, 4, 5, 6])),
+        (3, 2, 1, -17, np.array([-17, 0, 1, 0, 1, 0, 1, 2, 3, 4])),
     ),
 )
 def test_min_feature(
@@ -110,12 +105,11 @@ def test_min_feature(
     window: int,
     seasonality: int,
     periods: int,
-    offset: int,
     fill_na: float,
     expected: np.array,
 ):
     transform = MinTransform(
-        window=window, seasonality=seasonality, min_periods=periods, offset=offset, fillna=fill_na, in_column="target"
+        window=window, seasonality=seasonality, min_periods=periods, fillna=fill_na, in_column="target"
     )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
@@ -123,51 +117,49 @@ def test_min_feature(
 
 
 @pytest.mark.parametrize(
-    "window,periods,offset,fill_na,expected",
+    "window,periods,fill_na,expected",
     (
-        (10, 1, 0, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (-1, 1, 0, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (-1, 1, 3, 0, np.array([0, 0, 0, 0, 0, 1, 2, 3, 4, 5])),
-        (3, 2, 0, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (10, 1, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (-1, 1, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (3, 2, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
     ),
 )
 def test_max_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, offset: int, fill_na: float, expected: np.array
+    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
 ):
-    transform = MaxTransform(window=window, min_periods=periods, offset=offset, fillna=fill_na, in_column="target")
+    transform = MaxTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target")
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["target_max"]).all()
 
 
 @pytest.mark.parametrize(
-    "window,periods,offset,fill_na,expected",
+    "window,periods,fill_na,expected",
     (
-        (3, 3, 0, -17, np.array([-17, -17, -17, 1, 2, 3, 4, 5, 6, 7])),
-        (3, 3, 2, -17, np.array([-17, -17, -17, -17, -17, 1, 2, 3, 4, 5])),
-        (-1, 1, 0, -17, np.array([-17, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
+        (3, 3, -17, np.array([-17, -17, -17, 1, 2, 3, 4, 5, 6, 7])),
+        (-1, 1, -17, np.array([-17, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
     ),
 )
 def test_median_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, offset: int, fill_na: float, expected: np.array
+    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
 ):
-    transform = MedianTransform(window=window, min_periods=periods, offset=offset, fillna=fill_na, in_column="target")
+    transform = MedianTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target")
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["target_median"]).all()
 
 
 @pytest.mark.parametrize(
-    "window,periods,offset,fill_na,expected",
+    "window,periods,fill_na,expected",
     (
-        (3, 3, 0, -17, np.array([-17, -17, -17, 1, 1, 1, 1, 1, 1, 1])),
-        (3, 1, 0, -17, np.array([-17, -17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1])),
+        (3, 3, -17, np.array([-17, -17, -17, 1, 1, 1, 1, 1, 1, 1])),
+        (3, 1, -17, np.array([-17, -17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1])),
     ),
 )
 def test_std_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, offset: int, fill_na: float, expected: np.array
+    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
 ):
-    transform = StdTransform(window=window, min_periods=periods, offset=offset, fillna=fill_na, in_column="target")
+    transform = StdTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target")
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["target_std"]).all()
