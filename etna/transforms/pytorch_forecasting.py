@@ -103,20 +103,20 @@ class PytorchForecastingTransform(Transform):
         """
         self.freq = pd.infer_freq(df.index)
         ts = TSDataset(df, self.freq)
-        ts = ts.to_pandas(flatten=True)
-        ts = ts.dropna()
-        self.min_timestamp = ts.timestamp.min()
+        df_flat = ts.to_pandas(flatten=True)
+        df_flat = df_flat.dropna()
+        self.min_timestamp = df_flat.timestamp.min()
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
-                ts[feature_name] = ts[feature_name].astype(str)
+                df_flat[feature_name] = df_flat[feature_name].astype(str)
 
         freq_unit = self._calculate_freq_unit(self.freq)
-        ts["time_idx"] = (ts["timestamp"] - self.min_timestamp) / freq_unit
-        ts["time_idx"] = ts["time_idx"].astype(int)
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
+        df_flat["time_idx"] = df_flat["time_idx"].astype(int)
 
         pf_dataset = TimeSeriesDataSet(
-            ts,
+            df_flat,
             time_idx="time_idx",
             target="target",
             group_ids=["segment"],
@@ -164,24 +164,24 @@ class PytorchForecastingTransform(Transform):
         It`s not right pattern of using Transforms and TSDataset.
         """
         ts = TSDataset(df, self.freq)
-        ts = ts.to_pandas(flatten=True)
-        ts = ts[ts.timestamp >= self.min_timestamp]
-        ts = ts.fillna(0)
+        df_flat = ts.to_pandas(flatten=True)
+        df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
+        df_flat = df_flat.fillna(0)
 
         freq_unit = self._calculate_freq_unit(self.freq)
-        ts["time_idx"] = (ts["timestamp"] - self.min_timestamp) / freq_unit
-        ts["time_idx"] = ts["time_idx"].astype(int)
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
+        df_flat["time_idx"] = df_flat["time_idx"].astype(int)
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
-                ts[feature_name] = ts[feature_name].astype(str)
+                df_flat[feature_name] = df_flat[feature_name].astype(str)
 
         if inspect.stack()[1].function == "make_future":
             pf_dataset_predict = TimeSeriesDataSet.from_parameters(
-                self.pf_dataset_params, ts, predict=True, stop_randomization=True
+                self.pf_dataset_params, df_flat, predict=True, stop_randomization=True
             )
             self.pf_dataset_predict = pf_dataset_predict
         else:
-            pf_dataset_train = TimeSeriesDataSet.from_parameters(self.pf_dataset_params, ts)
+            pf_dataset_train = TimeSeriesDataSet.from_parameters(self.pf_dataset_params, df_flat)
             self.pf_dataset_train = pf_dataset_train
         return df
