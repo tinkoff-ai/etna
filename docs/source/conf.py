@@ -22,7 +22,7 @@ from sphinx.ext.autosummary import Autosummary
 SOURCE_PATH = Path(os.path.dirname(__file__))  # noqa # docs source
 PROJECT_PATH = SOURCE_PATH.joinpath("../..")  # noqa # project root
 
-try:
+"""try:
     import git
     repo = git.Repo(PROJECT_PATH)
     COMMIT_SHORT_SHA = str(repo.active_branch.commit)[:8]
@@ -30,7 +30,7 @@ try:
 
 except:
     COMMIT_SHORT_SHA = os.environ["CI_COMMIT_SHORT_SHA"]
-    CI_COMMIT_BRANCH = os.environ["CI_COMMIT_BRANCH"]
+    CI_COMMIT_BRANCH = os.environ["CI_COMMIT_BRANCH"]"""
 
 sys.path.insert(0, str(PROJECT_PATH))  # noqa
 
@@ -46,10 +46,11 @@ author = 'etna-tech@tinkoff.ru'
 with open(PROJECT_PATH / "pyproject.toml", "r") as f:
     pyproject_toml = toml.load(f)
 
-if CI_COMMIT_BRANCH == "master":
+"""if CI_COMMIT_BRANCH == "master":
     release = f"ID {COMMIT_SHORT_SHA}"
 else:
-    release = pyproject_toml["tool"]["poetry"]["version"]
+    release = pyproject_toml["tool"]["poetry"]["version"]"""
+release = pyproject_toml["tool"]["poetry"]["version"]
 
 
 # -- General configuration ---------------------------------------------------
