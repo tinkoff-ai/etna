@@ -26,7 +26,7 @@ timestamp                          ...
 [3 rows x 8 columns]
 
 There is a key note to mention: `future_ts` and `forecast_ts` are the same objects.
-Method `forecast` only fills 'target' column in `future_ts` and return reference to it.
+Method `forecast` only fills 'target' columns in `future_ts` and return reference to it.
 
 >>> forecast_ts is future_ts
 True
