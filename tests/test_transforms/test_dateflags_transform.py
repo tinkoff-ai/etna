@@ -10,6 +10,7 @@ import pytest
 
 from etna.transforms.datetime_flags import DateFlagsTransform
 
+WEEKEND_DAYS = (5, 6)
 SPECIAL_DAYS = [1, 4]
 INIT_PARAMS_TEMPLATE = {
     "day_number_in_week": False,
@@ -17,9 +18,10 @@ INIT_PARAMS_TEMPLATE = {
     "week_number_in_year": False,
     "week_number_in_month": False,
     "month_number_in_year": False,
+    "year_number": False,
+    "is_weekend": False,
     "special_days_in_week": (),
     "special_days_in_month": (),
-    "year_number": False,
 }
 
 
@@ -46,6 +48,7 @@ def dateflags_true_df() -> pd.DataFrame:
         df["week_number_in_month"] = df["timestamp"].apply(
             lambda x: int(x.weekday() < (x - timedelta(days=x.day - 1)).weekday()) + (x.day - 1) // 7 + 1
         )
+        df["is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
         df["special_days_in_week"] = df["day_number_in_week"].apply(lambda x: x in SPECIAL_DAYS)
         df["special_days_in_month"] = df["day_number_in_month"].apply(lambda x: x in SPECIAL_DAYS)
 
@@ -93,6 +96,7 @@ def test_invalid_arguments_configuration():
             week_number_in_year=False,
             month_number_in_year=False,
             year_number=False,
+            is_weekend=False,
             special_days_in_week=(),
             special_days_in_month=(),
         )
@@ -108,13 +112,14 @@ def test_repr():
         week_number_in_year=False,
         month_number_in_year=True,
         year_number=True,
+        is_weekend=True,
         special_days_in_week=(1, 2),
         special_days_in_month=(12,),
     )
     transform_repr = transform.__repr__()
     true_repr = (
         f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, week_number_in_month = False, "
-        f"week_number_in_year = False, month_number_in_year = True, year_number = True, special_days_in_week = (1, 2), "
+        f"week_number_in_year = False, month_number_in_year = True, year_number = True, is_weekend = True, special_days_in_week = (1, 2), "
         f"special_days_in_month = (12,), )"
     )
     assert transform_repr == true_repr
@@ -129,6 +134,7 @@ def test_repr():
         ["week_number_in_month"],
         ["month_number_in_year"],
         ["year_number"],
+        ["is_weekend"],
         [
             "day_number_in_week",
             "day_number_in_month",
@@ -136,6 +142,7 @@ def test_repr():
             "week_number_in_month",
             "month_number_in_year",
             "year_number",
+            "is_weekend",
         ],
     ),
 )
@@ -192,6 +199,7 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
         {"week_number_in_month": True},
         {"month_number_in_year": True},
         {"year_number": True},
+        {"is_weekend": True},
         {"special_days_in_week": SPECIAL_DAYS},
         {"special_days_in_month": SPECIAL_DAYS},
     ),
