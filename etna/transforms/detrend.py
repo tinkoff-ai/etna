@@ -12,9 +12,6 @@ from etna.transforms.base import Transform
 class _OneSegmentLinearTrendBaseTransform(Transform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
-    is_categorical = False
-    is_static = False
-
     def __init__(self, in_column: str, regressor: Optional[RegressorMixin] = None):
         # TODO: add inplace arg
         """

@@ -233,8 +233,6 @@ class DateFlagsTransform(Transform):
 class TimeFlagsTransform(Transform):
     """Class for holding time transform."""
 
-    is_categorical = True
-
     def __init__(
         self,
         minute_in_hour_number: bool = True,

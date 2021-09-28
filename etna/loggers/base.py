@@ -133,7 +133,7 @@ class _Logger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
-        forecast_df
+        forecast_df:
             Forecast from backtest
         fold_info_df:
             Fold information from backtest
