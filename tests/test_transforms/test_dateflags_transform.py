@@ -18,10 +18,10 @@ INIT_PARAMS_TEMPLATE = {
     "week_number_in_year": False,
     "week_number_in_month": False,
     "month_number_in_year": False,
-    "special_days_in_week": (),
-    "special_days_in_month": (),
     "year_number": False,
     "is_weekend": False,
+    "special_days_in_week": (),
+    "special_days_in_month": (),
 }
 
 
@@ -95,9 +95,9 @@ def test_invalid_arguments_configuration():
             week_number_in_year=False,
             month_number_in_year=False,
             year_number=False,
+            is_weekend=False,
             special_days_in_week=(),
             special_days_in_month=(),
-            is_weekend=False,
         )
 
 
@@ -111,15 +111,15 @@ def test_repr():
         week_number_in_year=False,
         month_number_in_year=True,
         year_number=True,
+        is_weekend=True,
         special_days_in_week=(1, 2),
         special_days_in_month=(12,),
-        is_weekend=True,
     )
     transform_repr = transform.__repr__()
     true_repr = (
         f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, week_number_in_month = False, "
-        f"week_number_in_year = False, month_number_in_year = True, year_number = True, special_days_in_week = (1, 2), "
-        f"special_days_in_month = (12,), is_weekend = True, )"
+        f"week_number_in_year = False, month_number_in_year = True, year_number = True, is_weekend = True, special_days_in_week = (1, 2), "
+        f"special_days_in_month = (12,), )"
     )
     assert transform_repr == true_repr
 
@@ -196,9 +196,9 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
         {"week_number_in_month": True},
         {"month_number_in_year": True},
         {"year_number": True},
+        {"is_weekend": True},
         {"special_days_in_week": SPECIAL_DAYS},
         {"special_days_in_month": SPECIAL_DAYS},
-        {"is_weekend": True},
     ),
 )
 def test_feature_values(

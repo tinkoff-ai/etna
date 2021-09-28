@@ -24,9 +24,9 @@ class DateFlagsTransform(Transform):
         week_number_in_year: Optional[bool] = False,
         month_number_in_year: Optional[bool] = False,
         year_number: Optional[bool] = False,
+        is_weekend: Optional[bool] = True,
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
-        is_weekend: Optional[bool] = True,
     ):
         """Create instance of DateFlags.
 
@@ -46,14 +46,14 @@ class DateFlagsTransform(Transform):
             if True, add column "month_number_in_year" with month info to feature dataframe in transform
         year_number:
             if True, add column "year_number" with year info to feature dataframe in transform
+        is_weekend:
+            if True: add column "regressor_is_weekend" with weekends flags to feature dataframe in transform
         special_days_in_week:
             list of weekdays number (from [0, 6]) that should be interpreted as special ones, if given add column
             "special_days_in_week" with flag that shows given date is a special day
         special_days_in_month:
             list of days number (from [1, 31]) that should be interpreted as special ones, if given add column
             "special_days_in_month" with flag that shows given date is a special day
-         is_weekend:
-            if True: add column "regressor_is_weekend" with weekends flags to feature dataframe in transform
 
         Notes
         -----
@@ -79,9 +79,9 @@ class DateFlagsTransform(Transform):
                 week_number_in_year,
                 month_number_in_year,
                 year_number,
+                is_weekend,
                 special_days_in_week,
                 special_days_in_month,
-                is_weekend,
             ]
         ):
             raise ValueError(
