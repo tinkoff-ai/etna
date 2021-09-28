@@ -5,7 +5,7 @@ from etna.transforms.base import Transform
 
 
 class SegmentEncoderTransform(Transform):
-    """Encode segment label to categorical."""
+    """Encode segment label to categorical. Creates column 'regressor_segment_code'."""
 
     idx = pd.IndexSlice
 
@@ -46,14 +46,16 @@ class SegmentEncoderTransform(Transform):
         encoded_matrix = encoded_matrix.reshape(len(self._le.classes_), -1).repeat(len(df), axis=1).T
         encoded_df = pd.DataFrame(
             encoded_matrix,
-            columns=pd.MultiIndex.from_product([self._le.classes_, ["segment_code"]], names=("segment", "feature")),
+            columns=pd.MultiIndex.from_product(
+                [self._le.classes_, ["regressor_segment_code"]], names=("segment", "feature")
+            ),
             index=df.index,
         )
         encoded_df = encoded_df.astype("category")
 
         for segment in set(df.columns.get_level_values("segment")):
-            df.loc[self.idx[:], self.idx[segment, "segment_code"]] = encoded_df.loc[
-                self.idx[:], self.idx[segment, "segment_code"]
+            df.loc[self.idx[:], self.idx[segment, "regressor_segment_code"]] = encoded_df.loc[
+                self.idx[:], self.idx[segment, "regressor_segment_code"]
             ]
         df = df.sort_index(axis=1)
         return df

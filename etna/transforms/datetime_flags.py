@@ -10,6 +10,7 @@ from etna.transforms.base import Transform
 
 class DateFlagsTransform(Transform):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
+    Creates columns 'regressor_<feature_name>'.
 
     Notes
     -----
@@ -24,6 +25,7 @@ class DateFlagsTransform(Transform):
         week_number_in_year: Optional[bool] = False,
         month_number_in_year: Optional[bool] = False,
         year_number: Optional[bool] = False,
+        is_weekend: Optional[bool] = True,
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
     ):
@@ -45,6 +47,8 @@ class DateFlagsTransform(Transform):
             if True, add column "month_number_in_year" with month info to feature dataframe in transform
         year_number:
             if True, add column "year_number" with year info to feature dataframe in transform
+        is_weekend:
+            if True: add column "regressor_is_weekend" with weekends flags to feature dataframe in transform
         special_days_in_week:
             list of weekdays number (from [0, 6]) that should be interpreted as special ones, if given add column
             "special_days_in_week" with flag that shows given date is a special day
@@ -76,6 +80,7 @@ class DateFlagsTransform(Transform):
                 week_number_in_year,
                 month_number_in_year,
                 year_number,
+                is_weekend,
                 special_days_in_week,
                 special_days_in_month,
             ]
@@ -83,7 +88,7 @@ class DateFlagsTransform(Transform):
             raise ValueError(
                 f"{type(self).__name__} feature does nothing with given init args configuration, "
                 f"at least one of day_number_in_week, day_number_in_month, week_number_in_month, "
-                f"week_number_in_year, month_number_in_year, year_number should be True or any of "
+                f"week_number_in_year, month_number_in_year, year_number, is_weekend should be True or any of "
                 f"specyal_days_in_week, special_days_in_month should be not empty."
             )
 
@@ -93,9 +98,12 @@ class DateFlagsTransform(Transform):
         self.week_number_in_year = week_number_in_year
         self.month_number_in_year = month_number_in_year
         self.year_number = year_number
+        self.is_weekend = is_weekend
 
         self.special_days_in_week = special_days_in_week
         self.special_days_in_month = special_days_in_month
+
+        self.out_prefix = "regressor_"
 
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
@@ -134,6 +142,9 @@ class DateFlagsTransform(Transform):
         if self.year_number:
             features["year_number"] = self._get_year(timestamp_series=timestamp_series)
 
+        if self.is_weekend:
+            features["is_weekend"] = self._get_weekends(timestamp_series=timestamp_series)
+
         if self.special_days_in_week:
             features["special_days_in_week"] = self._get_special_day_in_week(
                 special_days=self.special_days_in_week, timestamp_series=timestamp_series
@@ -146,6 +157,7 @@ class DateFlagsTransform(Transform):
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
+        features = features.add_prefix(self.out_prefix)
 
         dataframes = []
         for seg in df.columns.get_level_values("segment").unique():
@@ -228,6 +240,12 @@ class DateFlagsTransform(Transform):
     def _get_year(timestamp_series: pd.Series) -> np.array:
         """Generate an array with the week number in the year."""
         return timestamp_series.apply(lambda x: x.year).values
+
+    @staticmethod
+    def _get_weekends(timestamp_series: pd.Series) -> np.array:
+        """Generate an array with the weekends flags."""
+        weekend_days = (5, 6)
+        return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
 
 
 class TimeFlagsTransform(Transform):

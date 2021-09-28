@@ -36,9 +36,9 @@ class TSDataset:
     Examples
     --------
     >>> from etna.datasets import generate_const_df
-    >>> classic_df = generate_const_df(periods=30, start_time="2021-06-01", n_segments=2, scale=1)
-    >>> df = TSDataset.to_dataset(classic_df)
-    >>> ts = TSDataset(df, "D")
+    >>> df = generate_const_df(periods=30, start_time="2021-06-01", n_segments=2, scale=1)
+    >>> df_ts_format = TSDataset.to_dataset(df)
+    >>> ts = TSDataset(df_ts_format, "D")
     >>> ts["2021-06-01":"2021-06-07", "segment_0", "target"]
     timestamp
     2021-06-01    1.0
@@ -49,6 +49,26 @@ class TSDataset:
     2021-06-06    1.0
     2021-06-07    1.0
     Freq: D, Name: (segment_0, target), dtype: float64
+
+    >>> from etna.datasets import generate_ar_df
+    >>> pd.options.display.float_format = '{:,.2f}'.format
+    >>> df_to_forecast = generate_ar_df(100, start_time="2021-01-01", n_segments=1)
+    >>> df_regressors = generate_ar_df(120, start_time="2021-01-01", n_segments=5)
+    >>> df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
+    >>> df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(5)]
+    >>> df_regressors["segment"] = "segment_0"
+    >>> df_to_forecast = TSDataset.to_dataset(df_to_forecast)
+    >>> df_regressors = TSDataset.to_dataset(df_regressors)
+    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    >>> tsdataset.df.iloc[:5]
+    segment      segment_0
+    feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
+    timestamp
+    2021-01-01        1.62       -0.02       -0.50       -0.56        0.52   1.62
+    2021-01-02        1.01       -0.80       -0.81        0.38       -0.60   1.01
+    2021-01-03        0.48        0.47       -0.81       -1.56       -1.37   0.48
+    2021-01-04       -0.59        2.44       -2.21       -1.21       -0.69  -0.59
+    2021-01-05        0.28        0.58       -3.07       -1.45        0.77   0.28
     """
 
     idx = pd.IndexSlice
@@ -142,6 +162,30 @@ class TSDataset:
         Returns
         -------
         dataset with features in the future.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_regressors = pd.DataFrame({
+        ...     "timestamp": list(pd.date_range("2021-06-01", periods=40))*2,
+        ...     "regressor_1": np.arange(80), "regressor_2": np.arange(80) + 5,
+        ...     "segment": ["segment_0"]*40 + ["segment_1"]*40
+        ... })
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
+        >>> ts = TSDataset(df_ts_format, "D", df_exog=df_regressors_ts_format)
+        >>> ts.make_future(4)
+        segment      segment_0                      segment_1
+        feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
+        timestamp
+        2021-07-01          30          35    nan          70          75    nan
+        2021-07-02          31          36    nan          71          76    nan
+        2021-07-03          32          37    nan          72          77    nan
+        2021-07-04          33          38    nan          73          78    nan
         """
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
@@ -210,7 +254,7 @@ class TSDataset:
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
-        Applied in revered order.
+        Applied in reversed order.
         """
         if self.transforms is not None:
             for transform in reversed(self.transforms):
@@ -218,7 +262,20 @@ class TSDataset:
 
     @property
     def segments(self) -> List[str]:
-        """Get list of all segments in dataset."""
+        """Get list of all segments in dataset.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> ts = TSDataset(df_ts_format, "D")
+        >>> ts.segments
+        ['segment_0', 'segment_1']
+        """
         return self.df.columns.get_level_values("segment").unique().tolist()
 
     @property
@@ -236,9 +293,10 @@ class TSDataset:
 
         Parameters
         ----------
-        column
         n_segments:
             number of random segments to plot
+        column:
+            feature to plot
         segments:
             segments to plot
         """
@@ -256,18 +314,52 @@ class TSDataset:
 
         plt.show()
 
-    def to_pandas(self, flatten=False) -> pd.DataFrame:
+    def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
         """Return pandas DataFrame.
 
         Parameters
         ----------
-        flatten: bool
+        flatten:
             If False return pd.DataFrame with multiindex
             if True with flatten index
 
         Returns
         -------
         pd.DataFrame
+            with TSDataset data
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df.head()
+            timestamp    segment  target
+        0  2021-06-01  segment_0    1.00
+        1  2021-06-02  segment_0    1.00
+        2  2021-06-03  segment_0    1.00
+        3  2021-06-04  segment_0    1.00
+        4  2021-06-05  segment_0    1.00
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> ts = TSDataset(df_ts_format, "D")
+        >>> ts.to_pandas(True).head()
+        feature  timestamp  target    segment
+        0       2021-06-01    1.00  segment_0
+        1       2021-06-02    1.00  segment_0
+        2       2021-06-03    1.00  segment_0
+        3       2021-06-04    1.00  segment_0
+        4       2021-06-05    1.00  segment_0
+        >>> ts.to_pandas(False).head()
+        segment    segment_0 segment_1
+        feature       target    target
+        timestamp
+        2021-06-01      1.00      1.00
+        2021-06-02      1.00      1.00
+        2021-06-03      1.00      1.00
+        2021-06-04      1.00      1.00
+        2021-06-05      1.00      1.00
         """
         if not flatten:
             return self.df.copy()
@@ -289,7 +381,50 @@ class TSDataset:
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
         """Convert pandas dataframe to ETNA Dataset format.
 
-        Expects pd.DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+        Parameters
+        ----------
+        df:
+            DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df.head()
+           timestamp    segment  target
+        0 2021-06-01  segment_0    1.00
+        1 2021-06-02  segment_0    1.00
+        2 2021-06-03  segment_0    1.00
+        3 2021-06-04  segment_0    1.00
+        4 2021-06-05  segment_0    1.00
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> df_ts_format.head()
+        segment    segment_0 segment_1
+        feature       target    target
+        timestamp
+        2021-06-01      1.00      1.00
+        2021-06-02      1.00      1.00
+        2021-06-03      1.00      1.00
+        2021-06-04      1.00      1.00
+        2021-06-05      1.00      1.00
+
+        >>> df_regressors = pd.DataFrame({
+        ...     "timestamp": pd.date_range("2021-01-01", periods=10),
+        ...     "regressor_1": np.arange(10), "regressor_2": np.arange(10) + 5,
+        ...     "segment": ["segment_0"]*10
+        ... })
+        >>> TSDataset.to_dataset(df_regressors).iloc[:5]
+        segment      segment_0
+        feature    regressor_1 regressor_2
+        timestamp
+        2021-01-01           0           5
+        2021-01-02           1           6
+        2021-01-03           2           7
+        2021-01-04           3           8
+        2021-01-05           4           9
         """
         # TODO: add dataframe checks
         segments = df["segment"].unique()
@@ -324,6 +459,36 @@ class TSDataset:
         -------
         train, test:
             generated datasets
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_ar_df
+        >>> pd.options.display.float_format = '{:,.2f}'.format
+        >>> df = generate_ar_df(100, start_time="2021-01-01", n_segments=3)
+        >>> df = TSDataset.to_dataset(df)
+        >>> ts = TSDataset(df, "D")
+        >>> train_ts, test_ts = ts.train_test_split(
+        ...     train_start="2021-01-01", train_end="2021-02-01",
+        ...     test_start="2021-02-02", test_end="2021-02-07"
+        ... )
+        >>> train_ts.df.iloc[-5:]
+        segment    segment_0 segment_1 segment_2
+        feature       target    target    target
+        timestamp
+        2021-01-28     -2.06      2.03      1.51
+        2021-01-29     -2.33      0.83      0.81
+        2021-01-30     -1.80      1.69      0.61
+        2021-01-31     -2.49      1.51      0.85
+        2021-02-01     -2.89      0.91      1.06
+        >>> test_ts.df.iloc[:5]
+        segment    segment_0 segment_1 segment_2
+        feature       target    target    target
+        timestamp
+        2021-02-02     -3.57     -0.32      1.72
+        2021-02-03     -4.42      0.23      3.51
+        2021-02-04     -5.09      1.02      3.39
+        2021-02-05     -5.10      0.40      2.15
+        2021-02-06     -6.22      0.92      0.97
         """
         if pd.Timestamp(test_end) > self.df.index.max():
             raise UserWarning(f"Max timestamp in df is {self.df.index.max()}.")
@@ -347,7 +512,8 @@ class TSDataset:
 
         Returns
         -------
-        timestamp index
+        pd.core.indexes.datetimes.DatetimeIndex
+            timestamp index of TSDataset
         """
         return self.df.index
 
@@ -357,7 +523,8 @@ class TSDataset:
 
         Returns
         -------
-        columns
+        pd.core.indexes.multi.MultiIndex
+            multindex of dataframe with target and features.
         """
         return self.df.columns
 
@@ -367,7 +534,8 @@ class TSDataset:
 
         Returns
         -------
-        dataframe with self.df.loc[...]
+        pd.core.indexing._LocIndexer
+            dataframe with self.df.loc[...]
         """
         return self.df.loc
 
@@ -376,7 +544,8 @@ class TSDataset:
 
         Returns
         -------
-        is_null dataframe
+        pd.Dataframe
+            is_null dataframe
         """
         return self.df.isnull()
 
@@ -393,14 +562,13 @@ class TSDataset:
 
         Parameters
         ----------
-        n_rows: int, default 5
-            Number of rows to select.
+        n_rows:
+            number of rows to select.
 
         Returns
         -------
-        same type as caller
-            The first `n` rows of the caller object.
-
+        pd.DataFrame
+            the first `n` rows or 5 by default.
         """
         return self.df.head(n_rows)
 
@@ -417,18 +585,24 @@ class TSDataset:
 
         Parameters
         ----------
-        n_rows: int, default 5
-            Number of rows to select.
+        n_rows:
+            number of rows to select.
 
         Returns
         -------
-        type of caller
-            The last `n` rows of the caller object.
+        pd.DataFrame
+            the last `n` rows or 5 by default.
 
         """
         return self.df.tail(n_rows)
 
-    def describe(self, percentiles=None, include=None, exclude=None, datetime_is_numeric=False) -> pd.DataFrame:
+    def describe(
+        self,
+        percentiles: Optional[List[float]] = None,
+        include: Optional[Union[str, List[np.dtype]]] = None,
+        exclude: Optional[Union[str, List[np.dtype]]] = None,
+        datetime_is_numeric: bool = False,
+    ) -> pd.DataFrame:
         """Generate descriptive statistics.
 
         Mimics pandas method.
