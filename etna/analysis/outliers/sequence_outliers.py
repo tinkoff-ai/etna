@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 def get_segment_sequence_anomalies(
     series: np.ndarray, num_anomalies: int = 1, anomaly_lenght: int = 15, alphabet_size: int = 3, word_lenght: int = 3
 ) -> List[Tuple[int, int]]:
-    """Get indices of start and end of sequence outliers for one segment using SAX HOT algorithm.
+    """
+    Get indices of start and end of sequence outliers for one segment using SAX HOT algorithm.
+
     Parameters
     ----------
     series:
@@ -28,6 +30,7 @@ def get_segment_sequence_anomalies(
         the number of letters with which the subsequence will be encrypted
     word_lenght:
         the number of segments into which the subsequence will be divided by the paa algorithm
+
     Returns
     -------
     list of tuples with start and end of outliers.
@@ -49,10 +52,11 @@ def get_sequence_anomalies(
     word_lenght: int = 3,
     in_column: str = "target",
 ) -> Dict[str, List[pd.Timestamp]]:
-    """Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
-
+    """
+    Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
     We use saxpy under the hood.
     Repository link: https://github.com/seninp/saxpy.
+
     Parameters
     ----------
     ts:
@@ -67,10 +71,10 @@ def get_sequence_anomalies(
         the number of segments into which the subsequence will be divided by the paa algorithm
     in_column:
         name of the column in which the anomaly is searching
+
     Returns
     -------
-    dict of sequence outliers in format {segment_name: [outliers]}, where outliers
-    are a pd.Timestamp.
+    dict of sequence outliers in format {segment_name: [outliers]}, where outliers are a pd.Timestamp.
     """
     segments = ts.segments
     outliers_per_segment = dict()

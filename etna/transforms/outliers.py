@@ -31,10 +31,12 @@ class OutliersTransform(Transform, ABC):
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
         Find outliers using detection method.
+
         Parameters
         ----------
         df:
             dataframe with series to find outliers
+
         Returns
         -------
         result: _OneSegmentTimeSeriesImputerTransform
@@ -47,10 +49,12 @@ class OutliersTransform(Transform, ABC):
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Replace found outliers with NaNs.
+
         Parameters
         ----------
         df:
             transform in_column series of given dataframe
+
         Returns
         -------
         result: pd.DataFrame
@@ -64,10 +68,12 @@ class OutliersTransform(Transform, ABC):
     @abstractmethod
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call function for detection outliers with self parameters.
+
         Parameters
         ----------
         ts:
             dataset to process
+
         Returns
         -------
         dict of outliers:
@@ -81,6 +87,7 @@ class MedianOutliersTransform(OutliersTransform):
 
     def __init__(self, in_column: str, window_size: int = 10, alpha: float = 3):
         """Create instance of MedianOutliersTransform.
+
         Parameters
         ----------
         in_column:
@@ -97,6 +104,7 @@ class MedianOutliersTransform(OutliersTransform):
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_anomalies_median` function with self parameters.
+
         Parameters
         ----------
         ts:
@@ -121,6 +129,7 @@ class DensityOutliersTransform(OutliersTransform):
         distance_func: Callable[[float, float], float] = lambda x, y: abs(x - y),
     ):
         """Create instance of DensityOutliersTransform.
+
         Parameters
         ----------
         in_column:
@@ -143,6 +152,7 @@ class DensityOutliersTransform(OutliersTransform):
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_anomalies_density` function with self parameters.
+
         Parameters
         ----------
         ts:
@@ -167,6 +177,7 @@ class SAXOutliersTransform(OutliersTransform):
         word_lenght: int = 3,
     ):
         """Create instance of SAXOutliersTransform.
+
         Parameters
         ----------
         in_column:
@@ -189,6 +200,7 @@ class SAXOutliersTransform(OutliersTransform):
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_sequence_anomalies` function with self parameters.
+
         Parameters
         ----------
         ts:
