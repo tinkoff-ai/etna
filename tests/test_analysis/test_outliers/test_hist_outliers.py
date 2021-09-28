@@ -20,7 +20,7 @@ from etna.datasets.tsdataset import TSDataset
 )
 def test_v_optimal_hist(series: np.array, B: int, expected: float):
     """Check that v_optimal_hist works correctly."""
-    error = v_optimal_hist(series, B)
+    error = v_optimal_hist(series, B)[len(series) - 1][B - 1]
     assert error == expected
 
 
