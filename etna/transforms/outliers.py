@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from etna.analysis import get_anomalies_density
+from etna.analysis import get_anomalies_hist
 from etna.analysis import get_anomalies_median
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
@@ -167,4 +168,37 @@ class DensityOutliersTransform(OutliersTransform):
         return get_anomalies_density(ts, self.window_size, self.distance_coef, self.n_neighbors, self.distance_func)
 
 
-__all__ = ["MedianOutliersTransform", "DensityOutliersTransform"]
+class HistOutliersTransform(OutliersTransform):
+    """Transform that uses get_anomalies_hist to find anomalies in data."""
+
+    def __init__(self, in_column: str, B: int = 10):
+        """Create instance of HistOutliersTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of processed column
+        B:
+            number of bins
+        """
+        self.in_column = in_column
+        self.B = B
+        super().__init__(in_column=self.in_column)
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+        """Call `get_anomalies_hist` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            dataset to process
+
+        Returns
+        -------
+        dict of outliers:
+            dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_hist(ts, self.B)
+
+
+__all__ = ["MedianOutliersTransform", "DensityOutliersTransform", "HistOutliersTransform"]

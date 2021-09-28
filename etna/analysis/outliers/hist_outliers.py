@@ -1,10 +1,16 @@
+import typing
 from copy import deepcopy
+from typing import List
 
-import matplotlib.pyplot as plt
 import numpy as np
 
+from etna.datasets import TSDataset
 
-def SSE(i, j, p, pp):  # считается ошибка аппроксимации с i по j элемент константой (среднее значение)
+
+def SSE(i: int, j: int, p: List[float], pp: List[float]):
+    """
+    Count the approximation error by 1 bin from i to j elements.
+    """
     if i == 0:
         avg = p[j]
         return pp[j] - avg ** 2 / (j - i + 1)
@@ -12,7 +18,10 @@ def SSE(i, j, p, pp):  # считается ошибка аппроксимац�
     return pp[j] - pp[i - 1] - avg ** 2 / (j - i + 1)
 
 
-def v_optimal_hist(series, B):  # считается ошибка аппроксиации ряда series с B бинов
+def v_optimal_hist(series: List[float], B: int):
+    """
+    Count an approximation error of a series with B bins.
+    """
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]  # p[i] = series[0] + series[1] + .. + series[i]
     pp[0] = series[0] ** 2  # pp[i] = series[0]**2 + series[1]**2 + .. + series[i]**2
@@ -34,8 +43,27 @@ def v_optimal_hist(series, B):  # считается ошибка аппрокс
     # начинаем заполнять sse
     for k in range(1, B):  # итерация по бинам
         for i in range(k, len(series)):  # итерация по ряду
+            # заполняем sse[i][k]
+            s1 = sse[i - 1][k - 1]
+            s0 = sse[i - 1][k - 1]
+            idx0 = np.inf
+            idx1 = 0
+            left = 0
+            right = i
+            while idx1 != idx0:
+                right = i
+                idx0 = idx1
+                # найти бинпоиском такое j: count_sse[j][i] > s1
+                while right - left > 1:
+                    if count_sse[(left + right) // 2][i] > s1:
+                        left = (left + right) // 2
+                    else:
+                        right = (left + right) // 2
+                idx1 = left
+                s1 = s0 - sse[idx1][k - 1]
+
             now_min = np.inf
-            for j in range(0, i):
+            for j in range(idx1, i):
                 now = sse[j][k - 1] + count_sse[j + 1][i]
                 if now < now_min:
                     now_min = now
@@ -43,8 +71,10 @@ def v_optimal_hist(series, B):  # считается ошибка аппрокс
     return sse[len(series) - 1][B - 1]
 
 
-def computeF(series, k, p, pp):
-    # F[a][b][c] минимаьная ошбка на series[a:b+1] с c выбросами
+def computeF(series: List[float], k: int, p: List[float], pp: List[float]):
+    """
+    Compute F. F[a][b][c] - minimum approximation error on series[a:b+1] with k outliers.
+    """
     F = np.zeros((len(series), len(series), k + 1))
     S = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
     # S[i][j][k] - сумма всех элементов невыбросов с i по j, с учетом что там k выбросов
@@ -131,7 +161,12 @@ def computeF(series, k, p, pp):
     return F, idx
 
 
-def hist(series, B):  # главная функция, B - количество бинов, работает за N^2 * B^3, самое долгое - подсчет F
+def hist(
+    series: List[float], B: int
+):  # главная функция, B - количество бинов, работает за N^2 * B^3, самое долгое - подсчет F
+    """
+    Compute outliers indices according to hist rule.
+    """
     # E[i][j][k] ошибка на series[:i+1] с j бинами и k выбросами
     # E[i][j][k] = min[1<= l <= i, 0 <= m <= k] (E[l, j-1, m] + F[l+1, i, k-m])
     E = np.zeros((len(series), B + 1, B))
@@ -183,6 +218,29 @@ def hist(series, B):  # главная функция, B - количество 
     return np.array(sorted(anomal[-1][E.shape[1] - 1 - count][count]))
 
 
-def plot(series, anomal):  # быстро отрисовать то что получилось
-    plt.plot(series)
-    plt.scatter(anomal, series[anomal], c="r")
+def get_anomalies_hist(ts: "TSDataset", B: int = 10) -> typing.Dict[str, typing.List[pd.Timestamp]]:
+    """
+    Get point outliers in time series using histogram model.
+    Outliers are all points that, when removed, result in a histogram with a lower approximation error, even with the number of bins less than the number of outliers.
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    B:
+        number of bins
+    Returns
+    -------
+    dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
+        dict of outliers in format {segment: [outliers_timestamps]}
+    """
+    outliers_per_segment = {}
+    segments = ts.segments
+    for seg in segments:
+        segment_df = ts.df[seg].reset_index()
+        values = segment_df["target"].values
+        timestamp = segment_df["timestamp"].values
+
+        anomal = hist(values, B)
+
+        outliers_per_segment[seg] = [timestamp[i] for i in anomal]
+    return outliers_per_segment

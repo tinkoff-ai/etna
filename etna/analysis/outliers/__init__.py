@@ -1,2 +1,3 @@
 from etna.analysis.outliers.density_outliers import get_anomalies_density
+from etna.analysis.outliers.hist_outliers import get_anomalies_hist
 from etna.analysis.outliers.median_outliers import get_anomalies_median
