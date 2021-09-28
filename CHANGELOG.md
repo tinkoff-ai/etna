@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna-ts/pull/92))
 - WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
 - Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
+- Sequence anomalies ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
 - 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna-ts/pull/101))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
+- Update EDA notebook ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
 
 ### Fixed
 - Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
