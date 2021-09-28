@@ -124,9 +124,7 @@ def test_min_feature(
         (3, 2, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
     ),
 )
-def test_max_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
-):
+def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
     transform = MaxTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target")
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
@@ -140,9 +138,7 @@ def test_max_feature(
         (-1, 1, -17, np.array([-17, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
     ),
 )
-def test_median_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
-):
+def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
     transform = MedianTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target")
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
@@ -156,9 +152,7 @@ def test_median_feature(
         (3, 1, -17, np.array([-17, -17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1])),
     ),
 )
-def test_std_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
-):
+def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
     transform = StdTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target")
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
