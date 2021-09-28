@@ -117,6 +117,9 @@ class PerSegmentModel(Model):
             raise ValueError("Dataset contains NaN values on the forecast side", df.columns[df.isna().any()].tolist())
         df.sort_values(by=["segment", "timestamp"], inplace=True)"""
 
+        if self._segments is None:
+            raise ValueError("The model is not fitted yet, use fit() to train it")
+
         result_list = list()
         for segment in self._segments:
             model = self._models[segment]
