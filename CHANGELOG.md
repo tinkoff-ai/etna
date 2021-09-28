@@ -5,17 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2021-09-23
+### Fixed
+- Documentation build workflow ([#85](https://github.com/tinkoff-ai/etna-ts/pull/85))
+
 ## [Unreleased]
 ### Added
 - BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
 - Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
 - Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna-ts/pull/92))
+- WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
+- Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
 
 ### Fixed
-
+- Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
 
 ## [1.1.0] - 2021-09-23
 ### Added 
@@ -25,9 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pytorch-Forecasting models ([#29](https://github.com/tinkoff-ai/etna-ts/pull/29))
 - SARIMAX model ([#10](https://github.com/tinkoff-ai/etna-ts/pull/10))
 - Logging, including ConsoleLogger ([#46](https://github.com/tinkoff-ai/etna-ts/pull/46))
-- WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
 - Correlation heatmap plotter ([#77](https://github.com/tinkoff-ai/etna-ts/pull/77))
-- Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
 
 ### Changed
 - Backtest is fully parallel 
@@ -41,7 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix working with 'cap' and 'floor' features in Prophet model ([#62](https://github.com/tinkoff-ai/etna-ts/pull/62)))
 - Fix saving init params for SARIMAXModel ([#81](https://github.com/tinkoff-ai/etna-ts/pull/81))
 - Imports of nn models, PytorchForecastingTransform and Transform ([#80](https://github.com/tinkoff-ai/etna-ts/pull/80)))
-- Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
 
 ## [1.0.0] - 2021-09-05
 ### Added
