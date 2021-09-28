@@ -74,7 +74,8 @@ def get_sequence_anomalies(
 
     Returns
     -------
-    dict of sequence outliers in format {segment_name: [outliers]}, where outliers are a pd.Timestamp.
+    dict of outliers: Dict[str, List[pd.Timestamp]]
+        dict of sequence outliers in format {segment: [outliers_timestamps]}
     """
     segments = ts.segments
     outliers_per_segment = dict()
