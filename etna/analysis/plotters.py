@@ -280,7 +280,7 @@ def plot_anomalies_interactive(
     >>> ts = TSDataset(df, "D")
     >>> params_bounds = {"window_size": (5, 20, 1), "distance_coef": (0.1, 3, 0.25)}
     >>> method = get_anomalies_density
-    >>> plot_anomalies_interactive(ts=ts, segment="segment_1", method=method, params_bounds=params_bounds)
+    >>> plot_anomalies_interactive(ts=ts, segment="segment_1", method=method, params_bounds=params_bounds) # doctest: +SKIP
     """
     from ipywidgets import FloatSlider
     from ipywidgets import IntSlider
