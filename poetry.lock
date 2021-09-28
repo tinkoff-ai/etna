@@ -118,7 +118,7 @@ name = "atomicwrites"
 version = "1.4.0"
 description = "Atomic file writes."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
@@ -337,6 +337,18 @@ docs = ["sphinx", "sphinx-gallery", "sphinx-rtd-theme", "numpydoc", "matplotlib"
 tests = ["flake8", "pylint", "pytest", "pytest-cov", "testfixtures", "tqdm"]
 
 [[package]]
+name = "codecov"
+version = "2.1.12"
+description = "Hosted coverage reports for GitHub, Bitbucket and Gitlab"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+
+[package.dependencies]
+coverage = "*"
+requests = ">=2.7.9"
+
+[[package]]
 name = "colorama"
 version = "0.4.4"
 description = "Cross-platform colored terminal text."
@@ -402,7 +414,7 @@ name = "coverage"
 version = "5.5"
 description = "Code coverage measurement for Python"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 
 [package.extras]
@@ -772,7 +784,7 @@ name = "iniconfig"
 version = "1.1.1"
 description = "iniconfig: brain-dead simple config-ini parsing"
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [[package]]
@@ -1495,7 +1507,7 @@ name = "pluggy"
 version = "1.0.0"
 description = "plugin and hook calling mechanisms for python"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
@@ -1610,7 +1622,7 @@ name = "py"
 version = "1.10.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
@@ -1751,7 +1763,7 @@ name = "pytest"
 version = "6.2.5"
 description = "pytest: simple powerful testing with Python"
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
@@ -1773,7 +1785,7 @@ name = "pytest-cov"
 version = "2.12.1"
 description = "Pytest plugin for measuring coverage."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.dependencies]
@@ -1952,6 +1964,20 @@ dev = ["pre-commit"]
 display = ["matplotlib"]
 docs = ["jupyter", "librosa", "matplotlib", "mkdocs", "mkdocs-macros-plugin", "mkdocs-material", "mkdocstrings", "mknotebooks", "pymdown-extensions"]
 test = ["pytest", "pytest-cov"]
+
+[[package]]
+name = "saxpy"
+version = "1.0.1.dev167"
+description = "SAX, HOTSAX, EMMA implementations for Python"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+codecov = "*"
+numpy = "*"
+pytest = "*"
+pytest-cov = "*"
 
 [[package]]
 name = "scikit-learn"
@@ -2638,7 +2664,7 @@ tests = ["pytest-cov", "coverage", "pytest"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2, <3.9.0"
-content-hash = "1bed9ca16d24519956f01e80ca63a518d5d1e3be48b37bac0c56bb176aa13762"
+content-hash = "f2b8ad4c4cb5c29a807a32f283e516c92b536bdcf09681fa1cd3e51fbb1d9639"
 
 [metadata.files]
 absl-py = [
@@ -2855,6 +2881,11 @@ cmd2 = [
 cmdstanpy = [
     {file = "cmdstanpy-0.9.68-py3-none-any.whl", hash = "sha256:8b0862c5491283c9e5ec6c7256dfcd835b9ef2319e38339ac640aa0156cc34c9"},
     {file = "cmdstanpy-0.9.68.tar.gz", hash = "sha256:9e935be976fda3ee738b19b8386b38617f78d9dfef51643d1ba5cb9740616b59"},
+]
+codecov = [
+    {file = "codecov-2.1.12-py2.py3-none-any.whl", hash = "sha256:585dc217dc3d8185198ceb402f85d5cb5dbfa0c5f350a5abcdf9e347776a5b47"},
+    {file = "codecov-2.1.12-py3.8.egg", hash = "sha256:782a8e5352f22593cbc5427a35320b99490eb24d9dcfa2155fd99d2b75cfb635"},
+    {file = "codecov-2.1.12.tar.gz", hash = "sha256:a0da46bb5025426da895af90938def8ee12d37fcbcbbbc15b6dc64cf7ebc51c1"},
 ]
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
@@ -4063,6 +4094,10 @@ ruptures = [
     {file = "ruptures-1.1.3-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:256c6f81373aa4ed34e2def9c4f060aac530e06eb4c305807de6144a36af3702"},
     {file = "ruptures-1.1.3-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:9476aa7702f60377a41486fb956458cfc226f12fc61bda6b579f19c9c3d847cf"},
     {file = "ruptures-1.1.3.tar.gz", hash = "sha256:e3845f5ccc91fe958a120b6bfbc35092b690f09e76d16df4b550b6362ac67b67"},
+]
+saxpy = [
+    {file = "saxpy-1.0.1.dev167-py2-none-any.whl", hash = "sha256:dcab8e87c9a6aa67f9ae1940ed9d5eb9f222f8952e05eb473e85a6d9fc2f7155"},
+    {file = "saxpy-1.0.1.dev167.tar.gz", hash = "sha256:1e223cacd9404f366434be3137224356568d2ef3d4ab88d8412ef7ab91405744"},
 ]
 scikit-learn = [
     {file = "scikit-learn-0.24.2.tar.gz", hash = "sha256:d14701a12417930392cd3898e9646cf5670c190b933625ebe7511b1f7d7b8736"},

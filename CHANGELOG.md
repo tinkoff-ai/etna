@@ -12,14 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna-ts/pull/92))
 - WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
 - Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
+- Sequence anomalies ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
 - 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna-ts/pull/101))
 - Documentation example for models and note about inplace nature of forecast ([#112](https://github.com/tinkoff-ai/etna-ts/pull/112))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
+- Update EDA notebook ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
 
 ### Fixed
 - Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
+- Fix bug with hardcoded frequency in PytorchForecastingTransform ([#107](https://github.com/tinkoff-ai/etna-ts/pull/107))
 
 ## [1.1.1] - 2021-09-23
 ### Fixed

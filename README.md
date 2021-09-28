@@ -97,7 +97,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 [Bunin Dmitriy](https://github.com/Mr-Geekman),
 [Chikov Aleksandr](https://github.com/alex-hse-repository),
 [Barinov Nikita](https://github.com/diadorer),
-[Romantsov Nikolay](),
+[Romantsov Nikolay](https://github.com/WinstonDovlatov),
 [Makhin Artem](https://github.com/Ama16),
 [Denisov Vladislav](https://github.com/v-v-denisov),
 [Mitskovets Ivan](https://github.com/imitskovets),
