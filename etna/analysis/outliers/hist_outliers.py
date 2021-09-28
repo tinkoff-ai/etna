@@ -1,15 +1,32 @@
 import typing
+from typing import TYPE_CHECKING
 from copy import deepcopy
 from typing import List
 
+import pandas as pd
 import numpy as np
 
-from etna.datasets import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def SSE(i: int, j: int, p: List[float], pp: List[float]):
     """
     Count the approximation error by 1 bin from i to j elements.
+
+    Parameters
+    ----------
+    i:
+        left border
+    j:
+        right border
+    p:
+        array of sums of elements, p[i] - sum from first to i elements
+    pp:
+        array of sums of squares of elements, p[i] - sum of squares from first to i elements
+    Returns
+    -------
+    Approximation error.
     """
     if i == 0:
         avg = p[j]
@@ -21,6 +38,17 @@ def SSE(i: int, j: int, p: List[float], pp: List[float]):
 def v_optimal_hist(series: List[float], B: int):
     """
     Count an approximation error of a series with B bins.
+    http://www.vldb.org/conf/1998/p275.pdf
+
+    Parameters
+    ----------
+    series:
+        array to count an approximation error with B bins
+    B:
+        number of bins
+    Returns
+    -------
+    Approximation error of a series with B bins
     """
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]  # p[i] = series[0] + series[1] + .. + series[i]
@@ -73,7 +101,23 @@ def v_optimal_hist(series: List[float], B: int):
 
 def computeF(series: List[float], k: int, p: List[float], pp: List[float]):
     """
-    Compute F. F[a][b][c] - minimum approximation error on series[a:b+1] with k outliers.
+    Compute F. F[a][b][k] - minimum approximation error on series[a:b+1] with k outliers.
+    http://www.vldb.org/conf/1999/P9.pdf
+
+    Parameters
+    ----------
+    series:
+        array to count F
+    k:
+        number of outliers
+    p:
+        array of sums of elements, p[i] - sum from first to i elements
+    pp:
+        array of sums of squares of elements, p[i] - sum of squares from first to i elements
+
+    Returns
+    -------
+    Array F
     """
     F = np.zeros((len(series), len(series), k + 1))
     S = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
@@ -166,6 +210,18 @@ def hist(
 ):  # главная функция, B - количество бинов, работает за N^2 * B^3, самое долгое - подсчет F
     """
     Compute outliers indices according to hist rule.
+    http://www.vldb.org/conf/1999/P9.pdf
+
+    Parameters
+    ----------
+    series:
+        array to count F
+    B:
+        number of bins
+
+    Returns
+    -------
+    Outliers indices.
     """
     # E[i][j][k] ошибка на series[:i+1] с j бинами и k выбросами
     # E[i][j][k] = min[1<= l <= i, 0 <= m <= k] (E[l, j-1, m] + F[l+1, i, k-m])
@@ -218,7 +274,7 @@ def hist(
     return np.array(sorted(anomal[-1][E.shape[1] - 1 - count][count]))
 
 
-def get_anomalies_hist(ts: "TSDataset", B: int = 10) -> typing.Dict[str, typing.List[pd.Timestamp]]:
+def get_anomalies_hist(ts: "TSDataset", B: int = 10) -> typing.Dict[str, List[pd.Timestamp]]:
     """
     Get point outliers in time series using histogram model.
     Outliers are all points that, when removed, result in a histogram with a lower approximation error, even with the number of bins less than the number of outliers.
