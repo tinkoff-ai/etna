@@ -31,8 +31,8 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon):
         weekly_period_df[lambda x: x.timestamp >= ts_start],
     )
 
-    ts_train = TSDataset(TSDataset.to_dataset(train), "1d")
-    ts_test = TSDataset(TSDataset.to_dataset(test), "1d")
+    ts_train = TSDataset(TSDataset.to_dataset(train), "D")
+    ts_test = TSDataset(TSDataset.to_dataset(test), "D")
     dft = DateFlagsTransform(day_number_in_week=True, day_number_in_month=False)
     pft = PytorchForecastingTransform(
         max_encoder_length=21,

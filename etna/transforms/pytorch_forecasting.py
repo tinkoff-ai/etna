@@ -48,6 +48,10 @@ class PytorchForecastingTransform(Transform):
     ):
         """Parameters for TimeSeriesDataSet object.
 
+        Notes
+        -----
+        This transform should be added at the very end of `transforms` parameter.
+
         Reference
         ---------
         https://github.com/jdb78/pytorch-forecasting/blob/v0.8.5/pytorch_forecasting/data/timeseries.py#L117
@@ -76,6 +80,14 @@ class PytorchForecastingTransform(Transform):
         self.lags = lags
         self.scalers = scalers
 
+    @staticmethod
+    def _calculate_freq_unit(freq: str) -> pd.Timedelta:
+        """Calculate frequency unit by its string representation."""
+        if freq[0].isdigit():
+            return pd.Timedelta(freq)
+        else:
+            return pd.Timedelta(1, unit=freq)
+
     def fit(self, df: pd.DataFrame) -> "PytorchForecastingTransform":
         """
         Fit TimeSeriesDataSet.
@@ -89,8 +101,8 @@ class PytorchForecastingTransform(Transform):
         -------
             PytorchForecastingTransform
         """
-        ts = TSDataset(df, "1d")
-        self.freq = ts.freq
+        self.freq = pd.infer_freq(df.index)
+        ts = TSDataset(df, self.freq)
         ts = ts.to_pandas(flatten=True)
         ts = ts.dropna()
         self.min_timestamp = ts.timestamp.min()
@@ -99,8 +111,8 @@ class PytorchForecastingTransform(Transform):
             for feature_name in self.time_varying_known_categoricals:
                 ts[feature_name] = ts[feature_name].astype(str)
 
-        ts["time_idx"] = ts["timestamp"] - self.min_timestamp
-        ts["time_idx"] = ts["time_idx"].apply(lambda x: x / self.freq)
+        freq_unit = self._calculate_freq_unit(self.freq)
+        ts["time_idx"] = (ts["timestamp"] - self.min_timestamp) / freq_unit
         ts["time_idx"] = ts["time_idx"].astype(int)
 
         pf_dataset = TimeSeriesDataSet(
@@ -151,14 +163,15 @@ class PytorchForecastingTransform(Transform):
         We save TimeSeriesDataSet in instance to use it in the model.
         It`s not right pattern of using Transforms and TSDataset.
         """
-        ts = TSDataset(df, "1d")
+        ts = TSDataset(df, self.freq)
         ts = ts.to_pandas(flatten=True)
         ts = ts[ts.timestamp >= self.min_timestamp]
         ts = ts.fillna(0)
 
-        ts["time_idx"] = ts["timestamp"] - self.min_timestamp
-        ts["time_idx"] = ts["time_idx"].apply(lambda x: x / self.freq)
+        freq_unit = self._calculate_freq_unit(self.freq)
+        ts["time_idx"] = (ts["timestamp"] - self.min_timestamp) / freq_unit
         ts["time_idx"] = ts["time_idx"].astype(int)
+
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
                 ts[feature_name] = ts[feature_name].astype(str)
