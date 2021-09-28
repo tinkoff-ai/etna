@@ -203,4 +203,4 @@ def test_finding_regressors(df_and_regressors):
     """Check that ts.regressors property works correctly."""
     df, df_exog = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
-    assert ts.regressors == {"1": ["regressor_1", "regressor_2"], "2": ["regressor_1", "regressor_2"]}
+    assert sorted(ts.regressors) == ["regressor_1", "regressor_2"]

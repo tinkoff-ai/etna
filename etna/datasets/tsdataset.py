@@ -1,8 +1,6 @@
 import math
 import warnings
-from collections import defaultdict
 from typing import TYPE_CHECKING
-from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
@@ -115,6 +113,7 @@ class TSDataset:
             self.df = self._merge_exog(self.df)
 
         self.transforms = None
+        self._update_regressors()
 
     def transform(self, transforms: Iterable["Transform"]):
         """Apply given transform to the data."""
@@ -131,6 +130,7 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
+        self._update_regressors()
 
     def __repr__(self):
         return self.df.__repr__()
@@ -200,13 +200,14 @@ class TSDataset:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
-            for segment, regressors_columns in self.regressors.items():
-                regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
-                if not np.all(future_dates.isin(regressors_index)):
-                    warnings.warn(
-                        f"Some regressors don't have enough values in segment {segment}, "
-                        f"NaN-s will be used for missing values"
-                    )
+            if self.regressors:
+                for segment in self.segments:
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
+                    if not np.all(future_dates.isin(regressors_index)):
+                        warnings.warn(
+                            f"Some regressors don't have enough values in segment {segment}, "
+                            f"NaN-s will be used for missing values"
+                        )
 
         if self.transforms is not None:
             for transform in self.transforms:
@@ -278,15 +279,17 @@ class TSDataset:
         """
         return self.df.columns.get_level_values("segment").unique().tolist()
 
+    def _update_regressors(self):
+        result = set()
+        for column in self.columns.get_level_values("feature"):
+            if column.startswith("regressor"):
+                result.add(column)
+        self._regressors = list(result)
+
     @property
-    def regressors(self) -> Dict[str, List[str]]:
-        """Get list of all regressors of segments in dataset."""
-        columns = self.df.columns.values
-        result = defaultdict(list)
-        for segment_name, feature_name in columns:
-            if feature_name.startswith("regressor"):
-                result[segment_name].append(feature_name)
-        return dict(result)
+    def regressors(self) -> List[str]:
+        """Get list of all regressors across all segments in dataset."""
+        return self._regressors
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
         """ Plot of random or chosen segments.
