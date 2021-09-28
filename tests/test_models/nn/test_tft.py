@@ -12,8 +12,7 @@ from etna.transforms import PytorchForecastingTransform
 
 
 @pytest.mark.long
-# @pytest.mark.parametrize("horizon", [8, 21])
-@pytest.mark.parametrize("horizon", [21])
+@pytest.mark.parametrize("horizon", [8, 21])
 def test_tft_model_run_weekly_overfit(weekly_period_df, horizon):
     """
     Given: I have dataframe with 2 segments with weekly seasonality with known future

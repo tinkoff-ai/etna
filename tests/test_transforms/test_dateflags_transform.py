@@ -123,19 +123,19 @@ def test_repr():
 @pytest.mark.parametrize(
     "true_params",
     (
-        ["day_number_in_week"],
-        ["day_number_in_month"],
-        ["week_number_in_year"],
-        ["week_number_in_month"],
-        ["month_number_in_year"],
-        ["year_number"],
+        ["regressor_day_number_in_week"],
+        ["regressor_day_number_in_month"],
+        ["regressor_week_number_in_year"],
+        ["regressor_week_number_in_month"],
+        ["regressor_month_number_in_year"],
+        ["regressor_year_number"],
         [
-            "day_number_in_week",
-            "day_number_in_month",
-            "week_number_in_year",
-            "week_number_in_month",
-            "month_number_in_year",
-            "year_number",
+            "regressor_day_number_in_week",
+            "regressor_day_number_in_month",
+            "regressor_week_number_in_year",
+            "regressor_week_number_in_month",
+            "regressor_month_number_in_year",
+            "regressor_year_number",
         ],
     ),
 )
@@ -151,7 +151,6 @@ def test_interface_correct_args(true_params: List[str], train_df: pd.DataFrame):
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = ["regressor_" + param for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
@@ -161,7 +160,7 @@ def test_interface_correct_args(true_params: List[str], train_df: pd.DataFrame):
 
 @pytest.mark.parametrize(
     "true_params",
-    (["special_days_in_week"], ["special_days_in_month"], ["special_days_in_week", "special_days_in_month"]),
+    (["regressor_special_days_in_week"], ["regressor_special_days_in_month"], ["regressor_special_days_in_week", "regressor_special_days_in_month"]),
 )
 def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataFrame):
     """This test checks that feature generates all the expected columns and no unexpected ones in transform"""
@@ -175,7 +174,6 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = ["regressor_" + param for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
