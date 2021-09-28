@@ -47,7 +47,10 @@ def test_repr():
 
 @pytest.mark.parametrize(
     "lags,expected_columns",
-    ((4, ["target_lag_1", "target_lag_2", "target_lag_3", "target_lag_4"]), ([5, 8], ["target_lag_5", "target_lag_8"])),
+    (
+        (4, ["regressor_target_lag_1", "regressor_target_lag_2", "regressor_target_lag_3", "regressor_target_lag_4"]),
+        ([5, 8], ["regressor_target_lag_5", "regressor_target_lag_8"]),
+    ),
 )
 def test_interface_one_segment(
     lags: Union[int, Sequence[int]], expected_columns: List[str], int_df_one_segment: pd.DataFrame
@@ -55,20 +58,23 @@ def test_interface_one_segment(
     """This test checks _OneSegmentLagFeature interface."""
     lf = _OneSegmentLagFeature(in_column="target", lags=lags)
     lags_df = lf.fit_transform(df=int_df_one_segment)
-    lags_df_lags_columns = sorted(filter(lambda x: x.startswith("target_lag"), lags_df.columns))
+    lags_df_lags_columns = sorted(filter(lambda x: x.startswith("regressor_target_lag"), lags_df.columns))
     assert lags_df_lags_columns == expected_columns
 
 
 @pytest.mark.parametrize(
     "lags,expected_columns",
-    ((4, ["target_lag_1", "target_lag_2", "target_lag_3", "target_lag_4"]), ([5, 8], ["target_lag_5", "target_lag_8"])),
+    (
+        (4, ["regressor_target_lag_1", "regressor_target_lag_2", "regressor_target_lag_3", "regressor_target_lag_4"]),
+        ([5, 8], ["regressor_target_lag_5", "regressor_target_lag_8"]),
+    ),
 )
 def test_interface_two_segments(lags: Union[int, Sequence[int]], expected_columns: List[str], int_df_two_segments):
     """This test checks LagTransform interface."""
     lf = LagTransform(in_column="target", lags=lags)
     lags_df = lf.fit_transform(df=int_df_two_segments)
     for segment in lags_df.columns.get_level_values("segment").unique():
-        lags_df_lags_columns = sorted(filter(lambda x: x.startswith("target_lag"), lags_df[segment].columns))
+        lags_df_lags_columns = sorted(filter(lambda x: x.startswith("regressor_target_lag"), lags_df[segment].columns))
         assert lags_df_lags_columns == expected_columns
 
 
@@ -81,7 +87,7 @@ def test_lags_values_one_segment(lags: Union[int, Sequence[int]], int_df_one_seg
         lags = list(range(1, lags + 1))
     for lag in lags:
         true_values = pd.Series([None] * lag + list(int_df_one_segment["target"].values[:-lag]))
-        assert_almost_equal(true_values.values, lags_df[f"target_lag_{lag}"].values)
+        assert_almost_equal(true_values.values, lags_df[f"regressor_target_lag_{lag}"].values)
 
 
 @pytest.mark.parametrize("lags", (12, [4, 6, 8, 16]))
@@ -94,7 +100,7 @@ def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_df_two_se
     for segment in lags_df.columns.get_level_values("segment").unique():
         for lag in lags:
             true_values = pd.Series([None] * lag + list(int_df_two_segments[segment, "target"].values[:-lag]))
-            assert_almost_equal(true_values.values, lags_df[segment, f"target_lag_{lag}"].values)
+            assert_almost_equal(true_values.values, lags_df[segment, f"regressor_target_lag_{lag}"].values)
 
 
 @pytest.mark.parametrize("lags", (0, -1, (10, 15, -2)))

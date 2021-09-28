@@ -25,6 +25,6 @@ def test_dummy(dummy_df):
     transform = SegmentEncoderTransform()
     transformed_df = transform.fit_transform(dummy_df)
     assert (
-        len(transformed_df.loc[:, pd.IndexSlice[:, "segment_code"]].columns) == 2
+        len(transformed_df.loc[:, pd.IndexSlice[:, "regressor_segment_code"]].columns) == 2
     ), "Number of columns not the same as segments"
     assert len(dummy_df) == len(transformed_df), "Row missing"
