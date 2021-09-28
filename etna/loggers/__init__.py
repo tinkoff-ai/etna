@@ -4,6 +4,7 @@ Examples
 --------
 >>> from etna.loggers import tslogger, ConsoleLogger
 >>> tslogger.add(ConsoleLogger())
+0
 
 Notes
 -----
