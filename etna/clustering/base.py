@@ -4,8 +4,10 @@ from typing import Dict
 
 import pandas as pd
 
+from etna.core import BaseMixin
 
-class Clustering(ABC):
+
+class Clustering(ABC, BaseMixin):
     """Base class for ETNA clustering algorithms."""
 
     def __init__(self, n_jobs: int = 1):
@@ -13,7 +15,7 @@ class Clustering(ABC):
 
         Parameters
         ----------
-        n_jobs: int
+        n_jobs:
             number of jobs to run in parallel
         """
         self.n_jobs = n_jobs
@@ -36,6 +38,6 @@ class Clustering(ABC):
         Returns
         -------
         centroids_df:
-            pd.DataFrame with "cluster", "timestamp", "target" columns
+            TSDataset with centroids
         """
         pass

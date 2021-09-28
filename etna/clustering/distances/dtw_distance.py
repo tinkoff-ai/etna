@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from etna.clustering.distances.base import Distance
+from etna.datasets import TSDataset
 
 
 @numba.cfunc(numba.float64(numba.float64, numba.float64))
@@ -15,14 +16,14 @@ def simple_dist(x1: float, x2: float) -> float:
 
     Parameters
     ----------
-    x1: float
+    x1:
         first value
-    x2: float
+    x2:
         second value
 
     Returns
     -------
-    distance: float
+    distance:
         distance between x1 and x2
     """
     return abs(x1 - x2)
@@ -36,10 +37,14 @@ class DTWDistance(Distance):
 
         Parameters
         ----------
-        points_distance: callable
+        points_distance:
             function to be used for computation of distance between two series' points
-        trim_series: bool
+        trim_series:
             True if it is necessary to trim series, default False.
+
+        Notes
+        -----
+        Specifying manual points_distance might slow down the clustering algorithm
         """
         super().__init__(trim_series=trim_series)
         self.points_distance = points_distance
@@ -106,37 +111,44 @@ class DTWDistance(Distance):
         centroid = assoc_table / n_samples
         return centroid
 
-    def get_average(self, xs: pd.DataFrame, n_iters: int = 10) -> pd.DataFrame:
+    @staticmethod
+    def _get_longest_series(series_list: List[pd.np.array]) -> np.array:
+        """Get the longest series from the list."""
+        longest_series = max(series_list, key=len)
+        return longest_series
+
+    @staticmethod
+    def _get_all_series(ts: TSDataset) -> List[np.array]:
+        """Get series from the TSDataset."""
+        series_list = []
+        for segment in ts.segments:
+            series = ts[:, segment, "target"].dropna().values
+            series_list.append(series)
+        return series_list
+
+    def get_average(self, ts: TSDataset, n_iters: int = 10) -> pd.DataFrame:
         """Get series that minimizes squared distance to given ones according to the dtw distance.
 
         Parameters
         ----------
-        xs: pd.DataFrame
-            dataframe with columns "segment", "timestamp", "target" that contains series to be averaged
-
+        ts:
+            TSDataset with series to be averaged
+        n_iters:
+            number of DBA iterations to adjust centroid with series
         Returns
         -------
-        centroid: pd.DataFrame
+        centroid:
             dataframe with columns "timestamp" and "target" that contains the series
         """
-        # Let the longest series be the first initialisation of centroid
-        segment_length_df = xs.groupby(["segment"])["target"].count()
-        biggest_segment_idx = segment_length_df.argmax()
-        biggest_segment = segment_length_df.reset_index()["segment"].loc[biggest_segment_idx]
-        initial_centroid_df = xs[xs["segment"] == biggest_segment]
-        centroid = initial_centroid_df["target"].values
-
-        series_list = []
-        segments = xs["segment"].unique()
-        for segment in segments:
-            series_list.append(xs[xs["segment"] == segment]["target"].values)
-
-        # Repeat _dba_iteration n_iters time to adjust centroid with series
+        series_list = self._get_all_series(ts)
+        initial_centroid = self._get_longest_series(series_list)
+        centroid = initial_centroid.copy()
         for _ in range(n_iters):
             new_centroid = self._dba_iteration(initial_centroid=centroid, series_list=series_list)
             centroid = new_centroid
-        centroid_df = pd.DataFrame({"timestamp": initial_centroid_df["timestamp"].values, "target": centroid})
-        return centroid_df
+        index = pd.date_range(start=ts.df.first_valid_index(), periods=len(initial_centroid))
+        centroid = pd.DataFrame({"timestamp": index, "target": centroid})
+        return centroid
 
 
 __all__ = ["DTWDistance", "simple_dist"]

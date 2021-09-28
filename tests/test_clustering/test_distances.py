@@ -8,39 +8,7 @@ import pytest
 from etna.clustering.distances.dtw_distance import DTWDistance
 from etna.clustering.distances.dtw_distance import simple_dist
 from etna.clustering.distances.euclidean_distance import EuclideanDistance
-
-
-@pytest.fixture
-def two_series() -> Tuple[pd.Series, pd.Series]:
-    """Generate two series with different timestamp range."""
-    x1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=10)})
-    x1["target"] = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8]
-    x1.set_index("timestamp", inplace=True)
-
-    x2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-02", periods=10)})
-    x2["target"] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    x2.set_index("timestamp", inplace=True)
-
-    return x1["target"], x2["target"]
-
-
-@pytest.fixture
-def pattern():
-    x = [1] * 5 + [20, 3, 1, -5, -7, -8, -9, -10, -7.5, -6.5, -5, -4, -3, -2, -1, 0, 0, 1, 1] + [-1] * 11
-    return x
-
-
-@pytest.fixture
-def dtw_df(pattern) -> pd.DataFrame:
-    """Get df with complex pattern with timestamp lag."""
-    df = pd.DataFrame()
-    for i in range(1, 8):
-        date_range = pd.date_range(f"2020-01-0{str(i)}", periods=35)
-        tmp = pd.DataFrame({"timestamp": date_range})
-        tmp["segment"] = str(i)
-        tmp["target"] = pattern
-        df = df.append(tmp, ignore_index=True)
-    return df
+from etna.datasets import TSDataset
 
 
 @pytest.mark.parametrize("trim_series,expected", ((True, 0), (False, 3)))
@@ -133,12 +101,12 @@ def test_path(matrix: np.array, expected_path: List[Tuple[int, int]]):
         assert coords == expected_coords
 
 
-def test_dtw_get_average(dtw_df: pd.DataFrame):
+def test_dtw_get_average(dtw_ts: TSDataset):
     """Check that dtw centroid catches the pattern of df series."""
     dtw = DTWDistance()
-    centroid = dtw.get_average(dtw_df)
+    centroid = dtw.get_average(dtw_ts)
     percentiles = np.linspace(0, 1, 19)
-    for s in dtw_df["segment"].unique():
-        tmp = dtw_df[dtw_df["segment"] == s]
+    for segment in dtw_ts.segments:
+        tmp = dtw_ts[:, segment, :][segment].dropna()
         for p in percentiles:
             assert abs(np.percentile(centroid["target"].values, p) - np.percentile(tmp["target"].values, p)) < 0.3
