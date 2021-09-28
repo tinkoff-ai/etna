@@ -20,6 +20,7 @@ class OutliersTransform(Transform, ABC):
     def __init__(self, in_column: str):
         """
         Create instance of OutliersTransform.
+
         Parameters
         ----------
         in_column:
@@ -109,6 +110,7 @@ class MedianOutliersTransform(OutliersTransform):
         ----------
         ts:
             dataset to process
+
         Returns
         -------
         dict of outliers:
@@ -157,6 +159,7 @@ class DensityOutliersTransform(OutliersTransform):
         ----------
         ts:
             dataset to process
+
         Returns
         -------
         dict of outliers:
