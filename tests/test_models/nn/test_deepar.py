@@ -8,8 +8,8 @@ from pytorch_forecasting.data import GroupNormalizer
 from etna.datasets.tsdataset import TSDataset
 from etna.metrics import MAE
 from etna.models.nn import DeepARModel
-from etna.transforms import DateFlagsTransform
 from etna.transforms import AddConstTransform
+from etna.transforms import DateFlagsTransform
 from etna.transforms import PytorchForecastingTransform
 
 

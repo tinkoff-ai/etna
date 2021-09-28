@@ -7,11 +7,11 @@ import pytorch_lightning as pl
 from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import DeepAR
 
-from etna.transforms import PytorchForecastingTransform
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.base import Model
 from etna.models.base import log_decorator
+from etna.transforms import PytorchForecastingTransform
 
 
 class DeepARModel(Model):
@@ -99,7 +99,6 @@ class DeepARModel(Model):
             raise ValueError(
                 "Not valid usage of transforms, please add PytorchForecastingTransform at the end of transforms"
             )
-
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "DeepARModel":

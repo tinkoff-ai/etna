@@ -8,10 +8,10 @@ from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import TemporalFusionTransformer
 
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms import PytorchForecastingTransform
 from etna.loggers import tslogger
 from etna.models.base import Model
 from etna.models.base import log_decorator
+from etna.transforms import PytorchForecastingTransform
 
 
 class TFTModel(Model):
