@@ -79,12 +79,7 @@ def test_mean_feature(
     expected: np.array,
 ):
     transform = MeanTransform(
-        window=window,
-        seasonality=seasonality,
-        alpha=alpha,
-        min_periods=periods,
-        fillna=fill_na,
-        in_column="target",
+        window=window, seasonality=seasonality, alpha=alpha, min_periods=periods, fillna=fill_na, in_column="target"
     )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
@@ -101,12 +96,7 @@ def test_mean_feature(
     ),
 )
 def test_min_feature(
-    simple_df_for_agg: pd.DataFrame,
-    window: int,
-    seasonality: int,
-    periods: int,
-    fill_na: float,
-    expected: np.array,
+    simple_df_for_agg: pd.DataFrame, window: int, seasonality: int, periods: int, fill_na: float, expected: np.array
 ):
     transform = MinTransform(
         window=window, seasonality=seasonality, min_periods=periods, fillna=fill_na, in_column="target"
