@@ -3,6 +3,7 @@ from etna.analysis.eda_utils import distribution_plot
 from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.median_outliers import get_anomalies_median
+from etna.analysis.outliers.sequence_outliers import get_sequence_anomalies
 from etna.analysis.plotters import get_correlation_matrix
 from etna.analysis.plotters import plot_anomalies
 from etna.analysis.plotters import plot_anomalies_interactive
