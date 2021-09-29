@@ -38,6 +38,37 @@ def SSE(i: int, j: int, p: List[float], pp: List[float]):
 
 
 @numba.jit(nopython=True)
+def adjust_estimation(i: int, k: int, sse: np.array, count_sse: np.array):
+    """
+    Count sse[i][k] using binary search.
+    """
+    s1 = sse[i - 1][k - 1]
+    s0 = sse[i - 1][k - 1]
+    idx0 = np.inf
+    idx1 = 0
+    left = 0
+    right = i
+    while idx1 != idx0:
+        right = i
+        idx0 = idx1
+        # найти бинпоиском такое j: count_sse[j][i] > s1
+        while right - left > 1:
+            if count_sse[(left + right) // 2][i] > s1:
+                left = (left + right) // 2
+            else:
+                right = (left + right) // 2
+        idx1 = left
+        s1 = s0 - sse[idx1][k - 1]
+
+    now_min = np.inf
+    for j in range(idx1, i):
+        now = sse[j][k - 1] + count_sse[j + 1][i]
+        if now < now_min:
+            now_min = now
+    return now_min
+
+
+@numba.jit(nopython=True)
 def v_optimal_hist(series: List[float], B: int):
     """
     Count an approximation error of a series with B bins.
@@ -75,30 +106,7 @@ def v_optimal_hist(series: List[float], B: int):
     for k in range(1, B):  # итерация по бинам
         for i in range(k, len(series)):  # итерация по ряду
             # заполняем sse[i][k]
-            s1 = sse[i - 1][k - 1]
-            s0 = sse[i - 1][k - 1]
-            idx0 = np.inf
-            idx1 = 0
-            left = 0
-            right = i
-            while idx1 != idx0:
-                right = i
-                idx0 = idx1
-                # найти бинпоиском такое j: count_sse[j][i] > s1
-                while right - left > 1:
-                    if count_sse[(left + right) // 2][i] > s1:
-                        left = (left + right) // 2
-                    else:
-                        right = (left + right) // 2
-                idx1 = left
-                s1 = s0 - sse[idx1][k - 1]
-
-            now_min = np.inf
-            for j in range(idx1, i):
-                now = sse[j][k - 1] + count_sse[j + 1][i]
-                if now < now_min:
-                    now_min = now
-            sse[i][k] = now_min
+            sse[i][k] = adjust_estimation(i, k, sse, count_sse)
     return sse
 
 
