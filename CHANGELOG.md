@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
 - Update EDA notebook ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
+- Delete offset from WindowStatisticsTransform, use lags instead ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
 
 ### Fixed
 - Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
