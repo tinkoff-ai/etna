@@ -5,10 +5,11 @@ import pytest
 from etna.clustering.distances.distance_matrix import DistanceMatrix
 from etna.clustering.distances.dtw_distance import DTWDistance
 from etna.clustering.distances.euclidean_distance import EuclideanDistance
+from etna.datasets import TSDataset
 
 
 @pytest.fixture
-def simple_multisegment_df() -> pd.DataFrame:
+def simple_multisegment_ts() -> TSDataset:
     """Generate simple dataframe with multiple segments."""
     date_range = pd.date_range("2020-01-01", periods=4)
     x1 = pd.DataFrame({"timestamp": date_range})
@@ -29,21 +30,22 @@ def simple_multisegment_df() -> pd.DataFrame:
 
     df = pd.concat((x1, x2, x3, x4), ignore_index=True)
     df["target"] = df["target"].astype(float)
-    return df
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    return ts
 
 
-def test_idx2segment_segment2idx(simple_multisegment_df: pd.DataFrame):
+def test_idx2segment_segment2idx(simple_multisegment_ts: TSDataset):
     """Check that mapping is correct."""
     dm = DistanceMatrix(distance=EuclideanDistance())
-    dm.fit(df=simple_multisegment_df)
+    dm.fit(ts=simple_multisegment_ts)
     assert dm.idx2segment == {0: "A", 1: "B", 2: "C", 3: "D"}
     assert dm.segment2idx == {"A": 0, "B": 1, "C": 2, "D": 3}
 
 
-def test_eucl_matrix_value(simple_multisegment_df: pd.DataFrame):
+def test_eucl_matrix_value(simple_multisegment_ts: TSDataset):
     """Check distance matrix in case of euclidean distance."""
     dm = DistanceMatrix(distance=EuclideanDistance())
-    dm.fit(df=simple_multisegment_df)
+    dm.fit(ts=simple_multisegment_ts)
     matrix = dm.predict()
 
     sqrt_2 = np.sqrt(2)
@@ -52,10 +54,10 @@ def test_eucl_matrix_value(simple_multisegment_df: pd.DataFrame):
     np.testing.assert_array_almost_equal(matrix, expected)
 
 
-def test_dtw_matrix_value(simple_multisegment_df: pd.DataFrame):
+def test_dtw_matrix_value(simple_multisegment_ts: TSDataset):
     """Check distance matrix in case of dtw distance."""
     dm = DistanceMatrix(distance=DTWDistance())
-    dm.fit(df=simple_multisegment_df)
+    dm.fit(ts=simple_multisegment_ts)
     matrix = dm.predict()
 
     expected = np.array([[0, 0, 1, 2], [0, 0, 1, 2], [1, 1, 0, 1], [2, 2, 1, 0]])

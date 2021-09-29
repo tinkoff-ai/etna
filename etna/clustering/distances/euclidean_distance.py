@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 
 from etna.clustering.distances.base import Distance
-from etna.datasets import TSDataset
 
 
 @numba.cfunc(numba.float64(numba.float64[:], numba.float64[:]))
@@ -41,7 +40,7 @@ class EuclideanDistance(Distance):
     def _compute_distance(self, x1: np.array, x2: np.array) -> float:
         return euclidean_distance(x1=x1, x2=x2)
 
-    def get_average(self, ts: TSDataset) -> pd.DataFrame:
+    def _get_average(self, ts: "TSDataset") -> pd.DataFrame:
         """Get series that minimizes squared distance to given ones according to the euclidean distance.
 
         Parameters

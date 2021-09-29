@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from etna.clustering.distances.base import Distance
-from etna.datasets import TSDataset
 
 
 @numba.cfunc(numba.float64(numba.float64, numba.float64))
@@ -112,13 +111,17 @@ class DTWDistance(Distance):
         return centroid
 
     @staticmethod
-    def _get_longest_series(series_list: List[pd.np.array]) -> np.array:
+    def _get_longest_series(ts: "TSDataset") -> pd.Series:
         """Get the longest series from the list."""
+        series_list = []
+        for segment in ts.segments:
+            series = ts[:, segment, "target"].dropna()
+            series_list.append(series)
         longest_series = max(series_list, key=len)
         return longest_series
 
     @staticmethod
-    def _get_all_series(ts: TSDataset) -> List[np.array]:
+    def _get_all_series(ts: "TSDataset") -> List[np.array]:
         """Get series from the TSDataset."""
         series_list = []
         for segment in ts.segments:
@@ -126,7 +129,7 @@ class DTWDistance(Distance):
             series_list.append(series)
         return series_list
 
-    def get_average(self, ts: TSDataset, n_iters: int = 10) -> pd.DataFrame:
+    def _get_average(self, ts: "TSDataset", n_iters: int = 10) -> pd.DataFrame:
         """Get series that minimizes squared distance to given ones according to the dtw distance.
 
         Parameters
@@ -141,13 +144,12 @@ class DTWDistance(Distance):
             dataframe with columns "timestamp" and "target" that contains the series
         """
         series_list = self._get_all_series(ts)
-        initial_centroid = self._get_longest_series(series_list)
-        centroid = initial_centroid.copy()
+        initial_centroid = self._get_longest_series(ts)
+        centroid = initial_centroid.values
         for _ in range(n_iters):
             new_centroid = self._dba_iteration(initial_centroid=centroid, series_list=series_list)
             centroid = new_centroid
-        index = pd.date_range(start=ts.df.first_valid_index(), periods=len(initial_centroid))
-        centroid = pd.DataFrame({"timestamp": index, "target": centroid})
+        centroid = pd.DataFrame({"timestamp": initial_centroid.index.values, "target": centroid})
         return centroid
 
 

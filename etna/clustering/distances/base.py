@@ -1,4 +1,5 @@
 import sys
+import warnings
 from abc import ABC
 from abc import abstractmethod
 
@@ -6,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from etna.core import BaseMixin
-from etna.datasets import TSDataset
 
 
 class Distance(ABC, BaseMixin):
@@ -65,8 +65,26 @@ class Distance(ABC, BaseMixin):
         distance = min(self.inf_value, distance)
         return distance
 
+    @staticmethod
+    def _validate_dataset(ts: "TSDataset"):
+        """Check that dataset does not contain NaNs."""
+        for segment in ts.segments:
+            series = ts[:, segment, "target"]
+            first_valid_index = 0
+            last_valid_index = series.reset_index(drop=True).last_valid_index()
+            series_length = last_valid_index - first_valid_index + 1
+            if len(series.dropna()) != series_length:
+                warnings.warn(
+                    f"Timeseries contains NaN values, which will be dropped. "
+                    f"If it is not desirable behaviour, handle them manually."
+                )
+                break
+
     @abstractmethod
-    def get_average(self, ts: TSDataset) -> pd.DataFrame:
+    def _get_average(self, ts: "TSDataset") -> pd.DataFrame:
+        pass
+
+    def get_average(self, ts: "TSDataset") -> pd.DataFrame:
         """Get series that minimizes squared distance to given ones according to the Distance.
 
         Parameters
@@ -79,7 +97,9 @@ class Distance(ABC, BaseMixin):
         centroid:
             dataframe with columns "timestamp" and "target" that contains the series
         """
-        pass
+        self._validate_dataset(ts)
+        centroid = self._get_average(ts)
+        return centroid
 
 
 __all__ = ["Distance"]
