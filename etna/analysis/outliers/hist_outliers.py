@@ -151,6 +151,12 @@ def computeF(series: List[float], k: int, p: List[float], pp: List[float]):
             S[ai][bi][0] = [p[bi] - p[ai - 1]]
             SS[ai][bi][0] = [pp[bi] - pp[ai - 1]]
 
+    for ai in range(0, len(series)):
+        for bi in range(ai, min(len(series), ai + k)):
+            S[ai][bi][bi - ai + 1] = [0]
+            SS[ai][bi][bi - ai + 1] = [0]
+            idx[ai][bi][bi - ai + 1] = [list(np.arange(ai, bi + 1))]
+
     for ai in range(len(series)):
         for bi in range(ai + 1, len(series)):
             for ci in range(1, min(bi - ai + 1, k + 1)):
@@ -207,12 +213,6 @@ def computeF(series: List[float], k: int, p: List[float], pp: List[float]):
                         tmp = [[bi]]
                     idx[ai][bi][ci].extend(now_idx)
                     idx[ai][bi][ci].extend(deepcopy(tmp))
-
-    for ai in range(len(series)):  # просто проверка на соответствие длин, пусть пока что поживет тут
-        for bi in range(ai + 1, len(series)):
-            for ci in range(1, min(bi - ai + 1, k + 1)):
-                for i in range(len(idx[ai][bi][ci])):
-                    assert len(idx[ai][bi][ci][i]) == ci
     return F, idx
 
 
@@ -270,8 +270,6 @@ def hist(
                 if where[1][0] != k:
                     anomal[i][j][k].extend(deepcopy(idx[1 + where[0][0]][i][k - where[1][0]][0]))
                 anomal[i][j][k].extend(deepcopy(anomal[where[0][0]][j - 1][where[1][0]]))
-
-                assert len(anomal[i][j][k]) == k  # тоже проверочка
 
     # берем минимальную ошибку от E[len(series)][B-i][i] по всем допустимым i, это i - количество выбросов
     count = 0
