@@ -288,7 +288,29 @@ class TSDataset:
 
     @property
     def regressors(self) -> List[str]:
-        """Get list of all regressors across all segments in dataset."""
+        """Get list of all regressors across all segments in dataset.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.regressors
+        ['regressor_1']
+        """
         return self._regressors
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
