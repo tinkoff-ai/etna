@@ -2,6 +2,8 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Dict
 
+import pandas as pd
+
 from etna.core import BaseMixin
 
 
@@ -30,12 +32,12 @@ class Clustering(ABC, BaseMixin):
         pass
 
     @abstractmethod
-    def get_centroids(self) -> "TSDataset":
+    def get_centroids(self) -> pd.DataFrame:
         """Get centroids of clusters.
 
         Returns
         -------
-        centroids_ts:
-            TSDataset with centroids
+        centroids_df:
+            dataframe with centroids
         """
         pass
