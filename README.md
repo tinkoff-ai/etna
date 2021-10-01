@@ -70,6 +70,7 @@ We have also prepared a set of tutorials for an easy introduction:
 - Creating TSDataset and time series plotting 
 - Forecast single time series - Simple forecast, Prophet, Catboost
 - Forecast multiple time series
+- Pipeline
 #### 02. [Backtest](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/backtest.ipynb)
 - What is backtest and how it works
 - How to run a validation
