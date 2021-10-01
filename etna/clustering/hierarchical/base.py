@@ -89,7 +89,7 @@ class HierarchicalClustering(Clustering):
 
         Returns
         -------
-        segment-cluster dict:
+        Dict[str, int]:
             dict in format {segment: cluster}
         """
         self.clusters = self.clustering_algo.fit_predict(X=self.distance_matrix.matrix)
@@ -99,11 +99,13 @@ class HierarchicalClustering(Clustering):
         return self.segment2cluster
 
     def _get_series_in_cluster(self, cluster: int) -> TSDataset:
+        """Get series in cluster."""
         segments_in_cluster = [segment for segment in self.ts.segments if self.segment2cluster[segment] == cluster]
         cluster_ts = TSDataset(df=self.ts[:, segments_in_cluster, "target"], freq=self.ts.freq)
         return cluster_ts
 
-    def _get_centroid_for_cluster(self, cluster: str, **averaging_kwargs) -> pd.DataFrame:
+    def _get_centroid_of_cluster(self, cluster: str, **averaging_kwargs) -> pd.DataFrame:
+        """Get centroid of cluster."""
         cluster_ts = self._get_series_in_cluster(cluster)
         centroid = self.distance.get_average(ts=cluster_ts, **averaging_kwargs)
         centroid["segment"] = cluster
@@ -114,13 +116,13 @@ class HierarchicalClustering(Clustering):
 
         Returns
         -------
-        centroids_df:
+        pd.DataFrame:
             dataframe with centroids
         """
         centroids = []
         clusters = set(self.clusters)
         for cluster in clusters:
-            centroid = self._get_centroid_for_cluster(cluster=cluster, **averaging_kwargs)
+            centroid = self._get_centroid_of_cluster(cluster=cluster, **averaging_kwargs)
             centroids.append(centroid)
         self.centroids_df = pd.concat(centroids, ignore_index=True)
         self.centroids_df = TSDataset.to_dataset(self.centroids_df)

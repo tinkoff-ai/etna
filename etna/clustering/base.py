@@ -10,23 +10,13 @@ from etna.core import BaseMixin
 class Clustering(ABC, BaseMixin):
     """Base class for ETNA clustering algorithms."""
 
-    def __init__(self, n_jobs: int = 1):
-        """Init Clustering.
-
-        Parameters
-        ----------
-        n_jobs:
-            number of jobs to run in parallel
-        """
-        self.n_jobs = n_jobs
-
     @abstractmethod
     def fit_predict(self) -> Dict[str, int]:
         """Fit clustering algo and predict clusters.
 
         Returns
         -------
-        segment-cluster dict:
+        Dict[str, int]:
             dict in format {segment: cluster}
         """
         pass
@@ -37,7 +27,7 @@ class Clustering(ABC, BaseMixin):
 
         Returns
         -------
-        centroids_df:
+        pd.DataFrame:
             dataframe with centroids
         """
         pass

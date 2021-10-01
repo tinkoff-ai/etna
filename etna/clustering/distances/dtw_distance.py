@@ -22,7 +22,7 @@ def simple_dist(x1: float, x2: float) -> float:
 
     Returns
     -------
-    distance:
+    float:
         distance between x1 and x2
     """
     return abs(x1 - x2)
@@ -31,7 +31,9 @@ def simple_dist(x1: float, x2: float) -> float:
 class DTWDistance(Distance):
     """DTW distance handler."""
 
-    def __init__(self, points_distance: Callable[[np.array, np.array], float] = simple_dist, trim_series: bool = False):
+    def __init__(
+        self, points_distance: Callable[[np.ndarray, np.ndarray], float] = simple_dist, trim_series: bool = False
+    ):
         """Init DTWDistance.
 
         Parameters
@@ -50,7 +52,7 @@ class DTWDistance(Distance):
 
     @staticmethod
     @numba.njit
-    def _build_matrix(x1: np.array, x2: np.array, points_distance: Callable[[float, float], float]) -> np.array:
+    def _build_matrix(x1: np.ndarray, x2: np.ndarray, points_distance: Callable[[float, float], float]) -> np.ndarray:
         """Build dtw-distance matrix for series x1 and x2."""
         x1_size, x2_size = len(x1), len(x2)
         matrix = np.empty(shape=(x1_size, x2_size))
@@ -68,7 +70,7 @@ class DTWDistance(Distance):
 
     @staticmethod
     @numba.njit
-    def _get_path(matrix: np.array) -> List[Tuple[int, int]]:
+    def _get_path(matrix: np.ndarray) -> List[Tuple[int, int]]:
         """Build a warping path with given matrix of dtw-distance."""
         i, j = matrix.shape[0] - 1, matrix.shape[1] - 1
         path = [(i, j)]
@@ -86,12 +88,12 @@ class DTWDistance(Distance):
             path.append((i, j))
         return path
 
-    def _compute_distance(self, x1: np.array, x2: np.array) -> float:
+    def _compute_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
         """Compute distance between x1 and x2."""
         matrix = self._build_matrix(x1=x1, x2=x2, points_distance=self.points_distance)
         return matrix[-1][-1]
 
-    def _dba_iteration(self, initial_centroid: np.array, series_list: List[np.array]) -> np.array:
+    def _dba_iteration(self, initial_centroid: np.ndarray, series_list: List[np.ndarray]) -> np.ndarray:
         """Run DBA iteration.
         * for each series from series list build a dtw matrix and warping path
         * update values of centroid with values from series according to path
@@ -121,7 +123,7 @@ class DTWDistance(Distance):
         return longest_series
 
     @staticmethod
-    def _get_all_series(ts: "TSDataset") -> List[np.array]:
+    def _get_all_series(ts: "TSDataset") -> List[np.ndarray]:
         """Get series from the TSDataset."""
         series_list = []
         for segment in ts.segments:
@@ -129,7 +131,7 @@ class DTWDistance(Distance):
             series_list.append(series)
         return series_list
 
-    def _get_average(self, ts: "TSDataset", n_iters: int = 10) -> pd.DataFrame:
+    def _get_average(self, ts: "TSDataset", n_iters: int = 10) -> np.ndarray:
         """Get series that minimizes squared distance to given ones according to the dtw distance.
 
         Parameters
@@ -140,7 +142,7 @@ class DTWDistance(Distance):
             number of DBA iterations to adjust centroid with series
         Returns
         -------
-        centroid:
+        np.ndarray:
             dataframe with columns "timestamp" and "target" that contains the series
         """
         series_list = self._get_all_series(ts)

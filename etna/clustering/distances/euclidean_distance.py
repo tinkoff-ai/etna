@@ -6,7 +6,7 @@ from etna.clustering.distances.base import Distance
 
 
 @numba.cfunc(numba.float64(numba.float64[:], numba.float64[:]))
-def euclidean_distance(x1: np.array, x2: np.array) -> float:
+def euclidean_distance(x1: np.ndarray, x2: np.ndarray) -> float:
     """Get euclidean distance between two arrays.
 
     Parameters
@@ -18,7 +18,7 @@ def euclidean_distance(x1: np.array, x2: np.array) -> float:
 
     Returns
     -------
-    distance:
+    float:
         distance between x1 and x2
     """
     return np.linalg.norm(x1 - x2)
@@ -37,7 +37,8 @@ class EuclideanDistance(Distance):
         """
         super().__init__(trim_series=trim_series)
 
-    def _compute_distance(self, x1: np.array, x2: np.array) -> float:
+    def _compute_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
+        """Compute distance between x1 and x2."""
         return euclidean_distance(x1=x1, x2=x2)
 
     def _get_average(self, ts: "TSDataset") -> pd.DataFrame:
@@ -50,7 +51,7 @@ class EuclideanDistance(Distance):
 
         Returns
         -------
-        centroid:
+        pd.DataFrame:
             dataframe with columns "timestamp" and "target" that contains the series
         """
         centroid = pd.DataFrame({"timestamp": ts.index.values, "target": ts.df.mean(axis=1).values})

@@ -28,7 +28,7 @@ class Distance(ABC, BaseMixin):
         self.inf_value = inf_value
 
     @abstractmethod
-    def _compute_distance(self, x1: np.array, x2: np.array) -> float:
+    def _compute_distance(self, x1: np.ndarray, x2: np.ndarray) -> float:
         """Compute distance between two given arrays."""
         pass
 
@@ -44,7 +44,7 @@ class Distance(ABC, BaseMixin):
 
         Returns
         -------
-        distance:
+        float:
             distance between x1 and x2
         """
         if self.trim_series:
@@ -82,6 +82,7 @@ class Distance(ABC, BaseMixin):
 
     @abstractmethod
     def _get_average(self, ts: "TSDataset") -> pd.DataFrame:
+        """Get series that minimizes squared distance to given ones according to the Distance."""
         pass
 
     def get_average(self, ts: "TSDataset") -> pd.DataFrame:
@@ -94,7 +95,7 @@ class Distance(ABC, BaseMixin):
 
         Returns
         -------
-        centroid:
+        pd.DataFrame:
             dataframe with columns "timestamp" and "target" that contains the series
         """
         self._validate_dataset(ts)

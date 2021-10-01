@@ -23,8 +23,8 @@ class DistanceMatrix(BaseMixin):
             class for distance measurement
         """
         self.distance = distance
-        self.matrix: Optional[np.array] = None
-        self.series: Optional[List[np.array]] = None
+        self.matrix: Optional[np.ndarray] = None
+        self.series: Optional[List[np.ndarray]] = None
         self.segment2idx: Dict[str, int] = {}
         self.idx2segment: Dict[int, str] = {}
         self.series_number: Optional[int] = None
@@ -58,12 +58,12 @@ class DistanceMatrix(BaseMixin):
         self.series_number = len(series_list)
         return series_list
 
-    def _compute_dist(self, series: List[pd.Series], idx: int) -> np.array:
+    def _compute_dist(self, series: List[pd.Series], idx: int) -> np.ndarray:
         """Compute distance from idx-th series to other ones."""
         distances = np.array([self.distance(series[idx], series[j]) for j in range(self.series_number)])
         return distances
 
-    def _compute_dist_matrix(self, series: List[pd.Series]) -> np.array:
+    def _compute_dist_matrix(self, series: List[pd.Series]) -> np.ndarray:
         """Compute distance matrix for given series."""
         distances = np.empty(shape=(self.series_number, self.series_number))
         for idx in tqdm(range(self.series_number)):
@@ -89,17 +89,17 @@ class DistanceMatrix(BaseMixin):
         self.matrix = self._compute_dist_matrix(self.series)
         return self
 
-    def predict(self) -> np.array:
+    def predict(self) -> np.ndarray:
         """Get distance matrix.
 
         Returns
         -------
-        matrix:
+        np.ndarray:
             2D array with distances between series
         """
         return self.matrix
 
-    def fit_predict(self, ts: "TSDataset") -> np.array:
+    def fit_predict(self, ts: "TSDataset") -> np.ndarray:
         """Compute distance matrix and return it.
 
         Parameters
@@ -109,7 +109,7 @@ class DistanceMatrix(BaseMixin):
 
         Returns
         -------
-        matrix:
+        np.ndarray:
             2D array with distances between series
         """
         return self.fit(ts).predict()
