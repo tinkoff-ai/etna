@@ -122,6 +122,7 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
+        self._update_regressors()
 
     def fit_transform(self, transforms: Iterable["Transform"]):
         """Fit and apply given transforms to the data."""
