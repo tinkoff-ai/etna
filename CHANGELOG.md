@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
 - Sequence anomalies ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
 - 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna-ts/pull/101))
+- Outliers notebook (#[117](https://github.com/tinkoff-ai/etna-ts/pull/117)))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))

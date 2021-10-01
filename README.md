@@ -82,7 +82,14 @@ We have also prepared a set of tutorials for an easy introduction:
     - Distribution
 - Outliers
      - Median method
+     - Density method
+#### 04. [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/Outliers.ipynb) 
+- Point outliers
+    - Median method
     - Density method
+- Sequence outliers
+- Interactive visualization
+- Outliers imputation
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
