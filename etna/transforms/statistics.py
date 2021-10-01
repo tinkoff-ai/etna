@@ -19,7 +19,6 @@ class WindowStatisticsTransform(Transform, ABC):
         in_column: str,
         seasonality: int = 1,
         min_periods: int = 1,
-        offset: int = 0,
         out_postfix: Optional[str] = None,
         fillna: float = 0,
         **kwargs,
@@ -35,8 +34,6 @@ class WindowStatisticsTransform(Transform, ABC):
         min_periods: int
             min number of targets in window to compute aggregation; if there is less than min_periods number of targets
             return None
-        offset: int
-            value of offset to start feature computation
         out_postfix: str, optional
             postfix to add to result column name; if not given, uses default_out_postfix
         fillna: float
@@ -45,7 +42,6 @@ class WindowStatisticsTransform(Transform, ABC):
         self.window = window
         self.seasonality = seasonality
         self.min_periods = min_periods
-        self.offset = offset
         self.out_postfix = out_postfix or self.default_out_postfix
         self.fillna = fillna
         self.kwargs = kwargs
@@ -81,7 +77,7 @@ class WindowStatisticsTransform(Transform, ABC):
         """
         features = (
             df.xs(self.in_column, level=1, axis=1)
-            .shift(1 + self.offset)
+            .shift(1)
             .rolling(
                 window=self.seasonality * self.window if self.window != -1 else len(df) - 1,
                 min_periods=self.min_required_len,
@@ -120,7 +116,6 @@ class MeanTransform(WindowStatisticsTransform):
         seasonality: int = 1,
         alpha: float = 1,
         min_periods: int = 1,
-        offset: int = 0,
         out_postfix: Optional[str] = None,
         fillna: float = 0,
     ):
@@ -137,8 +132,6 @@ class MeanTransform(WindowStatisticsTransform):
         min_periods: int
             min number of targets in window to compute aggregation; if there is less than min_periods number of targets
             return None
-        offset: int
-            value of offset to start feature computation
         out_postfix: str
             postfix to add to result column name
         fillna: float
@@ -149,7 +142,6 @@ class MeanTransform(WindowStatisticsTransform):
             in_column=in_column,
             seasonality=seasonality,
             min_periods=min_periods,
-            offset=offset,
             out_postfix=out_postfix,
             fillna=fillna,
         )
@@ -209,7 +201,6 @@ class QuantileTransform(WindowStatisticsTransform):
         in_column: str,
         seasonality: int = 1,
         min_periods: int = 1,
-        offset: int = 0,
         out_postfix: Optional[str] = None,
         fillna: float = 0,
     ):
@@ -226,8 +217,6 @@ class QuantileTransform(WindowStatisticsTransform):
         min_periods: int
             min number of targets in window to compute aggregation; if there is less than min_periods number of targets
             return None
-        offset: int
-            value of offset to start feature computation
         out_postfix: str
             postfix to add to result column name
         fillna: float
@@ -239,7 +228,6 @@ class QuantileTransform(WindowStatisticsTransform):
             in_column=in_column,
             seasonality=seasonality,
             min_periods=min_periods,
-            offset=offset,
             out_postfix=out_postfix,
             fillna=fillna,
         )
