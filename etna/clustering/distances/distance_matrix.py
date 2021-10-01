@@ -5,10 +5,11 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from etna.clustering.distances.base import Distance
 from etna.core import BaseMixin
+from etna.loggers import ConsoleLogger
+from etna.loggers import tslogger
 
 
 class DistanceMatrix(BaseMixin):
@@ -66,8 +67,15 @@ class DistanceMatrix(BaseMixin):
     def _compute_dist_matrix(self, series: List[pd.Series]) -> np.ndarray:
         """Compute distance matrix for given series."""
         distances = np.empty(shape=(self.series_number, self.series_number))
-        for idx in tqdm(range(self.series_number)):
+        logging_freq = self.series_number // 10
+        logger_id = tslogger.add(ConsoleLogger())
+        tslogger.start_experiment()
+        for idx in range(self.series_number):
             distances[idx] = self._compute_dist(series=series, idx=idx)
+            if (idx + 1) % logging_freq == 0:
+                tslogger.log(f"Done {idx + 1} out of {self.series_number} ")
+        tslogger.finish_experiment()
+        tslogger.remove(logger_id)
         return distances
 
     def fit(self, ts: "TSDataset") -> "DistanceMatrix":
