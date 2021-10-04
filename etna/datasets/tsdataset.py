@@ -113,6 +113,7 @@ class TSDataset:
             self.df = self._merge_exog(self.df)
 
         self.transforms = None
+        self._update_regressors()
 
     def transform(self, transforms: Iterable["Transform"]):
         """Apply given transform to the data."""
@@ -121,6 +122,7 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
+        self._update_regressors()
 
     def fit_transform(self, transforms: Iterable["Transform"]):
         """Fit and apply given transforms to the data."""
@@ -129,6 +131,7 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
+        self._update_regressors()
 
     def __repr__(self):
         return self.df.__repr__()
@@ -198,10 +201,9 @@ class TSDataset:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
-            for segment in self.segments:
-                regressors_columns = [x for x in self.df_exog[segment].columns if x.startswith("regressor")]
-                if regressors_columns:
-                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, regressors_columns]].index
+            if self.regressors:
+                for segment in self.segments:
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
                     if not np.all(future_dates.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -277,6 +279,40 @@ class TSDataset:
         ['segment_0', 'segment_1']
         """
         return self.df.columns.get_level_values("segment").unique().tolist()
+
+    def _update_regressors(self):
+        result = set()
+        for column in self.columns.get_level_values("feature"):
+            if column.startswith("regressor"):
+                result.add(column)
+        self._regressors = list(result)
+
+    @property
+    def regressors(self) -> List[str]:
+        """Get list of all regressors across all segments in dataset.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.regressors
+        ['regressor_1']
+        """
+        return self._regressors
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
         """ Plot of random or chosen segments.
