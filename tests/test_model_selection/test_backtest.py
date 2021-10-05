@@ -258,23 +258,27 @@ def test_get_metrics_interface(aggregate_metrics: bool, expected_columns: List[s
 
 def test_get_forecasts_interface_daily(big_daily_example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_forecasts"""
-    date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
+    date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True, is_weekend=False)
     tsvc = _fit_backtest_pipeline(
         model=CatBoostModelMultiSegment(), horizon=24, ts=big_daily_example_tsdf, transforms=[date_flags]
     )
     forecast = tsvc.get_forecasts()
-    expected_columns = ["day_number_in_month", "day_number_in_week", "fold_number", "target"]
+    expected_columns = sorted(
+        ["regressor_day_number_in_month", "regressor_day_number_in_week", "fold_number", "target"]
+    )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
 
 def test_get_forecasts_interface_hours(example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_forecasts"""
-    date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
+    date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True, is_weekend=False)
     tsvc = _fit_backtest_pipeline(
         model=CatBoostModelMultiSegment(), horizon=24, ts=example_tsdf, transforms=[date_flags]
     )
     forecast = tsvc.get_forecasts()
-    expected_columns = ["day_number_in_month", "day_number_in_week", "fold_number", "target"]
+    expected_columns = sorted(
+        ["regressor_day_number_in_month", "regressor_day_number_in_week", "fold_number", "target"]
+    )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
 

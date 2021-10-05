@@ -1,12 +1,9 @@
-from typing import List
-
 import numpy as np
 import pytest
 
 from etna.analysis.outliers.hist_outliers import computeF
 from etna.analysis.outliers.hist_outliers import hist
 from etna.analysis.outliers.hist_outliers import v_optimal_hist
-from etna.datasets.tsdataset import TSDataset
 
 
 @pytest.mark.parametrize(
@@ -20,7 +17,13 @@ from etna.datasets.tsdataset import TSDataset
 )
 def test_v_optimal_hist_one_value(series: np.array, B: int, expected: float):
     """Check that v_optimal_hist works correctly."""
-    error = v_optimal_hist(series, B)[len(series) - 1][B - 1]
+    p, pp = np.empty_like(series), np.empty_like(series)
+    p[0] = series[0]
+    pp[0] = series[0] ** 2
+    for i in range(1, len(series)):
+        p[i] = p[i - 1] + series[i]
+        pp[i] = pp[i - 1] + series[i] ** 2
+    error = v_optimal_hist(series, B, p, pp)[len(series) - 1][B - 1]
     assert error == expected
 
 
@@ -37,7 +40,13 @@ def test_v_optimal_hist_one_value(series: np.array, B: int, expected: float):
 )
 def test_v_optimal_hist(series: np.array, B: int, expected: np.array):
     """Check that v_optimal_hist works correctly."""
-    error = v_optimal_hist(series, B)
+    p, pp = np.empty_like(series), np.empty_like(series)
+    p[0] = series[0]
+    pp[0] = series[0] ** 2
+    for i in range(1, len(series)):
+        p[i] = p[i - 1] + series[i]
+        pp[i] = pp[i - 1] + series[i] ** 2
+    error = v_optimal_hist(series, B, p, pp)
     np.testing.assert_almost_equal(error, expected)
 
 

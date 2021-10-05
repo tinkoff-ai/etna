@@ -107,7 +107,7 @@ def test_dummy_inverse_transform_not_inplace(normal_distributed_df, scaler, mode
     not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
     columns_to_compare = pd.MultiIndex.from_tuples(
         [
-            (segment_name, f"{str(inplace_scaler)}_{feature_name}")
+            (segment_name, f"{feature_name}_{str(inplace_scaler)}")
             for segment_name, feature_name in normal_distributed_df.columns
         ]
     )

@@ -8,8 +8,10 @@ from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import TemporalFusionTransformer
 
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import tslogger
 from etna.models.base import Model
 from etna.models.base import log_decorator
+from etna.transforms import PytorchForecastingTransform
 
 
 class TFTModel(Model):
@@ -96,6 +98,16 @@ class TFTModel(Model):
             hidden_continuous_size=self.hidden_continuous_size,
         )
 
+    @staticmethod
+    def _get_pf_transform(ts: TSDataset) -> PytorchForecastingTransform:
+        """Get PytorchForecastingTransform from ts.transforms or raise exception if not found."""
+        if ts.transforms is not None and isinstance(ts.transforms[-1], PytorchForecastingTransform):
+            return ts.transforms[-1]
+        else:
+            raise ValueError(
+                "Not valid usage of transforms, please add PytorchForecastingTransform at the end of transforms"
+            )
+
     @log_decorator
     def fit(self, ts: TSDataset) -> "TFTModel":
         """
@@ -110,24 +122,25 @@ class TFTModel(Model):
         -------
         TFTModel
         """
-        self.model = self._from_dataset(ts.transforms[-1].pf_dataset_train)
+        pf_transform = self._get_pf_transform(ts)
+        self.model = self._from_dataset(pf_transform.pf_dataset_train)
 
         self.trainer = pl.Trainer(
-            logger=False,
+            logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
             checkpoint_callback=False,
             gradient_clip_val=self.gradient_clip_val,
         )
 
-        train_dataloader = ts.transforms[-1].pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
+        train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 
         self.trainer.fit(self.model, train_dataloader)
 
         return self
 
     @log_decorator
-    def forecast(self, ts: TSDataset) -> pd.DataFrame:
+    def forecast(self, ts: TSDataset) -> TSDataset:
         """
         Predict future.
 
@@ -141,7 +154,8 @@ class TFTModel(Model):
         TSDataset
             TSDataset with predictions.
         """
-        prediction_dataloader = ts.transforms[-1].pf_dataset_predict.to_dataloader(
+        pf_transform = self._get_pf_transform(ts)
+        prediction_dataloader = pf_transform.pf_dataset_predict.to_dataloader(
             train=False, batch_size=self.batch_size * 2
         )
 

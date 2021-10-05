@@ -1,20 +1,25 @@
 import math
+from typing import TYPE_CHECKING
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from etna.datasets.tsdataset import TSDataset
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def plot_forecast(
-    forecast_ts: TSDataset,
-    test_ts: TSDataset,
-    train_ts: Optional[TSDataset] = None,
+    forecast_ts: "TSDataset",
+    test_ts: "TSDataset",
+    train_ts: Optional["TSDataset"] = None,
     segments: Optional[List[str]] = None,
     n_train_samples: Optional[int] = None,
     columns_num: int = 2,
@@ -79,7 +84,7 @@ def plot_forecast(
 
 def plot_backtest(
     forecast_df: pd.DataFrame,
-    ts: TSDataset,
+    ts: "TSDataset",
     segments: Optional[List[str]] = None,
     folds: Optional[List[int]] = None,
     columns_num: int = 2,
@@ -148,7 +153,7 @@ def plot_backtest(
 
 
 def plot_anomalies(
-    ts: TSDataset,
+    ts: "TSDataset",
     anomaly_dict: Dict[str, List[np.datetime64]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
@@ -189,12 +194,12 @@ def plot_anomalies(
         ax[i].tick_params("x", rotation=45)
 
 
-def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
+def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
     -----------
-    ts :
+    ts:
         TSDataset with timeseries data
     segments:
         Segments to use
@@ -217,13 +222,13 @@ def get_correlation_matrix(ts: TSDataset, segments: Optional[List[str]] = None, 
 
 
 def plot_correlation_matrix(
-    ts: TSDataset, segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
+    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
 ):
     """Plot pairwise correlation heatmap for selected segments.
 
     Parameters
     -----------
-    ts :
+    ts:
         TSDataset with timeseries data
     segments:
         Segments to use
@@ -242,3 +247,78 @@ def plot_correlation_matrix(
     ax.set_xticklabels(labels, rotation=45, horizontalalignment="right")
     ax.set_yticklabels(labels, rotation=0, horizontalalignment="right")
     ax.set_title("Correlation Heatmap")
+
+
+def plot_anomalies_interactive(
+    ts: "TSDataset",
+    segment: str,
+    method: Callable[..., Dict[str, List[pd.Timestamp]]],
+    params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
+):
+    """Plot a time series with indicated anomalies.
+    Anomalies are obtained using the specified method. The method parameters values
+    can be changed using the corresponding sliders.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    segment:
+        Segment to plot
+    method:
+        Method for outliers detection
+    params_bounds:
+        Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
+
+    Notes
+    -----
+    Jupyter notebook might display the results incorrectly, in this case try to use '!jupyter nbextension enable --py widgetsnbextension'
+
+    Examples
+    --------
+    >>> from etna.datasets import TSDataset
+    >>> from etna.datasets import generate_ar_df
+    >>> from etna.analysis import plot_anomalies_interactive, get_anomalies_density
+    >>> classic_df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
+    >>> df = TSDataset.to_dataset(classic_df)
+    >>> ts = TSDataset(df, "D")
+    >>> params_bounds = {"window_size": (5, 20, 1), "distance_coef": (0.1, 3, 0.25)}
+    >>> method = get_anomalies_density
+    >>> plot_anomalies_interactive(ts=ts, segment="segment_1", method=method, params_bounds=params_bounds) # doctest: +SKIP
+    """
+    from ipywidgets import FloatSlider
+    from ipywidgets import IntSlider
+    from ipywidgets import interact
+
+    from etna.datasets import TSDataset
+
+    df = ts[:, segment, "target"]
+    ts = TSDataset(ts[:, segment, :], ts.freq)
+    x, y = df.index.values, df.values
+    cache = {}
+
+    sliders = dict()
+    style = {"description_width": "initial"}
+    for param, bounds in params_bounds.items():
+        min_, max_, step = bounds
+        if isinstance(min_, float) or isinstance(max_, float) or isinstance(step, float):
+            sliders[param] = FloatSlider(min=min_, max=max_, step=step, continuous_update=False, style=style)
+        else:
+            sliders[param] = IntSlider(min=min_, max=max_, step=step, continuous_update=False, style=style)
+
+    def update(**kwargs):
+        key = "_".join([str(val) for val in kwargs.values()])
+        if key not in cache:
+            anomalies = method(ts, **kwargs)[segment]
+            anomalies = sorted(anomalies)
+            cache[key] = anomalies
+        else:
+            anomalies = cache[key]
+        plt.figure(figsize=(20, 10))
+        plt.cla()
+        plt.plot(x, y)
+        plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
+        plt.xticks(rotation=45)
+        plt.show()
+
+    interact(update, **sliders)

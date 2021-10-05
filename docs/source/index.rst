@@ -13,6 +13,7 @@ Welcome to ETNA's documentation!
    transforms
    analysis
    model_selection
+   loggers
    api
 
 Indices and tables

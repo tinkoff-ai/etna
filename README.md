@@ -70,6 +70,7 @@ We have also prepared a set of tutorials for an easy introduction:
 - Creating TSDataset and time series plotting 
 - Forecast single time series - Simple forecast, Prophet, Catboost
 - Forecast multiple time series
+- Pipeline
 #### 02. [Backtest](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/backtest.ipynb)
 - What is backtest and how it works
 - How to run a validation
@@ -82,7 +83,14 @@ We have also prepared a set of tutorials for an easy introduction:
     - Distribution
 - Outliers
      - Median method
+     - Density method
+#### 04. [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/Outliers.ipynb) 
+- Point outliers
+    - Median method
     - Density method
+- Sequence outliers
+- Interactive visualization
+- Outliers imputation
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
@@ -97,7 +105,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 [Bunin Dmitriy](https://github.com/Mr-Geekman),
 [Chikov Aleksandr](https://github.com/alex-hse-repository),
 [Barinov Nikita](https://github.com/diadorer),
-[Romantsov Nikolay](),
+[Romantsov Nikolay](https://github.com/WinstonDovlatov),
 [Makhin Artem](https://github.com/Ama16),
 [Denisov Vladislav](https://github.com/v-v-denisov),
 [Mitskovets Ivan](https://github.com/imitskovets),

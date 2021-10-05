@@ -110,7 +110,7 @@ class SklearnTransform(Transform):
             )
             transformed_features.columns = pd.MultiIndex.from_tuples(
                 [
-                    (segment_name, f"{str(self)}_{feature_name}")
+                    (segment_name, f"{feature_name}_{str(self)}")
                     for segment_name, feature_name in transformed_features.columns
                 ]
             )
