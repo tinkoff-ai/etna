@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from etna.analysis.outliers.hist_outliers import computeF
+from etna.analysis.outliers.hist_outliers import compute_f
 from etna.analysis.outliers.hist_outliers import hist
 from etna.analysis.outliers.hist_outliers import v_optimal_hist
 
 
 @pytest.mark.parametrize(
-    "series,B,expected",
+    "series,bins_number,expected",
     (
         (np.array([1, 2, 3, 4, 5, 6, 7, 8, 9]), 1, 60),
         (np.array([1, 2, 3, 4, -1, 0, -2, -2, -1]), 2, 7.8),
@@ -15,7 +15,7 @@ from etna.analysis.outliers.hist_outliers import v_optimal_hist
         (np.array([1, 2, 3, 4, 5, 6, 6, 7]), 7, 0),
     ),
 )
-def test_v_optimal_hist_one_value(series: np.array, B: int, expected: float):
+def test_v_optimal_hist_one_value(series: np.array, bins_number: int, expected: float):
     """Check that v_optimal_hist works correctly."""
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
@@ -23,12 +23,12 @@ def test_v_optimal_hist_one_value(series: np.array, B: int, expected: float):
     for i in range(1, len(series)):
         p[i] = p[i - 1] + series[i]
         pp[i] = pp[i - 1] + series[i] ** 2
-    error = v_optimal_hist(series, B, p, pp)[len(series) - 1][B - 1]
+    error = v_optimal_hist(series, bins_number, p, pp)[len(series) - 1][bins_number - 1]
     assert error == expected
 
 
 @pytest.mark.parametrize(
-    "series,B,expected",
+    "series,bins_number,expected",
     (
         (np.array([-1, 0, 4, 3, 8]), 2, np.array([[0, 0], [0.5, 0], [14, 0.5], [17, 1], [50.8, 14.5]])),
         (
@@ -38,7 +38,7 @@ def test_v_optimal_hist_one_value(series: np.array, B: int, expected: float):
         ),
     ),
 )
-def test_v_optimal_hist(series: np.array, B: int, expected: np.array):
+def test_v_optimal_hist(series: np.array, bins_number: int, expected: np.array):
     """Check that v_optimal_hist works correctly."""
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
@@ -46,31 +46,14 @@ def test_v_optimal_hist(series: np.array, B: int, expected: np.array):
     for i in range(1, len(series)):
         p[i] = p[i - 1] + series[i]
         pp[i] = pp[i - 1] + series[i] ** 2
-    error = v_optimal_hist(series, B, p, pp)
-    np.testing.assert_almost_equal(error, expected)
-
-
-@pytest.mark.parametrize(
-    "series,B,expected",
-    (
-        (np.array([-1, 0, 4, 3, 8]), 2, np.array([[0, 0], [0.5, 0], [14, 0.5], [17, 1], [50.8, 14.5]])),
-        (
-            np.array([4, 2, 3, 5, 3, 1]),
-            3,
-            np.array([[0, 0, 0], [2, 0, 0], [2, 0.5, 0], [5, 2, 0.5], [5.2, 4, 2], [10, 5.2, 4]]),
-        ),
-    ),
-)
-def test_computeF(series: np.array, B: int, expected: np.array):
-    """Check that v_optimal_hist works correctly."""
-    error = v_optimal_hist(series, B)
+    error = v_optimal_hist(series, bins_number, p, pp)
     np.testing.assert_almost_equal(error, expected)
 
 
 @pytest.mark.parametrize(
     "series,k", ((np.random.random(100), 10), (np.random.random(100), 20), (np.random.random(10), 4))
 )
-def test_computeF_format(series: np.array, k: int):
+def test_compute_f_format(series: np.array, k: int):
     """Check that computeF produce the correct size output."""
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
@@ -78,7 +61,7 @@ def test_computeF_format(series: np.array, k: int):
     for i in range(1, len(series)):
         p[i] = p[i - 1] + series[i]
         pp[i] = pp[i - 1] + series[i] ** 2
-    _, idx = computeF(series, k, p, pp)
+    _, idx = compute_f(series, k, p, pp)
     for ai in range(len(series)):
         for bi in range(ai + 1, len(series)):
             for ci in range(1, min(bi - ai + 1, k + 1)):
@@ -117,7 +100,7 @@ def test_computeF_format(series: np.array, k: int):
         ),
     ),
 )
-def test_computeF(series: np.array, k: int, dim: int, expected: np.array):
+def test_computef(series: np.array, k: int, dim: int, expected: np.array):
     """Check that computeF works correctly."""
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
@@ -125,18 +108,18 @@ def test_computeF(series: np.array, k: int, dim: int, expected: np.array):
     for i in range(1, len(series)):
         p[i] = p[i - 1] + series[i]
         pp[i] = pp[i - 1] + series[i] ** 2
-    res, idx = computeF(series, k, p, pp)
+    res, _ = compute_f(series, k, p, pp)
     np.testing.assert_almost_equal(res[dim], expected)
 
 
 @pytest.mark.parametrize(
-    "series,B,expected",
+    "series,bins_number,expected",
     (
         (np.array([1, 0, 1, -1, 0, 4, 1, 0, 1, 0, 1, 1, 0, 0, -1, 0, 0]), 5, np.array([3, 5, 14])),
         (np.array([4, 5, 4, 3, 9, 10, 8, 2, 1, 0, 1, 1, 5, 1, 2]), 4, np.array([12])),
     ),
 )
-def test_hist(series: np.array, B: int, expected: np.array):
+def test_hist(series: np.array, bins_number: int, expected: np.array):
     """Check that hist works correctly."""
-    anomal = hist(series, B)
+    anomal = hist(series, bins_number)
     np.testing.assert_array_equal(anomal, expected)
