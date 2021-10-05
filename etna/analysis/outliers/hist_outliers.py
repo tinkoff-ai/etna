@@ -97,19 +97,16 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
     -------
     Approximation error of a series with [1, bins_number] bins
     """
-    sse = np.zeros((len(series), bins_number))  
-    for i in range(len(series)):  
+    sse = np.zeros((len(series), bins_number))
+    for i in range(len(series)):
         sse[i][0] = optimal_sse(0, i, p, pp)
 
-    sse_one_bin = np.zeros(
-        (len(series), len(series))
-    )  
-    for i in range(len(series)):  
+    sse_one_bin = np.zeros((len(series), len(series)))
+    for i in range(len(series)):
         for j in range(i, len(series)):
             sse_one_bin[i][j] = optimal_sse(i, j, p, pp)
 
-    
-    for tmp_bins_number in range(1, bins_number):  
+    for tmp_bins_number in range(1, bins_number):
         for i in range(tmp_bins_number, len(series)):
             sse[i][tmp_bins_number] = adjust_estimation(i, tmp_bins_number, sse, sse_one_bin)
     return sse
@@ -169,9 +166,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
                 now_min = np.inf
                 now_outliers_indices = []
                 where = 0
-                for i in range(
-                    len(ss[left_border][right_border - 1][outlier_number])
-                ):
+                for i in range(len(ss[left_border][right_border - 1][outlier_number])):
                     tmp_ss.append(ss[left_border][right_border - 1][outlier_number][i] + series[right_border] ** 2)
                     tmp_s.append(s[left_border][right_border - 1][outlier_number][i] + series[right_border])
                     now_outliers_indices.append(
@@ -198,7 +193,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
                             outliers_indices[left_border][right_border][outlier_number][i].append(right_border)
                     else:
                         outliers_indices[left_border][right_border][outlier_number].append([right_border])
-                elif f1 > now_min: 
+                elif f1 > now_min:
                     f[left_border][right_border][outlier_number] = f2[where]
                     s[left_border][right_border][outlier_number] = tmp_s
                     ss[left_border][right_border][outlier_number] = tmp_ss
@@ -222,9 +217,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
     return f, outliers_indices
 
 
-def hist(
-    series: np.ndarray, bins_number: int
-) -> np.ndarray:
+def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
     """
     Compute outliers indices according to hist rule.
     http://www.vldb.org/conf/1999/P9.pdf
@@ -241,9 +234,7 @@ def hist(
     Outliers indices.
     """
     approximation_error = np.zeros((len(series), bins_number + 1, bins_number))
-    anomal = [
-        [[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))
-    ]
+    anomal = [[[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))]
 
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
