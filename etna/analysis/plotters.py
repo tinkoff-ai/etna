@@ -270,6 +270,10 @@ def plot_anomalies_interactive(
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
 
+    Notes
+    -----
+    Jupyter notebook might display the results incorrectly, in this case try to use '!jupyter nbextension enable --py widgetsnbextension'
+
     Examples
     --------
     >>> from etna.datasets import TSDataset
