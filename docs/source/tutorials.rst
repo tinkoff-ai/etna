@@ -10,3 +10,4 @@ Tutorials
    tutorials/get_started
    tutorials/EDA
    tutorials/backtest
+   tutorials/outliers
