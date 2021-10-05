@@ -61,7 +61,6 @@ def adjust_estimation(i: int, k: int, sse: np.ndarray, sse_one_bin: np.ndarray) 
     while idx_now != idx_prev:
         right = i
         idx_prev = idx_now
-        # найти бинпоиском такое j: sse_one_bin[j][i] > now_evaluated
         while right - left > 1:
             if sse_one_bin[(left + right) // 2][i] > now_evaluated:
                 left = (left + right) // 2
@@ -98,21 +97,20 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
     -------
     Approximation error of a series with [1, bins_number] bins
     """
-    sse = np.zeros((len(series), bins_number))  # sse[i][j] = ошибка аппроксимации j+1 бинами ряда series[:i+1]
-    for i in range(len(series)):  # заполняем столбец матрицы для 1 бина
+    sse = np.zeros((len(series), bins_number))  
+    for i in range(len(series)):  
         sse[i][0] = optimal_sse(0, i, p, pp)
 
     sse_one_bin = np.zeros(
         (len(series), len(series))
-    )  # count_sse[i][j] = ошибка аппроксимации с 1 бином от series[i:j+1]
-    for i in range(len(series)):  # препдосчитываем для того чтобы тысячу раз не вызывать одно и то же
+    )  
+    for i in range(len(series)):  
         for j in range(i, len(series)):
             sse_one_bin[i][j] = optimal_sse(i, j, p, pp)
 
-    # начинаем заполнять sse
-    for tmp_bins_number in range(1, bins_number):  # итерация по бинам
-        for i in range(tmp_bins_number, len(series)):  # итерация по ряду
-            # заполняем sse[i][k]
+    
+    for tmp_bins_number in range(1, bins_number):  
+        for i in range(tmp_bins_number, len(series)):
             sse[i][tmp_bins_number] = adjust_estimation(i, tmp_bins_number, sse, sse_one_bin)
     return sse
 
@@ -164,9 +162,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
     for left_border in range(len(series)):
         for right_border in range(left_border + 1, len(series)):
             for outlier_number in range(1, min(right_border - left_border + 1, k + 1)):
-                # рассматриваем новое значение bi. Если считаем его выбросом, то ошибка F1
                 f1 = f[left_border][right_border - 1][outlier_number - 1]
-                # подсчет второго варианта, когда bi выбросом не является
                 tmp_ss = []
                 tmp_s = []
                 f2 = []
@@ -175,7 +171,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
                 where = 0
                 for i in range(
                     len(ss[left_border][right_border - 1][outlier_number])
-                ):  # формулы для пересчета коэффициентов и ошибок, если bi не выброс
+                ):
                     tmp_ss.append(ss[left_border][right_border - 1][outlier_number][i] + series[right_border] ** 2)
                     tmp_s.append(s[left_border][right_border - 1][outlier_number][i] + series[right_border])
                     now_outliers_indices.append(
@@ -186,7 +182,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
                         now_min = f2[-1]
                         where = i
 
-                if f1 < now_min:  # ошибка меньше в предположении bi выброс
+                if f1 < now_min:
                     f[left_border][right_border][outlier_number] = f1
                     s[left_border][right_border][outlier_number] = deepcopy(
                         s[left_border][right_border - 1][outlier_number - 1]
@@ -202,7 +198,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
                             outliers_indices[left_border][right_border][outlier_number][i].append(right_border)
                     else:
                         outliers_indices[left_border][right_border][outlier_number].append([right_border])
-                elif f1 > now_min:  # ошибка меньше в предположении bi не выброс
+                elif f1 > now_min: 
                     f[left_border][right_border][outlier_number] = f2[where]
                     s[left_border][right_border][outlier_number] = tmp_s
                     ss[left_border][right_border][outlier_number] = tmp_ss
@@ -228,7 +224,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
 
 def hist(
     series: np.ndarray, bins_number: int
-) -> np.ndarray:  # главная функция, bins_number - количество бинов, работает за N^2 * bins_number^3, самое долгое - подсчет F
+) -> np.ndarray:
     """
     Compute outliers indices according to hist rule.
     http://www.vldb.org/conf/1999/P9.pdf
@@ -244,12 +240,10 @@ def hist(
     -------
     Outliers indices.
     """
-    # approximation_error[i][j][k] ошибка на series[:i+1] с j бинами и k выбросами
-    # approximation_error[i][j][k] = min[1<= l <= i, 0 <= m <= k] (E[l, j-1, m] + F[l+1, i, k-m])
     approximation_error = np.zeros((len(series), bins_number + 1, bins_number))
     anomal = [
         [[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))
-    ]  # храним индексы аномалий для E[i][j][k]
+    ]
 
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
@@ -260,7 +254,6 @@ def hist(
 
     f, outliers_indices = compute_f(series, bins_number - 1, p, pp)
 
-    # граничные условия
     approximation_error[:, 1:, 0] = v_optimal_hist(series, bins_number, p, pp)
 
     approximation_error[:, 1, :] = f[0]
@@ -290,7 +283,6 @@ def hist(
                     deepcopy(anomal[where[0][0]][tmp_bins_number - 1][where[1][0]])
                 )
 
-    # берем минимальную ошибку от E[len(series)][bins_number-i][i] по всем допустимым i, это i - количество выбросов
     count = 0
     now_min = approximation_error[-1][-1][0]
     for outlier_number in range(1, min(approximation_error.shape[1], approximation_error.shape[2])):
