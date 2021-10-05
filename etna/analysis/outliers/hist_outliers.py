@@ -41,6 +41,17 @@ def optimal_sse(left: int, right: int, p: np.ndarray, pp: np.ndarray) -> float:
 def adjust_estimation(i: int, k: int, sse: np.ndarray, sse_one_bin: np.ndarray) -> float:
     """
     Count sse_one_bin[i][k] using binary search.
+
+    Parameters
+    ----------
+    i:
+        left border of series
+    k:
+        number of bins
+    sse:
+        array of approximation errors
+    sse_one_bin:
+        array of approximation errors with one bin
     """
     now_evaluated = sse[i - 1][k - 1]
     first_evalueted = sse[i - 1][k - 1]
@@ -87,7 +98,6 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
     -------
     Approximation error of a series with [1, bins_number] bins
     """
-
     sse = np.zeros((len(series), bins_number))  # sse[i][j] = ошибка аппроксимации j+1 бинами ряда series[:i+1]
     for i in range(len(series)):  # заполняем столбец матрицы для 1 бина
         sse[i][0] = optimal_sse(0, i, p, pp)
@@ -107,7 +117,7 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
     return sse
 
 
-def computeF(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.ndarray:
+def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.ndarray:
     """
     Compute F. F[a][b][k] - minimum approximation error on series[a:b+1] with k outliers.
     http://www.vldb.org/conf/1999/P9.pdf
@@ -127,31 +137,26 @@ def computeF(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.nd
     -------
     Array F, outliers_indice
     """
-    F = np.zeros((len(series), len(series), k + 1))
-    S = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
-    # S[i][j][k] - сумма всех элементов невыбросов с i по j, с учетом что там k выбросов
-    SS = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
-    # SS[i][j][k] - сумма квадратов всех элементов невыбросов с i по j, с учетом что там k выбросов
+    f = np.zeros((len(series), len(series), k + 1))
+    s = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
+    ss = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
     outliers_indices = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
-    # idx[i][j][k] - индексы выбросов (которые мы назвали такими про подсчете S и SS)
-    # Везде сверху возможны несколько значений, поэтому листы. возникает когда F1 == F2 (ниже про них)
 
-    # заполнение граничных условий
-    for right_border in range(0, len(series)):  # a = 0, c = 0
-        F[0][right_border][0] = optimal_sse(0, right_border, p, pp)
-        S[0][right_border][0] = [p[right_border]]
-        SS[0][right_border][0] = [pp[right_border]]
+    for right_border in range(0, len(series)):
+        f[0][right_border][0] = optimal_sse(0, right_border, p, pp)
+        s[0][right_border][0] = [p[right_border]]
+        ss[0][right_border][0] = [pp[right_border]]
 
     for left_border in range(1, len(series)):
-        for right_border in range(left_border, len(series)):  # c = 0
-            F[left_border][right_border][0] = optimal_sse(left_border, right_border, p, pp)
-            S[left_border][right_border][0] = [p[right_border] - p[left_border - 1]]
-            SS[left_border][right_border][0] = [pp[right_border] - pp[left_border - 1]]
+        for right_border in range(left_border, len(series)):
+            f[left_border][right_border][0] = optimal_sse(left_border, right_border, p, pp)
+            s[left_border][right_border][0] = [p[right_border] - p[left_border - 1]]
+            ss[left_border][right_border][0] = [pp[right_border] - pp[left_border - 1]]
 
     for left_border in range(0, len(series)):
         for right_border in range(left_border, min(len(series), left_border + k)):
-            S[left_border][right_border][right_border - left_border + 1] = [0]
-            SS[left_border][right_border][right_border - left_border + 1] = [0]
+            s[left_border][right_border][right_border - left_border + 1] = [0]
+            ss[left_border][right_border][right_border - left_border + 1] = [0]
             outliers_indices[left_border][right_border][right_border - left_border + 1] = [
                 list(np.arange(left_border, right_border + 1))
             ]
@@ -160,34 +165,34 @@ def computeF(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.nd
         for right_border in range(left_border + 1, len(series)):
             for outlier_number in range(1, min(right_border - left_border + 1, k + 1)):
                 # рассматриваем новое значение bi. Если считаем его выбросом, то ошибка F1
-                F1 = F[left_border][right_border - 1][outlier_number - 1]
+                f1 = f[left_border][right_border - 1][outlier_number - 1]
                 # подсчет второго варианта, когда bi выбросом не является
-                tmp_SS = []
-                tmp_S = []
-                F2 = []
+                tmp_ss = []
+                tmp_s = []
+                f2 = []
                 now_min = np.inf
                 now_outliers_indices = []
                 where = 0
                 for i in range(
-                    len(SS[left_border][right_border - 1][outlier_number])
+                    len(ss[left_border][right_border - 1][outlier_number])
                 ):  # формулы для пересчета коэффициентов и ошибок, если bi не выброс
-                    tmp_SS.append(SS[left_border][right_border - 1][outlier_number][i] + series[right_border] ** 2)
-                    tmp_S.append(S[left_border][right_border - 1][outlier_number][i] + series[right_border])
+                    tmp_ss.append(ss[left_border][right_border - 1][outlier_number][i] + series[right_border] ** 2)
+                    tmp_s.append(s[left_border][right_border - 1][outlier_number][i] + series[right_border])
                     now_outliers_indices.append(
                         deepcopy(outliers_indices[left_border][right_border - 1][outlier_number][i])
                     )
-                    F2.append(tmp_SS[-1] - tmp_S[-1] ** 2 / (right_border - left_border + 1 - outlier_number))
-                    if F2[-1] < now_min:
-                        now_min = F2[-1]
+                    f2.append(tmp_ss[-1] - tmp_s[-1] ** 2 / (right_border - left_border + 1 - outlier_number))
+                    if f2[-1] < now_min:
+                        now_min = f2[-1]
                         where = i
 
-                if F1 < now_min:  # ошибка меньше в предположении bi выброс
-                    F[left_border][right_border][outlier_number] = F1
-                    S[left_border][right_border][outlier_number] = deepcopy(
-                        S[left_border][right_border - 1][outlier_number - 1]
+                if f1 < now_min:  # ошибка меньше в предположении bi выброс
+                    f[left_border][right_border][outlier_number] = f1
+                    s[left_border][right_border][outlier_number] = deepcopy(
+                        s[left_border][right_border - 1][outlier_number - 1]
                     )
-                    SS[left_border][right_border][outlier_number] = deepcopy(
-                        SS[left_border][right_border - 1][outlier_number - 1]
+                    ss[left_border][right_border][outlier_number] = deepcopy(
+                        ss[left_border][right_border - 1][outlier_number - 1]
                     )
                     outliers_indices[left_border][right_border][outlier_number] = deepcopy(
                         outliers_indices[left_border][right_border - 1][outlier_number - 1]
@@ -197,20 +202,18 @@ def computeF(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.nd
                             outliers_indices[left_border][right_border][outlier_number][i].append(right_border)
                     else:
                         outliers_indices[left_border][right_border][outlier_number].append([right_border])
-                elif F1 > now_min:  # ошибка меньше в предположении bi не выброс
-                    F[left_border][right_border][outlier_number] = F2[where]
-                    S[left_border][right_border][outlier_number] = tmp_S
-                    SS[left_border][right_border][outlier_number] = tmp_SS
+                elif f1 > now_min:  # ошибка меньше в предположении bi не выброс
+                    f[left_border][right_border][outlier_number] = f2[where]
+                    s[left_border][right_border][outlier_number] = tmp_s
+                    ss[left_border][right_border][outlier_number] = tmp_ss
 
                     outliers_indices[left_border][right_border][outlier_number] = now_outliers_indices
-                else:  # плохой случай, когда в обоих случаях одинаково
-                    # здесь не обязательно ВСЕ значения переписывать от S, SS и idx, можно только те, на которых ошибка минимальна
-                    # но пока что так
-                    F[left_border][right_border][outlier_number] = F1
-                    tmp_S.extend(S[left_border][right_border - 1][outlier_number - 1])
-                    tmp_SS.extend(SS[left_border][right_border - 1][outlier_number - 1])
-                    S[left_border][right_border][outlier_number] = tmp_S
-                    SS[left_border][right_border][outlier_number] = tmp_SS
+                else:
+                    f[left_border][right_border][outlier_number] = f1
+                    tmp_s.extend(s[left_border][right_border - 1][outlier_number - 1])
+                    tmp_ss.extend(ss[left_border][right_border - 1][outlier_number - 1])
+                    s[left_border][right_border][outlier_number] = tmp_s
+                    ss[left_border][right_border][outlier_number] = tmp_ss
 
                     tmp = deepcopy(outliers_indices[left_border][right_border - 1][outlier_number - 1])
                     if len(tmp):
@@ -220,7 +223,7 @@ def computeF(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.nd
                         tmp = [[right_border]]
                     outliers_indices[left_border][right_border][outlier_number].extend(now_outliers_indices)
                     outliers_indices[left_border][right_border][outlier_number].extend(deepcopy(tmp))
-    return F, outliers_indices
+    return f, outliers_indices
 
 
 def hist(
@@ -255,33 +258,33 @@ def hist(
         p[i] = p[i - 1] + series[i]
         pp[i] = pp[i - 1] + series[i] ** 2
 
-    F, idx = computeF(series, bins_number - 1, p, pp)
+    f, outliers_indices = compute_f(series, bins_number - 1, p, pp)
 
     # граничные условия
     approximation_error[:, 1:, 0] = v_optimal_hist(series, bins_number, p, pp)
 
-    approximation_error[:, 1, :] = F[0]
+    approximation_error[:, 1, :] = f[0]
     for right_border in range(len(series)):
         for outlier_number in range(1, bins_number):
-            if len(idx[0][right_border][outlier_number]):
-                anomal[right_border][1][outlier_number] = deepcopy(idx[0][right_border][outlier_number][0])
+            if len(outliers_indices[0][right_border][outlier_number]):
+                anomal[right_border][1][outlier_number] = deepcopy(outliers_indices[0][right_border][outlier_number][0])
 
     for right_border in range(1, len(series)):
         for tmp_bins_number in range(2, min(bins_number + 1, right_border + 2)):
             for outlier_number in range(1, min(bins_number, right_border + 2 - tmp_bins_number)):  # см формулу выше
                 tmp_approximation_error = approximation_error[:right_border, tmp_bins_number - 1, : outlier_number + 1]
-                tmp_F = F[1 : right_border + 1, right_border, : outlier_number + 1][:, ::-1]
+                tmp_f = f[1 : right_border + 1, right_border, : outlier_number + 1][:, ::-1]
                 approximation_error[right_border][tmp_bins_number][outlier_number] = np.min(
-                    tmp_approximation_error + tmp_F
+                    tmp_approximation_error + tmp_f
                 )
                 where = np.where(
-                    tmp_approximation_error + tmp_F
+                    tmp_approximation_error + tmp_f
                     == approximation_error[right_border][tmp_bins_number][outlier_number]
                 )
 
                 if where[1][0] != outlier_number:
                     anomal[right_border][tmp_bins_number][outlier_number].extend(
-                        deepcopy(idx[1 + where[0][0]][right_border][outlier_number - where[1][0]][0])
+                        deepcopy(outliers_indices[1 + where[0][0]][right_border][outlier_number - where[1][0]][0])
                     )
                 anomal[right_border][tmp_bins_number][outlier_number].extend(
                     deepcopy(anomal[where[0][0]][tmp_bins_number - 1][where[1][0]])

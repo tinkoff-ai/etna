@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 
 from etna.analysis import get_anomalies_density
-from etna.analysis import get_anomalies_hist
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets import TSDataset
