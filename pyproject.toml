@@ -78,11 +78,14 @@ typer = {version = "^0.4.0", optional = true}
 semver = {version = "^2.13.0", optional = true}
 ipywidgets = {version = "^7.6.5", optional = true}
 
+jupyter = {version = "*", optional = true}
+nbconvert = {version = "*", optional = true}
 
 [tool.poetry.extras]
 release = ["click", "typer", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
+jupyter = ["jupyter", "nbconvert"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings"]
 all = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings","ipywidgets"]
