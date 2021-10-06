@@ -46,11 +46,8 @@ def forecast(
         pipeline = yaml.safe_load(f)
 
     df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
-    print(df_timeseries.head().set_index("timestamp").to_markdown())
 
     df_timeseries = TSDataset.to_dataset(df_timeseries)
-
-    print(df_timeseries.head())
 
     df_exog = None
     if exog_path:
@@ -64,7 +61,6 @@ def forecast(
     forecast = model.forecast()
 
     if raw_output:
-        print(raw_output)
         (forecast.to_pandas(True).to_csv(output_path, index=False))
     else:
         (forecast.to_pandas(True)[["timestamp", "segment", "target"]].to_csv(output_path, index=False))

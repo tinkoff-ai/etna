@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna-ts/pull/82))
 - Clustering (#[110](https://github.com/tinkoff-ai/etna-ts/pull/110))
 - Outliers notebook (#[123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
+- Forecast command for cli (#[133](https://github.com/tinkoff-ai/etna-ts/issues/133)))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
