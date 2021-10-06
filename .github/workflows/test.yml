@@ -102,7 +102,7 @@ jobs:
           poetry --version
           poetry config virtualenvs.in-project true
           poetry install -vv
-          poetry install -E tests
+          poetry install -E release
           poetry install -E jupyter
           
       - name: Notebook runner
