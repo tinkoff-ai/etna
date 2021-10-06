@@ -16,10 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna-ts/pull/101))
 - Documentation example for models and note about inplace nature of forecast ([#112](https://github.com/tinkoff-ai/etna-ts/pull/112))
 - Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna-ts/pull/82))
-- Clustering (#[110](https://github.com/tinkoff-ai/etna-ts/pull/110))
-- Outliers notebook (#[123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
+- Clustering ([#110](https://github.com/tinkoff-ai/etna-ts/pull/110))
+- Outliers notebook ([#123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
 - Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna-ts/pull/135))
-- Forecast command for cli (#[133](https://github.com/tinkoff-ai/etna-ts/issues/133)))
+- Forecast command for cli ([#133](https://github.com/tinkoff-ai/etna-ts/issues/133)))
 
 
 ### Changed
