@@ -1,5 +1,3 @@
-from typing import Dict
-from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -10,7 +8,6 @@ from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.binseg import _Binseg
 from etna.transforms.change_points_trend import BaseEstimator
 from etna.transforms.change_points_trend import TDetrendModel
-from etna.transforms.change_points_trend import TTimestampInterval
 from etna.transforms.change_points_trend import _OneSegmentChangePointsTrendTransform
 
 
