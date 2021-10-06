@@ -240,6 +240,10 @@ def plot_correlation_matrix(
     """
     if segments is None:
         segments = sorted(ts.segments)
+    if "vmin" not in heatmap_kwargs:
+        heatmap_kwargs["vmin"] = -1
+    if "vmax" not in heatmap_kwargs:
+        heatmap_kwargs["vmax"] = 1
 
     correlation_matrix = get_correlation_matrix(ts, segments, method)
     ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, **heatmap_kwargs)
