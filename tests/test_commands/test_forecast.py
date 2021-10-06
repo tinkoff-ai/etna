@@ -60,7 +60,6 @@ def base_timeseries_exog_path():
 def test_dummy_run_with_exog(base_pipeline_yaml_path, base_timeseries_path, base_timeseries_exog_path):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
-   
     forecast(base_pipeline_yaml_path, base_timeseries_path, "D", tmp_output, base_timeseries_exog_path)
     tmp_output.flush()
     df_output = pd.read_csv(tmp_output_path)

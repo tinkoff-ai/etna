@@ -55,10 +55,10 @@ def forecast(
         df_exog = TSDataset.to_dataset(df_exog)
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
-    model: Pipeline = hydra_slayer.get_from_params(**pipeline)
 
-    model.fit(tsdataset)
-    forecast = model.forecast()
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline)
+    pipeline.fit(tsdataset)
+    forecast = pipeline.forecast()
 
     if raw_output:
         (forecast.to_pandas(True).to_csv(output_path, index=False))
