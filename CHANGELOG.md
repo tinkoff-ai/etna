@@ -18,13 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna-ts/pull/82))
 - Clustering (#[110](https://github.com/tinkoff-ai/etna-ts/pull/110))
 - Outliers notebook (#[123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
+- Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna-ts/pull/135))
 - Forecast command for cli (#[133](https://github.com/tinkoff-ai/etna-ts/issues/133)))
+
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
 - Update EDA notebook ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96), [#114](https://github.com/tinkoff-ai/etna-ts/pull/114))
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
 - Add Pipeline example in Get started notebook ([#115](https://github.com/tinkoff-ai/etna-ts/pull/115))
+- Internal implementation of BinsegTrendTransform ([#141](https://github.com/tinkoff-ai/etna-ts/pull/141))
 
 ### Fixed
 - Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))

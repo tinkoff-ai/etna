@@ -1,5 +1,6 @@
 from enum import Enum
 
+import numpy as np
 import pandas as pd
 
 from etna.transforms.base import PerSegmentWrapper
@@ -46,6 +47,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.strategy = ImputerMode(strategy)
         self.window = window
         self.fill_value = None
+        self.nan_timestamps = None
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
         """
@@ -81,8 +83,28 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         result: pd.DataFrame
             dataframe with in_column series with filled gaps
         """
+        self.nan_timestamps = df[df[self.in_column].isna()].index
         result_df = df.copy()
-        result_df[self.in_column] = self._fill(df[self.in_column])
+        result_df[self.in_column] = self._fill(result_df[self.in_column])
+        return result_df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Inverse transform dataframe.
+
+        Parameters
+        ----------
+        df: pd.Dataframe
+            inverse transform in_column series of given dataframe
+
+        Returns
+        -------
+        result: pd.DataFrame
+            dataframe with in_column series with initial values
+        """
+        result_df = df.copy()
+        index = result_df.index.intersection(self.nan_timestamps)
+        result_df.loc[index, self.in_column] = np.nan
         return result_df
 
     def _fill(self, df: pd.Series) -> pd.Series:
