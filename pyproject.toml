@@ -53,6 +53,7 @@ toml = "^0.10.2"
 loguru = "^0.5.3"
 wandb = "^0.12.2"
 saxpy = "^1.0.1-dev167"
+hydra-slayer = "^0.2.0"
 
 
 sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
@@ -86,6 +87,9 @@ tests = ["pytest-cov", "coverage", "pytest"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings"]
 all = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings","ipywidgets"]
+
+[tool.poetry.scripts]
+etna = "etna.commands.__main__:app"
 
 [tool.black]
 line-length = 120
