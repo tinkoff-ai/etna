@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
+from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
-from etna.transforms.binseg import _Binseg
 from etna.transforms.change_points_trend import _OneSegmentChangePointsTrendTransform
 
 
@@ -32,7 +32,7 @@ def pre_multitrend_df() -> pd.DataFrame:
 def test_get_change_points(multitrend_df: pd.DataFrame, n_bkps: int):
     """Check that _get_change_points method return correct number of points in correct format."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=n_bkps
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=n_bkps
     )
     change_points = bs._get_change_points(multitrend_df["segment_1"]["target"])
     assert isinstance(change_points, list)
@@ -61,7 +61,7 @@ def test_build_trend_intervals():
 def test_models_after_fit(multitrend_df: pd.DataFrame):
     """Check that fit method generates correct number of detrend model's copies."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
     bs.fit(df=multitrend_df["segment_1"])
     assert isinstance(bs.per_interval_models, dict)
@@ -74,7 +74,7 @@ def test_models_after_fit(multitrend_df: pd.DataFrame):
 def test_transform_detrend(multitrend_df: pd.DataFrame):
     """Check that transform method detrends given series."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(df=multitrend_df["segment_1"])
@@ -85,7 +85,7 @@ def test_transform_detrend(multitrend_df: pd.DataFrame):
 def test_transform(multitrend_df: pd.DataFrame):
     """Check that detrend models get series trends."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=50
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(df=multitrend_df["segment_1"])
@@ -96,7 +96,7 @@ def test_transform(multitrend_df: pd.DataFrame):
 def test_inverse_transform(multitrend_df: pd.DataFrame):
     """Check that inverse_transform turns transformed series back to the origin one."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
     bs.fit(df=multitrend_df["segment_1"])
 
@@ -113,7 +113,7 @@ def test_inverse_transform(multitrend_df: pd.DataFrame):
 def test_inverse_transform_hard(multitrend_df: pd.DataFrame):
     """Check the logic of out-of-sample inverse transformation: for past and future dates unseen by transform."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
     bs.fit(df=multitrend_df["segment_1"]["2020-02-01":"2021-05-01"])
 
@@ -130,7 +130,7 @@ def test_inverse_transform_hard(multitrend_df: pd.DataFrame):
 def test_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: pd.DataFrame):
     """Check that transform works correctly in case of fully unseen pre history data."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(pre_multitrend_df["segment_1"])
@@ -141,7 +141,7 @@ def test_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: p
 def test_inverse_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: pd.DataFrame):
     """Check that inverse_transform works correctly in case of fully unseen pre history data."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs.fit(df=multitrend_df["segment_1"])
     inversed = bs.inverse_transform(pre_multitrend_df["segment_1"])
@@ -152,7 +152,7 @@ def test_inverse_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitre
 def test_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df: pd.DataFrame):
     """Check that transform works correctly in case of fully unseen post history data with offset."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(post_multitrend_df["segment_1"])
@@ -164,7 +164,7 @@ def test_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df:
 def test_inverse_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df: pd.DataFrame):
     """Check that inverse_transform works correctly in case of fully unseen post history data with offset."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=_Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.inverse_transform(post_multitrend_df["segment_1"])
