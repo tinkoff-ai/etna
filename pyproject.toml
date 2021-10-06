@@ -87,7 +87,8 @@ docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-of
 tests = ["pytest-cov", "coverage", "pytest"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy"]
 all = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
-    "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
+    "pytest-cov", "coverage", "pytest",
+    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
     "click", "typer", "semver"]
 
 [tool.poetry.scripts]

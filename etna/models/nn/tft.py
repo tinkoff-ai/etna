@@ -80,6 +80,9 @@ class TFTModel(Model):
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
 
+        self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
+        self.trainer: Optional[pl.Trainer] = None
+
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
         Construct TemporalFusionTransformer.
@@ -159,7 +162,8 @@ class TFTModel(Model):
             train=False, batch_size=self.batch_size * 2
         )
 
-        predicts = self.model.predict(prediction_dataloader).numpy()  # shape (segments, encoder_lenght)
+        predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
+        # shape (segments, encoder_lenght)
 
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
         return ts
