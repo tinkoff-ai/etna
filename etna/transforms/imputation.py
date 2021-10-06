@@ -63,6 +63,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self: _OneSegmentTimeSeriesImputerTransform
             fitted preprocess
         """
+        self.nan_timestamps = df[df[self.in_column].isna()].index
         if self.strategy == ImputerMode.zero:
             self.fill_value = 0
         elif self.strategy == ImputerMode.mean:
@@ -83,9 +84,14 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         result: pd.DataFrame
             dataframe with in_column series with filled gaps
         """
-        self.nan_timestamps = df[df[self.in_column].isna()].index
         result_df = df.copy()
+        cur_nans = result_df[result_df[self.in_column].isna()].index
         result_df[self.in_column] = self._fill(result_df[self.in_column])
+
+        # restore nans not in self.nan_timestamps
+        restore_nans = cur_nans.difference(self.nan_timestamps)
+        result_df.loc[restore_nans, self.in_column] = np.nan
+
         return result_df
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
