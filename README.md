@@ -80,6 +80,7 @@ We have also prepared a set of tutorials for an easy introduction:
     - Plot
     - Partial autocorrelation
     - Cross-correlation
+    - Correlation heatmap
     - Distribution
 - Outliers
      - Median method
