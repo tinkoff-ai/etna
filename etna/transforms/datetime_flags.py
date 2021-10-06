@@ -34,19 +34,19 @@ class DateFlagsTransform(Transform):
         Parameters
         ----------
         day_number_in_week:
-            if True, add column "day_number_in_week" with weekday info to feature dataframe in transform
+            if True, add column "regressor_day_number_in_week" with weekday info to feature dataframe in transform
         day_number_in_month:
-            if True, add column "day_number_in_month" with day info to feature dataframe in transform
+            if True, add column "regressor_day_number_in_month" with day info to feature dataframe in transform
         week_number_in_month:
-            if True, add column "week_number_in_month" with week number (in month context) to feature dataframe
-            in transform
+            if True, add column "regressor_week_number_in_month" with week number (in month context)
+            to feature dataframe in transform
         week_number_in_year:
-            if True, add column "week_number_in_year" with week number (in year context) to feature dataframe
+            if True, add column "regressor_week_number_in_year" with week number (in year context) to feature dataframe
             in transform
         month_number_in_year:
-            if True, add column "month_number_in_year" with month info to feature dataframe in transform
+            if True, add column "regressor_month_number_in_year" with month info to feature dataframe in transform
         year_number:
-            if True, add column "year_number" with year info to feature dataframe in transform
+            if True, add column "regressor_year_number" with year info to feature dataframe in transform
         is_weekend:
             if True: add column "regressor_is_weekend" with weekends flags to feature dataframe in transform
         special_days_in_week:
@@ -264,18 +264,19 @@ class TimeFlagsTransform(Transform):
 
         Parameters
         ----------
-        minute_in_hour_number : bool
-            True if need to compute minute_in_hour_number feature
-        fifteen_minutes_in_hour_number : bool
-            True if need to compute fifteen_minutes_in_hour_number feature
-        hour_number : bool
-            True if need to compute hour_number feature
-        half_hour_number : bool
-            True if need to compute half_hour_number feature
-        half_day_number:  bool
-            True if need to compute half_day_number feature
-        one_third_day_number : bool
-            True if need to compute one_third_day_number feature
+        minute_in_hour_number:
+            if True: add column "regressor_minute_in_hour_number" with weekends flags to feature dataframe in transform
+        fifteen_minutes_in_hour_number:
+            if True: add column "regressor_fifteen_minutes_in_hour_number" with weekends flags
+            to feature dataframe in transform
+        hour_number:
+            if True: add column "regressor_hour_number" with weekends flags to feature dataframe in transform
+        half_hour_number:
+            if True: add column "regressor_half_hour_number" with weekends flags to feature dataframe in transform
+        half_day_number:
+            if True: add column "regressor_half_day_number" with weekends flags to feature dataframe in transform
+        one_third_day_number:
+            if True: add column "regressor_one_third_day_number" with weekends flags to feature dataframe in transform
 
         Raises
         ------
@@ -305,7 +306,9 @@ class TimeFlagsTransform(Transform):
         self.half_day_number: bool = half_day_number
         self.one_third_day_number: bool = one_third_day_number
 
-    def fit(self, *args, **kwargs) -> "_OneModelTimeFlagsFeatures":
+        self.out_prefix = "regressor_"
+
+    def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
         return self
 
@@ -315,12 +318,12 @@ class TimeFlagsTransform(Transform):
 
         Parameters
         ----------
-        df : pd.DataFrame
+        df:
             Features dataframe with time
 
         Returns
         -------
-        result : pd.DataFrame
+        result: pd.DataFrame
             Dataframe with extracted features
         """
         features = pd.DataFrame(index=df.index)
@@ -354,6 +357,7 @@ class TimeFlagsTransform(Transform):
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
+        features = features.add_prefix(self.out_prefix)
 
         dataframes = []
         for seg in df.columns.get_level_values("segment").unique():
@@ -376,7 +380,7 @@ class TimeFlagsTransform(Transform):
     def _get_period_in_hour(timestamp_series: pd.Series, period_in_minutes: int = 15) -> np.array:
         """Generate an array with the period number in the hour.
 
-        Accepts a period lenght in mitunes as input and returns array where timestamps marked by period number.
+        Accepts a period length in minutes as input and returns array where timestamps marked by period number.
         """
         return timestamp_series.apply(lambda x: x.minute // period_in_minutes).values
 
@@ -389,7 +393,7 @@ class TimeFlagsTransform(Transform):
     def _get_period_in_day(timestamp_series: pd.DataFrame, period_in_hours: int = 12) -> np.array:
         """Generate an array with the period number in the day.
 
-        Accepts a period lenght in hours as input and returns array where timestamps marked by period number.
+        Accepts a period length in hours as input and returns array where timestamps marked by period number.
         """
         return timestamp_series.apply(lambda x: x.hour // period_in_hours).values
 
