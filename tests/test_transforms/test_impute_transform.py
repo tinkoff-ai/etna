@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
+from etna.models import NaiveModel
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.imputation import _OneSegmentTimeSeriesImputerTransform
 
@@ -37,10 +39,7 @@ def all_date_present_df_two_segments(all_date_present_df: pd.Series) -> pd.DataF
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
+    df = TSDataset.to_dataset(classic_df)
     return df
 
 
@@ -75,6 +74,21 @@ def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd
     rng = timestamps[2:7]
     df = all_date_present_df
     df.loc[rng, "target"] = np.NaN
+    return df, rng
+
+
+@pytest.fixture()
+def df_with_missing_range_x_index_two_segments(
+    df_with_missing_range_x_index: pd.DataFrame
+) -> Tuple[pd.DataFrame, list]:
+    """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
+    df_one_segment, rng = df_with_missing_range_x_index
+    df_1 = df_one_segment.reset_index()
+    df_2 = df_one_segment.copy().reset_index()
+    df_1["segment"] = "segment_1"
+    df_2["segment"] = "segment_2"
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
     return df, rng
 
 
@@ -193,7 +207,44 @@ def test_range_missing_running_mean(df_with_missing_range_x_index: pd.DataFrame,
     assert not result.isna().any()
     for idx in timestamp_idxs:
         if window == -1:
-            expected_value = df.loc[: timestamps[idx - 1], "target"].mean()
+            expected_value = result.loc[: timestamps[idx - 1]].mean()
         else:
-            expected_value = df.loc[timestamps[idx - window] : timestamps[idx - 1], "target"].mean()
+            expected_value = result.loc[timestamps[idx - window] : timestamps[idx - 1]].mean()
         assert result.loc[timestamps[idx]] == expected_value
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
+def test_inverse_transform_one_segment(df_with_missing_range_x_index: pd.DataFrame, fill_strategy: str):
+    """Check that transform + inverse_transform don't change original df for one segment."""
+    df, rng = df_with_missing_range_x_index
+    imputer = _OneSegmentTimeSeriesImputerTransform(strategy=fill_strategy)
+    transform_result = imputer.fit_transform(df)
+    inverse_transform_result = imputer.inverse_transform(transform_result)
+    np.testing.assert_array_equal(df, inverse_transform_result)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
+def test_inverse_transform_many_segments(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
+    """Check that transform + inverse_transform don't change original df for two segments."""
+    df, rng = df_with_missing_range_x_index_two_segments
+    imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
+    transform_result = imputer.fit_transform(df)
+    inverse_transform_result = imputer.inverse_transform(transform_result)
+    np.testing.assert_array_equal(df, inverse_transform_result)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
+def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
+    """Check that inverse_transform doesn't change anything in forecast."""
+    df, rng = df_with_missing_range_x_index_two_segments
+    ts = TSDataset(df, freq=pd.infer_freq(df.index))
+    imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
+    model = NaiveModel()
+    ts.fit_transform(transforms=[imputer])
+    model.fit(ts)
+    ts_test = ts.make_future(3)
+    assert np.all(ts_test[:, :, "target"].isna())
+    ts_forecast = model.forecast(ts_test)
+    for segment in ts.segments:
+        true_value = ts[:, segment, "target"].values[-1]
+        assert np.all(ts_forecast[:, segment, "target"] == true_value)
