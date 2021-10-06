@@ -37,18 +37,12 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         change_point_model_predict_params:
             params for change_point_model predict method
         """
-        self.in_column = in_column
         self.out_column = "regressor_" + in_column + "_trend"
-        self.change_point_model = change_point_model
-        self.detrend_model = detrend_model
-        self.per_interval_models: Optional[Dict[TTimestampInterval, TDetrendModel]] = None
-        self.intervals: Optional[List[TTimestampInterval]] = None
-        self.change_point_model_predict_params = change_point_model_predict_params
         super().__init__(
-            in_column=self.in_column,
-            change_point_model=self.change_point_model,
-            detrend_model=self.detrend_model,
-            **self.change_point_model_predict_params,
+            in_column=in_column,
+            change_point_model=change_point_model,
+            detrend_model=detrend_model,
+            **change_point_model_predict_params,
         )
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -124,7 +118,7 @@ class _TrendTransform(PerSegmentWrapper):
 
 
 class TrendTransform(_TrendTransform):
-    """_TrendTransform adds trend as a feature. Creates column 'regressor_<in_column>_trend'.
+    """TrendTransform adds trend as a feature. Creates column 'regressor_<in_column>_trend'.
     TrendTransform uses _Binseg model as a change point detection model in _TrendTransform.
     """
 
