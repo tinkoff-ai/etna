@@ -9,7 +9,7 @@ from etna.transforms.change_points_trend import TDetrendModel
 
 
 class BinsegTrendTransform(ChangePointsTrendTransform):
-    """BinsegTrendTransform uses _Binseg model as a change point detection model in ChangePointsTrendTransform transform."""
+    """BinsegTrendTransform uses Binseg model as a change point detection model in ChangePointsTrendTransform transform."""
 
     def __init__(
         self,
