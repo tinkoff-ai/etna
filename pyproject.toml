@@ -80,16 +80,20 @@ click = {version = "^8.0.1", optional = true}
 semver = {version = "^2.13.0", optional = true}
 ipywidgets = {version = "^7.6.5", optional = true}
 
+jupyter = {version = "*", optional = true}
+nbconvert = {version = "*", optional = true}
 
 [tool.poetry.extras]
 release = ["click", "typer", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
+jupyter = ["jupyter", "nbconvert"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy"]
 all = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
-    "click", "typer", "semver"]
+    "click", "typer", "semver",
+    "jupyter", "nbconvert"]
 
 [tool.poetry.scripts]
 etna = "etna.commands.__main__:app"
