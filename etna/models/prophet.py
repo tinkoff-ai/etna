@@ -6,11 +6,15 @@ from typing import Optional
 from typing import Union
 
 import pandas as pd
-from prophet import Prophet
 
 from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
+
+from etna import SETTINGS
+
+if SETTINGS.prophet_required:
+    from prophet import Prophet
 
 
 class _ProphetModel:

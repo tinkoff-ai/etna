@@ -14,6 +14,10 @@ If it's not possible you should try define all globals before ``if __name__ == "
 """
 from etna.loggers.base import _Logger
 from etna.loggers.console_logger import ConsoleLogger
-from etna.loggers.wandb_logger import WandbLogger
+
+from etna import SETTINGS
+
+if SETTINGS.wandb_required and SETTINGS.torch_required:
+    from etna.loggers.wandb_logger import WandbLogger
 
 tslogger = _Logger()
