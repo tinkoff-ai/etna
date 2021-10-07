@@ -19,7 +19,7 @@ def random_seed():
 
 
 @pytest.fixture()
-def example_df():
+def example_df(random_seed):
     df1 = pd.DataFrame()
     df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
     df1["segment"] = "segment_1"
@@ -34,7 +34,7 @@ def example_df():
 
 
 @pytest.fixture
-def two_dfs_with_different_timestamps():
+def two_dfs_with_different_timestamps(random_seed):
     """Generate two dataframes with the same segments and different timestamps"""
 
     def generate_df(start_time):
@@ -57,7 +57,7 @@ def two_dfs_with_different_timestamps():
 
 
 @pytest.fixture
-def two_dfs_with_different_segments_sets():
+def two_dfs_with_different_segments_sets(random_seed):
     """Generate two dataframes with the same timestamps and different segments"""
 
     def generate_df(n_segments):
@@ -80,7 +80,7 @@ def two_dfs_with_different_segments_sets():
 
 
 @pytest.fixture
-def train_test_dfs():
+def train_test_dfs(random_seed):
     """Generate two dataframes with the same segments and the same timestamps"""
 
     def generate_df():
@@ -144,7 +144,7 @@ def outliers_df():
 
 
 @pytest.fixture
-def example_df_() -> pd.DataFrame:
+def example_df_(random_seed) -> pd.DataFrame:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = ["segment_1"] * periods
@@ -163,7 +163,7 @@ def example_df_() -> pd.DataFrame:
 
 
 @pytest.fixture
-def example_tsds() -> TSDataset:
+def example_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = "segment_1"
@@ -181,7 +181,7 @@ def example_tsds() -> TSDataset:
 
 
 @pytest.fixture
-def example_reg_tsds() -> TSDataset:
+def example_reg_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = "segment_1"
