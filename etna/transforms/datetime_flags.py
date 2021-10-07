@@ -390,7 +390,7 @@ class TimeFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.hour).values
 
     @staticmethod
-    def _get_period_in_day(timestamp_series: pd.DataFrame, period_in_hours: int = 12) -> np.array:
+    def _get_period_in_day(timestamp_series: pd.Series, period_in_hours: int = 12) -> np.array:
         """Generate an array with the period number in the day.
 
         Accepts a period length in hours as input and returns array where timestamps marked by period number.

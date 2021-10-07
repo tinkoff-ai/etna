@@ -165,7 +165,7 @@ class MeanTransform(WindowStatisticsTransform):
         self._alpha_range = [self.alpha ** i for i in range(0, size)]
         return super().transform(df=df)
 
-    def _aggregate_window(self, series: pd.Series) -> Optional[float]:
+    def _aggregate_window(self, series: pd.Series) -> float:
         """Compute weighted average for window series."""
         tmp_series = self._get_required_lags(series)
         size = len(tmp_series)
@@ -183,7 +183,7 @@ class StdTransform(WindowStatisticsTransform):
 
     default_out_postfix = "std"
 
-    def _aggregate_window(self, series: pd.Series) -> Optional[float]:
+    def _aggregate_window(self, series: pd.Series) -> float:
         """Compute std over the series."""
         tmp_series = self._get_required_lags(series)
         return tmp_series.std(**self.kwargs)

@@ -24,7 +24,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace: bool = True,
         with_mean: bool = True,
         with_std: bool = True,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """
         Init StandardScalerPreprocess.
@@ -73,7 +73,7 @@ class RobustScalerTransform(SklearnTransform):
         with_scaling: bool = True,
         quantile_range: Tuple[float, float] = (25, 75),
         unit_variance: bool = False,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """
         Init RobustScalerPreprocess.
@@ -135,7 +135,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace: bool = True,
         feature_range: Tuple[float, float] = (0, 1),
         clip: bool = True,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """
         Init MinMaxScalerPreprocess.
@@ -180,7 +180,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
-        mode: TransformMode = "per-segment",
+        mode: Union[TransformMode, str] = "per-segment",
     ):
         """Init MinMaxScalerPreprocess.
 
