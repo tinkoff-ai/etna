@@ -5,6 +5,19 @@ import pytest
 from etna.datasets.tsdataset import TSDataset
 
 
+@pytest.fixture(autouse=True)
+def random_seed():
+    "Fixture to fix random state for every test case"
+    import random
+
+    import torch
+
+    SEED = 121  # noqa: N806
+    torch.manual_seed(SEED)
+    random.seed(SEED)
+    np.random.seed(SEED)
+
+
 @pytest.fixture()
 def example_df():
     df1 = pd.DataFrame()

@@ -69,7 +69,6 @@ class TSDataset:
     """
 
     idx = pd.IndexSlice
-    np.random.seed(0)
 
     def __init__(self, df: pd.DataFrame, freq: str, df_exog: Optional[pd.DataFrame] = None):
         """Init TSDataset.
@@ -313,7 +312,7 @@ class TSDataset:
         """
         return self._regressors
 
-    def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
+    def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None, seed: int = 1):
         """Plot of random or chosen segments.
 
         Parameters
@@ -324,6 +323,8 @@ class TSDataset:
             feature to plot
         segments:
             segments to plot
+        seed:
+            seed for local random state
         """
         if not segments:
             segments = self.segments
@@ -332,7 +333,8 @@ class TSDataset:
         rows_num = math.ceil(k / columns_num)
         _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), squeeze=False)
         ax = ax.ravel()
-        for i, segment in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
+        rnd_state = np.random.RandomState(seed)
+        for i, segment in enumerate(sorted(rnd_state.choice(segments, size=k, replace=False))):
             df_slice = self[:, segment, column]
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
