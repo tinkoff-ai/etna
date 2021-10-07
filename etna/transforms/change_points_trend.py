@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Type
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
 TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
-TDetrendModel = RegressorMixin
+TDetrendModel = Type[RegressorMixin]
 
 
 class _OneSegmentChangePointsTrendTransform(Transform):
@@ -111,7 +112,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             trend_series[tmp_series.index] = trend
         return trend_series
 
-    def fit(self, df: pd.DataFrame) -> "OneSegmentChangePointsTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
         """Fit OneSegmentChangePointsTransform: find thrend change points in df, fit detrend models with data from intervals of stable trend.
 
         Parameters

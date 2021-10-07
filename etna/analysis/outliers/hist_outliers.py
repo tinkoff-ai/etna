@@ -133,9 +133,9 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
     Array F, outliers_indice
     """
     f = np.zeros((len(series), len(series), k + 1))
-    s = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
-    ss = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
-    outliers_indices = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
+    s: list = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
+    ss: list = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
+    outliers_indices: list = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
 
     for right_border in range(0, len(series)):
         f[0][right_border][0] = optimal_sse(0, right_border, p, pp)
@@ -234,7 +234,7 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
     Outliers indices.
     """
     approximation_error = np.zeros((len(series), bins_number + 1, bins_number))
-    anomal = [[[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))]
+    anomal: list = [[[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))]
 
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]

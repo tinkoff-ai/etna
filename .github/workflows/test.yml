@@ -18,15 +18,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-
+        
       - name: Install Dependencies
         run: |
-          pip install black=="19.3b0"
-          pip install isort
-          pip install flake8 pep8-naming flake8-docstrings
+          pip install poetry
+          poetry --version
+          poetry config virtualenvs.in-project true
+          poetry install -E style --no-root
           
       - name: Static Analysis
-        run: make lint
+        run: poetry run make lint
 
   test:
     runs-on: ubuntu-latest
