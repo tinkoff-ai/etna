@@ -1,11 +1,12 @@
 from typing import Iterable
 
+from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.models.base import Model
 from etna.transforms.base import Transform
 
 
-class Pipeline:
+class Pipeline(BaseMixin):
     """Pipeline of transforms with a final estimator."""
 
     def __init__(self, model: Model, transforms: Iterable[Transform] = (), horizon: int = 1):
