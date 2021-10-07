@@ -22,20 +22,20 @@ deps/release:
 
 .PHONY: release/prerelease
 release/prerelease:
-	@poetry run python scripts/release.py prerelease
+	@poetry run python -m scripts.release prerelease
 
 .PHONY: release/prepatch
 release/prepatch:
-	@poetry run python scripts/release.py prepatch
+	@poetry run python -m scripts.release prepatch
 
 .PHONY: release/preminor
 release/preminor:
-	@poetry run python scripts/release.py preminor
+	@poetry run python -m scripts.release preminor
 
 .PHONY: release/patch
 release/patch:
-	@poetry run python scripts/release.py patch
+	@poetry run python -m scripts.release patch
 
 .PHONY: release/minor
 release/minor:
-	@poetry run python scripts/release.py minor
+	@poetry run python -m scripts.release minor
