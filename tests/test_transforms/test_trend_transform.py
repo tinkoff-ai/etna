@@ -2,10 +2,10 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
+from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets.tsdataset import TSDataset
-from ruptures import Binseg
 from etna.transforms.trend import TrendTransform
 from etna.transforms.trend import _OneSegmentTrendTransform
 from etna.transforms.trend import _TrendTransform

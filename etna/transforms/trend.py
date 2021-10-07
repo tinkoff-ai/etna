@@ -1,11 +1,11 @@
 from typing import Optional
 
 import pandas as pd
+from ruptures import Binseg
 from ruptures.base import BaseCost
 from sklearn.linear_model import LinearRegression
 
 from etna.transforms.base import PerSegmentWrapper
-from ruptures import Binseg
 from etna.transforms.change_points_trend import BaseEstimator
 from etna.transforms.change_points_trend import TDetrendModel
 from etna.transforms.change_points_trend import _OneSegmentChangePointsTrendTransform
