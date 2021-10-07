@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clustering ([#110](https://github.com/tinkoff-ai/etna-ts/pull/110))
 - Outliers notebook ([#123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
 - Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna-ts/pull/135))
+- VotingEnsemble ([#150](https://github.com/tinkoff-ai/etna-ts/pull/150))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
