@@ -6,17 +6,20 @@ from typing import Tuple
 from typing import Union
 
 import pandas as pd
-from pytorch_forecasting.data import TimeSeriesDataSet
-from pytorch_forecasting.data.encoders import EncoderNormalizer
-from pytorch_forecasting.data.encoders import NaNLabelEncoder
-from pytorch_forecasting.data.encoders import TorchNormalizer
 from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.base import Transform
 
-NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    from pytorch_forecasting.data import TimeSeriesDataSet
+    from pytorch_forecasting.data.encoders import EncoderNormalizer
+    from pytorch_forecasting.data.encoders import NaNLabelEncoder
+    from pytorch_forecasting.data.encoders import TorchNormalizer
+    NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 
 
 class PytorchForecastingTransform(Transform):

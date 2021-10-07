@@ -51,6 +51,9 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install -vv
           poetry install -E tests
+          poetry install -E torch
+          poetry install -E prophet
+          poetry install -E wandb
           
       - name: PyTest ("not long")
         run: |
@@ -78,7 +81,10 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install -vv
           poetry install -E tests
-          
+          poetry install -E torch
+          poetry install -E prophet
+          poetry install -E wandb
+
       - name: PyTest ("long")
         run: |
           poetry run pytest tests -v --cov=etna -m "long" --cov-report=xml

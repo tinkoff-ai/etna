@@ -6,9 +6,13 @@ from typing import Optional
 from typing import Union
 
 import pandas as pd
-from prophet import Prophet
 
 from etna.models.base import PerSegmentModel
+
+from etna import SETTINGS
+
+if SETTINGS.prophet_required:
+    from prophet import Prophet
 
 
 class _ProphetModel:

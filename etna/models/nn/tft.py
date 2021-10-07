@@ -3,16 +3,20 @@ from typing import Optional
 from typing import Union
 
 import pandas as pd
-import pytorch_lightning as pl
-from pytorch_forecasting.data import TimeSeriesDataSet
-from pytorch_forecasting.models import TemporalFusionTransformer
-from pytorch_lightning import LightningModule
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.base import Model
 from etna.models.base import log_decorator
 from etna.transforms import PytorchForecastingTransform
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import pytorch_lightning as pl
+    from pytorch_forecasting.data import TimeSeriesDataSet
+    from pytorch_forecasting.models import TemporalFusionTransformer
+    from pytorch_lightning import LightningModule
 
 
 class TFTModel(Model):

@@ -10,8 +10,8 @@ from uuid import uuid4
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import wandb
-from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+
+from etna import SETTINGS
 
 from etna.analysis import plot_backtest
 from etna.loggers.base import BaseLogger
@@ -19,6 +19,9 @@ from etna.loggers.base import BaseLogger
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
+if SETTINGS.wandb_required and SETTINGS.torch_required:
+    import wandb
+    from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
 
 def percentile(n: int):
     """Percentile for pandas agg."""
