@@ -7,9 +7,8 @@ from typing import Union
 
 import pandas as pd
 
-from etna.models.base import PerSegmentModel
-
 from etna import SETTINGS
+from etna.models.base import PerSegmentModel
 
 if SETTINGS.prophet_required:
     from prophet import Prophet

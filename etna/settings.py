@@ -1,14 +1,18 @@
-import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple
 import configparser
 import os
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 
 def _is_torch_available():
     try:
-        import torch  # noqa: F401
         import pytorch_forecasting  # noqa: F401
         import pytorch_lightning  # noqa: F401
+        import torch  # noqa: F401
 
         return True
     except ImportError:
@@ -33,9 +37,7 @@ def _is_prophet_available():
         return False
 
 
-def _get_optional_value(
-        is_required: Optional[bool], is_available_fn: Callable, assert_msg: str
-) -> bool:
+def _get_optional_value(is_required: Optional[bool], is_available_fn: Callable, assert_msg: str) -> bool:
     if is_required is None:
         return is_available_fn()
     elif is_required:
@@ -50,10 +52,10 @@ class Settings:
     """etna settings."""
 
     def __init__(  # noqa: D107
-            self,
-            torch_required: Optional[bool] = None,
-            prophet_required: Optional[bool] = None,
-            wandb_required: Optional[bool] = None,
+        self,
+        torch_required: Optional[bool] = None,
+        prophet_required: Optional[bool] = None,
+        wandb_required: Optional[bool] = None,
     ):
         # True – use the package
         # None – use the package if available
@@ -84,7 +86,7 @@ class Settings:
         return Settings(**kwargrs)
 
     def type_hint(self, key: str):
-        """Returns type hint for the specified ``key``.
+        """Return type hint for the specified ``key``.
         Args:
             key: key of interest
         Returns:
@@ -137,15 +139,9 @@ class ConfigFileFinder:
             try:
                 found_files.extend(config.read(filename))
             except UnicodeDecodeError:
-                print(
-                    f"There was an error decoding a config file."
-                    f" The file with a problem was {filename}."
-                )
+                print(f"There was an error decoding a config file." f" The file with a problem was {filename}.")
             except configparser.ParsingError:
-                print(
-                    f"There was an error trying to parse a config file."
-                    f" The file with a problem was {filename}."
-                )
+                print(f"There was an error trying to parse a config file." f" The file with a problem was {filename}.")
 
         return config, found_files
 
@@ -213,9 +209,7 @@ class MergedConfigParser:
 
     def _normalize_value(self, option, value):
         final_value = option.normalize(value, self.config_finder.local_directory)
-        print(
-            f"{value} has been normalized to {final_value}" f" for option '{option.config_name}'"
-        )
+        print(f"{value} has been normalized to {final_value}" f" for option '{option.config_name}'")
         return final_value
 
     def _parse_config(self, config_parser):
