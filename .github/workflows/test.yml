@@ -111,6 +111,9 @@ jobs:
           poetry install -vv
           poetry install -E release
           poetry install -E jupyter
+          poetry install -E torch
+          poetry install -E prophet
+          poetry install -E wandb
           
       - name: Notebook runner
         run: |
