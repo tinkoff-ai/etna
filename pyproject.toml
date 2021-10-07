@@ -69,11 +69,12 @@ pytest = {version = "^6.2", optional = true}
 coverage = {version = "^5.4", optional = true}
 pytest-cov = {version = "^2.11.1", optional = true}
 
-black = {version = "19.3b0", optional = true}
+black = {version = "21.9b0", optional = true}
 isort = {version = "^5.8.0", optional = true}
 flake8 = {version = "^3.9.2", optional = true}
-pep8-naming = {version = "^0.11.1", optional = true}
+pep8-naming = {version = "^0.12.1", optional = true}
 flake8-docstrings = {version = "^1.6.0", optional = true}
+mypy = {version = "^0.910", optional = true}
 
 click = {version = "^8.0.1", optional = true}
 semver = {version = "^2.13.0", optional = true}
@@ -84,9 +85,11 @@ ipywidgets = {version = "^7.6.5", optional = true}
 release = ["click", "typer", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy"]
 all = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
-    "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings","ipywidgets"]
+    "pytest-cov", "coverage", "pytest",
+    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
+    "click", "typer", "semver"]
 
 [tool.poetry.scripts]
 etna = "etna.commands.__main__:app"

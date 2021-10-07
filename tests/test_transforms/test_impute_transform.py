@@ -79,7 +79,7 @@ def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd
 
 @pytest.fixture()
 def df_with_missing_range_x_index_two_segments(
-    df_with_missing_range_x_index: pd.DataFrame
+    df_with_missing_range_x_index: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, list]:
     """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
     df_one_segment, rng = df_with_missing_range_x_index

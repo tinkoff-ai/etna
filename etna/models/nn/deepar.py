@@ -6,6 +6,7 @@ import pandas as pd
 import pytorch_lightning as pl
 from pytorch_forecasting.data import TimeSeriesDataSet
 from pytorch_forecasting.models import DeepAR
+from pytorch_lightning import LightningModule
 
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
@@ -72,7 +73,10 @@ class DeepARModel(Model):
         self.rnn_layers = rnn_layers
         self.dropout = dropout
 
-    def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> DeepAR:
+        self.model: Optional[Union[LightningModule, DeepAR]] = None
+        self.trainer: Optional[pl.Trainer] = None
+
+    def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
         Construct DeepAR.
 
@@ -151,7 +155,8 @@ class DeepARModel(Model):
             train=False, batch_size=self.batch_size * 2
         )
 
-        predicts = self.model.predict(prediction_dataloader).numpy()  # shape (segments, encoder_lenght)
+        predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
+        # shape (segments, encoder_lenght)
 
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
         return ts

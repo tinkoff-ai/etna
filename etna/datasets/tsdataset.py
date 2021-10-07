@@ -1,7 +1,6 @@
 import math
 import warnings
 from typing import TYPE_CHECKING
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -112,10 +111,10 @@ class TSDataset:
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.df = self._merge_exog(self.df)
 
-        self.transforms = None
+        self.transforms: Optional[Sequence["Transform"]] = None
         self._update_regressors()
 
-    def transform(self, transforms: Iterable["Transform"]):
+    def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings()
         self.transforms = transforms
@@ -124,7 +123,7 @@ class TSDataset:
             self.df = transform.transform(self.df)
         self._update_regressors()
 
-    def fit_transform(self, transforms: Iterable["Transform"]):
+    def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings()
         self.transforms = transforms
@@ -315,7 +314,7 @@ class TSDataset:
         return self._regressors
 
     def plot(self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence] = None):
-        """ Plot of random or chosen segments.
+        """Plot of random or chosen segments.
 
         Parameters
         ----------
@@ -390,14 +389,14 @@ class TSDataset:
         if not flatten:
             return self.df.copy()
         if flatten:
-            df = []
+            aggregator_list = []
             category = []
             for segment in self.segments:
                 if self.df[segment].select_dtypes(include=["category"]).columns.to_list():
                     category.extend(self.df[segment].select_dtypes(include=["category"]).columns.to_list())
-                df.append(self.df[segment].copy())
-                df[-1]["segment"] = segment
-            df = pd.concat(df)
+                aggregator_list.append(self.df[segment].copy())
+                aggregator_list[-1]["segment"] = segment
+            df = pd.concat(aggregator_list)
             df = df.reset_index()
             category = list(set(category))
             df[category] = df[category].astype("category")
@@ -520,13 +519,13 @@ class TSDataset:
             raise UserWarning(f"Max timestamp in df is {self.df.index.max()}.")
         if pd.Timestamp(train_start) < self.df.index.min():
             raise UserWarning(f"Min timestamp in df is {self.df.index.min()}.")
-        train_df = self.df[train_start:train_end][self.raw_df.columns]
-        train_raw_df = self.raw_df[train_start:train_end]
+        train_df = self.df[train_start:train_end][self.raw_df.columns]  # type: ignore
+        train_raw_df = self.raw_df[train_start:train_end]  # type: ignore
         train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq)
         train.raw_df = train_raw_df
 
-        test_df = self.df[test_start:test_end][self.raw_df.columns]
-        test_raw_df = self.raw_df[train_start:test_end]
+        test_df = self.df[test_start:test_end][self.raw_df.columns]  # type: ignore
+        test_raw_df = self.raw_df[train_start:test_end]  # type: ignore
         test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq)
         test.raw_df = test_raw_df
 

@@ -5,6 +5,7 @@ lint:
 	black --check tests/
 	flake8 etna/
 	flake8 tests/ --select E,W,C,F401,N
+	mypy
 
 format:
 	isort --sl etna/
@@ -13,6 +14,7 @@ format:
 	black tests/
 	flake8 etna/
 	flake8 tests/ --select E,W,C,F401,N
+	mypy
 
 .PHONY: deps/release
 deps/release:
