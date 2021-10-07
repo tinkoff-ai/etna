@@ -6,21 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-- BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
-- Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
-- Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna-ts/pull/92))
-- WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
-- Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
-- Sequence anomalies ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96)), Histogram anomalies ([#79](https://github.com/tinkoff-ai/etna-ts/pull/79))
-- 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna-ts/pull/101))
-- Documentation example for models and note about inplace nature of forecast ([#112](https://github.com/tinkoff-ai/etna-ts/pull/112))
-- Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna-ts/pull/82))
-- Clustering ([#110](https://github.com/tinkoff-ai/etna-ts/pull/110))
-- Outliers notebook ([#123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
-- Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna-ts/pull/135))
-- Forecast command for cli ([#133](https://github.com/tinkoff-ai/etna-ts/issues/133)))
-
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
