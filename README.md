@@ -85,13 +85,17 @@ We have also prepared a set of tutorials for an easy introduction:
 - Outliers
      - Median method
      - Density method
-#### 04. [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/Outliers.ipynb) 
+#### 04. [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/outliers.ipynb) 
 - Point outliers
     - Median method
     - Density method
 - Sequence outliers
 - Interactive visualization
 - Outliers imputation
+#### 05. [Clustering](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/clustering.ipynb) 
+- Clustering pipeline
+- Custom Distance
+- Visualisation
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
