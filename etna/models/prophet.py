@@ -8,7 +8,9 @@ from typing import Union
 import pandas as pd
 from prophet import Prophet
 
+from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
+from etna.models.base import log_decorator
 
 
 class _ProphetModel:
@@ -77,7 +79,7 @@ class _ProphetModel:
 
         Parameters
         ----------
-        df: pd.DataFrame
+        df:
             Features dataframe
 
         """
@@ -95,14 +97,16 @@ class _ProphetModel:
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame):
+    def predict(self, df: pd.DataFrame, confidence_interval: bool = False):
         """
         Compute Prophet predictions.
 
         Parameters
         ----------
-        df : pd.DataFrame
+        df :
             Features dataframe
+        confidence_interval:
+            If True returns confidence interval for forecast
 
         Returns
         -------
@@ -121,8 +125,10 @@ class _ProphetModel:
                     prophet_column_name = column_name
                 prophet_df[prophet_column_name] = df[column_name]
         forecast = self.model.predict(prophet_df)
-        y_pred = forecast["yhat"]
-        y_pred = y_pred.tolist()
+        if confidence_interval:
+            y_pred = forecast[["yhat_lower", "yhat", "yhat_upper"]]
+        else:
+            y_pred = pd.DataFrame(forecast["yhat"])
         return y_pred
 
 
@@ -153,65 +159,65 @@ class ProphetModel(PerSegmentModel):
 
         Parameters
         ----------
-        growth: str
+        growth:
             Options are ‘linear’ and ‘logistic’. This likely will not be tuned;
             if there is a known saturating point and growth towards that point
             it will be included and the logistic trend will be used, otherwise
             it will be linear.
-        changepoints: Optional[List[datetime]]
+        changepoints:
             List of dates at which to include potential changepoints. If
             not specified, potential changepoints are selected automatically.
-        n_changepoints: int
+        n_changepoints:
             Number of potential changepoints to include. Not used
             if input `changepoints` is supplied. If `changepoints` is not supplied,
             then n_changepoints potential changepoints are selected uniformly from
             the first `changepoint_range` proportion of the history.
-        changepoint_range: float
+        changepoint_range:
             Proportion of history in which trend changepoints will
             be estimated. Defaults to 0.8 for the first 80%. Not used if
             `changepoints` is specified.
-        yearly_seasonality: str or bool
+        yearly_seasonality:
             By default (‘auto’) this will turn yearly seasonality on if there is
             a year of data, and off otherwise. Options are [‘auto’, True, False].
             If there is more than a year of data, rather than trying to turn this
             off during HPO, it will likely be more effective to leave it on and
             turn down seasonal effects by tuning seasonality_prior_scale.
-        weekly_seasonality: str or bool
+        weekly_seasonality:
             Same as for yearly_seasonality.
-        daily_seasonality: str or bool
+        daily_seasonality:
             Same as for yearly_seasonality.
-        holidays: Optional[pd.Dataframe]
+        holidays:
             pd.DataFrame with columns holiday (string) and ds (date type)
             and optionally columns lower_window and upper_window which specify a
             range of days around the date to be included as holidays.
             lower_window=-2 will include 2 days prior to the date as holidays. Also
             optionally can have a column prior_scale specifying the prior scale for
             that holiday.
-        seasonality_mode: str
+        seasonality_mode:
             'additive' (default) or 'multiplicative'.
-        seasonality_prior_scale: float
+        seasonality_prior_scale:
             Parameter modulating the strength of the
             seasonality model. Larger values allow the model to fit larger seasonal
             fluctuations, smaller values dampen the seasonality. Can be specified
             for individual seasonalities using add_seasonality.
-        holidays_prior_scale: float
+        holidays_prior_scale:
             Parameter modulating the strength of the holiday components model, unless overridden
             in the holidays input.
-        mcmc_samples: int
+        mcmc_samples:
             Integer, if greater than 0, will do full Bayesian inference
             with the specified number of MCMC samples. If 0, will do MAP
             estimation.
-        interval_width: float
+        interval_width:
             Float, width of the uncertainty intervals provided
             for the forecast. If mcmc_samples=0, this will be only the uncertainty
             in the trend using the MAP estimate of the extrapolated generative
             model. If mcmc.samples>0, this will be integrated over all model
             parameters, which will include uncertainty in seasonality.
-        uncertainty_samples: Union[int, bool]
+        uncertainty_samples:
             Number of simulated draws used to estimate
             uncertainty intervals. Settings this value to 0 or False will disable
             uncertainty estimation and speed up the calculation.
-        stan_backend: Optional[str]
+        stan_backend:
             as defined in StanBackendEnum default: None - will try to
             iterate over all available backends and find the working one
         additional_seasonality_params: Iterable[Dict[str, Union[int, float, str]]]
@@ -262,3 +268,68 @@ class ProphetModel(PerSegmentModel):
                 additional_seasonality_params=self.additional_seasonality_params,
             )
         )
+
+    @staticmethod
+    def _forecast_segment(
+        model, segment: Union[str, List[str]], ts: TSDataset, confidence_interval: bool = False
+    ) -> pd.DataFrame:
+        segment_features = ts[:, segment, :]
+        segment_features = segment_features.droplevel("segment", axis=1)
+        segment_features = segment_features.reset_index()
+        dates = segment_features["timestamp"]
+        dates.reset_index(drop=True, inplace=True)
+        segment_predict = model.predict(df=segment_features, confidence_interval=confidence_interval)
+        segment_predict = segment_predict.rename(
+            {"yhat": "target", "yhat_lower": "target_lower", "yhat_upper": "target_upper"}, axis=1
+        )
+        segment_predict["segment"] = segment
+        segment_predict["timestamp"] = dates
+        return segment_predict
+
+    @log_decorator
+    def forecast(self, ts: TSDataset, confidence_interval: bool = False) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataframe with features
+        confidence_interval:
+            If True returns confidence interval for forecast
+
+        Returns
+        -------
+        DataFrame
+            Models result
+
+        Notes
+        _____
+        The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width
+        """
+        """df = dataset.to_pandas(flatten=True)
+        df = df[df["target"].isna()]
+        if any(df.drop(columns="target").isna().any()):
+            raise ValueError("Dataset contains NaN values on the forecast side", df.columns[df.isna().any()].tolist())
+        df.sort_values(by=["segment", "timestamp"], inplace=True)"""
+
+        if self._segments is None:
+            raise ValueError("The model is not fitted yet, use fit() to train it")
+
+        result_list = list()
+        for segment in self._segments:
+            model = self._models[segment]
+
+            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval)
+            result_list.append(segment_predict)
+
+        # need real case to test
+        result_df = pd.concat(result_list, ignore_index=True)
+        result_df = result_df.set_index(["timestamp", "segment"])
+        df = ts.to_pandas(flatten=True)
+        df = df.set_index(["timestamp", "segment"])
+        df = df.combine_first(result_df).reset_index()
+
+        df = TSDataset.to_dataset(df)
+        ts.df = df
+        ts.inverse_transform()
+        return ts
