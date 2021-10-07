@@ -16,4 +16,5 @@ API
    analysis
    model_selection
    loggers
+   commands
 

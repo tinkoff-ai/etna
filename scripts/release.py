@@ -1,12 +1,11 @@
 from enum import Enum
-import subprocess
-from typing import Tuple
-from typing import Optional
 
 import click
 import typer
 from semver import VersionInfo as Version
 
+from .shell import shell
+from .shell import ShellError
 
 REPO='https://github.com/tinkoff-ai/etna-ts'
 
@@ -21,21 +20,6 @@ class Rule(str, Enum):
 
 def is_unstable(version: Version):
     return bool(version.prerelease)
-
-
-class ShellError(Exception):
-    ...
-
-
-def shell(command: str, *args: Tuple[str], capture_output: bool = False) -> Optional[str]:
-    out = subprocess.run(command.split(' ') + list(args), capture_output=capture_output)
-    if out.returncode > 0:
-        if capture_output:
-            typer.echo(out.stdout or out.stderr)
-        raise ShellError(f'Shell command returns code {out.returncode}')
-
-    if capture_output:
-        return out.stdout.decode().strip()
 
 
 def main(rule: Rule):
