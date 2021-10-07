@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.models import NaiveModel
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.imputation import _OneSegmentTimeSeriesImputerTransform
 
@@ -233,14 +234,17 @@ def test_inverse_transform_many_segments(df_with_missing_range_x_index_two_segme
 
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
-def test_inverse_transform_make_future(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
-    """Check that inverse_transform return nan-s back after make_future."""
+def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
+    """Check that inverse_transform doesn't change anything in forecast."""
     df, rng = df_with_missing_range_x_index_two_segments
     ts = TSDataset(df, freq=pd.infer_freq(df.index))
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
+    model = NaiveModel()
     ts.fit_transform(transforms=[imputer])
+    model.fit(ts)
     ts_test = ts.make_future(3)
-    ts_test.inverse_transform()
-    df_test_final = ts_test.to_pandas()
+    assert np.all(ts_test[:, :, "target"].isna())
+    ts_forecast = model.forecast(ts_test)
     for segment in ts.segments:
-        assert np.all(df_test_final.loc[:, pd.IndexSlice[segment, "target"]].isna())
+        true_value = ts[:, segment, "target"].values[-1]
+        assert np.all(ts_forecast[:, segment, "target"] == true_value)
