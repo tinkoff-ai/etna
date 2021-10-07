@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Outliers notebook ([#123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
 - Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna-ts/pull/135))
 - Forecast command for cli ([#133](https://github.com/tinkoff-ai/etna-ts/issues/133)))
+- MyPy checks in CI/CD and lint commands ([#39](https://github.com/tinkoff-ai/etna-ts/issues/39))
 - TrendTransform ([#139](https://github.com/tinkoff-ai/etna-ts/pull/139))
 
 ### Changed

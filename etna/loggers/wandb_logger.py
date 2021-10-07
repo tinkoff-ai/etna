@@ -85,7 +85,7 @@ class WandbLogger(BaseLogger):
         self.group = group
         self.config = config
         self._experiment = None
-        self._pl_logger = None
+        self._pl_logger: Optional[PLWandbLogger] = None
         self.job_type = job_type
         self.tags = tags
         self.plot = plot
