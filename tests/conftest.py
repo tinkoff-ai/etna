@@ -3,6 +3,9 @@ import pandas as pd
 import pytest
 
 from etna.datasets.tsdataset import TSDataset
+from etna.models import CatBoostModelPerSegment
+from etna.pipeline import Pipeline
+from etna.transforms import LagTransform
 
 
 @pytest.fixture()
@@ -255,3 +258,89 @@ def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
     df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df=df, freq="H")
     return ts
+
+
+@pytest.fixture
+def imbalanced_tsdf() -> TSDataset:
+    """Generate two series with big time range difference"""
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2021-01-25", "2021-02-01", freq="D")})
+    df1["segment"] = "segment_1"
+    df1["target"] = np.random.uniform(0, 5, len(df1))
+
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-02-01", freq="D")})
+    df2["segment"] = "segment_2"
+    df2["target"] = np.random.uniform(0, 5, len(df2))
+
+    df = df1.append(df2)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def example_tsdf() -> TSDataset:
+    df1 = pd.DataFrame()
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df1["segment"] = "segment_1"
+    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
+
+    df2 = pd.DataFrame()
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df2["segment"] = "segment_2"
+    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
+
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    df = TSDataset(df, freq="H")
+    return df
+
+
+@pytest.fixture
+def big_daily_example_tsdf() -> TSDataset:
+    df1 = pd.DataFrame()
+    df1["timestamp"] = pd.date_range(start="2019-01-01", end="2020-04-01", freq="D")
+    df1["segment"] = "segment_1"
+    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
+
+    df2 = pd.DataFrame()
+    df2["timestamp"] = pd.date_range(start="2019-06-01", end="2020-04-01", freq="D")
+    df2["segment"] = "segment_2"
+    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
+
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    df = TSDataset(df, freq="D")
+    return df
+
+
+@pytest.fixture
+def big_example_tsdf() -> TSDataset:
+    df1 = pd.DataFrame()
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
+    df1["segment"] = "segment_1"
+    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
+
+    df2 = pd.DataFrame()
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
+    df2["segment"] = "segment_2"
+    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
+
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    df = TSDataset(df, freq="D")
+    return df
+
+
+@pytest.fixture
+def catboost_pipeline() -> Pipeline:
+    """Generate pipeline with CatBoostModelMultiSegment."""
+    pipeline = Pipeline(
+        model=CatBoostModelPerSegment(),
+        transforms=[LagTransform(in_column="target", lags=[10, 11, 12])],
+        horizon=7,
+    )
+    return pipeline
