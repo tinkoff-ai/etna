@@ -61,7 +61,7 @@ def test_outliers_detection(transform, method, outliers_tsds):
 def test_inverse_transform(transform, outliers_tsds):
     """Checks that inverse transform works correctly."""
     original_df = outliers_tsds.df.copy()
-    outliers_tsds.fit([transform])
+    outliers_tsds.fit_transform([transform])
 
     future = outliers_tsds.make_future(future_steps=10)
     original_future_df = future.df.copy()
