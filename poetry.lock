@@ -2663,7 +2663,7 @@ tests = ["pytest-cov", "coverage", "pytest"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2, <3.9.0"
-content-hash = "f4c29f58544732568e8f511ed533e89c2fd6cb12332367b136cd327324604e5c"
+content-hash = "5b5a2e67ec17be5562bceb618f5b923ff9ad808d5d3eb0018b480d4b7b139b92"
 
 [metadata.files]
 absl-py = [
