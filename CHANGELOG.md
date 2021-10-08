@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Colorebar scaling in Correlation heatmap plotter ([#143](https://github.com/tinkoff-ai/etna-ts/pull/143))
 - Add Correlation heatmap in EDA notebook ([#144](https://github.com/tinkoff-ai/etna-ts/pull/144))
 - Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna-ts/pull/151))
+- Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
 
 ### Fixed
 - Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
