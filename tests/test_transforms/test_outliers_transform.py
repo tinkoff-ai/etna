@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 import pandas as pd
 import pytest
@@ -59,14 +58,14 @@ def test_outliers_detection(transform, method, outliers_tsds):
     ]
 )
 def test_inverse_transform(transform, outliers_tsds):
-    original_df = copy.deepcopy(outliers_tsds.df)
+    original_df = outliers_tsds.df.copy()
     outliers_tsds.fit([transform])
 
     future = outliers_tsds.make_future(future_steps=10)
-    original_future = copy.deepcopy(future)
+    original_future_df = future.df.copy()
 
     future.inverse_transform()
     outliers_tsds.inverse_transform()
 
     assert (original_df == outliers_tsds.df).all().all()
-    assert (future.df.isnull() == original_future.df.isnull()).all().all()
+    assert (future.df.isnull() == original_future_df.isnull()).all().all()
