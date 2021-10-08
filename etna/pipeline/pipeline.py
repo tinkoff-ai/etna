@@ -1,11 +1,12 @@
 from typing import Iterable
 
+from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.models.base import Model
 from etna.transforms.base import Transform
 
 
-class Pipeline:
+class Pipeline(BaseMixin):
     """Pipeline of transforms with a final estimator."""
 
     def __init__(self, model: Model, transforms: Iterable[Transform] = (), horizon: int = 1):
@@ -27,7 +28,7 @@ class Pipeline:
         self.ts = None
 
     def fit(self, ts: TSDataset) -> "Pipeline":
-        """ Fit the Pipeline.
+        """Fit the Pipeline.
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
         Parameters
@@ -45,7 +46,7 @@ class Pipeline:
         return self
 
     def forecast(self) -> TSDataset:
-        """ Make predictions.
+        """Make predictions.
 
         Returns
         -------

@@ -1,6 +1,7 @@
 import inspect
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -24,27 +25,27 @@ class PytorchForecastingTransform(Transform):
     def __init__(
         self,
         max_encoder_length: int = 30,
-        min_encoder_length: int = None,
-        min_prediction_idx: int = None,
-        min_prediction_length: int = None,
+        min_encoder_length: Optional[int] = None,
+        min_prediction_idx: Optional[int] = None,
+        min_prediction_length: Optional[int] = None,
         max_prediction_length: int = 1,
-        static_categoricals: List[str] = [],
-        static_reals: List[str] = [],
-        time_varying_known_categoricals: List[str] = [],
-        time_varying_known_reals: List[str] = [],
-        time_varying_unknown_categoricals: List[str] = [],
-        time_varying_unknown_reals: List[str] = [],
-        variable_groups: Dict[str, List[int]] = {},
-        dropout_categoricals: List[str] = [],
-        constant_fill_strategy: Dict[str, Union[str, float, int, bool]] = {},
+        static_categoricals: Optional[List[str]] = None,
+        static_reals: Optional[List[str]] = None,
+        time_varying_known_categoricals: Optional[List[str]] = None,
+        time_varying_known_reals: Optional[List[str]] = None,
+        time_varying_unknown_categoricals: Optional[List[str]] = None,
+        time_varying_unknown_reals: Optional[List[str]] = None,
+        variable_groups: Optional[Dict[str, List[int]]] = None,
+        dropout_categoricals: Optional[List[str]] = None,
+        constant_fill_strategy: Optional[Dict[str, Union[str, float, int, bool]]] = None,
         allow_missings: bool = True,
-        lags: Dict[str, List[int]] = {},
+        lags: Optional[Dict[str, List[int]]] = None,
         add_relative_time_idx: bool = True,
         add_target_scales: bool = True,
         add_encoder_length: Union[bool, str] = True,
         target_normalizer: Union[NORMALIZER, str, List[NORMALIZER], Tuple[NORMALIZER]] = "auto",
-        categorical_encoders: Dict[str, NaNLabelEncoder] = None,
-        scalers: Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]] = {},
+        categorical_encoders: Optional[Dict[str, NaNLabelEncoder]] = None,
+        scalers: Optional[Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]]] = None,
     ):
         """Parameters for TimeSeriesDataSet object.
 
@@ -62,23 +63,28 @@ class PytorchForecastingTransform(Transform):
         self.min_prediction_idx = min_prediction_idx
         self.min_prediction_length = min_prediction_length
         self.max_prediction_length = max_prediction_length
-        self.static_categoricals = static_categoricals
-        self.static_reals = static_reals
-        self.time_varying_known_categoricals = time_varying_known_categoricals
-        self.time_varying_known_reals = time_varying_known_reals
-        self.time_varying_unknown_categoricals = time_varying_unknown_categoricals
-        self.time_varying_unknown_reals = time_varying_unknown_reals
-        self.variable_groups = variable_groups
+        self.static_categoricals = static_categoricals if static_categoricals else []
+        self.static_reals = static_reals if static_reals else []
+        self.time_varying_known_categoricals = (
+            time_varying_known_categoricals if time_varying_known_categoricals else []
+        )
+        self.time_varying_known_reals = time_varying_known_reals if time_varying_known_reals else []
+        self.time_varying_unknown_categoricals = (
+            time_varying_unknown_categoricals if time_varying_unknown_categoricals else []
+        )
+        self.time_varying_unknown_reals = time_varying_unknown_reals if time_varying_unknown_reals else []
+        self.variable_groups = variable_groups if variable_groups else {}
         self.add_relative_time_idx = add_relative_time_idx
         self.add_target_scales = add_target_scales
         self.add_encoder_length = add_encoder_length
         self.allow_missings = allow_missings
         self.target_normalizer = target_normalizer
-        self.categorical_encoders = categorical_encoders
-        self.dropout_categoricals = dropout_categoricals
-        self.constant_fill_strategy = constant_fill_strategy
-        self.lags = lags
-        self.scalers = scalers
+        self.categorical_encoders = categorical_encoders if categorical_encoders else {}
+        self.dropout_categoricals = dropout_categoricals if dropout_categoricals else []
+        self.constant_fill_strategy = constant_fill_strategy if constant_fill_strategy else []
+        self.lags = lags if lags else {}
+        self.scalers = scalers if scalers else {}
+        self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
 
     @staticmethod
     def _calculate_freq_unit(freq: str) -> pd.Timedelta:

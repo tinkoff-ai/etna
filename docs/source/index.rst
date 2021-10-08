@@ -11,9 +11,11 @@ Welcome to ETNA's documentation!
    datasets
    metrics
    transforms
+   ensembles
    analysis
    model_selection
    loggers
+   commands
    api
 
 Indices and tables

@@ -12,7 +12,9 @@ API
    datasets
    metrics
    transforms
+   ensembles
    analysis
    model_selection
    loggers
+   commands
 

@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 from typing import Tuple
 
 import pandas as pd
@@ -49,8 +50,8 @@ class _OneSegmentSpecialDaysTransform(Transform):
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
 
-        self.anomaly_week_days = None
-        self.anomaly_month_days = None
+        self.anomaly_week_days: Optional[Tuple[int]] = None
+        self.anomaly_month_days: Optional[Tuple[int]] = None
 
         if self.find_special_weekday and find_special_month_day:
             self.res_type = {"df_sample": (0, 0), "columns": ["anomaly_weekdays", "anomaly_monthdays"]}

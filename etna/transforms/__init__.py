@@ -27,4 +27,5 @@ from etna.transforms.statistics import MedianTransform
 from etna.transforms.statistics import MinTransform
 from etna.transforms.statistics import QuantileTransform
 from etna.transforms.statistics import StdTransform
+from etna.transforms.trend import TrendTransform
 from etna.transforms.stl import STLTransform
