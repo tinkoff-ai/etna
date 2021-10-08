@@ -3,7 +3,6 @@ from abc import abstractmethod
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -28,7 +27,7 @@ class OutliersTransform(Transform, ABC):
             name of processed column
         """
         self.in_column = in_column
-        self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self.outliers_timestamps = None
 
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -46,6 +45,12 @@ class OutliersTransform(Transform, ABC):
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
+        self.original_values = dict()
+
+        for segment, timestamps in self.outliers_timestamps.items():
+            segment_ts = ts[:, "segment_a", :]
+            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
+            self.original_values[segment] = segment_values
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -66,6 +71,28 @@ class OutliersTransform(Transform, ABC):
         for segment in df.columns.get_level_values("segment").unique():
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Inverse transformation. Return back deleted values.
+
+        Parameters
+        ----------
+        df:
+            data to transform
+
+        Returns
+        -------
+        pd.DataFrame
+            data with reconstructed trend
+        """
+        result = df.copy()
+
+        for segment in self.original_values.keys():
+            segment_ts = result[segment, self.in_column]
+            segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
+
+        return result
 
     @abstractmethod
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
