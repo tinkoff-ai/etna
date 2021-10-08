@@ -40,6 +40,10 @@ class _ProphetModel:
         stan_backend: Optional[str] = None,
         additional_seasonality_params: Iterable[Dict[str, Union[str, float, int]]] = (),
     ):
+        if not SETTINGS.prophet_required:
+            raise ImportError("prophet is not available. Please install it by running `pip install etna[prophet]` "
+                              "if prophet is installed check configuration file")
+
         self.growth = growth
         self.n_changepoints = n_changepoints
         self.changepoints = changepoints

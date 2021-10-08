@@ -1,5 +1,6 @@
 import configparser
 import os
+from importlib.util import find_spec
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -8,12 +9,28 @@ from typing import Optional
 from typing import Tuple
 
 
+def _module_available(module_path: str) -> bool:
+    """Check if a path is available in your environment.
+    >>> _module_available('os')
+    True
+    >>> _module_available('bla.bla')
+    False
+    """
+    try:
+        return find_spec(module_path) is not None
+    except AttributeError:
+        # Python 3.6
+        return False
+    except ModuleNotFoundError:
+        # Python 3.7+
+        return False
+
+
 def _is_torch_available():
     try:
-        import pytorch_forecasting  # noqa: F401
-        import pytorch_lightning  # noqa: F401
-        import torch  # noqa: F401
-
+        _module_available('pytorch_forecasting')  # noqa: F401
+        _module_available('pytorch_lightning')  # noqa: F401
+        _module_available('torch')  # noqa: F401
         return True
     except ImportError:
         return False
@@ -21,8 +38,7 @@ def _is_torch_available():
 
 def _is_wandb_available():
     try:
-        import wandb  # noqa: F401
-
+        _module_available('wandb')
         return True
     except ImportError:
         return False
@@ -30,8 +46,7 @@ def _is_wandb_available():
 
 def _is_prophet_available():
     try:
-        import prophet  # noqa: F401
-
+        _module_available('prophet')
         return True
     except ImportError:
         return False
