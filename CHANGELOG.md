@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MyPy checks in CI/CD and lint commands ([#39](https://github.com/tinkoff-ai/etna-ts/issues/39))
 - TrendTransform ([#139](https://github.com/tinkoff-ai/etna-ts/pull/139))
 - Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
+- Limit version of pandas by 1.2 excluding ([#163](https://github.com/tinkoff-ai/etna-ts/pull/163))
 
 ### Changed
 - SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
