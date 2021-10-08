@@ -124,9 +124,7 @@ class VotingEnsemble(Pipeline):
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:
         """Get average forecast."""
-        forecast_df = forecasts[0][:, :, "target"] * self.weights[0]
-        for forecast, weight in zip(forecasts[1:], self.weights[1:]):
-            forecast_df += forecast[:, :, "target"] * weight
+        forecast_df = sum([forecast[:, :, "target"] * weight for forecast, weight in zip(forecasts, self.weights)])
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
