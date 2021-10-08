@@ -6,6 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+import deprecation
 import pandas as pd
 from joblib import Parallel
 from joblib import delayed
@@ -28,6 +29,7 @@ class CrossValidationMode(Enum):
     constant = "constant"
 
 
+@deprecation.deprecated(deprecated_in="1.2.0", removed_in="1.4.0", details="Use Pipeline.backtest method instead.")
 class TimeSeriesCrossValidation(BaseMixin):
     """Cross validation for time series."""
 
