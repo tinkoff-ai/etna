@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,7 @@ class OutliersTransform(Transform, ABC):
             name of processed column
         """
         self.in_column = in_column
-        self.outliers_timestamps = None
+        self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
 
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -48,7 +49,7 @@ class OutliersTransform(Transform, ABC):
         self.original_values = dict()
 
         for segment, timestamps in self.outliers_timestamps.items():
-            segment_ts = ts[:, "segment_a", :]
+            segment_ts = ts[:, segment, :]
             segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
             self.original_values[segment] = segment_values
         return self
