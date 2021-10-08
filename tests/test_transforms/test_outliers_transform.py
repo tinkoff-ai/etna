@@ -49,6 +49,7 @@ def test_outliers_detection(transform, method, outliers_tsds):
         transformed_column = transformed_df.loc[non_nan_index[segment], pd.IndexSlice[segment, "target"]]
         assert np.all(transformed_column[transformed_column.isna()].index == nan_timestamps)
 
+
 @pytest.mark.parametrize(
     "transform",
     [
