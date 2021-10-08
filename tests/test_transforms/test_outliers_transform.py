@@ -55,10 +55,11 @@ def test_outliers_detection(transform, method, outliers_tsds):
     [
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
-        SAXOutliersTransform(in_column="target")
-    ]
+        SAXOutliersTransform(in_column="target"),
+    ],
 )
 def test_inverse_transform(transform, outliers_tsds):
+    """Checks that inverse transform works correctly."""
     original_df = outliers_tsds.df.copy()
     outliers_tsds.fit([transform])
 
