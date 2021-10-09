@@ -34,7 +34,7 @@ def test_interface(transform, example_tsds: TSDataset):
         (SAXOutliersTransform(in_column="target"), get_sequence_anomalies),
     ],
 )
-def test_outliers_detection(transform, method, example_df):
+def test_outliers_detection(transform, method, outliers_tsds):
     """Checks that outliers transforms detect anomalies according to methods from etna.analysis."""
     detectiom_method_results = method(outliers_tsds)
 
@@ -58,7 +58,7 @@ def test_outliers_detection(transform, method, example_df):
         SAXOutliersTransform(in_column="target"),
     ],
 )
-def test_inverse_transform(transform, outliers_tsds):
+def test_inverse_transform(transform, example_df):
     """Checks that inverse transform works correctly."""
     original_df = outliers_tsds.df.copy()
     outliers_tsds.fit_transform([transform])
