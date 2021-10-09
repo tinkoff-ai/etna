@@ -58,16 +58,16 @@ def test_outliers_detection(transform, method, outliers_tsds):
         SAXOutliersTransform(in_column="target"),
     ],
 )
-def test_inverse_transform(transform, example_df):
+def test_inverse_transform(transform, example_tsds):
     """Checks that inverse transform works correctly."""
-    original_df = example_df.df.copy()
-    example_df.fit_transform([transform])
+    original_df = example_tsds.df.copy()
+    example_tsds.fit_transform([transform])
 
-    future = example_df.make_future(future_steps=10)
+    future = example_tsds.make_future(future_steps=10)
     original_future_df = future.df.copy()
 
     future.inverse_transform()
-    example_df.inverse_transform()
+    example_tsds.inverse_transform()
 
-    assert (original_df == example_df.df).all().all()
+    assert (original_df == example_tsds.df).all().all()
     assert (future.df.isnull() == original_future_df.isnull()).all().all()
