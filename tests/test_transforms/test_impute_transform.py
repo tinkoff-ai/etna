@@ -56,7 +56,7 @@ def test_wrong_init_two_segments(all_date_present_df_two_segments):
 
 
 @pytest.fixture()
-def df_with_missing_value_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
+def df_with_missing_value_x_index(random_seed, all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
     """Create pd.DataFrame that contains some target on given range of dates with one gap."""
     # index cannot be first or last value,
     # because Imputer should know starting and ending dates
