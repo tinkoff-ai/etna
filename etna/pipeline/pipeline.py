@@ -5,7 +5,6 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
@@ -49,8 +48,6 @@ class Pipeline(BaseMixin):
         self.transforms = transforms
         self.horizon = horizon
         self.ts = None
-        self._folds: Optional[Dict[int, Any]] = None
-        self._fold_column = "fold_number"
 
     def fit(self, ts: TSDataset) -> "Pipeline":
         """Fit the Pipeline.
@@ -81,6 +78,10 @@ class Pipeline(BaseMixin):
         future = self.ts.make_future(self.horizon)
         predictions = self.model.forecast(future)
         return predictions
+
+    def _init_backtest(self):
+        self._folds: Optional[Dict[int, Any]] = None
+        self._fold_column = "fold_number"
 
     @staticmethod
     def _validate_backtest_n_folds(n_folds: int):
@@ -154,17 +155,14 @@ class Pipeline(BaseMixin):
         train: TSDataset,
         test: TSDataset,
         fold_number: int,
-        transforms: Sequence[Transform] = (),
         metrics: Optional[List[Metric]] = None,
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
 
-        train.fit_transform(transforms=deepcopy(transforms))
-        future = train.make_future(future_steps=self.horizon)
-        model = deepcopy(self.model)
-        model.fit(ts=train)
-        forecast = model.forecast(ts=future)
+        pipeline = deepcopy(self)
+        pipeline.fit(ts=train)
+        forecast = pipeline.forecast()
 
         fold = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
@@ -249,13 +247,12 @@ class Pipeline(BaseMixin):
         pd.DataFrame, pd.DataFrame, pd.Dataframe:
             metrics dataframe, forecast dataframe and dataframe with information about folds
         """
+        self._init_backtest()
         self._validate_backtest_n_folds(n_folds=n_folds)
         self._validate_backtest_dataset(ts=ts, n_folds=n_folds, horizon=self.horizon)
         self._validate_backtest_metrics(metrics=metrics)
         folds = Parallel(n_jobs=n_jobs, verbose=11, backend="multiprocessing")(
-            delayed(self._run_fold)(
-                train=train, test=test, fold_number=fold_number, transforms=deepcopy(self.transforms), metrics=metrics
-            )
+            delayed(self._run_fold)(train=train, test=test, fold_number=fold_number, metrics=metrics)
             for fold_number, (train, test) in enumerate(
                 self._generate_folds_datasets(ts=ts, n_folds=n_folds, horizon=self.horizon, mode=mode)
             )
