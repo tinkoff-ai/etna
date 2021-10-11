@@ -51,7 +51,7 @@ class _SARIMAXModel:
 
         Parameters
         ----------
-        order : iterable or iterable of iterables, optional
+        order:
             The (p,d,q) order of the model for the number of AR parameters,
             differences, and MA parameters. `d` must be an integer
             indicating the integration order of the process, while
@@ -59,7 +59,7 @@ class _SARIMAXModel:
             orders (so that all lags up to those orders are included) or else
             iterables giving specific AR and / or MA lags to include. Default is
             an AR(1) model: (1,0,0).
-        seasonal_order : iterable, optional
+        seasonal_order:
             The (P,D,Q,s) order of the seasonal component of the model for the
             AR parameters, differences, MA parameters, and periodicity.
             `D` must be an integer indicating the integration order of the process,
@@ -69,7 +69,7 @@ class _SARIMAXModel:
             integer giving the periodicity (number of periods in season), often it
             is 4 for quarterly data or 12 for monthly data. Default is no seasonal
             effect.
-        trend : str{'n','c','t','ct'} or iterable, optional
+        trend:
             Parameter controlling the deterministic trend polynomial :math:`A(t)`.
             Can be specified as a string where 'c' indicates a constant (i.e. a
             degree zero component of the trend polynomial), 't' indicates a
@@ -77,20 +77,20 @@ class _SARIMAXModel:
             iterable defining the non-zero polynomial exponents to include, in
             increasing order. For example, `[1,1,0,1]` denotes
             :math:`a + bt + ct^3`. Default is to not include a trend component.
-        measurement_error : bool, optional
+        measurement_error:
             Whether or not to assume the endogenous observations `endog` were
             measured with error. Default is False.
-        time_varying_regression : bool, optional
+        time_varying_regression:
             Used when an explanatory variables, `exog`, are provided provided
             to select whether or not coefficients on the exogenous regressors are
             allowed to vary over time. Default is False.
-        mle_regression : bool, optional
+        mle_regression:
             Whether or not to use estimate the regression coefficients for the
             exogenous variables as part of maximum likelihood estimation or through
             the Kalman filter (i.e. recursive least squares). If
             `time_varying_regression` is True, this must be set to False. Default
             is True.
-        simple_differencing : bool, optional
+        simple_differencing:
             Whether or not to use partially conditional maximum likelihood
             estimation. If True, differencing is performed prior to estimation,
             which discards the first :math:`s D + d` initial rows but results in a
@@ -98,35 +98,35 @@ class _SARIMAXModel:
             details about interpreting results when this option is used. If False,
             the full SARIMAX model is put in state-space form so that all
             datapoints can be used in estimation. Default is False.
-        enforce_stationarity : bool, optional
+        enforce_stationarity:
             Whether or not to transform the AR parameters to enforce stationarity
             in the autoregressive component of the model. Default is True.
-        enforce_invertibility : bool, optional
+        enforce_invertibility:
             Whether or not to transform the MA parameters to enforce invertibility
             in the moving average component of the model. Default is True.
-        hamilton_representation : bool, optional
+        hamilton_representation:
             Whether or not to use the Hamilton representation of an ARMA process
             (if True) or the Harvey representation (if False). Default is False.
-        concentrate_scale : bool, optional
+        concentrate_scale:
             Whether or not to concentrate the scale (variance of the error term)
             out of the likelihood. This reduces the number of parameters estimated
             by maximum likelihood by one, but standard errors will then not
             be available for the scale parameter.
-        trend_offset : int, optional
+        trend_offset:
             The offset at which to start time trend values. Default is 1, so that
             if `trend='t'` the trend is equal to 1, 2, ..., nobs. Typically is only
             set when the model created by extending a previous dataset.
-        use_exact_diffuse : bool, optional
+        use_exact_diffuse:
             Whether or not to use exact diffuse initialization for non-stationary
             states. Default is False (in which case approximate diffuse
             initialization is used).
-        dates : array_like of datetime, optional
+        dates:
             If no index is given by `endog` or `exog`, an array-like object of
             datetime objects can be provided.
-        freq : str, optional
+        freq:
             If no index is given by `endog` or `exog`, the frequency of the
             time-series may be specified here as a Pandas offset or offset string.
-        missing : str
+        missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
@@ -158,7 +158,7 @@ class _SARIMAXModel:
 
         Parameters
         ----------
-        df: pd.DataFrame
+        df:
             Features dataframe
 
         Returns
@@ -223,7 +223,7 @@ class _SARIMAXModel:
 
         Parameters
         ----------
-        df : pd.DataFrame
+        df:
             Features dataframe
 
         Returns
@@ -318,11 +318,7 @@ class SARIMAXModel(PerSegmentModel):
 
         Parameters
         ----------
-        endog : array_like
-            The observed time-series process :math:`y`
-        exog : array_like, optional
-            Array of exogenous regressors, shaped nobs x k.
-        order : iterable or iterable of iterables, optional
+        order:
             The (p,d,q) order of the model for the number of AR parameters,
             differences, and MA parameters. `d` must be an integer
             indicating the integration order of the process, while
@@ -330,7 +326,7 @@ class SARIMAXModel(PerSegmentModel):
             orders (so that all lags up to those orders are included) or else
             iterables giving specific AR and / or MA lags to include. Default is
             an AR(1) model: (1,0,0).
-        seasonal_order : iterable, optional
+        seasonal_order:
             The (P,D,Q,s) order of the seasonal component of the model for the
             AR parameters, differences, MA parameters, and periodicity.
             `D` must be an integer indicating the integration order of the process,
@@ -340,7 +336,7 @@ class SARIMAXModel(PerSegmentModel):
             integer giving the periodicity (number of periods in season), often it
             is 4 for quarterly data or 12 for monthly data. Default is no seasonal
             effect.
-        trend : str{'n','c','t','ct'} or iterable, optional
+        trend:
             Parameter controlling the deterministic trend polynomial :math:`A(t)`.
             Can be specified as a string where 'c' indicates a constant (i.e. a
             degree zero component of the trend polynomial), 't' indicates a
@@ -348,20 +344,20 @@ class SARIMAXModel(PerSegmentModel):
             iterable defining the non-zero polynomial exponents to include, in
             increasing order. For example, `[1,1,0,1]` denotes
             :math:`a + bt + ct^3`. Default is to not include a trend component.
-        measurement_error : bool, optional
+        measurement_error:
             Whether or not to assume the endogenous observations `endog` were
             measured with error. Default is False.
-        time_varying_regression : bool, optional
+        time_varying_regression:
             Used when an explanatory variables, `exog`, are provided provided
             to select whether or not coefficients on the exogenous regressors are
             allowed to vary over time. Default is False.
-        mle_regression : bool, optional
+        mle_regression:
             Whether or not to use estimate the regression coefficients for the
             exogenous variables as part of maximum likelihood estimation or through
             the Kalman filter (i.e. recursive least squares). If
             `time_varying_regression` is True, this must be set to False. Default
             is True.
-        simple_differencing : bool, optional
+        simple_differencing:
             Whether or not to use partially conditional maximum likelihood
             estimation. If True, differencing is performed prior to estimation,
             which discards the first :math:`s D + d` initial rows but results in a
@@ -369,35 +365,35 @@ class SARIMAXModel(PerSegmentModel):
             details about interpreting results when this option is used. If False,
             the full SARIMAX model is put in state-space form so that all
             datapoints can be used in estimation. Default is False.
-        enforce_stationarity : bool, optional
+        enforce_stationarity:
             Whether or not to transform the AR parameters to enforce stationarity
             in the autoregressive component of the model. Default is True.
-        enforce_invertibility : bool, optional
+        enforce_invertibility:
             Whether or not to transform the MA parameters to enforce invertibility
             in the moving average component of the model. Default is True.
-        hamilton_representation : bool, optional
+        hamilton_representation:
             Whether or not to use the Hamilton representation of an ARMA process
             (if True) or the Harvey representation (if False). Default is False.
-        concentrate_scale : bool, optional
+        concentrate_scale:
             Whether or not to concentrate the scale (variance of the error term)
             out of the likelihood. This reduces the number of parameters estimated
             by maximum likelihood by one, but standard errors will then not
             be available for the scale parameter.
-        trend_offset : int, optional
+        trend_offset:
             The offset at which to start time trend values. Default is 1, so that
             if `trend='t'` the trend is equal to 1, 2, ..., nobs. Typically is only
             set when the model created by extending a previous dataset.
-        use_exact_diffuse : bool, optional
+        use_exact_diffuse:
             Whether or not to use exact diffuse initialization for non-stationary
             states. Default is False (in which case approximate diffuse
             initialization is used).
-        dates : array_like of datetime, optional
+        dates:
             If no index is given by `endog` or `exog`, an array-like object of
             datetime objects can be provided.
-        freq : str, optional
+        freq:
             If no index is given by `endog` or `exog`, the frequency of the
             time-series may be specified here as a Pandas offset or offset string.
-        missing : str
+        missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
