@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MyPy checks in CI/CD and lint commands ([#39](https://github.com/tinkoff-ai/etna-ts/issues/39))
 - TrendTransform ([#139](https://github.com/tinkoff-ai/etna-ts/pull/139))
 - Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
+- Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
 - STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
 
 ### Changed
@@ -33,8 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Colorebar scaling in Correlation heatmap plotter ([#143](https://github.com/tinkoff-ai/etna-ts/pull/143))
 - Add Correlation heatmap in EDA notebook ([#144](https://github.com/tinkoff-ai/etna-ts/pull/144))
 - Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna-ts/pull/151))
+- Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
 
 ### Fixed
+- Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
 
 ## [1.1.3] - 2021-10-08
 ### Fixed

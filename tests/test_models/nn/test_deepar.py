@@ -1,8 +1,4 @@
-import random
-
-import numpy as np
 import pytest
-import torch
 from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets.tsdataset import TSDataset
@@ -39,10 +35,6 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon):
     When:
     Then: I get {horizon} periods per dataset as a forecast and they "the same" as past
     """
-    SEED = 121  # noqa: N806
-    torch.manual_seed(SEED)
-    random.seed(SEED)
-    np.random.seed(SEED)
 
     ts_start = sorted(set(weekly_period_df.timestamp))[-horizon]
     train, test = (

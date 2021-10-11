@@ -8,7 +8,7 @@ from etna.transforms.log import LogTransform
 
 
 @pytest.fixture
-def non_positive_df_() -> pd.DataFrame:
+def non_positive_df_(random_seed) -> pd.DataFrame:
     """Generate dataset with non-positive target."""
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
@@ -26,7 +26,7 @@ def non_positive_df_() -> pd.DataFrame:
 
 
 @pytest.fixture
-def positive_df_() -> pd.DataFrame:
+def positive_df_(random_seed) -> pd.DataFrame:
     """Generate dataset with positive target."""
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
