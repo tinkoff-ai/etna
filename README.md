@@ -93,7 +93,7 @@ We have also prepared a set of tutorials for an easy introduction:
 - Interactive visualization
 - Outliers imputation
 
-#### 04. [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
+#### 04. [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
 - Creating TSDataset  
 - Architecture
 - Testing models
