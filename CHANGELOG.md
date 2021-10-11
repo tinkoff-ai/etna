@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MyPy checks in CI/CD and lint commands ([#39](https://github.com/tinkoff-ai/etna-ts/issues/39))
 - TrendTransform ([#139](https://github.com/tinkoff-ai/etna-ts/pull/139))
 - Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
+- Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
