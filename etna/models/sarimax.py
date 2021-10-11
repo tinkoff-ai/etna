@@ -3,11 +3,14 @@ from datetime import datetime
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
+from etna.models.base import log_decorator
 
 
 class _SARIMAXModel:
@@ -44,6 +47,7 @@ class _SARIMAXModel:
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        interval_width: float = 0.8,
         **kwargs,
     ):
         """
@@ -130,6 +134,10 @@ class _SARIMAXModel:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
+        validate_specification:
+            If True, validation of hyperparameters is performed.
+        interval_width:
+            Float, width of the uncertainty intervals provided for the forecast.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -148,6 +156,7 @@ class _SARIMAXModel:
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.interval_width = interval_width
         self.kwargs = kwargs
         self._model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
@@ -217,7 +226,7 @@ class _SARIMAXModel:
         self._result = self._model.fit(start_params=start_params, disp=False)
         return self
 
-    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, confidence_interval: bool = False) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
@@ -225,7 +234,8 @@ class _SARIMAXModel:
         ----------
         df:
             Features dataframe
-
+        confidence_interval:
+             If True returns confidence interval for forecast
         Returns
         -------
         y_pred: pd.DataFrame
@@ -244,9 +254,14 @@ class _SARIMAXModel:
             )
 
         exog_future = self._select_regressors(df)
-        y_pred = self._result.predict(
+        forecast = self._result.get_prediction(
             start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
         )
+        if confidence_interval:
+            y_pred = forecast.summary_frame(alpha=1 - self.interval_width)[["mean_ci_lower", "mean", "mean_ci_upper"]]
+        else:
+            y_pred = pd.DataFrame(forecast.predicted_mean)
+            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
         return y_pred.reset_index(drop=True, inplace=False)
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
@@ -311,6 +326,7 @@ class SARIMAXModel(PerSegmentModel):
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        interval_width: float = 0.8,
         **kwargs,
     ):
         """
@@ -397,6 +413,10 @@ class SARIMAXModel(PerSegmentModel):
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
+        validate_specification:
+            If True, validation of hyperparameters is performed.
+        interval_width:
+            Float, width of the uncertainty intervals provided for the forecast.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -415,6 +435,7 @@ class SARIMAXModel(PerSegmentModel):
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.interval_width = interval_width
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXModel(
@@ -438,3 +459,59 @@ class SARIMAXModel(PerSegmentModel):
                 **self.kwargs,
             )
         )
+
+    @staticmethod
+    def _forecast_segment(
+        model, segment: Union[str, List[str]], ts: TSDataset, confidence_interval: bool = False
+    ) -> pd.DataFrame:
+        segment_features = ts[:, segment, :]
+        segment_features = segment_features.droplevel("segment", axis=1)
+        segment_features = segment_features.reset_index()
+        dates = segment_features["timestamp"]
+        dates.reset_index(drop=True, inplace=True)
+        segment_predict = model.predict(df=segment_features, confidence_interval=confidence_interval)
+        segment_predict = segment_predict.rename(
+            {"mean": "target", "mean_ci_lower": "target_lower", "mean_ci_upper": "target_upper"}, axis=1
+        )
+        segment_predict["segment"] = segment
+        segment_predict["timestamp"] = dates
+        return segment_predict
+
+    @log_decorator
+    def forecast(self, ts: TSDataset, confidence_interval: bool = False) -> TSDataset:
+        """Make predictions.
+        Parameters
+        ----------
+        ts:
+            Dataframe with features
+        confidence_interval:
+            If True returns confidence interval for forecast
+        Returns
+        -------
+        pd.DataFrame
+            Models result
+        Notes
+        -----
+        The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width
+        """
+        if self._segments is None:
+            raise ValueError("The model is not fitted yet, use fit() to train it")
+
+        result_list = list()
+        for segment in self._segments:
+            model = self._models[segment]
+
+            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval)
+            result_list.append(segment_predict)
+
+        # need real case to test
+        result_df = pd.concat(result_list, ignore_index=True)
+        result_df = result_df.set_index(["timestamp", "segment"])
+        df = ts.to_pandas(flatten=True)
+        df = df.set_index(["timestamp", "segment"])
+        df = df.combine_first(result_df).reset_index()
+
+        df = TSDataset.to_dataset(df)
+        ts.df = df
+        ts.inverse_transform()
+        return ts
