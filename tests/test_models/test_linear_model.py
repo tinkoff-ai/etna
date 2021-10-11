@@ -35,18 +35,16 @@ def linear_segments_by_parameters(alpha_values, intercept_values):
 
 
 @pytest.fixture()
-def linear_segments_ts_unique():
+def linear_segments_ts_unique(random_seed):
     """Create TSDataset that represents 3 segments with unique linear dependency on lags in each."""
-    np.random.seed(42)
     alpha_values = [np.random.rand() * 4 - 2 for _ in range(3)]
     intercept_values = [np.random.rand() * 4 + 1 for _ in range(3)]
     return linear_segments_by_parameters(alpha_values, intercept_values)
 
 
 @pytest.fixture()
-def linear_segments_ts_common():
+def linear_segments_ts_common(random_seed):
     """Create TSDataset that represents 3 segments with common linear dependency on lags in each."""
-    np.random.seed(42)
     alpha_values = [np.random.rand() * 4 - 2] * 3
     intercept_values = [np.random.rand() * 4 + 1 for _ in range(3)]
     return linear_segments_by_parameters(alpha_values, intercept_values)
