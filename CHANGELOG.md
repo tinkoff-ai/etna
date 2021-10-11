@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
 - Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
 - STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
+- NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna-ts/pull/159))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
