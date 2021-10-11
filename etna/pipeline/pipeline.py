@@ -238,7 +238,6 @@ class Pipeline(BaseMixin):
             one of 'expand', 'constant' -- train generation policy
         aggregate_metrics:
             if True aggregate metrics above folds, return raw metrics otherwise
-
         n_jobs:
             number of jobs to run in parallel
 

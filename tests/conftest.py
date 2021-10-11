@@ -277,7 +277,7 @@ def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
 
 
 @pytest.fixture
-def imbalanced_tsdf() -> TSDataset:
+def imbalanced_tsdf(random_seed) -> TSDataset:
     """Generate two series with big time range difference"""
     df1 = pd.DataFrame({"timestamp": pd.date_range("2021-01-25", "2021-02-01", freq="D")})
     df1["segment"] = "segment_1"
@@ -295,7 +295,7 @@ def imbalanced_tsdf() -> TSDataset:
 
 
 @pytest.fixture
-def example_tsdf() -> TSDataset:
+def example_tsdf(random_seed) -> TSDataset:
     df1 = pd.DataFrame()
     df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
     df1["segment"] = "segment_1"
@@ -314,7 +314,7 @@ def example_tsdf() -> TSDataset:
 
 
 @pytest.fixture
-def big_daily_example_tsdf() -> TSDataset:
+def big_daily_example_tsdf(random_seed) -> TSDataset:
     df1 = pd.DataFrame()
     df1["timestamp"] = pd.date_range(start="2019-01-01", end="2020-04-01", freq="D")
     df1["segment"] = "segment_1"
@@ -333,7 +333,7 @@ def big_daily_example_tsdf() -> TSDataset:
 
 
 @pytest.fixture
-def big_example_tsdf() -> TSDataset:
+def big_example_tsdf(random_seed) -> TSDataset:
     df1 = pd.DataFrame()
     df1["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
     df1["segment"] = "segment_1"
