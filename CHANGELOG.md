@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
 - Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
 - Pipeline.backtest method ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161))
+- STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Correlation heatmap in EDA notebook ([#144](https://github.com/tinkoff-ai/etna-ts/pull/144))
 - Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna-ts/pull/151))
 - Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
+- Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153)) 
 
 ### Fixed
 - Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
