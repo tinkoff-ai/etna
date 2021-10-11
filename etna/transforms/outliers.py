@@ -30,6 +30,28 @@ class OutliersTransform(Transform, ABC):
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
 
+    def __save_original_values(self, ts: TSDataset) -> "OutliersTransform":
+        """
+        Save values to be replaced with NaNs.
+
+        Parameters
+        ----------
+        ts:
+            original TSDataset
+
+        Returns
+        -------
+        result: OutliersTransform
+            instance with saved values
+        """
+        self.original_values = dict()
+
+        for segment, timestamps in self.outliers_timestamps.items():
+            segment_ts = ts[:, segment, :]
+            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
+            self.original_values[segment] = segment_values
+        return self
+
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
         Find outliers using detection method.
@@ -41,17 +63,13 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: _OneSegmentTimeSeriesImputerTransform
+        result: OutliersTransform
             instance with saved outliers
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
-        self.original_values = dict()
+        self.__save_original_values(ts)
 
-        for segment, timestamps in self.outliers_timestamps.items():
-            segment_ts = ts[:, segment, :]
-            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
-            self.original_values[segment] = segment_values
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -75,7 +93,7 @@ class OutliersTransform(Transform, ABC):
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Inverse transformation. Return back deleted values.
+        Inverse transformation. Returns back deleted values.
 
         Parameters
         ----------
@@ -85,7 +103,7 @@ class OutliersTransform(Transform, ABC):
         Returns
         -------
         pd.DataFrame
-            data with reconstructed trend
+            data with reconstructed values
         """
         result = df.copy()
 
