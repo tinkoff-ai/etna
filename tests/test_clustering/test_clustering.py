@@ -9,7 +9,7 @@ from etna.datasets import TSDataset
 
 
 @pytest.fixture
-def eucl_ts() -> TSDataset:
+def eucl_ts(random_seed) -> TSDataset:
     df = pd.DataFrame()
     for i in range(1, 8):
         date_range = pd.date_range("2020-01-01", "2020-05-01")
