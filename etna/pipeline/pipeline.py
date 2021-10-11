@@ -104,6 +104,7 @@ class Pipeline(BaseMixin):
 
     @staticmethod
     def _validate_backtest_metrics(metrics: List[Metric]):
+        """Check that given metrics are valid for backtest."""
         if not metrics:
             raise ValueError("At least one metric required")
         for metric in metrics:
