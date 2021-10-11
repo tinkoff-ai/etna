@@ -290,7 +290,7 @@ class ProphetModel(PerSegmentModel):
             If True returns confidence interval for forecast
         Returns
         -------
-        pd.DataFrame
+        TSDataset
             Models result
         Notes
         -----
