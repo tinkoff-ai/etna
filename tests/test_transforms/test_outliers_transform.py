@@ -58,16 +58,28 @@ def test_outliers_detection(transform, method, outliers_tsds):
         SAXOutliersTransform(in_column="target"),
     ],
 )
-def test_inverse_transform(transform, example_tsds):
-    """Checks that inverse transform works correctly."""
+def test_inverse_transform_train(transform, example_tsds):
+    """Checks that inverse transform returns dataset to its original form."""
     original_df = example_tsds.df.copy()
     example_tsds.fit_transform([transform])
-
-    future = example_tsds.make_future(future_steps=10)
-    original_future_df = future.df.copy()
-
-    future.inverse_transform()
     example_tsds.inverse_transform()
 
     assert (original_df == example_tsds.df).all().all()
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        SAXOutliersTransform(in_column="target"),
+    ],
+)
+def test_inverse_transform_future(transform, example_tsds):
+    """Checks that inverse transform does not change the future."""
+    example_tsds.fit_transform([transform])
+    future = example_tsds.make_future(future_steps=10)
+    original_future_df = future.df.copy()
+    future.inverse_transform()
+
     assert (future.df.isnull() == original_future_df.isnull()).all().all()
