@@ -82,7 +82,6 @@ ipywidgets = {version = "^7.6.5", optional = true}
 
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
-deprecation = "^2.1.0"
 
 [tool.poetry.extras]
 release = ["click", "typer", "semver"]
