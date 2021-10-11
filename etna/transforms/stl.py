@@ -34,9 +34,11 @@ class _OneSegmentSTLTransform(Transform):
         period:
             size of seasonality
         model:
-            model to predict trend, custom model or one of:
-            1. "arima": `ARIMA(data, 1, 0, 0)` (default)
+            model to predict trend, default options are:
+            1. "arima": `ARIMA(data, 1, 1, 0)` (default)
             2. "holt": `ETSModel(data, trend='add')`
+            Custom model should be a subclass of statsmodels.tsa.base.tsa_model.TimeSeriesModel
+            and have method `get_prediction` (not just `predict`)
         robust:
             flag indicating whether to use robust version of STL
         model_kwargs:
@@ -63,6 +65,8 @@ class _OneSegmentSTLTransform(Transform):
                 raise ValueError(f"Not a valid option for model: {model}")
         elif isinstance(model, TimeSeriesModel):
             self.model = model
+        else:
+            raise ValueError("Model should be a string or TimeSeriesModel")
 
         self.robust = robust
         self.model_kwargs = model_kwargs
@@ -146,7 +150,7 @@ class STLTransform(PerSegmentWrapper):
         stl_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
-        Init _OneSegmentSTLTransform.
+        Init STLTransform.
 
         Parameters
         ----------
