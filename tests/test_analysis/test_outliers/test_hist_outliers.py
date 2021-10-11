@@ -50,11 +50,10 @@ def test_v_optimal_hist(series: np.array, bins_number: int, expected: np.array):
     np.testing.assert_almost_equal(error, expected)
 
 
-@pytest.mark.parametrize(
-    "series,k", ((np.random.random(100), 10), (np.random.random(100), 20), (np.random.random(10), 4))
-)
-def test_compute_f_format(series: np.array, k: int):
+@pytest.mark.parametrize("series_len,k", ((100, 10), (100, 20), (10, 4)))
+def test_compute_f_format(random_seed, series_len: int, k: int):
     """Check that computeF produce the correct size output."""
+    series = np.random.random(size=series_len)
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
     pp[0] = series[0] ** 2
