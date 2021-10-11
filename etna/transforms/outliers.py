@@ -30,7 +30,7 @@ class OutliersTransform(Transform, ABC):
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
 
-    def __save_original_values(self, ts: TSDataset) -> "OutliersTransform":
+    def _save_original_values(self, ts: TSDataset) -> "OutliersTransform":
         """
         Save values to be replaced with NaNs.
 
@@ -68,7 +68,7 @@ class OutliersTransform(Transform, ABC):
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
-        self.__save_original_values(ts)
+        self._save_original_values(ts)
 
         return self
 
