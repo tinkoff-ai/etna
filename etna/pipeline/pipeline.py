@@ -1,4 +1,5 @@
 from copy import deepcopy
+from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import Iterable
@@ -15,11 +16,17 @@ from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import Metric
+from etna.metrics import MetricAggregationMode
+from etna.metrics.utils import compute_metrics
 from etna.models.base import Model
-from etna.pipeline.backtest_utils import compute_metrics
-from etna.pipeline.backtest_utils import generate_folds_datasets
-from etna.pipeline.backtest_utils import validate_backtest_dataset
 from etna.transforms.base import Transform
+
+
+class CrossValidationMode(Enum):
+    """Enum for different cross-validation modes."""
+
+    expand = "expand"
+    constant = "constant"
 
 
 class Pipeline(BaseMixin):
@@ -74,6 +81,72 @@ class Pipeline(BaseMixin):
         future = self.ts.make_future(self.horizon)
         predictions = self.model.forecast(future)
         return predictions
+
+    @staticmethod
+    def _validate_backtest_n_folds(n_folds: int):
+        """Check that given n_folds value is valid."""
+        if n_folds < 1:
+            raise ValueError(f"Folds number should be a positive number, {n_folds} given")
+
+    @staticmethod
+    def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int):
+        """Check that all the given timestamps have enough timestamp points to validate forecaster with given number of splits."""
+        min_required_length = horizon * n_folds
+        segments = set(ts.df.columns.get_level_values("segment"))
+        for segment in segments:
+            segment_target = ts[:, segment, "target"]
+            if len(segment_target) < min_required_length:
+                raise ValueError(
+                    f"All the series from feature dataframe should contain at least "
+                    f"{horizon} * {n_folds} = {min_required_length} timestamps; "
+                    f"series {segment} does not."
+                )
+
+    @staticmethod
+    def _validate_backtest_metrics(metrics: List[Metric]):
+        if not metrics:
+            raise ValueError("At least one metric required")
+        for metric in metrics:
+            if not metric.mode == MetricAggregationMode.per_segment:
+                raise ValueError(
+                    f"All the metrics should be in {MetricAggregationMode.per_segment}, "
+                    f"{metric.__class__.__name__} metric is in {metric.mode} mode"
+                )
+
+    @staticmethod
+    def _generate_folds_datasets(
+        ts: TSDataset, n_folds: int, horizon: int, mode: str = "expand"
+    ) -> Tuple[TSDataset, TSDataset]:
+        """Generate a sequence of train-test pairs according to timestamp."""
+        mode = CrossValidationMode[mode.lower()]
+        if mode == CrossValidationMode.expand:
+            constant_history_length = 0
+        elif mode == CrossValidationMode.constant:
+            constant_history_length = 1
+        else:
+            raise NotImplementedError(
+                f"Only '{CrossValidationMode.expand}' and '{CrossValidationMode.constant}' modes allowed"
+            )
+
+        timestamps = ts.index
+        min_timestamp_idx, max_timestamp_idx = 0, len(timestamps)
+        for offset in range(n_folds, 0, -1):
+            # if not self._constant_history_length, left border of train df is always equal to minimal timestamp value;
+            # it means that all the given data is used.
+            # if self._constant_history_length, left border of train df moves to one horizon steps on each split
+            min_train_idx = min_timestamp_idx + (n_folds - offset) * horizon * constant_history_length
+            max_train_idx = max_timestamp_idx - horizon * offset - 1
+            min_test_idx = max_train_idx + 1
+            max_test_idx = max_train_idx + horizon
+
+            min_train, max_train = timestamps[min_train_idx], timestamps[max_train_idx]
+            min_test, max_test = timestamps[min_test_idx], timestamps[max_test_idx]
+
+            train, test = ts.train_test_split(
+                train_start=min_train, train_end=max_train, test_start=min_test, test_end=max_test
+            )
+
+            yield train, test
 
     def _run_fold(
         self,
@@ -175,13 +248,15 @@ class Pipeline(BaseMixin):
         pd.DataFrame, pd.DataFrame, pd.Dataframe:
             metrics dataframe, forecast dataframe and dataframe with information about folds
         """
-        validate_backtest_dataset(ts=ts, n_folds=n_folds, horizon=self.horizon)
+        self._validate_backtest_n_folds(n_folds=n_folds)
+        self._validate_backtest_dataset(ts=ts, n_folds=n_folds, horizon=self.horizon)
+        self._validate_backtest_metrics(metrics=metrics)
         folds = Parallel(n_jobs=n_jobs, verbose=11, backend="multiprocessing")(
             delayed(self._run_fold)(
                 train=train, test=test, fold_number=fold_number, transforms=deepcopy(self.transforms), metrics=metrics
             )
             for fold_number, (train, test) in enumerate(
-                generate_folds_datasets(ts=ts, n_folds=n_folds, horizon=self.horizon, mode=mode)
+                self._generate_folds_datasets(ts=ts, n_folds=n_folds, horizon=self.horizon, mode=mode)
             )
         )
 

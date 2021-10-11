@@ -344,3 +344,14 @@ def catboost_pipeline() -> Pipeline:
         horizon=7,
     )
     return pipeline
+
+
+@pytest.fixture
+def catboost_pipeline_big() -> Pipeline:
+    """Generate pipeline with CatBoostModelMultiSegment."""
+    pipeline = Pipeline(
+        model=CatBoostModelPerSegment(),
+        transforms=[LagTransform(in_column="target", lags=[25, 26, 27])],
+        horizon=24,
+    )
+    return pipeline

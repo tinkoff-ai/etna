@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from enum import Enum
 from typing import Any
@@ -6,7 +7,6 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-import deprecation
 import pandas as pd
 from joblib import Parallel
 from joblib import delayed
@@ -29,7 +29,6 @@ class CrossValidationMode(Enum):
     constant = "constant"
 
 
-@deprecation.deprecated(deprecated_in="1.2.0", removed_in="1.4.0", details="Use Pipeline.backtest method instead.")
 class TimeSeriesCrossValidation(BaseMixin):
     """Cross validation for time series."""
 
@@ -306,3 +305,11 @@ class TimeSeriesCrossValidation(BaseMixin):
         tslogger.finish_experiment()
 
         return metrics_df, forecast_df, fold_info_df
+
+
+warnings.warn(
+    "TimeSeriesCrossValidation is deprecated in etna==1.2.0, will be deleted in etna==1.4.0. "
+    "Use Pipeline.backtest method instead.",
+    DeprecationWarning,
+    stacklevel=3,
+)
