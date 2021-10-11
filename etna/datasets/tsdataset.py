@@ -576,7 +576,7 @@ class TSDataset:
         """
         return self.df.isnull()
 
-    def head(self, n_rows: Optional[int] = None) -> pd.DataFrame:
+    def head(self, n_rows: int = 5) -> pd.DataFrame:
         """Return the first `n` rows.
 
         Mimics pandas method.

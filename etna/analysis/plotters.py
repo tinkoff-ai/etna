@@ -326,3 +326,40 @@ def plot_anomalies_interactive(
         plt.show()
 
     interact(update, **sliders)
+
+
+def plot_clusters(
+    ts: "TSDataset", segment2cluster: Dict[str, int], centroids_df: Optional[pd.DataFrame] = None, columns_num: int = 2
+):
+    """Plot clusters [with centroids].
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries
+    segment2cluster:
+        mapping from segment to cluster in format {segment: cluster}
+    centroids_df:
+        dataframe with centroids
+    columns_num:
+        number of columns in subplots
+    """
+    unique_clusters = sorted(set(segment2cluster.values()))
+    rows_num = math.ceil(len(unique_clusters) / columns_num)
+    fig, axs = plt.subplots(rows_num, columns_num, constrained_layout=True, figsize=(20, 5 * rows_num))
+    for i, cluster in enumerate(unique_clusters):
+        segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
+        h, w = i // columns_num, i % columns_num
+        for segment in segments:
+            segment_slice = ts[:, segment, "target"]
+            axs[h][w].plot(
+                segment_slice.index.values,
+                segment_slice.values,
+                alpha=1 / math.sqrt(len(segments)),
+                c="blue",
+            )
+        axs[h][w].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
+        if centroids_df is not None:
+            centroid = centroids_df[cluster, "target"]
+            axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
+        axs[h][w].legend()
