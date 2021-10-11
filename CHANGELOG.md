@@ -40,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.3] - 2021-10-08
 ### Fixed
 - Limit version of pandas by 1.2 (excluding) ([#163](https://github.com/tinkoff-ai/etna-ts/pull/163))
->>>>>>> 50f2074bbcf7c2f6d5234a44e96f55022ecd0f3b
 
 ## [1.1.2] - 2021-10-08
 ### Changed
