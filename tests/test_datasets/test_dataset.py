@@ -10,7 +10,7 @@ from etna.transforms import DateFlagsTransform
 
 
 @pytest.fixture()
-def tsdf_with_exog() -> TSDataset:
+def tsdf_with_exog(random_seed) -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_1["segment"] = "Moscow"
