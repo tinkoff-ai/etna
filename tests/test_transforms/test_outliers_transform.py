@@ -11,6 +11,34 @@ from etna.transforms import MedianOutliersTransform
 from etna.transforms import SAXOutliersTransform
 
 
+@pytest.fixture()
+def outliers_solid_tsds():
+    """Create TSDataset with outliers and same last date."""
+    timestamp1 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-10"))
+    target1 = [np.sin(i) for i in range(len(timestamp1))]
+    target1[10] += 10
+
+    timestamp2 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-10"))
+    target2 = [np.sin(i) for i in range(len(timestamp2))]
+    target2[8] += 8
+    target2[15] = 2
+    target2[26] -= 12
+
+    df1 = pd.DataFrame({"timestamp": timestamp1, "target": target1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp2, "target": target2, "segment": "2"})
+
+    df = pd.concat([df1, df2], ignore_index=True)
+
+    df = df.pivot(index="timestamp", columns="segment")
+    df = df.reorder_levels([1, 0], axis=1)
+    df = df.sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    exog = df.copy()
+    exog.columns = pd.MultiIndex.from_arrays([["1", "2"], ["exog", "exog"]])
+    tsds = TSDataset(df, "1d", exog)
+    return tsds
+
+
 @pytest.mark.parametrize(
     "transform",
     [
@@ -58,13 +86,13 @@ def test_outliers_detection(transform, method, outliers_tsds):
         SAXOutliersTransform(in_column="target"),
     ],
 )
-def test_inverse_transform_train(transform, example_tsds):
+def test_inverse_transform_train(transform, outliers_solid_tsds):
     """Checks that inverse transform returns dataset to its original form."""
-    original_df = example_tsds.df.copy()
-    example_tsds.fit_transform([transform])
-    example_tsds.inverse_transform()
+    original_df = outliers_solid_tsds.df.copy()
+    outliers_solid_tsds.fit_transform([transform])
+    outliers_solid_tsds.inverse_transform()
 
-    assert (original_df == example_tsds.df).all().all()
+    assert (original_df == outliers_solid_tsds.df).all().all()
 
 
 @pytest.mark.parametrize(
@@ -75,10 +103,10 @@ def test_inverse_transform_train(transform, example_tsds):
         SAXOutliersTransform(in_column="target"),
     ],
 )
-def test_inverse_transform_future(transform, example_tsds):
+def test_inverse_transform_future(transform, outliers_solid_tsds):
     """Checks that inverse transform does not change the future."""
-    example_tsds.fit_transform([transform])
-    future = example_tsds.make_future(future_steps=10)
+    outliers_solid_tsds.fit_transform([transform])
+    future = outliers_solid_tsds.make_future(future_steps=10)
     original_future_df = future.df.copy()
     future.inverse_transform()
 
