@@ -27,28 +27,24 @@ def _module_available(module_path: str) -> bool:
 
 
 def _is_torch_available():
-    try:
-        _module_available('pytorch_forecasting')  # noqa: F401
-        _module_available('pytorch_lightning')  # noqa: F401
-        _module_available('torch')  # noqa: F401
+    true_case = _module_available('pytorch_forecasting') & _module_available('pytorch_lightning') & _module_available('torch')
+    if true_case:
         return True
-    except ImportError:
+    else:
         return False
 
 
 def _is_wandb_available():
-    try:
-        _module_available('wandb')
+    if _module_available('wandb'):
         return True
-    except ImportError:
+    else:
         return False
 
 
 def _is_prophet_available():
-    try:
-        _module_available('prophet')
+    if _module_available('prophet'):
         return True
-    except ImportError:
+    else:
         return False
 
 
