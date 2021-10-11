@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna-ts/pull/151))
 - Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
 - Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153)) 
+- TimeSeriesCrossValidation returns `Metric.__repr__` as a key in `backtest`'s return values ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161))
 
 ### Fixed
 - Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))

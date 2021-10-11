@@ -152,14 +152,31 @@ def test_generate_constant_timeranges_hours():
 
 @pytest.mark.parametrize(
     "aggregate_metrics,expected_columns",
-    ((False, ["fold_number", "MAE", "MSE", "segment", "SMAPE"]), (True, ["MAE", "MSE", "segment", "SMAPE"])),
+    (
+        (
+            False,
+            [
+                "fold_number",
+                "MAE(mode = 'per-segment', )",
+                "MSE(mode = 'per-segment', )",
+                "segment",
+                "SMAPE(mode = 'per-segment', )",
+            ],
+        ),
+        (
+            True,
+            ["MAE(mode = 'per-segment', )", "MSE(mode = 'per-segment', )", "segment", "SMAPE(mode = 'per-segment', )"],
+        ),
+    ),
 )
 def test_get_metrics_interface(
     catboost_pipeline: Pipeline, aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset
 ):
     """Check that Pipeline.backtest returns metrics in correct format."""
     metrics_df, _, _ = catboost_pipeline.backtest(
-        ts=big_daily_example_tsdf, aggregate_metrics=aggregate_metrics, metrics=[MAE(), MSE(), SMAPE()]
+        ts=big_daily_example_tsdf,
+        aggregate_metrics=aggregate_metrics,
+        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")],
     )
     assert sorted(expected_columns) == sorted(metrics_df.columns)
 

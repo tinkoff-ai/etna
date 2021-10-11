@@ -161,14 +161,34 @@ def _fit_backtest_pipeline(
     model: Model, horizon: int, ts: TSDataset, transforms: Optional[List[Transform]] = [], n_jobs: int = 1
 ) -> TimeSeriesCrossValidation:
     """Init pipeline and run backtest"""
-    tsvc = TimeSeriesCrossValidation(model=model, horizon=horizon, metrics=[MAE(), MSE(), SMAPE()], n_jobs=n_jobs)
+    tsvc = TimeSeriesCrossValidation(
+        model=model,
+        horizon=horizon,
+        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")],
+        n_jobs=n_jobs,
+    )
     tsvc.backtest(ts=ts, transforms=transforms)
     return tsvc
 
 
 @pytest.mark.parametrize(
     "aggregate_metrics,expected_columns",
-    ((False, ["fold_number", "MAE", "MSE", "segment", "SMAPE"]), (True, ["MAE", "MSE", "segment", "SMAPE"])),
+    (
+        (
+            False,
+            [
+                "MAE(mode = 'per-segment', )",
+                "MSE(mode = 'per-segment', )",
+                "SMAPE(mode = 'per-segment', )",
+                "fold_number",
+                "segment",
+            ],
+        ),
+        (
+            True,
+            ["MAE(mode = 'per-segment', )", "MSE(mode = 'per-segment', )", "SMAPE(mode = 'per-segment', )", "segment"],
+        ),
+    ),
 )
 def test_get_metrics_interface(aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_metrics with aggregate_metrics=False mode"""

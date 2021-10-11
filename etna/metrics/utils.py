@@ -23,5 +23,5 @@ def compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset)
     """
     metrics_values = {}
     for metric in metrics:
-        metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)
+        metrics_values[metric.__repr__()] = metric(y_true=y_true, y_pred=y_pred)
     return metrics_values
