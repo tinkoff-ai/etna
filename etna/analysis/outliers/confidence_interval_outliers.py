@@ -1,6 +1,8 @@
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
+from typing import Type
 from typing import Union
 
 import numpy as np
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
 
 def get_anomalies_confidence_interval(
     ts: "TSDataset",
-    model: Union["ProphetModel", "SARIMAXModel"],
+    model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
     interval_width: float = 0.95,
     **model_params,
 ) -> Dict[str, List[pd.Timestamp]]:
@@ -38,9 +40,9 @@ def get_anomalies_confidence_interval(
     """
     outliers_per_segment = {}
     time_points = np.array(ts.index.values)
-    model = model(interval_width=interval_width, **model_params)
-    model.fit(ts)
-    confidence_interval = model.forecast(ts, confidence_interval=True)
+    model_instance = model(interval_width=interval_width, **model_params)
+    model_instance.fit(ts)
+    confidence_interval = model_instance.forecast(deepcopy(ts), confidence_interval=True)
     for segment in ts.segments:
         segment_slice = confidence_interval[:, segment, :][segment]
         anomalies_mask = (segment_slice["target"] > segment_slice["target_upper"]) | (
