@@ -152,7 +152,6 @@ class SklearnTransform(Transform):
     def _reshape(self, df: pd.DataFrame) -> np.ndarray:
         segments = sorted(set(df.columns.get_level_values("segment")))
         x = df.loc[:, (segments, self.in_column)]
-        print()
         x = pd.concat([x[segment] for segment in segments]).values
         return x
 
