@@ -17,14 +17,14 @@ from etna.transforms.sklearn import TransformMode
 
 
 class DummySkTransform:
-    def fit(self, x, y=None):
+    def fit(self, X, y=None):  # noqa: N803
         pass
 
-    def transform(self, x, y=None):
-        return x
+    def transform(self, X, y=None):  # noqa: N803
+        return X
 
-    def inverse_transform(self, x, y=None):
-        return x
+    def inverse_transform(self, X, y=None):  # noqa: N803
+        return X
 
 
 class DummyTransform(SklearnTransform):
