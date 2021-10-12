@@ -5,8 +5,21 @@ import pytest
 from etna.datasets.tsdataset import TSDataset
 
 
+@pytest.fixture(autouse=True)
+def random_seed():
+    "Fixture to fix random state for every test case"
+    import random
+
+    import torch
+
+    SEED = 121  # noqa: N806
+    torch.manual_seed(SEED)
+    random.seed(SEED)
+    np.random.seed(SEED)
+
+
 @pytest.fixture()
-def example_df():
+def example_df(random_seed):
     df1 = pd.DataFrame()
     df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
     df1["segment"] = "segment_1"
@@ -21,7 +34,7 @@ def example_df():
 
 
 @pytest.fixture
-def two_dfs_with_different_timestamps():
+def two_dfs_with_different_timestamps(random_seed):
     """Generate two dataframes with the same segments and different timestamps"""
 
     def generate_df(start_time):
@@ -44,7 +57,7 @@ def two_dfs_with_different_timestamps():
 
 
 @pytest.fixture
-def two_dfs_with_different_segments_sets():
+def two_dfs_with_different_segments_sets(random_seed):
     """Generate two dataframes with the same timestamps and different segments"""
 
     def generate_df(n_segments):
@@ -67,7 +80,7 @@ def two_dfs_with_different_segments_sets():
 
 
 @pytest.fixture
-def train_test_dfs():
+def train_test_dfs(random_seed):
     """Generate two dataframes with the same segments and the same timestamps"""
 
     def generate_df():
@@ -131,7 +144,7 @@ def outliers_df():
 
 
 @pytest.fixture
-def example_df_() -> pd.DataFrame:
+def example_df_(random_seed) -> pd.DataFrame:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = ["segment_1"] * periods
@@ -150,7 +163,7 @@ def example_df_() -> pd.DataFrame:
 
 
 @pytest.fixture
-def example_tsds() -> TSDataset:
+def example_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = "segment_1"
@@ -168,7 +181,7 @@ def example_tsds() -> TSDataset:
 
 
 @pytest.fixture
-def example_reg_tsds() -> TSDataset:
+def example_reg_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = "segment_1"
@@ -255,3 +268,78 @@ def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
     df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df=df, freq="H")
     return ts
+
+
+@pytest.fixture
+def imbalanced_tsdf(random_seed) -> TSDataset:
+    """Generate two series with big time range difference"""
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2021-01-25", "2021-02-01", freq="D")})
+    df1["segment"] = "segment_1"
+    df1["target"] = np.random.uniform(0, 5, len(df1))
+
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-02-01", freq="D")})
+    df2["segment"] = "segment_2"
+    df2["target"] = np.random.uniform(0, 5, len(df2))
+
+    df = df1.append(df2)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def example_tsdf(random_seed) -> TSDataset:
+    df1 = pd.DataFrame()
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df1["segment"] = "segment_1"
+    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
+
+    df2 = pd.DataFrame()
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df2["segment"] = "segment_2"
+    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
+
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    df = TSDataset(df, freq="H")
+    return df
+
+
+@pytest.fixture
+def big_daily_example_tsdf(random_seed) -> TSDataset:
+    df1 = pd.DataFrame()
+    df1["timestamp"] = pd.date_range(start="2019-01-01", end="2020-04-01", freq="D")
+    df1["segment"] = "segment_1"
+    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
+
+    df2 = pd.DataFrame()
+    df2["timestamp"] = pd.date_range(start="2019-06-01", end="2020-04-01", freq="D")
+    df2["segment"] = "segment_2"
+    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
+
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    df = TSDataset(df, freq="D")
+    return df
+
+
+@pytest.fixture
+def big_example_tsdf(random_seed) -> TSDataset:
+    df1 = pd.DataFrame()
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
+    df1["segment"] = "segment_1"
+    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
+
+    df2 = pd.DataFrame()
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
+    df2["segment"] = "segment_2"
+    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
+
+    df = pd.concat([df1, df2], ignore_index=True)
+    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    df = TSDataset(df, freq="D")
+    return df

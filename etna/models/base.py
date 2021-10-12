@@ -111,12 +111,6 @@ class PerSegmentModel(Model):
         DataFrame
             Models result
         """
-        """df = dataset.to_pandas(flatten=True)
-        df = df[df["target"].isna()]
-        if any(df.drop(columns="target").isna().any()):
-            raise ValueError("Dataset contains NaN values on the forecast side", df.columns[df.isna().any()].tolist())
-        df.sort_values(by=["segment", "timestamp"], inplace=True)"""
-
         if self._segments is None:
             raise ValueError("The model is not fitted yet, use fit() to train it")
 

@@ -1,9 +1,4 @@
-import numpy as np
-
-from etna.datasets import TSDataset
-from etna.metrics import MAE
 from etna.models import SARIMAXModel
-from etna.transforms import TheilSenTrendTransform
 
 
 def test_sarimax_forecaster_run(example_tsds):
@@ -41,28 +36,22 @@ def test_sarimax_forecaster_run_with_reg(example_reg_tsds):
     assert len(res) == 14
 
 
-def test_compare_sarimax_vanilla_reg(example_reg_tsds):
-    horizon = 24
-    example_tsds = TSDataset(example_reg_tsds[:, :, "target"], freq="D")
-    train, test = example_tsds.train_test_split(
-        train_start=None, train_end="2020-01-31", test_start="2020-02-01", test_end="2020-02-24"
-    )
-    model = SARIMAXModel()
-    model.fit(train)
-    future_ts = train.make_future(future_steps=horizon)
-    vanilla_result = model.forecast(future_ts)
+def test_confidence_interval_run_insample(example_tsds):
+    model = SARIMAXModel(interval_width=0.95)
+    model.fit(example_tsds)
+    forecast = model.forecast(example_tsds, confidence_interval=True)
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
 
-    train, test = example_reg_tsds.train_test_split(
-        train_start=None, train_end="2020-01-31", test_start="2020-02-01", test_end="2020-02-24"
-    )
-    prep = TheilSenTrendTransform(in_column="target")
-    train.fit_transform([prep])
-    model = SARIMAXModel()
-    model.fit(train)
-    future_ts = train.make_future(future_steps=horizon)
-    reg_result = model.forecast(future_ts)
 
-    van_acc = np.array(list(MAE()(test, vanilla_result).values()))
-    reg_acc = np.array(list(MAE()(test, reg_result).values()))
-
-    assert np.all(van_acc < reg_acc)
+def test_confidence_interval_run_infuture(example_tsds):
+    model = SARIMAXModel(interval_width=0.95)
+    model.fit(example_tsds)
+    future = example_tsds.make_future(10)
+    forecast = model.forecast(future, confidence_interval=True)
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()

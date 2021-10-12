@@ -93,6 +93,14 @@ We have also prepared a set of tutorials for an easy introduction:
 - Interactive visualization
 - Outliers imputation
 
+#### 04. [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
+- Creating TSDataset  
+- Architecture
+- Testing models
+  - DeepAR 
+  - TFT
+  - Simple Model
+
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
