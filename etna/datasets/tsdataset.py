@@ -181,10 +181,10 @@ class TSDataset:
         segment      segment_0                      segment_1
         feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
         timestamp
-        2021-07-01          30          35    nan          70          75    nan
-        2021-07-02          31          36    nan          71          76    nan
-        2021-07-03          32          37    nan          72          77    nan
-        2021-07-04          33          38    nan          73          78    nan
+        2021-07-01          30          70    nan          35          75    nan
+        2021-07-02          31          71    nan          36          76    nan
+        2021-07-03          32          72    nan          37          77    nan
+        2021-07-04          33          73    nan          38          78    nan
         """
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
@@ -443,7 +443,7 @@ class TSDataset:
         ...     "regressor_1": np.arange(10), "regressor_2": np.arange(10) + 5,
         ...     "segment": ["segment_0"]*10
         ... })
-        >>> TSDataset.to_dataset(df_regressors).iloc[:5]
+        >>> TSDataset.to_dataset(df_regressors).head(5)
         segment      segment_0
         feature    regressor_1 regressor_2
         timestamp
@@ -452,6 +452,20 @@ class TSDataset:
         2021-01-03           2           7
         2021-01-04           3           8
         2021-01-05           4           9
+
+        >>> df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=100)})
+        >>> df["segment"] = "segment_1"
+        >>> df["reg_2"] = 1
+        >>> df["reg_1"] = 2
+        >>> TSDataset.to_dataset(df).head(5)
+        segment    segment_1
+        feature        reg_1 reg_2
+        timestamp
+        2020-01-01         2     1
+        2020-01-02         2     1
+        2020-01-03         2     1
+        2020-01-04         2     1
+        2020-01-05         2     1
         """
         # TODO: add dataframe checks
         segments = df["segment"].unique()
@@ -461,9 +475,9 @@ class TSDataset:
         feature_columns.remove("segment")
         df = df.pivot(index="timestamp", columns="segment")
         df = df.reorder_levels([1, 0], axis=1)
-        df = df.sort_index(axis=1)
         df.columns = pd.MultiIndex.from_product([segments, feature_columns])
         df.columns.names = ["segment", "feature"]
+        df = df.sort_index(axis=1, level=0)
         return df
 
     def _find_all_borders(
