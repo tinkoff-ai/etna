@@ -51,7 +51,7 @@ class _CatBoostModel:
 class CatBoostModelPerSegment(PerSegmentModel):
     """Class for holding per segment Catboost model.
 
-            Examples
+    Examples
     --------
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
@@ -164,7 +164,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
 class CatBoostModelMultiSegment(Model):
     """Class for holding Catboost model for all segments.
 
-        Examples
+    Examples
     --------
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
