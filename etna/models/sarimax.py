@@ -3,11 +3,14 @@ from datetime import datetime
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
+from etna.models.base import log_decorator
 
 
 class _SARIMAXModel:
@@ -44,6 +47,7 @@ class _SARIMAXModel:
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        interval_width: float = 0.8,
         **kwargs,
     ):
         """
@@ -51,7 +55,7 @@ class _SARIMAXModel:
 
         Parameters
         ----------
-        order : iterable or iterable of iterables, optional
+        order:
             The (p,d,q) order of the model for the number of AR parameters,
             differences, and MA parameters. `d` must be an integer
             indicating the integration order of the process, while
@@ -59,7 +63,7 @@ class _SARIMAXModel:
             orders (so that all lags up to those orders are included) or else
             iterables giving specific AR and / or MA lags to include. Default is
             an AR(1) model: (1,0,0).
-        seasonal_order : iterable, optional
+        seasonal_order:
             The (P,D,Q,s) order of the seasonal component of the model for the
             AR parameters, differences, MA parameters, and periodicity.
             `D` must be an integer indicating the integration order of the process,
@@ -69,7 +73,7 @@ class _SARIMAXModel:
             integer giving the periodicity (number of periods in season), often it
             is 4 for quarterly data or 12 for monthly data. Default is no seasonal
             effect.
-        trend : str{'n','c','t','ct'} or iterable, optional
+        trend:
             Parameter controlling the deterministic trend polynomial :math:`A(t)`.
             Can be specified as a string where 'c' indicates a constant (i.e. a
             degree zero component of the trend polynomial), 't' indicates a
@@ -77,20 +81,20 @@ class _SARIMAXModel:
             iterable defining the non-zero polynomial exponents to include, in
             increasing order. For example, `[1,1,0,1]` denotes
             :math:`a + bt + ct^3`. Default is to not include a trend component.
-        measurement_error : bool, optional
+        measurement_error:
             Whether or not to assume the endogenous observations `endog` were
             measured with error. Default is False.
-        time_varying_regression : bool, optional
+        time_varying_regression:
             Used when an explanatory variables, `exog`, are provided provided
             to select whether or not coefficients on the exogenous regressors are
             allowed to vary over time. Default is False.
-        mle_regression : bool, optional
+        mle_regression:
             Whether or not to use estimate the regression coefficients for the
             exogenous variables as part of maximum likelihood estimation or through
             the Kalman filter (i.e. recursive least squares). If
             `time_varying_regression` is True, this must be set to False. Default
             is True.
-        simple_differencing : bool, optional
+        simple_differencing:
             Whether or not to use partially conditional maximum likelihood
             estimation. If True, differencing is performed prior to estimation,
             which discards the first :math:`s D + d` initial rows but results in a
@@ -98,38 +102,42 @@ class _SARIMAXModel:
             details about interpreting results when this option is used. If False,
             the full SARIMAX model is put in state-space form so that all
             datapoints can be used in estimation. Default is False.
-        enforce_stationarity : bool, optional
+        enforce_stationarity:
             Whether or not to transform the AR parameters to enforce stationarity
             in the autoregressive component of the model. Default is True.
-        enforce_invertibility : bool, optional
+        enforce_invertibility:
             Whether or not to transform the MA parameters to enforce invertibility
             in the moving average component of the model. Default is True.
-        hamilton_representation : bool, optional
+        hamilton_representation:
             Whether or not to use the Hamilton representation of an ARMA process
             (if True) or the Harvey representation (if False). Default is False.
-        concentrate_scale : bool, optional
+        concentrate_scale:
             Whether or not to concentrate the scale (variance of the error term)
             out of the likelihood. This reduces the number of parameters estimated
             by maximum likelihood by one, but standard errors will then not
             be available for the scale parameter.
-        trend_offset : int, optional
+        trend_offset:
             The offset at which to start time trend values. Default is 1, so that
             if `trend='t'` the trend is equal to 1, 2, ..., nobs. Typically is only
             set when the model created by extending a previous dataset.
-        use_exact_diffuse : bool, optional
+        use_exact_diffuse:
             Whether or not to use exact diffuse initialization for non-stationary
             states. Default is False (in which case approximate diffuse
             initialization is used).
-        dates : array_like of datetime, optional
+        dates:
             If no index is given by `endog` or `exog`, an array-like object of
             datetime objects can be provided.
-        freq : str, optional
+        freq:
             If no index is given by `endog` or `exog`, the frequency of the
             time-series may be specified here as a Pandas offset or offset string.
-        missing : str
+        missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
+        validate_specification:
+            If True, validation of hyperparameters is performed.
+        interval_width:
+            Float, width of the uncertainty intervals provided for the forecast.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -148,6 +156,7 @@ class _SARIMAXModel:
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.interval_width = interval_width
         self.kwargs = kwargs
         self._model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
@@ -158,7 +167,7 @@ class _SARIMAXModel:
 
         Parameters
         ----------
-        df: pd.DataFrame
+        df:
             Features dataframe
 
         Returns
@@ -217,15 +226,16 @@ class _SARIMAXModel:
         self._result = self._model.fit(start_params=start_params, disp=False)
         return self
 
-    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, confidence_interval: bool = False) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
         Parameters
         ----------
-        df : pd.DataFrame
+        df:
             Features dataframe
-
+        confidence_interval:
+             If True returns confidence interval for forecast
         Returns
         -------
         y_pred: pd.DataFrame
@@ -244,9 +254,14 @@ class _SARIMAXModel:
             )
 
         exog_future = self._select_regressors(df)
-        y_pred = self._result.predict(
+        forecast = self._result.get_prediction(
             start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
         )
+        if confidence_interval:
+            y_pred = forecast.summary_frame(alpha=1 - self.interval_width)[["mean_ci_lower", "mean", "mean_ci_upper"]]
+        else:
+            y_pred = pd.DataFrame(forecast.predicted_mean)
+            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
         return y_pred.reset_index(drop=True, inplace=False)
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
@@ -311,6 +326,7 @@ class SARIMAXModel(PerSegmentModel):
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        interval_width: float = 0.8,
         **kwargs,
     ):
         """
@@ -318,11 +334,7 @@ class SARIMAXModel(PerSegmentModel):
 
         Parameters
         ----------
-        endog : array_like
-            The observed time-series process :math:`y`
-        exog : array_like, optional
-            Array of exogenous regressors, shaped nobs x k.
-        order : iterable or iterable of iterables, optional
+        order:
             The (p,d,q) order of the model for the number of AR parameters,
             differences, and MA parameters. `d` must be an integer
             indicating the integration order of the process, while
@@ -330,7 +342,7 @@ class SARIMAXModel(PerSegmentModel):
             orders (so that all lags up to those orders are included) or else
             iterables giving specific AR and / or MA lags to include. Default is
             an AR(1) model: (1,0,0).
-        seasonal_order : iterable, optional
+        seasonal_order:
             The (P,D,Q,s) order of the seasonal component of the model for the
             AR parameters, differences, MA parameters, and periodicity.
             `D` must be an integer indicating the integration order of the process,
@@ -340,7 +352,7 @@ class SARIMAXModel(PerSegmentModel):
             integer giving the periodicity (number of periods in season), often it
             is 4 for quarterly data or 12 for monthly data. Default is no seasonal
             effect.
-        trend : str{'n','c','t','ct'} or iterable, optional
+        trend:
             Parameter controlling the deterministic trend polynomial :math:`A(t)`.
             Can be specified as a string where 'c' indicates a constant (i.e. a
             degree zero component of the trend polynomial), 't' indicates a
@@ -348,20 +360,20 @@ class SARIMAXModel(PerSegmentModel):
             iterable defining the non-zero polynomial exponents to include, in
             increasing order. For example, `[1,1,0,1]` denotes
             :math:`a + bt + ct^3`. Default is to not include a trend component.
-        measurement_error : bool, optional
+        measurement_error:
             Whether or not to assume the endogenous observations `endog` were
             measured with error. Default is False.
-        time_varying_regression : bool, optional
+        time_varying_regression:
             Used when an explanatory variables, `exog`, are provided provided
             to select whether or not coefficients on the exogenous regressors are
             allowed to vary over time. Default is False.
-        mle_regression : bool, optional
+        mle_regression:
             Whether or not to use estimate the regression coefficients for the
             exogenous variables as part of maximum likelihood estimation or through
             the Kalman filter (i.e. recursive least squares). If
             `time_varying_regression` is True, this must be set to False. Default
             is True.
-        simple_differencing : bool, optional
+        simple_differencing:
             Whether or not to use partially conditional maximum likelihood
             estimation. If True, differencing is performed prior to estimation,
             which discards the first :math:`s D + d` initial rows but results in a
@@ -369,38 +381,42 @@ class SARIMAXModel(PerSegmentModel):
             details about interpreting results when this option is used. If False,
             the full SARIMAX model is put in state-space form so that all
             datapoints can be used in estimation. Default is False.
-        enforce_stationarity : bool, optional
+        enforce_stationarity:
             Whether or not to transform the AR parameters to enforce stationarity
             in the autoregressive component of the model. Default is True.
-        enforce_invertibility : bool, optional
+        enforce_invertibility:
             Whether or not to transform the MA parameters to enforce invertibility
             in the moving average component of the model. Default is True.
-        hamilton_representation : bool, optional
+        hamilton_representation:
             Whether or not to use the Hamilton representation of an ARMA process
             (if True) or the Harvey representation (if False). Default is False.
-        concentrate_scale : bool, optional
+        concentrate_scale:
             Whether or not to concentrate the scale (variance of the error term)
             out of the likelihood. This reduces the number of parameters estimated
             by maximum likelihood by one, but standard errors will then not
             be available for the scale parameter.
-        trend_offset : int, optional
+        trend_offset:
             The offset at which to start time trend values. Default is 1, so that
             if `trend='t'` the trend is equal to 1, 2, ..., nobs. Typically is only
             set when the model created by extending a previous dataset.
-        use_exact_diffuse : bool, optional
+        use_exact_diffuse:
             Whether or not to use exact diffuse initialization for non-stationary
             states. Default is False (in which case approximate diffuse
             initialization is used).
-        dates : array_like of datetime, optional
+        dates:
             If no index is given by `endog` or `exog`, an array-like object of
             datetime objects can be provided.
-        freq : str, optional
+        freq:
             If no index is given by `endog` or `exog`, the frequency of the
             time-series may be specified here as a Pandas offset or offset string.
-        missing : str
+        missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
+        validate_specification:
+            If True, validation of hyperparameters is performed.
+        interval_width:
+            Float, width of the uncertainty intervals provided for the forecast.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -419,6 +435,7 @@ class SARIMAXModel(PerSegmentModel):
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.interval_width = interval_width
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXModel(
@@ -442,3 +459,59 @@ class SARIMAXModel(PerSegmentModel):
                 **self.kwargs,
             )
         )
+
+    @staticmethod
+    def _forecast_segment(
+        model, segment: Union[str, List[str]], ts: TSDataset, confidence_interval: bool = False
+    ) -> pd.DataFrame:
+        segment_features = ts[:, segment, :]
+        segment_features = segment_features.droplevel("segment", axis=1)
+        segment_features = segment_features.reset_index()
+        dates = segment_features["timestamp"]
+        dates.reset_index(drop=True, inplace=True)
+        segment_predict = model.predict(df=segment_features, confidence_interval=confidence_interval)
+        segment_predict = segment_predict.rename(
+            {"mean": "target", "mean_ci_lower": "target_lower", "mean_ci_upper": "target_upper"}, axis=1
+        )
+        segment_predict["segment"] = segment
+        segment_predict["timestamp"] = dates
+        return segment_predict
+
+    @log_decorator
+    def forecast(self, ts: TSDataset, confidence_interval: bool = False) -> TSDataset:
+        """Make predictions.
+        Parameters
+        ----------
+        ts:
+            Dataframe with features
+        confidence_interval:
+            If True returns confidence interval for forecast
+        Returns
+        -------
+        pd.DataFrame
+            Models result
+        Notes
+        -----
+        The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width
+        """
+        if self._segments is None:
+            raise ValueError("The model is not fitted yet, use fit() to train it")
+
+        result_list = list()
+        for segment in self._segments:
+            model = self._models[segment]
+
+            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval)
+            result_list.append(segment_predict)
+
+        # need real case to test
+        result_df = pd.concat(result_list, ignore_index=True)
+        result_df = result_df.set_index(["timestamp", "segment"])
+        df = ts.to_pandas(flatten=True)
+        df = df.set_index(["timestamp", "segment"])
+        df = df.combine_first(result_df).reset_index()
+
+        df = TSDataset.to_dataset(df)
+        ts.df = df
+        ts.inverse_transform()
+        return ts
