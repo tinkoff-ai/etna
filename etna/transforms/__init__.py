@@ -9,10 +9,10 @@ from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform
+from etna.transforms.outliers import ConfidenceIntervalOutliersTransform
 from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import SAXOutliersTransform
-from etna.transforms.outliers import ConfidenceIntervalOutliersTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform
 from etna.transforms.pytorch_forecasting import PytorchForecastingTransform
