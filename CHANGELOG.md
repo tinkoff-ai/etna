@@ -25,9 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TrendTransform ([#139](https://github.com/tinkoff-ai/etna-ts/pull/139))
 - Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
 - Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
+- Pipeline.backtest method ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161))
 - STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
 - NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna-ts/pull/159))
 - Example for ProphetModel ([#178](https://github.com/tinkoff-ai/etna-ts/pull/178))
+- Instruction notebook for custom model and transform creation ([#180](https://github.com/tinkoff-ai/etna-ts/pull/180))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
@@ -37,8 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Correlation heatmap in EDA notebook ([#144](https://github.com/tinkoff-ai/etna-ts/pull/144))
 - Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna-ts/pull/151))
 - Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
-- Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153)) 
-
+- TimeSeriesCrossValidation returns `Metric.__repr__` as a key in `backtest`'s return values ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161))
+- Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153))
+- Add confidence intervals to SARIMA ([#172](https://github.com/tinkoff-ai/etna-ts/pull/172))
+ 
 ### Fixed
 - Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
 
