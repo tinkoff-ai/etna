@@ -29,8 +29,9 @@ class OutliersTransform(Transform, ABC):
         """
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
 
-    def _save_original_values(self, ts: TSDataset) -> "OutliersTransform":
+    def _save_original_values(self, ts: TSDataset):
         """
         Save values to be replaced with NaNs.
 
@@ -38,10 +39,6 @@ class OutliersTransform(Transform, ABC):
         ----------
         ts:
             original TSDataset
-
-        Returns
-        -------
-        instance with saved values
         """
         self.original_values = dict()
 
@@ -49,7 +46,6 @@ class OutliersTransform(Transform, ABC):
             segment_ts = ts[:, segment, :]
             segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
             self.original_values[segment] = segment_values
-        return self
 
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -62,7 +58,8 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        instance with saved outliers
+        result: OutliersTransform
+            instance with saved outliers
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
@@ -81,7 +78,8 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        dataframe with in_column series with filled with NaNs
+        result: pd.DataFrame
+            dataframe with in_column series with filled with NaNs
         """
         result_df = df.copy()
         for segment in df.columns.get_level_values("segment").unique():
@@ -99,7 +97,8 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        data with reconstructed values
+        result: pd.DataFrame
+            data with reconstructed values
         """
         result = df.copy()
 
