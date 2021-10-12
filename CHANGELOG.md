@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pipeline.backtest method ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161))
 - STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
 - NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna-ts/pull/159))
+- Instruction notebook for custom model and transform creation ([#180](https://github.com/tinkoff-ai/etna-ts/pull/180))
 - Examples for CatBoostModelMultiSegment and CatBoostModelPerSegment ([#181](https://github.com/tinkoff-ai/etna-ts/pull/181))
 
 ### Changed
