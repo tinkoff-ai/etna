@@ -41,8 +41,7 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: OutliersTransform
-            instance with saved values
+        instance with saved values
         """
         self.original_values = dict()
 
@@ -63,8 +62,7 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: OutliersTransform
-            instance with saved outliers
+        instance with saved outliers
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
@@ -83,8 +81,7 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: pd.DataFrame
-            dataframe with in_column series with filled with NaNs
+        dataframe with in_column series with filled with NaNs
         """
         result_df = df.copy()
         for segment in df.columns.get_level_values("segment").unique():
@@ -102,8 +99,7 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        pd.DataFrame
-            data with reconstructed values
+        data with reconstructed values
         """
         result = df.copy()
 

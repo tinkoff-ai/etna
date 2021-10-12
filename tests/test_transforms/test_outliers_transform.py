@@ -33,9 +33,7 @@ def outliers_solid_tsds():
     df = df.reorder_levels([1, 0], axis=1)
     df = df.sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    exog = df.copy()
-    exog.columns = pd.MultiIndex.from_arrays([["1", "2"], ["exog", "exog"]])
-    tsds = TSDataset(df, "1d", exog)
+    tsds = TSDataset(df, "1d")
     return tsds
 
 
