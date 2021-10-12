@@ -113,6 +113,7 @@ class VotingEnsemble(Pipeline):
         self.pipelines = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
+        return self
 
     @staticmethod
     def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
