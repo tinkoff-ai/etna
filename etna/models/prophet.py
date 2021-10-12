@@ -189,6 +189,7 @@ class ProphetModel(PerSegmentModel):
     ):
         """
         Create instance of Prophet model.
+
         Parameters
         ----------
         growth:
