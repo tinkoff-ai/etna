@@ -158,11 +158,7 @@ class Pipeline(BaseMixin):
         return metrics_values
 
     def _run_fold(
-        self,
-        train: TSDataset,
-        test: TSDataset,
-        fold_number: int,
-        metrics: Optional[List[Metric]] = None,
+        self, train: TSDataset, test: TSDataset, fold_number: int, metrics: Optional[List[Metric]] = None
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
