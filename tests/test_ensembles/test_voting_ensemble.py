@@ -3,56 +3,15 @@ from typing import List
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
 from etna.ensembles.voting_ensemble import VotingEnsemble
-from etna.models import CatBoostModelPerSegment
-from etna.models import NaiveModel
-from etna.models import ProphetModel
+from etna.metrics import MAE
 from etna.pipeline import Pipeline
-from etna.transforms import LagTransform
 
 HORIZON = 7
-
-
-@pytest.fixture
-def catboost_pipeline() -> Pipeline:
-    """Generate pipeline with CatBoostModelMultiSegment."""
-    pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
-        transforms=[LagTransform(in_column="target", lags=[10, 11, 12])],
-        horizon=HORIZON,
-    )
-    return pipeline
-
-
-@pytest.fixture
-def prophet_pipeline() -> Pipeline:
-    """Generate pipeline with ProphetModel."""
-    pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=HORIZON)
-    return pipeline
-
-
-@pytest.fixture
-def naive_pipeline() -> Pipeline:
-    """Generate pipeline with NaiveModel."""
-    pipeline = Pipeline(model=NaiveModel(20), transforms=[], horizon=2 * HORIZON)
-    return pipeline
-
-
-@pytest.fixture
-def naive_pipeline_1() -> Pipeline:
-    """Generate pipeline with NaiveModel(1)."""
-    pipeline = Pipeline(model=NaiveModel(1), transforms=[], horizon=HORIZON)
-    return pipeline
-
-
-@pytest.fixture
-def naive_pipeline_2() -> Pipeline:
-    """Generate pipeline with NaiveModel(2)."""
-    pipeline = Pipeline(model=NaiveModel(2), transforms=[], horizon=HORIZON)
-    return pipeline
 
 
 def test_invalid_pipelines_number(catboost_pipeline: Pipeline):
@@ -143,3 +102,11 @@ def test_multiprocessing_ensemples(
     multi_jobs_forecast = multi_jobs_ensemble.forecast()
 
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest(ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
+    """Check that backtest works with VotingEnsemble."""
+    results = ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
