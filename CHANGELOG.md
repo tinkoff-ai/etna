@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
 - STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
 - NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna-ts/pull/159))
+- Example for ProphetModel ([#178](https://github.com/tinkoff-ai/etna-ts/pull/178))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
