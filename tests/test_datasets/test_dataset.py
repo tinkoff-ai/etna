@@ -43,7 +43,7 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(df)
 
-    timestamp = pd.date_range("2021-01-01", "2021-02-11")
+    timestamp = pd.date_range("2020-12-01", "2021-02-11")
     df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_1": 3, "regressor_2": 4, "segment": "2"})
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
