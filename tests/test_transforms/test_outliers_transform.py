@@ -5,10 +5,12 @@ import pytest
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
+from enta.analysis import get_confidence_interval_anomalies
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import SAXOutliersTransform
+from etna.transforms import ConfidenceIntervalOutliersTransform
 
 
 @pytest.mark.parametrize(
@@ -17,6 +19,7 @@ from etna.transforms import SAXOutliersTransform
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
+        ConfidenceIntervalOutliersTransform(in_column="target")
     ],
 )
 def test_interface(transform, example_tsds: TSDataset):
@@ -32,6 +35,7 @@ def test_interface(transform, example_tsds: TSDataset):
         (MedianOutliersTransform(in_column="target"), get_anomalies_median),
         (DensityOutliersTransform(in_column="target"), get_anomalies_density),
         (SAXOutliersTransform(in_column="target"), get_sequence_anomalies),
+        (ConfidenceIntervalOutliersTransform(in_column="target"), get_confidence_interval_anomalies)
     ],
 )
 def test_outliers_detection(transform, method, outliers_tsds):

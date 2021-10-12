@@ -223,5 +223,48 @@ class SAXOutliersTransform(OutliersTransform):
             in_column=self.in_column,
         )
 
+class ConfidenceIntervalOutliersTransform(OutliersTransform):
+    """Transform that uses get_anomalies_density to find anomalies in data."""
 
-__all__ = ["MedianOutliersTransform", "DensityOutliersTransform"]
+    def __init__(
+        self,
+        in_column: str,
+        model: int = 15,
+        interval_width: float = 0.95,
+        **model_params,
+    ):
+        #TODO DOCSTRING
+        """Create instance of DensityOutliersTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of processed column
+        model:
+            size of windows to build
+        interval_width:
+            factor for standard deviation that forms distance threshold to determine points are close to each other
+        """
+        self.in_column = in_column
+        self.model = model
+        self.interval_width = interval_width
+        self.model_params = model_params
+        super().__init__(in_column=self.in_column)
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+        """Call `get_anomalies_confidence_interval` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            dataset to process
+
+        Returns
+        -------
+        dict of outliers:
+            dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_confidence_interval(ts, self.model, self.interval_width, **self.model_params)
+
+
+__all__ = ["MedianOutliersTransform", "DensityOutliersTransform","SAXOutliersTransform", "ConfidenceIntervalOutliersTransform"]
