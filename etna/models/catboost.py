@@ -72,23 +72,23 @@ class CatBoostModelPerSegment(PerSegmentModel):
     ... ]
     >>> ts.fit_transform(transforms=transforms)
     >>> future = ts.make_future(horizon)
-    >>> model = CatBoostModelMultiSegment()
+    >>> model = CatBoostModelPerSegment()
     >>> model.fit(ts=ts)
-    CatBoostModelPerSegment(iterations = None, depth = None,
-    learning_rate = None, logging_level = 'Silent', l2_leaf_reg = None,
-    thread_count = None, )
+    CatBoostModelPerSegment(iterations = None, depth = None, learning_rate = None,
+    logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
     >>> forecast = model.forecast(future)
-    >>> forecast[:, :, "target"].round(2)
+    >>> pd.options.display.float_format = '{:,.2f}'.format
+    >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
     feature       target    target    target    target
     timestamp
-    2020-04-10       9.0       9.0       4.0       6.0
-    2020-04-11       5.0       2.0       7.0       9.0
-    2020-04-12       0.0       4.0       7.0       9.0
-    2020-04-13       0.0       5.0       9.0       7.0
-    2020-04-14       1.0       2.0       1.0       6.0
-    2020-04-15       5.0       7.0       4.0       7.0
-    2020-04-16       8.0       6.0       2.0       0.0
+    2020-04-10      9.00      9.00      4.00      6.00
+    2020-04-11      5.00      2.00      7.00      9.00
+    2020-04-12      0.00      4.00      7.00      9.00
+    2020-04-13      0.00      5.00      9.00      7.00
+    2020-04-14      1.00      2.00      1.00      6.00
+    2020-04-15      5.00      7.00      4.00      7.00
+    2020-04-16      8.00      6.00      2.00      0.00
     """
 
     def __init__(
@@ -173,7 +173,7 @@ class CatBoostModelMultiSegment(Model):
     >>> classic_df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
-    ...     n_segments=3,
+    ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
@@ -187,21 +187,21 @@ class CatBoostModelMultiSegment(Model):
     >>> future = ts.make_future(horizon)
     >>> model = CatBoostModelMultiSegment()
     >>> model.fit(ts=ts)
-    CatBoostModelMultiSegment(iterations = None, depth = None,
-    learning_rate = None, logging_level = 'Silent', l2_leaf_reg = None,
-    thread_count = None, )
+    CatBoostModelMultiSegment(iterations = None, depth = None, learning_rate = None,
+    logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
     >>> forecast = model.forecast(future)
-    >>> forecast[:, :, "target"]
+    >>> pd.options.display.float_format = '{:,.2f}'.format
+    >>> forecast[:, :, "target"].round()
     segment    segment_0 segment_1 segment_2 segment_3
     feature       target    target    target    target
     timestamp
-    2020-04-10       9.0       9.0       4.0       6.0
-    2020-04-11       5.0       2.0       7.0       9.0
-    2020-04-12       0.0       4.0       7.0       9.0
-    2020-04-13       0.0       5.0       9.0       7.0
-    2020-04-14       1.0       2.0       1.0       6.0
-    2020-04-15       5.0       7.0       4.0       7.0
-    2020-04-16       8.0       6.0       2.0       0.0
+    2020-04-10      9.00      9.00      4.00      6.00
+    2020-04-11      5.00      2.00      7.00      9.00
+    2020-04-12     -0.00      4.00      7.00      9.00
+    2020-04-13      0.00      5.00      9.00      7.00
+    2020-04-14      1.00      2.00      1.00      6.00
+    2020-04-15      5.00      7.00      4.00      7.00
+    2020-04-16      8.00      6.00      2.00      0.00
     """
 
     def __init__(
