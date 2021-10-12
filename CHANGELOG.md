@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pipeline.backtest method ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161))
 - STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
 - NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna-ts/pull/159))
+- Confidence interval anomalies detection to EDA ([#182](https://github.com/tinkoff-ai/etna-ts/pull/182))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
