@@ -176,17 +176,11 @@ def _fit_backtest_pipeline(
     (
         (
             False,
-            [
-                "MAE",
-                "MSE",
-                "SMAPE",
-                "fold_number",
-                "segment",
-            ],
+            ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
         ),
         (
             True,
-            ["MAE", "MSE", "SMAPE", "segment"],
+            ["MAE", "MSE", "segment", "SMAPE"],
         ),
     ),
 )

@@ -155,13 +155,7 @@ def test_generate_constant_timeranges_hours():
     (
         (
             False,
-            [
-                "fold_number",
-                "MAE",
-                "MSE",
-                "segment",
-                "SMAPE",
-            ],
+            ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
         ),
         (
             True,
