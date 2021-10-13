@@ -11,3 +11,4 @@ Tutorials
    tutorials/EDA
    tutorials/backtest
    tutorials/outliers
+   tutorials/custom_transform_and_model
