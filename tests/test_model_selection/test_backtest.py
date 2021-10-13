@@ -177,16 +177,16 @@ def _fit_backtest_pipeline(
         (
             False,
             [
-                "MAE(mode = 'per-segment', )",
-                "MSE(mode = 'per-segment', )",
-                "SMAPE(mode = 'per-segment', )",
+                "MAE",
+                "MSE",
+                "SMAPE",
                 "fold_number",
                 "segment",
             ],
         ),
         (
             True,
-            ["MAE(mode = 'per-segment', )", "MSE(mode = 'per-segment', )", "SMAPE(mode = 'per-segment', )", "segment"],
+            ["MAE", "MSE", "SMAPE", "segment"],
         ),
     ),
 )
