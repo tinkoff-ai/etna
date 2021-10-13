@@ -466,21 +466,60 @@ class TSDataset:
         df.columns.names = ["segment", "feature"]
         return df
 
+    def _find_all_borders(
+        self,
+        train_start: Optional[TTimestamp],
+        train_end: Optional[TTimestamp],
+        test_start: Optional[TTimestamp],
+        test_end: Optional[TTimestamp],
+    ) -> Tuple[TTimestamp, TTimestamp, TTimestamp, TTimestamp]:
+        """Find borders for train_test_split if some values wasn't specified."""
+        if train_start is None:
+            train_start_defined = self.df.index.min()
+        else:
+            train_start_defined = train_start
+
+        if test_end is None:
+            test_end_defined = self.df.index.max()
+        else:
+            test_end_defined = test_end
+
+        if train_end is None and test_start is None:
+            raise ValueError("One of train_end or test_start should be defined")
+
+        if train_end is None:
+            test_start_idx = self.df.index.get_loc(test_start)
+            train_end_defined = self.df.index[test_start_idx - 1]
+        else:
+            train_end_defined = train_end
+
+        if test_start is None:
+            train_end_idx = self.df.index.get_loc(train_end)
+            test_start_defined = self.df.index[train_end_idx + 1]
+        else:
+            test_start_defined = test_start
+
+        return train_start_defined, train_end_defined, test_start_defined, test_end_defined
+
     def train_test_split(
-        self, train_start: Optional[TTimestamp], train_end: TTimestamp, test_start: TTimestamp, test_end: TTimestamp
+        self,
+        train_start: Optional[TTimestamp],
+        train_end: Optional[TTimestamp],
+        test_start: Optional[TTimestamp],
+        test_end: Optional[TTimestamp],
     ) -> Tuple["TSDataset", "TSDataset"]:
         """Split given df with train-test timestamp indices.
 
         Parameters
         ----------
         train_start:
-            start timestamp of new train dataset
+            start timestamp of new train dataset, if None first timestamp is used
         train_end:
-            end timestamp of new train dataset
+            end timestamp of new train dataset, if None previous to test_start timestamp is used
         test_start:
-            start timestamp of new test dataset
+            start timestamp of new test dataset, if None next to train_end timestamp is used
         test_end:
-            end timestamp of new test dataset
+            end timestamp of new test dataset, if None last timestamp is used
 
         Returns
         -------
@@ -517,17 +556,22 @@ class TSDataset:
         2021-02-05     -5.10      0.40      2.15
         2021-02-06     -6.22      0.92      0.97
         """
-        if pd.Timestamp(test_end) > self.df.index.max():
-            raise UserWarning(f"Max timestamp in df is {self.df.index.max()}.")
-        if pd.Timestamp(train_start) < self.df.index.min():
-            raise UserWarning(f"Min timestamp in df is {self.df.index.min()}.")
-        train_df = self.df[train_start:train_end][self.raw_df.columns]  # type: ignore
-        train_raw_df = self.raw_df[train_start:train_end]  # type: ignore
+        train_start_defined, train_end_defined, test_start_defined, test_end_defined = self._find_all_borders(
+            train_start, train_end, test_start, test_end
+        )
+
+        if pd.Timestamp(test_end_defined) > self.df.index.max():
+            warnings.warn(f"Max timestamp in df is {self.df.index.max()}.")
+        if pd.Timestamp(train_start_defined) < self.df.index.min():
+            warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
+
+        train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
+        train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
         train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq)
         train.raw_df = train_raw_df
 
-        test_df = self.df[test_start:test_end][self.raw_df.columns]  # type: ignore
-        test_raw_df = self.raw_df[train_start:test_end]  # type: ignore
+        test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
+        test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
         test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq)
         test.raw_df = test_raw_df
 

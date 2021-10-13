@@ -86,19 +86,65 @@ def test_categorical_after_call_to_pandas():
 
 
 @pytest.mark.parametrize(
-    "train_start,train_end,test_start,test_end",
-    (("2021-02-03", "2021-06-20", "2021-06-21", "2021-07-01"), (None, "2021-06-20", "2021-06-21", "2021-07-01")),
+    "borders, true_borders",
+    (
+        (
+            ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01"),
+            ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01"),
+        ),
+        (
+            ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
+            ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
+        ),
+        (
+            ("2021-02-01", "2021-06-20", "2021-06-21", "2021-06-28"),
+            ("2021-02-01", "2021-06-20", "2021-06-21", "2021-06-28"),
+        ),
+        (
+            ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01"),
+            ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01"),
+        ),
+        ((None, "2021-06-20", "2021-06-23", "2021-06-28"), ("2021-02-01", "2021-06-20", "2021-06-23", "2021-06-28")),
+        (("2021-02-03", "2021-06-20", "2021-06-23", None), ("2021-02-03", "2021-06-20", "2021-06-23", "2021-07-01")),
+        ((None, "2021-06-20", "2021-06-23", None), ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01")),
+        ((None, "2021-06-20", None, None), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+        ((None, None, "2021-06-21", None), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+    ),
 )
-def test_train_test_split(train_start, train_end, test_start, test_end, tsdf_with_exog):
+def test_train_test_split(borders, true_borders, tsdf_with_exog):
+    train_start, train_end, test_start, test_end = borders
+    train_start_true, train_end_true, test_start_true, test_end_true = true_borders
     train, test = tsdf_with_exog.train_test_split(
         train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    assert (train.df == tsdf_with_exog.df[train_start:train_end]).all().all()
+    assert (train.df == tsdf_with_exog.df[train_start_true:train_end_true]).all().all()
     assert (train.df_exog == tsdf_with_exog.df_exog).all().all()
-    assert (test.df == tsdf_with_exog.df[test_start:test_end]).all().all()
+    assert (test.df == tsdf_with_exog.df[test_start_true:test_end_true]).all().all()
     assert (test.df_exog == tsdf_with_exog.df_exog).all().all()
+
+
+@pytest.mark.parametrize(
+    "borders, match",
+    (
+        (("2021-01-01", "2021-06-20", "2021-06-21", "2021-07-01"), "Min timestamp in df is"),
+        (("2021-02-01", "2021-06-20", "2021-06-21", "2021-08-01"), "Max timestamp in df is"),
+    ),
+)
+def test_train_test_split_warning(borders, match, tsdf_with_exog):
+    train_start, train_end, test_start, test_end = borders
+    with pytest.warns(UserWarning, match=match):
+        tsdf_with_exog.train_test_split(
+            train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end
+        )
+
+
+def test_train_test_split_failed(tsdf_with_exog):
+    with pytest.raises(ValueError, match="train_end or test_start should be defined"):
+        tsdf_with_exog.train_test_split(
+            train_start="2021-02-03", train_end=None, test_start=None, test_end="2021-07-01"
+        )
 
 
 def test_dataset_datetime_convertion():
