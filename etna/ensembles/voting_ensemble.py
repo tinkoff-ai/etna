@@ -66,6 +66,11 @@ class VotingEnsemble(Pipeline):
             list of pipelines' weights; weights will be normalized automatically.
         n_jobs:
             number of jobs to run in parallel
+
+        Raises
+        ------
+        ValueError:
+            If the number of the pipelines is less than 2 or pipelines have different horizons.
         """
         self._validate_pipeline_number(pipelines=pipelines)
         self.horizon = self._get_horizon(pipelines=pipelines)
