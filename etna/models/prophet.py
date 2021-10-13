@@ -129,7 +129,44 @@ class _ProphetModel:
 
 
 class ProphetModel(PerSegmentModel):
-    """Class for holding Prophet model."""
+    """Class for holding Prophet model.
+
+    Examples
+    --------
+    >>> from etna.datasets import generate_periodic_df
+    >>> from etna.datasets import TSDataset
+    >>> from etna.models import ProphetModel
+    >>> classic_df = generate_periodic_df(
+    ...     periods=100,
+    ...     start_time="2020-01-01",
+    ...     n_segments=4,
+    ...     period=7,
+    ...     sigma=3
+    ... )
+    >>> df = TSDataset.to_dataset(df=classic_df)
+    >>> ts = TSDataset(df, freq="D")
+    >>> future = ts.make_future(7)
+    >>> model = ProphetModel(growth="flat")
+    >>> model.fit(ts=ts)
+    ProphetModel(growth = 'flat', changepoints = None, n_changepoints = 25,
+    changepoint_range = 0.8, yearly_seasonality = 'auto', weekly_seasonality = 'auto',
+    daily_seasonality = 'auto', holidays = None, seasonality_mode = 'additive',
+    seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
+    interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
+    additional_seasonality_params = (), )
+    >>> forecast = model.forecast(future)
+    >>> forecast
+    segment    segment_0 segment_1 segment_2 segment_3
+    feature       target    target    target    target
+    timestamp
+    2020-04-10      9.00      9.00      4.00      6.00
+    2020-04-11      5.00      2.00      7.00      9.00
+    2020-04-12      0.00      4.00      7.00      9.00
+    2020-04-13      0.00      5.00      9.00      7.00
+    2020-04-14      1.00      2.00      1.00      6.00
+    2020-04-15      5.00      7.00      4.00      7.00
+    2020-04-16      8.00      6.00      2.00      0.00
+    """
 
     def __init__(
         self,
@@ -152,6 +189,7 @@ class ProphetModel(PerSegmentModel):
     ):
         """
         Create instance of Prophet model.
+
         Parameters
         ----------
         growth:
@@ -282,6 +320,7 @@ class ProphetModel(PerSegmentModel):
     @log_decorator
     def forecast(self, ts: TSDataset, confidence_interval: bool = False) -> TSDataset:
         """Make predictions.
+
         Parameters
         ----------
         ts:
@@ -294,7 +333,7 @@ class ProphetModel(PerSegmentModel):
             Models result
         Notes
         -----
-        The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width
+        The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width.
         """
         if self._segments is None:
             raise ValueError("The model is not fitted yet, use fit() to train it")
