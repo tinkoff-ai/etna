@@ -183,7 +183,7 @@ class TimeSeriesCrossValidation(BaseMixin):
         """
         metrics = {}
         for metric in self.metrics:
-            metrics[metric.__repr__()] = metric(y_true=y_true, y_pred=y_pred)
+            metrics[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)
         return metrics
 
     def get_forecasts(self) -> pd.DataFrame:
