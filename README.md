@@ -89,6 +89,7 @@ We have also prepared a set of tutorials for an easy introduction:
 - Point outliers
     - Median method
     - Density method
+    - Confidence interval method
 - Sequence outliers
 - Interactive visualization
 - Outliers imputation
