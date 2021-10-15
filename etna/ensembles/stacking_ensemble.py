@@ -1,7 +1,6 @@
 import warnings
 from copy import deepcopy
 from typing import List
-from typing import Literal
 from typing import Optional
 from typing import Union
 
@@ -9,6 +8,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel
 from joblib import delayed
+from typing_extensions import Literal
 
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
