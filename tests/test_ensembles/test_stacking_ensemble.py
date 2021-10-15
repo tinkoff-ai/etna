@@ -1,6 +1,5 @@
 from copy import deepcopy
 from typing import List
-from typing import Literal
 from typing import Set
 from typing import Union
 
@@ -8,6 +7,7 @@ import pandas as pd
 import pytest
 from joblib import Parallel
 from joblib import delayed
+from typing_extensions import Literal
 
 from etna.datasets import TSDataset
 from etna.ensembles.stacking_ensemble import StackingEnsemble
