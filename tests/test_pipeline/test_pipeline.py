@@ -155,17 +155,11 @@ def test_generate_constant_timeranges_hours():
     (
         (
             False,
-            [
-                "fold_number",
-                "MAE(mode = 'per-segment', )",
-                "MSE(mode = 'per-segment', )",
-                "segment",
-                "SMAPE(mode = 'per-segment', )",
-            ],
+            ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
         ),
         (
             True,
-            ["MAE(mode = 'per-segment', )", "MSE(mode = 'per-segment', )", "segment", "SMAPE(mode = 'per-segment', )"],
+            ["MAE", "MSE", "segment", "SMAPE"],
         ),
     ),
 )

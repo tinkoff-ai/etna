@@ -172,7 +172,7 @@ class PytorchForecastingTransform(Transform):
         ts = TSDataset(df, self.freq)
         df_flat = ts.to_pandas(flatten=True)
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
-        df_flat = df_flat.fillna(0)
+        df_flat["target"] = df_flat["target"].fillna(0)
 
         freq_unit = self._calculate_freq_unit(self.freq)
         df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
