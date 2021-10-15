@@ -453,20 +453,6 @@ class TSDataset:
         2021-01-03           2           7
         2021-01-04           3           8
         2021-01-05           4           9
-
-        >>> df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=100)})
-        >>> df["segment"] = "segment_1"
-        >>> df["reg_2"] = 1
-        >>> df["reg_1"] = 2
-        >>> TSDataset.to_dataset(df).head(5)
-        segment    segment_1
-        feature        reg_1 reg_2
-        timestamp
-        2020-01-01         2     1
-        2020-01-02         2     1
-        2020-01-03         2     1
-        2020-01-04         2     1
-        2020-01-05         2     1
         """
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         feature_columns = df.columns.tolist()
