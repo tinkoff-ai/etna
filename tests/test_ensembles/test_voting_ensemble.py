@@ -83,7 +83,7 @@ def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: 
 
 
 @pytest.mark.long
-def test_multiprocessing_ensemples(
+def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,
     prophet_pipeline: Pipeline,
@@ -105,8 +105,8 @@ def test_multiprocessing_ensemples(
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
-def test_backtest(ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
+def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with VotingEnsemble."""
-    results = ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
+    results = voting_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
     for df in results:
         assert isinstance(df, pd.DataFrame)

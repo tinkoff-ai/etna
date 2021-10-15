@@ -76,7 +76,7 @@ class StackingEnsemble(Pipeline):
         """Check that given number of folds is grater than 1."""
         if cv is None:
             cv = 3
-        if cv < 2:
+        elif cv < 2:
             raise ValueError("At least two folds for backtest are expected.")
         return cv
 
@@ -113,8 +113,16 @@ class StackingEnsemble(Pipeline):
         self._validate_features_to_use(forecasts)
 
         features_df = self._make_features(forecasts)
+        ind = pd.date_range(start=features_df.index.max(), periods=2, closed="right")
+        new_index = features_df.index.append(ind)
+        features_df = features_df.reindex(new_index)
+        features_df.index.name = "timestamp"
+        features_df.loc[ind, pd.IndexSlice[:, :]] = features_df.loc[ts.index.max(), pd.IndexSlice[:, :]].values
+
+        targets_df = ts[features_df.index.min() : ts.index.max(), :, "target"]
+
         features = TSDataset(
-            df=ts[features_df.index.min() : features_df.index.max(), :, "target"].copy(),
+            df=targets_df,
             freq=ts.freq,
             df_exog=features_df,
         )
@@ -128,7 +136,7 @@ class StackingEnsemble(Pipeline):
     def _validate_features_to_use(self, forecasts: List[TSDataset]):
         """Check that features from 'features_to_use' are in the dataset."""
         features_df = pd.concat([forecast.df for forecast in forecasts])
-        available_features = set(features_df.columns.get_level_values("feature"))
+        available_features = set(features_df.columns.get_level_values("feature")) - {"fold_number"}
         if isinstance(self.features_to_use, list):
             self.features_to_use = set(self.features_to_use)
             if len(self.features_to_use) == 0:
@@ -161,17 +169,26 @@ class StackingEnsemble(Pipeline):
     def _stack_targets(forecasts: List[TSDataset]) -> pd.DataFrame:
         """Stack targets from forecasts."""
         targets = [
-            forecast[:, :, "target"].rename({"target": f"target_{i}"}, axis=1) for i, forecast in enumerate(forecasts)
+            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
+            for i, forecast in enumerate(forecasts)
         ]
         targets = pd.concat(targets, axis=1)
         return targets
 
     def _get_features(self, forecasts: List[TSDataset]) -> pd.DataFrame:
         """Get features from the forecasts."""
-        features = forecasts[0]
-        for forecast in forecasts[1:]:
-            features = features.merge(forecast)
-        features = features[:, :, self.features_to_use]
+        features_to_add = self.features_to_use.copy()
+        new_features = features_to_add.intersection(set(forecasts[0].df.columns.get_level_values("feature")))
+        features = forecasts[0][:, :, new_features]
+        features_to_add -= new_features
+        if len(features_to_add) != 0:
+            for forecast in forecasts[1:]:
+                new_features = features_to_add.intersection(set(forecast.columns.get_level_values("feature")))
+                if len(new_features) != 0:
+                    features = pd.concat([features, forecast[:, :, new_features]], axis=1)
+                    features_to_add -= new_features
+                    if len(features_to_add) == 0:
+                        break
         return features
 
     def _make_features(self, forecasts: List[TSDataset]) -> pd.DataFrame:
@@ -184,7 +201,7 @@ class StackingEnsemble(Pipeline):
 
     def _make_future(self, forecasts: List[TSDataset]) -> TSDataset:
         """Prepare future for the 'final_model' forecast."""
-        target_df = forecasts[0][:, :, "target"].copy()
+        target_df = forecasts[0][:, :, "target"]
         target_df.loc[:] = np.NAN
         features_df = self._make_features(forecasts=forecasts)
         future = TSDataset(df=target_df, freq=forecasts[0].freq, df_exog=features_df)

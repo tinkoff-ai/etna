@@ -1,10 +1,12 @@
 import pytest
 
+from etna.ensembles import StackingEnsemble
 from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostModelPerSegment
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.pipeline import Pipeline
+from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 
 
@@ -48,8 +50,30 @@ def naive_pipeline_2() -> Pipeline:
 
 
 @pytest.fixture
-def ensemble_pipeline(
+def voting_ensemble_pipeline(
     catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
 ) -> VotingEnsemble:
     pipeline = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def stacking_ensemble_pipeline(
+    catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
+) -> StackingEnsemble:
+    pipeline = StackingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def naive_featured_pipeline_1() -> Pipeline:
+    """Generate pipeline with NaiveModel(1)."""
+    pipeline = Pipeline(model=NaiveModel(1), transforms=[LagTransform(lags=[10], in_column="target")], horizon=7)
+    return pipeline
+
+
+@pytest.fixture
+def naive_featured_pipeline_2() -> Pipeline:
+    """Generate pipeline with NaiveModel(2)."""
+    pipeline = Pipeline(model=NaiveModel(2), transforms=[DateFlagsTransform()], horizon=7)
     return pipeline
