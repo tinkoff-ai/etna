@@ -6,11 +6,19 @@ from typing import Tuple
 from typing import Union
 
 import pandas as pd
+from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
+
+warnings.filterwarnings(
+    message="No frequency information was provided, so inferred frequency .* will be used",
+    action="ignore",
+    category=ValueWarning,
+    module="statsmodels.tsa.base.tsa_model",
+)
 
 
 class _SARIMAXModel:
@@ -254,12 +262,15 @@ class _SARIMAXModel:
             )
 
         exog_future = self._select_regressors(df)
-        forecast = self._result.get_prediction(
-            start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
-        )
         if confidence_interval:
+            forecast = self._result.get_prediction(
+                start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
+            )
             y_pred = forecast.summary_frame(alpha=1 - self.interval_width)[["mean_ci_lower", "mean", "mean_ci_upper"]]
         else:
+            forecast = self._result.get_prediction(
+                start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
+            )
             y_pred = pd.DataFrame(forecast.predicted_mean)
             y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
         return y_pred.reset_index(drop=True, inplace=False)
@@ -456,6 +467,7 @@ class SARIMAXModel(PerSegmentModel):
                 freq=self.freq,
                 missing=self.missing,
                 validate_specification=self.validate_specification,
+                interval_width=self.interval_width,
                 **self.kwargs,
             )
         )

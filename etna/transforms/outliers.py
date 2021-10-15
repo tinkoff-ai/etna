@@ -34,6 +34,23 @@ class OutliersTransform(Transform, ABC):
         """
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
+
+    def _save_original_values(self, ts: TSDataset):
+        """
+        Save values to be replaced with NaNs.
+
+        Parameters
+        ----------
+        ts:
+            original TSDataset
+        """
+        self.original_values = dict()
+
+        for segment, timestamps in self.outliers_timestamps.items():
+            segment_ts = ts[:, segment, :]
+            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
+            self.original_values[segment] = segment_values
 
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -46,11 +63,13 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: _OneSegmentTimeSeriesImputerTransform
+        result: OutliersTransform
             instance with saved outliers
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
+        self._save_original_values(ts)
+
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -71,6 +90,28 @@ class OutliersTransform(Transform, ABC):
         for segment in df.columns.get_level_values("segment").unique():
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Inverse transformation. Returns back deleted values.
+
+        Parameters
+        ----------
+        df:
+            data to transform
+
+        Returns
+        -------
+        result: pd.DataFrame
+            data with reconstructed values
+        """
+        result = df.copy()
+
+        for segment in self.original_values.keys():
+            segment_ts = result[segment, self.in_column]
+            segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
+
+        return result
 
     @abstractmethod
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
