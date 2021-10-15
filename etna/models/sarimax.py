@@ -6,11 +6,19 @@ from typing import Tuple
 from typing import Union
 
 import pandas as pd
+from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
+
+warnings.filterwarnings(
+    message="No frequency information was provided, so inferred frequency .* will be used",
+    action="ignore",
+    category=ValueWarning,
+    module="statsmodels.tsa.base.tsa_model",
+)
 
 
 class _SARIMAXModel:

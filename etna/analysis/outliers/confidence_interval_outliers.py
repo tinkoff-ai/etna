@@ -27,16 +27,16 @@ def get_anomalies_confidence_interval(
     Parameters
     ----------
     ts:
-        TSDataset with timeseries data(should contains all the necessary features)
+        TSDataset with timeseries data(should contains all the necessary features).
     model:
-        model for confidence interval estimation
+        Model for confidence interval estimation.
     interval_width:
-        width of the confidence interval
+       The significance level for the confidence interval. By default a 95% confidence interval is taken.
 
     Returns
     -------
     dict of outliers: Dict[str, List[pd.Timestamp]]
-        dict of outliers in format {segment: [outliers_timestamps]}
+        Dict of outliers in format {segment: [outliers_timestamps]}.
     """
     outliers_per_segment = {}
     time_points = np.array(ts.index.values)
