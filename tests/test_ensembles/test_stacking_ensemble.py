@@ -74,6 +74,7 @@ def test_features_to_use(
     features_to_use: Union[None, Literal[all], List[str]],
     expected_features: Set[str],
 ):
+    """Check that StackingEnsemble._validate_features_to_use works correctly."""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
@@ -91,6 +92,7 @@ def test_stack_targets(
     naive_featured_pipeline_1: Pipeline,
     naive_featured_pipeline_2: Pipeline,
 ):
+    """Check that StackingEnsemble._stack_targets returns Dataframe with base models' forecasts in columns."""
     ensemble = StackingEnsemble(pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2])
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
         delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
@@ -128,6 +130,7 @@ def test_get_features(
     features_to_use: Union[None, Literal[all], List[str]],
     expected_features: Set[str],
 ):
+    """Check that StackingEnsemble._get_features returns all the expected features in correct format."""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
@@ -137,48 +140,6 @@ def test_get_features(
     )
     ensemble._validate_features_to_use(forecasts)
     features_df = ensemble._get_features(forecasts)
-    features = set(features_df.columns.get_level_values("feature"))
-    assert isinstance(features_df, pd.DataFrame)
-    assert features == expected_features
-
-
-@pytest.mark.parametrize(
-    "features_to_use,expected_features",
-    (
-        (None, {"regressor_target_0", "regressor_target_1"}),
-        (
-            "all",
-            {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
-                "regressor_target_0",
-                "regressor_target_1",
-            },
-        ),
-        (
-            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
-            {"regressor_target_lag_10", "regressor_day_number_in_week", "regressor_target_0", "regressor_target_1"},
-        ),
-    ),
-)
-def test_make_features(
-    example_tsds,
-    naive_featured_pipeline_1: Pipeline,
-    naive_featured_pipeline_2: Pipeline,
-    features_to_use: Union[None, Literal[all], List[str]],
-    expected_features: Set[str],
-):
-    ensemble = StackingEnsemble(
-        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
-    )
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
-        for pipeline in ensemble.pipelines
-    )
-    ensemble._validate_features_to_use(forecasts)
-    features_df = ensemble._make_features(forecasts)
     features = set(features_df.columns.get_level_values("feature"))
     assert isinstance(features_df, pd.DataFrame)
     assert features == expected_features
@@ -212,13 +173,14 @@ def test_make_features(
         ),
     ),
 )
-def test_make_future(
+def test_make_features_train(
     example_tsds,
     naive_featured_pipeline_1: Pipeline,
     naive_featured_pipeline_2: Pipeline,
     features_to_use: Union[None, Literal[all], List[str]],
     expected_features: Set[str],
 ):
+    """Check that StackingEnsemble._make_features works correctly in case of making features for train."""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
@@ -227,7 +189,61 @@ def test_make_future(
         for pipeline in ensemble.pipelines
     )
     ensemble._validate_features_to_use(forecasts)
-    features_ts = ensemble._make_future(forecasts)
+    features_ts = ensemble._make_features(example_tsds, forecasts, train=True)
+    features = set(features_ts.columns.get_level_values("feature"))
+    targets_df = features_ts[:, :, "target"]
+    assert isinstance(features_ts, TSDataset)
+    assert features == expected_features
+    assert (
+        targets_df.values == example_tsds[targets_df.index.min() : targets_df.index.max(), :, "target"].values
+    ).all()
+
+
+@pytest.mark.parametrize(
+    "features_to_use,expected_features",
+    (
+        (None, {"regressor_target_0", "regressor_target_1", "target"}),
+        (
+            "all",
+            {
+                "regressor_target_lag_10",
+                "regressor_day_number_in_month",
+                "regressor_day_number_in_week",
+                "regressor_is_weekend",
+                "regressor_target_0",
+                "regressor_target_1",
+                "target",
+            },
+        ),
+        (
+            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
+            {
+                "regressor_target_lag_10",
+                "regressor_day_number_in_week",
+                "regressor_target_0",
+                "regressor_target_1",
+                "target",
+            },
+        ),
+    ),
+)
+def test_make_features_forecast(
+    example_tsds,
+    naive_featured_pipeline_1: Pipeline,
+    naive_featured_pipeline_2: Pipeline,
+    features_to_use: Union[None, Literal[all], List[str]],
+    expected_features: Set[str],
+):
+    """Check that StackingEnsemble._make_features works correctly in case of making features for forecast."""
+    ensemble = StackingEnsemble(
+        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
+    )
+    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
+        for pipeline in ensemble.pipelines
+    )
+    ensemble._validate_features_to_use(forecasts)
+    features_ts = ensemble._make_features(example_tsds, forecasts, train=False)
     features = set(features_ts.columns.get_level_values("feature"))
     targets_df = features_ts[:, :, "target"]
     assert isinstance(features_ts, TSDataset)
@@ -263,6 +279,7 @@ def test_forecast_interface(
     features_to_use: Union[None, Literal[all], List[str]],
     expected_features: Set[str],
 ):
+    """Check that StackingEnsemble.forecast returns TSDataset of correct length, containing all the expected columns"""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
@@ -272,15 +289,6 @@ def test_forecast_interface(
     assert isinstance(forecast, TSDataset)
     assert len(forecast.df) == HORIZON
     assert features == expected_features
-
-
-def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
-    """Check that StackingEnsemble.forecast returns TSDataset of correct length."""
-    ensemble = StackingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline])
-    ensemble.fit(ts=example_tsds)
-    forecast = ensemble.forecast()
-    assert isinstance(forecast, TSDataset)
-    assert len(forecast.df) == HORIZON
 
 
 @pytest.mark.long

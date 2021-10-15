@@ -80,62 +80,9 @@ class StackingEnsemble(Pipeline):
             raise ValueError("At least two folds for backtest are expected.")
         return cv
 
-    @staticmethod
-    def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
-        """Fit given pipeline with ts."""
-        tslogger.log(msg=f"Start fitting {pipeline.__repr__()}.")
-        pipeline.fit(ts=ts)
-        tslogger.log(msg=f"Pipeline {pipeline.__repr__()} is fitted.")
-        return pipeline
-
-    def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
-        """Get forecasts from backtest for given pipeline."""
-        _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.cv)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
-        return forecasts
-
-    def fit(self, ts: TSDataset) -> "StackingEnsemble":
-        """Fit pipelines in ensemble.
-
-        Parameters
-        ----------
-        ts:
-            TSDataset to fit ensemble.
-
-        Returns
-        -------
-        StackingEnsemble:
-            Fitted ensemble.
-        """
-        forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
-            delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
-        )
-        self._validate_features_to_use(forecasts)
-
-        features_df = self._make_features(forecasts)
-        ind = pd.date_range(start=features_df.index.max(), periods=2, closed="right")
-        new_index = features_df.index.append(ind)
-        features_df = features_df.reindex(new_index)
-        features_df.index.name = "timestamp"
-        features_df.loc[ind, pd.IndexSlice[:, :]] = features_df.loc[ts.index.max(), pd.IndexSlice[:, :]].values
-
-        targets_df = ts[features_df.index.min() : ts.index.max(), :, "target"]
-
-        features = TSDataset(
-            df=targets_df,
-            freq=ts.freq,
-            df_exog=features_df,
-        )
-        self.final_model.fit(features)
-
-        self.pipelines = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
-            delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
-        )
-        return self
-
     def _validate_features_to_use(self, forecasts: List[TSDataset]):
-        """Check that features from 'features_to_use' are in the dataset."""
-        features_df = pd.concat([forecast.df for forecast in forecasts])
+        """Check that features from 'features_to_use' are available."""
+        features_df = pd.concat([forecast.df for forecast in forecasts], axis=1)
         available_features = set(features_df.columns.get_level_values("feature")) - {"fold_number"}
         if isinstance(self.features_to_use, list):
             self.features_to_use = set(self.features_to_use)
@@ -143,7 +90,7 @@ class StackingEnsemble(Pipeline):
                 self.features_to_use = None
             else:
                 if not self.features_to_use.issubset(available_features):
-                    unavailable_features = available_features - self.features_to_use
+                    unavailable_features = self.features_to_use - available_features
                     warnings.warn(f"Features {unavailable_features} are not found and will be dropped")
                     self.features_to_use = self.features_to_use.intersection(available_features)
         elif self.features_to_use == "all":
@@ -158,16 +105,51 @@ class StackingEnsemble(Pipeline):
             self.features_to_use = None
 
     @staticmethod
-    def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
-        """Make forecast with given pipeline."""
-        tslogger.log(msg=f"Start forecasting with {pipeline.__repr__()}.")
-        forecast = pipeline.forecast()
-        tslogger.log(msg=f"Forecast is done with {pipeline.__repr__()}.")
-        return forecast
+    def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
+        """Fit given pipeline with ts."""
+        tslogger.log(msg=f"Start fitting {pipeline.__repr__()}.")
+        pipeline.fit(ts=ts)
+        tslogger.log(msg=f"Pipeline {pipeline.__repr__()} is fitted.")
+        return pipeline
+
+    def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
+        """Get forecasts from backtest for given pipeline."""
+        _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.cv)
+        forecasts = TSDataset(df=forecasts, freq=ts.freq)
+        return forecasts
+
+    def _fit_final_model(self, ts: TSDataset):
+        """Fit the 'final_model' on the forecasts of the base models."""
+        forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+            delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+        )
+        self._validate_features_to_use(forecasts)
+
+        features = self._make_features(ts=ts, forecasts=forecasts, train=True)
+        self.final_model.fit(features)
+
+    def fit(self, ts: TSDataset) -> "StackingEnsemble":
+        """Fit pipelines in ensemble.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to fit ensemble.
+
+        Returns
+        -------
+        StackingEnsemble:
+            Fitted ensemble.
+        """
+        self._fit_final_model(ts)
+        self.pipelines = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+            delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+        )
+        return self
 
     @staticmethod
     def _stack_targets(forecasts: List[TSDataset]) -> pd.DataFrame:
-        """Stack targets from forecasts."""
+        """Stack targets from the forecasts."""
         targets = [
             forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
             for i, forecast in enumerate(forecasts)
@@ -177,35 +159,51 @@ class StackingEnsemble(Pipeline):
 
     def _get_features(self, forecasts: List[TSDataset]) -> pd.DataFrame:
         """Get features from the forecasts."""
-        features_to_add = self.features_to_use.copy()
-        new_features = features_to_add.intersection(set(forecasts[0].df.columns.get_level_values("feature")))
-        features = forecasts[0][:, :, new_features]
-        features_to_add -= new_features
-        if len(features_to_add) != 0:
-            for forecast in forecasts[1:]:
-                new_features = features_to_add.intersection(set(forecast.columns.get_level_values("feature")))
-                if len(new_features) != 0:
-                    features = pd.concat([features, forecast[:, :, new_features]], axis=1)
-                    features_to_add -= new_features
-                    if len(features_to_add) == 0:
-                        break
-        return features
+        features_df = None
+        features_left = self.features_to_use.copy()
+        for forecast in forecasts:
+            features_in_forecast = set(forecast.columns.get_level_values("feature"))
+            features_new = features_left.intersection(features_in_forecast)
+            if len(features_new) != 0:
+                if features_df is None:
+                    features_df = forecast[:, :, features_new]
+                else:
+                    features_df = pd.concat([features_df, forecast[:, :, features_new]], axis=1)
+                features_left -= features_new
+                if len(features_left) == 0:
+                    break
+        return features_df
 
-    def _make_features(self, forecasts: List[TSDataset]) -> pd.DataFrame:
+    def _make_features(self, ts: TSDataset, forecasts: List[TSDataset], train: bool = False) -> TSDataset:
         """Prepare features for the 'final_model'."""
         features_df = self._stack_targets(forecasts=forecasts)
         if self.features_to_use is not None:
             features = self._get_features(forecasts=forecasts)
             features_df = pd.concat([features_df, features], axis=1)
-        return features_df
 
-    def _make_future(self, forecasts: List[TSDataset]) -> TSDataset:
-        """Prepare future for the 'final_model' forecast."""
-        target_df = forecasts[0][:, :, "target"]
-        target_df.loc[:] = np.NAN
-        features_df = self._make_features(forecasts=forecasts)
-        future = TSDataset(df=target_df, freq=forecasts[0].freq, df_exog=features_df)
-        return future
+        if train:
+            targets_df = ts[forecasts[0].index.min() : forecasts[0].index.max(), :, "target"]
+            ind = pd.date_range(start=forecasts[0].index.max(), periods=2, closed="right")
+            new_index = features_df.index.append(ind)
+            features_df = features_df.reindex(new_index)
+            features_df.index.name = "timestamp"
+            features_df.loc[ind, pd.IndexSlice[:, :]] = features_df.loc[
+                forecasts[0].index.max(), pd.IndexSlice[:, :]
+            ].values
+        else:
+            targets_df = forecasts[0][:, :, "target"]
+            targets_df.loc[:] = np.NAN
+
+        features_ts = TSDataset(df=targets_df, freq=forecasts[0].freq, df_exog=features_df)
+        return features_ts
+
+    @staticmethod
+    def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
+        """Make forecast with given pipeline."""
+        tslogger.log(msg=f"Start forecasting with {pipeline.__repr__()}.")
+        forecast = pipeline.forecast()
+        tslogger.log(msg=f"Forecast is done with {pipeline.__repr__()}.")
+        return forecast
 
     def forecast(self) -> TSDataset:
         """Forecast with ensemble: compute the combination of pipelines' forecasts using 'final_model'.
@@ -218,6 +216,6 @@ class StackingEnsemble(Pipeline):
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
         )
-        future = self._make_future(forecasts=forecasts)
+        future = self._make_features(ts=None, forecasts=forecasts, train=False)
         forecast = self.final_model.forecast(future)
         return forecast
