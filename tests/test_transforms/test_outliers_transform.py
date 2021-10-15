@@ -2,10 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets.tsdataset import TSDataset
+from etna.models import ProphetModel
+from etna.transforms import ConfidenceIntervalOutliersTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import SAXOutliersTransform
@@ -43,6 +46,7 @@ def outliers_solid_tsds():
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
+        ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ],
 )
 def test_interface(transform, example_tsds: TSDataset):
@@ -53,16 +57,21 @@ def test_interface(transform, example_tsds: TSDataset):
 
 
 @pytest.mark.parametrize(
-    "transform, method",
+    "transform, method, method_kwargs",
     [
-        (MedianOutliersTransform(in_column="target"), get_anomalies_median),
-        (DensityOutliersTransform(in_column="target"), get_anomalies_density),
-        (SAXOutliersTransform(in_column="target"), get_sequence_anomalies),
+        (MedianOutliersTransform(in_column="target"), get_anomalies_median, {}),
+        (DensityOutliersTransform(in_column="target"), get_anomalies_density, {}),
+        (SAXOutliersTransform(in_column="target"), get_sequence_anomalies, {}),
+        (
+            ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
+            get_anomalies_confidence_interval,
+            {"model": ProphetModel},
+        ),
     ],
 )
-def test_outliers_detection(transform, method, outliers_tsds):
+def test_outliers_detection(transform, method, outliers_tsds, method_kwargs):
     """Checks that outliers transforms detect anomalies according to methods from etna.analysis."""
-    detectiom_method_results = method(outliers_tsds)
+    detectiom_method_results = method(outliers_tsds, **method_kwargs)
 
     # save for each segment index without existing nans
     non_nan_index = {}
@@ -82,6 +91,7 @@ def test_outliers_detection(transform, method, outliers_tsds):
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
+        ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ],
 )
 def test_inverse_transform_train(transform, outliers_solid_tsds):
@@ -99,6 +109,7 @@ def test_inverse_transform_train(transform, outliers_solid_tsds):
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
+        ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ],
 )
 def test_inverse_transform_future(transform, outliers_solid_tsds):

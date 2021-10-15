@@ -4,14 +4,19 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets import TSDataset
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.transforms.base import Transform
 
 
@@ -265,4 +270,52 @@ class SAXOutliersTransform(OutliersTransform):
         )
 
 
-__all__ = ["MedianOutliersTransform", "DensityOutliersTransform"]
+class ConfidenceIntervalOutliersTransform(OutliersTransform):
+    """Transform that uses get_anomalies_density to find anomalies in data."""
+
+    def __init__(
+        self,
+        in_column: str,
+        model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
+        interval_width: float = 0.95,
+        **model_kwargs,
+    ):
+        """Create instance of ConfidenceIntervalOutliersTransform.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset with timeseries data(should contains all the necessary features)
+        model:
+            model for confidence interval estimation
+        interval_width:
+            width of the confidence interval
+        """
+        self.in_column = in_column
+        self.model = model
+        self.interval_width = interval_width
+        self.model_kwargs = model_kwargs
+        super().__init__(in_column=self.in_column)
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+        """Call `get_anomalies_confidence_interval` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            dataset to process
+
+        Returns
+        -------
+        dict of outliers:
+            dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_confidence_interval(ts, self.model, self.interval_width, **self.model_kwargs)
+
+
+__all__ = [
+    "MedianOutliersTransform",
+    "DensityOutliersTransform",
+    "SAXOutliersTransform",
+    "ConfidenceIntervalOutliersTransform",
+]
