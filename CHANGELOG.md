@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Examples for CatBoostModelMultiSegment and CatBoostModelPerSegment ([#181](https://github.com/tinkoff-ai/etna-ts/pull/181))
 - Simplify TSDataset.train_test_split method by allowing to pass not all values ([#191](https://github.com/tinkoff-ai/etna-ts/pull/191))
 - Confidence interval anomalies detection to EDA ([#182](https://github.com/tinkoff-ai/etna-ts/pull/182))
+- ConfidenceIntervalOutliersTransform ([#196](https://github.com/tinkoff-ai/etna-ts/pull/196))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
