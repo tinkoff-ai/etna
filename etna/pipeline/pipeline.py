@@ -16,7 +16,6 @@ from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
-from etna.metrics.utils import compute_metrics
 from etna.models.base import Model
 from etna.transforms.base import Transform
 
@@ -150,6 +149,14 @@ class Pipeline(BaseMixin):
 
             yield train, test
 
+    @staticmethod
+    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, float]:
+        """Compute metrics for given y_true, y_pred."""
+        metrics_values = {}
+        for metric in metrics:
+            metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)
+        return metrics_values
+
     def _run_fold(
         self,
         train: TSDataset,
@@ -170,7 +177,7 @@ class Pipeline(BaseMixin):
             fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
             fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
         fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
         tslogger.finish_experiment()
