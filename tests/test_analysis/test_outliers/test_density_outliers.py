@@ -47,3 +47,11 @@ def test_get_anomalies_density(outliers_tsds: TSDataset):
     for key in expected:
         assert key in outliers
         np.testing.assert_array_equal(outliers[key], expected[key])
+
+
+def test_in_column(outliers_df_with_two_columns):
+    outliers = get_anomalies_density(ts=outliers_df_with_two_columns, in_column="feature", window_size=10)
+    expected = {"1": [np.datetime64("2021-01-08")], "2": [np.datetime64("2021-01-26")]}
+    for key in expected:
+        assert key in outliers
+        np.testing.assert_array_equal(outliers[key], expected[key])

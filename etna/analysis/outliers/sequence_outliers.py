@@ -46,11 +46,11 @@ def get_segment_sequence_anomalies(
 
 def get_sequence_anomalies(
     ts: "TSDataset",
+    in_column: str = "target",
     num_anomalies: int = 1,
     anomaly_lenght: int = 15,
     alphabet_size: int = 3,
     word_lenght: int = 3,
-    in_column: str = "target",
 ) -> Dict[str, List[pd.Timestamp]]:
     """
     Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
@@ -61,6 +61,8 @@ def get_sequence_anomalies(
     ----------
     ts:
         TSDataset with timeseries data
+    in_column:
+        name of the column in which the anomaly is searching
     num_anomalies:
         number of outliers to be found
     anomaly_lenght:
@@ -69,8 +71,6 @@ def get_sequence_anomalies(
         the number of letters with which the subsequence will be encrypted
     word_lenght:
         the number of segments into which the subsequence will be divided by the paa algorithm
-    in_column:
-        name of the column in which the anomaly is searching
 
     Returns
     -------
