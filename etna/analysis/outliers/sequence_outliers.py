@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def get_segment_sequence_anomalies(
-    series: np.ndarray, num_anomalies: int = 1, anomaly_length: int = 15, alphabet_size: int = 3, word_length: int = 3
+    series: np.ndarray, num_anomalies: int = 1, anomaly_lenght: int = 15, alphabet_size: int = 3, word_lenght: int = 3
 ) -> List[Tuple[int, int]]:
     """
     Get indices of start and end of sequence outliers for one segment using SAX HOT algorithm.
@@ -24,11 +24,11 @@ def get_segment_sequence_anomalies(
         array to find outliers in
     num_anomalies:
         number of outliers to be found
-    anomaly_length:
-        target length of outliers
+    anomaly_lenght:
+        target lenght of outliers
     alphabet_size:
         the number of letters with which the subsequence will be encrypted
-    word_length:
+    word_lenght:
         the number of segments into which the subsequence will be divided by the paa algorithm
 
     Returns
@@ -36,10 +36,10 @@ def get_segment_sequence_anomalies(
     list of tuples with start and end of outliers.
     """
     start_points = find_discords_hotsax(
-        series=series, win_size=anomaly_length, num_discords=num_anomalies, a_size=alphabet_size, paa_size=word_length
+        series=series, win_size=anomaly_lenght, num_discords=num_anomalies, a_size=alphabet_size, paa_size=word_lenght
     )
 
-    result = [(pt[0], pt[0] + anomaly_length) for pt in start_points]
+    result = [(pt[0], pt[0] + anomaly_lenght) for pt in start_points]
 
     return result
 
@@ -48,9 +48,9 @@ def get_sequence_anomalies(
     ts: "TSDataset",
     in_column: str = "target",
     num_anomalies: int = 1,
-    anomaly_length: int = 15,
+    anomaly_lenght: int = 15,
     alphabet_size: int = 3,
-    word_length: int = 3,
+    word_lenght: int = 3,
 ) -> Dict[str, List[pd.Timestamp]]:
     """
     Find the start and end of the sequence outliers for each segment using the SAX HOT algorithm.
@@ -65,11 +65,11 @@ def get_sequence_anomalies(
         name of the column in which the anomaly is searching
     num_anomalies:
         number of outliers to be found
-    anomaly_length:
-        target length of outliers
+    anomaly_lenght:
+        target lenght of outliers
     alphabet_size:
         the number of letters with which the subsequence will be encrypted
-    word_length:
+    word_lenght:
         the number of segments into which the subsequence will be divided by the paa algorithm
 
     Returns
@@ -92,9 +92,9 @@ def get_sequence_anomalies(
         outliers_idxs = get_segment_sequence_anomalies(
             series=segment_df[in_column].values,
             num_anomalies=num_anomalies,
-            anomaly_length=anomaly_length,
+            anomaly_lenght=anomaly_lenght,
             alphabet_size=alphabet_size,
-            word_length=word_length,
+            word_lenght=word_lenght,
         )
 
         timestamps = segment_df["timestamp"].values

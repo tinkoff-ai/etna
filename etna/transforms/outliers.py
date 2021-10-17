@@ -268,9 +268,9 @@ class SAXOutliersTransform(OutliersTransform):
             ts=ts,
             in_column=self.in_column,
             num_anomalies=self.num_anomalies,
-            anomaly_length=self.anomaly_length,
+            anomaly_lenght=self.anomaly_length,
             alphabet_size=self.alphabet_size,
-            word_length=self.word_length,
+            word_lenght=self.word_length,
         )
 
 
