@@ -284,6 +284,7 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
         **model_kwargs,
     ):
         """Create instance of ConfidenceIntervalOutliersTransform.
+        Works only with target column.
 
         Parameters
         ----------

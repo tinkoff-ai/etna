@@ -23,6 +23,7 @@ def get_anomalies_confidence_interval(
     """
     Get point outliers in time series using confidence intervals (estimation model-based method).
     Outliers are all points out of the confidence interval predicted with the model.
+    Works only with target column.
 
     Parameters
     ----------
