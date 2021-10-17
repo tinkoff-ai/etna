@@ -57,16 +57,13 @@ def test_sequence_anomalies(outliers_tsds: TSDataset):
 
 def test_in_column(outliers_df_with_two_columns):
     outliers = get_sequence_anomalies(
-        ts=outliers_df_with_two_columns,
-        num_anomalies=1,
-        anomaly_lenght=4,
-        in_column="feature"
+        ts=outliers_df_with_two_columns, num_anomalies=1, anomaly_lenght=4, in_column="feature"
     )
     delta = pd.to_timedelta(outliers_df_with_two_columns.index.freq)
 
     expected = {
         "1": np.arange(np.datetime64("2021-01-06"), np.datetime64("2021-01-10"), delta),
-        "2": np.arange(np.datetime64("2021-01-25"), np.datetime64("2021-01-29"), delta)
+        "2": np.arange(np.datetime64("2021-01-25"), np.datetime64("2021-01-29"), delta),
     }
 
     for key in expected:
