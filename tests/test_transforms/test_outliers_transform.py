@@ -46,7 +46,7 @@ def outliers_solid_tsds():
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
-        ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
+        ConfidenceIntervalOutliersTransform(model=ProphetModel),
     ],
 )
 def test_interface(transform, example_tsds: TSDataset):
@@ -63,7 +63,7 @@ def test_interface(transform, example_tsds: TSDataset):
         (DensityOutliersTransform(in_column="target"), get_anomalies_density, {}),
         (SAXOutliersTransform(in_column="target"), get_sequence_anomalies, {}),
         (
-            ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
+            ConfidenceIntervalOutliersTransform(model=ProphetModel),
             get_anomalies_confidence_interval,
             {"model": ProphetModel},
         ),
