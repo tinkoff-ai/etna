@@ -2,6 +2,7 @@ from typing import List
 from typing import Tuple
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.analysis.outliers.sequence_outliers import get_segment_sequence_anomalies
