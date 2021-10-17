@@ -20,7 +20,7 @@ from etna.analysis.outliers import get_anomalies_median
     ),
 )
 def test_median_outliers(window_size, alpha, right_anomal, outliers_tsds):
-    assert get_anomalies_median(outliers_tsds, window_size, alpha) == right_anomal
+    assert get_anomalies_median(ts=outliers_tsds, window_size=window_size, alpha=alpha) == right_anomal
 
 
 @pytest.mark.parametrize("true_params", (["1", "2"],))

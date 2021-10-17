@@ -270,6 +270,7 @@ def outliers_df_with_two_columns() -> TSDataset:
 
     return tsds
 
+
 @pytest.fixture
 def multitrend_df() -> pd.DataFrame:
     """Generate one segment pd.DataFrame with multiple linear trend."""
