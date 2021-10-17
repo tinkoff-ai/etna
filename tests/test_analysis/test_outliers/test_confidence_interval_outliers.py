@@ -8,7 +8,7 @@ from etna.models import SARIMAXModel
 
 @pytest.mark.parametrize("model", (ProphetModel, SARIMAXModel))
 def test_interface(outliers_tsds, model):
-    anomalies = get_anomalies_confidence_interval(outliers_tsds, model=model, interval_width=0.95)
+    anomalies = get_anomalies_confidence_interval(ts=outliers_tsds, model=model, interval_width=0.95)
     assert isinstance(anomalies, dict)
     assert sorted(list(anomalies.keys())) == sorted(outliers_tsds.segments)
     for segment in anomalies.keys():
@@ -29,4 +29,8 @@ def test_interface(outliers_tsds, model):
     ),
 )
 def test_confidence_interval_outliers(outliers_tsds, model, interval_width, true_anomalies):
-    assert get_anomalies_confidence_interval(outliers_tsds, model, interval_width) == true_anomalies
+    assert get_anomalies_confidence_interval(
+        ts=outliers_tsds,
+        model=model,
+        interval_width=interval_width
+    ) == true_anomalies

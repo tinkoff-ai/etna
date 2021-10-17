@@ -109,7 +109,7 @@ def test_inverse_transform_train(transform, outliers_solid_tsds):
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
-        ConfidenceIntervalOutliersTransform(in_column="target", model=ProphetModel),
+        ConfidenceIntervalOutliersTransform(model=ProphetModel),
     ],
 )
 def test_inverse_transform_future(transform, outliers_solid_tsds):
