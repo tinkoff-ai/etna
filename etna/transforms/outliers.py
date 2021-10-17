@@ -110,7 +110,6 @@ class OutliersTransform(Transform, ABC):
         for segment in self.original_values.keys():
             segment_ts = result[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
-
         return result
 
     @abstractmethod
@@ -216,7 +215,7 @@ class DensityOutliersTransform(OutliersTransform):
             window_size=self.window_size,
             distance_coef=self.distance_coef,
             n_neighbors=self.n_neighbors,
-            distance_func=self.distance_func
+            distance_func=self.distance_func,
         )
 
 
@@ -271,7 +270,7 @@ class SAXOutliersTransform(OutliersTransform):
             num_anomalies=self.num_anomalies,
             anomaly_length=self.anomaly_length,
             alphabet_size=self.alphabet_size,
-            word_length=self.word_length
+            word_length=self.word_length,
         )
 
 
@@ -315,11 +314,7 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_confidence_interval(
-            ts=ts,
-            in_column=self.in_column,
-            model=self.model,
-            interval_width=self.interval_width,
-            **self.model_kwargs
+            ts=ts, in_column=self.in_column, model=self.model, interval_width=self.interval_width, **self.model_kwargs
         )
 
 
