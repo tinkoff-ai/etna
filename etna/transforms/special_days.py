@@ -37,7 +37,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
             flag, if True, find special monthdays in transform
 
         Raises
-        ----------
+        ------
         ValueError:
             if all the modes are False
         """
@@ -179,7 +179,7 @@ class SpecialDaysTransform(PerSegmentWrapper):
             flag, if True, find special monthdays in transform
 
         Raises
-        ----------
+        ------
         ValueError:
             if all the modes are False
         """

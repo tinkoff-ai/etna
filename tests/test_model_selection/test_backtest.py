@@ -173,16 +173,7 @@ def _fit_backtest_pipeline(
 
 @pytest.mark.parametrize(
     "aggregate_metrics,expected_columns",
-    (
-        (
-            False,
-            ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
-        ),
-        (
-            True,
-            ["MAE", "MSE", "segment", "SMAPE"],
-        ),
-    ),
+    ((False, ["fold_number", "MAE", "MSE", "segment", "SMAPE"]), (True, ["MAE", "MSE", "segment", "SMAPE"])),
 )
 def test_get_metrics_interface(aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_metrics with aggregate_metrics=False mode"""

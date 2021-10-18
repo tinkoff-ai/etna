@@ -26,9 +26,9 @@ def get_anomalies_median(
     alpha:
         coefficient for determining the threshold
 
-    Returns
-    -------
-    dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
+    Return
+    ------
+    :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
     outliers_per_segment = {}

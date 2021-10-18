@@ -333,7 +333,7 @@ def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
-    -----------
+    ----------
     ts:
         TSDataset with timeseries data
     segments:
@@ -362,7 +362,7 @@ def plot_correlation_matrix(
     """Plot pairwise correlation heatmap for selected segments.
 
     Parameters
-    -----------
+    ----------
     ts:
         TSDataset with timeseries data
     segments:
@@ -488,10 +488,7 @@ def plot_clusters(
         for segment in segments:
             segment_slice = ts[:, segment, "target"]
             axs[h][w].plot(
-                segment_slice.index.values,
-                segment_slice.values,
-                alpha=1 / math.sqrt(len(segments)),
-                c="blue",
+                segment_slice.index.values, segment_slice.values, alpha=1 / math.sqrt(len(segments)), c="blue"
             )
         axs[h][w].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
         if centroids_df is not None:
