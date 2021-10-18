@@ -23,7 +23,6 @@ def get_anomalies_confidence_interval(
     """
     Get point outliers in time series using confidence intervals (estimation model-based method).
     Outliers are all points out of the confidence interval predicted with the model.
-    Works only with target column.
 
     Parameters
     ----------
@@ -38,6 +37,10 @@ def get_anomalies_confidence_interval(
     -------
     dict of outliers: Dict[str, List[pd.Timestamp]]
         Dict of outliers in format {segment: [outliers_timestamps]}.
+
+    Notes
+    -----
+    Works only with target column.
     """
     outliers_per_segment = {}
     time_points = np.array(ts.index.values)

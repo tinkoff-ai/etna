@@ -284,7 +284,6 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
         **model_kwargs,
     ):
         """Create instance of ConfidenceIntervalOutliersTransform.
-        Works only with target column.
 
         Parameters
         ----------
@@ -292,6 +291,10 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
             model for confidence interval estimation
         interval_width:
             width of the confidence interval
+
+        Notes
+        -----
+        Works only with target column.
         """
         self.model = model
         self.interval_width = interval_width
