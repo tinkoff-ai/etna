@@ -353,7 +353,10 @@ def plot_clusters(
         for segment in segments:
             segment_slice = ts[:, segment, "target"]
             axs[h][w].plot(
-                segment_slice.index.values, segment_slice.values, alpha=1 / math.sqrt(len(segments)), c="blue"
+                segment_slice.index.values,
+                segment_slice.values,
+                alpha=1 / math.sqrt(len(segments)),
+                c="blue",
             )
         axs[h][w].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
         if centroids_df is not None:
