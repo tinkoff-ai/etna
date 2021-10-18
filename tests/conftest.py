@@ -241,6 +241,37 @@ def outliers_tsds():
 
 
 @pytest.fixture
+def outliers_df_with_two_columns() -> TSDataset:
+    timestamp1 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-10"))
+    target1 = [np.sin(i) for i in range(len(timestamp1))]
+    feature1 = [np.cos(i) for i in range(len(timestamp1))]
+    target1[10] += 10
+    feature1[7] += 10
+
+    timestamp2 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-10"))
+    target2 = [np.sin(i) for i in range(len(timestamp2))]
+    feature2 = [np.cos(i) for i in range(len(timestamp2))]
+    target2[8] += 8
+    target2[15] = 2
+    target2[26] -= 12
+    feature2[25] += 10
+
+    df1 = pd.DataFrame({"timestamp": timestamp1, "target": target1, "feature": feature1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp2, "target": target2, "feature": feature2, "segment": "2"})
+
+    df = pd.concat([df1, df2], ignore_index=True)
+
+    df = df.pivot(index="timestamp", columns="segment")
+    df = df.reorder_levels([1, 0], axis=1)
+    df = df.sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+
+    tsds = TSDataset(df, "1d")
+
+    return tsds
+
+
+@pytest.fixture
 def multitrend_df() -> pd.DataFrame:
     """Generate one segment pd.DataFrame with multiple linear trend."""
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-05-31")})
