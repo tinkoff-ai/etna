@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from enum import Enum
 from typing import Any
@@ -304,3 +305,11 @@ class TimeSeriesCrossValidation(BaseMixin):
         tslogger.finish_experiment()
 
         return metrics_df, forecast_df, fold_info_df
+
+
+warnings.warn(
+    "TimeSeriesCrossValidation is deprecated in etna==1.2.0, will be deleted in etna==1.4.0. "
+    "Use Pipeline.backtest method instead.",
+    DeprecationWarning,
+    stacklevel=3,
+)

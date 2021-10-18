@@ -89,6 +89,7 @@ We have also prepared a set of tutorials for an easy introduction:
 - Point outliers
     - Median method
     - Density method
+    - Confidence interval method
 - Sequence outliers
 - Interactive visualization
 - Outliers imputation
@@ -96,6 +97,14 @@ We have also prepared a set of tutorials for an easy introduction:
 - Clustering pipeline
 - Custom Distance
 - Visualisation
+
+#### 04. [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
+- Creating TSDataset  
+- Architecture
+- Testing models
+  - DeepAR 
+  - TFT
+  - Simple Model
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).

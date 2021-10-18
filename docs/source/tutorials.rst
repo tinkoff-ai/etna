@@ -12,3 +12,4 @@ Tutorials
    tutorials/backtest
    tutorials/outliers
    tutorials/clustering
+   tutorials/custom_transform_and_model

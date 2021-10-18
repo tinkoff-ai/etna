@@ -9,6 +9,7 @@ from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform
+from etna.transforms.outliers import ConfidenceIntervalOutliersTransform
 from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import SAXOutliersTransform
@@ -27,4 +28,5 @@ from etna.transforms.statistics import MedianTransform
 from etna.transforms.statistics import MinTransform
 from etna.transforms.statistics import QuantileTransform
 from etna.transforms.statistics import StdTransform
+from etna.transforms.stl import STLTransform
 from etna.transforms.trend import TrendTransform

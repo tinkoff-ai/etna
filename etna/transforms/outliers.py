@@ -4,14 +4,19 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets import TSDataset
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.transforms.base import Transform
 
 
@@ -29,6 +34,23 @@ class OutliersTransform(Transform, ABC):
         """
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
+
+    def _save_original_values(self, ts: TSDataset):
+        """
+        Save values to be replaced with NaNs.
+
+        Parameters
+        ----------
+        ts:
+            original TSDataset
+        """
+        self.original_values = dict()
+
+        for segment, timestamps in self.outliers_timestamps.items():
+            segment_ts = ts[:, segment, :]
+            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
+            self.original_values[segment] = segment_values
 
     def fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -41,11 +63,13 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: _OneSegmentTimeSeriesImputerTransform
+        result: OutliersTransform
             instance with saved outliers
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
+        self._save_original_values(ts)
+
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -66,6 +90,28 @@ class OutliersTransform(Transform, ABC):
         for segment in df.columns.get_level_values("segment").unique():
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Inverse transformation. Returns back deleted values.
+
+        Parameters
+        ----------
+        df:
+            data to transform
+
+        Returns
+        -------
+        result: pd.DataFrame
+            data with reconstructed values
+        """
+        result = df.copy()
+
+        for segment in self.original_values.keys():
+            segment_ts = result[segment, self.in_column]
+            segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
+
+        return result
 
     @abstractmethod
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
@@ -224,4 +270,52 @@ class SAXOutliersTransform(OutliersTransform):
         )
 
 
-__all__ = ["MedianOutliersTransform", "DensityOutliersTransform"]
+class ConfidenceIntervalOutliersTransform(OutliersTransform):
+    """Transform that uses get_anomalies_density to find anomalies in data."""
+
+    def __init__(
+        self,
+        in_column: str,
+        model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
+        interval_width: float = 0.95,
+        **model_kwargs,
+    ):
+        """Create instance of ConfidenceIntervalOutliersTransform.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset with timeseries data(should contains all the necessary features)
+        model:
+            model for confidence interval estimation
+        interval_width:
+            width of the confidence interval
+        """
+        self.in_column = in_column
+        self.model = model
+        self.interval_width = interval_width
+        self.model_kwargs = model_kwargs
+        super().__init__(in_column=self.in_column)
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+        """Call `get_anomalies_confidence_interval` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            dataset to process
+
+        Returns
+        -------
+        dict of outliers:
+            dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_confidence_interval(ts, self.model, self.interval_width, **self.model_kwargs)
+
+
+__all__ = [
+    "MedianOutliersTransform",
+    "DensityOutliersTransform",
+    "SAXOutliersTransform",
+    "ConfidenceIntervalOutliersTransform",
+]

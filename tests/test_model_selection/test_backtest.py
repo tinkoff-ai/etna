@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import List
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -22,81 +21,6 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms.base import Transform
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
-
-
-@pytest.fixture
-def imbalanced_tsdf(random_seed) -> TSDataset:
-    """Generate two series with big time range difference"""
-    df1 = pd.DataFrame({"timestamp": pd.date_range("2021-01-25", "2021-02-01", freq="D")})
-    df1["segment"] = "segment_1"
-    df1["target"] = np.random.uniform(0, 5, len(df1))
-
-    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-02-01", freq="D")})
-    df2["segment"] = "segment_2"
-    df2["target"] = np.random.uniform(0, 5, len(df2))
-
-    df = df1.append(df2)
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="1D")
-    return df
-
-
-@pytest.fixture()
-def big_daily_example_tsdf(random_seed) -> TSDataset:
-    df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2019-01-01", end="2020-04-01", freq="D")
-    df1["segment"] = "segment_1"
-    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
-
-    df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2019-06-01", end="2020-04-01", freq="D")
-    df2["segment"] = "segment_2"
-    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
-
-    df = pd.concat([df1, df2], ignore_index=True)
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="1D")
-    return df
-
-
-@pytest.fixture()
-def example_tsdf(random_seed) -> TSDataset:
-    df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
-    df1["segment"] = "segment_1"
-    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
-
-    df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
-    df2["segment"] = "segment_2"
-    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
-
-    df = pd.concat([df1, df2], ignore_index=True)
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="1H")
-    return df
-
-
-@pytest.fixture()
-def big_example_tsdf(random_seed) -> TSDataset:
-    df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
-    df1["segment"] = "segment_1"
-    df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
-
-    df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
-    df2["segment"] = "segment_2"
-    df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
-
-    df = pd.concat([df1, df2], ignore_index=True)
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="1D")
-    return df
 
 
 def test_repr():
@@ -237,14 +161,28 @@ def _fit_backtest_pipeline(
     model: Model, horizon: int, ts: TSDataset, transforms: Optional[List[Transform]] = [], n_jobs: int = 1
 ) -> TimeSeriesCrossValidation:
     """Init pipeline and run backtest"""
-    tsvc = TimeSeriesCrossValidation(model=model, horizon=horizon, metrics=[MAE(), MSE(), SMAPE()], n_jobs=n_jobs)
+    tsvc = TimeSeriesCrossValidation(
+        model=model,
+        horizon=horizon,
+        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")],
+        n_jobs=n_jobs,
+    )
     tsvc.backtest(ts=ts, transforms=transforms)
     return tsvc
 
 
 @pytest.mark.parametrize(
     "aggregate_metrics,expected_columns",
-    ((False, ["fold_number", "MAE", "MSE", "segment", "SMAPE"]), (True, ["MAE", "MSE", "segment", "SMAPE"])),
+    (
+        (
+            False,
+            ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
+        ),
+        (
+            True,
+            ["MAE", "MSE", "segment", "SMAPE"],
+        ),
+    ),
 )
 def test_get_metrics_interface(aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_metrics with aggregate_metrics=False mode"""
