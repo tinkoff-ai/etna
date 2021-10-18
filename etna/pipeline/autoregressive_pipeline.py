@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from typing import Iterable
 
@@ -5,14 +6,50 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.models.base import Model
-from etna.transforms.base import Transform
-from etna.pipeline import Pipeline
+from etna.pipeline.pipeline import Pipeline
+from etna.transforms import Transform
 
 
 class AutoRegressivePipeline(Pipeline):
     """Pipeline that make regressive models autoregressive.
 
-    TODO: Add example
+    Examples
+    --------
+    >>> from etna.datasets import generate_periodic_df
+    >>> from etna.datasets import TSDataset
+    >>> from etna.models import LinearPerSegmentModel
+    >>> from etna.transforms import LagTransform
+    >>> classic_df = generate_periodic_df(
+    ...     periods=100,
+    ...     start_time="2020-01-01",
+    ...     n_segments=4,
+    ...     period=7,
+    ...     sigma=3
+    ... )
+    >>> df = TSDataset.to_dataset(df=classic_df)
+    >>> ts = TSDataset(df, freq="D")
+    >>> horizon = 7
+    >>> transforms = [
+    ...     LagTransform(in_column="target", lags=list(range(1, horizon+1)))
+    ... ]
+    >>> model = LinearPerSegmentModel()
+    >>> pipeline = AutoRegressivePipeline(model, horizon, transforms, step=1)
+    >>> pipeline.fit(ts=ts)
+    AutoRegressivePipeline(model = LinearPerSegmentModel(fit_intercept = True, normalize = False, ),
+    horizon = 7, transforms = [LagTransform(lags = [1, 2, 3, 4, 5, 6, 7], in_column = 'target', )],
+    step = 1, )
+    >>> forecast = pipeline.forecast()
+    >>> forecast[:, :, "target"]
+    segment    segment_0 segment_1 segment_2 segment_3
+    feature       target    target    target    target
+    timestamp
+    2020-04-10      9.00      9.00      4.00      6.00
+    2020-04-11      5.00      2.00      7.00      9.00
+    2020-04-12      0.00      4.00      7.00      9.00
+    2020-04-13      0.00      5.00      9.00      7.00
+    2020-04-14      1.00      2.00      1.00      6.00
+    2020-04-15      5.00      7.00      4.00      7.00
+    2020-04-16      8.00      6.00      2.00      0.00
     """
 
     def __init__(self, model: Model, horizon: int, transforms: Iterable[Transform] = (), step: int = 1):
@@ -34,7 +71,8 @@ class AutoRegressivePipeline(Pipeline):
         self.horizon = horizon
         self.transforms = transforms
         self.step = step
-        self.step_pipeline = Pipeline(model, transforms, step)
+        self.transforms = transforms
+        self.model = model
 
     def fit(self, ts: TSDataset) -> Pipeline:
         """Fit the Pipeline.
@@ -50,15 +88,10 @@ class AutoRegressivePipeline(Pipeline):
         Pipeline:
             Fitted Pipeline instance
         """
-        self.step_pipeline.fit(ts)
+        self.ts = deepcopy(ts)
+        ts.fit_transform(self.transforms)
+        self.model.fit(ts)
         return self
-
-    @staticmethod
-    def _update_pipeline_ts(pipeline: Pipeline, ts: TSDataset) -> None:
-        """Append df to self.step_pipeline.ts."""
-        pipeline.ts.df = pd.concat([
-            pipeline.ts.df, ts.df
-        ])
 
     def forecast(self) -> TSDataset:
         """Make predictions.
@@ -68,16 +101,29 @@ class AutoRegressivePipeline(Pipeline):
         TSDataset
             TSDataset with forecast
         """
-        step_forecast_pipeline = deepcopy(self.step_pipeline)
+        prediction_df = self.ts.to_pandas()
         to_forecast = self.horizon
-        predictions_steps = []
-        freq = None
-        while to_forecast >= self.step:
+        while to_forecast > 0:
             cur_step = min(self.step, to_forecast)
-            predictions_step = step_forecast_pipeline.forecast()
-            self._update_pipeline_ts(step_forecast_pipeline, predictions_step)
-            predictions_steps.append(predictions_step.df.iloc[:cur_step])
-            freq = predictions_step.freq
-        predictions_df = pd.concat(predictions_steps)
-        predictions_ts = TSDataset(predictions_df, freq=freq)
-        return predictions_ts
+            cur_ts = TSDataset(prediction_df, freq=self.ts.freq)
+            # manually set transforms in cur_ts, otherwise make_future won't know about them
+            cur_ts.transforms = self.transforms
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    message="TSDataset freq can't be inferred",
+                    action="ignore",
+                )
+                warnings.filterwarnings(
+                    message="You probably set wrong freq.",
+                    action="ignore",
+                )
+                cur_ts_forecast = cur_ts.make_future(cur_step)
+            cur_ts_future = self.model.forecast(cur_ts_forecast)
+            prediction_df = pd.concat([prediction_df, cur_ts_future.to_pandas()[prediction_df.columns]])
+            to_forecast -= cur_step
+
+        prediction_ts = TSDataset(prediction_df.tail(self.horizon), freq=self.ts.freq)
+        # add all other features to forecast by making transform + inverse_transform
+        prediction_ts.transform(self.transforms)
+        prediction_ts.inverse_transform()
+        return prediction_ts
