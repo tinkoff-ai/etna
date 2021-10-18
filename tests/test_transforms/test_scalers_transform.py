@@ -1,3 +1,7 @@
+from typing import List
+from typing import Optional
+from typing import Union
+
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -8,7 +12,34 @@ from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MinMaxScalerTransform
 from etna.transforms import RobustScalerTransform
 from etna.transforms import StandardScalerTransform
+from etna.transforms.sklearn import SklearnTransform
 from etna.transforms.sklearn import TransformMode
+
+
+class DummySkTransform:
+    def fit(self, X, y=None):  # noqa: N803
+        pass
+
+    def transform(self, X, y=None):  # noqa: N803
+        return X
+
+    def inverse_transform(self, X, y=None):  # noqa: N803
+        return X
+
+
+class DummyTransform(SklearnTransform):
+    def __init__(
+        self,
+        in_column: Optional[Union[str, List[str]]] = None,
+        inplace: bool = True,
+        mode: Union[TransformMode, str] = "per-segment",
+    ):
+        super().__init__(
+            in_column=in_column,
+            inplace=inplace,
+            transformer=DummySkTransform(),
+            mode=mode,
+        )
 
 
 @pytest.fixture
@@ -47,6 +78,7 @@ def test_transform_invalid_mode(scaler):
 @pytest.mark.parametrize(
     "scaler",
     (
+        DummyTransform(),
         StandardScalerTransform(),
         RobustScalerTransform(),
         MinMaxScalerTransform(),
@@ -61,13 +93,14 @@ def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler, mode
     """Check that `inverse_transform(transform(df)) == df` for all columns."""
     scaler.mode = TransformMode(mode)
     feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
-    inversed_df = scaler.inverse_transform(df=feature_df)
+    inversed_df = scaler.inverse_transform(df=feature_df.copy())
     npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
 
 
 @pytest.mark.parametrize(
     "scaler",
     (
+        DummyTransform(in_column="target"),
         StandardScalerTransform(in_column="target"),
         RobustScalerTransform(in_column="target"),
         MinMaxScalerTransform(in_column="target"),
@@ -89,6 +122,7 @@ def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler, mode)
 @pytest.mark.parametrize(
     "scaler",
     (
+        DummyTransform,
         StandardScalerTransform,
         RobustScalerTransform,
         MinMaxScalerTransform,

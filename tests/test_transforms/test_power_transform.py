@@ -86,7 +86,7 @@ def test_inverse_transform_all_columns(positive_df: pd.DataFrame, preprocessing_
     transformed_target_none = preprocess_none.fit_transform(df=positive_df.copy())
     transformed_target_all = preprocess_all.fit_transform(df=positive_df.copy())
     inversed_target_none = preprocess_none.inverse_transform(df=transformed_target_none)
-    inversed_target_all = preprocess_none.inverse_transform(df=transformed_target_all)
+    inversed_target_all = preprocess_all.inverse_transform(df=transformed_target_all)
     np.testing.assert_array_almost_equal(inversed_target_none.values, positive_df.values)
     np.testing.assert_array_almost_equal(inversed_target_all.values, positive_df.values)
 

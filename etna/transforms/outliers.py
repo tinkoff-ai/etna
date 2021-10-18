@@ -4,14 +4,19 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets import TSDataset
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.transforms.base import Transform
 
 
@@ -105,7 +110,6 @@ class OutliersTransform(Transform, ABC):
         for segment in self.original_values.keys():
             segment_ts = result[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
-
         return result
 
     @abstractmethod
@@ -140,10 +144,9 @@ class MedianOutliersTransform(OutliersTransform):
         alpha:
             coefficient for determining the threshold
         """
-        self.in_column = in_column
         self.window_size = window_size
         self.alpha = alpha
-        super().__init__(in_column=self.in_column)
+        super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_anomalies_median` function with self parameters.
@@ -158,7 +161,7 @@ class MedianOutliersTransform(OutliersTransform):
         dict of outliers:
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        return get_anomalies_median(ts, self.window_size, self.alpha)
+        return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
 
 
 class DensityOutliersTransform(OutliersTransform):
@@ -187,12 +190,11 @@ class DensityOutliersTransform(OutliersTransform):
         distance_func:
             distance function
         """
-        self.in_column = in_column
         self.window_size = window_size
         self.distance_coef = distance_coef
         self.n_neighbors = n_neighbors
         self.distance_func = distance_func
-        super().__init__(in_column=self.in_column)
+        super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_anomalies_density` function with self parameters.
@@ -207,7 +209,14 @@ class DensityOutliersTransform(OutliersTransform):
         dict of outliers:
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        return get_anomalies_density(ts, self.window_size, self.distance_coef, self.n_neighbors, self.distance_func)
+        return get_anomalies_density(
+            ts=ts,
+            in_column=self.in_column,
+            window_size=self.window_size,
+            distance_coef=self.distance_coef,
+            n_neighbors=self.n_neighbors,
+            distance_func=self.distance_func,
+        )
 
 
 class SAXOutliersTransform(OutliersTransform):
@@ -236,12 +245,11 @@ class SAXOutliersTransform(OutliersTransform):
         word_lenght:
             the number of segments into which the subsequence will be divided by the paa algorithm
         """
-        self.in_column = in_column
         self.num_anomalies = num_anomalies
         self.anomaly_lenght = anomaly_lenght
         self.alphabet_size = alphabet_size
         self.word_lenght = word_lenght
-        super().__init__(in_column=self.in_column)
+        super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_sequence_anomalies` function with self parameters.
@@ -250,6 +258,7 @@ class SAXOutliersTransform(OutliersTransform):
         ----------
         ts:
             dataset to process
+
         Returns
         -------
         dict of outliers:
@@ -257,12 +266,62 @@ class SAXOutliersTransform(OutliersTransform):
         """
         return get_sequence_anomalies(
             ts=ts,
+            in_column=self.in_column,
             num_anomalies=self.num_anomalies,
             anomaly_lenght=self.anomaly_lenght,
             alphabet_size=self.alphabet_size,
             word_lenght=self.word_lenght,
-            in_column=self.in_column,
         )
 
 
-__all__ = ["MedianOutliersTransform", "DensityOutliersTransform"]
+class ConfidenceIntervalOutliersTransform(OutliersTransform):
+    """Transform that uses get_anomalies_density to find anomalies in data."""
+
+    def __init__(
+        self,
+        model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
+        interval_width: float = 0.95,
+        **model_kwargs,
+    ):
+        """Create instance of ConfidenceIntervalOutliersTransform.
+
+        Parameters
+        ----------
+        model:
+            model for confidence interval estimation
+        interval_width:
+            width of the confidence interval
+
+        Notes
+        -----
+        Works only with target column.
+        """
+        self.model = model
+        self.interval_width = interval_width
+        self.model_kwargs = model_kwargs
+        super().__init__(in_column="target")
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+        """Call `get_anomalies_confidence_interval` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            dataset to process
+
+        Returns
+        -------
+        dict of outliers:
+            dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_confidence_interval(
+            ts=ts, model=self.model, interval_width=self.interval_width, **self.model_kwargs
+        )
+
+
+__all__ = [
+    "MedianOutliersTransform",
+    "DensityOutliersTransform",
+    "SAXOutliersTransform",
+    "ConfidenceIntervalOutliersTransform",
+]
