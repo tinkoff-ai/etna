@@ -5,7 +5,7 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentAddConstTransform(Transform):
-    def __init__(self, value: float, in_column: str, inplace: bool = True):
+    def __init__(self, value: float, in_column: str, inplace: bool = True, out_column: str = None):
         """
         Init _OneSegmentAddConstTransform.
 
@@ -16,12 +16,14 @@ class _OneSegmentAddConstTransform(Transform):
         in_column:
             column to apply transform
         inplace:
-            if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
+            if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
+        out_column:
+            name of added column
         """
         self.value = value
         self.in_column = in_column
         self.inplace = inplace
-        self.out_column = self.in_column if self.inplace else f"{self.in_column}_add_{self.value}"
+        self.out_column = out_column
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentAddConstTransform":
         """
@@ -72,7 +74,7 @@ class _OneSegmentAddConstTransform(Transform):
 class AddConstTransform(PerSegmentWrapper):
     """AddConstTransform add constant for given series."""
 
-    def __init__(self, value: float, in_column: str, inplace: bool = True):
+    def __init__(self, value: float, in_column: str, inplace: bool = True, out_column: str = None):
         """
         Init AddConstTransform.
 
@@ -83,13 +85,28 @@ class AddConstTransform(PerSegmentWrapper):
         in_column:
             column to apply transform
         inplace:
-            if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
+            if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
+        out_column:
+            name of added column. If not given, use '{in_column}_{self.__repr__()}'
         """
         self.value = value
         self.in_column = in_column
         self.inplace = inplace
+
+        if inplace:
+            out_column_result = in_column
+        elif out_column:
+            out_column_result = out_column
+        else:
+            out_column_result = f"{in_column}_{self.__repr__()}"
+
         super().__init__(
-            transform=_OneSegmentAddConstTransform(value=self.value, in_column=self.in_column, inplace=self.inplace)
+            transform=_OneSegmentAddConstTransform(
+                value=value,
+                in_column=in_column,
+                inplace=inplace,
+                out_column=out_column_result
+            )
         )
 
 
