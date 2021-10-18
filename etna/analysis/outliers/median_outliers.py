@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
 
 
 def get_anomalies_median(
-    ts: "TSDataset", window_size: int = 10, alpha: float = 3
+    ts: "TSDataset", in_column: str = "target", window_size: int = 10, alpha: float = 3
 ) -> typing.Dict[str, typing.List[pd.Timestamp]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
@@ -19,6 +19,8 @@ def get_anomalies_median(
     ----------
     ts:
         TSDataset with timeseries data
+    in_column:
+        name of the column in which the anomaly is searching
     window_size:
         number of points in the window
     alpha:
@@ -35,7 +37,7 @@ def get_anomalies_median(
         anomal = []
 
         segment_df = ts.df[seg].reset_index()
-        values = segment_df["target"].values
+        values = segment_df[in_column].values
         timestamp = segment_df["timestamp"].values
 
         n_iter = math.ceil(len(values) / window_size)

@@ -37,6 +37,10 @@ def get_anomalies_confidence_interval(
     -------
     dict of outliers: Dict[str, List[pd.Timestamp]]
         Dict of outliers in format {segment: [outliers_timestamps]}.
+
+    Notes
+    -----
+    Works only with target column.
     """
     outliers_per_segment = {}
     time_points = np.array(ts.index.values)

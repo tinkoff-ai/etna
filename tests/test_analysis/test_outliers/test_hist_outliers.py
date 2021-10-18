@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from etna.analysis.outliers import get_anomalies_hist
 from etna.analysis.outliers.hist_outliers import compute_f
 from etna.analysis.outliers.hist_outliers import hist
 from etna.analysis.outliers.hist_outliers import v_optimal_hist
@@ -122,3 +123,11 @@ def test_hist(series: np.array, bins_number: int, expected: np.array):
     """Check that hist works correctly."""
     anomal = hist(series, bins_number)
     np.testing.assert_array_equal(anomal, expected)
+
+
+def test_in_column(outliers_df_with_two_columns):
+    outliers = get_anomalies_hist(ts=outliers_df_with_two_columns, in_column="feature")
+    expected = {"1": [np.datetime64("2021-01-08")], "2": [np.datetime64("2021-01-26")]}
+    for key in expected:
+        assert key in outliers
+        np.testing.assert_array_equal(outliers[key], expected[key])
