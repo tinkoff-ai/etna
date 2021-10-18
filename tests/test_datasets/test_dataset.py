@@ -43,7 +43,7 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(df)
 
-    timestamp = pd.date_range("2021-01-01", "2021-02-11")
+    timestamp = pd.date_range("2020-12-01", "2021-02-11")
     df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_1": 3, "regressor_2": 4, "segment": "2"})
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
@@ -271,3 +271,18 @@ def test_updating_regressors_fit_transform(df_and_regressors):
     final_regressors = set(ts.regressors)
     assert initial_regressors.issubset(final_regressors)
     assert final_regressors.difference(initial_regressors) == {"regressor_day_number_in_week", "regressor_is_weekend"}
+
+
+def test_right_format_sorting():
+    """Need to check if to_dataset method does not mess up with data and column names,
+    sorting it with no respect to each other
+    """
+    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=100)})
+    df["segment"] = "segment_1"
+    # need names and values in inverse fashion
+    df["reg_2"] = 1
+    df["reg_1"] = 2
+    tsd = TSDataset(TSDataset.to_dataset(df), freq="D")
+    inv_df = tsd.to_pandas(flatten=True)
+    pd.testing.assert_series_equal(df["reg_1"], inv_df["reg_1"])
+    pd.testing.assert_series_equal(df["reg_2"], inv_df["reg_2"])
