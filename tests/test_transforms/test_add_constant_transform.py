@@ -11,7 +11,9 @@ def test_addconstpreproc_value(example_df_: pd.DataFrame, value: float):
     preprocess = AddConstTransform(in_column="target", value=value, inplace=True)
     result = preprocess.fit_transform(df=example_df_)
     for segment in ["segment_1", "segment_2"]:
-        np.testing.assert_array_almost_equal(result[segment]["target"], example_df_[segment]["target_no_change"] + value)
+        np.testing.assert_array_almost_equal(
+            result[segment]["target"], example_df_[segment]["target_no_change"] + value
+        )
 
 
 @pytest.mark.parametrize("out_column", (None, "result"))
@@ -32,7 +34,9 @@ def test_addconstpreproc_value_out_column(example_df_: pd.DataFrame):
     preprocess = AddConstTransform(in_column="target", value=5.5, inplace=False, out_column=out_column)
     result = preprocess.fit_transform(df=example_df_)
     for segment in ["segment_1", "segment_2"]:
-        np.testing.assert_array_almost_equal(result[segment][out_column], example_df_[segment]["target_no_change"] + 5.5)
+        np.testing.assert_array_almost_equal(
+            result[segment][out_column], example_df_[segment]["target_no_change"] + 5.5
+        )
 
 
 @pytest.mark.parametrize("value", (-5, 3.14, 33))
