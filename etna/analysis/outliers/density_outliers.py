@@ -67,6 +67,7 @@ def get_segment_density_outliers_indices(
 
 def get_anomalies_density(
     ts: "TSDataset",
+    in_column: str = "target",
     window_size: int = 15,
     distance_coef: float = 3,
     n_neighbors: int = 3,
@@ -82,6 +83,8 @@ def get_anomalies_density(
     ----------
     ts:
         TSDataset with timeseries data
+    in_column:
+        name of the column in which the anomaly is searching
     window_size:
         size of windows to build
     distance_coef:
@@ -106,7 +109,7 @@ def get_anomalies_density(
         # TODO: dropna() now is responsible for removing nan-s at the end of the sequence and in the middle of it
         #   May be error or warning should be raised in this case
         segment_df = ts[:, seg, :][seg].dropna().reset_index()
-        series = segment_df["target"].values
+        series = segment_df[in_column].values
         timestamps = segment_df["timestamp"].values
         outliers_idxs = get_segment_density_outliers_indices(
             series=series,

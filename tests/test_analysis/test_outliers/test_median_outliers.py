@@ -20,14 +20,22 @@ from etna.analysis.outliers import get_anomalies_median
     ),
 )
 def test_median_outliers(window_size, alpha, right_anomal, outliers_tsds):
-    assert get_anomalies_median(outliers_tsds, window_size, alpha) == right_anomal
+    assert get_anomalies_median(ts=outliers_tsds, window_size=window_size, alpha=alpha) == right_anomal
 
 
 @pytest.mark.parametrize("true_params", (["1", "2"],))
 def test_interface_correct_args(true_params, outliers_tsds):
-    d = get_anomalies_median(outliers_tsds, 10, 2)
+    d = get_anomalies_median(ts=outliers_tsds, window_size=10, alpha=2)
     assert isinstance(d, dict)
     assert sorted(list(d.keys())) == sorted(true_params)
     for i in d.keys():
         for j in d[i]:
             assert isinstance(j, np.datetime64)
+
+
+def test_in_column(outliers_df_with_two_columns):
+    outliers = get_anomalies_median(ts=outliers_df_with_two_columns, in_column="feature", window_size=10)
+    expected = {"1": [np.datetime64("2021-01-08")], "2": [np.datetime64("2021-01-26")]}
+    for key in expected:
+        assert key in outliers
+        np.testing.assert_array_equal(outliers[key], expected[key])

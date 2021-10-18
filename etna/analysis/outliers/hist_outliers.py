@@ -26,9 +26,11 @@ def optimal_sse(left: int, right: int, p: np.ndarray, pp: np.ndarray) -> float:
         array of sums of elements, p[i] - sum from first to i elements
     pp:
         array of sums of squares of elements, p[i] - sum of squares from first to i elements
+
     Returns
     -------
-    Approximation error.
+    result: float
+        approximation error
     """
     if left == 0:
         avg = p[right]
@@ -52,6 +54,11 @@ def adjust_estimation(i: int, k: int, sse: np.ndarray, sse_one_bin: np.ndarray) 
         array of approximation errors
     sse_one_bin:
         array of approximation errors with one bin
+
+    Returns
+    -------
+    result: float
+        calculated sse_one_bin[i][k]
     """
     now_evaluated = sse[i - 1][k - 1]
     first_evalueted = sse[i - 1][k - 1]
@@ -95,7 +102,8 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
 
     Returns
     -------
-    Approximation error of a series with [1, bins_number] bins
+    error: np.ndarray
+        approximation error of a series with [1, bins_number] bins
     """
     sse = np.zeros((len(series), bins_number))
     for i in range(len(series)):
@@ -130,7 +138,8 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
 
     Returns
     -------
-    Array F, outliers_indice
+    result: np.ndarray
+        array F, outliers_indice
     """
     f = np.zeros((len(series), len(series), k + 1))
     s: list = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
@@ -231,7 +240,8 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
 
     Returns
     -------
-    Outliers indices.
+    indices: np.ndarray
+        outliers indices
     """
     approximation_error = np.zeros((len(series), bins_number + 1, bins_number))
     anomal: list = [[[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))]
@@ -283,16 +293,22 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
     return np.array(sorted(anomal[-1][approximation_error.shape[1] - 1 - count][count]))
 
 
-def get_anomalies_hist(ts: "TSDataset", bins_number: int = 10) -> typing.Dict[str, List[pd.Timestamp]]:
+def get_anomalies_hist(
+    ts: "TSDataset", in_column: str = "target", bins_number: int = 10
+) -> typing.Dict[str, List[pd.Timestamp]]:
     """
     Get point outliers in time series using histogram model.
     Outliers are all points that, when removed, result in a histogram with a lower approximation error, even with the number of bins less than the number of outliers.
+
     Parameters
     ----------
     ts:
         TSDataset with timeseries data
+    in_column:
+        name of the column in which the anomaly is searching
     bins_number:
         number of bins
+
     Returns
     -------
     dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
@@ -302,7 +318,7 @@ def get_anomalies_hist(ts: "TSDataset", bins_number: int = 10) -> typing.Dict[st
     segments = ts.segments
     for seg in segments:
         segment_df = ts.df[seg].reset_index()
-        values = segment_df["target"].values
+        values = segment_df[in_column].values
         timestamp = segment_df["timestamp"].values
 
         anomal = hist(values, bins_number)
