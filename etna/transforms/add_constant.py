@@ -99,13 +99,9 @@ class AddConstTransform(PerSegmentWrapper):
             out_column_result = out_column
         else:
             out_column_result = f"{in_column}_{self.__repr__()}"
-
         super().__init__(
             transform=_OneSegmentAddConstTransform(
-                value=value,
-                in_column=in_column,
-                inplace=inplace,
-                out_column=out_column_result
+                value=value, in_column=in_column, inplace=inplace, out_column=out_column_result
             )
         )
 
