@@ -38,21 +38,21 @@ def dateflags_true_df() -> pd.DataFrame:
     """
     dataframes = [pd.DataFrame({"timestamp": pd.date_range("2010-06-01", "2021-06-01", freq="3h")}) for i in range(5)]
 
+    out_column = "dateflag"
     for i in range(len(dataframes)):
         df = dataframes[i]
-        df["day_number_in_week"] = df["timestamp"].dt.weekday
-        df["day_number_in_month"] = df["timestamp"].dt.day
-        df["week_number_in_year"] = df["timestamp"].dt.week
-        df["month_number_in_year"] = df["timestamp"].dt.month
-        df["year_number"] = df["timestamp"].dt.year
-        df["week_number_in_month"] = df["timestamp"].apply(
+        df[f"{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday
+        df[f"{out_column}_day_number_in_month"] = df["timestamp"].dt.day
+        df[f"{out_column}_week_number_in_year"] = df["timestamp"].dt.week
+        df[f"{out_column}_month_number_in_year"] = df["timestamp"].dt.month
+        df[f"{out_column}_year_number"] = df["timestamp"].dt.year
+        df[f"{out_column}_week_number_in_month"] = df["timestamp"].apply(
             lambda x: int(x.weekday() < (x - timedelta(days=x.day - 1)).weekday()) + (x.day - 1) // 7 + 1
         )
-        df["is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
-        df["special_days_in_week"] = df["day_number_in_week"].apply(lambda x: x in SPECIAL_DAYS)
-        df["special_days_in_month"] = df["day_number_in_month"].apply(lambda x: x in SPECIAL_DAYS)
+        df[f"{out_column}_is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
+        df[f"{out_column}_special_days_in_week"] = df[f"{out_column}_day_number_in_week"].apply(lambda x: x in SPECIAL_DAYS)
+        df[f"{out_column}_special_days_in_month"] = df[f"{out_column}_day_number_in_month"].apply(lambda x: x in SPECIAL_DAYS)
 
-        df.columns = df.columns.map(lambda col: "regressor_" + col if col != "timestamp" else col)
         df["segment"] = f"segment_{i}"
         df["target"] = 2
 
@@ -202,10 +202,10 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
 
     true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
-        segment_true = dateflags_true_df[seg]
-        true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
-        result_df = result[seg].sort_index(axis=1)
-        assert (true_df == result_df).all().all()
+        tmp_df = result[seg]
+        assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
+        for param in true_params:
+            assert tmp_df[param].dtype == "category"
 
 
 @pytest.mark.parametrize(
