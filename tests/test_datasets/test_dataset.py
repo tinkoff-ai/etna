@@ -163,6 +163,11 @@ def test_train_test_split_with_test_size(test_size, true_borders, tsdf_with_exog
             ("2021-02-03", "2021-06-20", None, "2021-07-01"),
             ("2021-02-03", "2021-06-20", "2021-06-28", "2021-07-01"),
         ),
+        (
+            4,
+            ("2021-02-03", "2021-06-20", None, None),
+            ("2021-02-03", "2021-06-20", "2021-06-21", "2021-06-24"),
+        ),
     ),
 )
 def test_train_test_split_both(test_size, borders, true_borders, tsdf_with_exog):

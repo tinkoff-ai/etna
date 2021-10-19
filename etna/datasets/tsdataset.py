@@ -486,6 +486,10 @@ class TSDataset:
                         f"test_size is {test_size}, but only {len(self.df.index) - test_start_idx} available with your test_start"
                     )
                 test_end_defined = self.df.index[test_start_idx + test_size]
+            elif test_size is not None and train_end is not None:
+                test_start_idx = self.df.index.get_loc(train_end)
+                test_start = self.df.index[test_start_idx + 1]
+                test_end_defined = self.df.index[test_start_idx + test_size]
             else:
                 test_end_defined = self.df.index.max()
         else:
