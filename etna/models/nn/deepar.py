@@ -156,7 +156,7 @@ class DeepARModel(Model):
         )
 
         predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
-        # shape (segments, encoder_lenght)
+        # shape (segments, encoder_length)
 
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
         return ts
