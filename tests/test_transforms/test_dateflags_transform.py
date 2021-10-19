@@ -252,9 +252,10 @@ def test_feature_values(
     true_params: Dict[str, Union[bool, Tuple[int, int]]], train_df: pd.DataFrame, dateflags_true_df: pd.DataFrame
 ):
     """This test checks that feature generates correct values"""
+    out_column = "dateflag"
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     init_params.update(true_params)
-    transform = DateFlagsTransform(**init_params, out_column="dateflag")
+    transform = DateFlagsTransform(**init_params, out_column=out_column)
     result = transform.fit_transform(df=train_df.copy())
 
     segments_true = dateflags_true_df.columns.get_level_values(0).unique()
@@ -262,7 +263,7 @@ def test_feature_values(
 
     assert sorted(segment_result) == sorted(segments_true)
 
-    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
+    true_params = [f"regressor_{out_column}_{param}" for param in true_params.keys()]
     for seg in segment_result:
         segment_true = dateflags_true_df[seg]
         true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
