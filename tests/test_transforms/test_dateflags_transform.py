@@ -254,7 +254,7 @@ def test_feature_values(
     """This test checks that feature generates correct values"""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     init_params.update(true_params)
-    transform = DateFlagsTransform(**init_params)
+    transform = DateFlagsTransform(**init_params,  out_column="dateflag")
     result = transform.fit_transform(df=train_df.copy())
 
     segments_true = dateflags_true_df.columns.get_level_values(0).unique()
