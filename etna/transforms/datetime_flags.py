@@ -10,7 +10,7 @@ from etna.transforms.base import Transform
 
 class DateFlagsTransform(Transform):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
-    Creates columns 'regressor_<feature_name>'.
+    Creates columns named '{out_column}_{feature_name}' or 'regressor_{__repr__()}_{feature_name}' if not given.
 
     Notes
     -----
@@ -28,33 +28,35 @@ class DateFlagsTransform(Transform):
         is_weekend: Optional[bool] = True,
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
+        out_column: str = None,
     ):
         """Create instance of DateFlags.
 
         Parameters
         ----------
         day_number_in_week:
-            if True, add column "regressor_day_number_in_week" with weekday info to feature dataframe in transform
+            if True, add column with weekday info to feature dataframe in transform
         day_number_in_month:
-            if True, add column "regressor_day_number_in_month" with day info to feature dataframe in transform
+            if True, add column with day info to feature dataframe in transform
         week_number_in_month:
-            if True, add column "regressor_week_number_in_month" with week number (in month context)
-            to feature dataframe in transform
+            if True, add column with week number (in month context) to feature dataframe in transform
         week_number_in_year:
-            if True, add column "regressor_week_number_in_year" with week number (in year context) to feature dataframe
-            in transform
+            if True, add column with week number (in year context) to feature dataframe in transform
         month_number_in_year:
-            if True, add column "regressor_month_number_in_year" with month info to feature dataframe in transform
+            if True, add column with month info to feature dataframe in transform
         year_number:
-            if True, add column "regressor_year_number" with year info to feature dataframe in transform
+            if True, add column with year info to feature dataframe in transform
         is_weekend:
-            if True: add column "regressor_is_weekend" with weekends flags to feature dataframe in transform
+            if True: add column with weekends flags to feature dataframe in transform
         special_days_in_week:
             list of weekdays number (from [0, 6]) that should be interpreted as special ones, if given add column
-            "special_days_in_week" with flag that shows given date is a special day
+            with flag that shows given date is a special day
         special_days_in_month:
             list of days number (from [1, 31]) that should be interpreted as special ones, if given add column
-            "special_days_in_month" with flag that shows given date is a special day
+            with flag that shows given date is a special day
+        out_column:
+            name of added column. We get '{out_column}_{feature_name}'.
+            If not given, use '{in_column}_{self.__repr__()}'
 
         Notes
         -----
@@ -103,7 +105,14 @@ class DateFlagsTransform(Transform):
         self.special_days_in_week = special_days_in_week
         self.special_days_in_month = special_days_in_month
 
-        self.out_prefix = "regressor_"
+        self.out_column = out_column
+
+    def _generate_name(self, feature_name: str) -> str:
+        """Generate name for transform column."""
+        if self.out_column:
+            return f"{self.out_column}_{feature_name}"
+        else:
+            return f"regressor_{self.__repr__()}_{feature_name}"
 
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
@@ -125,39 +134,48 @@ class DateFlagsTransform(Transform):
         timestamp_series = pd.Series(df.index)
 
         if self.day_number_in_week:
-            features["day_number_in_week"] = self._get_day_number_in_week(timestamp_series=timestamp_series)
+            features[self._generate_name("day_number_in_week")] = self._get_day_number_in_week(
+                timestamp_series=timestamp_series
+            )
 
         if self.day_number_in_month:
-            features["day_number_in_month"] = self._get_day_number_in_month(timestamp_series=timestamp_series)
+            features[self._generate_name("day_number_in_month")] = self._get_day_number_in_month(
+                timestamp_series=timestamp_series
+            )
 
         if self.week_number_in_month:
-            features["week_number_in_month"] = self._get_week_number_in_month(timestamp_series=timestamp_series)
+            features[self._generate_name("week_number_in_month")] = self._get_week_number_in_month(
+                timestamp_series=timestamp_series
+            )
 
         if self.week_number_in_year:
-            features["week_number_in_year"] = self._get_week_number_in_year(timestamp_series=timestamp_series)
+            features[self._generate_name("week_number_in_year")] = self._get_week_number_in_year(
+                timestamp_series=timestamp_series
+            )
 
         if self.month_number_in_year:
-            features["month_number_in_year"] = self._get_month_number_in_year(timestamp_series=timestamp_series)
+            features[self._generate_name("month_number_in_year")] = self._get_month_number_in_year(
+                timestamp_series=timestamp_series
+            )
 
         if self.year_number:
-            features["year_number"] = self._get_year(timestamp_series=timestamp_series)
+            features[self._generate_name("year_number")] = self._get_year(timestamp_series=timestamp_series)
 
         if self.is_weekend:
-            features["is_weekend"] = self._get_weekends(timestamp_series=timestamp_series)
+            features[self._generate_name("is_weekend")] = self._get_weekends(timestamp_series=timestamp_series)
 
         if self.special_days_in_week:
-            features["special_days_in_week"] = self._get_special_day_in_week(
+            features[self._generate_name("special_days_in_week")] = self._get_special_day_in_week(
                 special_days=self.special_days_in_week, timestamp_series=timestamp_series
             )
 
         if self.special_days_in_month:
-            features["special_days_in_month"] = self._get_special_day_in_month(
+            features[self._generate_name("special_days_in_month")] = self._get_special_day_in_month(
                 special_days=self.special_days_in_month, timestamp_series=timestamp_series
             )
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
-        features = features.add_prefix(self.out_prefix)
 
         dataframes = []
         for seg in df.columns.get_level_values("segment").unique():

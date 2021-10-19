@@ -120,7 +120,7 @@ def test_repr():
     true_repr = (
         f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, week_number_in_month = False, "
         f"week_number_in_year = False, month_number_in_year = True, year_number = True, is_weekend = True, special_days_in_week = (1, 2), "
-        f"special_days_in_month = (12,), )"
+        f"special_days_in_month = (12,), out_column = None, )"
     )
     assert transform_repr == true_repr
 
@@ -146,8 +146,50 @@ def test_repr():
         ],
     ),
 )
-def test_interface_correct_args(true_params: List[str], train_df: pd.DataFrame):
-    """This test checks that feature generates all the expected columns and no unexpected ones in transform"""
+def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.DataFrame):
+    """This test checks generates in transform using out_column."""
+    init_params = deepcopy(INIT_PARAMS_TEMPLATE)
+    test_segs = train_df.columns.get_level_values(0).unique()
+    out_column = "dateflags"
+    for key in true_params:
+        init_params[key] = True
+    transform = DateFlagsTransform(**init_params, out_column=out_column)
+    result = transform.fit_transform(df=train_df.copy())
+
+    assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
+    assert sorted(result.columns.names) == ["feature", "segment"]
+
+    true_params = [f"{out_column}_{param}" for param in true_params]
+    for seg in result.columns.get_level_values(0).unique():
+        tmp_df = result[seg]
+        assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
+        for param in true_params:
+            assert tmp_df[param].dtype == "category"
+
+
+@pytest.mark.parametrize(
+    "true_params",
+    (
+        ["day_number_in_week"],
+        ["day_number_in_month"],
+        ["week_number_in_year"],
+        ["week_number_in_month"],
+        ["month_number_in_year"],
+        ["year_number"],
+        ["is_weekend"],
+        [
+            "day_number_in_week",
+            "day_number_in_month",
+            "week_number_in_year",
+            "week_number_in_month",
+            "month_number_in_year",
+            "year_number",
+            "is_weekend",
+        ],
+    ),
+)
+def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFrame):
+    """This test checks generates in transform using no out_column, that is, repr in the name of column."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     test_segs = train_df.columns.get_level_values(0).unique()
     for key in true_params:
@@ -158,12 +200,12 @@ def test_interface_correct_args(true_params: List[str], train_df: pd.DataFrame):
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = ["regressor_" + param for param in true_params]
+    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
-        tmp_df = result[seg]
-        assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
-        for param in true_params:
-            assert tmp_df[param].dtype == "category"
+        segment_true = dateflags_true_df[seg]
+        true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
+        result_df = result[seg].sort_index(axis=1)
+        assert (true_df == result_df).all().all()
 
 
 @pytest.mark.parametrize(
@@ -182,7 +224,7 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = ["regressor_" + param for param in true_params]
+    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
@@ -218,7 +260,7 @@ def test_feature_values(
 
     assert sorted(segment_result) == sorted(segments_true)
 
-    true_params = ["regressor_" + param for param in true_params.keys()]
+    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
     for seg in segment_result:
         segment_true = dateflags_true_df[seg]
         true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
