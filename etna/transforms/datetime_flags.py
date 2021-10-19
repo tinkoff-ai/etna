@@ -278,24 +278,28 @@ class TimeFlagsTransform(Transform):
         half_hour_number: bool = False,
         half_day_number: bool = False,
         one_third_day_number: bool = False,
+        out_column: str = None,
     ):
         """Initialise class attributes.
 
         Parameters
         ----------
         minute_in_hour_number:
-            if True: add column "regressor_minute_in_hour_number" with weekends flags to feature dataframe in transform
+            if True: add column with weekends flags to feature dataframe in transform
         fifteen_minutes_in_hour_number:
-            if True: add column "regressor_fifteen_minutes_in_hour_number" with weekends flags
+            if True: add column with weekends flags
             to feature dataframe in transform
         hour_number:
-            if True: add column "regressor_hour_number" with weekends flags to feature dataframe in transform
+            if True: add column with weekends flags to feature dataframe in transform
         half_hour_number:
-            if True: add column "regressor_half_hour_number" with weekends flags to feature dataframe in transform
+            if True: add column with weekends flags to feature dataframe in transform
         half_day_number:
-            if True: add column "regressor_half_day_number" with weekends flags to feature dataframe in transform
+            if True: add column with weekends flags to feature dataframe in transform
         one_third_day_number:
-            if True: add column "regressor_one_third_day_number" with weekends flags to feature dataframe in transform
+            if True: add column with weekends flags to feature dataframe in transform
+        out_column:
+            name of added column. We get 'regressor_{out_column}_{feature_name}'.
+            If not given, use 'regressor_{self.__repr__()}_{feature_name}'
 
         Raises
         ------
@@ -325,7 +329,14 @@ class TimeFlagsTransform(Transform):
         self.half_day_number: bool = half_day_number
         self.one_third_day_number: bool = one_third_day_number
 
-        self.out_prefix = "regressor_"
+        self.out_column = out_column
+
+    def _generate_name(self, feature_name: str) -> str:
+        """Generate name for transform column."""
+        if self.out_column:
+            return f"regressor_{self.out_column}_{feature_name}"
+        else:
+            return f"regressor_{self.__repr__()}_{feature_name}"
 
     def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
@@ -350,33 +361,32 @@ class TimeFlagsTransform(Transform):
 
         if self.minute_in_hour_number:
             minute_in_hour_number = self._get_minute_number(timestamp_series=timestamp_series)
-            features["minute_in_hour_number"] = minute_in_hour_number
+            features[self._generate_name("minute_in_hour_number")] = minute_in_hour_number
 
         if self.fifteen_minutes_in_hour_number:
             fifteen_minutes_in_hour_number = self._get_period_in_hour(
                 timestamp_series=timestamp_series, period_in_minutes=15
             )
-            features["fifteen_minutes_in_hour_number"] = fifteen_minutes_in_hour_number
+            features[self._generate_name("fifteen_minutes_in_hour_number")] = fifteen_minutes_in_hour_number
 
         if self.hour_number:
             hour_number = self._get_hour_number(timestamp_series=timestamp_series)
-            features["hour_number"] = hour_number
+            features[self._generate_name("hour_number")] = hour_number
 
         if self.half_hour_number:
             half_hour_number = self._get_period_in_hour(timestamp_series=timestamp_series, period_in_minutes=30)
-            features["half_hour_number"] = half_hour_number
+            features[self._generate_name("half_hour_number")] = half_hour_number
 
         if self.half_day_number:
             half_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=12)
-            features["half_day_number"] = half_day_number
+            features[self._generate_name("half_day_number")] = half_day_number
 
         if self.one_third_day_number:
             one_third_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=8)
-            features["one_third_day_number"] = one_third_day_number
+            features[self._generate_name("one_third_day_number")] = one_third_day_number
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
-        features = features.add_prefix(self.out_prefix)
 
         dataframes = []
         for seg in df.columns.get_level_values("segment").unique():
