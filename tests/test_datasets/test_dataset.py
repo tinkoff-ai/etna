@@ -271,7 +271,7 @@ def test_updating_regressors_fit_transform(df_and_regressors):
     assert initial_regressors.issubset(final_regressors)
     assert final_regressors.difference(initial_regressors) == {
         "regressor_dateflag_day_number_in_week",
-        "regressor_dateflag_is_weekend"
+        "regressor_dateflag_is_weekend",
     }
 
 
