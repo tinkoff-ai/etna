@@ -87,10 +87,10 @@ class VotingEnsemble(Pipeline):
     @staticmethod
     def _get_horizon(pipelines: List[Pipeline]) -> int:
         """Get ensemble's horizon."""
-        horizons = list(set([pipeline.horizon for pipeline in pipelines]))
+        horizons = set([pipeline.horizon for pipeline in pipelines])
         if len(horizons) > 1:
             raise ValueError("All the pipelines should have the same horizon.")
-        return horizons[0]
+        return horizons.pop()
 
     @staticmethod
     def _process_weights(weights: Optional[Iterable[float]], pipelines_number: int) -> List[float]:
@@ -106,9 +106,9 @@ class VotingEnsemble(Pipeline):
     @staticmethod
     def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
         """Fit given pipeline with ts."""
-        tslogger.log(msg=f"Start fitting {pipeline.__repr__()}.")
+        tslogger.log(msg=f"Start fitting {pipeline}.")
         pipeline.fit(ts=ts)
-        tslogger.log(msg=f"Pipeline {pipeline.__repr__()} is fitted.")
+        tslogger.log(msg=f"Pipeline {pipeline} is fitted.")
         return pipeline
 
     def fit(self, ts: TSDataset) -> "VotingEnsemble":
@@ -132,9 +132,9 @@ class VotingEnsemble(Pipeline):
     @staticmethod
     def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
         """Make forecast with given pipeline."""
-        tslogger.log(msg=f"Start forecasting with {pipeline.__repr__()}.")
+        tslogger.log(msg=f"Start forecasting with {pipeline}.")
         forecast = pipeline.forecast()
-        tslogger.log(msg=f"Forecast is done with {pipeline.__repr__()}.")
+        tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:

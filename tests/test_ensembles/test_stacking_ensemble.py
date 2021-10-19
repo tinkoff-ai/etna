@@ -5,8 +5,6 @@ from typing import Union
 
 import pandas as pd
 import pytest
-from joblib import Parallel
-from joblib import delayed
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
@@ -19,7 +17,7 @@ HORIZON = 7
 
 def test_invalid_pipelines_number(catboost_pipeline: Pipeline):
     """Test StackingEnsemble behavior in case of invalid pipelines number."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="At least two pipelines are expected."):
         _ = StackingEnsemble(pipelines=[catboost_pipeline])
 
 
@@ -31,7 +29,7 @@ def test_get_horizon_pass(catboost_pipeline: Pipeline, prophet_pipeline: Pipelin
 
 def test_get_horizon_fail(catboost_pipeline: Pipeline, naive_pipeline: Pipeline):
     """Check that StackingEnsemble._get horizon works correctly in case of invalid pipelines list."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="All the pipelines should have the same horizon."):
         _ = StackingEnsemble._get_horizon(pipelines=[catboost_pipeline, naive_pipeline])
 
 
@@ -42,10 +40,18 @@ def test_cv_pass(input_cv, true_cv):
     assert cv == true_cv
 
 
-def test_cv_fail():
-    """Check that StackingEnsemble._validate_cv works correctly in case of invalid cv parameter."""
-    with pytest.raises(ValueError):
-        _ = StackingEnsemble._validate_cv(cv=1)
+@pytest.mark.parametrize("input_cv", ([1]))
+def test_cv_fail_wrong_number(input_cv):
+    """Check that StackingEnsemble._validate_cv works correctly in case of wrong number for cv parameter."""
+    with pytest.raises(ValueError, match="At least two folds for backtest are expected."):
+        _ = StackingEnsemble._validate_cv(cv=input_cv)
+
+
+@pytest.mark.parametrize("input_cv", (["test"]))
+def test_cv_fail_wrong_format(input_cv):
+    """Check that StackingEnsemble._validate_cv works correctly in case of wrong format for cv parameter."""
+    with pytest.raises(ValueError, match="Invalid format for cv parameter."):
+        _ = StackingEnsemble._validate_cv(cv=input_cv)
 
 
 @pytest.mark.parametrize(
@@ -62,93 +68,60 @@ def test_cv_fail():
             },
         ),
         (
-            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
+            ["regressor_target_lag_10", "regressor_day_number_in_week"],
             {"regressor_target_lag_10", "regressor_day_number_in_week"},
         ),
     ),
 )
 def test_features_to_use(
-    example_tsds,
-    naive_featured_pipeline_1: Pipeline,
-    naive_featured_pipeline_2: Pipeline,
+    forecasts_ts: TSDataset,
+    naive_featured_pipeline_1,
+    naive_featured_pipeline_2,
     features_to_use: Union[None, Literal[all], List[str]],
     expected_features: Set[str],
 ):
-    """Check that StackingEnsemble._validate_features_to_use works correctly."""
+    """Check that StackingEnsemble._get_features_to_use works correctly."""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
-        for pipeline in ensemble.pipelines
-    )
-    ensemble._validate_features_to_use(forecasts)
-    features = ensemble.features_to_use
-    assert features == expected_features
+    obtained_features = ensemble._get_features_to_use(forecasts_ts)
+    assert obtained_features == expected_features
 
 
-def test_stack_targets(
-    example_tsds,
-    naive_featured_pipeline_1: Pipeline,
-    naive_featured_pipeline_2: Pipeline,
+@pytest.mark.parametrize("features_to_use", (["regressor_target_lag_10"]))
+def test_features_to_use_wrong_format(
+    forecasts_ts: TSDataset,
+    naive_featured_pipeline_1,
+    naive_featured_pipeline_2,
+    features_to_use: Union[None, Literal[all], List[str]],
 ):
-    """Check that StackingEnsemble._stack_targets returns Dataframe with base models' forecasts in columns."""
-    ensemble = StackingEnsemble(pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2])
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
-        for pipeline in ensemble.pipelines
+    """Check that StackingEnsemble._get_features_to_use raises worning in case of wrong format."""
+    ensemble = StackingEnsemble(
+        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
-    stacked_targets = ensemble._stack_targets(forecasts=forecasts)
-    columns = set(stacked_targets.columns.get_level_values("feature"))
-    assert isinstance(stacked_targets, pd.DataFrame)
-    assert len(stacked_targets) == len(forecasts[0].df)
-    assert columns == {"regressor_target_0", "regressor_target_1"}
+    with pytest.warns(UserWarning, match="Feature list is passed in the wrong format."):
+        _ = ensemble._get_features_to_use(forecasts_ts)
+
+
+@pytest.mark.parametrize("features_to_use", ([["unknow_feature"]]))
+def test_features_to_use_not_found(
+    forecasts_ts: TSDataset,
+    naive_featured_pipeline_1,
+    naive_featured_pipeline_2,
+    features_to_use: Union[None, Literal[all], List[str]],
+):
+    """Check that StackingEnsemble._get_features_to_use raises worning in case of unavailable features."""
+    ensemble = StackingEnsemble(
+        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
+    )
+    with pytest.warns(UserWarning, match=f"Features {set(features_to_use)} are not found and will be dropped!"):
+        _ = ensemble._get_features_to_use(forecasts_ts)
 
 
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
-        (
-            "all",
-            {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
-            },
-        ),
-        (
-            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
-            {"regressor_target_lag_10", "regressor_day_number_in_week"},
-        ),
-    ),
-)
-def test_get_features(
-    example_tsds,
-    naive_featured_pipeline_1: Pipeline,
-    naive_featured_pipeline_2: Pipeline,
-    features_to_use: Union[None, Literal[all], List[str]],
-    expected_features: Set[str],
-):
-    """Check that StackingEnsemble._get_features returns all the expected features in correct format."""
-    ensemble = StackingEnsemble(
-        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
-    )
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
-        for pipeline in ensemble.pipelines
-    )
-    ensemble._validate_features_to_use(forecasts)
-    features_df = ensemble._get_features(forecasts)
-    features = set(features_df.columns.get_level_values("feature"))
-    assert isinstance(features_df, pd.DataFrame)
-    assert features == expected_features
-
-
-@pytest.mark.parametrize(
-    "features_to_use,expected_features",
-    (
-        (None, {"regressor_target_0", "regressor_target_1", "target"}),
+        (None, {"regressor_target_0", "regressor_target_1"}),
         (
             "all",
             {
@@ -158,7 +131,6 @@ def test_get_features(
                 "regressor_is_weekend",
                 "regressor_target_0",
                 "regressor_target_1",
-                "target",
             },
         ),
         (
@@ -168,87 +140,31 @@ def test_get_features(
                 "regressor_day_number_in_week",
                 "regressor_target_0",
                 "regressor_target_1",
-                "target",
             },
         ),
     ),
 )
-def test_make_features_train(
+def test_make_features(
     example_tsds,
+    forecasts_ts,
+    targets,
     naive_featured_pipeline_1: Pipeline,
     naive_featured_pipeline_2: Pipeline,
     features_to_use: Union[None, Literal[all], List[str]],
     expected_features: Set[str],
 ):
-    """Check that StackingEnsemble._make_features works correctly in case of making features for train."""
+    """Check that StackingEnsemble._make_features returns X,y with all the expected columns
+    and which are compatible with the sklearn interface.
+    """
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
-    )
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
-        for pipeline in ensemble.pipelines
-    )
-    ensemble._validate_features_to_use(forecasts)
-    features_ts = ensemble._make_features(example_tsds, forecasts, train=True)
-    features = set(features_ts.columns.get_level_values("feature"))
-    targets_df = features_ts[:, :, "target"]
-    assert isinstance(features_ts, TSDataset)
+    ).fit(example_tsds)
+    x, y = ensemble._make_features(forecasts_ts, train=True)
+    features = set(x.columns.get_level_values("feature"))
+    assert isinstance(x, pd.DataFrame)
+    assert isinstance(y, pd.Series)
     assert features == expected_features
-    assert (
-        targets_df.values == example_tsds[targets_df.index.min() : targets_df.index.max(), :, "target"].values
-    ).all()
-
-
-@pytest.mark.parametrize(
-    "features_to_use,expected_features",
-    (
-        (None, {"regressor_target_0", "regressor_target_1", "target"}),
-        (
-            "all",
-            {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
-                "regressor_target_0",
-                "regressor_target_1",
-                "target",
-            },
-        ),
-        (
-            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
-            {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_week",
-                "regressor_target_0",
-                "regressor_target_1",
-                "target",
-            },
-        ),
-    ),
-)
-def test_make_features_forecast(
-    example_tsds,
-    naive_featured_pipeline_1: Pipeline,
-    naive_featured_pipeline_2: Pipeline,
-    features_to_use: Union[None, Literal[all], List[str]],
-    expected_features: Set[str],
-):
-    """Check that StackingEnsemble._make_features works correctly in case of making features for forecast."""
-    ensemble = StackingEnsemble(
-        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
-    )
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
-        for pipeline in ensemble.pipelines
-    )
-    ensemble._validate_features_to_use(forecasts)
-    features_ts = ensemble._make_features(example_tsds, forecasts, train=False)
-    features = set(features_ts.columns.get_level_values("feature"))
-    targets_df = features_ts[:, :, "target"]
-    assert isinstance(features_ts, TSDataset)
-    assert targets_df.isnull().all().all()
-    assert features == expected_features
+    assert (y == targets).all()
 
 
 @pytest.mark.parametrize(
@@ -282,8 +198,7 @@ def test_forecast_interface(
     """Check that StackingEnsemble.forecast returns TSDataset of correct length, containing all the expected columns"""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
-    )
-    ensemble.fit(example_tsds)
+    ).fit(example_tsds)
     forecast = ensemble.forecast()
     features = set(forecast.columns.get_level_values("feature")) - {"target"}
     assert isinstance(forecast, TSDataset)

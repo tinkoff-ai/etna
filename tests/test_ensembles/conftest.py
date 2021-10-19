@@ -1,4 +1,10 @@
+from copy import deepcopy
+from typing import List
+
+import pandas as pd
 import pytest
+from joblib import Parallel
+from joblib import delayed
 
 from etna.ensembles import StackingEnsemble
 from etna.ensembles import VotingEnsemble
@@ -77,3 +83,27 @@ def naive_featured_pipeline_2() -> Pipeline:
     """Generate pipeline with NaiveModel(2)."""
     pipeline = Pipeline(model=NaiveModel(2), transforms=[DateFlagsTransform()], horizon=7)
     return pipeline
+
+
+@pytest.fixture
+def forecasts_ts(
+    example_tsds: "TSDataset", naive_featured_pipeline_1: Pipeline, naive_featured_pipeline_2: Pipeline
+) -> List["TSDataset"]:
+    ensemble = StackingEnsemble(pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use="all")
+    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+        delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
+        for pipeline in ensemble.pipelines
+    )
+    return forecasts
+
+
+@pytest.fixture
+def targets(example_tsds: "TSDataset", forecasts_ts: List["TSDataset"]) -> pd.Series:
+    y = pd.concat(
+        [
+            example_tsds[forecasts_ts[0].index.min() : forecasts_ts[0].index.max(), segment, "target"]
+            for segment in example_tsds.segments
+        ],
+        axis=0,
+    )
+    return y

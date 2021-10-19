@@ -16,7 +16,7 @@ HORIZON = 7
 
 def test_invalid_pipelines_number(catboost_pipeline: Pipeline):
     """Test VotingEnsemble behavior in case of invalid pipelines number."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="At least two pipelines are expected."):
         _ = VotingEnsemble(pipelines=[catboost_pipeline])
 
 
@@ -28,7 +28,7 @@ def test_get_horizon_pass(catboost_pipeline: Pipeline, prophet_pipeline: Pipelin
 
 def test_get_horizon_fail(catboost_pipeline: Pipeline, naive_pipeline: Pipeline):
     """Check that VotingEnsemble._get horizon works correctly in case of invalid pipelines list."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="All the pipelines should have the same horizon."):
         _ = VotingEnsemble._get_horizon(pipelines=[catboost_pipeline, naive_pipeline])
 
 
@@ -51,7 +51,7 @@ def test_process_weights_pass(
 
 def test_process_weights_fail():
     """Check that VotingEnsemble._process_weights processes weights correctly in case of invalid args sets."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Weights size should be equal to pipelines number."):
         _ = VotingEnsemble._process_weights(weights=[0.3, 0.4, 0.3], pipelines_number=2)
 
 
