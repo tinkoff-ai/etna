@@ -157,11 +157,11 @@ def test_train_test_split_with_test_size(test_size, true_borders, tsdf_with_exog
             ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
             ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
         ),
-        (11, ("2021-02-01", None, None, "2021-06-28"), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+        (11, ("2021-02-02", None, None, "2021-06-28"), ("2021-02-02", "2021-06-17", "2021-06-18", "2021-06-28")),
         (
-            15,
+            4,
             ("2021-02-03", "2021-06-20", None, "2021-07-01"),
-            ("2021-02-03", "2021-06-20", "2021-06-21", "2021-07-01"),
+            ("2021-02-03", "2021-06-20", "2021-06-28", "2021-07-01"),
         ),
     ),
 )
@@ -194,10 +194,49 @@ def test_train_test_split_warning(borders, match, tsdf_with_exog):
         )
 
 
-def test_train_test_split_failed(tsdf_with_exog):
-    with pytest.raises(ValueError, match="train_end, test_start or test_size should be defined"):
+@pytest.mark.parametrize(
+    "test_size, borders, match",
+    (
+        (
+            10,
+            ("2021-02-01", None, "2021-06-21", "2021-07-01"),
+            "test_size, test_start and test_end cannot be applied at the same time. test_size will be ignored",
+        ),
+    ),
+)
+def test_train_test_split_warning2(test_size, borders, match, tsdf_with_exog):
+    train_start, train_end, test_start, test_end = borders
+    with pytest.warns(UserWarning, match=match):
         tsdf_with_exog.train_test_split(
-            train_start="2021-02-03", train_end=None, test_start=None, test_end="2021-07-01", test_size=None
+            train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end, test_size=test_size
+        )
+
+
+@pytest.mark.parametrize(
+    "test_size, borders, match",
+    (
+        (
+            None,
+            ("2021-02-03", None, None, "2021-07-01"),
+            "At least one of train_end, test_start or test_size should be defined",
+        ),
+        (
+            17,
+            ("2021-02-01", "2021-06-20", None, "2021-07-01"),
+            "The beginning of the test goes before the end of the train",
+        ),
+        (
+            17,
+            ("2021-02-01", "2021-06-20", "2021-06-26", None),
+            "test_size is 17, but only 6 available with your test_start",
+        ),
+    ),
+)
+def test_train_test_split_failed(test_size, borders, match, tsdf_with_exog):
+    train_start, train_end, test_start, test_end = borders
+    with pytest.raises(ValueError, match=match):
+        tsdf_with_exog.train_test_split(
+            train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end, test_size=test_size
         )
 
 
