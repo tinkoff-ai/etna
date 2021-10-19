@@ -44,14 +44,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Dependencies
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+      #----------------------------------------------
+      # install dependencies if cache does not exist
+      #----------------------------------------------
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           pip install poetry
           poetry --version
           poetry config virtualenvs.in-project true
           poetry install -vv
           poetry install -E tests
-          
+
       - name: PyTest ("not long")
         run: |
           poetry run pytest tests -v --cov=etna -m "not long" --cov-report=xml
