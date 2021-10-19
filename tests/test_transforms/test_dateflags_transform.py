@@ -147,7 +147,7 @@ def test_repr():
     ),
 )
 def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.DataFrame):
-    """This test checks generates in transform using out_column."""
+    """This test checks generated columns in transform using out_column."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     test_segs = train_df.columns.get_level_values(0).unique()
     out_column = "dateflags"
@@ -189,7 +189,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
     ),
 )
 def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFrame):
-    """This test checks generates in transform using no out_column, that is, repr in the name of column."""
+    """This test checks generated columns in transform using no out_column, that is, repr in the name of column."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     test_segs = train_df.columns.get_level_values(0).unique()
     for key in true_params:
