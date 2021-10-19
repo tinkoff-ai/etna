@@ -57,7 +57,7 @@ class TSDataset:
     >>> df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     >>> df_regressors = TSDataset.to_dataset(df_regressors)
     >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
-    >>> tsdataset.df.iloc[:5]
+    >>> tsdataset.df.head(5)
     segment      segment_0
     feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
     timestamp
@@ -213,6 +213,7 @@ class TSDataset:
                 df = transform.transform(df)
 
         futute_dataset = df.tail(future_steps).copy(deep=True)
+        futute_dataset = futute_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(futute_dataset, freq=self.freq)
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
@@ -242,7 +243,7 @@ class TSDataset:
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         self._check_exog(df=df, df_exog=self.df_exog)
-        df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1)
+        df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1, level=(0, 1))
         return df
 
     def _check_endings(self):
@@ -362,7 +363,7 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
-        >>> df.head()
+        >>> df.head(5)
             timestamp    segment  target
         0  2021-06-01  segment_0    1.00
         1  2021-06-02  segment_0    1.00
@@ -371,14 +372,14 @@ class TSDataset:
         4  2021-06-05  segment_0    1.00
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df_ts_format, "D")
-        >>> ts.to_pandas(True).head()
+        >>> ts.to_pandas(True).head(5)
         feature  timestamp  target    segment
         0       2021-06-01    1.00  segment_0
         1       2021-06-02    1.00  segment_0
         2       2021-06-03    1.00  segment_0
         3       2021-06-04    1.00  segment_0
         4       2021-06-05    1.00  segment_0
-        >>> ts.to_pandas(False).head()
+        >>> ts.to_pandas(False).head(5)
         segment    segment_0 segment_1
         feature       target    target
         timestamp
@@ -420,7 +421,7 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
-        >>> df.head()
+        >>> df.head(5)
            timestamp    segment  target
         0 2021-06-01  segment_0    1.00
         1 2021-06-02  segment_0    1.00
@@ -428,7 +429,7 @@ class TSDataset:
         3 2021-06-04  segment_0    1.00
         4 2021-06-05  segment_0    1.00
         >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> df_ts_format.head()
+        >>> df_ts_format.head(5)
         segment    segment_0 segment_1
         feature       target    target
         timestamp
@@ -443,7 +444,7 @@ class TSDataset:
         ...     "regressor_1": np.arange(10), "regressor_2": np.arange(10) + 5,
         ...     "segment": ["segment_0"]*10
         ... })
-        >>> TSDataset.to_dataset(df_regressors).iloc[:5]
+        >>> TSDataset.to_dataset(df_regressors).head(5)
         segment      segment_0
         feature    regressor_1 regressor_2
         timestamp
@@ -453,17 +454,14 @@ class TSDataset:
         2021-01-04           3           8
         2021-01-05           4           9
         """
-        # TODO: add dataframe checks
-        segments = df["segment"].unique()
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         feature_columns = df.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")
         df = df.pivot(index="timestamp", columns="segment")
         df = df.reorder_levels([1, 0], axis=1)
-        df = df.sort_index(axis=1)
-        df.columns = pd.MultiIndex.from_product([segments, feature_columns])
         df.columns.names = ["segment", "feature"]
+        df = df.sort_index(axis=1, level=(0, 1))
         return df
 
     def _find_all_borders(
@@ -537,7 +535,7 @@ class TSDataset:
         ...     train_start="2021-01-01", train_end="2021-02-01",
         ...     test_start="2021-02-02", test_end="2021-02-07"
         ... )
-        >>> train_ts.df.iloc[-5:]
+        >>> train_ts.df.tail(5)
         segment    segment_0 segment_1 segment_2
         feature       target    target    target
         timestamp
@@ -546,7 +544,7 @@ class TSDataset:
         2021-01-30     -1.80      1.69      0.61
         2021-01-31     -2.49      1.51      0.85
         2021-02-01     -2.89      0.91      1.06
-        >>> test_ts.df.iloc[:5]
+        >>> test_ts.df.head(5)
         segment    segment_0 segment_1 segment_2
         feature       target    target    target
         timestamp
