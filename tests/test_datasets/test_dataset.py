@@ -142,9 +142,7 @@ def test_train_test_split_warning(borders, match, tsdf_with_exog):
 
 def test_train_test_split_failed(tsdf_with_exog):
     with pytest.raises(ValueError, match="train_end or test_start should be defined"):
-        tsdf_with_exog.train_test_split(
-            train_start="2021-02-03", train_end=None, test_start=None, test_end="2021-07-01"
-        )
+        tsdf_with_exog.train_test_split(train_start="2021-02-03", train_end=None, test_start=None, test_end="2021-07-01")
 
 
 def test_dataset_datetime_convertion():
@@ -265,13 +263,15 @@ def test_updating_regressors_fit_transform(df_and_regressors):
         month_number_in_year=False,
         year_number=False,
         is_weekend=True,
-        out_column="dateflag"
+        out_column="dateflag",
     )
     initial_regressors = set(ts.regressors)
     ts.fit_transform(transforms=[date_flags_transform])
     final_regressors = set(ts.regressors)
     assert initial_regressors.issubset(final_regressors)
-    assert final_regressors.difference(initial_regressors) == {"dateflag_day_number_in_week", "dateflag_is_weekend"}
+    assert final_regressors.difference(initial_regressors) == {
+        "regressor_dateflag_day_number_in_week", "regressor_dateflag_is_weekend"
+    }
 
 
 def test_right_format_sorting():

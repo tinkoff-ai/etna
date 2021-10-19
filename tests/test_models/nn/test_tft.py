@@ -51,7 +51,7 @@ def test_tft_model_run_weekly_overfit(weekly_period_df, horizon):
         min_encoder_length=21,
         max_prediction_length=horizon,
         time_varying_known_reals=["time_idx"],
-        time_varying_known_categoricals=["dateflag_day_number_in_week"],
+        time_varying_known_categoricals=["regressor_dateflag_day_number_in_week"],
         time_varying_unknown_reals=["target"],
         static_categoricals=["segment"],
         target_normalizer=None,

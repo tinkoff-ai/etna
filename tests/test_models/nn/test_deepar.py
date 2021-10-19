@@ -49,7 +49,7 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon):
         max_encoder_length=21,
         max_prediction_length=horizon,
         time_varying_known_reals=["time_idx"],
-        time_varying_known_categoricals=["dateflags_day_number_in_week"],
+        time_varying_known_categoricals=["regressor_dateflags_day_number_in_week"],
         time_varying_unknown_reals=["target"],
         target_normalizer=GroupNormalizer(groups=["segment"]),
     )

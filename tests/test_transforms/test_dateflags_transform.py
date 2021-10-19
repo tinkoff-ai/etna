@@ -41,21 +41,24 @@ def dateflags_true_df() -> pd.DataFrame:
     out_column = "dateflag"
     for i in range(len(dataframes)):
         df = dataframes[i]
-        df[f"{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday
-        df[f"{out_column}_day_number_in_month"] = df["timestamp"].dt.day
-        df[f"{out_column}_week_number_in_year"] = df["timestamp"].dt.week
-        df[f"{out_column}_month_number_in_year"] = df["timestamp"].dt.month
-        df[f"{out_column}_year_number"] = df["timestamp"].dt.year
-        df[f"{out_column}_week_number_in_month"] = df["timestamp"].apply(
+        df[f"regressor_{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday
+        df[f"regressor_{out_column}_day_number_in_month"] = df["timestamp"].dt.day
+        df[f"regressor_{out_column}_week_number_in_year"] = df["timestamp"].dt.week
+        df[f"regressor_{out_column}_month_number_in_year"] = df["timestamp"].dt.month
+        df[f"regressor_{out_column}_year_number"] = df["timestamp"].dt.year
+        df[f"regressor_{out_column}_week_number_in_month"] = df["timestamp"].apply(
             lambda x: int(x.weekday() < (x - timedelta(days=x.day - 1)).weekday()) + (x.day - 1) // 7 + 1
         )
-        df[f"{out_column}_is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
-        df[f"{out_column}_special_days_in_week"] = df[f"{out_column}_day_number_in_week"].apply(lambda x: x in SPECIAL_DAYS)
-        df[f"{out_column}_special_days_in_month"] = df[f"{out_column}_day_number_in_month"].apply(lambda x: x in SPECIAL_DAYS)
+        df[f"regressor_{out_column}_is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
+        df[f"regressor_{out_column}_special_days_in_week"] = df[f"regressor_{out_column}_day_number_in_week"].apply(
+            lambda x: x in SPECIAL_DAYS
+        )
+        df[f"regressor_{out_column}_special_days_in_month"] = df[f"regressor_{out_column}_day_number_in_month"].apply(
+            lambda x: x in SPECIAL_DAYS
+        )
 
         df["segment"] = f"segment_{i}"
         df["target"] = 2
-
     result = pd.concat(dataframes, ignore_index=True)
     result = result.pivot(index="timestamp", columns="segment")
     result = result.reorder_levels([1, 0], axis=1)
@@ -76,7 +79,6 @@ def train_df() -> pd.DataFrame:
         df = dataframes[i]
         df["segment"] = f"segment_{i}"
         df["target"] = 2
-
     result = pd.concat(dataframes, ignore_index=True)
     result = result.pivot(index="timestamp", columns="segment")
     result = result.reorder_levels([1, 0], axis=1)
@@ -159,7 +161,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = [f"{out_column}_{param}" for param in true_params]
+    true_params = [f"regressor_{out_column}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])

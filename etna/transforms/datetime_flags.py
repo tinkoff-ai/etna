@@ -10,7 +10,8 @@ from etna.transforms.base import Transform
 
 class DateFlagsTransform(Transform):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
-    Creates columns named '{out_column}_{feature_name}' or 'regressor_{__repr__()}_{feature_name}' if not given.
+    Creates columns named 'regressor_{out_column}_{feature_name}'
+    or 'regressor_{__repr__()}_{feature_name}' if not given.
 
     Notes
     -----
@@ -55,8 +56,8 @@ class DateFlagsTransform(Transform):
             list of days number (from [1, 31]) that should be interpreted as special ones, if given add column
             with flag that shows given date is a special day
         out_column:
-            name of added column. We get '{out_column}_{feature_name}'.
-            If not given, use '{in_column}_{self.__repr__()}'
+            name of added column. We get 'regressor_{out_column}_{feature_name}'.
+            If not given, use 'regressor_{self.__repr__()}_{feature_name}'
 
         Notes
         -----
@@ -110,7 +111,7 @@ class DateFlagsTransform(Transform):
     def _generate_name(self, feature_name: str) -> str:
         """Generate name for transform column."""
         if self.out_column:
-            return f"{self.out_column}_{feature_name}"
+            return f"regressor_{self.out_column}_{feature_name}"
         else:
             return f"regressor_{self.__repr__()}_{feature_name}"
 
