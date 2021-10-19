@@ -220,7 +220,7 @@ class StackingEnsemble(Pipeline):
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
         )
         x = self._make_features(forecasts=forecasts, train=False)
-        y = self.final_model.predict(x).reshape(self.horizon, -1)
+        y = self.final_model.predict(x).reshape(-1, self.horizon).T
 
         # Format the forecast into TSDataset
         for i, segment in enumerate(self.ts.segments):

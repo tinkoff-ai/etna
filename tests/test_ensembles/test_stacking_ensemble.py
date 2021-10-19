@@ -1,8 +1,10 @@
 from copy import deepcopy
 from typing import List
 from typing import Set
+from typing import Tuple
 from typing import Union
 
+import numpy as np
 import pandas as pd
 import pytest
 from typing_extensions import Literal
@@ -204,6 +206,15 @@ def test_forecast_interface(
     assert isinstance(forecast, TSDataset)
     assert len(forecast.df) == HORIZON
     assert features == expected_features
+
+
+def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble):
+    """Check that StackingEnsemble.forecast forecast correct values"""
+    train, test = weekly_period_ts
+    ensemble = naive_ensemble.fit(train)
+    forecast = ensemble.forecast()
+    mae = MAE("macro")
+    np.allclose(mae(test, forecast), 0)
 
 
 @pytest.mark.long
