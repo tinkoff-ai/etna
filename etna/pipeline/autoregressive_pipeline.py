@@ -34,10 +34,7 @@ class AutoRegressivePipeline(Pipeline):
     ... ]
     >>> model = LinearPerSegmentModel()
     >>> pipeline = AutoRegressivePipeline(model, horizon, transforms, step=1)
-    >>> pipeline.fit(ts=ts)
-    AutoRegressivePipeline(model = LinearPerSegmentModel(fit_intercept = True, normalize = False, ),
-    horizon = 7, transforms = [LagTransform(lags = [1, 2, 3, 4, 5, 6, 7], in_column = 'target', )],
-    step = 1, )
+    >>> _ = pipeline.fit(ts=ts)
     >>> forecast = pipeline.forecast()
     >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
