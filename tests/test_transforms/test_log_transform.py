@@ -91,9 +91,9 @@ def test_inverse_transform(positive_df_: pd.DataFrame, base: int):
 
 def test_inverse_transform_out_column(positive_df_: pd.DataFrame):
     """Check that inverse_transform rolls back transform result in case of given out_column."""
-    expected_out_column = "target_log_10"
-    preprocess = LogTransform(in_column="target", base=10, inplace=False)
+    out_column = "target_log_10"
+    preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
     transformed_target = preprocess.fit_transform(df=positive_df_)
     inversed = preprocess.inverse_transform(df=transformed_target)
     for segment in ["segment_1", "segment_2"]:
-        assert expected_out_column in inversed[segment]
+        assert out_column in inversed[segment]
