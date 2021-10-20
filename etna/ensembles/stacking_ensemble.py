@@ -32,7 +32,7 @@ class StackingEnsemble(Pipeline):
     >>> from etna.pipeline import Pipeline
     >>> import pandas as pd
     >>> pd.options.display.float_format = '{:,.2f}'.format
-    >>> df = generate_ar_df(periods=100, start_time="2021-06-01", ar_coef=[1.2], n_segments=3)
+    >>> df = generate_ar_df(periods=100, start_time="2021-06-01", ar_coef=[0.8], n_segments=3)
     >>> df_ts_format = TSDataset.to_dataset(df)
     >>> ts = TSDataset(df_ts_format, "D")
     >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=7)
@@ -41,16 +41,16 @@ class StackingEnsemble(Pipeline):
     >>> _ = ensemble.fit(ts=ts)
     >>> forecast = ensemble.forecast()
     >>> forecast[:,:,"target"]
-    segment         segment_0      segment_1       segment_2
-    feature            target         target          target
+    segment    segment_0 segment_1 segment_2
+    feature       target    target    target
     timestamp
-    2021-09-09  -8,253,363.26  37,752,594.24  -87,335,523.39
-    2021-09-10  -9,904,035.52  45,303,113.38 -104,802,627.05
-    2021-09-11 -11,884,845.70  54,363,745.81 -125,763,147.95
-    2021-09-12 -14,261,819.53  65,236,499.78 -150,915,780.20
-    2021-09-13 -17,114,181.54  78,283,801.72 -181,098,935.13
-    2021-09-14 -20,537,018.09  93,940,549.85 -217,318,722.29
-    2021-09-15 -24,644,424.55 112,728,661.36 -260,782,462.32
+    2021-09-09      1.09      1.80      0.03
+    2021-09-10      1.22      1.42     -0.15
+    2021-09-11      0.92      1.76      0.10
+    2021-09-12      0.76      2.21     -0.12
+    2021-09-13      0.71      2.28     -0.13
+    2021-09-14      0.86      1.51     -0.25
+    2021-09-15      0.87      1.93     -0.02
     """
 
     def __init__(
