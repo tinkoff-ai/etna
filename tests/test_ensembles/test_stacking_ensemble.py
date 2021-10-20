@@ -35,25 +35,18 @@ def test_get_horizon_fail(catboost_pipeline: Pipeline, naive_pipeline: Pipeline)
         _ = StackingEnsemble._get_horizon(pipelines=[catboost_pipeline, naive_pipeline])
 
 
-@pytest.mark.parametrize("input_cv,true_cv", ((2, 2), (None, 3)))
-def test_cv_pass(input_cv, true_cv):
+@pytest.mark.parametrize("input_cv,true_cv", ([(2, 2)]))
+def test_cv_pass(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv, true_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of valid cv parameter."""
-    cv = StackingEnsemble._validate_cv(input_cv)
-    assert cv == true_cv
+    ensemble = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], cv=input_cv)
+    assert ensemble.cv == true_cv
 
 
 @pytest.mark.parametrize("input_cv", ([1]))
-def test_cv_fail_wrong_number(input_cv):
+def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of wrong number for cv parameter."""
     with pytest.raises(ValueError, match="At least two folds for backtest are expected."):
-        _ = StackingEnsemble._validate_cv(cv=input_cv)
-
-
-@pytest.mark.parametrize("input_cv", (["test"]))
-def test_cv_fail_wrong_format(input_cv):
-    """Check that StackingEnsemble._validate_cv works correctly in case of wrong format for cv parameter."""
-    with pytest.raises(ValueError, match="Invalid format for cv parameter."):
-        _ = StackingEnsemble._validate_cv(cv=input_cv)
+        _ = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], cv=input_cv)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +79,7 @@ def test_features_to_use(
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
-    obtained_features = ensemble._get_features_to_use(forecasts_ts)
+    obtained_features = ensemble._filter_features_to_use(forecasts_ts)
     assert obtained_features == expected_features
 
 
@@ -102,7 +95,7 @@ def test_features_to_use_wrong_format(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
     with pytest.warns(UserWarning, match="Feature list is passed in the wrong format."):
-        _ = ensemble._get_features_to_use(forecasts_ts)
+        _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
 @pytest.mark.parametrize("features_to_use", ([["unknow_feature"]]))
@@ -117,7 +110,7 @@ def test_features_to_use_not_found(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
     with pytest.warns(UserWarning, match=f"Features {set(features_to_use)} are not found and will be dropped!"):
-        _ = ensemble._get_features_to_use(forecasts_ts)
+        _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
 @pytest.mark.parametrize(
