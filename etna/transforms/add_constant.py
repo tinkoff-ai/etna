@@ -95,16 +95,17 @@ class AddConstTransform(PerSegmentWrapper):
         self.value = value
         self.in_column = in_column
         self.inplace = inplace
+        self.out_column = out_column
 
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
-        if inplace:
-            out_column_result = in_column
-        elif out_column:
-            out_column_result = out_column
+        if self.inplace:
+            out_column_result = self.in_column
+        elif self.out_column:
+            out_column_result = self.out_column
         else:
-            out_column_result = f"{in_column}_{self.__repr__()}"
+            out_column_result = f"{self.in_column}_{self.__repr__()}"
         super().__init__(
             transform=_OneSegmentAddConstTransform(
                 value=value, in_column=in_column, inplace=inplace, out_column=out_column_result
