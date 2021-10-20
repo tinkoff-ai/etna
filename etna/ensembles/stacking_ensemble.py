@@ -28,29 +28,29 @@ class StackingEnsemble(Pipeline):
     >>> from etna.datasets import TSDataset
     >>> from etna.ensembles import VotingEnsemble
     >>> from etna.models import NaiveModel
-    >>> from etna.models import ProphetModel
+    >>> from etna.models import MovingAverageModel
     >>> from etna.pipeline import Pipeline
     >>> import pandas as pd
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> df = generate_ar_df(periods=100, start_time="2021-06-01", ar_coef=[0.8], n_segments=3)
     >>> df_ts_format = TSDataset.to_dataset(df)
     >>> ts = TSDataset(df_ts_format, "D")
-    >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=7)
+    >>> ma_pipeline = Pipeline(model=MovingAverageModel(window=5), transforms=[], horizon=7)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=7)
-    >>> ensemble = StackingEnsemble(pipelines=[prophet_pipeline, naive_pipeline])
+    >>> ensemble = StackingEnsemble(pipelines=[ma_pipeline, naive_pipeline])
     >>> _ = ensemble.fit(ts=ts)
     >>> forecast = ensemble.forecast()
     >>> forecast[:,:,"target"]
     segment    segment_0 segment_1 segment_2
     feature       target    target    target
     timestamp
-    2021-09-09      1.09      1.80      0.03
-    2021-09-10      1.22      1.42     -0.15
-    2021-09-11      0.92      1.76      0.10
-    2021-09-12      0.76      2.21     -0.12
-    2021-09-13      0.71      2.28     -0.13
-    2021-09-14      0.86      1.51     -0.25
-    2021-09-15      0.87      1.93     -0.02
+    2021-09-09      0.70      1.47      0.20
+    2021-09-10      0.62      1.53      0.26
+    2021-09-11      0.50      1.78      0.36
+    2021-09-12      0.37      1.88      0.21
+    2021-09-13      0.46      1.87      0.25
+    2021-09-14      0.44      1.49      0.21
+    2021-09-15      0.36      1.56      0.30
     """
 
     def __init__(
