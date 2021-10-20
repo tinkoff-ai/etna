@@ -54,7 +54,7 @@ class SklearnTransform(Transform):
         self.transformer = transformer
         if isinstance(in_column, str):
             in_column = [in_column]
-        self.in_column: Optional[List[str]] = in_column if in_column is None else sorted(in_column)
+        self.in_column = in_column if in_column is None else sorted(in_column)
         self.inplace = inplace
         self.mode = TransformMode(mode)
         self.out_column_postfix = out_column_postfix
