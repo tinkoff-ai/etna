@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 
 from etna.transforms.base import PerSegmentWrapper
@@ -18,7 +20,7 @@ class _OneSegmentAddConstTransform(Transform):
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
-            name of added column
+            name of added column. If not given, use '{in_column}_{self.__repr__()}'
         """
         self.value = value
         self.in_column = in_column
@@ -92,6 +94,9 @@ class AddConstTransform(PerSegmentWrapper):
         self.value = value
         self.in_column = in_column
         self.inplace = inplace
+
+        if self.inplace and self.out_column:
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
         if inplace:
             out_column_result = in_column
