@@ -31,16 +31,7 @@ class VotingEnsemble(Pipeline):
     ...     pipelines=[prophet_pipeline, naive_pipeline],
     ...     weights=[0.7, 0.3]
     ... )
-    >>> ensemble.fit(ts=ts)
-    VotingEnsemble(pipelines =
-    [Pipeline(model = ProphetModel(growth = 'linear', changepoints = None, n_changepoints = 25,
-    changepoint_range = 0.8, yearly_seasonality = 'auto', weekly_seasonality = 'auto',
-    daily_seasonality = 'auto', holidays = None, seasonality_mode = 'additive',
-    seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
-    interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
-    additional_seasonality_params = (), ), transforms = [], horizon = 7, ),
-    Pipeline(model = NaiveModel(lag = 10, ), transforms = [], horizon = 7, )],
-    weights = [0.7, 0.3], n_jobs = 1, )
+    >>> _ = ensemble.fit(ts=ts)
     >>> forecast = ensemble.forecast()
     >>> forecast
     segment         segment_0        segment_1       segment_2
@@ -66,6 +57,11 @@ class VotingEnsemble(Pipeline):
             list of pipelines' weights; weights will be normalized automatically.
         n_jobs:
             number of jobs to run in parallel
+
+        Raises
+        ------
+        ValueError:
+            If the number of the pipelines is less than 2 or pipelines have different horizons.
         """
         self._validate_pipeline_number(pipelines=pipelines)
         self.horizon = self._get_horizon(pipelines=pipelines)
@@ -82,10 +78,10 @@ class VotingEnsemble(Pipeline):
     @staticmethod
     def _get_horizon(pipelines: List[Pipeline]) -> int:
         """Get ensemble's horizon."""
-        horizons = list(set([pipeline.horizon for pipeline in pipelines]))
+        horizons = set([pipeline.horizon for pipeline in pipelines])
         if len(horizons) > 1:
             raise ValueError("All the pipelines should have the same horizon.")
-        return horizons[0]
+        return horizons.pop()
 
     @staticmethod
     def _process_weights(weights: Optional[Iterable[float]], pipelines_number: int) -> List[float]:
@@ -101,9 +97,9 @@ class VotingEnsemble(Pipeline):
     @staticmethod
     def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
         """Fit given pipeline with ts."""
-        tslogger.log(msg=f"Start fitting {pipeline.__repr__()}.")
+        tslogger.log(msg=f"Start fitting {pipeline}.")
         pipeline.fit(ts=ts)
-        tslogger.log(msg=f"Pipeline {pipeline.__repr__()} is fitted.")
+        tslogger.log(msg=f"Pipeline {pipeline} is fitted.")
         return pipeline
 
     def fit(self, ts: TSDataset) -> "VotingEnsemble":
@@ -127,9 +123,9 @@ class VotingEnsemble(Pipeline):
     @staticmethod
     def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
         """Make forecast with given pipeline."""
-        tslogger.log(msg=f"Start forecasting with {pipeline.__repr__()}.")
+        tslogger.log(msg=f"Start forecasting with {pipeline}.")
         forecast = pipeline.forecast()
-        tslogger.log(msg=f"Forecast is done with {pipeline.__repr__()}.")
+        tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:
