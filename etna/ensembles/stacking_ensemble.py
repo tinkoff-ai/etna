@@ -39,23 +39,23 @@ class StackingEnsemble(Pipeline):
     >>> ensemble.fit(ts=ts)
     StackingEnsemble(pipelines =
     [Pipeline(model = ProphetModel(growth = 'linear', changepoints = None, n_changepoints = 25, changepoint_range = 0.8,
-     yearly_seasonality = 'auto', weekly_seasonality = 'auto', daily_seasonality = 'auto', holidays = None,
-     seasonality_mode = 'additive', seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
-     interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None, additional_seasonality_params = (), ),
-     transforms = [], horizon = 7, ), Pipeline(model = NaiveModel(lag = 10, ), transforms = [], horizon = 7, )],
-     final_model = LinearRegression(), cv = 3, features_to_use = None, n_jobs = 1, )
+    yearly_seasonality = 'auto', weekly_seasonality = 'auto', daily_seasonality = 'auto', holidays = None,
+    seasonality_mode = 'additive', seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
+    interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None, additional_seasonality_params = (), ),
+    transforms = [], horizon = 7, ), Pipeline(model = NaiveModel(lag = 10, ), transforms = [], horizon = 7, )],
+    final_model = LinearRegression(), cv = 3, features_to_use = None, n_jobs = 1, )
     >>> forecast = ensemble.forecast()
     >>> forecast[:,:,"target"]
-    segment	segment_0	segment_1	segment_2
-    feature	target	target	target
+    segment        segment_0     segment_1     segment_2
+    feature           target        target        target
     timestamp
-    2021-09-09	-8.253363e+06	3.775259e+07	-8.733552e+07
-    2021-09-10	-9.904036e+06	4.530311e+07	-1.048026e+08
-    2021-09-11	-1.188485e+07	5.436375e+07	-1.257631e+08
-    2021-09-12	-1.426182e+07	6.523650e+07	-1.509158e+08
-    2021-09-13	-1.711418e+07	7.828380e+07	-1.810989e+08
-    2021-09-14	-2.053702e+07	9.394055e+07	-2.173187e+08
-    2021-09-15	-2.464442e+07	1.127287e+08	-2.607825e+08
+    2021-09-09 -8.253363e+06  3.775259e+07 -8.733552e+07
+    2021-09-10 -9.904036e+06  4.530311e+07 -1.048026e+08
+    2021-09-11 -1.188485e+07  5.436375e+07 -1.257631e+08
+    2021-09-12 -1.426182e+07  6.523650e+07 -1.509158e+08
+    2021-09-13 -1.711418e+07  7.828380e+07 -1.810989e+08
+    2021-09-14 -2.053702e+07  9.394055e+07 -2.173187e+08
+    2021-09-15 -2.464442e+07  1.127287e+08 -2.607825e+08
     """
 
     def __init__(
