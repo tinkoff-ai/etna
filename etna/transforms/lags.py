@@ -9,6 +9,8 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentLagFeature(Transform):
+    """Generates series of lags from given segment."""
+
     def __init__(self, lags: Union[List[int], int], in_column: str, out_column: Optional[str] = None):
         if isinstance(lags, int):
             if lags < 1:
@@ -33,7 +35,7 @@ class _OneSegmentLagFeature(Transform):
 
 
 class LagTransform(PerSegmentWrapper):
-    """Generates series of lags from given dataframe"""
+    """Generates series of lags from given dataframe."""
 
     def __init__(self, lags: Union[List[int], int], in_column: str, out_column: Optional[str] = None):
         """Create instance of LagTransform.

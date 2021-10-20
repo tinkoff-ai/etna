@@ -24,7 +24,7 @@ def catboost_pipeline() -> Pipeline:
     """Generate pipeline with CatBoostModelMultiSegment."""
     pipeline = Pipeline(
         model=CatBoostModelPerSegment(),
-        transforms=[LagTransform(in_column="target", lags=[10, 11, 12])],
+        transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="lag_feature")],
         horizon=7,
     )
     return pipeline
@@ -77,7 +77,11 @@ def stacking_ensemble_pipeline(
 @pytest.fixture
 def naive_featured_pipeline_1() -> Pipeline:
     """Generate pipeline with NaiveModel(1)."""
-    pipeline = Pipeline(model=NaiveModel(1), transforms=[LagTransform(lags=[10], in_column="target")], horizon=7)
+    pipeline = Pipeline(
+        model=NaiveModel(1),
+        transforms=[LagTransform(lags=[10], in_column="target", out_column="lag_feature")],
+        horizon=7,
+    )
     return pipeline
 
 
@@ -138,7 +142,7 @@ def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset"
 @pytest.fixture
 def naive_ensemble(horizon: int = 7) -> StackingEnsemble:
     naive_featured_pipeline_1 = Pipeline(
-        model=NaiveModel(1), transforms=[LagTransform(lags=[horizon], in_column="target")], horizon=horizon
+        model=NaiveModel(1), transforms=[LagTransform(lags=[horizon], in_column="target", out_column="lag_feature")], horizon=horizon
     )
     naive_featured_pipeline_2 = Pipeline(model=NaiveModel(2), transforms=[DateFlagsTransform()], horizon=horizon)
     ensemble = StackingEnsemble(
