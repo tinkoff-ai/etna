@@ -272,13 +272,13 @@ class TimeFlagsTransform(Transform):
 
     def __init__(
         self,
-        minute_in_hour_number: bool = True,
-        fifteen_minutes_in_hour_number: bool = False,
-        hour_number: bool = True,
-        half_hour_number: bool = False,
-        half_day_number: bool = False,
-        one_third_day_number: bool = False,
-        out_column: str = None,
+        minute_in_hour_number: Optional[bool] = True,
+        fifteen_minutes_in_hour_number: Optional[bool] = False,
+        hour_number: Optional[bool] = True,
+        half_hour_number: Optional[bool] = False,
+        half_day_number: Optional[bool] = False,
+        one_third_day_number: Optional[bool] = False,
+        out_column: Optional[str] = None,
     ):
         """Initialise class attributes.
 

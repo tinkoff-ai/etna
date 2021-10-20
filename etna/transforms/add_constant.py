@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 import pandas as pd
 
@@ -76,7 +77,7 @@ class _OneSegmentAddConstTransform(Transform):
 class AddConstTransform(PerSegmentWrapper):
     """AddConstTransform add constant for given series."""
 
-    def __init__(self, value: float, in_column: str, inplace: bool = True, out_column: str = None):
+    def __init__(self, value: float, in_column: str, inplace: bool = True, out_column: Optional[str] = None):
         """
         Init AddConstTransform.
 
