@@ -170,14 +170,14 @@ def test_dummy_inverse_transform_not_inplace_repr(normal_distributed_df, scaler,
     """Check that inversed values the same for not inplace version."""
     inplace_scaler = scaler(mode=mode)
     not_inplace_scaler = scaler(inplace=False, mode=mode)
-    inplace_feature_df = inplace_scaler.fit_transform(df=normal_distributed_df.copy())
-    not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
     columns_to_compare = pd.MultiIndex.from_tuples(
         [
             (segment_name, f"{feature_name}_{not_inplace_scaler.__repr__()}")
             for segment_name, feature_name in normal_distributed_df.columns
         ]
     )
+    inplace_feature_df = inplace_scaler.fit_transform(df=normal_distributed_df.copy())
+    not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
 
     inplace_feature_df.columns = columns_to_compare
     npt.assert_array_almost_equal(
