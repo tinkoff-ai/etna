@@ -415,4 +415,4 @@ class TimeFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.hour // period_in_hours).values
 
 
-__all__ = ["TimeFlagsTransform", "TimeFlagsTransform", "DateFlagsTransform"]
+__all__ = ["TimeFlagsTransform", "DateFlagsTransform"]

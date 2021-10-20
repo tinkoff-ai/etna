@@ -60,14 +60,23 @@ def test_logpreproc_value(positive_df_: pd.DataFrame):
         np.testing.assert_array_almost_equal(value[segment]["target"], positive_df_[segment]["expected"])
 
 
-def test_logpreproc_value_out_column(positive_df_: pd.DataFrame):
-    """Check the value of transform result in case of given out column."""
-    expected_out_column = "target_log_10"
-    preprocess = LogTransform(in_column="target", base=10, inplace=False)
+@pytest.mark.parametrize("out_column", (None, "log_transform"))
+def test_logpreproc_noninplace_interface(positive_df_: pd.DataFrame, out_column: str):
+    """Check the column name after non inplace transform."""
+    preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
     value = preprocess.fit_transform(df=positive_df_)
+    expected_out_column = out_column or f"target_{preprocess.__repr__()}"
     for segment in ["segment_1", "segment_2"]:
         assert expected_out_column in value[segment]
-        np.testing.assert_array_almost_equal(value[segment][expected_out_column], positive_df_[segment]["expected"])
+
+
+def test_logpreproc_value_out_column(positive_df_: pd.DataFrame):
+    """Check the value of transform result in case of given out column."""
+    out_column = "target_log_10"
+    preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
+    value = preprocess.fit_transform(df=positive_df_)
+    for segment in ["segment_1", "segment_2"]:
+        np.testing.assert_array_almost_equal(value[segment][out_column], positive_df_[segment]["expected"])
 
 
 @pytest.mark.parametrize("base", (5, 10, e))
