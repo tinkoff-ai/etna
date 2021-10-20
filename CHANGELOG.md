@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Confidence interval anomalies detection to EDA ([#182](https://github.com/tinkoff-ai/etna-ts/pull/182))
 - ConfidenceIntervalOutliersTransform ([#196](https://github.com/tinkoff-ai/etna-ts/pull/196))
 - Add 'in_column' parameter to get_anomalies methods([#199](https://github.com/tinkoff-ai/etna-ts/pull/199))
+- Clustering notebook ([#152](https://github.com/tinkoff-ai/etna-ts/pull/152))
 - StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
 
 ### Changed
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Categorical and fillna issues with pandas >=1.2 ([#190](https://github.com/tinkoff-ai/etna-ts/pull/190))
 - Fix `TSDataset.to_dataset` method sorting bug ([#183](https://github.com/tinkoff-ai/etna-ts/pull/183))
 - Undefinded behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna-ts/pull/188))
+- Fix typo in word "length" in `get_segment_sequence_anomalies`,`get_sequence_anomalies`,`SAXOutliersTransform` arguments ([#212](https://github.com/tinkoff-ai/etna-ts/pull/212))
 
 ## [1.1.3] - 2021-10-08
 ### Fixed
