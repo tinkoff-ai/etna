@@ -96,7 +96,7 @@ class AddConstTransform(PerSegmentWrapper):
         self.in_column = in_column
         self.inplace = inplace
 
-        if self.inplace and self.out_column:
+        if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
         if inplace:
