@@ -107,13 +107,7 @@ class DateFlagsTransform(Transform):
         self.special_days_in_month = special_days_in_month
 
         self.out_column = out_column
-
-    def _generate_name(self, feature_name: str) -> str:
-        """Generate name for transform column."""
-        if self.out_column:
-            return f"regressor_{self.out_column}_{feature_name}"
-        else:
-            return f"regressor_{self.__repr__()}_{feature_name}"
+        self.out_column_prefix = f"regressor_{self.out_column or self.__repr__()}"
 
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
@@ -135,43 +129,43 @@ class DateFlagsTransform(Transform):
         timestamp_series = pd.Series(df.index)
 
         if self.day_number_in_week:
-            features[self._generate_name("day_number_in_week")] = self._get_day_number_in_week(
+            features[f"{self.out_column_prefix}_day_number_in_week"] = self._get_day_number_in_week(
                 timestamp_series=timestamp_series
             )
 
         if self.day_number_in_month:
-            features[self._generate_name("day_number_in_month")] = self._get_day_number_in_month(
+            features[f"{self.out_column_prefix}_day_number_in_month"] = self._get_day_number_in_month(
                 timestamp_series=timestamp_series
             )
 
         if self.week_number_in_month:
-            features[self._generate_name("week_number_in_month")] = self._get_week_number_in_month(
+            features[f"{self.out_column_prefix}_week_number_in_month"] = self._get_week_number_in_month(
                 timestamp_series=timestamp_series
             )
 
         if self.week_number_in_year:
-            features[self._generate_name("week_number_in_year")] = self._get_week_number_in_year(
+            features[f"{self.out_column_prefix}_week_number_in_year"] = self._get_week_number_in_year(
                 timestamp_series=timestamp_series
             )
 
         if self.month_number_in_year:
-            features[self._generate_name("month_number_in_year")] = self._get_month_number_in_year(
+            features[f"{self.out_column_prefix}_month_number_in_year"] = self._get_month_number_in_year(
                 timestamp_series=timestamp_series
             )
 
         if self.year_number:
-            features[self._generate_name("year_number")] = self._get_year(timestamp_series=timestamp_series)
+            features[f"{self.out_column_prefix}_year_number"] = self._get_year(timestamp_series=timestamp_series)
 
         if self.is_weekend:
-            features[self._generate_name("is_weekend")] = self._get_weekends(timestamp_series=timestamp_series)
+            features[f"{self.out_column_prefix}_is_weekend"] = self._get_weekends(timestamp_series=timestamp_series)
 
         if self.special_days_in_week:
-            features[self._generate_name("special_days_in_week")] = self._get_special_day_in_week(
+            features[f"{self.out_column_prefix}_special_days_in_week"] = self._get_special_day_in_week(
                 special_days=self.special_days_in_week, timestamp_series=timestamp_series
             )
 
         if self.special_days_in_month:
-            features[self._generate_name("special_days_in_month")] = self._get_special_day_in_month(
+            features[f"{self.out_column_prefix}_special_days_in_month"] = self._get_special_day_in_month(
                 special_days=self.special_days_in_month, timestamp_series=timestamp_series
             )
 
@@ -330,13 +324,7 @@ class TimeFlagsTransform(Transform):
         self.one_third_day_number: bool = one_third_day_number
 
         self.out_column = out_column
-
-    def _generate_name(self, feature_name: str) -> str:
-        """Generate name for transform column."""
-        if self.out_column:
-            return f"regressor_{self.out_column}_{feature_name}"
-        else:
-            return f"regressor_{self.__repr__()}_{feature_name}"
+        self.out_column_prefix = f"regressor_{self.out_column or self.__repr__()}"
 
     def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
@@ -361,29 +349,29 @@ class TimeFlagsTransform(Transform):
 
         if self.minute_in_hour_number:
             minute_in_hour_number = self._get_minute_number(timestamp_series=timestamp_series)
-            features[self._generate_name("minute_in_hour_number")] = minute_in_hour_number
+            features[f"{self.out_column_prefix}_minute_in_hour_number"] = minute_in_hour_number
 
         if self.fifteen_minutes_in_hour_number:
             fifteen_minutes_in_hour_number = self._get_period_in_hour(
                 timestamp_series=timestamp_series, period_in_minutes=15
             )
-            features[self._generate_name("fifteen_minutes_in_hour_number")] = fifteen_minutes_in_hour_number
+            features[f"{self.out_column_prefix}_fifteen_minutes_in_hour_number"] = fifteen_minutes_in_hour_number
 
         if self.hour_number:
             hour_number = self._get_hour_number(timestamp_series=timestamp_series)
-            features[self._generate_name("hour_number")] = hour_number
+            features[f"{self.out_column_prefix}_hour_number"] = hour_number
 
         if self.half_hour_number:
             half_hour_number = self._get_period_in_hour(timestamp_series=timestamp_series, period_in_minutes=30)
-            features[self._generate_name("half_hour_number")] = half_hour_number
+            features[f"{self.out_column_prefix}_half_hour_number"] = half_hour_number
 
         if self.half_day_number:
             half_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=12)
-            features[self._generate_name("half_day_number")] = half_day_number
+            features[f"{self.out_column_prefix}_half_day_number"] = half_day_number
 
         if self.one_third_day_number:
             one_third_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=8)
-            features[self._generate_name("one_third_day_number")] = one_third_day_number
+            features[f"{self.out_column_prefix}_one_third_day_number"] = one_third_day_number
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
