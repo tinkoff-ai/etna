@@ -25,6 +25,7 @@ class SklearnTransform(Transform):
         transformer: TransformerMixin,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
+        out_column_postfix: Optional[str] = None,
         mode: Union[TransformMode, str] = "per-segment",
     ):
         """
@@ -38,6 +39,8 @@ class SklearnTransform(Transform):
             columns to be transformed, if None - all columns will be scaled.
         inplace:
             features are changed by transformed.
+        out_column_postfix:
+            postfix for generated columns. We get columns named '{in_column}_{out_column_postfix}'.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -54,6 +57,7 @@ class SklearnTransform(Transform):
         self.in_column: Optional[List[str]] = in_column if in_column is None else sorted(in_column)
         self.inplace = inplace
         self.mode = TransformMode(mode)
+        self.out_column_postfix = out_column_postfix or "test_postfix"
 
     def fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
@@ -112,7 +116,7 @@ class SklearnTransform(Transform):
             )
             transformed_features.columns = pd.MultiIndex.from_tuples(
                 [
-                    (segment_name, f"{feature_name}_{str(self)}")
+                    (segment_name, f"{feature_name}_{self.out_column_postfix}")
                     for segment_name, feature_name in transformed_features.columns
                 ]
             )
@@ -162,6 +166,3 @@ class SklearnTransform(Transform):
             [transformed[i * time_period_len : (i + 1) * time_period_len, :] for i in range(n_segments)], axis=1
         )
         return transformed
-
-    def __str__(self) -> str:
-        return self.__class__.__name__.lower()
