@@ -29,7 +29,7 @@ class DateFlagsTransform(Transform):
         is_weekend: Optional[bool] = True,
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
-        out_column: str = None,
+        out_column: Optional[str] = None,
     ):
         """Create instance of DateFlags.
 
