@@ -57,9 +57,9 @@ def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipe
             "all",
             {
                 "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
+                "regressor_dateflag_day_number_in_month",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_dateflag_is_weekend",
             },
         ),
         (
