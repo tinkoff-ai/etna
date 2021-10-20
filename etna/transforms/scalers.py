@@ -54,9 +54,14 @@ class StandardScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if self.inplace and out_column:
+        if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = in_column
+        self.inplace = inplace
         self.out_column = out_column
+        self.with_mean = with_mean
+        self.with_std = with_std
+        self.mode = mode
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
@@ -64,8 +69,7 @@ class StandardScalerTransform(SklearnTransform):
             inplace=inplace,
             mode=mode,
         )
-        self.with_mean = with_mean
-        self.with_std = with_std
+
 
 
 class RobustScalerTransform(SklearnTransform):
@@ -118,9 +122,16 @@ class RobustScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if self.inplace and out_column:
+        if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = in_column
+        self.inplace = inplace
         self.out_column = out_column
+        self.with_centering = with_centering
+        self.with_scaling = with_scaling
+        self.quantile_range = quantile_range
+        self.unit_variance = unit_variance
+        self.mode = mode
         super().__init__(
             in_column=in_column,
             inplace=inplace,
@@ -134,10 +145,6 @@ class RobustScalerTransform(SklearnTransform):
             ),
             mode=mode,
         )
-        self.with_centering = with_centering
-        self.with_scaling = with_scaling
-        self.quantile_range = quantile_range
-        self.unit_variance = unit_variance
 
 
 class MinMaxScalerTransform(SklearnTransform):
@@ -181,9 +188,14 @@ class MinMaxScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if self.inplace and out_column:
+        if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = in_column
+        self.inplace = inplace
         self.out_column = out_column
+        self.feature_range = feature_range
+        self.clip = clip
+        self.mode = mode
         super().__init__(
             in_column=in_column,
             inplace=inplace,
@@ -191,8 +203,6 @@ class MinMaxScalerTransform(SklearnTransform):
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
             mode=mode,
         )
-        self.feature_range = feature_range
-        self.clip = clip
 
 
 class MaxAbsScalerTransform(SklearnTransform):
@@ -229,15 +239,18 @@ class MaxAbsScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if self.inplace and out_column:
+        if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = in_column
+        self.inplace = inplace
         self.out_column = out_column
+        self.mode = mode
         super().__init__(
             in_column=in_column,
             inplace=inplace,
             out_column_postfix=self.out_column or self.__repr__(),
             transformer=MaxAbsScaler(copy=True),
-            mode=mode
+            mode=mode,
         )
 
 
