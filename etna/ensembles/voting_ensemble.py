@@ -31,16 +31,7 @@ class VotingEnsemble(Pipeline):
     ...     pipelines=[prophet_pipeline, naive_pipeline],
     ...     weights=[0.7, 0.3]
     ... )
-    >>> ensemble.fit(ts=ts)
-    VotingEnsemble(pipelines =
-    [Pipeline(model = ProphetModel(growth = 'linear', changepoints = None, n_changepoints = 25,
-    changepoint_range = 0.8, yearly_seasonality = 'auto', weekly_seasonality = 'auto',
-    daily_seasonality = 'auto', holidays = None, seasonality_mode = 'additive',
-    seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
-    interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
-    additional_seasonality_params = (), ), transforms = [], horizon = 7, ),
-    Pipeline(model = NaiveModel(lag = 10, ), transforms = [], horizon = 7, )],
-    weights = [0.7, 0.3], n_jobs = 1, )
+    >>> _ = ensemble.fit(ts=ts)
     >>> forecast = ensemble.forecast()
     >>> forecast
     segment         segment_0        segment_1       segment_2

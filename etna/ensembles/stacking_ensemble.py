@@ -30,32 +30,27 @@ class StackingEnsemble(Pipeline):
     >>> from etna.models import NaiveModel
     >>> from etna.models import ProphetModel
     >>> from etna.pipeline import Pipeline
+    >>> import pandas as pd
+    >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> df = generate_ar_df(periods=100, start_time="2021-06-01", ar_coef=[1.2], n_segments=3)
     >>> df_ts_format = TSDataset.to_dataset(df)
     >>> ts = TSDataset(df_ts_format, "D")
     >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=7)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=7)
     >>> ensemble = StackingEnsemble(pipelines=[prophet_pipeline, naive_pipeline])
-    >>> ensemble.fit(ts=ts)
-    StackingEnsemble(pipelines =
-    [Pipeline(model = ProphetModel(growth = 'linear', changepoints = None, n_changepoints = 25, changepoint_range = 0.8,
-    yearly_seasonality = 'auto', weekly_seasonality = 'auto', daily_seasonality = 'auto', holidays = None,
-    seasonality_mode = 'additive', seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
-    interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None, additional_seasonality_params = (), ),
-    transforms = [], horizon = 7, ), Pipeline(model = NaiveModel(lag = 10, ), transforms = [], horizon = 7, )],
-    final_model = LinearRegression(), cv = 3, features_to_use = None, n_jobs = 1, )
+    >>> _ = ensemble.fit(ts=ts)
     >>> forecast = ensemble.forecast()
     >>> forecast[:,:,"target"]
-    segment        segment_0     segment_1     segment_2
-    feature           target        target        target
+    segment         segment_0      segment_1       segment_2
+    feature            target         target          target
     timestamp
-    2021-09-09 -8.253363e+06  3.775259e+07 -8.733552e+07
-    2021-09-10 -9.904036e+06  4.530311e+07 -1.048026e+08
-    2021-09-11 -1.188485e+07  5.436375e+07 -1.257631e+08
-    2021-09-12 -1.426182e+07  6.523650e+07 -1.509158e+08
-    2021-09-13 -1.711418e+07  7.828380e+07 -1.810989e+08
-    2021-09-14 -2.053702e+07  9.394055e+07 -2.173187e+08
-    2021-09-15 -2.464442e+07  1.127287e+08 -2.607825e+08
+    2021-09-09  -8,253,363.26  37,752,594.24  -87,335,523.39
+    2021-09-10  -9,904,035.52  45,303,113.38 -104,802,627.05
+    2021-09-11 -11,884,845.70  54,363,745.81 -125,763,147.95
+    2021-09-12 -14,261,819.53  65,236,499.78 -150,915,780.20
+    2021-09-13 -17,114,181.54  78,283,801.72 -181,098,935.13
+    2021-09-14 -20,537,018.09  93,940,549.85 -217,318,722.29
+    2021-09-15 -24,644,424.55 112,728,661.36 -260,782,462.32
     """
 
     def __init__(
