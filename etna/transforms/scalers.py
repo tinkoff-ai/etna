@@ -56,7 +56,7 @@ class StandardScalerTransform(SklearnTransform):
         """
         if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = in_column
+        self.in_column: Union[str, List[str]] = in_column
         self.inplace = inplace
         self.out_column = out_column
         self.with_mean = with_mean
@@ -123,7 +123,7 @@ class RobustScalerTransform(SklearnTransform):
         """
         if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = in_column
+        self.in_column: Union[str, List[str]] = in_column
         self.inplace = inplace
         self.out_column = out_column
         self.with_centering = with_centering
@@ -189,7 +189,7 @@ class MinMaxScalerTransform(SklearnTransform):
         """
         if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = in_column
+        self.in_column: Union[str, List[str]] = in_column
         self.inplace = inplace
         self.out_column = out_column
         self.feature_range = feature_range
@@ -240,7 +240,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         """
         if inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = in_column
+        self.in_column: Union[str, List[str]] = in_column
         self.inplace = inplace
         self.out_column = out_column
         self.mode = TransformMode(mode)
