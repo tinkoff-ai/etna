@@ -57,7 +57,7 @@ class SklearnTransform(Transform):
         self.in_column: Optional[List[str]] = in_column if in_column is None else sorted(in_column)
         self.inplace = inplace
         self.mode = TransformMode(mode)
-        self.out_column_postfix = out_column_postfix or "test_postfix"
+        self.out_column_postfix = out_column_postfix
 
     def fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
