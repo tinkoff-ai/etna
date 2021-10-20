@@ -36,6 +36,7 @@ class AutoRegressivePipeline(Pipeline):
     >>> pipeline = AutoRegressivePipeline(model, horizon, transforms, step=1)
     >>> _ = pipeline.fit(ts=ts)
     >>> forecast = pipeline.forecast()
+    >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
     feature       target    target    target    target
@@ -90,21 +91,32 @@ class AutoRegressivePipeline(Pipeline):
         self.model.fit(ts)
         return self
 
+    def _create_predictions_template(self) -> pd.DataFrame:
+        """Create dataframe to fill with forecasts."""
+        prediction_df = self.ts.to_pandas()
+        future_dates = pd.date_range(
+            start=prediction_df.index.max(), periods=self.horizon + 1, freq=self.ts.freq, closed="right"
+        )
+        prediction_df = prediction_df.reindex(prediction_df.index.append(future_dates))
+        prediction_df.index.name = "timestamp"
+        return prediction_df
+
     def forecast(self) -> TSDataset:
         """Make predictions.
 
         Returns
         -------
-        TSDataset
+        TSDataset:
             TSDataset with forecast
         """
-        prediction_df = self.ts.to_pandas()
-        to_forecast = self.horizon
-        while to_forecast > 0:
-            cur_step = min(self.step, to_forecast)
-            cur_ts = TSDataset(prediction_df, freq=self.ts.freq)
-            # manually set transforms in cur_ts, otherwise make_future won't know about them
-            cur_ts.transforms = self.transforms
+        prediction_df = self._create_predictions_template()
+
+        for idx_start in range(0, self.horizon, self.step):
+            current_step = min(self.step, self.horizon - idx_start)
+            current_idx_border = self.ts.index.shape[0] + idx_start
+            current_ts = TSDataset(prediction_df.iloc[:current_idx_border], freq=self.ts.freq)
+            # manually set transforms in current_ts, otherwise make_future won't know about them
+            current_ts.transforms = self.transforms
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     message="TSDataset freq can't be inferred",
@@ -114,10 +126,9 @@ class AutoRegressivePipeline(Pipeline):
                     message="You probably set wrong freq.",
                     action="ignore",
                 )
-                cur_ts_forecast = cur_ts.make_future(cur_step)
+                cur_ts_forecast = current_ts.make_future(current_step)
             cur_ts_future = self.model.forecast(cur_ts_forecast)
-            prediction_df = pd.concat([prediction_df, cur_ts_future.to_pandas()[prediction_df.columns]])
-            to_forecast -= cur_step
+            prediction_df = prediction_df.combine_first(cur_ts_future.to_pandas()[prediction_df.columns])
 
         prediction_ts = TSDataset(prediction_df.tail(self.horizon), freq=self.ts.freq)
         # add all other features to forecast by making transform + inverse_transform
