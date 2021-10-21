@@ -1,7 +1,7 @@
 Pipelines
 ==========
 
-.. _transforms:
+.. _pipeline:
 
 .. currentmodule:: etna
 
