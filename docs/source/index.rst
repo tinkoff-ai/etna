@@ -12,6 +12,7 @@ Welcome to ETNA's documentation!
    metrics
    transforms
    ensembles
+   pipeline
    analysis
    model_selection
    loggers
