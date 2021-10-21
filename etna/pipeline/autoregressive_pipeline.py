@@ -126,9 +126,9 @@ class AutoRegressivePipeline(Pipeline):
                     message="You probably set wrong freq.",
                     action="ignore",
                 )
-                cur_ts_forecast = current_ts.make_future(current_step)
-            cur_ts_future = self.model.forecast(cur_ts_forecast)
-            prediction_df = prediction_df.combine_first(cur_ts_future.to_pandas()[prediction_df.columns])
+                current_ts_forecast = current_ts.make_future(current_step)
+            current_ts_future = self.model.forecast(current_ts_forecast)
+            prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         prediction_ts = TSDataset(prediction_df.tail(self.horizon), freq=self.ts.freq)
         # add all other features to forecast by making transform + inverse_transform
