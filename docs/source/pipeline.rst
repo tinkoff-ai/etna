@@ -8,7 +8,7 @@ Pipelines
 Details and available algorithms
 --------------------------------
 
-See the API documentation for further details on available clustering algorithms:
+See the API documentation for further details of using pipelines:
 
 .. currentmodule:: etna
 
