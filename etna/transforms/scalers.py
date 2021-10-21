@@ -53,6 +53,9 @@ class StandardScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        self.in_column = in_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
         self.with_mean = with_mean
         self.with_std = with_std
         super().__init__(
@@ -114,6 +117,9 @@ class RobustScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        self.in_column = in_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
         self.with_centering = with_centering
         self.with_scaling = with_scaling
         self.quantile_range = quantile_range
@@ -174,6 +180,9 @@ class MinMaxScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        self.in_column = in_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
         self.feature_range = feature_range
         self.clip = clip
         super().__init__(
@@ -219,6 +228,9 @@ class MaxAbsScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        self.in_column = in_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
         super().__init__(
             in_column=in_column,
             inplace=inplace,
