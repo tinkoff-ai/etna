@@ -27,8 +27,8 @@ class DateFlagsTransform(Transform):
         month_number_in_year: Optional[bool] = False,
         year_number: Optional[bool] = False,
         is_weekend: Optional[bool] = True,
-        special_days_in_week: Optional[int] = (),
-        special_days_in_month: Optional[int] = (),
+        special_days_in_week: Sequence[int] = (),
+        special_days_in_month: Sequence[int] = (),
         out_column: Optional[str] = None,
     ):
         """Create instance of DateFlags.
