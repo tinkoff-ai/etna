@@ -22,7 +22,7 @@ class _OneSegmentLagFeature(Transform):
             self.lags = lags
 
         self.in_column = in_column
-        self.out_column = out_column
+        self.out_column = f"regressor_{out_column}"
 
     def fit(self, *args) -> "_OneSegmentLagFeature":
         return self
@@ -61,6 +61,8 @@ class LagTransform(PerSegmentWrapper):
 
         super().__init__(
             transform=_OneSegmentLagFeature(
-                lags=self.lags, in_column=self.in_column, out_column=f"regressor_{self.out_column or self.__repr__()}"
+                lags=self.lags,
+                in_column=self.in_column,
+                out_column=out_column if out_column is not None else self.__repr__(),
             )
         )

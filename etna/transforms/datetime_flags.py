@@ -272,7 +272,7 @@ class TimeFlagsTransform(Transform):
         half_hour_number: bool = False,
         half_day_number: bool = False,
         one_third_day_number: bool = False,
-        out_column: str = None,
+        out_column: Optional[str] = None,
     ):
         """Initialise class attributes.
 
