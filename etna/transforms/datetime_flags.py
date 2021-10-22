@@ -20,15 +20,15 @@ class DateFlagsTransform(Transform):
 
     def __init__(
         self,
-        day_number_in_week: Optional[bool] = True,
-        day_number_in_month: Optional[bool] = True,
-        week_number_in_month: Optional[bool] = False,
-        week_number_in_year: Optional[bool] = False,
-        month_number_in_year: Optional[bool] = False,
-        year_number: Optional[bool] = False,
-        is_weekend: Optional[bool] = True,
-        special_days_in_week: Sequence[int] = (),
-        special_days_in_month: Sequence[int] = (),
+        day_number_in_week: bool = True,
+        day_number_in_month: bool = True,
+        week_number_in_month: bool = False,
+        week_number_in_year: bool = False,
+        month_number_in_year: bool = False,
+        year_number: bool = False,
+        is_weekend: bool = True,
+        special_days_in_week: int = (),
+        special_days_in_month: int = (),
         out_column: Optional[str] = None,
     ):
         """Create instance of DateFlags.
@@ -107,7 +107,7 @@ class DateFlagsTransform(Transform):
         self.special_days_in_month = special_days_in_month
 
         self.out_column = out_column
-        self.out_column_prefix = f"regressor_{self.out_column or self.__repr__()}"
+        self.out_column_prefix = f"regressor_{out_column if out_column is not None else self.__repr__()}"
 
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
@@ -324,7 +324,7 @@ class TimeFlagsTransform(Transform):
         self.one_third_day_number: bool = one_third_day_number
 
         self.out_column = out_column
-        self.out_column_prefix = f"regressor_{self.out_column or self.__repr__()}"
+        self.out_column_prefix = f"regressor_{out_column if out_column is not None else self.__repr__()}"
 
     def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""

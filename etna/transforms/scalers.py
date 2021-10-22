@@ -61,7 +61,7 @@ class StandardScalerTransform(SklearnTransform):
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
-            out_column_postfix=out_column or self.__repr__(),
+            out_column_postfix=out_column if out_column is not None else self.__repr__(),
             inplace=inplace,
             mode=mode,
         )
@@ -127,7 +127,7 @@ class RobustScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column or self.__repr__(),
+            out_column_postfix=out_column if out_column is not None else self.__repr__(),
             transformer=RobustScaler(
                 with_centering=with_centering,
                 with_scaling=with_scaling,
@@ -188,7 +188,7 @@ class MinMaxScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column or self.__repr__(),
+            out_column_postfix=out_column if out_column is not None else self.__repr__(),
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
             mode=mode,
         )
@@ -234,7 +234,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column or self.__repr__(),
+            out_column_postfix=out_column if out_column is not None else self.__repr__(),
             transformer=MaxAbsScaler(copy=True),
             mode=mode,
         )
