@@ -20,15 +20,15 @@ class DateFlagsTransform(Transform):
 
     def __init__(
         self,
-        day_number_in_week: bool = True,
-        day_number_in_month: bool = True,
-        week_number_in_month: bool = False,
-        week_number_in_year: bool = False,
-        month_number_in_year: bool = False,
-        year_number: bool = False,
-        is_weekend: bool = True,
-        special_days_in_week: int = (),
-        special_days_in_month: int = (),
+        day_number_in_week: Optional[bool] = True,
+        day_number_in_month: Optional[bool] = True,
+        week_number_in_month: Optional[bool] = False,
+        week_number_in_year: Optional[bool] = False,
+        month_number_in_year: Optional[bool] = False,
+        year_number: Optional[bool] = False,
+        is_weekend: Optional[bool] = True,
+        special_days_in_week: Optional[int] = (),
+        special_days_in_month: Optional[int] = (),
         out_column: Optional[str] = None,
     ):
         """Create instance of DateFlags.
@@ -266,13 +266,13 @@ class TimeFlagsTransform(Transform):
 
     def __init__(
         self,
-        minute_in_hour_number: Optional[bool] = True,
-        fifteen_minutes_in_hour_number: Optional[bool] = False,
-        hour_number: Optional[bool] = True,
-        half_hour_number: Optional[bool] = False,
-        half_day_number: Optional[bool] = False,
-        one_third_day_number: Optional[bool] = False,
-        out_column: Optional[str] = None,
+        minute_in_hour_number: bool = True,
+        fifteen_minutes_in_hour_number: bool = False,
+        hour_number: bool = True,
+        half_hour_number: bool = False,
+        half_day_number: bool = False,
+        one_third_day_number: bool = False,
+        out_column: str = None,
     ):
         """Initialise class attributes.
 
