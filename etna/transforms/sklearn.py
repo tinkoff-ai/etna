@@ -1,4 +1,3 @@
-import warnings
 from enum import Enum
 from typing import List
 from typing import Optional
@@ -52,8 +51,6 @@ class SklearnTransform(Transform):
         ValueError:
             if incorrect mode given
         """
-        if inplace and out_column_postfix:
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
         self.transformer = transformer
         if isinstance(in_column, str):
             in_column = [in_column]

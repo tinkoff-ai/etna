@@ -1,3 +1,4 @@
+import warnings
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -53,11 +54,14 @@ class StandardScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        self.in_column = in_column
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
         self.inplace = inplace
         self.mode = TransformMode(mode)
         self.with_mean = with_mean
         self.with_std = with_std
+        self.out_column = out_column
         super().__init__(
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
@@ -117,7 +121,10 @@ class RobustScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        self.in_column = in_column
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
+        self.out_column = out_column
         self.inplace = inplace
         self.mode = TransformMode(mode)
         self.with_centering = with_centering
@@ -180,7 +187,10 @@ class MinMaxScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        self.in_column = in_column
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
+        self.out_column = out_column
         self.inplace = inplace
         self.mode = TransformMode(mode)
         self.feature_range = feature_range
@@ -228,9 +238,12 @@ class MaxAbsScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        self.in_column = in_column
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
         self.inplace = inplace
         self.mode = TransformMode(mode)
+        self.out_column = out_column
         super().__init__(
             in_column=in_column,
             inplace=inplace,
