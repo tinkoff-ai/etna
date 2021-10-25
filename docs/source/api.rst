@@ -13,6 +13,7 @@ API
    metrics
    transforms
    ensembles
+   pipeline
    analysis
    model_selection
    loggers

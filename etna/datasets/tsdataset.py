@@ -470,43 +470,79 @@ class TSDataset:
         train_end: Optional[TTimestamp],
         test_start: Optional[TTimestamp],
         test_end: Optional[TTimestamp],
+        test_size: Optional[int],
     ) -> Tuple[TTimestamp, TTimestamp, TTimestamp, TTimestamp]:
         """Find borders for train_test_split if some values wasn't specified."""
+        if test_end is not None and test_start is not None and test_size is not None:
+            warnings.warn(
+                "test_size, test_start and test_end cannot be applied at the same time. test_size will be ignored"
+            )
+
+        if test_end is None:
+            if test_start is not None and test_size is not None:
+                test_start_idx = self.df.index.get_loc(test_start)
+                if test_start_idx + test_size > len(self.df.index):
+                    raise ValueError(
+                        f"test_size is {test_size}, but only {len(self.df.index) - test_start_idx} available with your test_start"
+                    )
+                test_end_defined = self.df.index[test_start_idx + test_size]
+            elif test_size is not None and train_end is not None:
+                test_start_idx = self.df.index.get_loc(train_end)
+                test_start = self.df.index[test_start_idx + 1]
+                test_end_defined = self.df.index[test_start_idx + test_size]
+            else:
+                test_end_defined = self.df.index.max()
+        else:
+            test_end_defined = test_end
+
         if train_start is None:
             train_start_defined = self.df.index.min()
         else:
             train_start_defined = train_start
 
-        if test_end is None:
-            test_end_defined = self.df.index.max()
-        else:
-            test_end_defined = test_end
+        if train_end is None and test_start is None and test_size is None:
+            raise ValueError("At least one of train_end, test_start or test_size should be defined")
 
-        if train_end is None and test_start is None:
-            raise ValueError("One of train_end or test_start should be defined")
+        if test_size is None:
+            if train_end is None:
+                test_start_idx = self.df.index.get_loc(test_start)
+                train_end_defined = self.df.index[test_start_idx - 1]
+            else:
+                train_end_defined = train_end
 
-        if train_end is None:
-            test_start_idx = self.df.index.get_loc(test_start)
-            train_end_defined = self.df.index[test_start_idx - 1]
+            if test_start is None:
+                train_end_idx = self.df.index.get_loc(train_end)
+                test_start_defined = self.df.index[train_end_idx + 1]
+            else:
+                test_start_defined = test_start
         else:
-            train_end_defined = train_end
+            if test_start is None:
+                test_start_idx = self.df.index.get_loc(test_end_defined)
+                test_start_defined = self.df.index[test_start_idx - test_size + 1]
+            else:
+                test_start_defined = test_start
 
-        if test_start is None:
-            train_end_idx = self.df.index.get_loc(train_end)
-            test_start_defined = self.df.index[train_end_idx + 1]
-        else:
-            test_start_defined = test_start
+            if train_end is None:
+                test_start_idx = self.df.index.get_loc(test_start_defined)
+                train_end_defined = self.df.index[test_start_idx - 1]
+            else:
+                train_end_defined = train_end
+
+        if np.datetime64(test_start_defined) < np.datetime64(train_end_defined):
+            raise ValueError("The beginning of the test goes before the end of the train")
 
         return train_start_defined, train_end_defined, test_start_defined, test_end_defined
 
     def train_test_split(
         self,
-        train_start: Optional[TTimestamp],
-        train_end: Optional[TTimestamp],
-        test_start: Optional[TTimestamp],
-        test_end: Optional[TTimestamp],
+        train_start: Optional[TTimestamp] = None,
+        train_end: Optional[TTimestamp] = None,
+        test_start: Optional[TTimestamp] = None,
+        test_end: Optional[TTimestamp] = None,
+        test_size: Optional[int] = None,
     ) -> Tuple["TSDataset", "TSDataset"]:
-        """Split given df with train-test timestamp indices.
+        """Split given df with train-test timestamp indices or size of test set.
+        In case of inconsistencies between test_size and (test_start, test_end), test_size is ignored
 
         Parameters
         ----------
@@ -518,6 +554,8 @@ class TSDataset:
             start timestamp of new test dataset, if None next to train_end timestamp is used
         test_end:
             end timestamp of new test dataset, if None last timestamp is used
+        test_size:
+            number of timestamps to use in test set
 
         Returns
         -------
@@ -555,7 +593,7 @@ class TSDataset:
         2021-02-06     -6.22      0.92      0.97
         """
         train_start_defined, train_end_defined, test_start_defined, test_end_defined = self._find_all_borders(
-            train_start, train_end, test_start, test_end
+            train_start, train_end, test_start, test_end, test_size
         )
 
         if pd.Timestamp(test_end_defined) > self.df.index.max():
