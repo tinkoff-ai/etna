@@ -51,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
 - Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153))
 - Add confidence intervals to SARIMA ([#172](https://github.com/tinkoff-ai/etna-ts/pull/172))
- 
+- Add badges to all example notebooks ([#220](https://github.com/tinkoff-ai/etna-ts/pull/220)) 
+
 ### Fixed
 - Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
 - Categorical and fillna issues with pandas >=1.2 ([#190](https://github.com/tinkoff-ai/etna-ts/pull/190))
