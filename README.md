@@ -98,13 +98,17 @@ We have also prepared a set of tutorials for an easy introduction:
 - Custom Distance
 - Visualisation
 
-#### 04. [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
+#### 06. [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
 - Creating TSDataset  
 - Architecture
 - Testing models
   - DeepAR 
   - TFT
   - Simple Model
+
+#### 07. [Ensembles](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/ensembles.ipynb)
+- VotingEnsemble
+- StackingEnsemble
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
