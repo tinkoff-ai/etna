@@ -99,7 +99,7 @@ def plot_backtest(
     forecast_df:
         forecasted dataframe with timeseries data
     ts:
-        dataframe of timeseries that was used for TimeSeriesCrossValidation
+        dataframe of timeseries that was used for backtest
     segments:
         segments to plot
     folds:
@@ -168,7 +168,7 @@ def plot_backtest_interactive(
     forecast_df:
         forecasted dataframe with timeseries data
     ts:
-        dataframe of timeseries that was used for TimeSeriesCrossValidation
+        dataframe of timeseries that was used for backtest
     segments:
         segments to plot
     folds:
