@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clustering notebook ([#152](https://github.com/tinkoff-ai/etna-ts/pull/152))
 - StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
 - Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna-ts/pull/209))
+- Confidence intervals in Pipeline ([#221](https://github.com/tinkoff-ai/etna-ts/pull/221)) 
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
