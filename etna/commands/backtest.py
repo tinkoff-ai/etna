@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 import hydra_slayer
@@ -8,31 +10,15 @@ import yaml
 
 from etna.datasets import TSDataset
 from etna.pipeline import Pipeline
-from etna.metrics import MAE, MSE, MAPE, SMAPE
-
-
-def make_flatten(df: pd.DataFrame) -> pd.DataFrame:
-    aggregator_list = []
-    category = []
-    segments = set(df.columns.get_level_values(0))
-    for segment in segments:
-        if df[segment].select_dtypes(include=["category"]).columns.to_list():
-            category.extend(df[segment].select_dtypes(include=["category"]).columns.to_list())
-        aggregator_list.append(df[segment].copy())
-        aggregator_list[-1]["segment"] = segment
-    df = pd.concat(aggregator_list)
-    df = df.reset_index()
-    category = list(set(category))
-    df[category] = df[category].astype("category")
-    return df
 
 
 def backtest(
     config_path: Path = typer.Argument(..., help="path to yaml config with desired pipeline"),
+    backtest_config_path: Path = typer.Argument(..., help="path to backtest config file"),
     target_path: Path = typer.Argument(..., help="path to csv with data to forecast"),
     freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
-    exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
+    exog_path: Optional[Path] = typer.Argument(default=None, help="path to csv with exog data"),
 ):
     """Command to make forecast with etna without coding.
 
@@ -61,7 +47,10 @@ def backtest(
     with open(config_path, "r") as f:
         pipeline = yaml.safe_load(f)
 
-    df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"], index_col=0)
+    with open(backtest_config_path, "r") as f:
+        backtest_configs = yaml.safe_load(f)
+
+    df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
 
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
@@ -73,16 +62,12 @@ def backtest(
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
 
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline)
-    # pipeline.fit(tsdataset)
-    metrics, forecast, info = pipeline.backtest(
-        ts=tsdataset,
-        n_folds=3,
-        n_jobs=3,
-        metrics=[MAE(), MAPE(), SMAPE(), MSE()]
-    )
+    backtest_configs: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
+
+    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs)
 
     (metrics.to_csv(output_path / "metrics.csv", index=False))
-    (make_flatten(forecast).to_csv(output_path / "forecast.csv", index=False))
+    (forecast.to_csv(output_path / "forecast.csv", index=False))
     (info.to_csv(output_path / "info.csv", index=False))
 
 
