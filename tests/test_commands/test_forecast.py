@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etna.commands import forecast
 from etna.datasets import generate_ar_df
 from etna.datasets.datasets_generation import generate_ar_df
 
