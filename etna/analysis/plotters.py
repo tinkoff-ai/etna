@@ -175,6 +175,11 @@ def plot_backtest_interactive(
         folds to plot
     history_len:
         length of pre-backtest history to plot
+
+    Returns
+    -------
+    go.Figure:
+        result of plotting
     """
     if not segments:
         segments = sorted(ts.segments)
