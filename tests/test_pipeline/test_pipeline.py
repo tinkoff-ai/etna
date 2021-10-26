@@ -13,11 +13,51 @@ from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models import LinearPerSegmentModel
+from etna.models import MovingAverageModel
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
+
+
+@pytest.mark.parametrize("horizon,interval_width,confidence_interval_cv", ([(1, 0.5, 2)]))
+def test_init_pass(horizon, interval_width, confidence_interval_cv):
+    """Check that Pipeline initialization works correctly in case of valid parameters."""
+    pipeline = Pipeline(
+        model=LinearPerSegmentModel(),
+        transforms=[],
+        horizon=horizon,
+        interval_width=interval_width,
+        confidence_interval_cv=confidence_interval_cv,
+    )
+    assert pipeline.horizon == horizon
+    assert pipeline.interval_width == interval_width
+    assert confidence_interval_cv == confidence_interval_cv
+
+
+@pytest.mark.parametrize(
+    "horizon,interval_width,confidence_interval_cv,error_msg",
+    (
+        [
+            (-1, 0.5, 2, "At least one point in the future is expected."),
+            (2, 2, 2, "Interval width should be a number from."),
+            (2, 0.5, 1, "At least two folds for backtest are expected."),
+        ]
+    ),
+)
+def test_init_fail(horizon, interval_width, confidence_interval_cv, error_msg):
+    """Check that Pipeline initialization works correctly in case of invalid parameters."""
+    with pytest.raises(ValueError, match=error_msg):
+        _ = Pipeline(
+            model=LinearPerSegmentModel(),
+            transforms=[],
+            horizon=horizon,
+            interval_width=interval_width,
+            confidence_interval_cv=confidence_interval_cv,
+        )
 
 
 def test_fit(example_tsds):
@@ -47,6 +87,34 @@ def test_forecast(example_tsds):
     forecast_manual = model.forecast(future)
 
     assert np.all(forecast_pipeline.df.values == forecast_manual.df.values)
+
+
+@pytest.mark.parametrize("model", (ProphetModel(), SARIMAXModel()))
+def test_forecast_confidence_interval_builtin(example_tsds, model):
+    """Test that forecast method uses built-in confidence intervals for the listed models."""
+    np.random.seed(1234)
+    pipeline = Pipeline(model=model, transforms=[], horizon=5)
+    pipeline.fit(example_tsds)
+    forecast_pipeline = pipeline.forecast(confidence_interval=True)
+
+    np.random.seed(1234)
+    model = model.fit(example_tsds)
+    future = example_tsds.make_future(5)
+    forecast_model = model.forecast(ts=future, confidence_interval=True)
+
+    assert forecast_model.df.equals(forecast_pipeline.df)
+
+
+@pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
+def test_forecast_confidence_interval(example_tsds, model):
+    """Test the forecast interface for the models without built-in confidence intervals."""
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.forecast(confidence_interval=True)
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
 
 
 @pytest.mark.parametrize("n_folds", (0, -1))
