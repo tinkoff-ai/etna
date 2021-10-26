@@ -64,3 +64,12 @@ def test_dummy_run_with_exog(base_pipeline_yaml_path, base_timeseries_path, base
     tmp_output.flush()
     df_output = pd.read_csv(tmp_output_path)
     assert len(df_output) == 2 * 4
+
+
+def test_dummy_run(base_pipeline_yaml_path, base_timeseries_path):
+    tmp_output = NamedTemporaryFile("w")
+    tmp_output_path = Path(tmp_output.name)
+    forecast(base_pipeline_yaml_path, base_timeseries_path, "D", tmp_output_path)
+    tmp_output.flush()
+    df_output = pd.read_csv(tmp_output_path)
+    assert len(df_output) == 2 * 4
