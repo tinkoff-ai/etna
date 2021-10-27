@@ -549,7 +549,7 @@ flake8 = "*"
 
 [[package]]
 name = "fsspec"
-version = "2021.10.0"
+version = "2021.10.1"
 description = "File-system specification"
 category = "main"
 optional = false
@@ -2434,6 +2434,22 @@ importlib-metadata = {version = ">=1.7.0", markers = "python_version < \"3.8\""}
 pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 
 [[package]]
+name = "stumpy"
+version = "1.9.2"
+description = "A powerful and scalable library that can be used for a variety of time series data mining tasks"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+numba = ">=0.48"
+numpy = ">=1.15"
+scipy = ">=1.5"
+
+[package.extras]
+ci = ["pandas (>=0.20.0)", "dask (>=1.2.2)", "distributed (>=1.28.1)", "coverage (>=4.5.3)", "flake8 (>=3.7.7)", "flake8-docstrings (>=1.5.0)", "black (>=19.3b0)", "pytest (>=4.4.1)", "codecov"]
+
+[[package]]
 name = "subprocess32"
 version = "3.5.4"
 description = "A backport of the subprocess module from Python 3 for use on 2.x."
@@ -2808,7 +2824,7 @@ tests = ["pytest-cov", "coverage", "pytest"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2, <3.9.0"
-content-hash = "4eba5ecfd5420837e4d40343515a2d492791fbd6d82af83e911b543cb8146e39"
+content-hash = "5e2c5e25a757ef72908b14d668121813c1eeef270edf09a3c0550aec2a2d3dc2"
 
 [metadata.files]
 absl-py = [
@@ -3229,8 +3245,8 @@ flake8-polyfill = [
     {file = "flake8_polyfill-1.0.2-py2.py3-none-any.whl", hash = "sha256:12be6a34ee3ab795b19ca73505e7b55826d5f6ad7230d31b18e106400169b9e9"},
 ]
 fsspec = [
-    {file = "fsspec-2021.10.0-py3-none-any.whl", hash = "sha256:7760d6b2f35739697d694c724be3500b19e6b33af65b139306be98bb1d1ebcdd"},
-    {file = "fsspec-2021.10.0.tar.gz", hash = "sha256:9505afbf8cee22cf12a29742e23ad79ad132b3423632ec3a3bf9034ce3911138"},
+    {file = "fsspec-2021.10.1-py3-none-any.whl", hash = "sha256:7164a488f3f5bf6a0fb39674978b756dda84e011a5db411a79791b7c38a36ff7"},
+    {file = "fsspec-2021.10.1.tar.gz", hash = "sha256:c245626e3cb8de5cd91485840b215a385fa6f2b0f6ab87978305e99e2d842753"},
 ]
 future = [
     {file = "future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
@@ -4565,6 +4581,10 @@ statsmodels = [
 stevedore = [
     {file = "stevedore-3.4.0-py3-none-any.whl", hash = "sha256:920ce6259f0b2498aaa4545989536a27e4e4607b8318802d7ddc3a533d3d069e"},
     {file = "stevedore-3.4.0.tar.gz", hash = "sha256:59b58edb7f57b11897f150475e7bc0c39c5381f0b8e3fa9f5c20ce6c89ec4aa1"},
+]
+stumpy = [
+    {file = "stumpy-1.9.2-py3-none-any.whl", hash = "sha256:bdf0fdd073b974c1b6ffa4fdcb859fe437c66cc33ea03e42d2facf8d1aeb016c"},
+    {file = "stumpy-1.9.2.tar.gz", hash = "sha256:58406a6cf635aecd73adc731135aa8ef58b2ecc9e8b799d8ab5530abf34174d8"},
 ]
 subprocess32 = [
     {file = "subprocess32-3.5.4-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:88e37c1aac5388df41cc8a8456bb49ebffd321a3ad4d70358e3518176de3a56b"},

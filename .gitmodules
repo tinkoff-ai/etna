@@ -1,0 +1,3 @@
+[submodule "etna/libs/tsfresh"]
+	path = etna/libs/tsfresh
+	url = https://github.com/blue-yonder/tsfresh

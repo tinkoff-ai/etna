@@ -1,5 +1,18 @@
+from typing import Dict
+
 import pandas as pd
-from tsfresh.feature_selection.relevance import calculate_relevance_table
+
+try:
+    import sys
+    from pathlib import Path
+
+    tsfresh_path = Path(__file__).parents[2] / "libs" / "tsfresh"
+    sys.path.append(str(tsfresh_path))
+    from tsfresh.feature_selection.relevance import calculate_relevance_table
+except Exception as e:
+    raise e
+finally:
+    sys.path.remove(str(tsfresh_path))
 
 
 def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> pd.DataFrame:
@@ -17,7 +30,7 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
     dataframe with p-values.
     """
     regressors = df_exog.columns.get_level_values("feature").unique().tolist()
-    result = dict(zip(regressors, [[] for i in range(len(regressors))]))
+    result: Dict[str, list] = dict(zip(regressors, [[] for i in range(len(regressors))]))
     result_segment = []
     for seg in df.columns.get_level_values("segment").unique().tolist():
         result_segment.append(seg)
