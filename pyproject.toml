@@ -86,9 +86,11 @@ jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
 
 [tool.poetry.extras]
+# optional deps
 prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting"]
 wandb = ["wandb"]
+# dev deps
 release = ["click", "typer", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
@@ -96,6 +98,12 @@ jupyter = ["jupyter", "nbconvert"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy"]
 
 all = [
+    "prophet",
+    "torch", "pytorch-forecasting",
+    "wandb",
+]
+
+all-dev = [
     "prophet",
     "torch", "pytorch-forecasting",
     "wandb",
