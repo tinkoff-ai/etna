@@ -118,10 +118,10 @@ def test_forecast_confidence_interval_interface(example_tsds, model):
         assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
 
 
-def test_forecast_confidence_interval_interface(splited_constant_ts):
-    """Test that the confidence interval for constant dataset is correct."""
-    train, test = splited_constant_ts
-    pipeline = Pipeline(model=NaiveModel(), transforms=[], horizon=5)
+def test_forecast_confidence_interval(splited_piecewise_constant_ts):
+    """Test that the confidence interval for piecewise-constant dataset is correct."""
+    train, test = splited_piecewise_constant_ts
+    pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=5)
     pipeline.fit(train)
     forecast = pipeline.forecast(confidence_interval=True)
     assert (forecast.df.values == test.df.values).all()

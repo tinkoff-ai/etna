@@ -2,12 +2,16 @@ from typing import Tuple
 
 import pandas as pd
 import pytest
+import scipy
 from numpy.random import RandomState
+from scipy.stats import norm
 
 from etna.datasets import TSDataset
 from etna.models import CatBoostModelPerSegment
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
+
+INTERVAL_WIDTH = 0.95
 
 
 @pytest.fixture
@@ -56,17 +60,27 @@ def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset"
 
 
 @pytest.fixture
-def splited_constant_ts(size=40, horizon=5) -> Tuple["TSDataset", "TSDataset"]:
-    segment_1 = [7] * size
-    segment_2 = [50] * size
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=size))
+def splited_piecewise_constant_ts(
+    first_constant_len=40, constant_1_1=7, constant_1_2=2, constant_2_1=50, constant_2_2=10, horizon=5
+) -> Tuple["TSDataset", "TSDataset"]:
+
+    segment_1 = [constant_1_1] * first_constant_len + [constant_1_2] * horizon * 2
+    segment_2 = [constant_2_1] * first_constant_len + [constant_2_2] * horizon * 2
+
+    quantile = norm.ppf(q=(1 + INTERVAL_WIDTH) / 2)
+    se_1 = scipy.stats.sem([0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
+    se_2 = scipy.stats.sem([0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
+    lower = [x - se_1 * quantile for x in segment_1] + [x - se_2 * quantile for x in segment_2]
+    upper = [x + se_1 * quantile for x in segment_1] + [x + se_2 * quantile for x in segment_2]
+
+    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
             "target": segment_1 + segment_2,
-            "target_lower": segment_1 + segment_2,
-            "target_upper": segment_1 + segment_2,
-            "segment": ["segment_1"] * size + ["segment_2"] * size,
+            "target_lower": lower,
+            "target_upper": upper,
+            "segment": ["segment_1"] * len(segment_1) + ["segment_2"] * len(segment_2),
         }
     )
     ts_start = sorted(set(df.timestamp))[-horizon]
