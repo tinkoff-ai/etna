@@ -6,6 +6,7 @@ from etna.transforms.datetime_flags import DateFlagsTransform
 from etna.transforms.datetime_flags import TimeFlagsTransform
 from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
+from etna.transforms.feature_importance import TreeFeatureSelectionTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform
@@ -30,4 +31,3 @@ from etna.transforms.statistics import QuantileTransform
 from etna.transforms.statistics import StdTransform
 from etna.transforms.stl import STLTransform
 from etna.transforms.trend import TrendTransform
-from etna.transforms.feature_importance import TreeFeatureSelectionTransform
