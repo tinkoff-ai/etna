@@ -42,7 +42,7 @@ def _is_wandb_available():
     if _module_available("wandb"):
         return True
     else:
-        warnings.warn("wandb is not available, to install it, run `pip install etna[wandb]`", category=ImportWarning)
+        warnings.warn("wandb is not available, to install it, run `pip install etna[wandb]`")
         return False
 
 
