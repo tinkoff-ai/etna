@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clustering notebook ([#152](https://github.com/tinkoff-ai/etna-ts/pull/152))
 - StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
 - Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna-ts/pull/209))
+- Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna-ts/pull/218))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
@@ -50,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
 - Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153))
 - Add confidence intervals to SARIMA ([#172](https://github.com/tinkoff-ai/etna-ts/pull/172))
- 
+- Add badges to all example notebooks ([#220](https://github.com/tinkoff-ai/etna-ts/pull/220)) 
+
 ### Fixed
 - Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
 - Categorical and fillna issues with pandas >=1.2 ([#190](https://github.com/tinkoff-ai/etna-ts/pull/190))
