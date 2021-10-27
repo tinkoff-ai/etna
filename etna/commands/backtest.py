@@ -20,7 +20,7 @@ def backtest(
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(default=None, help="path to csv with exog data"),
 ):
-    """Command to make forecast with etna without coding.
+    """Command to run backtest with etna without coding.
 
     Expected format of csv with target timeseries:
 
