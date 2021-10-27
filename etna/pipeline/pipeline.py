@@ -1,3 +1,4 @@
+import inspect
 from copy import deepcopy
 from enum import Enum
 from typing import Any
@@ -8,12 +9,15 @@ from typing import Optional
 from typing import Tuple
 
 import pandas as pd
+import scipy
 from joblib import Parallel
 from joblib import delayed
+from scipy.stats import norm
 
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
+from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
@@ -30,7 +34,14 @@ class CrossValidationMode(Enum):
 class Pipeline(BaseMixin):
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(self, model: Model, transforms: Iterable[Transform] = (), horizon: int = 1):
+    def __init__(
+        self,
+        model: Model,
+        transforms: Iterable[Transform] = (),
+        horizon: int = 1,
+        interval_width: float = 0.95,
+        confidence_interval_cv: int = 3,
+    ):
         """
         Create instance of Pipeline with given parameters.
 
@@ -42,11 +53,46 @@ class Pipeline(BaseMixin):
             Sequence of the transforms
         horizon:
             Number of timestamps in the future for forecasting
+        interval_width:
+            The significance level for the confidence interval. By default a 95% confidence interval is taken
+        confidence_interval_cv:
+            Number of folds to use in the backtest for confidence interval estimation
+
+        Raises
+        ------
+        ValueError:
+            If the horizon is less than 1, interval_width is out of (0,1) or confidence_interval_cv is less than 2.
         """
         self.model = model
         self.transforms = transforms
-        self.horizon = horizon
+        self.horizon = self._validate_horizon(horizon)
+        self.interval_width = self._validate_interval_width(interval_width)
+        self.confidence_interval_cv = self._validate_cv(confidence_interval_cv)
         self.ts = None
+
+    @staticmethod
+    def _validate_horizon(horizon: int) -> int:
+        """Check that given number of folds is grater than 1."""
+        if horizon > 0:
+            return horizon
+        else:
+            raise ValueError("At least one point in the future is expected.")
+
+    @staticmethod
+    def _validate_interval_width(interval_width: float) -> float:
+        """Check that given number of folds is grater than 1."""
+        if 0 < interval_width < 1:
+            return interval_width
+        else:
+            raise ValueError("Interval width should be a number from (0,1).")
+
+    @staticmethod
+    def _validate_cv(cv: int) -> int:
+        """Check that given number of folds is grater than 1."""
+        if cv > 1:
+            return cv
+        else:
+            raise ValueError("At least two folds for backtest are expected.")
 
     def fit(self, ts: TSDataset) -> "Pipeline":
         """Fit the Pipeline.
@@ -66,8 +112,34 @@ class Pipeline(BaseMixin):
         self.model.fit(self.ts)
         return self
 
-    def forecast(self) -> TSDataset:
+    def _forecast_confidence_interval(self, future: TSDataset) -> TSDataset:
+        """Forecast confidence interval for the future."""
+        _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.confidence_interval_cv)
+        forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
+        residuals = (
+            forecasts.loc[:, pd.IndexSlice[:, "target"]]
+            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
+        )
+
+        predictions = self.model.forecast(ts=future)
+        se = scipy.stats.sem(residuals)
+        quantile = norm.ppf(q=(1 + self.interval_width) / 2)
+        lower_border = predictions[:, :, "target"] - se * quantile
+        upper_border = predictions[:, :, "target"] + se * quantile
+        lower_border = lower_border.rename({"target": "target_lower"}, axis=1)
+        upper_border = upper_border.rename({"target": "target_upper"}, axis=1)
+        predictions.df = pd.concat([predictions.df, lower_border, upper_border], axis=1).sort_index(
+            axis=1, level=(0, 1)
+        )
+        return predictions
+
+    def forecast(self, confidence_interval: bool = False) -> TSDataset:
         """Make predictions.
+
+        Parameters
+        ----------
+        confidence_interval:
+            If True returns confidence interval for forecast
 
         Returns
         -------
@@ -75,7 +147,15 @@ class Pipeline(BaseMixin):
             TSDataset with forecast
         """
         future = self.ts.make_future(self.horizon)
-        predictions = self.model.forecast(future)
+        if confidence_interval:
+            if "confidence_interval" in inspect.signature(self.model.forecast).parameters:
+                predictions = self.model.forecast(
+                    ts=future, confidence_interval=confidence_interval, interval_width=self.interval_width
+                )
+            else:
+                predictions = self._forecast_confidence_interval(future=future)
+        else:
+            predictions = self.model.forecast(ts=future)
         return predictions
 
     def _init_backtest(self):
