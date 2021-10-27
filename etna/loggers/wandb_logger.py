@@ -7,14 +7,12 @@ from typing import Optional
 from typing import Union
 from uuid import uuid4
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
 
 from etna.analysis import plot_backtest_interactive
-from etna.analysis import plot_backtest
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
