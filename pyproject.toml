@@ -83,6 +83,7 @@ ipywidgets = {version = "^7.6.5", optional = true}
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
 stumpy = "^1.7.2"
+matrixprofile = {git = "https://github.com/matrix-profile-foundation/matrixprofile", rev = "f00a186e58202c00cc7bf0ba40948a582fe0552e"}
 
 [tool.poetry.extras]
 release = ["click", "typer", "semver"]
