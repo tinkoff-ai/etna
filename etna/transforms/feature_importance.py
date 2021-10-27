@@ -17,7 +17,7 @@ from sklearn.tree import ExtraTreeRegressor
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
 
-TreeBasedModel = Union[
+TreeBasedRegressor = Union[
     DecisionTreeRegressor,
     ExtraTreeRegressor,
     RandomForestRegressor,
@@ -30,17 +30,21 @@ TreeBasedModel = Union[
 class TreeFeatureSelectionTransform(Transform):
     """Transform that selects regressors according to tree-based models feature importance."""
 
-    def __init__(self, model: TreeBasedModel, top_k: int):
+    def __init__(self, model: TreeBasedRegressor, top_k: int):
         """
         Init TreeFeatureSelectionTransform.
 
         Parameters
         ----------
         model:
-            model to make selection
+            model to make selection, it should have feature_importances_ property
+            (e.g. all tree-based regressors in sklearn)
         top_k:
-            num of regressors to select
+            num of regressors to select; if there are not enough regressors, then all will be selected
         """
+        if not isinstance(top_k, int) or top_k < 0:
+            raise ValueError("Parameter top_k should be positive integer")
+
         self.model = model
         self.top_k = top_k
         self.selected_regressors: Optional[List[str]] = None
@@ -50,7 +54,6 @@ class TreeFeatureSelectionTransform(Transform):
         """Get train data for model."""
         # TODO: fix when TSDataset.to_pandas became static
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
-        # TODO: delete only rows with nans in target
         df = ts.to_pandas(flatten=True).dropna()
         train_target = df["target"]
         train_data = df.drop(columns=["target", "timestamp"])
@@ -74,7 +77,7 @@ class TreeFeatureSelectionTransform(Transform):
         values = np.array(list(weights.values()))
         idx_sort = np.argsort(values)[::-1]
         idx_selected = idx_sort[:top_k]
-        return keys[idx_selected].tolist().sort()
+        return keys[idx_selected].tolist()
 
     def fit(self, df: pd.DataFrame) -> "TreeFeatureSelectionTransform":
         """
@@ -109,5 +112,12 @@ class TreeFeatureSelectionTransform(Transform):
             Dataframe with with only selected regressors
         """
         result = df.copy()
-        result = result.loc[:, pd.IndexSlice[:, self.selected_regressors]]
+        selected_columns = sorted(
+            [
+                column
+                for column in df.columns.get_level_values("feature").unique()
+                if not column.startswith("regressor_") or column in self.selected_regressors
+            ]
+        )
+        result = result.loc[:, pd.IndexSlice[:, selected_columns]]
         return result
