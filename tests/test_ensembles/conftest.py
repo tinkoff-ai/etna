@@ -23,9 +23,7 @@ from etna.transforms import LagTransform
 def catboost_pipeline() -> Pipeline:
     """Generate pipeline with CatBoostModelMultiSegment."""
     pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
-        transforms=[LagTransform(in_column="target", lags=[10, 11, 12])],
-        horizon=7,
+        model=CatBoostModelPerSegment(), transforms=[LagTransform(in_column="target", lags=[10, 11, 12])], horizon=7
     )
     return pipeline
 

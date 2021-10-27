@@ -7,12 +7,10 @@ from typing import Union
 
 import pandas as pd
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
-
-from etna import SETTINGS
-from etna.models.base import PerSegmentModel
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
