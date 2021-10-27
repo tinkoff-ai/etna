@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,7 +11,6 @@ from catboost import CatBoostRegressor
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
@@ -50,15 +50,23 @@ class TreeFeatureSelectionTransform(Transform):
         self.selected_regressors: Optional[List[str]] = None
 
     @staticmethod
+    def _get_regressors(df: pd.DataFrame) -> List[str]:
+        """Get list of regressors in the dataframe."""
+        result = set()
+        for column in df.columns.get_level_values("feature"):
+            if column.startswith("regressor_"):
+                result.add(column)
+        return list(result)
+
+    @staticmethod
     def _get_train(df: pd.DataFrame) -> Tuple[np.array, np.array]:
         """Get train data for model."""
+        regressors = TreeFeatureSelectionTransform._get_regressors(df)
         # TODO: fix when TSDataset.to_pandas became static
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         df = ts.to_pandas(flatten=True).dropna()
         train_target = df["target"]
-        train_data = df.drop(columns=["target", "timestamp"])
-        le = LabelEncoder()
-        train_data["segment"] = le.fit_transform(train_data["segment"])
+        train_data = df[regressors]
         return train_data, train_target
 
     def _get_regressors_weights(self, df: pd.DataFrame) -> Dict[str, float]:
@@ -93,6 +101,9 @@ class TreeFeatureSelectionTransform(Transform):
         result: TreeFeatureSelectionTransform
             instance after fitting
         """
+        if len(self._get_regressors(df)) == 0:
+            warnings.warn("It is not possible to select regressors if there aren't any")
+            return self
         weights = self._get_regressors_weights(df)
         self.selected_regressors = self._select_top_k_regressors(weights, self.top_k)
         return self
