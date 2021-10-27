@@ -14,6 +14,8 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -32,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
