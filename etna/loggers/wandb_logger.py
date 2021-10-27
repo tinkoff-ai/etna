@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
-
 from etna.analysis import plot_backtest_interactive
 from etna.loggers.base import BaseLogger
 
