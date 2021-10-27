@@ -66,45 +66,15 @@ forecast_ts = model.forecast(future_ts)
 ## Tutorials
 We have also prepared a set of tutorials for an easy introduction:
 
-#### 01. [Get started](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/get_started.ipynb)
-- Creating TSDataset and time series plotting 
-- Forecast single time series - Simple forecast, Prophet, Catboost
-- Forecast multiple time series
-- Pipeline
-#### 02. [Backtest](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/backtest.ipynb)
-- What is backtest and how it works
-- How to run a validation
-- Validation visualisation
-#### 03. [EDA](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/EDA.ipynb) 
-- Visualization
-    - Plot
-    - Partial autocorrelation
-    - Cross-correlation
-    - Correlation heatmap
-    - Distribution
-- Outliers
-     - Median method
-     - Density method
-#### 04. [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/outliers.ipynb) 
-- Point outliers
-    - Median method
-    - Density method
-    - Confidence interval method
-- Sequence outliers
-- Interactive visualization
-- Outliers imputation
-#### 05. [Clustering](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/clustering.ipynb) 
-- Clustering pipeline
-- Custom Distance
-- Visualisation
-
-#### 04. [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb)
-- Creating TSDataset  
-- Architecture
-- Testing models
-  - DeepAR 
-  - TFT
-  - Simple Model
+| Notebook     | Interactive launch  |
+|:----------|------:|
+| [Get started](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/get_started.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/get_started.ipynb) |
+| [Backtest](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/backtest.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/backtest.ipynb) |
+| [EDA](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/EDA.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/EDA.ipynb) |
+| [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/outliers.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/outliers.ipynb) |
+| [Clustering](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/clustering.ipynb) |
+| [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/NN_examples.ipynb) |
+| [Ensembles](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/ensembles.ipynb) |
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).

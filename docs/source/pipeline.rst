@@ -1,14 +1,14 @@
-Transforms
+Pipelines
 ==========
 
-.. _transforms:
+.. _pipeline:
 
 .. currentmodule:: etna
 
 Details and available algorithms
 --------------------------------
 
-See the API documentation for further details on available feature extractions and transformations:
+See the API documentation for further details of using pipelines:
 
 .. currentmodule:: etna
 
@@ -17,4 +17,4 @@ See the API documentation for further details on available feature extractions a
    :template: custom-module-template.rst
    :recursive:
 
-   etna.transforms
+   etna.pipeline
