@@ -30,3 +30,4 @@ from etna.transforms.statistics import QuantileTransform
 from etna.transforms.statistics import StdTransform
 from etna.transforms.stl import STLTransform
 from etna.transforms.trend import TrendTransform
+from etna.transforms.feature_importance import TreeFeatureSelectionTransform

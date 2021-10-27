@@ -1,0 +1,113 @@
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
+import numpy as np
+import pandas as pd
+from catboost import CatBoostRegressor
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import ExtraTreeRegressor
+
+from etna.datasets import TSDataset
+from etna.transforms.base import Transform
+
+TreeBasedModel = Union[
+    DecisionTreeRegressor,
+    ExtraTreeRegressor,
+    RandomForestRegressor,
+    ExtraTreesRegressor,
+    GradientBoostingRegressor,
+    CatBoostRegressor,
+]
+
+
+class TreeFeatureSelectionTransform(Transform):
+    """Transform that selects regressors according to tree-based models feature importance."""
+
+    def __init__(self, model: TreeBasedModel, top_k: int):
+        """
+        Init TreeFeatureSelectionTransform.
+
+        Parameters
+        ----------
+        model:
+            model to make selection
+        top_k:
+            num of regressors to select
+        """
+        self.model = model
+        self.top_k = top_k
+        self.selected_regressors: Optional[List[str]] = None
+
+    @staticmethod
+    def _get_train(df: pd.DataFrame) -> Tuple[np.array, np.array]:
+        """Get train data for model."""
+        # TODO: fix when TSDataset.to_pandas became static
+        ts = TSDataset(df, freq=pd.infer_freq(df.index))
+        # TODO: delete only rows with nans in target
+        df = ts.to_pandas(flatten=True).dropna()
+        train_target = df["target"]
+        train_data = df.drop(columns=["target", "timestamp"])
+        le = LabelEncoder()
+        train_data["segment"] = le.fit_transform(train_data["segment"])
+        return train_data, train_target
+
+    def _get_regressors_weights(self, df: pd.DataFrame) -> Dict[str, float]:
+        """Get weights for regressors based on model feature importances."""
+        train_data, train_target = self._get_train(df)
+        self.model.fit(train_data, train_target)
+        weights_array = self.model.feature_importances_
+        weights_dict = {
+            column: weights_array[i] for i, column in enumerate(train_data.columns) if column.startswith("regressor_")
+        }
+        return weights_dict
+
+    @staticmethod
+    def _select_top_k_regressors(weights: Dict[str, float], top_k: int) -> List[str]:
+        keys = np.array(list(weights.keys()))
+        values = np.array(list(weights.values()))
+        idx_sort = np.argsort(values)[::-1]
+        idx_selected = idx_sort[:top_k]
+        return keys[idx_selected].tolist().sort()
+
+    def fit(self, df: pd.DataFrame) -> "TreeFeatureSelectionTransform":
+        """
+        Fit the model and remember features to select.
+
+        Parameters
+        ----------
+        df:
+            dataframe with all segments data
+
+        Returns
+        -------
+        result: TreeFeatureSelectionTransform
+            instance after fitting
+        """
+        weights = self._get_regressors_weights(df)
+        self.selected_regressors = self._select_top_k_regressors(weights, self.top_k)
+        return self
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Select top_k regressors.
+
+        Parameters
+        ----------
+        df:
+            dataframe with all segments data
+
+        Returns
+        -------
+        result: pd.DataFrame
+            Dataframe with with only selected regressors
+        """
+        result = df.copy()
+        result = result.loc[:, pd.IndexSlice[:, self.selected_regressors]]
+        return result
