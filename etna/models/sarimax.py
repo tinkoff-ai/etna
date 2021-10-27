@@ -230,9 +230,7 @@ class _SARIMAXModel:
         self._result = self._model.fit(start_params=start_params, disp=False)
         return self
 
-    def predict(
-        self, df: pd.DataFrame, confidence_interval: bool = False, interval_width: float = 0.95
-    ) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, confidence_interval: bool, interval_width: float) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
@@ -468,12 +466,12 @@ class SARIMAXModel(PerSegmentModel):
         )
 
     @staticmethod
-    def _forecast_segment(
+    def _forecast_one_segment(
         model,
         segment: Union[str, List[str]],
         ts: TSDataset,
-        confidence_interval: bool = False,
-        interval_width: float = 0.95,
+        confidence_interval: bool,
+        interval_width: float,
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
@@ -516,7 +514,7 @@ class SARIMAXModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval, interval_width)
+            segment_predict = self._forecast_one_segment(model, segment, ts, confidence_interval, interval_width)
             result_list.append(segment_predict)
 
         # need real case to test

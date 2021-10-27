@@ -95,7 +95,7 @@ class _ProphetModel:
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame, confidence_interval: bool = False, interval_width: float = 0.95):
+    def predict(self, df: pd.DataFrame, confidence_interval: bool, interval_width: float):
         """
         Compute Prophet predictions.
         Parameters
@@ -306,12 +306,12 @@ class ProphetModel(PerSegmentModel):
         )
 
     @staticmethod
-    def _forecast_segment(
+    def _forecast_one_segment(
         model,
         segment: Union[str, List[str]],
         ts: TSDataset,
-        confidence_interval: bool = False,
-        interval_width: float = 0.95,
+        confidence_interval: bool,
+        interval_width: float,
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
@@ -355,7 +355,7 @@ class ProphetModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval, interval_width)
+            segment_predict = self._forecast_one_segment(model, segment, ts, confidence_interval, interval_width)
             result_list.append(segment_predict)
 
         # need real case to test

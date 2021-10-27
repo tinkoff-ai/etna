@@ -14,6 +14,7 @@ from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
+from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
@@ -106,7 +107,7 @@ def test_forecast_confidence_interval_builtin(example_tsds, model):
 
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
-def test_forecast_confidence_interval(example_tsds, model):
+def test_forecast_confidence_interval_interface(example_tsds, model):
     """Test the forecast interface for the models without built-in confidence intervals."""
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -115,6 +116,46 @@ def test_forecast_confidence_interval(example_tsds, model):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
+
+
+def test_forecast_confidence_interval_interface(splited_constant_ts):
+    """Test that the confidence interval for constant dataset is correct."""
+    train, test = splited_constant_ts
+    pipeline = Pipeline(model=NaiveModel(), transforms=[], horizon=5)
+    pipeline.fit(train)
+    forecast = pipeline.forecast(confidence_interval=True)
+    assert (forecast.df.values == test.df.values).all()
+
+
+@pytest.mark.parametrize("interval_width_lower,interval_width_upper", ([(0.6, 0.95)]))
+def test_forecast_confidence_interval_size(example_tsds, interval_width_lower, interval_width_upper):
+    """Test that the higher value for interval_width parameter is passed, the wider confidence interval is forecasted."""
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, interval_width=interval_width_lower)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.forecast(confidence_interval=True)
+    lower_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
+
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, interval_width=interval_width_upper)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.forecast(confidence_interval=True)
+    upper_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
+
+    assert (lower_interval_length <= upper_interval_length).all()
+
+
+def test_forecast_confidence_interval_noise(constant_ts, constant_noisy_ts):
+    """Test that confidence interval for noisy dataset is wider then for the dataset without noise."""
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
+    pipeline.fit(constant_ts)
+    forecast = pipeline.forecast(confidence_interval=True)
+    lower_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
+
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
+    pipeline.fit(constant_noisy_ts)
+    forecast = pipeline.forecast(confidence_interval=True)
+    upper_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
+
+    assert (lower_interval_length <= upper_interval_length).all()
 
 
 @pytest.mark.parametrize("n_folds", (0, -1))

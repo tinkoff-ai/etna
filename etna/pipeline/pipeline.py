@@ -112,8 +112,8 @@ class Pipeline(BaseMixin):
         self.model.fit(self.ts)
         return self
 
-    def _get_confidence_interval(self, predictions: TSDataset) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Get the borders of the confidence interval for predictions."""
+    def _forecast_confidence_interval(self, future: TSDataset) -> TSDataset:
+        """Forecast confidence interval for the future."""
         _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.confidence_interval_cv)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
@@ -121,13 +121,17 @@ class Pipeline(BaseMixin):
             - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
+        predictions = self.model.forecast(ts=future)
         se = scipy.stats.sem(residuals)
         quantile = norm.ppf(q=(1 + self.interval_width) / 2)
         lower_border = predictions[:, :, "target"] - se * quantile
         upper_border = predictions[:, :, "target"] + se * quantile
         lower_border = lower_border.rename({"target": "target_lower"}, axis=1)
         upper_border = upper_border.rename({"target": "target_upper"}, axis=1)
-        return lower_border, upper_border
+        predictions.df = pd.concat([predictions.df, lower_border, upper_border], axis=1).sort_index(
+            axis=1, level=(0, 1)
+        )
+        return predictions
 
     def forecast(self, confidence_interval: bool = False) -> TSDataset:
         """Make predictions.
@@ -149,11 +153,7 @@ class Pipeline(BaseMixin):
                     ts=future, confidence_interval=confidence_interval, interval_width=self.interval_width
                 )
             else:
-                predictions = self.model.forecast(ts=future)
-                lower_border, upper_border = self._get_confidence_interval(predictions)
-                predictions.df = pd.concat([predictions.df, lower_border, upper_border], axis=1).sort_index(
-                    axis=1, level=(0, 1)
-                )
+                predictions = self._forecast_confidence_interval(future=future)
         else:
             predictions = self.model.forecast(ts=future)
         return predictions
