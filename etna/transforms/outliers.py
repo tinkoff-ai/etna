@@ -10,14 +10,17 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets import TSDataset
-from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.transforms.base import Transform
+
+if SETTINGS.prophet_required:
+    from etna.models import ProphetModel
 
 
 class OutliersTransform(Transform, ABC):
