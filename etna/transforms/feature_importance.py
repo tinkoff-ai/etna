@@ -56,7 +56,7 @@ class TreeFeatureSelectionTransform(Transform):
         for column in df.columns.get_level_values("feature"):
             if column.startswith("regressor_"):
                 result.add(column)
-        return list(result)
+        return sorted(list(result))
 
     @staticmethod
     def _get_train(df: pd.DataFrame) -> Tuple[np.array, np.array]:
