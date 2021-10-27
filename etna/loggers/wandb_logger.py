@@ -7,13 +7,12 @@ from typing import Optional
 from typing import Union
 from uuid import uuid4
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import wandb
 from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
 
-from etna.analysis import plot_backtest
+from etna.analysis import plot_backtest_interactive
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
@@ -157,10 +156,9 @@ class WandbLogger(BaseLogger):
             self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast_df))
             self.experiment.summary["fold_info"] = wandb.Table(data=fold_info_df)
 
-        # TODO: current plot behaviour uses conversion matplotlib to plotly. We should use native plotly. ETNA-674
         if self.plot:
-            plot_backtest(forecast_df, ts, history_len=100)
-            self.experiment.log({"backtest": plt})
+            fig = plot_backtest_interactive(forecast_df, ts, history_len=100)
+            self.experiment.log({"backtest": fig})
 
         metrics_dict = (
             metrics_df.groupby("segment")
