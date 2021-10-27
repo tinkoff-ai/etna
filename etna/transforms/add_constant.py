@@ -5,21 +5,21 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentAddConstTransform(Transform):
-    def __init__(self, value: float, in_column: str, inplace: bool = True):
+    def __init__(self, in_column: str, value: float,  inplace: bool = True):
         """
         Init _OneSegmentAddConstTransform.
 
         Parameters
         ----------
-        value:
-            value that should be added to the series
         in_column:
             column to apply transform
+        value:
+            value that should be added to the series
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
         """
-        self.value = value
         self.in_column = in_column
+        self.value = value
         self.inplace = inplace
         self.out_column = self.in_column if self.inplace else f"{self.in_column}_add_{self.value}"
 
@@ -72,24 +72,24 @@ class _OneSegmentAddConstTransform(Transform):
 class AddConstTransform(PerSegmentWrapper):
     """AddConstTransform add constant for given series."""
 
-    def __init__(self, value: float, in_column: str, inplace: bool = True):
+    def __init__(self, in_column: str, value: float, inplace: bool = True):
         """
         Init AddConstTransform.
 
         Parameters
         ----------
-        value:
-            value that should be added to the series
         in_column:
             column to apply transform
+        value:
+            value that should be added to the series
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
         """
-        self.value = value
         self.in_column = in_column
+        self.value = value
         self.inplace = inplace
         super().__init__(
-            transform=_OneSegmentAddConstTransform(value=self.value, in_column=self.in_column, inplace=self.inplace)
+            transform=_OneSegmentAddConstTransform(in_column=self.in_column, value=self.value, inplace=self.inplace)
         )
 
 

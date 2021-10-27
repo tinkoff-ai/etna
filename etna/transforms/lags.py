@@ -8,7 +8,8 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentLagFeature(Transform):
-    def __init__(self, lags: Union[List[int], int], in_column: str):
+    def __init__(self, in_column: str, lags: Union[List[int], int]):
+        self.in_column = in_column
         if isinstance(lags, int):
             if lags < 1:
                 raise ValueError(f"{type(self).__name__} works only with positive lags values, {lags} given")
@@ -18,7 +19,6 @@ class _OneSegmentLagFeature(Transform):
                 raise ValueError(f"{type(self).__name__} works only with positive lags values")
             self.lags = lags
 
-        self.in_column = in_column
         self.out_postfix = "_lag"
         self.out_prefix = "regressor_"
 
@@ -35,21 +35,20 @@ class _OneSegmentLagFeature(Transform):
 class LagTransform(PerSegmentWrapper):
     """Generates series of lags from given dataframe. Creates columns 'regressor_<column>_lag_<number>'."""
 
-    def __init__(self, lags: Union[List[int], int], in_column: str):
+    def __init__(self, in_column: str, lags: Union[List[int], int]):
         """Create instance of LagTransform.
 
         Parameters
         ----------
-        lags:
-            int value or list of values for lags computation; if int, generate range of lags from 1 to given value
         in_column:
             name of processed column
-
+        lags:
+            int value or list of values for lags computation; if int, generate range of lags from 1 to given value
         Raises
         ------
         ValueError:
             if lags value contains non-positive values
         """
-        self.lags = lags
         self.in_column = in_column
-        super().__init__(transform=_OneSegmentLagFeature(lags=self.lags, in_column=self.in_column))
+        self.lags = lags
+        super().__init__(transform=_OneSegmentLagFeature(in_column=self.in_column, lags=self.lags))
