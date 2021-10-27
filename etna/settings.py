@@ -1,5 +1,6 @@
 import configparser
 import os
+import warnings
 from importlib.util import find_spec
 from typing import Any
 from typing import Callable
@@ -27,24 +28,29 @@ def _module_available(module_path: str) -> bool:
 
 
 def _is_torch_available():
-    true_case = _module_available('pytorch_forecasting') & _module_available('pytorch_lightning') & _module_available('torch')
+    true_case = (
+        _module_available("pytorch_forecasting") & _module_available("pytorch_lightning") & _module_available("torch")
+    )
     if true_case:
         return True
     else:
+        warnings.warn("etna[torch] is not available, to install it, run `pip install etna[torch]`")
         return False
 
 
 def _is_wandb_available():
-    if _module_available('wandb'):
+    if _module_available("wandb"):
         return True
     else:
+        warnings.warn("wandb is not available, to install it, run `pip install etna[wandb]`", category=ImportWarning)
         return False
 
 
 def _is_prophet_available():
-    if _module_available('prophet'):
+    if _module_available("prophet"):
         return True
     else:
+        warnings.warn("etna[prophet] is not available, to install it, run `pip install etna[prophet]`")
         return False
 
 
@@ -77,9 +83,7 @@ class Settings:
             "etna[torch] is not available, to install it, run `pip install etna[torch]`.",
         )
         self.wandb_required: bool = _get_optional_value(
-            wandb_required,
-            _is_wandb_available,
-            "wandb is not available, to install it, " "run `pip install wandb`.",
+            wandb_required, _is_wandb_available, "wandb is not available, to install it, " "run `pip install wandb`."
         )
         self.prophet_required: bool = _get_optional_value(
             prophet_required,
@@ -224,10 +228,7 @@ class MergedConfigParser:
         return final_value
 
     def _parse_config(self, config_parser):
-        type2method = {
-            bool: config_parser.getboolean,
-            int: config_parser.getint,
-        }
+        type2method = {bool: config_parser.getboolean, int: config_parser.getint}
 
         config_dict: Dict[str, Any] = {}
         if config_parser.has_section(self.program_name):
@@ -257,9 +258,4 @@ class MergedConfigParser:
 
 SETTINGS = Settings.parse()
 
-__all__ = [
-    "SETTINGS",
-    "Settings",
-    "ConfigFileFinder",
-    "MergedConfigParser",
-]
+__all__ = ["SETTINGS", "Settings", "ConfigFileFinder", "MergedConfigParser"]
