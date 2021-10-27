@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
 - Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna-ts/pull/209))
 - Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna-ts/pull/218))
+- TreeFeatureSelectionTransform ([229](https://github.com/tinkoff-ai/etna-ts/pull/229))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
