@@ -20,9 +20,13 @@ from etna.loggers.base import BaseLogger
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
-if SETTINGS.wandb_required and SETTINGS.torch_required:
+if SETTINGS.wandb_required:
     import wandb
+
+if SETTINGS.torch_required:
     from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+else:
+    PLWandbLogger = None
 
 
 def percentile(n: int):

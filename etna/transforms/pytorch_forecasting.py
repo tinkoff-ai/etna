@@ -20,6 +20,8 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.data.encoders import TorchNormalizer
 
     NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
+else:
+    NORMALIZER = None  # type: ignore
 
 
 class PytorchForecastingTransform(Transform):
