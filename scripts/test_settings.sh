@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Adapted from Catalyst Team: https://github.com/catalyst-team/catalyst (Apache-2.0 License)
+
 # Cause the script to exit if a single command fails
 set -eo pipefail -v
 

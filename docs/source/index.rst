@@ -17,6 +17,7 @@ Welcome to ETNA's documentation!
    model_selection
    loggers
    commands
+   settings
    api
 
 Indices and tables
