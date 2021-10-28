@@ -18,7 +18,7 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
     -------
     dataframe with p-values.
     """
-    regressors = sorted(df_exog.columns.get_level_values("feature").unique().tolist())
+    regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique().tolist())
     result = np.empty((len(segments), len(regressors)))
     for k, seg in enumerate(segments):
