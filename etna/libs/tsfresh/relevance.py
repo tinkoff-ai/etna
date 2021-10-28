@@ -34,7 +34,7 @@ from etna.libs.tsfresh.significance_tests import (
 )
 from etna.libs.tsfresh.distribution import initialize_warnings_in_workers
 
-
+# Note: Originally copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/ff69073bbb4df787fcbf277a611c6b40632e767d/tsfresh/feature_selection/relevance.py)
 def calculate_relevance_table(
     X,
     y,
