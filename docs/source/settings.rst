@@ -15,6 +15,21 @@ All available installation options:
         pip install etna[wandb]
         pip install etna[all]
 
+.. note::
+   You also may want to make sure, that your etna project always has
+   necessary dependencies installed. In order to do that, you need to create `.etna`
+   file in the project directory. This way you will get error if any of
+   the dependencies are not present.
+
+Example `.etna` file:
+
+.. code-block:: console
+
+        [etna]
+        torch_required = false
+        prophet_required = true
+        wandb_required = false
+
 .. _etna:
 
 .. currentmodule:: etna
