@@ -91,7 +91,7 @@ prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting"]
 wandb = ["wandb"]
 # dev deps
-release = ["click", "typer", "semver"]
+release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
 jupyter = ["jupyter", "nbconvert"]
@@ -111,7 +111,7 @@ all-dev = [
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
-    "click", "typer", "semver",
+    "click", "semver",
     "jupyter", "nbconvert"
 ]
 

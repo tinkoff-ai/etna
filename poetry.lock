@@ -2802,11 +2802,11 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [extras]
 all = ["prophet", "torch", "pytorch-forecasting", "wandb"]
-all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "click", "typer", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "click", "typer", "semver", "jupyter", "nbconvert"]
+all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "click", "typer", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "click", "semver", "jupyter", "nbconvert"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 jupyter = ["jupyter", "nbconvert"]
 prophet = ["prophet"]
-release = ["click", "typer", "semver"]
+release = ["click", "semver"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy"]
 tests = ["pytest-cov", "coverage", "pytest"]
 torch = ["torch", "pytorch-forecasting"]
@@ -2815,7 +2815,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2, <3.9.0"
-content-hash = "da2a8e70c40db84e90aa04e8b7b6103861eece95f80212cf61a817d956af3a8a"
+content-hash = "f5e2a498495bb44bb1ee69da145149339998b3b644caf801b389e392e2dd539f"
 
 [metadata.files]
 absl-py = [
