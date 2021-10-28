@@ -20,27 +20,50 @@ def forecast(
 ):
     """Command to make forecast with etna without coding.
 
+    Parameters
+    ----------
+    config_path:
+        path to csv with data to forecast
+    target_path:
+        path to csv with data to forecast
+    freq:
+        frequency of timestamp in files in pandas format
+    output_path:
+        where to save forecast
+    exog_path:
+        path to csv with exog data
+    raw_output:
+        by default we return only forecast without features
+
+    Notes
+    -----
     Expected format of csv with target timeseries:
 
-    \b
-    | timestamp           | segment   |   target |
-    |:--------------------|:----------|---------:|
-    | 2019-01-01 00:00:00 | segment_a |      170 |
-    | 2019-01-02 00:00:00 | segment_a |      243 |
-    | 2019-01-03 00:00:00 | segment_a |      267 |
-    | 2019-01-04 00:00:00 | segment_a |      287 |
-    | 2019-01-05 00:00:00 | segment_a |      279 |
+    =============  ===========  ==========
+      timestamp      segment      target
+    =============  ===========  ==========
+    2020-01-01     segment_1        1
+    2020-01-02     segment_1        2
+    2020-01-03     segment_1        3
+    2020-01-04     segment_1        4
+    ...
+    2020-01-10     segment_2       10
+    2020-01-11     segment_2       20
+    =============  ===========  ==========
 
     Expected format of csv with exogenous timeseries:
 
-    \b
-    | timestamp           |   regressor_1 |   regressor_2 | segment   |
-    |:--------------------|--------------:|--------------:|:----------|
-    | 2019-01-01 00:00:00 |             0 |             5 | segment_a |
-    | 2019-01-02 00:00:00 |             1 |             6 | segment_a |
-    | 2019-01-03 00:00:00 |             2 |             7 | segment_a |
-    | 2019-01-04 00:00:00 |             3 |             8 | segment_a |
-    | 2019-01-05 00:00:00 |             4 |             9 | segment_a |
+    =============  ===========  ===============  ===============
+      timestamp      segment      regressor_1      regressor_2
+    =============  ===========  ===============  ===============
+    2020-01-01     segment_1        11                  12
+    2020-01-02     segment_1        22                  13
+    2020-01-03     segment_1        31                  14
+    2020-01-04     segment_1        42                  15
+    ...
+    2020-02-10     segment_2       101                  61
+    2020-02-11     segment_2       205                  54
+    =============  ===========  ===============  ===============
     """
     with open(config_path, "r") as f:
         pipeline = yaml.safe_load(f)
