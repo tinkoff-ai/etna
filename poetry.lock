@@ -998,7 +998,7 @@ test = ["pexpect"]
 
 [[package]]
 name = "jupyter-core"
-version = "4.9.0"
+version = "4.9.1"
 description = "Jupyter core package. A base package on which Jupyter projects rely."
 category = "main"
 optional = true
@@ -1797,7 +1797,7 @@ python-versions = "*"
 
 [[package]]
 name = "pyparsing"
-version = "3.0.2"
+version = "3.0.3"
 description = "Python parsing module"
 category = "main"
 optional = false
@@ -2678,7 +2678,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "wandb"
-version = "0.12.5"
+version = "0.12.6"
 description = "A CLI and library for interacting with the Weights and Biases API."
 category = "main"
 optional = true
@@ -3479,8 +3479,8 @@ jupyter-console = [
     {file = "jupyter_console-6.4.0.tar.gz", hash = "sha256:242248e1685039cd8bff2c2ecb7ce6c1546eb50ee3b08519729e6e881aec19c7"},
 ]
 jupyter-core = [
-    {file = "jupyter_core-4.9.0-py3-none-any.whl", hash = "sha256:d03ef9eaa5b28925d30c8f83547ccc24b95cd0394b272000a1a6ab069a652be3"},
-    {file = "jupyter_core-4.9.0.tar.gz", hash = "sha256:adfc754536b34a1cd987c7991a24536d95f4a791e9761e9327fa919fc8d424f3"},
+    {file = "jupyter_core-4.9.1-py3-none-any.whl", hash = "sha256:1c091f3bbefd6f2a8782f2c1db662ca8478ac240e962ae2c66f0b87c818154ea"},
+    {file = "jupyter_core-4.9.1.tar.gz", hash = "sha256:dce8a7499da5a53ae3afd5a9f4b02e5df1d57250cf48f3ad79da23b4778cd6fa"},
 ]
 jupyterlab-pygments = [
     {file = "jupyterlab_pygments-0.1.2-py2.py3-none-any.whl", hash = "sha256:abfb880fd1561987efaefcb2d2ac75145d2a5d0139b1876d5be806e32f630008"},
@@ -4103,8 +4103,8 @@ pymeeus = [
     {file = "PyMeeus-0.5.11.tar.gz", hash = "sha256:bb9d670818d8b0594317b48a7dadea02a0594e5344263bf2054e1a011c8fed55"},
 ]
 pyparsing = [
-    {file = "pyparsing-3.0.2-py3-none-any.whl", hash = "sha256:09fa60a2e3bc3c6a23c2ed23332199d0e57b2c676b9193750cfc22a4358b69c2"},
-    {file = "pyparsing-3.0.2.tar.gz", hash = "sha256:9366e57ad2d2faa8dd89775ef284ecae0fc4012c24717f3705613b262d712090"},
+    {file = "pyparsing-3.0.3-py3-none-any.whl", hash = "sha256:f8d3fe9fc404576c5164f0f0c4e382c96b85265e023c409c43d48f65da9d60d0"},
+    {file = "pyparsing-3.0.3.tar.gz", hash = "sha256:9e3511118010f112a4b4b435ae50e1eaa610cda191acb9e421d60cf5fde83455"},
 ]
 pyperclip = [
     {file = "pyperclip-1.8.2.tar.gz", hash = "sha256:105254a8b04934f0bc84e9c24eb360a591aaf6535c9def5f29d92af107a9bf57"},
@@ -4777,8 +4777,8 @@ urllib3 = [
     {file = "urllib3-1.26.7.tar.gz", hash = "sha256:4987c65554f7a2dbf30c18fd48778ef124af6fab771a377103da0585e2336ece"},
 ]
 wandb = [
-    {file = "wandb-0.12.5-py2.py3-none-any.whl", hash = "sha256:8b571d29e255ab7d733c19c9971a6d6070f30da48bf1e1f408da736441215323"},
-    {file = "wandb-0.12.5.tar.gz", hash = "sha256:cde0b19c96dbf618cd20605ef936488f85605c5fdce4f7b82a5da8dafbca3c35"},
+    {file = "wandb-0.12.6-py2.py3-none-any.whl", hash = "sha256:a486a697d18ca82e1cde64aa60997a9a37c71af3c6946240bda81a4d61f2bcf4"},
+    {file = "wandb-0.12.6.tar.gz", hash = "sha256:ad946efc269b25a36b500a831b6bf9ae26b4a695add55e4a53f5b7220e03b177"},
 ]
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},
