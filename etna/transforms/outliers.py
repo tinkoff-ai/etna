@@ -281,7 +281,10 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
     """Transform that uses get_anomalies_density to find anomalies in data."""
 
     def __init__(
-        self, model: Union[Type["ProphetModel"], Type["SARIMAXModel"]], interval_width: float = 0.95, **model_kwargs
+        self,
+        model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
+        interval_width: float = 0.95,
+        **model_kwargs,
     ):
         """Create instance of ConfidenceIntervalOutliersTransform.
 

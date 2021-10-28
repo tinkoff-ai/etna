@@ -34,7 +34,12 @@ class DummyTransform(SklearnTransform):
         inplace: bool = True,
         mode: Union[TransformMode, str] = "per-segment",
     ):
-        super().__init__(in_column=in_column, inplace=inplace, transformer=DummySkTransform(), mode=mode)
+        super().__init__(
+            in_column=in_column,
+            inplace=inplace,
+            transformer=DummySkTransform(),
+            mode=mode,
+        )
 
 
 @pytest.fixture

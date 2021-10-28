@@ -18,10 +18,13 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.data.encoders import EncoderNormalizer
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
     from pytorch_forecasting.data.encoders import TorchNormalizer
-
-    NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 else:
-    NORMALIZER = None  # type: ignore
+    TimeSeriesDataSet = None  # type: ignore
+    EncoderNormalizer = None  # type: ignore
+    NaNLabelEncoder = None  # type: ignore
+    TorchNormalizer = None  # type: ignore
+
+NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 
 
 class PytorchForecastingTransform(Transform):
