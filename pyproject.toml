@@ -113,6 +113,7 @@ exclude = '''
   | buck-out
   | build
   | dist
+  | etna/libs
 
   # The following are specific to Black, you probably don't want those.
   | blib2to3

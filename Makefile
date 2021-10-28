@@ -1,20 +1,20 @@
 lint:
-	isort --sl -c etna/
-	isort --sl -c tests/
+	isort --skip etna/libs --sl -c etna/
+	isort --skip etna/libs --sl -c tests/
 	black --check etna/
 	black --check tests/
-	flake8 etna/
-	flake8 tests/ --select E,W,C,F401,N
-	mypy
+	flake8 --exclude etna/libs etna/
+	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
+	mypy --exclude etna/libs
 
 format:
-	isort --sl etna/
-	isort --sl tests/
+	isort --skip etna/libs --sl etna/
+	isort --skip etna/libs --sl tests/
 	black etna/
 	black tests/
-	flake8 etna/
-	flake8 tests/ --select E,W,C,F401,N
-	mypy
+	flake8 --exclude etna/libs etna/
+	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
+	mypy --exclude etna/libs
 
 .PHONY: deps/release
 deps/release:
