@@ -10,6 +10,8 @@ from typing import Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly
+import plotly.graph_objects as go
 import seaborn as sns
 
 if TYPE_CHECKING:
@@ -97,7 +99,7 @@ def plot_backtest(
     forecast_df:
         forecasted dataframe with timeseries data
     ts:
-        dataframe of timeseries that was used for TimeSeriesCrossValidation
+        dataframe of timeseries that was used for backtest
     segments:
         segments to plot
     folds:
@@ -150,6 +152,139 @@ def plot_backtest(
         ax[i].set_title(segment)
         ax[i].legend()
         ax[i].tick_params("x", rotation=45)
+
+
+def plot_backtest_interactive(
+    forecast_df: pd.DataFrame,
+    ts: "TSDataset",
+    segments: Optional[List[str]] = None,
+    folds: Optional[List[int]] = None,
+    history_len: int = 0,
+) -> go.Figure:
+    """Plot targets and forecast for backtest pipeline using plotly.
+
+    Parameters
+    ----------
+    forecast_df:
+        forecasted dataframe with timeseries data
+    ts:
+        dataframe of timeseries that was used for backtest
+    segments:
+        segments to plot
+    folds:
+        folds to plot
+    history_len:
+        length of pre-backtest history to plot
+
+    Returns
+    -------
+    go.Figure:
+        result of plotting
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+    df = ts.df
+
+    if not folds:
+        folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
+
+    fig = go.Figure()
+    colors = plotly.colors.qualitative.Dark24
+
+    forecast_start = forecast_df.index.min()
+    history_df = df[df.index < forecast_start]
+    backtest_df = df[df.index >= forecast_start]
+
+    for i, segment in enumerate(segments):
+        segment_backtest_df = backtest_df[segment]
+        segment_history_df = history_df[segment]
+
+        if history_len:
+            plot_df = segment_history_df.tail(history_len)
+        else:
+            plot_df = segment_backtest_df
+
+        # history
+        fig.add_trace(
+            go.Scattergl(
+                x=plot_df.index,
+                y=plot_df.target,
+                legendgroup=f"{segment}",
+                name=f"{segment}",
+                marker_color=colors[i % len(colors)],
+                showlegend=True,
+                line=dict(width=2, dash="solid"),
+            )
+        )
+
+        # test
+        fig.add_trace(
+            go.Scattergl(
+                x=segment_backtest_df.index,
+                y=segment_backtest_df.target,
+                legendgroup=f"{segment}",
+                name=f"Test: {segment}",
+                marker_color=colors[i % len(colors)],
+                showlegend=False,
+                line=dict(width=2, dash="dot"),
+            )
+        )
+
+        # folds
+        segment_forecast_df = forecast_df[segment]
+        if i == 0:
+            for fold_number in folds:
+                forecast_df_slice_fold = segment_forecast_df[segment_forecast_df.fold_number == fold_number]
+                opacity = 0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2)
+                fig.add_vrect(
+                    x0=forecast_df_slice_fold.index.min(),
+                    x1=forecast_df_slice_fold.index.max(),
+                    line_width=0,
+                    fillcolor="blue",
+                    opacity=opacity,
+                )
+
+        # forecast
+        fig.add_trace(
+            go.Scattergl(
+                x=segment_forecast_df.index,
+                y=segment_forecast_df.target,
+                legendgroup=f"{segment}",
+                name=f"Forecast: {segment}",
+                marker_color=colors[i % len(colors)],
+                showlegend=False,
+                line=dict(width=2, dash="dash"),
+            )
+        )
+
+    fig.update_layout(
+        height=600,
+        width=900,
+        title="Backtest for all segments",
+        xaxis_title="timestamp",
+        yaxis_title="target",
+        legend=dict(itemsizing="trace", title="Segments"),
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="left",
+                xanchor="left",
+                yanchor="top",
+                showactive=True,
+                x=1.0,
+                y=1.1,
+                buttons=[
+                    dict(method="restyle", args=["visible", "all"], label="show all"),
+                    dict(method="restyle", args=["visible", "legendonly"], label="hide all"),
+                ],
+            )
+        ],
+        annotations=[
+            dict(text="Show segments:", showarrow=False, x=1.0, y=1.08, xref="paper", yref="paper", align="left")
+        ],
+    )
+
+    return fig
 
 
 def plot_anomalies(
