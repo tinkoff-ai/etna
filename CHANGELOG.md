@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
+- TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
+- feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227))
 
 ### Changed
 
@@ -51,7 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna-ts/pull/218))
 - Function plot_backtest_interactive ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
 - Confidence intervals in Pipeline ([#221](https://github.com/tinkoff-ai/etna-ts/pull/221)) 
-- TreeFeatureSelectionTransform ([229](https://github.com/tinkoff-ai/etna-ts/pull/229))
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
