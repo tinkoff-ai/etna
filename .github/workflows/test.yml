@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -vv
+          poetry install -E all -vv
 
       - name: Install Pytest
         run: |
@@ -101,7 +101,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -vv
+          poetry install -E all -vv
 
       - name: Install Pytest
         run: |
@@ -141,7 +141,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -vv
+          poetry install -E all -vv
 
       - name: Install Jupyter
         run: |

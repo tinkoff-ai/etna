@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2021-10-27
 ### Added
 - BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
 - Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
 - Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna-ts/pull/209))
 - Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna-ts/pull/218))
+- Function plot_backtest_interactive ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
+- Confidence intervals in Pipeline ([#221](https://github.com/tinkoff-ai/etna-ts/pull/221)) 
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
@@ -60,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `TSDataset.to_dataset` method sorting bug ([#183](https://github.com/tinkoff-ai/etna-ts/pull/183))
 - Undefinded behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna-ts/pull/188))
 - Fix typo in word "length" in `get_segment_sequence_anomalies`,`get_sequence_anomalies`,`SAXOutliersTransform` arguments ([#212](https://github.com/tinkoff-ai/etna-ts/pull/212))
+- Make possible to send backtest plots with many segments ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
 
 ## [1.1.3] - 2021-10-08
 ### Fixed

@@ -51,14 +51,4 @@ body:
   validations:
     required: false
 
-- type: checkboxes
-  attributes:
-    label: Checklist
-    options:
-      - label: Added feature request 
-        required: true
-      - label: Added motivation
-        required: true
-      - label: Added proposal
-        required: true
 ...
