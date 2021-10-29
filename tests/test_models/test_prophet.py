@@ -45,9 +45,9 @@ def test_run_with_reg(new_format_df, new_format_exog):
 
 
 def test_confidence_interval_run_insample(example_tsds):
-    model = ProphetModel(interval_width=0.95)
+    model = ProphetModel()
     model.fit(example_tsds)
-    forecast = model.forecast(example_tsds, confidence_interval=True)
+    forecast = model.forecast(example_tsds, confidence_interval=True, interval_width=0.95)
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
@@ -55,10 +55,10 @@ def test_confidence_interval_run_insample(example_tsds):
 
 
 def test_confidence_interval_run_infuture(example_tsds):
-    model = ProphetModel(interval_width=0.95)
+    model = ProphetModel()
     model.fit(example_tsds)
     future = example_tsds.make_future(10)
-    forecast = model.forecast(future, confidence_interval=True)
+    forecast = model.forecast(future, confidence_interval=True, interval_width=0.95)
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)

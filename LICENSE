@@ -188,3 +188,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+   This repository includes four files originally copied from https://github.com/blue-yonder/tsfresh
+   under etna/libs/tsfresh, defaults.py, distribution.py, relevance.py and significance_test.py. The
+   original versions of the files are MIT licensed. See the file headers for details.

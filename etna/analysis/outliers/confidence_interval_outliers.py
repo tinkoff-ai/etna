@@ -44,9 +44,9 @@ def get_anomalies_confidence_interval(
     """
     outliers_per_segment = {}
     time_points = np.array(ts.index.values)
-    model_instance = model(interval_width=interval_width, **model_params)
+    model_instance = model(**model_params)
     model_instance.fit(ts)
-    confidence_interval = model_instance.forecast(deepcopy(ts), confidence_interval=True)
+    confidence_interval = model_instance.forecast(deepcopy(ts), confidence_interval=True, interval_width=interval_width)
     for segment in ts.segments:
         segment_slice = confidence_interval[:, segment, :][segment]
         anomalies_mask = (segment_slice["target"] > segment_slice["target_upper"]) | (

@@ -374,3 +374,31 @@ def big_example_tsdf(random_seed) -> TSDataset:
     df.columns.names = ["segment", "feature"]
     df = TSDataset(df, freq="D")
     return df
+
+
+@pytest.fixture
+def simple_df_relevance() -> TSDataset:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    tmp = np.random.random(len(timestamp))
+
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": np.arange(32), "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": np.arange(5, 32), "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    timestamp = pd.date_range("2020-12-01", "2021-02-11")
+    regr1_2 = np.sin(-np.arange(len(timestamp) - 5))
+    regr2_2 = np.log(np.arange(1, len(timestamp) - 4))
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "regressor_1": np.arange(len(timestamp)),
+            "regressor_2": np.zeros(len(timestamp)),
+            "segment": "1",
+        }
+    )
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_1": regr1_2, "regressor_2": regr2_2, "segment": "2"})
+    df_exog = pd.concat([df_1, df_2], ignore_index=True)
+    df_exog = TSDataset.to_dataset(df_exog)
+
+    return df, df_exog
