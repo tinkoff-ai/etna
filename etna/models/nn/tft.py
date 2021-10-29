@@ -18,7 +18,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTBaseEtnaModel(BaseEtnaModel):
+class TFTModel(BaseEtnaModel):
     """Wrapper for TemporalFusionTransformer from Pytorch Forecasting library.
     Notes
     -----
@@ -115,7 +115,7 @@ class TFTBaseEtnaModel(BaseEtnaModel):
             )
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "TFTBaseEtnaModel":
+    def fit(self, ts: TSDataset) -> "TFTModel":
         """
         Fit model.
 
@@ -126,7 +126,7 @@ class TFTBaseEtnaModel(BaseEtnaModel):
 
         Returns
         -------
-        TFTBaseEtnaModel
+        TFTModel
         """
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)

@@ -2,7 +2,7 @@ import pytest
 
 from etna.datasets.tsdataset import TSDataset
 from etna.metrics import MAE
-from etna.models.nn import TFTBaseEtnaModel
+from etna.models.nn import TFTModel
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import PytorchForecastingTransform
@@ -23,7 +23,7 @@ def test_fit_wrong_order_transform(weekly_period_df):
 
     ts.fit_transform([pft, add_const])
 
-    model = TFTBaseEtnaModel(max_epochs=300, learning_rate=[0.1])
+    model = TFTModel(max_epochs=300, learning_rate=[0.1])
     with pytest.raises(ValueError, match="add PytorchForecastingTransform"):
         model.fit(ts)
 
@@ -59,7 +59,7 @@ def test_tft_model_run_weekly_overfit(weekly_period_df, horizon):
 
     ts_train.fit_transform([dft, pft])
 
-    model = TFTBaseEtnaModel(max_epochs=300, learning_rate=[0.1])
+    model = TFTModel(max_epochs=300, learning_rate=[0.1])
     ts_pred = ts_train.make_future(horizon)
     model.fit(ts_train)
     ts_pred = model.forecast(ts_pred)

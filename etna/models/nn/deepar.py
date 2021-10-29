@@ -18,7 +18,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class DeepARBaseEtnaModel(BaseEtnaModel):
+class DeepARModel(BaseEtnaModel):
     """Wrapper for DeepAR from Pytorch Forecasting library.
     Notes
     -----
@@ -108,7 +108,7 @@ class DeepARBaseEtnaModel(BaseEtnaModel):
             )
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "DeepARBaseEtnaModel":
+    def fit(self, ts: TSDataset) -> "DeepARModel":
         """
         Fit model.
 
@@ -119,7 +119,7 @@ class DeepARBaseEtnaModel(BaseEtnaModel):
 
         Returns
         -------
-        DeepARBaseEtnaModel
+        DeepARModel
         """
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)
