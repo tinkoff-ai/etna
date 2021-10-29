@@ -20,49 +20,34 @@ def forecast(
 ):
     """Command to make forecast with etna without coding.
 
-    Parameters
-    ----------
-    config_path:
-        path to csv with data to forecast
-    target_path:
-        path to csv with data to forecast
-    freq:
-        frequency of timestamp in files in pandas format
-    output_path:
-        where to save forecast
-    exog_path:
-        path to csv with exog data
-    raw_output:
-        by default we return only forecast without features
-
-    Notes
-    -----
     Expected format of csv with target timeseries:
 
+    \b
     =============  ===========  ==========
       timestamp      segment      target
     =============  ===========  ==========
-    2020-01-01     segment_1        1
-    2020-01-02     segment_1        2
-    2020-01-03     segment_1        3
-    2020-01-04     segment_1        4
+    2020-01-01     segment_1         1
+    2020-01-02     segment_1         2
+    2020-01-03     segment_1         3
+    2020-01-04     segment_1         4
     ...
-    2020-01-10     segment_2       10
-    2020-01-11     segment_2       20
+    2020-01-10     segment_2        10
+    2020-01-11     segment_2        20
     =============  ===========  ==========
 
     Expected format of csv with exogenous timeseries:
 
+    \b
     =============  ===========  ===============  ===============
       timestamp      segment      regressor_1      regressor_2
     =============  ===========  ===============  ===============
-    2020-01-01     segment_1        11                  12
-    2020-01-02     segment_1        22                  13
-    2020-01-03     segment_1        31                  14
-    2020-01-04     segment_1        42                  15
+    2020-01-01     segment_1          11               12
+    2020-01-02     segment_1          22               13
+    2020-01-03     segment_1          31               14
+    2020-01-04     segment_1          42               15
     ...
-    2020-02-10     segment_2       101                  61
-    2020-02-11     segment_2       205                  54
+    2020-02-10     segment_2         101               61
+    2020-02-11     segment_2         205               54
     =============  ===========  ===============  ===============
     """
     with open(config_path, "r") as f:
