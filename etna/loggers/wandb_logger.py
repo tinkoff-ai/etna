@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
-from etna.analysis import plot_backtest_interactive
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
@@ -158,6 +157,8 @@ class WandbLogger(BaseLogger):
         fold_info_df:
             Fold information from backtest
         """
+        from etna.analysis import plot_backtest_interactive
+
         if self.table:
             self.experiment.summary["metrics"] = wandb.Table(data=metrics_df)
             self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast_df))
