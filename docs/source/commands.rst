@@ -142,23 +142,3 @@ Example of exog dataset:
 2020-02-10     segment_2         101               61
 2020-02-11     segment_2         205               54
 =============  ===========  ===============  ===============
-
----------------------------
-
-.. _commands:
-
-.. currentmodule:: etna
-
-Details of ETNA CLI
--------------------------
-
-See the API documentation for further details on ETNA commands:
-
-.. currentmodule:: etna
-
-.. moduleautosummary::
-   :toctree: api/
-   :template: custom-module-template.rst
-   :recursive:
-
-   etna.commands

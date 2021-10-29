@@ -24,6 +24,7 @@ def backtest(
 
     Expected format of csv with target timeseries:
 
+    \b
     =============  ===========  ==========
       timestamp      segment      target
     =============  ===========  ==========
@@ -38,6 +39,7 @@ def backtest(
 
     Expected format of csv with exogenous timeseries:
 
+    \b
     =============  ===========  ===============  ===============
       timestamp      segment      regressor_1      regressor_2
     =============  ===========  ===============  ===============
