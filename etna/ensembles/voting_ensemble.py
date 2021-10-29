@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Iterable
 from typing import List
 from typing import Optional
 
@@ -84,7 +83,7 @@ class VotingEnsemble(Pipeline):
         return horizons.pop()
 
     @staticmethod
-    def _process_weights(weights: Optional[Iterable[float]], pipelines_number: int) -> List[float]:
+    def _process_weights(weights: Optional[List[float]], pipelines_number: int) -> List[float]:
         """Process weights: if weights are not given, set them with default values, normalize weights."""
         if weights is None:
             weights = [1 / pipelines_number for _ in range(pipelines_number)]
