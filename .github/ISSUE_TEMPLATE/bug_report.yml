@@ -61,10 +61,4 @@ body:
     options:
       - label: Bug appears at the latest library version
         required: true
-      - label: Bug description added
-        required: true
-      - label: Steps to reproduce added
-        required: true
-      - label: Expected behavior added
-        required: true
 ...

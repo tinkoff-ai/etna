@@ -18,4 +18,5 @@ API
    model_selection
    loggers
    commands
+   settings
 

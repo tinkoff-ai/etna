@@ -6,11 +6,14 @@ from typing import Optional
 from typing import Union
 
 import pandas as pd
-from prophet import Prophet
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
+
+if SETTINGS.prophet_required:
+    from prophet import Prophet
 
 
 class _ProphetModel:
@@ -35,6 +38,7 @@ class _ProphetModel:
         stan_backend: Optional[str] = None,
         additional_seasonality_params: Iterable[Dict[str, Union[str, float, int]]] = (),
     ):
+
         self.growth = growth
         self.n_changepoints = n_changepoints
         self.changepoints = changepoints
@@ -76,6 +80,7 @@ class _ProphetModel:
     def fit(self, df: pd.DataFrame) -> "_ProphetModel":
         """
         Fits a Prophet model.
+
         Parameters
         ----------
         df:
@@ -98,6 +103,7 @@ class _ProphetModel:
     def predict(self, df: pd.DataFrame, confidence_interval: bool, interval_width: float):
         """
         Compute Prophet predictions.
+
         Parameters
         ----------
         df :
@@ -262,6 +268,7 @@ class ProphetModel(PerSegmentModel):
             parameters that describe additional (not 'daily', 'weekly', 'yearly') seasonality that should be
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
             'mode', 'condition_name' will be used for prophet.Prophet().add_seasonality method call.
+
         Notes
         -----
         Original Prophet can use features 'cap' and 'floor',
