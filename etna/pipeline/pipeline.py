@@ -2,9 +2,9 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
@@ -30,7 +30,7 @@ class CrossValidationMode(Enum):
 class Pipeline(BaseMixin):
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(self, model: Model, transforms: Iterable[Transform] = (), horizon: int = 1):
+    def __init__(self, model: Model, transforms: Sequence[Transform] = (), horizon: int = 1):
         """
         Create instance of Pipeline with given parameters.
 
