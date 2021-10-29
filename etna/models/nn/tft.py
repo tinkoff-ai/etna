@@ -7,7 +7,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
-from etna.models.base import Model
+from etna.models.base import BaseEtnaModel
 from etna.models.base import log_decorator
 from etna.transforms import PytorchForecastingTransform
 
@@ -18,7 +18,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTModel(Model):
+class TFTBaseEtnaModel(BaseEtnaModel):
     """Wrapper for TemporalFusionTransformer from Pytorch Forecasting library.
     Notes
     -----
@@ -115,7 +115,7 @@ class TFTModel(Model):
             )
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "TFTModel":
+    def fit(self, ts: TSDataset) -> "TFTBaseEtnaModel":
         """
         Fit model.
 
@@ -126,7 +126,7 @@ class TFTModel(Model):
 
         Returns
         -------
-        TFTModel
+        TFTBaseEtnaModel
         """
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)

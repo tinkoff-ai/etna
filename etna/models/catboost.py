@@ -5,12 +5,12 @@ from catboost import CatBoostRegressor
 from catboost import Pool
 
 from etna.datasets.tsdataset import TSDataset
-from etna.models.base import Model
+from etna.models.base import BaseEtnaModel, BaseAdapter
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
 
 
-class _CatBoostModel:
+class _CatBoostModel(BaseAdapter):
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -161,7 +161,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         )
 
 
-class CatBoostModelMultiSegment(Model):
+class CatBoostModelMultiSegment(BaseEtnaModel):
     """Class for holding Catboost model for all segments.
 
     Examples

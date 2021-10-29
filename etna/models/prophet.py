@@ -9,14 +9,14 @@ import pandas as pd
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
-from etna.models.base import PerSegmentModel
+from etna.models.base import PerSegmentModel, BaseAdapter
 from etna.models.base import log_decorator
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
 
 
-class _ProphetModel:
+class _ProphetModel(BaseAdapter):
     """Class for holding Prophet model."""
 
     def __init__(

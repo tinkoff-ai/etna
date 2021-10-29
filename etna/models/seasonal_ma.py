@@ -3,10 +3,10 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from etna.models.base import PerSegmentModel
+from etna.models.base import PerSegmentModel, BaseAdapter
 
 
-class _SeasonalMovingAverageModel:
+class _SeasonalMovingAverageModel(BaseAdapter):
     """
     Seasonal moving average.
 

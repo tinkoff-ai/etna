@@ -16,7 +16,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
-from etna.models.base import Model
+from etna.models.base import BaseEtnaModel
 from etna.transforms.base import Transform
 
 TTimeRanges = Tuple[Tuple[Optional[str], str], Tuple[str, str]]
@@ -33,7 +33,7 @@ class TimeSeriesCrossValidation(BaseMixin):
     """Cross validation for time series."""
 
     def __init__(
-        self, model: Model, horizon: int, metrics: List[Metric], n_folds: int = 5, mode: str = "expand", n_jobs: int = 1
+        self, model: BaseEtnaModel, horizon: int, metrics: List[Metric], n_folds: int = 5, mode: str = "expand", n_jobs: int = 1
     ):
         """
         Init TimeSeriesCrossValidation.

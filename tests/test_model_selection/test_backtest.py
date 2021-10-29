@@ -13,7 +13,7 @@ from etna.metrics import SMAPE
 from etna.metrics.base import MetricAggregationMode
 from etna.model_selection.backtest import CrossValidationMode
 from etna.model_selection.backtest import TimeSeriesCrossValidation
-from etna.models.base import Model
+from etna.models.base import BaseEtnaModel
 from etna.models.catboost import CatBoostModelMultiSegment
 from etna.models.linear import LinearPerSegmentModel
 from etna.models.prophet import ProphetModel
@@ -158,7 +158,7 @@ def test_generate_constant_timeranges_hours():
 
 
 def _fit_backtest_pipeline(
-    model: Model, horizon: int, ts: TSDataset, transforms: Optional[List[Transform]] = [], n_jobs: int = 1
+    model: BaseEtnaModel, horizon: int, ts: TSDataset, transforms: Optional[List[Transform]] = [], n_jobs: int = 1
 ) -> TimeSeriesCrossValidation:
     """Init pipeline and run backtest"""
     tsvc = TimeSeriesCrossValidation(

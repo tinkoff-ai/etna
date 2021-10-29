@@ -20,7 +20,7 @@ from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
-from etna.models.base import Model
+from etna.models.base import BaseEtnaModel
 from etna.transforms.base import Transform
 
 
@@ -36,7 +36,7 @@ class Pipeline(BaseMixin):
 
     def __init__(
         self,
-        model: Model,
+        model: BaseEtnaModel,
         transforms: Iterable[Transform] = (),
         horizon: int = 1,
         interval_width: float = 0.95,

@@ -3,12 +3,12 @@ import pandas as pd
 from sklearn.base import RegressorMixin
 
 from etna.datasets.tsdataset import TSDataset
-from etna.models.base import Model
+from etna.models.base import BaseEtnaModel, BaseAdapter
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
 
 
-class _SklearnModel:
+class _SklearnModel(BaseAdapter):
     def __init__(self, regressor: RegressorMixin):
         self.model = regressor
 
@@ -39,7 +39,7 @@ class SklearnPerSegmentModel(PerSegmentModel):
         super().__init__(base_model=_SklearnModel(regressor=regressor))
 
 
-class SklearnMultiSegmentModel(Model):
+class SklearnMultiSegmentModel(BaseEtnaModel):
     """Class for holding Sklearn model for all segments."""
 
     def __init__(self, regressor: RegressorMixin):

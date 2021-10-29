@@ -10,7 +10,7 @@ from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.datasets import TSDataset
-from etna.models.base import PerSegmentModel
+from etna.models.base import PerSegmentModel, BaseAdapter
 from etna.models.base import log_decorator
 
 warnings.filterwarnings(
@@ -21,7 +21,7 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXModel:
+class _SARIMAXModel(BaseAdapter):
     """
     Class for holding Sarimax model.
 

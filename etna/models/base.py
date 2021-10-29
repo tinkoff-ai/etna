@@ -27,14 +27,26 @@ def log_decorator(f):
     return wrapper
 
 
-class Model(ABC, BaseMixin):
+class BaseAdapter(ABC, BaseMixin):
+    """Class for holding adapted third-party models."""
+
+    @abstractmethod
+    def fit(self, **kwargs) -> "BaseAdapter":
+        pass
+
+    @abstractmethod
+    def predict(self, **kwargs) -> pd.DataFrame:
+        pass
+
+
+class BaseEtnaModel(ABC, BaseMixin):
     """Class for holding specific models - autoregression and simple regressions."""
 
     def __init__(self):
         self._models = None
 
     @abstractmethod
-    def fit(self, ts: TSDataset) -> "Model":
+    def fit(self, ts: TSDataset) -> "BaseEtnaModel":
         """Fit model.
 
         Parameters
@@ -75,7 +87,7 @@ class Model(ABC, BaseMixin):
         return segment_predict
 
 
-class PerSegmentModel(Model):
+class PerSegmentModel(BaseEtnaModel):
     """Class for holding specific models for persegment prediction."""
 
     def __init__(self, base_model):
