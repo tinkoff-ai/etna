@@ -11,15 +11,13 @@ from etna.transforms.base import Transform
 class WindowStatisticsTransform(Transform, ABC):
     """WindowStatisticsTransform handles computation of statistical features on windows."""
 
-    default_out_postfix = "statistics"
-
     def __init__(
         self,
         window: int,
         in_column: str,
+        out_postfix: str,
         seasonality: int = 1,
         min_periods: int = 1,
-        out_postfix: Optional[str] = None,
         fillna: float = 0,
         **kwargs,
     ):
@@ -29,20 +27,22 @@ class WindowStatisticsTransform(Transform, ABC):
         ----------
         window: int
             size of window to aggregate
+        in_column: str
+            name of processed column
+        out_postfix: str
+            postfix to add to result column name
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
             min number of targets in window to compute aggregation; if there is less than min_periods number of targets
             return None
-        out_postfix: str, optional
-            postfix to add to result column name; if not given, uses default_out_postfix
         fillna: float
             value to fill results NaNs with
         """
         self.window = window
         self.seasonality = seasonality
         self.min_periods = min_periods
-        self.out_postfix = out_postfix or self.default_out_postfix
+        self.out_postfix = out_postfix
         self.fillna = fillna
         self.kwargs = kwargs
         self.min_required_len = max(self.min_periods - 1, 0) * self.seasonality + 1
@@ -107,16 +107,14 @@ class MeanTransform(WindowStatisticsTransform):
        MeanTransform(x_t) = \\sum_{i=1}^{window}{x_{t - i}\\cdot\\alpha^{i - 1}}
     """
 
-    default_out_postfix = "mean"
-
     def __init__(
         self,
         window: int,
         in_column: str,
+        out_column: Optional[str] = None,
         seasonality: int = 1,
         alpha: float = 1,
         min_periods: int = 1,
-        out_postfix: Optional[str] = None,
         fillna: float = 0,
     ):
         """Init MeanTransform.
@@ -125,6 +123,11 @@ class MeanTransform(WindowStatisticsTransform):
         ----------
         window: int
             size of window to aggregate
+        in_column: str
+            name of processed column
+        out_column: str, optional
+            postfix to add to result column name. We get "{in_column}_{out_column}".
+            If not given use "{in_column}_{__repr__()}"
         seasonality: int
             seasonality of lags to compute window's aggregation with
         alpha: float
@@ -132,21 +135,25 @@ class MeanTransform(WindowStatisticsTransform):
         min_periods: int
             min number of targets in window to compute aggregation; if there is less than min_periods number of targets
             return None
-        out_postfix: str
-            postfix to add to result column name
         fillna: float
             value to fill results NaNs with
         """
+        self.window = window
+        self.in_column = in_column
+        self.seasonality = seasonality
+        self.alpha = alpha
+        self.min_periods = min_periods
+        self.out_column = out_column
+        self._alpha_range: Optional[List[float]] = None
+        self.fillna = fillna
         super().__init__(
             window=window,
             in_column=in_column,
             seasonality=seasonality,
             min_periods=min_periods,
-            out_postfix=out_postfix,
+            out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
             fillna=fillna,
         )
-        self.alpha = alpha
-        self._alpha_range: Optional[List[float]] = None
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
@@ -181,7 +188,48 @@ class StdTransform(WindowStatisticsTransform):
     Note that pd.Series([1]).std() is np.nan.
     """
 
-    default_out_postfix = "std"
+    def __init__(
+        self,
+        window: int,
+        in_column: str,
+        out_column: Optional[str],
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+    ):
+        """Init StdTransform.
+
+        Parameters
+        ----------
+        window: int
+            size of window to aggregate
+        in_column: str
+            name of processed column
+        out_column: str, optional
+            postfix to add to result column name. We get "{in_column}_{out_column}".
+            If not given use "{in_column}_{__repr__()}"
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation; if there is less than min_periods number of targets
+            return None
+        fillna: float
+            value to fill results NaNs with
+        """
+        self.window = window
+        self.in_column = in_column
+        self.out_column = out_column
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
 
     def _aggregate_window(self, series: pd.Series) -> float:
         """Compute std over the series."""
@@ -192,16 +240,14 @@ class StdTransform(WindowStatisticsTransform):
 class QuantileTransform(WindowStatisticsTransform):
     """QuantileTransform computes quantile value for given window."""
 
-    default_out_postfix = "quantile"
-
     def __init__(
         self,
         quantile: float,
         window: int,
         in_column: str,
+        out_column: Optional[str],
         seasonality: int = 1,
         min_periods: int = 1,
-        out_postfix: Optional[str] = None,
         fillna: float = 0,
     ):
         """Init QuantileTransform.
@@ -212,6 +258,11 @@ class QuantileTransform(WindowStatisticsTransform):
             quantile to calculate
         window: int
             size of window to aggregate
+        in_column: str
+            name of processed column
+        out_column: str, optional
+            postfix to add to result column name. We get "{in_column}_{out_column}".
+            If not given use "{in_column}_{__repr__()}"
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
@@ -223,15 +274,20 @@ class QuantileTransform(WindowStatisticsTransform):
             value to fill results NaNs with
         """
         self.quantile = quantile
+        self.window = window
+        self.in_column = in_column
+        self.out_column = out_column
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
         super().__init__(
             window=window,
             in_column=in_column,
             seasonality=seasonality,
             min_periods=min_periods,
-            out_postfix=out_postfix,
+            out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
             fillna=fillna,
         )
-        self.out_postfix = f"{self.out_postfix}_{self.quantile}"
 
     def _aggregate_window(self, series: pd.Series) -> float:
         """Compute quantile over the series."""
@@ -242,7 +298,48 @@ class QuantileTransform(WindowStatisticsTransform):
 class MinTransform(WindowStatisticsTransform):
     """MinTransform computes min value for given window."""
 
-    default_out_postfix = "min"
+    def __init__(
+        self,
+        window: int,
+        in_column: str,
+        out_column: Optional[str],
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+    ):
+        """Init MinTransform.
+
+        Parameters
+        ----------
+        window: int
+            size of window to aggregate
+        in_column: str
+            name of processed column
+        out_column: str, optional
+            postfix to add to result column name. We get "{in_column}_{out_column}".
+            If not given use "{in_column}_{__repr__()}"
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation; if there is less than min_periods number of targets
+            return None
+        fillna: float
+            value to fill results NaNs with
+        """
+        self.window = window
+        self.in_column = in_column
+        self.out_column = out_column
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
 
     def _aggregate_window(self, series: pd.Series) -> float:
         """Compute min over the series."""
@@ -253,7 +350,48 @@ class MinTransform(WindowStatisticsTransform):
 class MaxTransform(WindowStatisticsTransform):
     """MaxTransform computes max value for given window."""
 
-    default_out_postfix = "max"
+    def __init__(
+        self,
+        window: int,
+        in_column: str,
+        out_column: Optional[str],
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+    ):
+        """Init MaxTransform.
+
+        Parameters
+        ----------
+        window: int
+            size of window to aggregate
+        in_column: str
+            name of processed column
+        out_column: str, optional
+            postfix to add to result column name. We get "{in_column}_{out_column}".
+            If not given use "{in_column}_{__repr__()}"
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation; if there is less than min_periods number of targets
+            return None
+        fillna: float
+            value to fill results NaNs with
+        """
+        self.window = window
+        self.in_column = in_column
+        self.out_column = out_column
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
 
     def _aggregate_window(self, series: pd.Series) -> float:
         """Compute max over the series."""
@@ -264,7 +402,48 @@ class MaxTransform(WindowStatisticsTransform):
 class MedianTransform(WindowStatisticsTransform):
     """MedianTransform computes median value for given window."""
 
-    default_out_postfix = "median"
+    def __init__(
+        self,
+        window: int,
+        in_column: str,
+        out_column: Optional[str],
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+    ):
+        """Init MedianTransform.
+
+        Parameters
+        ----------
+        window: int
+            size of window to aggregate
+        in_column: str
+            name of processed column
+        out_column: str, optional
+            postfix to add to result column name. We get "{in_column}_{out_column}".
+            If not given use "{in_column}_{__repr__()}"
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation; if there is less than min_periods number of targets
+            return None
+        fillna: float
+            value to fill results NaNs with
+        """
+        self.window = window
+        self.in_column = in_column
+        self.out_column = out_column
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
 
     def _aggregate_window(self, series: pd.Series) -> float:
         """Compute median over the series."""

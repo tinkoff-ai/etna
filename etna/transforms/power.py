@@ -40,7 +40,6 @@ class YeoJohnsonTransform(SklearnTransform):
         if inplace and (out_column is not None):
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
         self.standardize = standardize
-        self.in_column = in_column
         self.inplace = inplace
         self.out_column = out_column
         self.mode = TransformMode(mode)
@@ -61,7 +60,7 @@ class BoxCoxTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
-        out_column: Optional[bool] = None,
+        out_column: Optional[str] = None,
         standardize: bool = True,
         mode: Union[TransformMode, str] = "per-segment",
     ):
