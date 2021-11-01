@@ -13,6 +13,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
     def __init__(self, in_column: str, regressor: Optional[RegressorMixin] = None):
+        # TODO: add inplace arg
         """
         Create instance of _OneSegmentLinearTrendBaseTransform.
 
@@ -143,29 +144,21 @@ class LinearTrendTransform(PerSegmentWrapper):
 class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
-    def __init__(self, in_column: str, n_subsamples: int = None, **regression_params):
+    def __init__(self, in_column: str, **regression_params):
+        # TODO: Parametre n_subsamples is the same for all segmetns, raises error if n_subsamples > length of the sortest segment
         """Create instance of TheilSenTrendTransform.
 
         Parameters
         ----------
         in_column:
             name of processed column
-        n_subsamples:
-            Number of samples to calculate the parameters of TheilSenRegressor. This is at least the number
-            of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
-            A lower number leads to a higher breakdown point and a low efficiency while a high number
-            leads to a low breakdown point and a high efficiency.
-            If None, take the minimum number of subsamples leading to maximal robustness.
-            If n_subsamples is set to n_samples, Theil-Sen is identical to least squares.
         regression_params:
             params that should be used to init TheilSenRegressor
         """
         self.in_column = in_column
-        self.n_subsamples = n_subsamples
         self.regression_params = regression_params
         super().__init__(
             transform=_OneSegmentLinearTrendBaseTransform(
-                in_column=self.in_column,
-                regressor=TheilSenRegressor(n_subsamples=self.n_subsamples, **self.regression_params),
+                in_column=self.in_column, regressor=TheilSenRegressor(**self.regression_params)
             )
         )
