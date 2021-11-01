@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
+- Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
 - TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
-- feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227))
+- Feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227))
+- Method flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
 
 ### Changed
 
