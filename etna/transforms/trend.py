@@ -17,6 +17,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
     def __init__(
         self,
         in_column: str,
+        out_column_postfix: str,
         change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
         **change_point_model_predict_params,
@@ -34,7 +35,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         change_point_model_predict_params:
             params for change_point_model predict method
         """
-        self.out_column = "regressor_" + in_column + "_trend"
+        self.out_column = f"regressor_{in_column}_{out_column_postfix}"
         super().__init__(
             in_column=in_column,
             change_point_model=change_point_model,
@@ -83,6 +84,7 @@ class _TrendTransform(PerSegmentWrapper):
     def __init__(
         self,
         in_column: str,
+        out_column_postfix: str,
         change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
         **change_point_model_predict_params,
@@ -100,16 +102,13 @@ class _TrendTransform(PerSegmentWrapper):
         change_point_model_predict_params:
             params for change_point_model predict method
         """
-        self.in_column = in_column
-        self.change_point_model = change_point_model
-        self.detrend_model = detrend_model
-        self.change_point_model_predict_params = change_point_model_predict_params
         super().__init__(
             transform=_OneSegmentTrendTransform(
-                in_column=self.in_column,
-                change_point_model=self.change_point_model,
-                detrend_model=self.detrend_model,
-                **self.change_point_model_predict_params,
+                in_column=in_column,
+                out_column_postfix=out_column_postfix,
+                change_point_model=change_point_model,
+                detrend_model=detrend_model,
+                **change_point_model_predict_params,
             )
         )
 
@@ -122,6 +121,7 @@ class TrendTransform(_TrendTransform):
     def __init__(
         self,
         in_column: str,
+        out_column: Optional[str] = None,
         detrend_model: TDetrendModel = LinearRegression(),
         model: str = "ar",
         custom_cost: Optional[BaseCost] = None,
@@ -154,6 +154,9 @@ class TrendTransform(_TrendTransform):
         epsilon:
             reconstruction budget (>0)
         """
+        self.in_column = in_column
+        self.out_column = out_column
+        self.detrend_model = detrend_model
         self.model = model
         self.custom_cost = custom_cost
         self.min_size = min_size
@@ -163,11 +166,10 @@ class TrendTransform(_TrendTransform):
         self.epsilon = epsilon
         super().__init__(
             in_column=in_column,
-            change_point_model=Binseg(
-                model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
-            ),
+            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            change_point_model=Binseg(model=model, custom_cost=custom_cost, min_size=min_size, jump=jump),
             detrend_model=detrend_model,
-            n_bkps=self.n_bkps,
-            pen=self.pen,
-            epsilon=self.epsilon,
+            n_bkps=n_bkps,
+            pen=pen,
+            epsilon=epsilon,
         )
