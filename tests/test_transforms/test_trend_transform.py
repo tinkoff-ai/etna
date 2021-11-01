@@ -24,12 +24,16 @@ def test_fit_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     """
     df_one_segment_original = df_one_segment.copy()
     trend_transform = _OneSegmentTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_point_model=Binseg(),
+        detrend_model=LinearRegression(),
+        n_bkps=5,
+        out_column_postfix="postfix",
     )
     df_one_segment = trend_transform.fit_transform(df_one_segment)
-    assert sorted(df_one_segment.columns) == sorted(["target", "segment", "regressor_target_trend"])
+    assert sorted(df_one_segment.columns) == sorted(["target", "segment", "regressor_target_postfix"])
     assert (df_one_segment["target"] == df_one_segment_original["target"]).all()
-    residue = df_one_segment["target"] - df_one_segment["regressor_target_trend"]
+    residue = df_one_segment["target"] - df_one_segment["regressor_target_postfix"]
     assert residue.mean() < 1
 
 
@@ -38,7 +42,11 @@ def test_inverse_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     Test that inverse_transform interface works correctly for one segment.
     """
     trend_transform = _OneSegmentTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_point_model=Binseg(),
+        detrend_model=LinearRegression(),
+        n_bkps=5,
+        out_column_postfix="test",
     )
     df_one_segment_transformed = trend_transform.fit_transform(df_one_segment)
     df_one_segment_inverse_transformed = trend_transform.inverse_transform(df_one_segment)
