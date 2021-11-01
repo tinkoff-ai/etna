@@ -3,9 +3,9 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
@@ -37,7 +37,7 @@ class Pipeline(BaseMixin):
     def __init__(
         self,
         model: Model,
-        transforms: Iterable[Transform] = (),
+        transforms: Sequence[Transform] = (),
         horizon: int = 1,
         interval_width: float = 0.95,
         confidence_interval_cv: int = 3,
