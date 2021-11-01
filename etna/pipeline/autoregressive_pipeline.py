@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Iterable
+from typing import Sequence
 
 import pandas as pd
 
@@ -50,7 +50,7 @@ class AutoRegressivePipeline(Pipeline):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
-    def __init__(self, model: Model, horizon: int, transforms: Iterable[Transform] = (), step: int = 1):
+    def __init__(self, model: Model, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
         """
         Create instance of AutoRegressivePipeline with given parameters.
 
