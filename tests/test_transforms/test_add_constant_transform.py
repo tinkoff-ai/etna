@@ -25,7 +25,7 @@ def test_addconstpreproc_out_column_naming(example_df_: pd.DataFrame, out_column
         if out_column:
             assert out_column in result[segment]
         else:
-            assert f"target_{preprocess.__repr__()}" in result[segment]
+            assert preprocess.__repr__() in result[segment]
 
 
 def test_addconstpreproc_value_out_column(example_df_: pd.DataFrame):

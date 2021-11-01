@@ -21,7 +21,7 @@ class _OneSegmentAddConstTransform(Transform):
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
-            name of added column. If not given, use '{in_column}_{self.__repr__()}'
+            name of added column. If not given, use self.__repr__()'
         """
         self.value = value
         self.in_column = in_column
@@ -90,7 +90,7 @@ class AddConstTransform(PerSegmentWrapper):
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
-            name of added column. If not given, use '{in_column}_{self.__repr__()}'
+            name of added column. If not given, use self.__repr__()
         """
         self.value = value
         self.in_column = in_column
@@ -105,7 +105,7 @@ class AddConstTransform(PerSegmentWrapper):
         elif self.out_column:
             out_column_result = self.out_column
         else:
-            out_column_result = f"{self.in_column}_{self.__repr__()}"
+            out_column_result = self.__repr__()
         super().__init__(
             transform=_OneSegmentAddConstTransform(
                 value=value, in_column=in_column, inplace=inplace, out_column=out_column_result
