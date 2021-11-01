@@ -65,7 +65,7 @@ def test_interface_two_segments_out_column(
     lags: Union[int, Sequence[int]], expected_columns: List[str], int_df_two_segments
 ):
     """This test checks LagTransform with out_column argument interface."""
-    lf = LagTransform(in_column="target", lags=lags, out_column="lag_feature")
+    lf = LagTransform(in_column="target", lags=lags, out_column="regressor_lag_feature")
     lags_df = lf.fit_transform(df=int_df_two_segments)
     for segment in lags_df.columns.get_level_values("segment").unique():
         lags_df_lags_columns = sorted(filter(lambda x: x.startswith("regressor_lag_feature"), lags_df[segment].columns))
@@ -92,7 +92,7 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_df_two
 @pytest.mark.parametrize("lags", (12, [4, 6, 8, 16]))
 def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_df_two_segments):
     """This test checks that LagTransform computes lags correctly."""
-    lf = LagTransform(in_column="target", lags=lags, out_column="lag_feature")
+    lf = LagTransform(in_column="target", lags=lags, out_column="regressor_lag_feature")
     lags_df = lf.fit_transform(df=int_df_two_segments)
     if isinstance(lags, int):
         lags = list(range(1, lags + 1))
