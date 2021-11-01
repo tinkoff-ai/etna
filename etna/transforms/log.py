@@ -25,7 +25,7 @@ class _OneSegmentLogTransform(Transform):
         inplace:
             if True, apply logarithm transformation inplace to in_column, if False, add transformed column to dataset.
         out_column:
-            name of added column. If not given, use '{in_column}_{self.__repr__()}'
+            name of added column. If not given, use self.__repr__()
         """
         self.base = base
         self.in_column = in_column
@@ -98,7 +98,7 @@ class LogTransform(PerSegmentWrapper):
             if True, apply logarithm transformation inplace to in_column,
             if False, add column add transformed column to dataset
         out_column:
-            name of added column. If not given, use '{in_column}_{self.__repr__()}'
+            name of added column. If not given, use self.__repr__()
         """
         self.in_column = in_column
         self.base = base
@@ -112,7 +112,7 @@ class LogTransform(PerSegmentWrapper):
         elif out_column:
             result_out_column = out_column
         else:
-            result_out_column = f"{self.in_column}_{self.__repr__()}"
+            result_out_column = self.__repr__()
 
         super().__init__(
             transform=_OneSegmentLogTransform(

@@ -65,7 +65,7 @@ def test_logpreproc_noninplace_interface(positive_df_: pd.DataFrame, out_column:
     """Check the column name after non inplace transform."""
     preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
     value = preprocess.fit_transform(df=positive_df_)
-    expected_out_column = out_column or f"target_{preprocess.__repr__()}"
+    expected_out_column = out_column if out_column is not None else preprocess.__repr__()
     for segment in ["segment_1", "segment_2"]:
         assert expected_out_column in value[segment]
 

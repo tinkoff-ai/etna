@@ -88,7 +88,9 @@ def naive_featured_pipeline_1() -> Pipeline:
 @pytest.fixture
 def naive_featured_pipeline_2() -> Pipeline:
     """Generate pipeline with NaiveModel(2)."""
-    pipeline = Pipeline(model=NaiveModel(2), transforms=[DateFlagsTransform(out_column="regressor_dateflag")], horizon=7)
+    pipeline = Pipeline(
+        model=NaiveModel(2), transforms=[DateFlagsTransform(out_column="regressor_dateflag")], horizon=7
+    )
     return pipeline
 
 
