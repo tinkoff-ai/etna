@@ -220,8 +220,8 @@ class TSDataset:
         return future_ts
 
     @staticmethod
-    def _check_exog(df: pd.DataFrame, df_exog: pd.DataFrame):
-        """Check that df_exog have more timestamps than df."""
+    def _check_regressors(df: pd.DataFrame, df_exog: pd.DataFrame):
+        """Check that regressors in df_exog begin not later than in df and end later than in df."""
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
             target = df[segment]["target"].dropna()
@@ -242,8 +242,8 @@ class TSDataset:
                     )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
-        self._check_exog(df=df, df_exog=self.df_exog)
-        df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1, level=(0, 1))
+        self._check_regressors(df=df, df_exog=self.df_exog)
+        df = pd.merge(df, self.df_exog, left_index=True, right_index=True, how="left").sort_index(axis=1, level=(0, 1))
         return df
 
     def _check_endings(self):
