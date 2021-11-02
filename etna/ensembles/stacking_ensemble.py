@@ -4,6 +4,7 @@ from typing import List
 from typing import Set
 from typing import Tuple
 from typing import Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -58,7 +59,7 @@ class StackingEnsemble(Pipeline):
         pipelines: List[Pipeline],
         final_model: RegressorMixin = LinearRegression(),
         cv: int = 3,
-        features_to_use: Union[None, Literal[all], List[str]] = None,
+        features_to_use: Union[None, Literal["all"], List[str]] = None,
         n_jobs: int = 1,
     ):
         """Init StackingEnsemble.
@@ -114,15 +115,15 @@ class StackingEnsemble(Pipeline):
         elif features_to_use == "all":
             return available_features - {"target"}
         elif isinstance(features_to_use, list):
-            features_to_use = set(features_to_use)
-            if len(features_to_use) == 0:
+            features_to_use_unique = set(features_to_use)
+            if len(features_to_use_unique) == 0:
                 return None
-            elif features_to_use.issubset(available_features):
-                return features_to_use
+            elif features_to_use_unique.issubset(available_features):
+                return features_to_use_unique
             else:
-                unavailable_features = features_to_use - available_features
+                unavailable_features = features_to_use_unique - available_features
                 warnings.warn(f"Features {unavailable_features} are not found and will be dropped!")
-                return features_to_use.intersection(available_features)
+                return features_to_use_unique.intersection(available_features)
         else:
             warnings.warn(
                 "Feature list is passed in the wrong format."
@@ -177,7 +178,7 @@ class StackingEnsemble(Pipeline):
 
     def _make_features(
         self, forecasts: List[TSDataset], train: bool = False
-    ) -> Union[Tuple[pd.DataFrame, pd.Series], pd.Series]:
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the `final_model`."""
         # Stack targets from the forecasts
         targets = [
@@ -211,7 +212,7 @@ class StackingEnsemble(Pipeline):
             )
             return x, y
         else:
-            return x
+            return x, None
 
     @staticmethod
     def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
@@ -233,7 +234,7 @@ class StackingEnsemble(Pipeline):
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
         )
-        x = self._make_features(forecasts=forecasts, train=False)
+        x, _ = self._make_features(forecasts=forecasts, train=False)
         y = self.final_model.predict(x).reshape(-1, self.horizon).T
 
         # Format the forecast into TSDataset
