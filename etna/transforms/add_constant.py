@@ -5,7 +5,7 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentAddConstTransform(Transform):
-    def __init__(self, in_column: str, value: float,  inplace: bool = True):
+    def __init__(self, in_column: str, value: float, inplace: bool = True):
         """
         Init _OneSegmentAddConstTransform.
 
