@@ -15,8 +15,8 @@ class WindowStatisticsTransform(Transform, ABC):
 
     def __init__(
         self,
-        window: int,
         in_column: str,
+        window: int,
         seasonality: int = 1,
         min_periods: int = 1,
         out_postfix: Optional[str] = None,
@@ -27,6 +27,8 @@ class WindowStatisticsTransform(Transform, ABC):
 
         Parameters
         ----------
+        in_column: str
+            name of processed column
         window: int
             size of window to aggregate
         seasonality: int
@@ -39,6 +41,7 @@ class WindowStatisticsTransform(Transform, ABC):
         fillna: float
             value to fill results NaNs with
         """
+        self.in_column = in_column
         self.window = window
         self.seasonality = seasonality
         self.min_periods = min_periods
@@ -47,7 +50,6 @@ class WindowStatisticsTransform(Transform, ABC):
         self.kwargs = kwargs
         self.min_required_len = max(self.min_periods - 1, 0) * self.seasonality + 1
         self.history = self.window * self.seasonality
-        self.in_column = in_column
 
     def fit(self, *args) -> "WindowStatisticsTransform":
         """Fits transform."""
@@ -111,8 +113,8 @@ class MeanTransform(WindowStatisticsTransform):
 
     def __init__(
         self,
-        window: int,
         in_column: str,
+        window: int,
         seasonality: int = 1,
         alpha: float = 1,
         min_periods: int = 1,
@@ -123,6 +125,8 @@ class MeanTransform(WindowStatisticsTransform):
 
         Parameters
         ----------
+        in_column: str
+            name of processed column
         window: int
             size of window to aggregate
         seasonality: int
@@ -138,8 +142,8 @@ class MeanTransform(WindowStatisticsTransform):
             value to fill results NaNs with
         """
         super().__init__(
-            window=window,
             in_column=in_column,
+            window=window,
             seasonality=seasonality,
             min_periods=min_periods,
             out_postfix=out_postfix,
@@ -196,9 +200,9 @@ class QuantileTransform(WindowStatisticsTransform):
 
     def __init__(
         self,
+        in_column: str,
         quantile: float,
         window: int,
-        in_column: str,
         seasonality: int = 1,
         min_periods: int = 1,
         out_postfix: Optional[str] = None,
@@ -208,6 +212,8 @@ class QuantileTransform(WindowStatisticsTransform):
 
         Parameters
         ----------
+        in_column: str
+            name of processed column
         quantile: float
             quantile to calculate
         window: int
@@ -224,8 +230,8 @@ class QuantileTransform(WindowStatisticsTransform):
         """
         self.quantile = quantile
         super().__init__(
-            window=window,
             in_column=in_column,
+            window=window,
             seasonality=seasonality,
             min_periods=min_periods,
             out_postfix=out_postfix,
