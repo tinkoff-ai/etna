@@ -103,6 +103,7 @@ class Pipeline(BaseMixin):
         ----------
         ts:
             Dataset with timeseries data
+
         Returns
         -------
         Pipeline:
