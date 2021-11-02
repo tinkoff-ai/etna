@@ -265,6 +265,17 @@ def test_dataset_datetime_convertion_during_init():
     assert ts.df.index.dtype == "datetime64[ns]"
 
 
+def test_make_future():
+    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
+    df = pd.concat([df1, df2], ignore_index=False)
+    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+
+
 def test_make_future_small_horizon():
     timestamp = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-01"))
     target1 = [np.sin(i) for i in range(len(timestamp))]
@@ -277,6 +288,27 @@ def test_make_future_small_horizon():
     train = TSDataset(ts[: ts.index[10], :, :], freq="D")
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
         assert len(train.make_future(1).df) == 1
+
+
+def test_make_future_with_exog():
+    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
+    df = pd.concat([df1, df2], ignore_index=False)
+    exog = df.copy()
+    exog.columns = ["timestamp", "exog", "segment"]
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(exog), freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+
+
+def test_make_future_with_regressors(df_and_regressors):
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
 
 
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
@@ -296,12 +328,12 @@ def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earli
     dfexog = TSDataset.to_dataset(dfexog)
 
     with pytest.raises(ValueError):
-        TSDataset._check_exog(df=df, df_exog=dfexog)
+        TSDataset._check_regressors(df=df, df_exog=dfexog)
 
 
 def test_dataset_check_exog_pass(df_and_regressors):
     df, df_exog = df_and_regressors
-    _ = TSDataset._check_exog(df=df, df_exog=df_exog)
+    _ = TSDataset._check_regressors(df=df, df_exog=df_exog)
 
 
 def test_warn_not_enough_exog(df_and_regressors):
