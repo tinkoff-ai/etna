@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
 - Make `in_column` the first argument in every transform ([#247](https://github.com/tinkoff-ai/etna-ts/pull/247))
+- Update mypy checking and fix issues with it ([#248](https://github.com/tinkoff-ai/etna-ts/pull/248))
 
 ### Fixed
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
