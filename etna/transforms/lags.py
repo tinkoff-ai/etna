@@ -44,6 +44,7 @@ class LagTransform(PerSegmentWrapper):
             name of processed column
         lags:
             int value or list of values for lags computation; if int, generate range of lags from 1 to given value
+
         Raises
         ------
         ValueError:
