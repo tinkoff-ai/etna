@@ -22,8 +22,8 @@ class SklearnTransform(Transform):
 
     def __init__(
         self,
+        in_column: Union[str, List[str]],
         transformer: TransformerMixin,
-        in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
         out_column_postfix: Optional[str] = None,
         mode: Union[TransformMode, str] = "per-segment",
@@ -33,10 +33,10 @@ class SklearnTransform(Transform):
 
         Parameters
         ----------
-        transformer:
-            sklearn.base.TransformerMixin instance.
         in_column:
             columns to be transformed, if None - all columns will be scaled.
+        transformer:
+            sklearn.base.TransformerMixin instance.
         inplace:
             features are changed by transformed.
         out_column_postfix:

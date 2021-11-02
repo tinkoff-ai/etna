@@ -13,8 +13,8 @@ class WindowStatisticsTransform(Transform, ABC):
 
     def __init__(
         self,
-        window: int,
         in_column: str,
+        window: int,
         out_postfix: str,
         seasonality: int = 1,
         min_periods: int = 1,
@@ -25,10 +25,10 @@ class WindowStatisticsTransform(Transform, ABC):
 
         Parameters
         ----------
-        window: int
-            size of window to aggregate
         in_column: str
             name of processed column
+        window: int
+            size of window to aggregate
         out_postfix: str
             postfix to add to result column name
         seasonality: int
@@ -109,8 +109,8 @@ class MeanTransform(WindowStatisticsTransform):
 
     def __init__(
         self,
-        window: int,
         in_column: str,
+        window: int,
         out_column: Optional[str] = None,
         seasonality: int = 1,
         alpha: float = 1,
@@ -121,10 +121,10 @@ class MeanTransform(WindowStatisticsTransform):
 
         Parameters
         ----------
-        window: int
-            size of window to aggregate
         in_column: str
             name of processed column
+        window: int
+            size of window to aggregate
         out_column: str, optional
             postfix to add to result column name. We get "{in_column}_{out_column}".
             If not given use "{in_column}_{__repr__()}"
@@ -147,8 +147,8 @@ class MeanTransform(WindowStatisticsTransform):
         self._alpha_range: Optional[List[float]] = None
         self.fillna = fillna
         super().__init__(
-            window=window,
             in_column=in_column,
+            window=window,
             seasonality=seasonality,
             min_periods=min_periods,
             out_postfix=self.out_column if self.out_column is not None else self.__repr__(),
@@ -242,9 +242,9 @@ class QuantileTransform(WindowStatisticsTransform):
 
     def __init__(
         self,
+        in_column: str,
         quantile: float,
         window: int,
-        in_column: str,
         out_column: Optional[str] = None,
         seasonality: int = 1,
         min_periods: int = 1,
@@ -254,12 +254,12 @@ class QuantileTransform(WindowStatisticsTransform):
 
         Parameters
         ----------
+        in_column: str
+            name of processed column
         quantile: float
             quantile to calculate
         window: int
             size of window to aggregate
-        in_column: str
-            name of processed column
         out_column: str, optional
             postfix to add to result column name. We get "{in_column}_{out_column}".
             If not given use "{in_column}_{__repr__()}"
@@ -281,8 +281,8 @@ class QuantileTransform(WindowStatisticsTransform):
         self.min_periods = min_periods
         self.fillna = fillna
         super().__init__(
-            window=window,
             in_column=in_column,
+            window=window,
             seasonality=seasonality,
             min_periods=min_periods,
             out_postfix=self.out_column if self.out_column is not None else self.__repr__(),

@@ -44,8 +44,8 @@ def test_repr():
     transform_without_out_column = LagTransform(lags=lags, in_column="target")
     transform_with_out_column = LagTransform(lags=lags, in_column="target", out_column=out_column)
 
-    true_repr_out_column = f"{transform_class}(lags = {lags}, in_column = 'target', out_column = '{out_column}', )"
-    true_repr_no_out_column = f"{transform_class}(lags = {lags}, in_column = 'target', out_column = None, )"
+    true_repr_out_column = f"{transform_class}(in_column = 'target, lags = {lags}', out_column = '{out_column}', )"
+    true_repr_no_out_column = f"{transform_class}(in_column = 'target', lags = {lags}, out_column = None, )"
 
     no_out_column_repr = transform_without_out_column.__repr__()
     out_column_repr = transform_with_out_column.__repr__()

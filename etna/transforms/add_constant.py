@@ -8,25 +8,25 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentAddConstTransform(Transform):
-    def __init__(self, value: float, in_column: str, inplace: bool = True, out_column: Optional[str] = None):
+    def __init__(self, in_column: str, value: float, inplace: bool = True, out_column: Optional[str] = None):
         """
         Init _OneSegmentAddConstTransform.
 
         Parameters
         ----------
-        value:
-            value that should be added to the series
         in_column:
             column to apply transform
+        value:
+            value that should be added to the series
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
             name of added column. If not given, use self.__repr__()'
         """
-        self.value = value
         self.in_column = in_column
+        self.value = value
         self.inplace = inplace
-        self.out_column = out_column
+        self.out_column = self.in_column if self.inplace else f"{self.in_column}_add_{self.value}"
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentAddConstTransform":
         """
@@ -77,23 +77,23 @@ class _OneSegmentAddConstTransform(Transform):
 class AddConstTransform(PerSegmentWrapper):
     """AddConstTransform add constant for given series."""
 
-    def __init__(self, value: float, in_column: str, inplace: bool = True, out_column: Optional[str] = None):
+    def __init__(self, in_column: str, value: float, inplace: bool = True):
         """
         Init AddConstTransform.
 
         Parameters
         ----------
-        value:
-            value that should be added to the series
         in_column:
             column to apply transform
+        value:
+            value that should be added to the series
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
             name of added column.Don't forget to add regressor prefix if necessary. If not given, use self.__repr__()
         """
-        self.value = value
         self.in_column = in_column
+        self.value = value
         self.inplace = inplace
         self.out_column = out_column
 
@@ -108,7 +108,7 @@ class AddConstTransform(PerSegmentWrapper):
             out_column_result = self.__repr__()
         super().__init__(
             transform=_OneSegmentAddConstTransform(
-                value=value, in_column=in_column, inplace=inplace, out_column=out_column_result
+                in_column=in_column, value=value, inplace=inplace, out_column=out_column_result
             )
         )
 

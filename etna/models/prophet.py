@@ -6,11 +6,14 @@ from typing import Optional
 from typing import Union
 
 import pandas as pd
-from prophet import Prophet
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
+
+if SETTINGS.prophet_required:
+    from prophet import Prophet
 
 
 class _ProphetModel:
@@ -35,6 +38,7 @@ class _ProphetModel:
         stan_backend: Optional[str] = None,
         additional_seasonality_params: Iterable[Dict[str, Union[str, float, int]]] = (),
     ):
+
         self.growth = growth
         self.n_changepoints = n_changepoints
         self.changepoints = changepoints
@@ -76,6 +80,7 @@ class _ProphetModel:
     def fit(self, df: pd.DataFrame) -> "_ProphetModel":
         """
         Fits a Prophet model.
+
         Parameters
         ----------
         df:
@@ -95,15 +100,18 @@ class _ProphetModel:
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame, confidence_interval: bool = False):
+    def predict(self, df: pd.DataFrame, confidence_interval: bool, interval_width: float):
         """
         Compute Prophet predictions.
+
         Parameters
         ----------
         df :
             Features dataframe
         confidence_interval:
             If True returns confidence interval for forecast
+        interval_width:
+            The significance level for the confidence interval. By default a 95% confidence interval is taken
         Returns
         -------
         y_pred: pd.DataFrame
@@ -120,11 +128,14 @@ class _ProphetModel:
                 else:
                     prophet_column_name = column_name
                 prophet_df[prophet_column_name] = df[column_name]
+        if confidence_interval:
+            self.model.interval_width = interval_width
         forecast = self.model.predict(prophet_df)
         if confidence_interval:
             y_pred = forecast[["yhat_lower", "yhat", "yhat_upper"]]
         else:
             y_pred = pd.DataFrame(forecast["yhat"])
+        self.model.interval_width = self.interval_width
         return y_pred
 
 
@@ -257,6 +268,7 @@ class ProphetModel(PerSegmentModel):
             parameters that describe additional (not 'daily', 'weekly', 'yearly') seasonality that should be
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
             'mode', 'condition_name' will be used for prophet.Prophet().add_seasonality method call.
+
         Notes
         -----
         Original Prophet can use features 'cap' and 'floor',
@@ -301,15 +313,21 @@ class ProphetModel(PerSegmentModel):
         )
 
     @staticmethod
-    def _forecast_segment(
-        model, segment: Union[str, List[str]], ts: TSDataset, confidence_interval: bool = False
+    def _forecast_one_segment(
+        model,
+        segment: Union[str, List[str]],
+        ts: TSDataset,
+        confidence_interval: bool,
+        interval_width: float,
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features, confidence_interval=confidence_interval)
+        segment_predict = model.predict(
+            df=segment_features, confidence_interval=confidence_interval, interval_width=interval_width
+        )
         segment_predict = segment_predict.rename(
             {"yhat": "target", "yhat_lower": "target_lower", "yhat_upper": "target_upper"}, axis=1
         )
@@ -318,7 +336,7 @@ class ProphetModel(PerSegmentModel):
         return segment_predict
 
     @log_decorator
-    def forecast(self, ts: TSDataset, confidence_interval: bool = False) -> TSDataset:
+    def forecast(self, ts: TSDataset, confidence_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -327,6 +345,8 @@ class ProphetModel(PerSegmentModel):
             Dataframe with features
         confidence_interval:
             If True returns confidence interval for forecast
+        interval_width:
+            The significance level for the confidence interval. By default a 95% confidence interval is taken
         Returns
         -------
         TSDataset
@@ -342,7 +362,7 @@ class ProphetModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval)
+            segment_predict = self._forecast_one_segment(model, segment, ts, confidence_interval, interval_width)
             result_list.append(segment_predict)
 
         # need real case to test

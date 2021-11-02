@@ -63,8 +63,8 @@ class StandardScalerTransform(SklearnTransform):
         self.with_std = with_std
         self.out_column = out_column
         super().__init__(
-            transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
+            transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             out_column_postfix=out_column if out_column is not None else self.__repr__(),
             inplace=inplace,
             mode=mode,

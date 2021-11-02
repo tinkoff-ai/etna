@@ -50,15 +50,12 @@ body:
     description: Add any other context or screenshots about the feature request here.
   validations:
     required: false
-
+    
 - type: checkboxes
   attributes:
     label: Checklist
     options:
-      - label: Added feature request 
-        required: true
-      - label: Added motivation
-        required: true
-      - label: Added proposal
-        required: true
+      - label: I discussed this issue with ETNA Team
+        required: false
+
 ...

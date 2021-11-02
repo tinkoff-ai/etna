@@ -80,7 +80,7 @@ def test_categorical_after_call_to_pandas():
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
     exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
-    ts = TSDataset(df, "1d", exog)
+    ts = TSDataset(df, "D", exog)
     flatten_df = ts.to_pandas(flatten=True)
     assert flatten_df["categorical_column"].dtype == "category"
 
@@ -261,8 +261,19 @@ def test_dataset_datetime_convertion_during_init():
     exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
     df.index = df.index.astype(str)
     exog.index = df.index.astype(str)
-    ts = TSDataset(df, "1d", exog)
+    ts = TSDataset(df, "D", exog)
     assert ts.df.index.dtype == "datetime64[ns]"
+
+
+def test_make_future():
+    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
+    df = pd.concat([df1, df2], ignore_index=False)
+    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
 
 
 def test_make_future_small_horizon():
@@ -277,6 +288,27 @@ def test_make_future_small_horizon():
     train = TSDataset(ts[: ts.index[10], :, :], freq="D")
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
         assert len(train.make_future(1).df) == 1
+
+
+def test_make_future_with_exog():
+    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
+    df = pd.concat([df1, df2], ignore_index=False)
+    exog = df.copy()
+    exog.columns = ["timestamp", "exog", "segment"]
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(exog), freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+
+
+def test_make_future_with_regressors(df_and_regressors):
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
 
 
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
@@ -296,12 +328,12 @@ def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earli
     dfexog = TSDataset.to_dataset(dfexog)
 
     with pytest.raises(ValueError):
-        TSDataset._check_exog(df=df, df_exog=dfexog)
+        TSDataset._check_regressors(df=df, df_exog=dfexog)
 
 
 def test_dataset_check_exog_pass(df_and_regressors):
     df, df_exog = df_and_regressors
-    _ = TSDataset._check_exog(df=df, df_exog=df_exog)
+    _ = TSDataset._check_regressors(df=df, df_exog=df_exog)
 
 
 def test_warn_not_enough_exog(df_and_regressors):
@@ -351,6 +383,14 @@ def test_finding_regressors(df_and_regressors):
     assert sorted(ts.regressors) == ["regressor_1", "regressor_2"]
 
 
+def test_head_default(tsdf_with_exog):
+    assert np.all(tsdf_with_exog.head() == tsdf_with_exog.df.head())
+
+
+def test_tail_default(tsdf_with_exog):
+    np.all(tsdf_with_exog.tail() == tsdf_with_exog.df.tail())
+
+
 def test_updating_regressors_fit_transform(df_and_regressors):
     """Check that ts.regressors is updated after making ts.fit_transform()."""
     df, df_exog = df_and_regressors
@@ -386,3 +426,12 @@ def test_right_format_sorting():
     inv_df = tsd.to_pandas(flatten=True)
     pd.testing.assert_series_equal(df["reg_1"], inv_df["reg_1"])
     pd.testing.assert_series_equal(df["reg_2"], inv_df["reg_2"])
+
+
+def test_to_flatten(example_df):
+    """Check that TSDataset.to_flatten works correctly."""
+    sorted_columns = sorted(example_df.columns)
+    expected_df = example_df[sorted_columns]
+    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(example_df))
+    assert sorted_columns == sorted(obtained_df.columns)
+    assert (expected_df.values == obtained_df[sorted_columns].values).all()
