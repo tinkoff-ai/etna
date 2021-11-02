@@ -681,7 +681,7 @@ class TSDataset:
         """
         return self.df.head(n_rows)
 
-    def tail(self, n_rows: Optional[int] = None) -> pd.DataFrame:
+    def tail(self, n_rows: int = 5) -> pd.DataFrame:
         """Return the last `n` rows.
 
         Mimics pandas method.
