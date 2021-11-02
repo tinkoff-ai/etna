@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -68,7 +69,7 @@ class Pipeline(BaseMixin):
         self.horizon = self._validate_horizon(horizon)
         self.interval_width = self._validate_interval_width(interval_width)
         self.confidence_interval_cv = self._validate_cv(confidence_interval_cv)
-        self.ts = None
+        self.ts: Optional[TSDataset] = None
 
     @staticmethod
     def _validate_horizon(horizon: int) -> int:
@@ -197,12 +198,12 @@ class Pipeline(BaseMixin):
     @staticmethod
     def _generate_folds_datasets(
         ts: TSDataset, n_folds: int, horizon: int, mode: str = "expand"
-    ) -> Tuple[TSDataset, TSDataset]:
+    ) -> Generator[Tuple[TSDataset, TSDataset], None, None]:
         """Generate a sequence of train-test pairs according to timestamp."""
-        mode = CrossValidationMode[mode.lower()]
-        if mode == CrossValidationMode.expand:
+        mode_enum = CrossValidationMode[mode.lower()]
+        if mode_enum == CrossValidationMode.expand:
             constant_history_length = 0
-        elif mode == CrossValidationMode.constant:
+        elif mode_enum == CrossValidationMode.constant:
             constant_history_length = 1
         else:
             raise NotImplementedError(
@@ -230,11 +231,11 @@ class Pipeline(BaseMixin):
             yield train, test
 
     @staticmethod
-    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, float]:
+    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
-        metrics_values = {}
+        metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
-            metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)
+            metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
     def _run_fold(
@@ -251,7 +252,7 @@ class Pipeline(BaseMixin):
         pipeline.fit(ts=train)
         forecast = pipeline.forecast()
 
-        fold = {}
+        fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
             fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()

@@ -51,7 +51,7 @@ def forecast(
     =============  ===========  ===============  ===============
     """
     with open(config_path, "r") as f:
-        pipeline = yaml.safe_load(f)
+        pipeline_dict = yaml.safe_load(f)
 
     df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
 
@@ -64,7 +64,7 @@ def forecast(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
 
-    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline)
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_dict)
     pipeline.fit(tsdataset)
     forecast = pipeline.forecast()
 

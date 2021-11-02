@@ -37,8 +37,9 @@ class HierarchicalClustering(Clustering):
         self.segment2cluster: Optional[Dict[str, int]] = None
         self.distance: Optional[Distance] = None
         self.centroids_df: Optional[pd.DataFrame] = None
+        self.distance: Optional[Distance] = None
 
-    def build_distance_matrix(self, ts: "TSDataset", distance: Distance):
+    def build_distance_matrix(self, ts: "TSDataset"):
         """Compute distance matrix with given ts and distance.
 
         Parameters
@@ -49,8 +50,7 @@ class HierarchicalClustering(Clustering):
             instance if distance to compute matrix
         """
         self.ts = ts
-        self.distance = distance
-        self.distance_matrix = DistanceMatrix(distance=distance)
+        self.distance_matrix = DistanceMatrix(distance=self.distance)
         self.distance_matrix.fit(ts=ts)
         self.clusters = None
         self.segment2cluster = None
@@ -104,7 +104,7 @@ class HierarchicalClustering(Clustering):
         cluster_ts = TSDataset(df=self.ts[:, segments_in_cluster, "target"], freq=self.ts.freq)
         return cluster_ts
 
-    def _get_centroid_of_cluster(self, cluster: str, **averaging_kwargs) -> pd.DataFrame:
+    def _get_centroid_of_cluster(self, cluster: int, **averaging_kwargs) -> pd.DataFrame:
         """Get centroid of cluster."""
         cluster_ts = self._get_series_in_cluster(cluster)
         centroid = self.distance.get_average(ts=cluster_ts, **averaging_kwargs)
