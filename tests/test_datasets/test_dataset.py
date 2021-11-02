@@ -51,7 +51,6 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df, df_exog
 
 
-'''
 def test_same_ending_error_raise():
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
@@ -384,7 +383,6 @@ def test_right_format_sorting():
     inv_df = tsd.to_pandas(flatten=True)
     pd.testing.assert_series_equal(df["reg_1"], inv_df["reg_1"])
     pd.testing.assert_series_equal(df["reg_2"], inv_df["reg_2"])
-'''
 
 
 def test_to_flatten(example_df):
