@@ -4,9 +4,10 @@ from abc import abstractmethod
 import pandas as pd
 
 from etna.analysis.feature_relevance.relevance_table import get_statistics_relevance_table
+from etna.core.mixins import BaseMixin
 
 
-class RelevanceTable(ABC):
+class RelevanceTable(ABC, BaseMixin):
     """Abstract class for relevance table computation."""
 
     def __init__(self, greater_is_better: bool):
