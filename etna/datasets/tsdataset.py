@@ -344,6 +344,58 @@ class TSDataset:
 
         plt.show()
 
+    @staticmethod
+    def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
+        """Return pandas DataFrame with flatten index.
+
+        Parameters
+        ----------
+        df:
+            DataFrame in ETNA format.
+
+        Returns
+        -------
+        pd.DataFrame
+            with TSDataset data
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df.head(5)
+            timestamp    segment  target
+        0  2021-06-01  segment_0    1.00
+        1  2021-06-02  segment_0    1.00
+        2  2021-06-03  segment_0    1.00
+        3  2021-06-04  segment_0    1.00
+        4  2021-06-05  segment_0    1.00
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> TSDataset.to_flatten(df_ts_format).head(5)
+           timestamp  target    segment
+        0 2021-06-01     1.0  segment_0
+        1 2021-06-02     1.0  segment_0
+        2 2021-06-03     1.0  segment_0
+        3 2021-06-04     1.0  segment_0
+        4 2021-06-05     1.0  segment_0
+        """
+        aggregator_list = []
+        category = []
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        for segment in segments:
+            if df[segment].select_dtypes(include=["category"]).columns.to_list():
+                category.extend(df[segment].select_dtypes(include=["category"]).columns.to_list())
+            aggregator_list.append(df[segment].copy())
+            aggregator_list[-1]["segment"] = segment
+        df = pd.concat(aggregator_list)
+        df = df.reset_index()
+        category = list(set(category))
+        df[category] = df[category].astype("category")
+        df.columns.name = None
+        return df
+
     def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
         """Return pandas DataFrame.
 
@@ -375,12 +427,12 @@ class TSDataset:
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df_ts_format, "D")
         >>> ts.to_pandas(True).head(5)
-        feature  timestamp  target    segment
-        0       2021-06-01    1.00  segment_0
-        1       2021-06-02    1.00  segment_0
-        2       2021-06-03    1.00  segment_0
-        3       2021-06-04    1.00  segment_0
-        4       2021-06-05    1.00  segment_0
+           timestamp  target    segment
+        0 2021-06-01     1.0  segment_0
+        1 2021-06-02     1.0  segment_0
+        2 2021-06-03     1.0  segment_0
+        3 2021-06-04     1.0  segment_0
+        4 2021-06-05     1.0  segment_0
         >>> ts.to_pandas(False).head(5)
         segment    segment_0 segment_1
         feature       target    target
@@ -393,19 +445,7 @@ class TSDataset:
         """
         if not flatten:
             return self.df.copy()
-        if flatten:
-            aggregator_list = []
-            category = []
-            for segment in self.segments:
-                if self.df[segment].select_dtypes(include=["category"]).columns.to_list():
-                    category.extend(self.df[segment].select_dtypes(include=["category"]).columns.to_list())
-                aggregator_list.append(self.df[segment].copy())
-                aggregator_list[-1]["segment"] = segment
-            df = pd.concat(aggregator_list)
-            df = df.reset_index()
-            category = list(set(category))
-            df[category] = df[category].astype("category")
-            return df
+        return self.to_flatten(self.df)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
