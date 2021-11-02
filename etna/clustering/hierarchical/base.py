@@ -37,7 +37,6 @@ class HierarchicalClustering(Clustering):
         self.segment2cluster: Optional[Dict[str, int]] = None
         self.distance: Optional[Distance] = None
         self.centroids_df: Optional[pd.DataFrame] = None
-        self.distance: Optional[Distance] = None
 
     def build_distance_matrix(self, ts: "TSDataset"):
         """Compute distance matrix with given ts and distance.
