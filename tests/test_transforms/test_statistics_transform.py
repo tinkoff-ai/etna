@@ -44,7 +44,7 @@ def simple_df_for_agg() -> pd.DataFrame:
 def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_column: str):
     transform = class_name(window=3, out_column=out_column, in_column="target")
     res = transform.fit_transform(df=simple_df_for_agg)
-    result_column = f"target_{out_column if out_column is not None else transform.__repr__()}"
+    result_column = out_column if out_column is not None else transform.__repr__()
     assert sorted(res["segment_1"]) == sorted([result_column] + ["target"])
 
 
@@ -52,7 +52,7 @@ def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_
 def test_interface_quantile(simple_df_for_agg: pd.DataFrame, out_column: str):
     transform = QuantileTransform(quantile=0.7, window=4, out_column=out_column, in_column="target")
     res = transform.fit_transform(df=simple_df_for_agg)
-    result_column = f"target_{out_column if out_column is not None else transform.__repr__()}"
+    result_column = out_column if out_column is not None else transform.__repr__()
     assert sorted(res["segment_1"]) == sorted([result_column] + ["target"])
 
 
@@ -83,11 +83,11 @@ def test_mean_feature(
         min_periods=periods,
         fillna=fill_na,
         in_column="target",
-        out_column="test",
+        out_column="result",
     )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
-    assert (res["expected"] == res["segment_1"]["target_test"]).all()
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -108,11 +108,11 @@ def test_min_feature(
         min_periods=periods,
         fillna=fill_na,
         in_column="target",
-        out_column="test",
+        out_column="result",
     )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
-    assert (res["expected"] == res["segment_1"]["target_test"]).all()
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -124,10 +124,12 @@ def test_min_feature(
     ),
 )
 def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
-    transform = MaxTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="test")
+    transform = MaxTransform(
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
+    )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
-    assert (res["expected"] == res["segment_1"]["target_test"]).all()
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -139,11 +141,11 @@ def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
 )
 def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
     transform = MedianTransform(
-        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="test"
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
-    assert (res["expected"] == res["segment_1"]["target_test"]).all()
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -154,7 +156,9 @@ def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: i
     ),
 )
 def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
-    transform = StdTransform(window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="test")
+    transform = StdTransform(
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
+    )
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
-    assert (res["expected"] == res["segment_1"]["target_test"]).all()
+    assert (res["expected"] == res["segment_1"]["result"]).all()
