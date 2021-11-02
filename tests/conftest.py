@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -377,7 +379,7 @@ def big_example_tsdf(random_seed) -> TSDataset:
 
 
 @pytest.fixture
-def simple_df_relevance() -> TSDataset:
+def simple_df_relevance() -> Tuple[pd.DataFrame, pd.DataFrame]:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     tmp = np.random.random(len(timestamp))
 
