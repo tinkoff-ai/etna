@@ -1,1 +1,1 @@
-from etna.analysis.feature_relevance.relevance_functions import get_statistics_relevance_table
+from etna.analysis.feature_relevance.relevance_table import get_statistics_relevance_table
