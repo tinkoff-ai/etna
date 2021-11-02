@@ -41,7 +41,7 @@ def test_repr():
     lags = list(range(8, 24, 1))
     transform = LagTransform(lags=lags, in_column="target")
     transform_repr = transform.__repr__()
-    true_repr = f"{transform_class_repr}(lags = {lags}, in_column = 'target', )"
+    true_repr = f"{transform_class_repr}(in_column = 'target', lags = {lags}, )"
     assert transform_repr == true_repr
 
 

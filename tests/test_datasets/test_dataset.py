@@ -383,6 +383,14 @@ def test_finding_regressors(df_and_regressors):
     assert sorted(ts.regressors) == ["regressor_1", "regressor_2"]
 
 
+def test_head_default(tsdf_with_exog):
+    assert np.all(tsdf_with_exog.head() == tsdf_with_exog.df.head())
+
+
+def test_tail_default(tsdf_with_exog):
+    np.all(tsdf_with_exog.tail() == tsdf_with_exog.df.tail())
+
+
 def test_updating_regressors_fit_transform(df_and_regressors):
     """Check that ts.regressors is updated after making ts.fit_transform()."""
     df, df_exog = df_and_regressors

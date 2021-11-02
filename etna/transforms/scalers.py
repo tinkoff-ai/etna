@@ -50,8 +50,8 @@ class StandardScalerTransform(SklearnTransform):
             if incorrect mode given
         """
         super().__init__(
-            transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             in_column=in_column,
+            transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
             inplace=inplace,
             mode=mode,
         )

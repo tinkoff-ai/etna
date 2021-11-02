@@ -13,7 +13,6 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
     def __init__(self, in_column: str, regressor: Optional[RegressorMixin] = None):
-        # TODO: add inplace arg
         """
         Create instance of _OneSegmentLinearTrendBaseTransform.
 
@@ -145,7 +144,6 @@ class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
 
     def __init__(self, in_column: str, **regression_params):
-        # TODO: Parametre n_subsamples is the same for all segmetns, raises error if n_subsamples > length of the sortest segment
         """Create instance of TheilSenTrendTransform.
 
         Parameters
@@ -154,6 +152,10 @@ class TheilSenTrendTransform(PerSegmentWrapper):
             name of processed column
         regression_params:
             params that should be used to init TheilSenRegressor
+
+        Notes:
+            Setting parameter n_subsamples manually might cause the error. It should be at least the number
+            of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
         """
         self.in_column = in_column
         self.regression_params = regression_params
