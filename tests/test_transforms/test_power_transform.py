@@ -105,10 +105,10 @@ def test_inverse_transform_one_column(positive_df: pd.DataFrame, preprocessing_c
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
 def test_interface_repr(positive_df: pd.DataFrame, preprocessing_class: Any, mode: str):
     preprocess = preprocessing_class(in_column="target", mode=mode, inplace=False)
-    excepted_column = f"target_{preprocess.__repr__()}"
+    excepted_column = f"{preprocess.__repr__()}"
     result = preprocess.fit_transform(df=positive_df)
     for segment in result.columns.get_level_values("segment").unique():
-        assert excepted_column in result[segment].columns[2]
+        assert excepted_column in result[segment].columns
 
 
 @pytest.mark.parametrize("preprocessing_class", (BoxCoxTransform, YeoJohnsonTransform))
@@ -116,7 +116,6 @@ def test_interface_repr(positive_df: pd.DataFrame, preprocessing_class: Any, mod
 def test_interface_out_column(positive_df: pd.DataFrame, preprocessing_class: Any, mode: str):
     out_column = "test_name"
     preprocess = preprocessing_class(in_column="target", mode=mode, inplace=False, out_column=out_column)
-    excepted_column = f"target_{out_column}"
     result = preprocess.fit_transform(df=positive_df)
     for segment in result.columns.get_level_values("segment").unique():
-        assert excepted_column in result[segment].columns
+        assert out_column in result[segment].columns

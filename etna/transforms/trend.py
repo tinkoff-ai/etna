@@ -12,12 +12,12 @@ from etna.transforms.change_points_trend import _OneSegmentChangePointsTrendTran
 
 
 class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
-    """_OneSegmentTrendTransform adds trend as a feature. Creates column 'regressor_<in_column>_trend'."""
+    """_OneSegmentTrendTransform adds trend as a feature."""
 
     def __init__(
         self,
         in_column: str,
-        out_column_postfix: str,
+        out_column: str,
         change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
         **change_point_model_predict_params,
@@ -28,6 +28,8 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         ----------
         in_column:
             name of column to apply transform to
+        out_column:
+            name of added column
         change_point_model:
             model to get trend change points
         detrend_model:
@@ -35,7 +37,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         change_point_model_predict_params:
             params for change_point_model predict method
         """
-        self.out_column = f"regressor_{in_column}_{out_column_postfix}"
+        self.out_column = out_column
         super().__init__(
             in_column=in_column,
             change_point_model=change_point_model,
@@ -44,7 +46,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         )
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Add column 'regressor_<in_column>_trend' with trend, got from the detrend_model.
+        """Add column with trend, got from the detrend_model.
 
         Parameters
         ----------
@@ -84,7 +86,7 @@ class _TrendTransform(PerSegmentWrapper):
     def __init__(
         self,
         in_column: str,
-        out_column_postfix: str,
+        out_column: str,
         change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
         **change_point_model_predict_params,
@@ -95,6 +97,8 @@ class _TrendTransform(PerSegmentWrapper):
         ----------
         in_column:
             name of column to apply transform to
+        out_column:
+            name of added column
         change_point_model:
             model to get trend change points
         detrend_model:
@@ -105,7 +109,7 @@ class _TrendTransform(PerSegmentWrapper):
         super().__init__(
             transform=_OneSegmentTrendTransform(
                 in_column=in_column,
-                out_column_postfix=out_column_postfix,
+                out_column=out_column,
                 change_point_model=change_point_model,
                 detrend_model=detrend_model,
                 **change_point_model_predict_params,
@@ -114,7 +118,7 @@ class _TrendTransform(PerSegmentWrapper):
 
 
 class TrendTransform(_TrendTransform):
-    """TrendTransform adds trend as a feature. Creates column 'regressor_<in_column>_trend'.
+    """TrendTransform adds trend as a feature.
     TrendTransform uses Binseg model as a change point detection model in _TrendTransform.
     """
 
@@ -137,6 +141,9 @@ class TrendTransform(_TrendTransform):
         ----------
         in_column:
             name of column to apply transform to
+        out_column:
+            name of added column. Don't forget to add regressor prefix if necessary.
+            If not given, use 'regressor_{self.__repr__()}'
         detrend_model:
             model to get trend in data
         model:
@@ -166,7 +173,7 @@ class TrendTransform(_TrendTransform):
         self.epsilon = epsilon
         super().__init__(
             in_column=in_column,
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else f"regressor_{self.__repr__()}",
             change_point_model=Binseg(model=model, custom_cost=custom_cost, min_size=min_size, jump=jump),
             detrend_model=detrend_model,
             n_bkps=n_bkps,

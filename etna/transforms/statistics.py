@@ -43,7 +43,7 @@ class WindowStatisticsTransform(Transform, ABC):
         self.window = window
         self.seasonality = seasonality
         self.min_periods = min_periods
-        self.out_column_result = out_column
+        self.out_column_name = out_column
         self.fillna = fillna
         self.kwargs = kwargs
         self.min_required_len = max(self.min_periods - 1, 0) * self.seasonality + 1
@@ -88,7 +88,7 @@ class WindowStatisticsTransform(Transform, ABC):
 
         dataframes = []
         for seg in df.columns.get_level_values(0).unique():
-            feature = features[seg].rename(self.out_column_result)
+            feature = features[seg].rename(self.out_column_name)
             tmp = df[seg].join(feature)
             _idx = tmp.columns.to_frame()
             _idx.insert(0, "segment", seg)

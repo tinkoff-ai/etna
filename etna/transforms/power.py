@@ -31,8 +31,7 @@ class YeoJohnsonTransform(SklearnTransform):
             if True, apply transformation inplace to in_column,
             if False, add column to dataset.
         out_column:
-            part of name of added column. Result name is '{in_column}_{out_column}'.
-            '{in_column}_{self.__repr__()} if not given.
+            name of added column. Use self.__repr__() if not given
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.
@@ -47,7 +46,7 @@ class YeoJohnsonTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=PowerTransformer(method="yeo-johnson", standardize=self.standardize),
             mode=mode,
         )
@@ -75,8 +74,7 @@ class BoxCoxTransform(SklearnTransform):
             if True, apply transformation inplace to in_column,
             if False, add column to dataset.
         out_column:
-            part of name of added column. Result name is '{in_column}_{out_column}'.
-            '{in_column}_{self.__repr__()} if not given.
+            name of added column. Use self.__repr__() if not given.
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.
@@ -91,7 +89,7 @@ class BoxCoxTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=PowerTransformer(method="box-cox", standardize=self.standardize),
             mode=mode,
         )

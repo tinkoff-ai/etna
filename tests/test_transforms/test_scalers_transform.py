@@ -1,3 +1,4 @@
+from typing import Any
 from typing import List
 from typing import Optional
 from typing import Union
@@ -42,7 +43,7 @@ class DummyTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column or self.__repr__(),
+            out_column=out_column if out_column is not None else self.__repr__(),
             transformer=DummySkTransform(),
             mode=mode,
         )
@@ -139,16 +140,15 @@ def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler, mode)
     ),
 )
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_dummy_inverse_transform_not_inplace_out_column(normal_distributed_df, scaler, mode):
+def test_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
     """Check that inversed values the same for not inplace version."""
     inplace_scaler = scaler(mode=mode)
-    out_column = "scaler"
-    not_inplace_scaler = scaler(inplace=False, mode=mode, out_column=out_column)
+    not_inplace_scaler = scaler(inplace=False, mode=mode)
+    columns_to_compare = pd.MultiIndex.from_tuples(
+        [(segment_name, not_inplace_scaler.__repr__()) for segment_name, _ in normal_distributed_df.columns]
+    )
     inplace_feature_df = inplace_scaler.fit_transform(df=normal_distributed_df.copy())
     not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
-    columns_to_compare = pd.MultiIndex.from_tuples(
-        [(segment_name, f"{feature_name}_{out_column}") for segment_name, feature_name in normal_distributed_df.columns]
-    )
 
     inplace_feature_df.columns = columns_to_compare
     npt.assert_array_almost_equal(
@@ -170,20 +170,33 @@ def test_dummy_inverse_transform_not_inplace_out_column(normal_distributed_df, s
     ),
 )
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_dummy_inverse_transform_not_inplace_repr(normal_distributed_df, scaler, mode):
-    """Check that inversed values the same for not inplace version."""
-    inplace_scaler = scaler(mode=mode)
-    not_inplace_scaler = scaler(inplace=False, mode=mode)
-    columns_to_compare = pd.MultiIndex.from_tuples(
-        [
-            (segment_name, f"{feature_name}_{not_inplace_scaler.__repr__()}")
-            for segment_name, feature_name in normal_distributed_df.columns
-        ]
-    )
-    inplace_feature_df = inplace_scaler.fit_transform(df=normal_distributed_df.copy())
-    not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
+def test_interface_out_column(normal_distributed_df: pd.DataFrame, scaler: Any, mode: str):
+    """Check transform interface in non inplace mode with given out_column param."""
+    out_column = "result"
+    transform = scaler(inplace=False, mode=mode, out_column=out_column)
+    result = transform.fit_transform(df=normal_distributed_df)
+    for segment in result.columns.get_level_values("segment").unique():
+        assert out_column in result[segment].columns
 
-    inplace_feature_df.columns = columns_to_compare
-    npt.assert_array_almost_equal(
-        inplace_feature_df.loc[:, columns_to_compare].values, not_inplace_feature_df.loc[:, columns_to_compare]
-    )
+
+@pytest.mark.parametrize(
+    "scaler",
+    (
+        DummyTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ),
+)
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_interface_repr(normal_distributed_df: pd.DataFrame, scaler: Any, mode: str):
+    """Check transform interface in non inplace mode without given out_column param."""
+    transform = scaler(inplace=False, mode=mode)
+    excepted_column = transform.__repr__()
+    result = transform.fit_transform(df=normal_distributed_df)
+    for segment in result.columns.get_level_values("segment").unique():
+        assert excepted_column in result[segment].columns

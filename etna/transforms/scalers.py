@@ -38,8 +38,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            part of name of added column. Result name is '{in_column}_{out_column}'.
-            '{in_column}_{self.__repr__()} if not given.
+            name of added column. Use self.__repr__() if not given.
         with_mean:
             if True, center the data before scaling.
         with_std:
@@ -65,7 +64,7 @@ class StandardScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             inplace=inplace,
             mode=mode,
         )
@@ -98,8 +97,7 @@ class RobustScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            part of name of added column. Result name is '{in_column}_{out_column}'.
-            '{in_column}_{self.__repr__()} if not given.
+            name of added column. Use self.__repr__() if not given.
         with_centering:
             if True, center the data before scaling.
         with_scaling:
@@ -134,7 +132,7 @@ class RobustScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=RobustScaler(
                 with_centering=with_centering,
                 with_scaling=with_scaling,
@@ -171,8 +169,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            part of name of added column. Result name is '{in_column}_{out_column}'.
-            '{in_column}_{self.__repr__()} if not given.
+            name of added column. Use self.__repr__() if not given.
         feature_range:
             desired range of transformed data.
         clip:
@@ -198,7 +195,7 @@ class MinMaxScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
             mode=mode,
         )
@@ -226,8 +223,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            part of name of added column. Result name is '{in_column}_{out_column}'.
-            '{in_column}_{self.__repr__()} if not given.
+            name of added column. Use self.__repr__() if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -247,7 +243,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column_postfix=out_column if out_column is not None else self.__repr__(),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=MaxAbsScaler(copy=True),
             mode=mode,
         )
