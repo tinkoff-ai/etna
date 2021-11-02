@@ -25,7 +25,7 @@ class ClusteringLinkageMode(Enum):
 class HierarchicalClustering(Clustering):
     """Base class for hierarchical clustering."""
 
-    def __init__(self):
+    def __init__(self, distance: Optional[Distance] = None):
         """Init HierarchicalClustering."""
         super().__init__()
         self.n_clusters: Optional[int] = None
@@ -35,7 +35,7 @@ class HierarchicalClustering(Clustering):
         self.clusters: Optional[List[int]] = None
         self.ts: Optional["TSDataset"] = None
         self.segment2cluster: Optional[Dict[str, int]] = None
-        self.distance: Optional[Distance] = None
+        self.distance: Optional[Distance] = distance
         self.centroids_df: Optional[pd.DataFrame] = None
 
     def build_distance_matrix(self, ts: "TSDataset"):

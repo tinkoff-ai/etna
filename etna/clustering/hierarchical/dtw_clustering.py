@@ -36,8 +36,7 @@ class DTWClustering(HierarchicalClustering):
 
     def __init__(self):
         """Create instance of DTWClustering."""
-        super().__init__()
-        self.distance = DTWDistance()
+        super().__init__(distance=DTWDistance())
 
     def build_distance_matrix(self, ts: "TSDataset"):
         """

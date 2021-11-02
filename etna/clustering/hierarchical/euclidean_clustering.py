@@ -36,8 +36,7 @@ class EuclideanClustering(HierarchicalClustering):
 
     def __init__(self):
         """Create instance of EuclideanClustering."""
-        super().__init__()
-        self.distance = EuclideanDistance()
+        super().__init__(distance=EuclideanDistance())
 
     def build_distance_matrix(self, ts: "TSDataset"):
         """
