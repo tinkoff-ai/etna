@@ -111,7 +111,7 @@ all-dev = [
     "click", "semver",
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
-    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
+    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML",
     "click", "semver",
     "jupyter", "nbconvert"
 ]
