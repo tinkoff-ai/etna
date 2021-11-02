@@ -371,8 +371,7 @@ class TSDataset:
         3  2021-06-04  segment_0    1.00
         4  2021-06-05  segment_0    1.00
         >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> ts = TSDataset(df_ts_format, "D")
-        >>> TSDataset.to_flatten(ts.df).head(5)
+        >>> TSDataset.to_flatten(df_ts_format).head(5)
            timestamp  target    segment
         0 2021-06-01     1.0  segment_0
         1 2021-06-02     1.0  segment_0
