@@ -13,13 +13,13 @@ class _SklearnModel:
         self.model = regressor
 
     def fit(self, df: pd.DataFrame) -> "_SklearnModel":
-        features = df.drop(columns=["timestamp", "target"])
+        features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
         target = df["target"]
         self.model.fit(features, target)
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        features = df.drop(columns=["timestamp", "target"])
+        features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
         pred = self.model.predict(features)
         return pred
 

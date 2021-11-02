@@ -7,6 +7,7 @@ from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
 from etna.models.linear import LinearPerSegmentModel
+from etna.transforms.datetime_flags import DateFlagsTransform
 from etna.transforms.lags import LagTransform
 
 
@@ -136,3 +137,19 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
+
+
+@pytest.mark.parametrize("model", [LinearPerSegmentModel()])
+def test_no_warning_on_categorical_features(example_tsds, model):
+    """Check that SklearnModel raises no warning working with dataset with categorical features"""
+    horizon = 7
+    num_lags = 5
+    lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
+    datefalgs = DateFlagsTransform()
+    example_tsds.fit_transform([lags, datefalgs])
+
+    with pytest.warns(None) as record:
+        _ = model.fit(example_tsds)
+        to_forecast = example_tsds.make_future(horizon)
+        _ = model.forecast(to_forecast)
+    assert not record
