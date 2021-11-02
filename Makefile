@@ -5,7 +5,7 @@ lint:
 	black --check tests/
 	flake8 --exclude etna/libs etna/
 	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
-	mypy
+	mypy --config-file=mypy.ini
 
 format:
 	isort --skip etna/libs --sl etna/
@@ -14,7 +14,7 @@ format:
 	black tests/
 	flake8 --exclude etna/libs etna/
 	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
-	mypy
+	mypy --config-file=mypy.iny
 
 .PHONY: deps/release
 deps/release:
