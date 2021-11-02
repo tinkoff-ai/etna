@@ -1,10 +1,10 @@
 import warnings
 from copy import deepcopy
 from typing import List
+from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Union
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
+from etna.pipeline.base import check_support_confidence_interval
 
 
 class StackingEnsemble(Pipeline):
@@ -53,6 +54,8 @@ class StackingEnsemble(Pipeline):
     2021-09-14      0.44      1.49      0.21
     2021-09-15      0.36      1.56      0.30
     """
+
+    support_confidence_interval = False
 
     def __init__(
         self,
@@ -222,7 +225,7 @@ class StackingEnsemble(Pipeline):
         tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 
-    def forecast(self) -> TSDataset:
+    def forecast(self, confidence_interval: bool = False) -> TSDataset:
         """Forecast with ensemble: compute the combination of pipelines' forecasts using `final_model`.
 
         Returns
@@ -230,6 +233,8 @@ class StackingEnsemble(Pipeline):
         TSDataset:
             Dataset with forecasts.
         """
+        check_support_confidence_interval(self.support_confidence_interval, confidence_interval)
+
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
