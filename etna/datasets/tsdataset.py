@@ -373,12 +373,12 @@ class TSDataset:
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df_ts_format, "D")
         >>> TSDataset.to_flatten(ts.df).head(5)
-        feature  timestamp  target    segment
-        0       2021-06-01    1.00  segment_0
-        1       2021-06-02    1.00  segment_0
-        2       2021-06-03    1.00  segment_0
-        3       2021-06-04    1.00  segment_0
-        4       2021-06-05    1.00  segment_0
+           timestamp  target    segment
+        0 2021-06-01     1.0  segment_0
+        1 2021-06-02     1.0  segment_0
+        2 2021-06-03     1.0  segment_0
+        3 2021-06-04     1.0  segment_0
+        4 2021-06-05     1.0  segment_0
         """
         aggregator_list = []
         category = []
@@ -392,6 +392,7 @@ class TSDataset:
         df = df.reset_index()
         category = list(set(category))
         df[category] = df[category].astype("category")
+        df.columns.name = None
         return df
 
     def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
@@ -425,12 +426,12 @@ class TSDataset:
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df_ts_format, "D")
         >>> ts.to_pandas(True).head(5)
-        feature  timestamp  target    segment
-        0       2021-06-01    1.00  segment_0
-        1       2021-06-02    1.00  segment_0
-        2       2021-06-03    1.00  segment_0
-        3       2021-06-04    1.00  segment_0
-        4       2021-06-05    1.00  segment_0
+           timestamp  target    segment
+        0 2021-06-01     1.0  segment_0
+        1 2021-06-02     1.0  segment_0
+        2 2021-06-03     1.0  segment_0
+        3 2021-06-04     1.0  segment_0
+        4 2021-06-05     1.0  segment_0
         >>> ts.to_pandas(False).head(5)
         segment    segment_0 segment_1
         feature       target    target
