@@ -85,7 +85,7 @@ ipywidgets = {version = "^7.6.5", optional = true}
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
 
-mrmr = {git = "https://github.com/smazzanti/mrmr.git", branch = "main", optional = true}
+mrmr = {git = "https://github.com/smazzanti/mrmr.git", branch = "main"}
 category-encoders = "^2.3.0"
 
 [tool.poetry.extras]
