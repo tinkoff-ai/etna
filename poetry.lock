@@ -2652,7 +2652,7 @@ name = "types-pyyaml"
 version = "6.0.0"
 description = "Typing stubs for PyYAML"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 
 [[package]]
@@ -2810,12 +2810,12 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [extras]
 all = ["prophet", "torch", "pytorch-forecasting", "wandb"]
-all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "click", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "click", "semver", "jupyter", "nbconvert"]
+all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "click", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "click", "semver", "jupyter", "nbconvert"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 jupyter = ["jupyter", "nbconvert"]
 prophet = ["prophet"]
 release = ["click", "semver"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML"]
 tests = ["pytest-cov", "coverage", "pytest"]
 torch = ["torch", "pytorch-forecasting"]
 wandb = ["wandb"]
@@ -2823,7 +2823,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2, <3.9.0"
-content-hash = "b27bcb2789cef07883a705d450a2e38fceec389781bd2cdbb53884a8269b74c4"
+content-hash = "4ab01f1104f23840d238d225be9af5787f271da960af02dfc785492f9a196065"
 
 [metadata.files]
 absl-py = [
