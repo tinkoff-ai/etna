@@ -184,5 +184,5 @@ def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
     datefalgs = DateFlagsTransform()
     ts_with_categoricals.fit_transform([lags, datefalgs])
 
-    with pytest.raises(ValueError, match="Only numeric features are accepted!"):
+    with pytest.raises(ValueError, match="Only convertible to numeric features are accepted!"):
         _ = model.fit(ts_with_categoricals)

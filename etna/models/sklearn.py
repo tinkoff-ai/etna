@@ -16,7 +16,7 @@ class _SklearnModel:
         try:
             features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
         except ValueError:
-            raise ValueError("Only numeric features are accepted!")
+            raise ValueError("Only convertible to numeric features are accepted!")
         target = df["target"]
         self.model.fit(features, target)
         return self
@@ -25,7 +25,7 @@ class _SklearnModel:
         try:
             features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
         except ValueError:
-            raise ValueError("Only numeric features are accepted!")
+            raise ValueError("Only convertible to numeric features are accepted!")
         pred = self.model.predict(features)
         return pred
 
