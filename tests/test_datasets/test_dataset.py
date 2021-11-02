@@ -80,7 +80,7 @@ def test_categorical_after_call_to_pandas():
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
     exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
-    ts = TSDataset(df, "1d", exog)
+    ts = TSDataset(df, "D", exog)
     flatten_df = ts.to_pandas(flatten=True)
     assert flatten_df["categorical_column"].dtype == "category"
 
@@ -261,7 +261,7 @@ def test_dataset_datetime_convertion_during_init():
     exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
     df.index = df.index.astype(str)
     exog.index = df.index.astype(str)
-    ts = TSDataset(df, "1d", exog)
+    ts = TSDataset(df, "D", exog)
     assert ts.df.index.dtype == "datetime64[ns]"
 
 
@@ -392,3 +392,12 @@ def test_right_format_sorting():
     inv_df = tsd.to_pandas(flatten=True)
     pd.testing.assert_series_equal(df["reg_1"], inv_df["reg_1"])
     pd.testing.assert_series_equal(df["reg_2"], inv_df["reg_2"])
+
+
+def test_to_flatten(example_df):
+    """Check that TSDataset.to_flatten works correctly."""
+    sorted_columns = sorted(example_df.columns)
+    expected_df = example_df[sorted_columns]
+    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(example_df))
+    assert sorted_columns == sorted(obtained_df.columns)
+    assert (expected_df.values == obtained_df[sorted_columns].values).all()
