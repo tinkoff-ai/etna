@@ -10,14 +10,17 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_sequence_anomalies
 from etna.datasets import TSDataset
-from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.transforms.base import Transform
+
+if SETTINGS.prophet_required:
+    from etna.models import ProphetModel
 
 
 class OutliersTransform(Transform, ABC):
@@ -279,6 +282,7 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
 
     def __init__(
         self,
+        in_column: str,
         model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
         interval_width: float = 0.95,
         **model_kwargs,
@@ -287,6 +291,8 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
 
         Parameters
         ----------
+        in_column:
+            name of processed column
         model:
             model for confidence interval estimation
         interval_width:
@@ -294,12 +300,12 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
 
         Notes
         -----
-        Works only with target column.
+        For not "target" column only column data will be used for learning.
         """
         self.model = model
         self.interval_width = interval_width
         self.model_kwargs = model_kwargs
-        super().__init__(in_column="target")
+        super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call `get_anomalies_confidence_interval` function with self parameters.
@@ -315,7 +321,7 @@ class ConfidenceIntervalOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_confidence_interval(
-            ts=ts, model=self.model, interval_width=self.interval_width, **self.model_kwargs
+            ts=ts, model=self.model, interval_width=self.interval_width, in_column=self.in_column, **self.model_kwargs
         )
 
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
+- TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
+- feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227))
+
+### Changed
+- Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
+
+### Fixed
+- Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
+
+## [1.2.0] - 2021-10-27
+### Added
 - BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
 - Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
 - Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna-ts/pull/92))
@@ -40,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
 - Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna-ts/pull/209))
 - Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna-ts/pull/218))
+- Function plot_backtest_interactive ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
+- Confidence intervals in Pipeline ([#221](https://github.com/tinkoff-ai/etna-ts/pull/221)) 
 
 ### Changed
 - Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
@@ -60,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `TSDataset.to_dataset` method sorting bug ([#183](https://github.com/tinkoff-ai/etna-ts/pull/183))
 - Undefinded behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna-ts/pull/188))
 - Fix typo in word "length" in `get_segment_sequence_anomalies`,`get_sequence_anomalies`,`SAXOutliersTransform` arguments ([#212](https://github.com/tinkoff-ai/etna-ts/pull/212))
+- Make possible to send backtest plots with many segments ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
 
 ## [1.1.3] - 2021-10-08
 ### Fixed

@@ -55,7 +55,6 @@ class _SARIMAXModel:
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
-        interval_width: float = 0.8,
         **kwargs,
     ):
         """
@@ -144,8 +143,6 @@ class _SARIMAXModel:
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
-        interval_width:
-            Float, width of the uncertainty intervals provided for the forecast.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -164,7 +161,6 @@ class _SARIMAXModel:
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
-        self.interval_width = interval_width
         self.kwargs = kwargs
         self._model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
@@ -234,7 +230,7 @@ class _SARIMAXModel:
         self._result = self._model.fit(start_params=start_params, disp=False)
         return self
 
-    def predict(self, df: pd.DataFrame, confidence_interval: bool = False) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, confidence_interval: bool, interval_width: float) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
@@ -244,6 +240,8 @@ class _SARIMAXModel:
             Features dataframe
         confidence_interval:
              If True returns confidence interval for forecast
+        interval_width:
+            The significance level for the confidence interval. By default a 95% confidence interval is taken
         Returns
         -------
         y_pred: pd.DataFrame
@@ -266,7 +264,7 @@ class _SARIMAXModel:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
-            y_pred = forecast.summary_frame(alpha=1 - self.interval_width)[["mean_ci_lower", "mean", "mean_ci_upper"]]
+            y_pred = forecast.summary_frame(alpha=1 - interval_width)[["mean_ci_lower", "mean", "mean_ci_upper"]]
         else:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
@@ -337,7 +335,6 @@ class SARIMAXModel(PerSegmentModel):
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
-        interval_width: float = 0.8,
         **kwargs,
     ):
         """
@@ -426,8 +423,6 @@ class SARIMAXModel(PerSegmentModel):
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
-        interval_width:
-            Float, width of the uncertainty intervals provided for the forecast.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -446,7 +441,6 @@ class SARIMAXModel(PerSegmentModel):
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
-        self.interval_width = interval_width
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXModel(
@@ -467,21 +461,26 @@ class SARIMAXModel(PerSegmentModel):
                 freq=self.freq,
                 missing=self.missing,
                 validate_specification=self.validate_specification,
-                interval_width=self.interval_width,
                 **self.kwargs,
             )
         )
 
     @staticmethod
-    def _forecast_segment(
-        model, segment: Union[str, List[str]], ts: TSDataset, confidence_interval: bool = False
+    def _forecast_one_segment(
+        model,
+        segment: Union[str, List[str]],
+        ts: TSDataset,
+        confidence_interval: bool,
+        interval_width: float,
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features, confidence_interval=confidence_interval)
+        segment_predict = model.predict(
+            df=segment_features, confidence_interval=confidence_interval, interval_width=interval_width
+        )
         segment_predict = segment_predict.rename(
             {"mean": "target", "mean_ci_lower": "target_lower", "mean_ci_upper": "target_upper"}, axis=1
         )
@@ -490,7 +489,7 @@ class SARIMAXModel(PerSegmentModel):
         return segment_predict
 
     @log_decorator
-    def forecast(self, ts: TSDataset, confidence_interval: bool = False) -> TSDataset:
+    def forecast(self, ts: TSDataset, confidence_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
         """Make predictions.
         Parameters
         ----------
@@ -498,6 +497,8 @@ class SARIMAXModel(PerSegmentModel):
             Dataframe with features
         confidence_interval:
             If True returns confidence interval for forecast
+        interval_width:
+            The significance level for the confidence interval. By default a 95% confidence interval is taken
         Returns
         -------
         pd.DataFrame
@@ -513,7 +514,7 @@ class SARIMAXModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_segment(model, segment, ts, confidence_interval)
+            segment_predict = self._forecast_one_segment(model, segment, ts, confidence_interval, interval_width)
             result_list.append(segment_predict)
 
         # need real case to test

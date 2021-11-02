@@ -1,6 +1,7 @@
 from etna.analysis.eda_utils import cross_corr_plot
 from etna.analysis.eda_utils import distribution_plot
 from etna.analysis.eda_utils import sample_pacf_plot
+from etna.analysis.feature_relevance.relevance_table import get_statistics_relevance_table
 from etna.analysis.outliers.confidence_interval_outliers import get_anomalies_confidence_interval
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.hist_outliers import get_anomalies_hist
@@ -10,6 +11,7 @@ from etna.analysis.plotters import get_correlation_matrix
 from etna.analysis.plotters import plot_anomalies
 from etna.analysis.plotters import plot_anomalies_interactive
 from etna.analysis.plotters import plot_backtest
+from etna.analysis.plotters import plot_backtest_interactive
 from etna.analysis.plotters import plot_clusters
 from etna.analysis.plotters import plot_correlation_matrix
 from etna.analysis.plotters import plot_forecast

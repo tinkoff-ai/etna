@@ -104,14 +104,6 @@ class StackingEnsemble(Pipeline):
             raise ValueError("All the pipelines should have the same horizon.")
         return horizons.pop()
 
-    @staticmethod
-    def _validate_cv(cv: int) -> int:
-        """Check that given number of folds is grater than 1."""
-        if cv > 1:
-            return cv
-        else:
-            raise ValueError("At least two folds for backtest are expected.")
-
     def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:
         """Return all the features from `features_to_use` which can be obtained from base models' forecasts."""
         features_df = pd.concat([forecast.df for forecast in forecasts], axis=1)
