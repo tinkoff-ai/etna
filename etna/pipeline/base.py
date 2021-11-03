@@ -10,7 +10,7 @@ class BasePipeline(ABC, BaseMixin):
 
     def __init__(
         self,
-        interval_width: float = 0.95,
+        interval_width: float,
     ):
         """
         Create instance of Pipeline with given parameters.
@@ -18,7 +18,7 @@ class BasePipeline(ABC, BaseMixin):
         Parameters
         ----------
         interval_width:
-            The significance level for the confidence interval. By default a 95% confidence interval is taken
+            The significance level for the confidence interval.
 
         Raises
         ------
