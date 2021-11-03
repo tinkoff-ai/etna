@@ -27,8 +27,8 @@ class BasePipeline(ABC, BaseMixin):
         """
         self.interval_width = self._validate_interval_width(interval_width)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def support_confidence_interval(self) -> bool:
         """Indicate if method supports confidence intervals."""
         pass
