@@ -47,7 +47,6 @@ class VotingEnsemble(Pipeline):
     2021-07-07	       -13.51	       -307.02	        215.73
     """
 
-
     support_confidence_interval = False
 
     def __init__(
