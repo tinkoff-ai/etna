@@ -8,7 +8,6 @@ from joblib import delayed
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.pipeline import Pipeline
-from etna.pipeline.base import check_support_confidence_interval
 
 
 class VotingEnsemble(Pipeline):
@@ -149,7 +148,7 @@ class VotingEnsemble(Pipeline):
         TSDataset:
             dataset with forecasts
         """
-        check_support_confidence_interval(self.support_confidence_interval, confidence_interval)
+        self.check_support_confidence_interval(confidence_interval)
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines

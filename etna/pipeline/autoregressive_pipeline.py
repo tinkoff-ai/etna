@@ -6,7 +6,6 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.models.base import Model
-from etna.pipeline.base import check_support_confidence_interval
 from etna.pipeline.pipeline import Pipeline
 from etna.transforms import Transform
 
@@ -117,7 +116,7 @@ class AutoRegressivePipeline(Pipeline):
         TSDataset:
             TSDataset with forecast
         """
-        check_support_confidence_interval(self.support_confidence_interval, confidence_interval)
+        self.check_support_confidence_interval(confidence_interval)
 
         prediction_df = self._create_predictions_template()
 

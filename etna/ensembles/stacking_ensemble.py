@@ -18,7 +18,6 @@ from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
-from etna.pipeline.base import check_support_confidence_interval
 
 
 class StackingEnsemble(Pipeline):
@@ -233,7 +232,7 @@ class StackingEnsemble(Pipeline):
         TSDataset:
             Dataset with forecasts.
         """
-        check_support_confidence_interval(self.support_confidence_interval, confidence_interval)
+        self.check_support_confidence_interval(confidence_interval)
 
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(

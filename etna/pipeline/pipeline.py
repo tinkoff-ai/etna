@@ -15,13 +15,13 @@ from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
 
-from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
+from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
 
@@ -32,8 +32,10 @@ class CrossValidationMode(Enum):
     constant = "constant"
 
 
-class Pipeline(BaseMixin):
+class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
+
+    support_confidence_interval = True
 
     def __init__(
         self,
@@ -64,10 +66,10 @@ class Pipeline(BaseMixin):
         ValueError:
             If the horizon is less than 1, interval_width is out of (0,1) or confidence_interval_cv is less than 2.
         """
+        super().__init__(interval_width=interval_width)
         self.model = model
         self.transforms = transforms
         self.horizon = self._validate_horizon(horizon)
-        self.interval_width = self._validate_interval_width(interval_width)
         self.confidence_interval_cv = self._validate_cv(confidence_interval_cv)
         self.ts: Optional[TSDataset] = None
 
@@ -78,14 +80,6 @@ class Pipeline(BaseMixin):
             return horizon
         else:
             raise ValueError("At least one point in the future is expected.")
-
-    @staticmethod
-    def _validate_interval_width(interval_width: float) -> float:
-        """Check that given number of folds is grater than 1."""
-        if 0 < interval_width < 1:
-            return interval_width
-        else:
-            raise ValueError("Interval width should be a number from (0,1).")
 
     @staticmethod
     def _validate_cv(cv: int) -> int:
@@ -148,6 +142,8 @@ class Pipeline(BaseMixin):
         TSDataset
             TSDataset with forecast
         """
+        self.check_support_confidence_interval(confidence_interval)
+
         future = self.ts.make_future(self.horizon)
         if confidence_interval:
             if "confidence_interval" in inspect.signature(self.model.forecast).parameters:
