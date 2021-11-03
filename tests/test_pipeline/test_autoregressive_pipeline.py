@@ -80,6 +80,18 @@ def test_forecast_multi_step(example_tsds, horizon, step):
     assert forecast_pipeline.df.shape[0] == horizon
 
 
+def test_forecast_warning_confidence_intervals(example_tsds):
+    """Test that AutoRegressivePipeline warns when called with confidence intervals."""
+    horizon = 5
+    step = 1
+    model = LinearPerSegmentModel()
+    transforms = [LagTransform(in_column="target", lags=[step])]
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=step)
+    pipeline.fit(example_tsds)
+    with pytest.warns(UserWarning, match="doesn't support confidence intervals"):
+        _ = pipeline.forecast(confidence_interval=True)
+
+
 def test_forecast_with_fit_transforms(example_tsds):
     """Test that AutoRegressivePipeline can work with transforms that need fitting."""
     horizon = 5
