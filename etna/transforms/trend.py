@@ -172,11 +172,13 @@ class TrendTransform(_TrendTransform):
         self.pen = pen
         self.epsilon = epsilon
         super().__init__(
-            in_column=in_column,
+            in_column=self.in_column,
             out_column=self.out_column if self.out_column is not None else f"regressor_{self.__repr__()}",
-            change_point_model=Binseg(model=model, custom_cost=custom_cost, min_size=min_size, jump=jump),
-            detrend_model=detrend_model,
-            n_bkps=n_bkps,
-            pen=pen,
-            epsilon=epsilon,
+            change_point_model=Binseg(
+                model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
+            ),
+            detrend_model=self.detrend_model,
+            n_bkps=self.n_bkps,
+            pen=self.pen,
+            epsilon=self.epsilon,
         )

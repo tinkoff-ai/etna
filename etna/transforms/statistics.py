@@ -14,8 +14,8 @@ class WindowStatisticsTransform(Transform, ABC):
     def __init__(
         self,
         in_column: str,
-        window: int,
         out_column: str,
+        window: int,
         seasonality: int = 1,
         min_periods: int = 1,
         fillna: float = 0,
@@ -40,10 +40,10 @@ class WindowStatisticsTransform(Transform, ABC):
             value to fill results NaNs with
         """
         self.in_column = in_column
+        self.out_column_name = out_column
         self.window = window
         self.seasonality = seasonality
         self.min_periods = min_periods
-        self.out_column_name = out_column
         self.fillna = fillna
         self.kwargs = kwargs
         self.min_required_len = max(self.min_periods - 1, 0) * self.seasonality + 1
@@ -111,11 +111,11 @@ class MeanTransform(WindowStatisticsTransform):
         self,
         in_column: str,
         window: int,
-        out_column: Optional[str] = None,
         seasonality: int = 1,
         alpha: float = 1,
         min_periods: int = 1,
         fillna: float = 0,
+        out_column: Optional[str] = None,
     ):
         """Init MeanTransform.
 
@@ -142,9 +142,9 @@ class MeanTransform(WindowStatisticsTransform):
         self.seasonality = seasonality
         self.alpha = alpha
         self.min_periods = min_periods
-        self.out_column = out_column
         self._alpha_range: Optional[List[float]] = None
         self.fillna = fillna
+        self.out_column = out_column
         super().__init__(
             in_column=in_column,
             window=window,
@@ -191,10 +191,10 @@ class StdTransform(WindowStatisticsTransform):
         self,
         in_column: str,
         window: int,
-        out_column: Optional[str] = None,
         seasonality: int = 1,
         min_periods: int = 1,
         fillna: float = 0,
+        out_column: Optional[str] = None,
     ):
         """Init StdTransform.
 
@@ -216,10 +216,10 @@ class StdTransform(WindowStatisticsTransform):
         """
         self.in_column = in_column
         self.window = window
-        self.out_column = out_column
         self.seasonality = seasonality
         self.min_periods = min_periods
         self.fillna = fillna
+        self.out_column = out_column
         super().__init__(
             window=window,
             in_column=in_column,
@@ -243,10 +243,10 @@ class QuantileTransform(WindowStatisticsTransform):
         in_column: str,
         quantile: float,
         window: int,
-        out_column: Optional[str] = None,
         seasonality: int = 1,
         min_periods: int = 1,
         fillna: float = 0,
+        out_column: Optional[str] = None,
     ):
         """Init QuantileTransform.
 
@@ -271,10 +271,10 @@ class QuantileTransform(WindowStatisticsTransform):
         self.in_column = in_column
         self.quantile = quantile
         self.window = window
-        self.out_column = out_column
         self.seasonality = seasonality
         self.min_periods = min_periods
         self.fillna = fillna
+        self.out_column = out_column
         super().__init__(
             in_column=in_column,
             window=window,
@@ -297,10 +297,10 @@ class MinTransform(WindowStatisticsTransform):
         self,
         in_column: str,
         window: int,
-        out_column: Optional[str] = None,
         seasonality: int = 1,
         min_periods: int = 1,
         fillna: float = 0,
+        out_column: Optional[str] = None,
     ):
         """Init MinTransform.
 
@@ -322,10 +322,10 @@ class MinTransform(WindowStatisticsTransform):
         """
         self.in_column = in_column
         self.window = window
-        self.out_column = out_column
         self.seasonality = seasonality
         self.min_periods = min_periods
         self.fillna = fillna
+        self.out_column = out_column
         super().__init__(
             window=window,
             in_column=in_column,
@@ -348,10 +348,10 @@ class MaxTransform(WindowStatisticsTransform):
         self,
         in_column: str,
         window: int,
-        out_column: Optional[str] = None,
         seasonality: int = 1,
         min_periods: int = 1,
         fillna: float = 0,
+        out_column: Optional[str] = None,
     ):
         """Init MaxTransform.
 
@@ -373,10 +373,10 @@ class MaxTransform(WindowStatisticsTransform):
         """
         self.in_column = in_column
         self.window = window
-        self.out_column = out_column
         self.seasonality = seasonality
         self.min_periods = min_periods
         self.fillna = fillna
+        self.out_column = out_column
         super().__init__(
             window=window,
             in_column=in_column,
@@ -399,10 +399,10 @@ class MedianTransform(WindowStatisticsTransform):
         self,
         in_column: str,
         window: int,
-        out_column: Optional[str] = None,
         seasonality: int = 1,
         min_periods: int = 1,
         fillna: float = 0,
+        out_column: Optional[str] = None,
     ):
         """Init MedianTransform.
 
@@ -424,10 +424,10 @@ class MedianTransform(WindowStatisticsTransform):
         """
         self.in_column = in_column
         self.window = window
-        self.out_column = out_column
         self.seasonality = seasonality
         self.min_periods = min_periods
         self.fillna = fillna
+        self.out_column = out_column
         super().__init__(
             window=window,
             in_column=in_column,
