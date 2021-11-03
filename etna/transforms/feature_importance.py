@@ -16,8 +16,8 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
 from etna.analysis import RelevanceTable
-from etna.clustering import HierarchicalClustering
 from etna.clustering import EuclideanClustering
+from etna.clustering import HierarchicalClustering
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
 
