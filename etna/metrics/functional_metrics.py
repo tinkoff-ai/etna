@@ -34,14 +34,14 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     <https://en.wikipedia.org/wiki/Mean_absolute_percentage_error>`_
 
     """
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
-    if len(y_true.shape) != len(y_pred.shape):
+    if len(y_true_array.shape) != len(y_pred_array.shape):
         raise ValueError("Shapes of the labels must be the same")
 
-    y_true = y_true.clip(eps)
+    y_true_array = y_true_array.clip(eps)
 
-    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+    return np.mean(np.abs((y_true_array - y_pred_array) / y_true_array)) * 100
 
 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
@@ -75,9 +75,11 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     <https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error>`_
 
     """
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
-    if len(y_true.shape) != len(y_pred.shape):
+    if len(y_true_array.shape) != len(y_pred_array.shape):
         raise ValueError("Shapes of the labels must be the same")
 
-    return 100 * np.mean(2 * np.abs(y_pred - y_true) / (np.abs(y_true) + np.abs(y_pred)).clip(eps))
+    return 100 * np.mean(
+        2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps)
+    )
