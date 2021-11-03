@@ -50,7 +50,7 @@ def forecast(
     2020-02-11     segment_2         205               54
     =============  ===========  ===============  ===============
     """
-    omega_cfg = OmegaConf.load(config_path)
+    pipeline_configs = OmegaConf.to_object(OmegaConf.load(config_path))
 
     df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
 
@@ -63,7 +63,7 @@ def forecast(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
 
-    pipeline: Pipeline = hydra_slayer.get_from_params(**OmegaConf.to_object(cfg=omega_cfg))
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     pipeline.fit(tsdataset)
     forecast = pipeline.forecast()
 
