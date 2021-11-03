@@ -47,16 +47,21 @@ class Model(ABC, BaseMixin):
         pass
 
     @abstractmethod
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, confidence_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataframe with features
+        confidence_interval:
+            If True returns confidence interval for forecast
+        interval_width:
+            The significance level for the confidence interval. By default a 95% confidence interval is taken
+
         Returns
         -------
-        DataFrame
+        TSDataset
             Models result
         """
         pass

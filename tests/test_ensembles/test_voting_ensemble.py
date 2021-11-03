@@ -82,6 +82,16 @@ def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: 
     np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
 
 
+def test_forecast_warning_confidence_intervals(
+    simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline
+):
+    """Check that VotingEnsemble warns when called with confidence intervals."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
+    ensemble.fit(ts=simple_df)
+    with pytest.warns(UserWarning, match="doesn't support confidence intervals"):
+        _ = ensemble.forecast(confidence_interval=True)
+
+
 @pytest.mark.long
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,

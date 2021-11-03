@@ -53,7 +53,7 @@ def backtest(
     =============  ===========  ===============  ===============
     """
     with open(config_path, "r") as f:
-        pipeline = yaml.safe_load(f)
+        pipeline_dict = yaml.safe_load(f)
 
     with open(backtest_config_path, "r") as f:
         backtest_configs = yaml.safe_load(f)
@@ -69,10 +69,10 @@ def backtest(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
 
-    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline)
-    backtest_configs: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_dict)
+    backtest_configs_hydra_slayer: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
 
-    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs)
+    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs_hydra_slayer)
 
     (metrics.to_csv(output_path / "metrics.csv", index=False))
     (forecast.to_csv(output_path / "forecast.csv", index=False))
