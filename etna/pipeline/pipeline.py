@@ -310,7 +310,7 @@ class Pipeline(BaseMixin):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
