@@ -62,8 +62,10 @@ class ConsoleLogger(BaseLogger):
         """
         for _, row in metrics_df.iterrows():
             for metric in metrics_df.columns[1:-1]:
+                # case for aggregate_metrics=False
                 if "fold_number" in row:
                     msg = f'Fold {row["fold_number"]}:{row["segment"]}:{metric} = {row[metric]}'
+                # case for aggregate_metrics=True
                 else:
                     msg = f'Segment {row["segment"]}:{metric} = {row[metric]}'
                 self.logger.info(msg)
