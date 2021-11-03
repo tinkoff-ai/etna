@@ -65,8 +65,8 @@ def ts_with_regressors():
 @pytest.mark.parametrize(
     "relevance_method, clustering_method",
     [
-        [StatisticsRelevanceTable, EuclideanClustering],
-        [StatisticsRelevanceTable, DTWClustering],
+        [StatisticsRelevanceTable(), EuclideanClustering()],
+        [StatisticsRelevanceTable(), DTWClustering()],
     ],
 )
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
@@ -87,7 +87,7 @@ def test_mrmr_right_len(relevance_method, clustering_method, top_k, ts_with_regr
 @pytest.mark.parametrize(
     "relevance_method, clustering_method",
     [
-        [StatisticsRelevanceTable, EuclideanClustering],
+        [StatisticsRelevanceTable(), EuclideanClustering()],
     ],
 )
 def test_mrmr_right_regressors(relevance_method, clustering_method, ts_with_regressors):
@@ -105,14 +105,14 @@ def test_mrmr_right_regressors(relevance_method, clustering_method, ts_with_regr
 def test_mrmr_fails_negative_parameters():
     """Check that transform doesn't allow you to set top_k to negative values and n_clusters >= 2."""
     with pytest.raises(ValueError, match="positive integer"):
-        MRMRFeatureSelectionTransform(StatisticsRelevanceTable, top_k=-1, freq="D")
+        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), top_k=-1, freq="D")
     with pytest.raises(ValueError, match="greater than"):
-        MRMRFeatureSelectionTransform(StatisticsRelevanceTable, top_k=1, freq="D", n_clusters=1)
+        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), top_k=1, freq="D", n_clusters=1)
 
 
 def test_mrmr_fails(ts_with_regressors):
     """Check that transform doesn't allow you to set n_clusters greater than number of regressors."""
-    mrmr = MRMRFeatureSelectionTransform(StatisticsRelevanceTable, top_k=4, freq="D", n_clusters=25)
+    mrmr = MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), top_k=4, freq="D", n_clusters=25)
     with pytest.raises(ValueError, match="strictly less than"):
         mrmr.fit_transform(ts_with_regressors.to_pandas())
 

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
 - Fix default value for TSDataset.tail ([#245](https://github.com/tinkoff-ai/etna-ts/pull/245))
+- Fix working TSDataset.make_future with empty exog values ([#244](https://github.com/tinkoff-ai/etna-ts/pull/244))
 
 ## [1.2.0] - 2021-10-27
 ### Added

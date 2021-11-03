@@ -16,7 +16,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
 from etna.analysis import RelevanceTable
-from etna.clustering import DTWClustering
+from etna.clustering import HierarchicalClustering
 from etna.clustering import EuclideanClustering
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
@@ -29,8 +29,6 @@ TreeBasedRegressor = Union[
     GradientBoostingRegressor,
     CatBoostRegressor,
 ]
-
-ClusteringBased = Union[EuclideanClustering, DTWClustering]
 
 
 class TreeFeatureSelectionTransform(Transform):
@@ -148,9 +146,10 @@ class MRMRFeatureSelectionTransform(Transform):
         relevance_method: RelevanceTable,
         top_k: int,
         freq: str,
-        clustering_method: ClusteringBased = EuclideanClustering,
+        clustering_method: HierarchicalClustering = EuclideanClustering,
         n_clusters: int = 10,
-        **kwargs,
+        linkage: str = "average",
+        **relevance_params,
     ):
         """
         Init MRMRFeatureSelectionTransform.
@@ -167,6 +166,8 @@ class MRMRFeatureSelectionTransform(Transform):
             method of time series clustering
         n_clusters:
             number of clusters
+        linkage:
+            rule for distance computation for new clusters, allowed "ward", "single", "average", "maximum", "complete"
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
@@ -174,12 +175,13 @@ class MRMRFeatureSelectionTransform(Transform):
         if not isinstance(n_clusters, int) or n_clusters < 2:
             raise ValueError("Parameter n_clusters should be integer and greater than 1")
 
-        self.relevance_method = relevance_method()
-        self.clustering = clustering_method()
+        self.relevance_method = relevance_method
+        self.clustering = clustering_method
         self.freq = freq
         self.n_clusters = n_clusters
+        self.linkage = linkage
         self.top_k = top_k
-        self.kwargs = kwargs
+        self.relevance_params = relevance_params
         self.selected_regressors: Optional[List[str]] = None
 
     @staticmethod
@@ -210,9 +212,9 @@ class MRMRFeatureSelectionTransform(Transform):
 
         ts = TSDataset(df=df, freq=self.freq)
         self.clustering.build_distance_matrix(ts=ts)
-        self.clustering.build_clustering_algo(n_clusters=self.n_clusters, linkage="average")
+        self.clustering.build_clustering_algo(n_clusters=self.n_clusters, linkage=self.linkage)
         s2c = self.clustering.fit_predict()
-        relevance_table = self.relevance_method(ts[:, :, "target"], ts[:, :, ts.regressors], **self.kwargs)
+        relevance_table = self.relevance_method(ts[:, :, "target"], ts[:, :, ts.regressors], **self.relevance_params)
         y = np.empty(len(relevance_table))
         for k, cluster in enumerate(relevance_table.index):
             y[k] = s2c[cluster]
