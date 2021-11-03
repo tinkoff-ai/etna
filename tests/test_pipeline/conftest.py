@@ -19,7 +19,7 @@ def catboost_pipeline() -> Pipeline:
     """Generate pipeline with CatBoostModelMultiSegment."""
     pipeline = Pipeline(
         model=CatBoostModelPerSegment(),
-        transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="lag_feature")],
+        transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="regressor_lag_feature")],
         horizon=7,
     )
     return pipeline
@@ -30,7 +30,7 @@ def catboost_pipeline_big() -> Pipeline:
     """Generate pipeline with CatBoostModelMultiSegment."""
     pipeline = Pipeline(
         model=CatBoostModelPerSegment(),
-        transforms=[LagTransform(in_column="target", lags=[25, 26, 27], out_column="lag_feature")],
+        transforms=[LagTransform(in_column="target", lags=[25, 26, 27], out_column="regressor_lag_feature")],
         horizon=24,
     )
     return pipeline
