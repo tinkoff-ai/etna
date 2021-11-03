@@ -403,7 +403,7 @@ def test_updating_regressors_fit_transform(df_and_regressors):
         month_number_in_year=False,
         year_number=False,
         is_weekend=True,
-        out_column="dateflag",
+        out_column="regressor_dateflag",
     )
     initial_regressors = set(ts.regressors)
     ts.fit_transform(transforms=[date_flags_transform])
