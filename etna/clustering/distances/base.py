@@ -2,11 +2,17 @@ import sys
 import warnings
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 from etna.core import BaseMixin
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 class Distance(ABC, BaseMixin):
@@ -85,13 +91,15 @@ class Distance(ABC, BaseMixin):
         """Get series that minimizes squared distance to given ones according to the Distance."""
         pass
 
-    def get_average(self, ts: "TSDataset") -> pd.DataFrame:
+    def get_average(self, ts: "TSDataset", **kwargs: Dict[str, Any]) -> pd.DataFrame:
         """Get series that minimizes squared distance to given ones according to the Distance.
 
         Parameters
         ----------
         ts:
             TSDataset with series to be averaged
+        kwargs:
+            additional parameters for averaging
 
         Returns
         -------
@@ -99,7 +107,7 @@ class Distance(ABC, BaseMixin):
             dataframe with columns "timestamp" and "target" that contains the series
         """
         self._validate_dataset(ts)
-        centroid = self._get_average(ts)
+        centroid = self._get_average(ts, **kwargs)  # type: ignore
         return centroid
 
 

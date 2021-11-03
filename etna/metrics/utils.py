@@ -1,11 +1,14 @@
 from typing import Dict
 from typing import List
+from typing import Union
 
 from etna.datasets import TSDataset
 from etna.metrics import Metric
 
 
-def compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, float]:
+def compute_metrics(
+    metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
+) -> Dict[str, Union[float, Dict[str, float]]]:
     """
     Compute metrics for given y_true, y_pred.
 

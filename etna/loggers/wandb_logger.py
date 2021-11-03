@@ -22,7 +22,7 @@ if SETTINGS.wandb_required:
 if SETTINGS.torch_required:
     from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
 else:
-    PLWandbLogger = None
+    PLWandbLogger = None  # type: ignore
 
 
 def percentile(n: int):
