@@ -302,7 +302,7 @@ def test_get_forecasts_interface_daily(catboost_pipeline: Pipeline, big_daily_ex
     """Check that Pipeline.backtest returns forecasts in correct format."""
     _, forecast, _ = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
     expected_columns = sorted(
-        ["regressor_target_lag_10", "regressor_target_lag_11", "regressor_target_lag_12", "fold_number", "target"]
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
     )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
@@ -311,7 +311,7 @@ def test_get_forecasts_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     """Check that Pipeline.backtest returns forecasts in correct format with non-daily seasonality."""
     _, forecast, _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
     expected_columns = sorted(
-        ["regressor_target_lag_10", "regressor_target_lag_11", "regressor_target_lag_12", "fold_number", "target"]
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
     )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 

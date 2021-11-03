@@ -56,15 +56,15 @@ def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipe
         (
             "all",
             {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_month",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_dateflag_is_weekend",
             },
         ),
         (
-            ["regressor_target_lag_10", "regressor_day_number_in_week"],
-            {"regressor_target_lag_10", "regressor_day_number_in_week"},
+            ["regressor_lag_feature_10", "regressor_dateflag_day_number_in_week"],
+            {"regressor_lag_feature_10", "regressor_dateflag_day_number_in_week"},
         ),
     ),
 )
@@ -83,14 +83,14 @@ def test_features_to_use(
     assert obtained_features == expected_features
 
 
-@pytest.mark.parametrize("features_to_use", (["regressor_target_lag_10"]))
+@pytest.mark.parametrize("features_to_use", (["regressor_lag_feature_10"]))
 def test_features_to_use_wrong_format(
     forecasts_ts: TSDataset,
     naive_featured_pipeline_1,
     naive_featured_pipeline_2,
     features_to_use: Union[None, Literal[all], List[str]],
 ):
-    """Check that StackingEnsemble._get_features_to_use raises worning in case of wrong format."""
+    """Check that StackingEnsemble._get_features_to_use raises warning in case of wrong format."""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
@@ -120,19 +120,19 @@ def test_features_to_use_not_found(
         (
             "all",
             {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_month",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_dateflag_is_weekend",
                 "regressor_target_0",
                 "regressor_target_1",
             },
         ),
         (
-            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
+            ["regressor_lag_feature_10", "regressor_dateflag_day_number_in_week", "unknown"],
             {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_week",
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_week",
                 "regressor_target_0",
                 "regressor_target_1",
             },
@@ -169,17 +169,22 @@ def test_make_features(
         (
             "all",
             {
-                "regressor_target_lag_10",
-                "regressor_day_number_in_month",
-                "regressor_day_number_in_week",
-                "regressor_is_weekend",
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_month",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_dateflag_is_weekend",
                 "regressor_target_0",
                 "regressor_target_1",
             },
         ),
         (
-            ["regressor_target_lag_10", "regressor_day_number_in_week", "unknown"],
-            {"regressor_target_lag_10", "regressor_day_number_in_week", "regressor_target_0", "regressor_target_1"},
+            ["regressor_lag_feature_10", "regressor_dateflag_day_number_in_week", "unknown"],
+            {
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_target_0",
+                "regressor_target_1",
+            },
         ),
     ),
 )

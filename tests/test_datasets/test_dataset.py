@@ -403,12 +403,14 @@ def test_updating_regressors_fit_transform(df_and_regressors):
         month_number_in_year=False,
         year_number=False,
         is_weekend=True,
+        out_column="regressor_dateflag",
     )
     initial_regressors = set(ts.regressors)
     ts.fit_transform(transforms=[date_flags_transform])
     final_regressors = set(ts.regressors)
+    expected_columns = {"regressor_dateflag_day_number_in_week", "regressor_dateflag_is_weekend"}
     assert initial_regressors.issubset(final_regressors)
-    assert final_regressors.difference(initial_regressors) == {"regressor_day_number_in_week", "regressor_is_weekend"}
+    assert final_regressors.difference(initial_regressors) == expected_columns
 
 
 def test_right_format_sorting():
