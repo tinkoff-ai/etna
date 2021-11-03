@@ -1,4 +1,6 @@
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -45,7 +47,13 @@ class VotingEnsemble(Pipeline):
     2021-07-07	       -13.51	       -307.02	        215.73
     """
 
-    def __init__(self, pipelines: List[Pipeline], weights: Optional[List[float]] = None, n_jobs: int = 1):
+    def __init__(
+        self,
+        pipelines: List[Pipeline],
+        weights: Optional[List[float]] = None,
+        n_jobs: int = 1,
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+    ):
         """Init VotingEnsemble.
 
         Parameters
@@ -56,6 +64,8 @@ class VotingEnsemble(Pipeline):
             list of pipelines' weights; weights will be normalized automatically.
         n_jobs:
             number of jobs to run in parallel
+        joblib_params:
+            additional parameters for joblib.Parallel
 
         Raises
         ------
@@ -67,6 +77,7 @@ class VotingEnsemble(Pipeline):
         self.weights = self._process_weights(weights=weights, pipelines_number=len(pipelines))
         self.pipelines = pipelines
         self.n_jobs = n_jobs
+        self.joblib_params = joblib_params
 
     @staticmethod
     def _validate_pipeline_number(pipelines: List[Pipeline]):
@@ -114,7 +125,7 @@ class VotingEnsemble(Pipeline):
         VotingEnsemble:
             fitted ensemble
         """
-        self.pipelines = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
         return self
