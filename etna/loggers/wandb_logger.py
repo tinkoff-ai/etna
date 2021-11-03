@@ -151,7 +151,7 @@ class WandbLogger(BaseLogger):
         Parameters
         ----------
         metrics_df:
-            Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
+            Dataframe produced with Pipeline._get_backtest_metrics() or TimeSeriesCrossValidation.get_metrics()
         forecast_df:
             Forecast from backtest
         fold_info_df:
@@ -168,14 +168,23 @@ class WandbLogger(BaseLogger):
             fig = plot_backtest_interactive(forecast_df, ts, history_len=100)
             self.experiment.log({"backtest": fig})
 
-        metrics_dict = (
-            metrics_df.groupby("segment")
-            .mean()
-            .reset_index()
-            .drop(["segment", "fold_number"], axis=1)
-            .apply(["median", "mean", "std", percentile(5), percentile(25), percentile(75), percentile(95)])
-            .to_dict()
-        )
+        # case for aggregate_metrics=False
+        if "fold_number" in metrics_df.columns:
+            metrics_dict = (
+                metrics_df.groupby("segment")
+                .mean()
+                .reset_index()
+                .drop(["segment", "fold_number"], axis=1)
+                .apply(["median", "mean", "std", percentile(5), percentile(25), percentile(75), percentile(95)])
+                .to_dict()
+            )
+        # case for aggregate_metrics=True
+        else:
+            metrics_dict = (
+                metrics_df.drop(["segment"], axis=1)
+                .apply(["median", "mean", "std", percentile(5), percentile(25), percentile(75), percentile(95)])
+                .to_dict()
+            )
         for metrics_key, values in metrics_dict.items():
             for statistics_key, value in values.items():
                 self.experiment.summary[f"{metrics_key}_{statistics_key}"] = value

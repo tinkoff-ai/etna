@@ -50,15 +50,22 @@ class ConsoleLogger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
+            Dataframe produced with Pipeline._get_backtest_metrics() or TimeSeriesCrossValidation.get_metrics()
         forecast_df:
             Forecast from backtest
         fold_info_df:
             Fold information from backtest
+
+        Notes
+        -----
+        The result of logging will be different for aggregate_metrics=True and aggregate_metrics=False
         """
         for _, row in metrics_df.iterrows():
             for metric in metrics_df.columns[1:-1]:
-                msg = f'Fold {row["fold_number"]}:{row["segment"]}:{metric} = {row[metric]}'
+                if "fold_number" in row:
+                    msg = f'Fold {row["fold_number"]}:{row["segment"]}:{metric} = {row[metric]}'
+                else:
+                    msg = f'Segment {row["segment"]}:{metric} = {row[metric]}'
                 self.logger.info(msg)
 
     @property
