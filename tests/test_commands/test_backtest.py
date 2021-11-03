@@ -12,7 +12,7 @@ def base_backtest_yaml_path():
     tmp.write(
         """
         n_folds: 3
-        n_jobs: 3
+        n_jobs: ${n_folds}
         metrics:
           - _target_: etna.metrics.MAE
           - _target_: etna.metrics.MSE
