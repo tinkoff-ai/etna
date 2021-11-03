@@ -170,7 +170,10 @@ def test_no_warning_on_categorical_features(example_tsds, model):
 
     with pytest.warns(None) as record:
         _ = model.fit(example_tsds)
-        to_forecast = example_tsds.make_future(horizon)
+    assert not record
+
+    to_forecast = example_tsds.make_future(horizon)
+    with pytest.warns(None) as record:
         _ = model.forecast(to_forecast)
     assert not record
 
