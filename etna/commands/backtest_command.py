@@ -72,7 +72,7 @@ def backtest(
     metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs_hydra_slayer)
 
     (metrics.to_csv(output_path / "metrics.csv", index=False))
-    (forecast.to_csv(output_path / "forecast.csv", index=False))
+    (TSDataset.to_flatten(forecast).to_csv(output_path / "forecast.csv", index=False))
     (info.to_csv(output_path / "info.csv", index=False))
 
 
