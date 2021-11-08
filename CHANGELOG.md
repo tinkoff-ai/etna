@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
 - TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
-- Feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
+- Feature relevance table calculation using tsfresh ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
 - Method flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
+- Feature relevance table calculation using feature importance ([#261](https://github.com/tinkoff-ai/etna-ts/pull/261))
 
 ### Changed
 - Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
