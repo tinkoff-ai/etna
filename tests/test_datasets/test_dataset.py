@@ -62,7 +62,7 @@ def test_check_endings_error_raise():
     ts = TSDataset(df=df, freq="D")
 
     with pytest.raises(ValueError):
-        ts.fit_transform([])
+        ts._check_endings()
 
 
 def test_check_endings_error_pass():
@@ -73,7 +73,7 @@ def test_check_endings_error_pass():
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
-    ts.fit_transform([])
+    ts._check_endings()
 
 
 def test_categorical_after_call_to_pandas():
