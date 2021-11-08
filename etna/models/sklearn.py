@@ -13,13 +13,19 @@ class _SklearnModel:
         self.model = regressor
 
     def fit(self, df: pd.DataFrame) -> "_SklearnModel":
-        features = df.drop(columns=["timestamp", "target"])
+        try:
+            features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
+        except ValueError:
+            raise ValueError("Only convertible to numeric features are accepted!")
         target = df["target"]
         self.model.fit(features, target)
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
-        features = df.drop(columns=["timestamp", "target"])
+        try:
+            features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
+        except ValueError:
+            raise ValueError("Only convertible to numeric features are accepted!")
         pred = self.model.predict(features)
         return pred
 
