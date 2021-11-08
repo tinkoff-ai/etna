@@ -1,4 +1,5 @@
 import warnings
+from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -9,6 +10,9 @@ import pandas as pd
 from etna.clustering.distances.base import Distance
 from etna.core import BaseMixin
 from etna.loggers import tslogger
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 class DistanceMatrix(BaseMixin):

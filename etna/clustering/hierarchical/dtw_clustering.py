@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from etna.clustering.distances.dtw_distance import DTWDistance
 from etna.clustering.hierarchical.base import HierarchicalClustering
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 class DTWClustering(HierarchicalClustering):
@@ -29,6 +34,10 @@ class DTWClustering(HierarchicalClustering):
      'segment_9': 2}
     """
 
+    def __init__(self):
+        """Create instance of DTWClustering."""
+        super().__init__(distance=DTWDistance())
+
     def build_distance_matrix(self, ts: "TSDataset"):
         """
         Build distance matrix with DTW distance.
@@ -38,7 +47,7 @@ class DTWClustering(HierarchicalClustering):
         ts:
             TSDataset with series to build distance matrix
         """
-        super().build_distance_matrix(ts=ts, distance=DTWDistance())
+        super().build_distance_matrix(ts=ts)
 
 
 __all__ = ["DTWClustering"]

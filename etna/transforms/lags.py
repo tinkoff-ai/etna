@@ -1,4 +1,5 @@
 from typing import List
+from typing import Optional
 from typing import Union
 
 import pandas as pd
@@ -8,8 +9,9 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentLagFeature(Transform):
-    def __init__(self, in_column: str, lags: Union[List[int], int]):
-        self.in_column = in_column
+    """Generates series of lags from given segment."""
+
+    def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
         if isinstance(lags, int):
             if lags < 1:
                 raise ValueError(f"{type(self).__name__} works only with positive lags values, {lags} given")
@@ -19,8 +21,8 @@ class _OneSegmentLagFeature(Transform):
                 raise ValueError(f"{type(self).__name__} works only with positive lags values")
             self.lags = lags
 
-        self.out_postfix = "_lag"
-        self.out_prefix = "regressor_"
+        self.in_column = in_column
+        self.out_column = out_column
 
     def fit(self, *args) -> "_OneSegmentLagFeature":
         return self
@@ -28,14 +30,14 @@ class _OneSegmentLagFeature(Transform):
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         result = df.copy()
         for lag in self.lags:
-            result[f"{self.out_prefix}{self.in_column}{self.out_postfix}_{lag}"] = df[self.in_column].shift(lag)
+            result[f"{self.out_column}_{lag}"] = df[self.in_column].shift(lag)
         return result
 
 
 class LagTransform(PerSegmentWrapper):
-    """Generates series of lags from given dataframe. Creates columns 'regressor_<column>_lag_<number>'."""
+    """Generates series of lags from given dataframe."""
 
-    def __init__(self, in_column: str, lags: Union[List[int], int]):
+    def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
         """Create instance of LagTransform.
 
         Parameters
@@ -44,6 +46,9 @@ class LagTransform(PerSegmentWrapper):
             name of processed column
         lags:
             int value or list of values for lags computation; if int, generate range of lags from 1 to given value
+        out_column:
+            name of added column. We get '{out_column}_{lag_number}'(don't forget to add regressor prefix if necessary).
+            If not given, use 'regressor_{self.__repr__()}_{lag_number}'
 
         Raises
         ------
@@ -52,4 +57,12 @@ class LagTransform(PerSegmentWrapper):
         """
         self.in_column = in_column
         self.lags = lags
-        super().__init__(transform=_OneSegmentLagFeature(in_column=self.in_column, lags=self.lags))
+        self.out_column = out_column
+
+        super().__init__(
+            transform=_OneSegmentLagFeature(
+                in_column=self.in_column,
+                lags=self.lags,
+                out_column=out_column if out_column is not None else f"regressor_{self.__repr__()}",
+            )
+        )

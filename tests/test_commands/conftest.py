@@ -29,6 +29,29 @@ def base_pipeline_yaml_path():
 
 
 @pytest.fixture
+def base_pipeline_omegaconf_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        _target_: etna.pipeline.Pipeline
+        horizon: 4
+        model:
+          _target_: etna.models.CatBoostModelMultiSegment
+        transforms:
+          - _target_: etna.transforms.LinearTrendTransform
+            in_column: target
+          - _target_: etna.transforms.SegmentEncoderTransform
+          - _target_: etna.transforms.LagTransform
+            in_column: target
+            lags: "${shift:${horizon},[1, 2, 4]}"
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
 def base_timeseries_path():
     df = generate_ar_df(periods=100, start_time="2021-06-01", n_segments=2)
     tmp = NamedTemporaryFile("w")

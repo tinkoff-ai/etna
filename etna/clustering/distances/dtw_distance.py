@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from typing import Callable
 from typing import List
 from typing import Tuple
@@ -7,6 +8,9 @@ import numpy as np
 import pandas as pd
 
 from etna.clustering.distances.base import Distance
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 @numba.cfunc(numba.float64(numba.float64, numba.float64))
@@ -31,9 +35,7 @@ def simple_dist(x1: float, x2: float) -> float:
 class DTWDistance(Distance):
     """DTW distance handler."""
 
-    def __init__(
-        self, points_distance: Callable[[np.ndarray, np.ndarray], float] = simple_dist, trim_series: bool = False
-    ):
+    def __init__(self, points_distance: Callable[[float, float], float] = simple_dist, trim_series: bool = False):
         """Init DTWDistance.
 
         Parameters
@@ -115,7 +117,7 @@ class DTWDistance(Distance):
     @staticmethod
     def _get_longest_series(ts: "TSDataset") -> pd.Series:
         """Get the longest series from the list."""
-        series_list = []
+        series_list: List[pd.Series] = []
         for segment in ts.segments:
             series = ts[:, segment, "target"].dropna()
             series_list.append(series)
@@ -131,7 +133,7 @@ class DTWDistance(Distance):
             series_list.append(series)
         return series_list
 
-    def _get_average(self, ts: "TSDataset", n_iters: int = 10) -> np.ndarray:
+    def _get_average(self, ts: "TSDataset", n_iters: int = 10) -> pd.DataFrame:
         """Get series that minimizes squared distance to given ones according to the dtw distance.
 
         Parameters
@@ -140,9 +142,10 @@ class DTWDistance(Distance):
             TSDataset with series to be averaged
         n_iters:
             number of DBA iterations to adjust centroid with series
+
         Returns
         -------
-        np.ndarray:
+        pd.Dataframe:
             dataframe with columns "timestamp" and "target" that contains the series
         """
         series_list = self._get_all_series(ts)

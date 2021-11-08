@@ -1,3 +1,6 @@
+import warnings
+from typing import Optional
+
 import pandas as pd
 
 from etna.transforms.base import PerSegmentWrapper
@@ -5,7 +8,7 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentAddConstTransform(Transform):
-    def __init__(self, in_column: str, value: float, inplace: bool = True):
+    def __init__(self, in_column: str, out_column: str, value: float, inplace: bool = True):
         """
         Init _OneSegmentAddConstTransform.
 
@@ -13,15 +16,17 @@ class _OneSegmentAddConstTransform(Transform):
         ----------
         in_column:
             column to apply transform
+        out_column:
+            name of added column
         value:
             value that should be added to the series
         inplace:
-            if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
+            if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         """
         self.in_column = in_column
         self.value = value
         self.inplace = inplace
-        self.out_column = self.in_column if self.inplace else f"{self.in_column}_add_{self.value}"
+        self.out_column = out_column
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentAddConstTransform":
         """
@@ -72,7 +77,7 @@ class _OneSegmentAddConstTransform(Transform):
 class AddConstTransform(PerSegmentWrapper):
     """AddConstTransform add constant for given series."""
 
-    def __init__(self, in_column: str, value: float, inplace: bool = True):
+    def __init__(self, in_column: str, value: float, inplace: bool = True, out_column: Optional[str] = None):
         """
         Init AddConstTransform.
 
@@ -83,13 +88,28 @@ class AddConstTransform(PerSegmentWrapper):
         value:
             value that should be added to the series
         inplace:
-            if True, apply add constant transformation inplace to in_column, if False, add column {in_column}_add_{value} to dataset
+            if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
+        out_column:
+            name of added column.Don't forget to add regressor prefix if necessary. If not given, use self.__repr__()
         """
         self.in_column = in_column
         self.value = value
         self.inplace = inplace
+        self.out_column = out_column
+
+        if self.inplace and out_column:
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+
+        if self.inplace:
+            out_column_result = self.in_column
+        elif self.out_column:
+            out_column_result = self.out_column
+        else:
+            out_column_result = self.__repr__()
         super().__init__(
-            transform=_OneSegmentAddConstTransform(in_column=self.in_column, value=self.value, inplace=self.inplace)
+            transform=_OneSegmentAddConstTransform(
+                in_column=in_column, value=value, inplace=inplace, out_column=out_column_result
+            )
         )
 
 

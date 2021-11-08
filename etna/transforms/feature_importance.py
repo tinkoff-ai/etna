@@ -62,9 +62,7 @@ class TreeFeatureSelectionTransform(Transform):
     def _get_train(df: pd.DataFrame) -> Tuple[np.array, np.array]:
         """Get train data for model."""
         regressors = TreeFeatureSelectionTransform._get_regressors(df)
-        # TODO: fix when TSDataset.to_pandas became static
-        ts = TSDataset(df, freq=pd.infer_freq(df.index))
-        df = ts.to_pandas(flatten=True).dropna()
+        df = TSDataset.to_flatten(df).dropna()
         train_target = df["target"]
         train_data = df[regressors]
         return train_data, train_target
