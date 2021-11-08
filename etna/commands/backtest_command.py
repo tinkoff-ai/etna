@@ -6,7 +6,7 @@ from typing import Optional
 import hydra_slayer
 import pandas as pd
 import typer
-import yaml
+from omegaconf import OmegaConf
 
 from etna.datasets import TSDataset
 from etna.pipeline import Pipeline
@@ -52,11 +52,8 @@ def backtest(
     2020-02-11     segment_2         205               54
     =============  ===========  ===============  ===============
     """
-    with open(config_path, "r") as f:
-        pipeline = yaml.safe_load(f)
-
-    with open(backtest_config_path, "r") as f:
-        backtest_configs = yaml.safe_load(f)
+    pipeline_configs = OmegaConf.to_object(OmegaConf.load(config_path))
+    backtest_configs = OmegaConf.to_object(OmegaConf.load(backtest_config_path))
 
     df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
 
@@ -69,13 +66,13 @@ def backtest(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
 
-    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline)
-    backtest_configs: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
+    backtest_configs_hydra_slayer: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
 
-    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs)
+    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs_hydra_slayer)
 
     (metrics.to_csv(output_path / "metrics.csv", index=False))
-    (forecast.to_csv(output_path / "forecast.csv", index=False))
+    (TSDataset.to_flatten(forecast).to_csv(output_path / "forecast.csv", index=False))
     (info.to_csv(output_path / "info.csv", index=False))
 
 

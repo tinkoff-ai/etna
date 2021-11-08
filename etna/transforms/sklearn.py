@@ -1,6 +1,5 @@
 from enum import Enum
 from typing import List
-from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -23,6 +22,7 @@ class SklearnTransform(Transform):
     def __init__(
         self,
         in_column: Union[str, List[str]],
+        out_column: str,
         transformer: TransformerMixin,
         inplace: bool = True,
         mode: Union[TransformMode, str] = "per-segment",
@@ -38,6 +38,8 @@ class SklearnTransform(Transform):
             sklearn.base.TransformerMixin instance.
         inplace:
             features are changed by transformed.
+        out_column:
+            name of result column
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -51,9 +53,10 @@ class SklearnTransform(Transform):
         self.transformer = transformer
         if isinstance(in_column, str):
             in_column = [in_column]
-        self.in_column: Optional[List[str]] = in_column if in_column is None else sorted(in_column)
+        self.in_column = in_column if in_column is None else sorted(in_column)
         self.inplace = inplace
         self.mode = TransformMode(mode)
+        self.out_column_name = out_column
 
     def fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
@@ -111,10 +114,7 @@ class SklearnTransform(Transform):
                 transformed, columns=df.loc[:, (segments, self.in_column)].columns, index=df.index
             )
             transformed_features.columns = pd.MultiIndex.from_tuples(
-                [
-                    (segment_name, f"{feature_name}_{str(self)}")
-                    for segment_name, feature_name in transformed_features.columns
-                ]
+                [(segment_name, self.out_column_name) for segment_name, feature_name in transformed_features.columns]
             )
             df = pd.concat((df, transformed_features), axis=1)
             df = df.sort_index(axis=1)
@@ -162,6 +162,3 @@ class SklearnTransform(Transform):
             [transformed[i * time_period_len : (i + 1) * time_period_len, :] for i in range(n_segments)], axis=1
         )
         return transformed
-
-    def __str__(self) -> str:
-        return self.__class__.__name__.lower()

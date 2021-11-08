@@ -3,8 +3,10 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
@@ -106,7 +108,7 @@ class TimeSeriesCrossValidation(BaseMixin):
             )
 
         self._fold_column = "fold_number"
-        self._folds = {}
+        self._folds: Dict[int, Any] = {}
 
     def _validate_features(self, ts: TSDataset):
         """
@@ -134,7 +136,7 @@ class TimeSeriesCrossValidation(BaseMixin):
                     f"series {segment} does not."
                 )
 
-    def _generate_folds_dataframes(self, ts: TSDataset) -> Tuple[TSDataset, TSDataset]:
+    def _generate_folds_dataframes(self, ts: TSDataset) -> Generator[Tuple[TSDataset, TSDataset], None, None]:
         """
         Generate a sequence of train-test pairs according to timestamp.
 
@@ -167,7 +169,7 @@ class TimeSeriesCrossValidation(BaseMixin):
 
             yield train, test
 
-    def _compute_metrics(self, y_true: TSDataset, y_pred: TSDataset) -> Dict[str, float]:
+    def _compute_metrics(self, y_true: TSDataset, y_pred: TSDataset) -> Dict[str, Dict[str, float]]:
         """
         Compute metrics for given y_true, y_pred.
 
@@ -181,9 +183,9 @@ class TimeSeriesCrossValidation(BaseMixin):
         -------
         dict of metrics in format {"metric_name": metric_value}
         """
-        metrics = {}
+        metrics: Dict[str, Dict[str, float]] = {}
         for metric in self.metrics:
-            metrics[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)
+            metrics[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics
 
     def get_forecasts(self) -> pd.DataFrame:
@@ -255,7 +257,7 @@ class TimeSeriesCrossValidation(BaseMixin):
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
         train.fit_transform(transforms=deepcopy(transforms))
         forecast_base = train.make_future(future_steps=self.horizon)
-        fold = {}
+        fold: Dict[str, Any] = {}
 
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
@@ -273,7 +275,7 @@ class TimeSeriesCrossValidation(BaseMixin):
         return fold
 
     def backtest(
-        self, ts: TSDataset, transforms: List[Transform] = ()
+        self, ts: TSDataset, transforms: Sequence[Transform] = ()
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Fit forecasters with historical data and compute metrics for each interval.

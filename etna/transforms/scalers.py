@@ -1,3 +1,4 @@
+import warnings
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -22,6 +23,7 @@ class StandardScalerTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
+        out_column: Optional[str] = None,
         with_mean: bool = True,
         with_std: bool = True,
         mode: Union[TransformMode, str] = "per-segment",
@@ -35,6 +37,8 @@ class StandardScalerTransform(SklearnTransform):
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
+        out_column:
+            name of added column. Use self.__repr__() if not given.
         with_mean:
             if True, center the data before scaling.
         with_std:
@@ -49,14 +53,21 @@ class StandardScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
+        self.with_mean = with_mean
+        self.with_std = with_std
+        self.out_column = out_column
         super().__init__(
             in_column=in_column,
             transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             inplace=inplace,
             mode=mode,
         )
-        self.with_mean = with_mean
-        self.with_std = with_std
 
 
 class RobustScalerTransform(SklearnTransform):
@@ -69,6 +80,7 @@ class RobustScalerTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
+        out_column: Optional[str] = None,
         with_centering: bool = True,
         with_scaling: bool = True,
         quantile_range: Tuple[float, float] = (25, 75),
@@ -84,6 +96,8 @@ class RobustScalerTransform(SklearnTransform):
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
+        out_column:
+            name of added column. Use self.__repr__() if not given.
         with_centering:
             if True, center the data before scaling.
         with_scaling:
@@ -105,9 +119,20 @@ class RobustScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
+        self.out_column = out_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
+        self.with_centering = with_centering
+        self.with_scaling = with_scaling
+        self.quantile_range = quantile_range
+        self.unit_variance = unit_variance
         super().__init__(
             in_column=in_column,
             inplace=inplace,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=RobustScaler(
                 with_centering=with_centering,
                 with_scaling=with_scaling,
@@ -117,10 +142,6 @@ class RobustScalerTransform(SklearnTransform):
             ),
             mode=mode,
         )
-        self.with_centering = with_centering
-        self.with_scaling = with_scaling
-        self.quantile_range = quantile_range
-        self.unit_variance = unit_variance
 
 
 class MinMaxScalerTransform(SklearnTransform):
@@ -133,6 +154,7 @@ class MinMaxScalerTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
+        out_column: Optional[str] = None,
         feature_range: Tuple[float, float] = (0, 1),
         clip: bool = True,
         mode: Union[TransformMode, str] = "per-segment",
@@ -146,6 +168,8 @@ class MinMaxScalerTransform(SklearnTransform):
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
+        out_column:
+            name of added column. Use self.__repr__() if not given.
         feature_range:
             desired range of transformed data.
         clip:
@@ -160,14 +184,21 @@ class MinMaxScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
+        self.out_column = out_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
+        self.feature_range = feature_range
+        self.clip = clip
         super().__init__(
             in_column=in_column,
             inplace=inplace,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
             transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
             mode=mode,
         )
-        self.feature_range = feature_range
-        self.clip = clip
 
 
 class MaxAbsScalerTransform(SklearnTransform):
@@ -180,6 +211,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
+        out_column: Optional[str] = None,
         mode: Union[TransformMode, str] = "per-segment",
     ):
         """Init MinMaxScalerPreprocess.
@@ -190,6 +222,8 @@ class MaxAbsScalerTransform(SklearnTransform):
             columns to be scaled, if None - all columns will be scaled.
         inplace:
             features are changed by scaled.
+        out_column:
+            name of added column. Use self.__repr__() if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -200,7 +234,19 @@ class MaxAbsScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        super().__init__(in_column=in_column, inplace=inplace, transformer=MaxAbsScaler(copy=True), mode=mode)
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        self.in_column = [in_column] if isinstance(in_column, str) else in_column
+        self.inplace = inplace
+        self.mode = TransformMode(mode)
+        self.out_column = out_column
+        super().__init__(
+            in_column=in_column,
+            inplace=inplace,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            transformer=MaxAbsScaler(copy=True),
+            mode=mode,
+        )
 
 
 __all__ = ["MaxAbsScalerTransform", "MinMaxScalerTransform", "RobustScalerTransform", "StandardScalerTransform"]

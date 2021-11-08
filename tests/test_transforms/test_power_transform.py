@@ -99,3 +99,23 @@ def test_inverse_transform_one_column(positive_df: pd.DataFrame, preprocessing_c
     transformed_target = preprocess.fit_transform(df=positive_df.copy())
     inversed_target = preprocess.inverse_transform(df=transformed_target)
     np.testing.assert_array_almost_equal(inversed_target.values, positive_df.values)
+
+
+@pytest.mark.parametrize("preprocessing_class", (BoxCoxTransform, YeoJohnsonTransform))
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_interface_repr(positive_df: pd.DataFrame, preprocessing_class: Any, mode: str):
+    preprocess = preprocessing_class(in_column="target", mode=mode, inplace=False)
+    excepted_column = f"{preprocess.__repr__()}"
+    result = preprocess.fit_transform(df=positive_df)
+    for segment in result.columns.get_level_values("segment").unique():
+        assert excepted_column in result[segment].columns
+
+
+@pytest.mark.parametrize("preprocessing_class", (BoxCoxTransform, YeoJohnsonTransform))
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_interface_out_column(positive_df: pd.DataFrame, preprocessing_class: Any, mode: str):
+    out_column = "test_name"
+    preprocess = preprocessing_class(in_column="target", mode=mode, inplace=False, out_column=out_column)
+    result = preprocess.fit_transform(df=positive_df)
+    for segment in result.columns.get_level_values("segment").unique():
+        assert out_column in result[segment].columns
