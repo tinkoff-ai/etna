@@ -298,7 +298,8 @@ def get_anomalies_hist(
 ) -> typing.Dict[str, List[pd.Timestamp]]:
     """
     Get point outliers in time series using histogram model.
-    Outliers are all points that, when removed, result in a histogram with a lower approximation error, even with the number of bins less than the number of outliers.
+    Outliers are all points that, when removed, result in a histogram with a lower approximation error,
+    even with the number of bins less than the number of outliers.
 
     Parameters
     ----------

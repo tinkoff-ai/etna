@@ -26,6 +26,7 @@ We have prepared a set of tutorials for an easy introduction:
     - Median method
     - Density method
     - Confidence interval method
+    - Histogram method
 - Sequence outliers
 - Interactive visualization
 - Outliers imputation
