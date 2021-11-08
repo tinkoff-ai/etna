@@ -52,7 +52,8 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df, df_exog
 
 
-def test_same_ending_error_raise():
+def test_check_endings_error_raise():
+    """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
     df2 = pd.DataFrame({"timestamp": timestamp[:-5], "target": 12, "segment": "2"})
@@ -64,7 +65,8 @@ def test_same_ending_error_raise():
         ts.fit_transform([])
 
 
-def test_same_ending_error_pass():
+def test_check_endings_error_pass():
+    """Check that _check_endings method passes if there is no nans at the end of all segments."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
     df2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
