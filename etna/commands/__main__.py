@@ -7,5 +7,6 @@ app = Typer()
 app.command()(forecast)
 app.command()(backtest)
 
+
 if __name__ == "__main__":
     app()

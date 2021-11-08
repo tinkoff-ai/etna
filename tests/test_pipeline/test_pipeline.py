@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 from datetime import datetime
 from typing import List
@@ -116,6 +117,19 @@ def test_forecast_confidence_interval_interface(example_tsds, model):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
+
+
+@pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
+def test_forecast_no_warning_confidence_intervals(example_tsds, model):
+    """Test that forecast doesn't warn when called with confidence intervals."""
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
+    pipeline.fit(example_tsds)
+    with pytest.warns(None) as record:
+        _ = pipeline.forecast(confidence_interval=True)
+    # check absense of warnings about confidence intervals
+    assert (
+        len([warning for warning in record.list if re.match("doesn't support confidence intervals", str(warning))]) == 0
+    )
 
 
 def test_forecast_confidence_interval(splited_piecewise_constant_ts):
@@ -288,7 +302,7 @@ def test_get_forecasts_interface_daily(catboost_pipeline: Pipeline, big_daily_ex
     """Check that Pipeline.backtest returns forecasts in correct format."""
     _, forecast, _ = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
     expected_columns = sorted(
-        ["regressor_target_lag_10", "regressor_target_lag_11", "regressor_target_lag_12", "fold_number", "target"]
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
     )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
@@ -297,7 +311,7 @@ def test_get_forecasts_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     """Check that Pipeline.backtest returns forecasts in correct format with non-daily seasonality."""
     _, forecast, _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
     expected_columns = sorted(
-        ["regressor_target_lag_10", "regressor_target_lag_11", "regressor_target_lag_12", "fold_number", "target"]
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
     )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 

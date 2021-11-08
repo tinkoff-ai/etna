@@ -8,7 +8,7 @@ CURRENT_PATH = Path(__file__)
 ROOT_PATH = CURRENT_PATH.parents[1]
 NOTEBOOKS_FOLDER = ROOT_PATH / "examples"
 
-NOTEBOOKS_TO_SKIP = ["NN_examples.ipynb"]
+NOTEBOOKS_TO_SKIP = []
 
 
 def run_notebooks():
