@@ -170,12 +170,34 @@ def test_no_warning_on_categorical_features(example_tsds, model):
 
     with pytest.warns(None) as record:
         _ = model.fit(example_tsds)
-    assert len([warning for warning in record if str(warning.message).startswith("Arrays of bytes/strings")]) == 0
+    assert (
+        len(
+            [
+                warning
+                for warning in record
+                if str(warning.message).startswith(
+                    "Arrays of bytes/strings is being converted to decimal numbers if dtype='numeric'."
+                )
+            ]
+        )
+        == 0
+    )
 
     to_forecast = example_tsds.make_future(horizon)
     with pytest.warns(None) as record:
         _ = model.forecast(to_forecast)
-    assert len([warning for warning in record if str(warning.message).startswith("Arrays of bytes/strings")]) == 0
+    assert (
+        len(
+            [
+                warning
+                for warning in record
+                if str(warning.message).startswith(
+                    "Arrays of bytes/strings is being converted to decimal numbers if dtype='numeric'."
+                )
+            ]
+        )
+        == 0
+    )
 
 
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])
