@@ -347,10 +347,12 @@ class ProphetModel(PerSegmentModel):
             If True returns confidence interval for forecast
         interval_width:
             The significance level for the confidence interval. By default a 95% confidence interval is taken
+
         Returns
         -------
         TSDataset
             Models result
+
         Notes
         -----
         The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width.

@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 import numba
 import numpy as np
 import pandas as pd
 
 from etna.clustering.distances.base import Distance
+
+if TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 @numba.cfunc(numba.float64(numba.float64[:], numba.float64[:]))

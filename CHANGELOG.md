@@ -7,19 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
+- Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223), [#259](https://github.com/tinkoff-ai/etna-ts/pull/259))
 - TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
 - Feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
 - Method flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
+- Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna-ts/pull/211))
+- omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna-ts/pull/258))
 
 ### Changed
 - Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
 - Make `in_column` the first argument in every transform ([#247](https://github.com/tinkoff-ai/etna-ts/pull/247))
+- Update mypy checking and fix issues with it ([#248](https://github.com/tinkoff-ai/etna-ts/pull/248))
+- Add histogram method in outliers notebook ([#252](https://github.com/tinkoff-ai/etna-ts/pull/252)) 
+- Joblib parameters for backtest and ensembles ([#253](https://github.com/tinkoff-ai/etna-ts/pull/253))
 
 ### Fixed
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
 - Fix default value for TSDataset.tail ([#245](https://github.com/tinkoff-ai/etna-ts/pull/245))
+- Fix raising warning on fitting SklearnModel on dataset categorical columns ([#250](https://github.com/tinkoff-ai/etna-ts/issues/207)) 
 - Fix working TSDataset.make_future with empty exog values ([#244](https://github.com/tinkoff-ai/etna-ts/pull/244))
+- Fix issue with aggregate_metics=True for ConsoleLogger and WandbLogger ([#254](https://github.com/tinkoff-ai/etna-ts/pull/254))
+- Fix binder requirements to work with optional dependencies ([#257](https://github.com/tinkoff-ai/etna-ts/pull/257))
 
 ## [1.2.0] - 2021-10-27
 ### Added

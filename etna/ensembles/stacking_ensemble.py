@@ -1,6 +1,9 @@
 import warnings
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Union
@@ -53,13 +56,16 @@ class StackingEnsemble(Pipeline):
     2021-09-15      0.36      1.56      0.30
     """
 
+    support_confidence_interval = False
+
     def __init__(
         self,
         pipelines: List[Pipeline],
         final_model: RegressorMixin = LinearRegression(),
         cv: int = 3,
-        features_to_use: Union[None, Literal[all], List[str]] = None,
+        features_to_use: Union[None, Literal["all"], List[str]] = None,
         n_jobs: int = 1,
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
     ):
         """Init StackingEnsemble.
 
@@ -75,6 +81,8 @@ class StackingEnsemble(Pipeline):
             Features except the forecasts of the base models to use in the `final_model`.
         n_jobs:
             Number of jobs to run in parallel.
+        joblib_params:
+            Additional parameters for joblib.Parallel.
 
         Raises
         ------
@@ -89,6 +97,7 @@ class StackingEnsemble(Pipeline):
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
+        self.joblib_params = joblib_params
 
     @staticmethod
     def _validate_pipeline_number(pipelines: List[Pipeline]):
@@ -114,15 +123,15 @@ class StackingEnsemble(Pipeline):
         elif features_to_use == "all":
             return available_features - {"target"}
         elif isinstance(features_to_use, list):
-            features_to_use = set(features_to_use)
-            if len(features_to_use) == 0:
+            features_to_use_unique = set(features_to_use)
+            if len(features_to_use_unique) == 0:
                 return None
-            elif features_to_use.issubset(available_features):
-                return features_to_use
+            elif features_to_use_unique.issubset(available_features):
+                return features_to_use_unique
             else:
-                unavailable_features = features_to_use - available_features
+                unavailable_features = features_to_use_unique - available_features
                 warnings.warn(f"Features {unavailable_features} are not found and will be dropped!")
-                return features_to_use.intersection(available_features)
+                return features_to_use_unique.intersection(available_features)
         else:
             warnings.warn(
                 "Feature list is passed in the wrong format."
@@ -160,7 +169,7 @@ class StackingEnsemble(Pipeline):
         self.ts = ts
 
         # Get forecasts from base models on backtest to fit the final model on
-        forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
 
@@ -170,14 +179,14 @@ class StackingEnsemble(Pipeline):
         self.final_model.fit(x, y)
 
         # Fit the base models
-        self.pipelines = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
         return self
 
     def _make_features(
         self, forecasts: List[TSDataset], train: bool = False
-    ) -> Union[Tuple[pd.DataFrame, pd.Series], pd.Series]:
+    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the `final_model`."""
         # Stack targets from the forecasts
         targets = [
@@ -211,7 +220,7 @@ class StackingEnsemble(Pipeline):
             )
             return x, y
         else:
-            return x
+            return x, None
 
     @staticmethod
     def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
@@ -221,7 +230,7 @@ class StackingEnsemble(Pipeline):
         tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 
-    def forecast(self) -> TSDataset:
+    def forecast(self, confidence_interval: bool = False) -> TSDataset:
         """Forecast with ensemble: compute the combination of pipelines' forecasts using `final_model`.
 
         Returns
@@ -229,11 +238,13 @@ class StackingEnsemble(Pipeline):
         TSDataset:
             Dataset with forecasts.
         """
+        self.check_support_confidence_interval(confidence_interval)
+
         # Get forecast
-        forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
         )
-        x = self._make_features(forecasts=forecasts, train=False)
+        x, _ = self._make_features(forecasts=forecasts, train=False)
         y = self.final_model.predict(x).reshape(-1, self.horizon).T
 
         # Format the forecast into TSDataset
