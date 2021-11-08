@@ -308,6 +308,7 @@ class Pipeline(BasePipeline):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -325,6 +326,8 @@ class Pipeline(BasePipeline):
             if True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
             number of jobs to run in parallel
+        joblib_params:
+            additional parameters for joblib.Parallel
 
         Returns
         -------
@@ -335,7 +338,7 @@ class Pipeline(BasePipeline):
         self._validate_backtest_n_folds(n_folds=n_folds)
         self._validate_backtest_dataset(ts=ts, n_folds=n_folds, horizon=self.horizon)
         self._validate_backtest_metrics(metrics=metrics)
-        folds = Parallel(n_jobs=n_jobs, verbose=11, backend="multiprocessing")(
+        folds = Parallel(n_jobs=n_jobs, **joblib_params)(
             delayed(self._run_fold)(train=train, test=test, fold_number=fold_number, metrics=metrics)
             for fold_number, (train, test) in enumerate(
                 self._generate_folds_datasets(ts=ts, n_folds=n_folds, horizon=self.horizon, mode=mode)

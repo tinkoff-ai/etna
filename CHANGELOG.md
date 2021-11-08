@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make `in_column` the first argument in every transform ([#247](https://github.com/tinkoff-ai/etna-ts/pull/247))
 - Update mypy checking and fix issues with it ([#248](https://github.com/tinkoff-ai/etna-ts/pull/248))
 - Add histogram method in outliers notebook ([#252](https://github.com/tinkoff-ai/etna-ts/pull/252)) 
+- Joblib parameters for backtest and ensembles ([#253](https://github.com/tinkoff-ai/etna-ts/pull/253))
 
 ### Fixed
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))

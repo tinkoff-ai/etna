@@ -1,5 +1,7 @@
 import warnings
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
@@ -63,6 +65,7 @@ class StackingEnsemble(Pipeline):
         cv: int = 3,
         features_to_use: Union[None, Literal["all"], List[str]] = None,
         n_jobs: int = 1,
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
     ):
         """Init StackingEnsemble.
 
@@ -78,6 +81,8 @@ class StackingEnsemble(Pipeline):
             Features except the forecasts of the base models to use in the `final_model`.
         n_jobs:
             Number of jobs to run in parallel.
+        joblib_params:
+            Additional parameters for joblib.Parallel.
 
         Raises
         ------
@@ -92,6 +97,7 @@ class StackingEnsemble(Pipeline):
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
+        self.joblib_params = joblib_params
 
     @staticmethod
     def _validate_pipeline_number(pipelines: List[Pipeline]):
@@ -163,7 +169,7 @@ class StackingEnsemble(Pipeline):
         self.ts = ts
 
         # Get forecasts from base models on backtest to fit the final model on
-        forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
 
@@ -173,7 +179,7 @@ class StackingEnsemble(Pipeline):
         self.final_model.fit(x, y)
 
         # Fit the base models
-        self.pipelines = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
         return self
@@ -235,7 +241,7 @@ class StackingEnsemble(Pipeline):
         self.check_support_confidence_interval(confidence_interval)
 
         # Get forecast
-        forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
         )
         x, _ = self._make_features(forecasts=forecasts, train=False)
