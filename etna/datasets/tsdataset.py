@@ -249,7 +249,7 @@ class TSDataset:
     def _check_endings(self):
         """Check that all targets ends at the same timestamp."""
         max_index = self.df.index.max()
-        if np.any(np.isnan(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
+        if np.any(pd.isna(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
             raise ValueError(f"All segments should end at the same timestamp")
 
     def inverse_transform(self):

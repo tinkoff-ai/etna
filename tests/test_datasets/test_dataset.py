@@ -87,6 +87,16 @@ def test_categorical_after_call_to_pandas():
     assert flatten_df["categorical_column"].dtype == "category"
 
 
+def test_speed():
+    from timeit import default_timer
+
+    df = generate_ar_df(periods=400, start_time='2020-01-01', n_segments=30000, freq='D')
+    ts = TSDataset(TSDataset.to_dataset(df), freq='D')
+    start_time = default_timer()
+    ts._check_endings()
+    print(default_timer() - start_time)
+
+
 @pytest.mark.parametrize(
     "borders, true_borders",
     (
