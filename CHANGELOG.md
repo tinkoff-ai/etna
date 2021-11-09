@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Method flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
 - Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna-ts/pull/211))
 - omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna-ts/pull/258))
+- MeanSegmentEncoderTransform ([#265](https://github.com/tinkoff-ai/etna-ts/pull/265))
 
 ### Changed
 - Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
