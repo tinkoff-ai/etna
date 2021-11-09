@@ -126,7 +126,7 @@ def test_forecast_no_warning_confidence_intervals(example_tsds, model):
     pipeline.fit(example_tsds)
     with pytest.warns(None) as record:
         _ = pipeline.forecast(confidence_interval=True)
-    # check absense of warnings about confidence intervals
+    # check absence of warnings about confidence intervals
     assert (
         len([warning for warning in record.list if re.match("doesn't support confidence intervals", str(warning))]) == 0
     )

@@ -247,7 +247,7 @@ def test_train_test_split_failed(test_size, borders, match, tsdf_with_exog):
         )
 
 
-def test_dataset_datetime_convertion():
+def test_dataset_datetime_conversion():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["timestamp"] = classic_df["timestamp"].astype(str)
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
@@ -255,7 +255,7 @@ def test_dataset_datetime_convertion():
     assert df.index.dtype == "datetime64[ns]"
 
 
-def test_dataset_datetime_convertion_during_init():
+def test_dataset_datetime_conversion_during_init():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["categorical_column"] = [0] * 30 + [1] * 30
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")

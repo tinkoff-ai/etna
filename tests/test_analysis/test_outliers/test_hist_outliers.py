@@ -121,8 +121,8 @@ def test_computef(series: np.array, k: int, dim: int, expected: np.array):
 )
 def test_hist(series: np.array, bins_number: int, expected: np.array):
     """Check that hist works correctly."""
-    anomal = hist(series, bins_number)
-    np.testing.assert_array_equal(anomal, expected)
+    anomalies = hist(series, bins_number)
+    np.testing.assert_array_equal(anomalies, expected)
 
 
 def test_in_column(outliers_df_with_two_columns):
