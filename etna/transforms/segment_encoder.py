@@ -25,8 +25,8 @@ class SegmentEncoderTransform(Transform):
         -------
         self
         """
-        segent_columns = df.columns.get_level_values("segment")
-        self._le.fit(segent_columns)
+        segment_columns = df.columns.get_level_values("segment")
+        self._le.fit(segment_columns)
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:

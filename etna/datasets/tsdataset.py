@@ -91,14 +91,14 @@ class TSDataset:
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
 
         try:
-            infered_freq = pd.infer_freq(self.raw_df.index)
+            inferred_freq = pd.infer_freq(self.raw_df.index)
         except ValueError:
             warnings.warn("TSDataset freq can't be inferred")
-            infered_freq = None
+            inferred_freq = None
 
-        if infered_freq != self.freq:
+        if inferred_freq != self.freq:
             warnings.warn(
-                f"You probably set wrong freq. Discovered freq in you data is {infered_freq}, you set {self.freq}"
+                f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {self.freq}"
             )
 
         self.raw_df = self.raw_df.asfreq(self.freq)
@@ -212,9 +212,9 @@ class TSDataset:
             for transform in self.transforms:
                 df = transform.transform(df)
 
-        futute_dataset = df.tail(future_steps).copy(deep=True)
-        futute_dataset = futute_dataset.sort_index(axis=1, level=(0, 1))
-        future_ts = TSDataset(futute_dataset, freq=self.freq)
+        future_dataset = df.tail(future_steps).copy(deep=True)
+        future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
+        future_ts = TSDataset(future_dataset, freq=self.freq)
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
@@ -672,7 +672,7 @@ class TSDataset:
         Returns
         -------
         pd.core.indexes.multi.MultiIndex
-            multindex of dataframe with target and features.
+            multiindex of dataframe with target and features.
         """
         return self.df.columns
 

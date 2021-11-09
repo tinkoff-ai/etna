@@ -87,7 +87,7 @@ class PerSegmentWrapper(Transform):
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply transform to eash segment separately."""
+        """Apply transform to each segment separately."""
         results = []
         for key, value in self.segment_transforms.items():
             seg_df = value.transform(df[key])
