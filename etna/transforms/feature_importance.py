@@ -143,7 +143,6 @@ class MRMRFeatureSelectionTransform(Transform):
         self,
         relevance_method: RelevanceTable,
         top_k: int,
-        freq: str,
         clustering_method: HierarchicalClustering = EuclideanClustering(),
         n_clusters: int = 10,
         linkage: str = "average",
@@ -158,8 +157,6 @@ class MRMRFeatureSelectionTransform(Transform):
             method to calculate relevance table
         top_k:
             num of regressors to select; if there are not enough regressors, then all will be selected
-        freq:
-            frequency of timestamp in df
         clustering_method:
             method of time series clustering
         n_clusters:
@@ -175,7 +172,6 @@ class MRMRFeatureSelectionTransform(Transform):
 
         self.relevance_method = relevance_method
         self.clustering = clustering_method
-        self.freq = freq
         self.n_clusters = n_clusters
         self.linkage = linkage
         self.top_k = top_k
@@ -208,7 +204,7 @@ class MRMRFeatureSelectionTransform(Transform):
         if len(self._get_regressors(df)) <= self.n_clusters:
             raise ValueError("The number of clusters must be strictly less than the number of regressors")
 
-        ts = TSDataset(df=df, freq=self.freq)
+        ts = TSDataset(df=df, freq=pd.infer_freq(df.index))
         self.clustering.build_distance_matrix(ts=ts)
         self.clustering.build_clustering_algo(n_clusters=self.n_clusters, linkage=self.linkage)
         s2c = self.clustering.fit_predict()
