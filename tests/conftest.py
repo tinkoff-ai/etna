@@ -381,7 +381,6 @@ def big_example_tsdf(random_seed) -> TSDataset:
 @pytest.fixture
 def simple_df_relevance() -> Tuple[pd.DataFrame, pd.DataFrame]:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
-    tmp = np.random.random(len(timestamp))
 
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": np.arange(32), "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": np.arange(5, 32), "segment": "2"})
