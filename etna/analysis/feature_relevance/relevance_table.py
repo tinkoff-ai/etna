@@ -74,7 +74,7 @@ def get_model_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame, model: Tr
     for k, seg in enumerate(segments):
         df_exog_seg = df_exog.loc[:, seg].dropna()[regressors]
         df_seg = df.loc[:, seg].dropna()["target"]
-        common_index = set(df_seg.index).intersection(set(df_exog_seg.index))
+        common_index = df_seg.index.intersection(df_exog_seg.index)
         model.fit(df_exog_seg.loc[common_index], df_seg.loc[common_index])
         result[k] = model.feature_importances_
     relevance_table = pd.DataFrame(result)
