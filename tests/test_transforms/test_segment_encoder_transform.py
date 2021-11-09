@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
-from etna.metrics import MAE
+from etna.metrics import R2
 from etna.models import LinearMultiSegmentModel
 from etna.transforms import MeanSegmentEncoderTransform
 from etna.transforms import SegmentEncoderTransform
@@ -85,9 +85,9 @@ def almost_constant_ts(random_seed) -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="D")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="D")})
     df_1["segment"] = "Moscow"
-    df_1["target"] = 1 + np.random.normal(0, 1, size=len(df_1))
+    df_1["target"] = 1 + np.random.normal(0, 0.1, size=len(df_1))
     df_2["segment"] = "Omsk"
-    df_2["target"] = 10 + np.random.normal(0, 1, size=len(df_1))
+    df_2["target"] = 10 + np.random.normal(0, 0.1, size=len(df_1))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     ts = TSDataset(df=TSDataset.to_dataset(classic_df), freq="D")
     return ts
@@ -104,6 +104,6 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
     future = train.make_future(horizon)
     pred_mean_segment_encoding = model.forecast(future)
 
-    metric = MAE(mode="macro")
+    metric = R2(mode="macro")
 
-    assert metric(pred_mean_segment_encoding, test) < 1
+    assert np.allclose(metric(pred_mean_segment_encoding, test), 0)
