@@ -72,10 +72,10 @@ def get_model_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame, model: Tr
     segments = sorted(df.columns.get_level_values("segment").unique())
     result = np.empty((len(segments), len(regressors)))
     for k, seg in enumerate(segments):
-        first_valid_idx = df.loc[:, seg].first_valid_index()
-        df_now = df.loc[first_valid_idx:, seg]["target"]
-        df_exog_now = df_exog.loc[first_valid_idx : df_now.index.max(), seg][regressors]
-        model.fit(df_exog_now, df_now)
+        df_exog_seg = df_exog.loc[:, seg].dropna()[regressors]
+        df_seg = df.loc[:, seg].dropna()["target"]
+        common_index = set(df_seg.index).intersection(set(df_exog_seg.index))
+        model.fit(df_exog_seg.loc[common_index], df_seg.loc[common_index])
         result[k] = model.feature_importances_
     relevance_table = pd.DataFrame(result)
     relevance_table.index = segments

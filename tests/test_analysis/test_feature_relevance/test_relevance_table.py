@@ -16,7 +16,7 @@ def test_interface(method, method_kwargs, simple_df_relevance):
     relevance_table = method(df=df, df_exog=df_exog, **method_kwargs)
     assert isinstance(relevance_table, pd.DataFrame)
     assert sorted(relevance_table.index) == sorted(df.columns.get_level_values("segment").unique())
-    assert sorted(relevance_table.columns) == sorted(df.columns.get_level_values("feature").unique())
+    assert sorted(relevance_table.columns) == sorted(df_exog.columns.get_level_values("feature").unique())
 
 
 def test_statistics_relevance_table(simple_df_relevance):
