@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223), [#259](https://github.com/tinkoff-ai/etna-ts/pull/259))
 - TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
 - Feature relevance table calculation using tsfresh ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
-- Method flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
+- Method to_flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
 - Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna-ts/pull/211))
 - omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna-ts/pull/258))
 - Feature relevance table calculation using feature importance ([#261](https://github.com/tinkoff-ai/etna-ts/pull/261))
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix default value for TSDataset.tail ([#245](https://github.com/tinkoff-ai/etna-ts/pull/245))
 - Fix raising warning on fitting SklearnModel on dataset categorical columns ([#250](https://github.com/tinkoff-ai/etna-ts/issues/207)) 
 - Fix working TSDataset.make_future with empty exog values ([#244](https://github.com/tinkoff-ai/etna-ts/pull/244))
-- Fix issue with aggregate_metics=True for ConsoleLogger and WandbLogger ([#254](https://github.com/tinkoff-ai/etna-ts/pull/254))
+- Fix issue with aggregate_metrics=True for ConsoleLogger and WandbLogger ([#254](https://github.com/tinkoff-ai/etna-ts/pull/254))
 - Fix binder requirements to work with optional dependencies ([#257](https://github.com/tinkoff-ai/etna-ts/pull/257))
 
 ## [1.2.0] - 2021-10-27
@@ -86,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
 - Categorical and fillna issues with pandas >=1.2 ([#190](https://github.com/tinkoff-ai/etna-ts/pull/190))
 - Fix `TSDataset.to_dataset` method sorting bug ([#183](https://github.com/tinkoff-ai/etna-ts/pull/183))
-- Undefinded behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna-ts/pull/188))
+- Undefined behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna-ts/pull/188))
 - Fix typo in word "length" in `get_segment_sequence_anomalies`,`get_sequence_anomalies`,`SAXOutliersTransform` arguments ([#212](https://github.com/tinkoff-ai/etna-ts/pull/212))
 - Make possible to send backtest plots with many segments ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
 
@@ -126,11 +126,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Documentation fixes ([#55](https://github.com/tinkoff-ai/etna-ts/pull/55), [#53](https://github.com/tinkoff-ai/etna-ts/pull/53), [#52](https://github.com/tinkoff-ai/etna-ts/pull/52))
 - Solved warning in LogTransform and AddConstantTransform ([#26](https://github.com/tinkoff-ai/etna-ts/pull/26))
-- Regressors does not have enough history bug ([#35](https://github.com/tinkoff-ai/etna-ts/pull/35))
+- Regressors do not have enough history bug ([#35](https://github.com/tinkoff-ai/etna-ts/pull/35))
 - make_future(1) and make_future(2) bug
-- Fix working with 'cap' and 'floor' features in Prophet model ([#62](https://github.com/tinkoff-ai/etna-ts/pull/62)))
+- Fix working with 'cap' and 'floor' features in Prophet model ([#62](https://github.com/tinkoff-ai/etna-ts/pull/62))
 - Fix saving init params for SARIMAXModel ([#81](https://github.com/tinkoff-ai/etna-ts/pull/81))
-- Imports of nn models, PytorchForecastingTransform and Transform ([#80](https://github.com/tinkoff-ai/etna-ts/pull/80)))
+- Imports of nn models, PytorchForecastingTransform and Transform ([#80](https://github.com/tinkoff-ai/etna-ts/pull/80))
 
 ## [1.0.0] - 2021-09-05
 ### Added
@@ -145,19 +145,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Trend removal
   - Segment encoder
   - Datetime flags
-  - Sklearn skalers (MinMax, Robust, MinMaxAbs, Standard, MaxAbs)
+  - Sklearn's scalers (MinMax, Robust, MinMaxAbs, Standard, MaxAbs)
   - BoxCox, YeoJohnson, LogTransform
   - Lag operator
   - NaN imputer
 - TimeSeriesCrossValidation
 - Time Series Dataset (TSDataset)
 - Playground datasets generation (AR, constant, periodic, from pattern)
-- Matrics (MAE, MAPE, SMAPE, MedAE, MSE, MSLE, R^2)
-- EDA mehods
+- Metrics (MAE, MAPE, SMAPE, MedAE, MSE, MSLE, R^2)
+- EDA methods
   - Outliers detection
   - PACF plot
   - Cross correlation plot
-  - Destribution plot
+  - Distribution plot
   - Anomalies (Outliers) plot
   - Backtest (CrossValidation) plot
   - Forecast plot
