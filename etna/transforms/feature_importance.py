@@ -144,7 +144,7 @@ class MRMRFeatureSelectionTransform(Transform):
         relevance_method: RelevanceTable,
         top_k: int,
         freq: str,
-        clustering_method: HierarchicalClustering = EuclideanClustering,
+        clustering_method: HierarchicalClustering = EuclideanClustering(),
         n_clusters: int = 10,
         linkage: str = "average",
         **relevance_params,
