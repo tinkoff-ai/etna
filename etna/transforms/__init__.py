@@ -21,6 +21,7 @@ from etna.transforms.scalers import MaxAbsScalerTransform
 from etna.transforms.scalers import MinMaxScalerTransform
 from etna.transforms.scalers import RobustScalerTransform
 from etna.transforms.scalers import StandardScalerTransform
+from etna.transforms.segment_encoder import MeanSegmentEncoderTransform
 from etna.transforms.segment_encoder import SegmentEncoderTransform
 from etna.transforms.special_days import SpecialDaysTransform
 from etna.transforms.statistics import MaxTransform
