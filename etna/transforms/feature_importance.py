@@ -142,6 +142,7 @@ class MRMRFeatureSelectionTransform(Transform):
     def __init__(
         self,
         relevance_method: RelevanceTable,
+        return_ranks: bool,
         top_k: int,
         clustering_method: HierarchicalClustering = EuclideanClustering(),
         n_clusters: int = 10,
@@ -155,6 +156,8 @@ class MRMRFeatureSelectionTransform(Transform):
         ----------
         relevance_method:
             method to calculate relevance table
+        return_ranks:
+            if False use relevance table else use ranks of relevance table
         top_k:
             num of regressors to select; if there are not enough regressors, then all will be selected
         clustering_method:
@@ -171,6 +174,7 @@ class MRMRFeatureSelectionTransform(Transform):
             raise ValueError("Parameter n_clusters should be integer and greater than 1")
 
         self.relevance_method = relevance_method
+        self.return_ranks = return_ranks
         self.clustering = clustering_method
         self.n_clusters = n_clusters
         self.linkage = linkage
@@ -208,7 +212,9 @@ class MRMRFeatureSelectionTransform(Transform):
         self.clustering.build_distance_matrix(ts=ts)
         self.clustering.build_clustering_algo(n_clusters=self.n_clusters, linkage=self.linkage)
         s2c = self.clustering.fit_predict()
-        relevance_table = self.relevance_method(ts[:, :, "target"], ts[:, :, ts.regressors], **self.relevance_params)
+        relevance_table = self.relevance_method(
+            ts[:, :, "target"], ts[:, :, ts.regressors], self.return_ranks, **self.relevance_params
+        )
         y = np.empty(len(relevance_table))
         for k, cluster in enumerate(relevance_table.index):
             y[k] = s2c[cluster]

@@ -22,7 +22,7 @@ class RelevanceTable(ABC, BaseMixin):
         """
         self.greater_is_better = greater_is_better
 
-    def _get_ranks(self, table):
+    def _get_ranks(self, table) -> pd.DataFrame:
         """Compute rank relevance table from relevance table."""
         rank_table = table.apply(lambda x: pd.Series(scipy.stats.rankdata(x.values), index=x.index), axis=1)
         if self.greater_is_better:
