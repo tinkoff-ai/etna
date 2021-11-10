@@ -94,6 +94,8 @@ def almost_constant_ts(random_seed) -> TSDataset:
 
 
 def test_mean_segment_encoder_forecast(almost_constant_ts):
+    """Test that MeanSegmentEncoderTransform works correctly in forecast pipeline
+    and helps to correctly forecast almost constant series."""
     horizon = 5
     model = LinearMultiSegmentModel()
     encoder = MeanSegmentEncoderTransform()
@@ -106,4 +108,5 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
 
     metric = R2(mode="macro")
 
+    # R2=0 => model predict the optimal constant
     assert np.allclose(metric(pred_mean_segment_encoding, test), 0)
