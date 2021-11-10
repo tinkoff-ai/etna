@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223), [#259](https://github.com/tinkoff-ai/etna-ts/pull/259))
 - TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
-- Feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
+- Feature relevance table calculation using tsfresh ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
 - Method flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
 - Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna-ts/pull/211))
 - omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna-ts/pull/258))
+- Feature relevance table calculation using feature importance ([#261](https://github.com/tinkoff-ai/etna-ts/pull/261))
 - MeanSegmentEncoderTransform ([#265](https://github.com/tinkoff-ai/etna-ts/pull/265))
 
 ### Changed
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update mypy checking and fix issues with it ([#248](https://github.com/tinkoff-ai/etna-ts/pull/248))
 - Add histogram method in outliers notebook ([#252](https://github.com/tinkoff-ai/etna-ts/pull/252)) 
 - Joblib parameters for backtest and ensembles ([#253](https://github.com/tinkoff-ai/etna-ts/pull/253))
+- Replace cycle over segments with vectorized expression in TSDataset._check_endings ([#264](https://github.com/tinkoff-ai/etna-ts/pull/264))
 
 ### Fixed
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
