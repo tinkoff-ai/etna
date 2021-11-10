@@ -81,7 +81,7 @@ class Model(ABC, BaseMixin):
 
 
 class PerSegmentModel(Model):
-    """Class for holding specific models for persegment prediction."""
+    """Class for holding specific models for per-segment prediction."""
 
     def __init__(self, base_model):
         super(PerSegmentModel, self).__init__()

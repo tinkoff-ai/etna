@@ -56,7 +56,7 @@ def _test_fit_transform_many_segments(trend_transform, df: pd.DataFrame, **compa
     Parameters
     ----------
     trend_transform:
-         insntance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
+         instance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
     df:
         dataframe to predict
     comparison_kwargs:
@@ -153,7 +153,7 @@ def _test_inverse_transform_many_segments(trend_transform, df: pd.DataFrame, **c
     Parameters
     ----------
     trend_transform:
-        insntance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
+        instance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
     df:
         dataframe to predict
     comparison_kwargs:
@@ -167,7 +167,7 @@ def _test_inverse_transform_many_segments(trend_transform, df: pd.DataFrame, **c
 
 def test_inverse_transform_linear_trend_one_segment(df_one_segment: pd.DataFrame):
     """
-    Test that LinearTrend can correclty make inverse_transform for one segment.
+    Test that LinearTrend can correctly make inverse_transform for one segment.
     """
     trend_transform = _OneSegmentLinearTrendBaseTransform(in_column="target", regressor=LinearRegression())
     _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
@@ -175,7 +175,7 @@ def test_inverse_transform_linear_trend_one_segment(df_one_segment: pd.DataFrame
 
 def test_inverse_transform_theil_sen_trend_one_segment(df_one_segment: pd.DataFrame):
     """
-    Test that TheilSenRegressor can correclty make inverse_transform for one segment.
+    Test that TheilSenRegressor can correctly make inverse_transform for one segment.
     """
     trend_transform = _OneSegmentLinearTrendBaseTransform(
         in_column="target", regressor=TheilSenRegressor(n_subsamples=len(df_one_segment))
@@ -185,7 +185,7 @@ def test_inverse_transform_theil_sen_trend_one_segment(df_one_segment: pd.DataFr
 
 def test_inverse_transform_linear_trend_two_segments(df_two_segments: pd.DataFrame):
     """
-    Test that LinearTrend can correclty make inverse_transform for two segments.
+    Test that LinearTrend can correctly make inverse_transform for two segments.
     """
     trend_transform = LinearTrendTransform(in_column="target")
     _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
@@ -193,7 +193,7 @@ def test_inverse_transform_linear_trend_two_segments(df_two_segments: pd.DataFra
 
 def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.DataFrame):
     """
-    Test that TheilSenRegressor can correclty make inverse_transform for two segments.
+    Test that TheilSenRegressor can correctly make inverse_transform for two segments.
     """
     trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
     _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
@@ -207,7 +207,7 @@ def test_fit_transform_two_segments_diff_size(
     df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper, decimal: int
 ):
     """
-    Test that TrendTransform can correclty make fit_transform for two segments of different size.
+    Test that TrendTransform can correctly make fit_transform for two segments of different size.
     """
     _test_fit_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size, decimal=decimal)
 
@@ -217,6 +217,6 @@ def test_fit_transform_two_segments_diff_size(
 )
 def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper):
     """
-    Test that TrendTransform can correclty make inverse_transform for two segments of different size.
+    Test that TrendTransform can correctly make inverse_transform for two segments of different size.
     """
     _test_inverse_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size)

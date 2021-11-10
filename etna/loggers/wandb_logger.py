@@ -200,7 +200,7 @@ class WandbLogger(BaseLogger):
         forecast:
             Dataframe with forecast
         test:
-            Dataframe with ground trouth
+            Dataframe with ground truth
         """
         columns_name = list(metrics.columns)
         metrics.reset_index(inplace=True)

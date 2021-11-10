@@ -92,7 +92,7 @@ class DateFlagsTransform(Transform):
                 f"{type(self).__name__} feature does nothing with given init args configuration, "
                 f"at least one of day_number_in_week, day_number_in_month, week_number_in_month, "
                 f"week_number_in_year, month_number_in_year, year_number, is_weekend should be True or any of "
-                f"specyal_days_in_week, special_days_in_month should be not empty."
+                f"special_days_in_week, special_days_in_month should be not empty."
             )
 
         self.day_number_in_week = day_number_in_week

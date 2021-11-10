@@ -106,7 +106,7 @@ def test_transform_inverse_transform(example_tsds: TSDataset) -> None:
 
 
 def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
-    """Test transform inteface with out_column param"""
+    """Test transform interface with out_column param"""
     out_column = "regressor_test"
     trend_transform = TrendTransform(
         in_column="target", detrend_model=LinearRegression(), model="rbf", out_column=out_column
@@ -117,7 +117,7 @@ def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
 
 
 def test_transform_interface_repr(example_tsds: TSDataset) -> None:
-    """Test transform inteface without out_column param"""
+    """Test transform interface without out_column param"""
     trend_transform = TrendTransform(in_column="target", detrend_model=LinearRegression(), model="rbf")
     out_column = f"regressor_{trend_transform.__repr__()}"
     result = trend_transform.fit_transform(example_tsds.df)

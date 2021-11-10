@@ -6,7 +6,7 @@ from etna.models.sklearn import SklearnPerSegmentModel
 
 
 class LinearPerSegmentModel(SklearnPerSegmentModel):
-    """Class holding per segment sklearn.linear_model.LinearRegressio."""
+    """Class holding per segment sklearn.linear_model.LinearRegression."""
 
     def __init__(self, fit_intercept: bool = True, normalize: bool = False, **kwargs):
         """

@@ -287,7 +287,7 @@ class _SARIMAXModel:
             short_regressors = [regressor for regressor in regressor_columns if df[regressor].count() < horizon]
             if short_regressors:
                 raise ValueError(
-                    f"Regrssors {short_regressors} are too short for chosen horizon value.\n "
+                    f"Regressors {short_regressors} are too short for chosen horizon value.\n "
                     "Try lower horizon value, or drop this regressors."
                 )
 
