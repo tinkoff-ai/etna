@@ -87,6 +87,9 @@ jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
 omegaconf = "^2.1.1"
 
+mrmr = {git = "https://github.com/smazzanti/mrmr.git", rev = "96ad224"} 
+category-encoders = "^2.3.0"
+
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
