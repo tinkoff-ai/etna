@@ -26,7 +26,7 @@ class RelevanceTable(ABC, BaseMixin):
         """Compute rank relevance table from relevance table."""
         if self.greater_is_better:
             table *= -1
-        rank_table =  pd.DataFrame(scipy.stats.rankdata(table, axis=1), columns=table.columns, index=table.index)
+        rank_table = pd.DataFrame(scipy.stats.rankdata(table, axis=1), columns=table.columns, index=table.index)
         return rank_table.astype(int)
 
     @abstractmethod
