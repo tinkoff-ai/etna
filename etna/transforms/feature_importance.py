@@ -213,7 +213,7 @@ class MRMRFeatureSelectionTransform(Transform):
         self.clustering.build_clustering_algo(n_clusters=self.n_clusters, linkage=self.linkage)
         s2c = self.clustering.fit_predict()
         relevance_table = self.relevance_method(
-            ts[:, :, "target"], ts[:, :, ts.regressors], self.return_ranks, **self.relevance_params
+            ts[:, :, "target"], ts[:, :, ts.regressors], return_ranks=self.return_ranks, **self.relevance_params
         )
         y = np.empty(len(relevance_table))
         for k, cluster in enumerate(relevance_table.index):
