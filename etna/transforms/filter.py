@@ -61,13 +61,14 @@ class FilterFeaturesTransform(Transform):
             transformed dataframe
         """
         result = df.copy()
-        segments = sorted(set(df.columns.get_level_values("segment")))
+        features = df.columns.get_level_values("feature")
         if self.include is not None:
-            if not set(self.include).issubset(df.columns.get_level_values("feature")):
+            if not set(self.include).issubset(features):
                 raise ValueError("Some features in include are not present in the dataset")
+            segments = sorted(set(df.columns.get_level_values("segment")))
             result = result.loc[:, (segments, self.include)]
         if self.exclude is not None and self.exclude:
-            if not set(self.exclude).issubset(df.columns.get_level_values("feature")):
+            if not set(self.exclude).issubset(features):
                 raise ValueError("Some features in exclude are not present in the dataset")
             result = result.drop(columns=self.exclude, level="feature")
         return result
