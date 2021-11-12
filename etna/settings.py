@@ -97,8 +97,8 @@ class Settings:
         Returns:
             Settings: Dictionary of the parsed and merged Settings.
         """
-        kwargrs = MergedConfigParser(ConfigFileFinder("etna")).parse()
-        return Settings(**kwargrs)
+        kwargs = MergedConfigParser(ConfigFileFinder("etna")).parse()
+        return Settings(**kwargs)
 
     def type_hint(self, key: str):
         """Return type hint for the specified ``key``.

@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -14,13 +15,13 @@ from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
 
-from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
+from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
 
@@ -31,8 +32,10 @@ class CrossValidationMode(Enum):
     constant = "constant"
 
 
-class Pipeline(BaseMixin):
+class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
+
+    support_confidence_interval = True
 
     def __init__(
         self,
@@ -63,12 +66,12 @@ class Pipeline(BaseMixin):
         ValueError:
             If the horizon is less than 1, interval_width is out of (0,1) or confidence_interval_cv is less than 2.
         """
+        super().__init__(interval_width=interval_width)
         self.model = model
         self.transforms = transforms
         self.horizon = self._validate_horizon(horizon)
-        self.interval_width = self._validate_interval_width(interval_width)
         self.confidence_interval_cv = self._validate_cv(confidence_interval_cv)
-        self.ts = None
+        self.ts: Optional[TSDataset] = None
 
     @staticmethod
     def _validate_horizon(horizon: int) -> int:
@@ -77,14 +80,6 @@ class Pipeline(BaseMixin):
             return horizon
         else:
             raise ValueError("At least one point in the future is expected.")
-
-    @staticmethod
-    def _validate_interval_width(interval_width: float) -> float:
-        """Check that given number of folds is grater than 1."""
-        if 0 < interval_width < 1:
-            return interval_width
-        else:
-            raise ValueError("Interval width should be a number from (0,1).")
 
     @staticmethod
     def _validate_cv(cv: int) -> int:
@@ -102,6 +97,7 @@ class Pipeline(BaseMixin):
         ----------
         ts:
             Dataset with timeseries data
+
         Returns
         -------
         Pipeline:
@@ -146,6 +142,8 @@ class Pipeline(BaseMixin):
         TSDataset
             TSDataset with forecast
         """
+        self.check_support_confidence_interval(confidence_interval)
+
         future = self.ts.make_future(self.horizon)
         if confidence_interval:
             if "confidence_interval" in inspect.signature(self.model.forecast).parameters:
@@ -197,12 +195,12 @@ class Pipeline(BaseMixin):
     @staticmethod
     def _generate_folds_datasets(
         ts: TSDataset, n_folds: int, horizon: int, mode: str = "expand"
-    ) -> Tuple[TSDataset, TSDataset]:
+    ) -> Generator[Tuple[TSDataset, TSDataset], None, None]:
         """Generate a sequence of train-test pairs according to timestamp."""
-        mode = CrossValidationMode[mode.lower()]
-        if mode == CrossValidationMode.expand:
+        mode_enum = CrossValidationMode[mode.lower()]
+        if mode_enum == CrossValidationMode.expand:
             constant_history_length = 0
-        elif mode == CrossValidationMode.constant:
+        elif mode_enum == CrossValidationMode.constant:
             constant_history_length = 1
         else:
             raise NotImplementedError(
@@ -230,11 +228,11 @@ class Pipeline(BaseMixin):
             yield train, test
 
     @staticmethod
-    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, float]:
+    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
-        metrics_values = {}
+        metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
-            metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)
+            metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
     def _run_fold(
@@ -251,7 +249,7 @@ class Pipeline(BaseMixin):
         pipeline.fit(ts=train)
         forecast = pipeline.forecast()
 
-        fold = {}
+        fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
             fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
@@ -310,6 +308,7 @@ class Pipeline(BaseMixin):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -327,6 +326,8 @@ class Pipeline(BaseMixin):
             if True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
             number of jobs to run in parallel
+        joblib_params:
+            additional parameters for joblib.Parallel
 
         Returns
         -------
@@ -337,7 +338,7 @@ class Pipeline(BaseMixin):
         self._validate_backtest_n_folds(n_folds=n_folds)
         self._validate_backtest_dataset(ts=ts, n_folds=n_folds, horizon=self.horizon)
         self._validate_backtest_metrics(metrics=metrics)
-        folds = Parallel(n_jobs=n_jobs, verbose=11, backend="multiprocessing")(
+        folds = Parallel(n_jobs=n_jobs, **joblib_params)(
             delayed(self._run_fold)(train=train, test=test, fold_number=fold_number, metrics=metrics)
             for fold_number, (train, test) in enumerate(
                 self._generate_folds_datasets(ts=ts, n_folds=n_folds, horizon=self.horizon, mode=mode)

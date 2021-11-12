@@ -52,7 +52,8 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df, df_exog
 
 
-def test_same_ending_error_raise():
+def test_check_endings_error_raise():
+    """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
     df2 = pd.DataFrame({"timestamp": timestamp[:-5], "target": 12, "segment": "2"})
@@ -61,17 +62,18 @@ def test_same_ending_error_raise():
     ts = TSDataset(df=df, freq="D")
 
     with pytest.raises(ValueError):
-        ts.fit_transform([])
+        ts._check_endings()
 
 
-def test_same_ending_error_pass():
+def test_check_endings_error_pass():
+    """Check that _check_endings method passes if there is no nans at the end of all segments."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
     df2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
-    ts.fit_transform([])
+    ts._check_endings()
 
 
 def test_categorical_after_call_to_pandas():
@@ -245,7 +247,7 @@ def test_train_test_split_failed(test_size, borders, match, tsdf_with_exog):
         )
 
 
-def test_dataset_datetime_convertion():
+def test_dataset_datetime_conversion():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["timestamp"] = classic_df["timestamp"].astype(str)
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
@@ -253,7 +255,7 @@ def test_dataset_datetime_convertion():
     assert df.index.dtype == "datetime64[ns]"
 
 
-def test_dataset_datetime_convertion_during_init():
+def test_dataset_datetime_conversion_during_init():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["categorical_column"] = [0] * 30 + [1] * 30
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
@@ -263,6 +265,17 @@ def test_dataset_datetime_convertion_during_init():
     exog.index = df.index.astype(str)
     ts = TSDataset(df, "D", exog)
     assert ts.df.index.dtype == "datetime64[ns]"
+
+
+def test_make_future():
+    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
+    df = pd.concat([df1, df2], ignore_index=False)
+    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
 
 
 def test_make_future_small_horizon():
@@ -277,6 +290,27 @@ def test_make_future_small_horizon():
     train = TSDataset(ts[: ts.index[10], :, :], freq="D")
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
         assert len(train.make_future(1).df) == 1
+
+
+def test_make_future_with_exog():
+    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
+    df = pd.concat([df1, df2], ignore_index=False)
+    exog = df.copy()
+    exog.columns = ["timestamp", "exog", "segment"]
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(exog), freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+
+
+def test_make_future_with_regressors(df_and_regressors):
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
 
 
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
@@ -296,12 +330,12 @@ def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earli
     dfexog = TSDataset.to_dataset(dfexog)
 
     with pytest.raises(ValueError):
-        TSDataset._check_exog(df=df, df_exog=dfexog)
+        TSDataset._check_regressors(df=df, df_exog=dfexog)
 
 
 def test_dataset_check_exog_pass(df_and_regressors):
     df, df_exog = df_and_regressors
-    _ = TSDataset._check_exog(df=df, df_exog=df_exog)
+    _ = TSDataset._check_regressors(df=df, df_exog=df_exog)
 
 
 def test_warn_not_enough_exog(df_and_regressors):
@@ -371,12 +405,14 @@ def test_updating_regressors_fit_transform(df_and_regressors):
         month_number_in_year=False,
         year_number=False,
         is_weekend=True,
+        out_column="regressor_dateflag",
     )
     initial_regressors = set(ts.regressors)
     ts.fit_transform(transforms=[date_flags_transform])
     final_regressors = set(ts.regressors)
+    expected_columns = {"regressor_dateflag_day_number_in_week", "regressor_dateflag_is_weekend"}
     assert initial_regressors.issubset(final_regressors)
-    assert final_regressors.difference(initial_regressors) == {"regressor_day_number_in_week", "regressor_is_weekend"}
+    assert final_regressors.difference(initial_regressors) == expected_columns
 
 
 def test_right_format_sorting():

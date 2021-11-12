@@ -91,14 +91,14 @@ class TSDataset:
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
 
         try:
-            infered_freq = pd.infer_freq(self.raw_df.index)
+            inferred_freq = pd.infer_freq(self.raw_df.index)
         except ValueError:
             warnings.warn("TSDataset freq can't be inferred")
-            infered_freq = None
+            inferred_freq = None
 
-        if infered_freq != self.freq:
+        if inferred_freq != self.freq:
             warnings.warn(
-                f"You probably set wrong freq. Discovered freq in you data is {infered_freq}, you set {self.freq}"
+                f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {self.freq}"
             )
 
         self.raw_df = self.raw_df.asfreq(self.freq)
@@ -212,16 +212,16 @@ class TSDataset:
             for transform in self.transforms:
                 df = transform.transform(df)
 
-        futute_dataset = df.tail(future_steps).copy(deep=True)
-        futute_dataset = futute_dataset.sort_index(axis=1, level=(0, 1))
-        future_ts = TSDataset(futute_dataset, freq=self.freq)
+        future_dataset = df.tail(future_steps).copy(deep=True)
+        future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
+        future_ts = TSDataset(future_dataset, freq=self.freq)
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
 
     @staticmethod
-    def _check_exog(df: pd.DataFrame, df_exog: pd.DataFrame):
-        """Check that df_exog have more timestamps than df."""
+    def _check_regressors(df: pd.DataFrame, df_exog: pd.DataFrame):
+        """Check that regressors in df_exog begin not later than in df and end later than in df."""
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
             target = df[segment]["target"].dropna()
@@ -242,16 +242,15 @@ class TSDataset:
                     )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
-        self._check_exog(df=df, df_exog=self.df_exog)
-        df = pd.merge(df, self.df_exog, left_index=True, right_index=True).sort_index(axis=1, level=(0, 1))
+        self._check_regressors(df=df, df_exog=self.df_exog)
+        df = pd.merge(df, self.df_exog, left_index=True, right_index=True, how="left").sort_index(axis=1, level=(0, 1))
         return df
 
     def _check_endings(self):
         """Check that all targets ends at the same timestamp."""
         max_index = self.df.index.max()
-        for segment in self.df.columns.get_level_values("segment"):
-            if np.isnan(self.df.loc[max_index, pd.IndexSlice[segment, "target"]]):
-                raise ValueError(f"All segments should end at the same timestamp")
+        if np.any(pd.isna(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
+            raise ValueError(f"All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
@@ -673,7 +672,7 @@ class TSDataset:
         Returns
         -------
         pd.core.indexes.multi.MultiIndex
-            multindex of dataframe with target and features.
+            multiindex of dataframe with target and features.
         """
         return self.df.columns
 

@@ -7,7 +7,28 @@ from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
 from etna.models.linear import LinearPerSegmentModel
+from etna.transforms.datetime_flags import DateFlagsTransform
 from etna.transforms.lags import LagTransform
+
+
+@pytest.fixture
+def ts_with_categoricals(random_seed) -> TSDataset:
+    periods = 100
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df1["segment"] = "segment_1"
+    df1["target"] = np.random.uniform(10, 20, size=periods)
+    df1["cat_feature"] = "x"
+
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df2["segment"] = "segment_2"
+    df2["target"] = np.random.uniform(-15, 5, size=periods)
+    df1["cat_feature"] = "y"
+
+    df = pd.concat([df1, df2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+
+    return ts
 
 
 def linear_segments_by_parameters(alpha_values, intercept_values):
@@ -136,3 +157,57 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
+
+
+@pytest.mark.parametrize("model", [LinearPerSegmentModel()])
+def test_no_warning_on_categorical_features(example_tsds, model):
+    """Check that SklearnModel raises no warning working with dataset with categorical features"""
+    horizon = 7
+    num_lags = 5
+    lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
+    dateflags = DateFlagsTransform()
+    example_tsds.fit_transform([lags, dateflags])
+
+    with pytest.warns(None) as record:
+        _ = model.fit(example_tsds)
+    assert (
+        len(
+            [
+                warning
+                for warning in record
+                if str(warning.message).startswith(
+                    "Arrays of bytes/strings is being converted to decimal numbers if dtype='numeric'."
+                )
+            ]
+        )
+        == 0
+    )
+
+    to_forecast = example_tsds.make_future(horizon)
+    with pytest.warns(None) as record:
+        _ = model.forecast(to_forecast)
+    assert (
+        len(
+            [
+                warning
+                for warning in record
+                if str(warning.message).startswith(
+                    "Arrays of bytes/strings is being converted to decimal numbers if dtype='numeric'."
+                )
+            ]
+        )
+        == 0
+    )
+
+
+@pytest.mark.parametrize("model", [LinearPerSegmentModel()])
+def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
+    """Check that SklearnModel raises error working with dataset with categorical features which can't be converted to numeric"""
+    horizon = 7
+    num_lags = 5
+    lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
+    dateflags = DateFlagsTransform()
+    ts_with_categoricals.fit_transform([lags, dateflags])
+
+    with pytest.raises(ValueError, match="Only convertible to numeric features are accepted!"):
+        _ = model.fit(ts_with_categoricals)

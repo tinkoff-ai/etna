@@ -61,7 +61,7 @@ def adjust_estimation(i: int, k: int, sse: np.ndarray, sse_one_bin: np.ndarray) 
         calculated sse_one_bin[i][k]
     """
     now_evaluated = sse[i - 1][k - 1]
-    first_evalueted = sse[i - 1][k - 1]
+    first_evaluated = sse[i - 1][k - 1]
     idx_prev = np.inf
     idx_now = 0
     left = 0
@@ -74,7 +74,7 @@ def adjust_estimation(i: int, k: int, sse: np.ndarray, sse_one_bin: np.ndarray) 
             else:
                 right = (left + right) // 2
         idx_now = left
-        now_evaluated = first_evalueted - sse[idx_now][k - 1]
+        now_evaluated = first_evaluated - sse[idx_now][k - 1]
 
     now_min = np.inf
     for j in range(idx_now, i):
@@ -139,7 +139,7 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.n
     Returns
     -------
     result: np.ndarray
-        array F, outliers_indice
+        array F, outliers_indices
     """
     f = np.zeros((len(series), len(series), k + 1))
     s: list = [[[[] for i in range(k + 1)] for j in range(len(series))] for s in range(len(series))]
@@ -244,7 +244,7 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
         outliers indices
     """
     approximation_error = np.zeros((len(series), bins_number + 1, bins_number))
-    anomal: list = [[[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))]
+    anomalies: list = [[[[] for i in range(bins_number)] for j in range(bins_number + 1)] for s in range(len(series))]
 
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
@@ -261,7 +261,9 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
     for right_border in range(len(series)):
         for outlier_number in range(1, bins_number):
             if len(outliers_indices[0][right_border][outlier_number]):
-                anomal[right_border][1][outlier_number] = deepcopy(outliers_indices[0][right_border][outlier_number][0])
+                anomalies[right_border][1][outlier_number] = deepcopy(
+                    outliers_indices[0][right_border][outlier_number][0]
+                )
 
     for right_border in range(1, len(series)):
         for tmp_bins_number in range(2, min(bins_number + 1, right_border + 2)):
@@ -277,11 +279,11 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
                 )
 
                 if where[1][0] != outlier_number:
-                    anomal[right_border][tmp_bins_number][outlier_number].extend(
+                    anomalies[right_border][tmp_bins_number][outlier_number].extend(
                         deepcopy(outliers_indices[1 + where[0][0]][right_border][outlier_number - where[1][0]][0])
                     )
-                anomal[right_border][tmp_bins_number][outlier_number].extend(
-                    deepcopy(anomal[where[0][0]][tmp_bins_number - 1][where[1][0]])
+                anomalies[right_border][tmp_bins_number][outlier_number].extend(
+                    deepcopy(anomalies[where[0][0]][tmp_bins_number - 1][where[1][0]])
                 )
 
     count = 0
@@ -290,7 +292,7 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
         if approximation_error[-1][approximation_error.shape[1] - 1 - outlier_number][outlier_number] <= now_min:
             count = outlier_number
             now_min = approximation_error[-1][approximation_error.shape[1] - 1 - outlier_number][outlier_number]
-    return np.array(sorted(anomal[-1][approximation_error.shape[1] - 1 - count][count]))
+    return np.array(sorted(anomalies[-1][approximation_error.shape[1] - 1 - count][count]))
 
 
 def get_anomalies_hist(
@@ -298,7 +300,8 @@ def get_anomalies_hist(
 ) -> typing.Dict[str, List[pd.Timestamp]]:
     """
     Get point outliers in time series using histogram model.
-    Outliers are all points that, when removed, result in a histogram with a lower approximation error, even with the number of bins less than the number of outliers.
+    Outliers are all points that, when removed, result in a histogram with a lower approximation error,
+    even with the number of bins less than the number of outliers.
 
     Parameters
     ----------
@@ -321,7 +324,7 @@ def get_anomalies_hist(
         values = segment_df[in_column].values
         timestamp = segment_df["timestamp"].values
 
-        anomal = hist(values, bins_number)
+        anomalies = hist(values, bins_number)
 
-        outliers_per_segment[seg] = [timestamp[i] for i in anomal]
+        outliers_per_segment[seg] = [timestamp[i] for i in anomalies]
     return outliers_per_segment

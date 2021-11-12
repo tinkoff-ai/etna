@@ -50,6 +50,8 @@ class AutoRegressivePipeline(Pipeline):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
+    support_confidence_interval = False
+
     def __init__(self, model: Model, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
         """
         Create instance of AutoRegressivePipeline with given parameters.
@@ -101,14 +103,21 @@ class AutoRegressivePipeline(Pipeline):
         prediction_df.index.name = "timestamp"
         return prediction_df
 
-    def forecast(self) -> TSDataset:
+    def forecast(self, confidence_interval: bool = False) -> TSDataset:
         """Make predictions.
+
+        Parameters
+        ----------
+        confidence_interval:
+            This parameter is ignored
 
         Returns
         -------
         TSDataset:
             TSDataset with forecast
         """
+        self.check_support_confidence_interval(confidence_interval)
+
         prediction_df = self._create_predictions_template()
 
         for idx_start in range(0, self.horizon, self.step):
