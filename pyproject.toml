@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna-ts"
-version = "1.2.0"
+version = "1.3.1"
 repository = "https://github.com/tinkoff-ai/etna-ts"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -86,9 +86,6 @@ ipywidgets = {version = "^7.6.5", optional = true}
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
 omegaconf = "^2.1.1"
-
-mrmr = {git = "https://github.com/smazzanti/mrmr.git", rev = "96ad224"} 
-category-encoders = "^2.3.0"
 
 [tool.poetry.extras]
 # optional deps
