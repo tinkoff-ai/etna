@@ -1,11 +1,14 @@
+from abc import ABC
 from typing import List
 
-from etna.transforms import Transform
 import pandas as pd
-from abc import ABC
+
+from etna.transforms import Transform
 
 
 class BaseFeatureSelectionTransform(Transform, ABC):
+    """Base class for feature selection transforms."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.selected_regressors = []

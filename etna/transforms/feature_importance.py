@@ -1,7 +1,6 @@
 import warnings
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -135,7 +134,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         return result
 
 
-class MRMRFeatureSelectionTransform(Transform):
+class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """Transform that selects regressors according to mRMR variable selection method."""
 
     def __init__(
@@ -169,22 +168,13 @@ class MRMRFeatureSelectionTransform(Transform):
         if not isinstance(n_clusters, int) or n_clusters < 2:
             raise ValueError("Parameter n_clusters should be integer and greater than 1")
 
+        super().__init__()
         self.relevance_method = relevance_method
         self.clustering = clustering_method
         self.n_clusters = n_clusters
         self.linkage = linkage
         self.top_k = top_k
         self.relevance_params = relevance_params
-        self.selected_regressors: Optional[List[str]] = None
-
-    @staticmethod
-    def _get_regressors(df: pd.DataFrame) -> List[str]:
-        """Get list of regressors in the dataframe."""
-        result = set()
-        for column in df.columns.get_level_values("feature"):
-            if column.startswith("regressor_"):
-                result.add(column)
-        return sorted(list(result))
 
     def fit(self, df: pd.DataFrame) -> "MRMRFeatureSelectionTransform":
         """
@@ -213,28 +203,3 @@ class MRMRFeatureSelectionTransform(Transform):
             y[k] = s2c[cluster]
         self.selected_regressors = mrmr_classif(relevance_table, y, K=self.top_k)
         return self
-
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Select top_k regressors.
-
-        Parameters
-        ----------
-        df:
-            dataframe with all segments data
-
-        Returns
-        -------
-        result: pd.DataFrame
-            Dataframe with with only selected regressors
-        """
-        result = df.copy()
-        selected_columns = sorted(
-            [
-                column
-                for column in df.columns.get_level_values("feature").unique()
-                if not column.startswith("regressor_") or column in self.selected_regressors
-            ]
-        )
-        result = result.loc[:, pd.IndexSlice[:, selected_columns]]
-        return result

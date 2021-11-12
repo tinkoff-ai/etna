@@ -100,7 +100,7 @@ def test_get_ranked_list(relevance_matrix: pd.DataFrame, ascending: bool, expect
         ),
     ),
 )
-def test_get_ranked_list_T(relevance_matrix: pd.DataFrame, ascending: bool, expected: Dict[str, List[str]]):
+def test_get_ranked_list_regressors(relevance_matrix: pd.DataFrame, ascending: bool, expected: Dict[str, List[str]]):
     result = GaleShapleyFeatureSelectionTransform._get_ranked_list(table=relevance_matrix.T, ascending=ascending)
     for key in expected.keys():
         assert key in result
