@@ -15,7 +15,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
 from etna.datasets import TSDataset
-from etna.transforms.base import Transform
+from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 
 TreeBasedRegressor = Union[
     DecisionTreeRegressor,
@@ -27,7 +27,7 @@ TreeBasedRegressor = Union[
 ]
 
 
-class TreeFeatureSelectionTransform(Transform):
+class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """Transform that selects regressors according to tree-based models feature importance."""
 
     def __init__(self, model: TreeBasedRegressor, top_k: int):
@@ -44,10 +44,9 @@ class TreeFeatureSelectionTransform(Transform):
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
-
+        super().__init__()
         self.model = model
         self.top_k = top_k
-        self.selected_regressors: Optional[List[str]] = None
 
     @staticmethod
     def _get_regressors(df: pd.DataFrame) -> List[str]:
