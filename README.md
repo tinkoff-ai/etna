@@ -1,16 +1,16 @@
 # ETNA Time Series Library
 
-[![Pipi version](https://img.shields.io/pypi/v/etna-ts.svg)](https://pypi.org/project/etna-ts/)
-[![PyPI Status](https://static.pepy.tech/personalized-badge/etna-ts?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna-ts)
-[![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna-ts)](https://codecov.io/gh/tinkoff-ai/etna-ts)
+[![Pipi version](https://img.shields.io/pypi/v/etna.svg)](https://pypi.org/project/etna/)
+[![PyPI Status](https://static.pepy.tech/personalized-badge/etna?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna)
+[![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna)](https://codecov.io/gh/tinkoff-ai/etna)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
 
 [Homepage](https://etna.tinkoff.ru) |
 [Documentation](https://etna-docs.netlify.app/) |
-[Tutorials](https://github.com/tinkoff-ai/etna-ts/tree/master/examples) | 
-[Contribution Guide](https://github.com/tinkoff-ai/etna-ts/blob/master/CONTRIBUTING.md) |
-[Release Notes](https://github.com/tinkoff-ai/etna-ts/releases)
+[Tutorials](https://github.com/tinkoff-ai/etna/tree/master/examples) | 
+[Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md) |
+[Release Notes](https://github.com/tinkoff-ai/etna/releases)
 
 ETNA is an easy-to-use time series forecasting framework. 
 It includes built in toolkits for time series preprocessing, feature generation, 
@@ -23,17 +23,17 @@ ETNA is the first python open source framework of
 Artificial Intelligence Center. 
 The library started as an internal product in our company - 
 we use it in over 10+ projects now, so we often release updates. 
-Contributions are welcome - check our [Contribution Guide](https://github.com/tinkoff-ai/etna-ts/blob/master/CONTRIBUTING.md).
+Contributions are welcome - check our [Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md).
 
 
 
 ## Installation 
 
-ETNA is on [PyPI](https://pypi.org/project/etna-ts), so you can use `pip` to install it.
+ETNA is on [PyPI](https://pypi.org/project/etna), so you can use `pip` to install it.
 
 ```bash
 pip install --upgrade pip
-pip install etna-ts
+pip install etna
 ```
 
 
@@ -68,13 +68,13 @@ We have also prepared a set of tutorials for an easy introduction:
 
 | Notebook     | Interactive launch  |
 |:----------|------:|
-| [Get started](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/get_started.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/get_started.ipynb) |
-| [Backtest](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/backtest.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/backtest.ipynb) |
-| [EDA](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/EDA.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/EDA.ipynb) |
-| [Outliers](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/outliers.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/outliers.ipynb) |
-| [Clustering](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/clustering.ipynb) |
-| [Deep learning models](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/NN_examples.ipynb) |
-| [Ensembles](https://github.com/tinkoff-ai/etna-ts/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna-ts/master?filepath=examples/ensembles.ipynb) |
+| [Get started](https://github.com/tinkoff-ai/etna/tree/master/examples/get_started.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/get_started.ipynb) |
+| [Backtest](https://github.com/tinkoff-ai/etna/tree/master/examples/backtest.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/backtest.ipynb) |
+| [EDA](https://github.com/tinkoff-ai/etna/tree/master/examples/EDA.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/EDA.ipynb) |
+| [Outliers](https://github.com/tinkoff-ai/etna/tree/master/examples/outliers.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/outliers.ipynb) |
+| [Clustering](https://github.com/tinkoff-ai/etna/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/clustering.ipynb) |
+| [Deep learning models](https://github.com/tinkoff-ai/etna/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/NN_examples.ipynb) |
+| [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/ensembles.ipynb) |
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
