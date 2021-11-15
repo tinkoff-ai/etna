@@ -137,7 +137,7 @@ class _ProphetModel:
             sim_values = self.model.predictive_samples(prophet_df)
             for quantile in quantiles:
                 percentile = quantile * 100
-                y_pred[f"yhat_{quantile}"] = self.model.percentile(sim_values["yhat"], percentile, axis=1)
+                y_pred[f"yhat_{quantile:.4g}"] = self.model.percentile(sim_values["yhat"], percentile, axis=1)
         return y_pred
 
 

@@ -80,8 +80,8 @@ def splited_piecewise_constant_ts(
         {
             "timestamp": ts_range * 2,
             "target": segment_1 + segment_2,
-            f"target_{lower_p:.3f}": lower,
-            f"target_{upper_p:.3f}": upper,
+            f"target_{lower_p:.4g}": lower,
+            f"target_{upper_p:.4g}": upper,
             "segment": ["segment_1"] * len(segment_1) + ["segment_2"] * len(segment_2),
         }
     )
@@ -90,7 +90,7 @@ def splited_piecewise_constant_ts(
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train.drop([f"target_{lower_p:.3f}", f"target_{upper_p:.3f}"], axis=1)), "D")
+    train = TSDataset(TSDataset.to_dataset(train.drop([f"target_{lower_p:.4g}", f"target_{upper_p:.4g}"], axis=1)), "D")
     test = TSDataset(TSDataset.to_dataset(test), "D")
     return train, test
 

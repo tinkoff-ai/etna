@@ -123,7 +123,7 @@ class Pipeline(BasePipeline):
         for quantile in self.quantiles:
             z_q = norm.ppf(q=quantile)
             border = predictions[:, :, "target"] + se * z_q
-            border.rename({"target": f"target_{quantile}"}, inplace=True, axis=1)
+            border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
             borders.append(border)
 
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))

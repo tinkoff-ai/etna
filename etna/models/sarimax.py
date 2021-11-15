@@ -278,7 +278,7 @@ class _SARIMAXModel:
                     series = borders["lower target"]
                 else:
                     series = borders["upper target"]
-                y_pred[f"mean_{quantile}"] = series
+                y_pred[f"mean_{quantile:.4g}"] = series
         else:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
