@@ -31,7 +31,7 @@ def generate_ar_df(
     n_segments:
         number of segments
     freq:
-        pandsas frequency string for date_range
+        pandas frequency string for date_range
     random_seed:
         random seed
     """
@@ -73,7 +73,7 @@ def generate_periodic_df(
     n_segments:
         number of segments
     freq:
-        pandsas frequency string for date_range
+        pandas frequency string for date_range
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -121,7 +121,7 @@ def generate_const_df(
     n_segments:
         number of segments
     freq:
-        pandsas frequency string for date_range
+        pandas frequency string for date_range
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -163,7 +163,7 @@ def generate_from_patterns_df(
     patterns:
         list of lists with patterns to be repeated
     freq:
-        pandsas frequency string for date_range
+        pandas frequency string for date_range
     add_noise:
         if True we add noise to final samples
     sigma:

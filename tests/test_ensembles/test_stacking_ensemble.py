@@ -98,14 +98,14 @@ def test_features_to_use_wrong_format(
         _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
-@pytest.mark.parametrize("features_to_use", ([["unknow_feature"]]))
+@pytest.mark.parametrize("features_to_use", ([["unknown_feature"]]))
 def test_features_to_use_not_found(
     forecasts_ts: TSDataset,
     naive_featured_pipeline_1,
     naive_featured_pipeline_2,
     features_to_use: Union[None, Literal[all], List[str]],
 ):
-    """Check that StackingEnsemble._get_features_to_use raises worning in case of unavailable features."""
+    """Check that StackingEnsemble._get_features_to_use raises warning in case of unavailable features."""
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )

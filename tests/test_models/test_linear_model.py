@@ -165,8 +165,8 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     horizon = 7
     num_lags = 5
     lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
-    datefalgs = DateFlagsTransform()
-    example_tsds.fit_transform([lags, datefalgs])
+    dateflags = DateFlagsTransform()
+    example_tsds.fit_transform([lags, dateflags])
 
     with pytest.warns(None) as record:
         _ = model.fit(example_tsds)
@@ -206,8 +206,8 @@ def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
     horizon = 7
     num_lags = 5
     lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
-    datefalgs = DateFlagsTransform()
-    ts_with_categoricals.fit_transform([lags, datefalgs])
+    dateflags = DateFlagsTransform()
+    ts_with_categoricals.fit_transform([lags, dateflags])
 
     with pytest.raises(ValueError, match="Only convertible to numeric features are accepted!"):
         _ = model.fit(ts_with_categoricals)

@@ -49,13 +49,20 @@ def main(rule: Rule):
     if rule in {Rule.prerelease, Rule.prepatch, Rule.preminor}:
         prerelease_prefix, is_prerelease = 'PRE-', True
 
-    if not click.confirm(f'Do you really want to {prerelease_prefix}release {package_name}', default=False):
-        typer.echo("Ok...", err=True)
+    shell(f'poetry version {rule}')
+    version = shell('poetry version --short', capture_output=True)
+
+    confirm_message = (
+        '\nDo you really want to ' +
+        click.style(prerelease_prefix, fg='yellow') + 'release ' +
+        f'{package_name}==' + click.style(version, bold=True)
+    )
+    if not click.confirm(confirm_message, default=False):
+        typer.echo("Ok...\n", err=True)
+
+        shell(f'poetry version {prev_version}')
         return
 
-    shell(f'poetry version {rule}')
-
-    version = shell('poetry version --short', capture_output=True)
     message = f':bomb: {prerelease_prefix}release {version}'
 
     shell(f'git checkout -b release/{version}')

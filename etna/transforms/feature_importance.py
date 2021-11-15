@@ -8,16 +8,12 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from catboost import CatBoostRegressor
-from mrmr import mrmr_classif
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
-from etna.analysis import RelevanceTable
-from etna.clustering import EuclideanClustering
-from etna.clustering import HierarchicalClustering
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
 
@@ -134,6 +130,7 @@ class TreeFeatureSelectionTransform(Transform):
         )
         result = result.loc[:, pd.IndexSlice[:, selected_columns]]
         return result
+<<<<<<< HEAD
 
 
 class MRMRFeatureSelectionTransform(Transform):
@@ -245,3 +242,5 @@ class MRMRFeatureSelectionTransform(Transform):
         )
         result = result.loc[:, pd.IndexSlice[:, selected_columns]]
         return result
+=======
+>>>>>>> 505ed5922a6a8fd9555698f152a8b2563a39f951

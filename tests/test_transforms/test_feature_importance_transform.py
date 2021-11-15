@@ -9,15 +9,11 @@ from sklearn.metrics import r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
-from etna.analysis import StatisticsRelevanceTable
-from etna.clustering import DTWClustering
-from etna.clustering import EuclideanClustering
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import SegmentEncoderTransform
-from etna.transforms.feature_importance import MRMRFeatureSelectionTransform
 from etna.transforms.feature_importance import TreeFeatureSelectionTransform
 
 
@@ -63,6 +59,7 @@ def ts_with_regressors():
 
 
 @pytest.mark.parametrize(
+<<<<<<< HEAD
     "relevance_method, clustering_method",
     [
         [StatisticsRelevanceTable(), EuclideanClustering()],
@@ -130,6 +127,8 @@ def test_mrmr_fails(ts_with_regressors):
 
 
 @pytest.mark.parametrize(
+=======
+>>>>>>> 505ed5922a6a8fd9555698f152a8b2563a39f951
     "model",
     [
         DecisionTreeRegressor(random_state=42),

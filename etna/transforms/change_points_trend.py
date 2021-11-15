@@ -57,7 +57,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         return signal
 
     def _get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
-        """Fit change point model with series data and predict trens change points."""
+        """Fit change point model with series data and predict trends change points."""
         signal = self._prepare_signal(series=series)
         timestamp = series.index
         self.change_point_model.fit(signal=signal)
@@ -113,7 +113,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         return trend_series
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
-        """Fit OneSegmentChangePointsTransform: find thrend change points in df, fit detrend models with data from intervals of stable trend.
+        """Fit OneSegmentChangePointsTransform: find trend change points in df, fit detrend models with data from intervals of stable trend.
 
         Parameters
         ----------
