@@ -73,7 +73,13 @@ def ts_with_regressors():
 def test_mrmr_right_len(relevance_method, clustering_method, top_k, ts_with_regressors):
     """Check that transform selects exactly top_k regressors."""
     df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_method, False, top_k, clustering_method, n_clusters=2)
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_method=relevance_method,
+        return_ranks=False,
+        top_k=top_k,
+        clustering_method=clustering_method,
+        n_clusters=2,
+    )
     df_selected = mrmr.fit_transform(df)
     all_regressors = ts_with_regressors.regressors
     selected_regressors = set()
@@ -93,7 +99,13 @@ def test_mrmr_right_len(relevance_method, clustering_method, top_k, ts_with_regr
 def test_mrmr_right_regressors(relevance_method, clustering_method, ts_with_regressors):
     """Check that transform selects right top_k regressors."""
     df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_method, False, 3, clustering_method, n_clusters=2)
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_method=relevance_method,
+        return_ranks=False,
+        top_k=3,
+        clustering_method=clustering_method,
+        n_clusters=2,
+    )
     df_selected = mrmr.fit_transform(df)
     selected_regressors = set()
     for column in df_selected.columns.get_level_values("feature"):
@@ -105,14 +117,14 @@ def test_mrmr_right_regressors(relevance_method, clustering_method, ts_with_regr
 def test_mrmr_fails_negative_parameters():
     """Check that transform doesn't allow you to set top_k to negative values and n_clusters >= 2."""
     with pytest.raises(ValueError, match="positive integer"):
-        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), False, top_k=-1)
+        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), return_ranks=False, top_k=-1)
     with pytest.raises(ValueError, match="greater than"):
-        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), False, top_k=1, n_clusters=1)
+        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), return_ranks=False, top_k=1, n_clusters=1)
 
 
 def test_mrmr_fails(ts_with_regressors):
     """Check that transform doesn't allow you to set n_clusters greater than number of regressors."""
-    mrmr = MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), False, top_k=4, freq="D", n_clusters=25)
+    mrmr = MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), return_ranks=False, top_k=4, n_clusters=25)
     with pytest.raises(ValueError, match="strictly less than"):
         mrmr.fit_transform(ts_with_regressors.to_pandas())
 

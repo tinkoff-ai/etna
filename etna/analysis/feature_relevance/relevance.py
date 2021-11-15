@@ -30,7 +30,7 @@ class RelevanceTable(ABC, BaseMixin):
         return rank_table.astype(int)
 
     @abstractmethod
-    def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool, **kwargs) -> pd.DataFrame:
+    def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool = False, **kwargs) -> pd.DataFrame:
         """Compute relevance table.
         For each series in df compute relevance of corresponding series in df_exog.
 
@@ -57,7 +57,7 @@ class StatisticsRelevanceTable(RelevanceTable):
     def __init__(self):
         super().__init__(greater_is_better=False)
 
-    def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool, **kwargs) -> pd.DataFrame:
+    def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool = False, **kwargs) -> pd.DataFrame:
         """Compute feature relevance table with etna.analysis.get_statistics_relevance_table method."""
         table = get_statistics_relevance_table(df=df, df_exog=df_exog)
         if return_ranks:
@@ -71,7 +71,7 @@ class ModelRelevanceTable(RelevanceTable):
     def __init__(self):
         super().__init__(greater_is_better=True)
 
-    def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool, **kwargs) -> pd.DataFrame:
+    def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool = False, **kwargs) -> pd.DataFrame:
         """Compute feature relevance table with etna.analysis.get_model_relevance_table method."""
         table = get_model_relevance_table(df=df, df_exog=df_exog, **kwargs)
         if return_ranks:
