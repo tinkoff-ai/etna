@@ -33,7 +33,7 @@ def test_set_only_exclude():
 def test_set_include_and_exclude():
     """Test that transform is not created with include and exclude."""
     with pytest.raises(ValueError, match="There should be exactly one option set: include or exclude"):
-        _ = FilterFeaturesTransform()
+        _ = FilterFeaturesTransform(include=["exog_1"], exclude=["exog_2"])
 
 
 def test_set_none():
@@ -45,17 +45,18 @@ def test_set_none():
 @pytest.mark.parametrize("include", [[], ["target"], ["exog_1"], ["exog_1", "exog_2", "target"]])
 def test_include_filter(ts_with_features, include):
     """Test that transform remains only features in include."""
+    original_df = ts_with_features.to_pandas()
     transform = FilterFeaturesTransform(include=include)
     ts_with_features.fit_transform([transform])
-    df_transformed = ts_with_features.df
-    expected_columns = set(ts_with_features.columns.get_level_values("feature"))
+    df_transformed = ts_with_features.to_pandas()
+    expected_columns = set(include)
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == expected_columns
     segments = ts_with_features.segments
     for column in got_columns:
         assert np.all(
             df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == ts_with_features.df.loc[:, pd.IndexSlice[segments, column]]
+            == original_df.loc[:, pd.IndexSlice[segments, column]]
         )
 
 
@@ -70,28 +71,29 @@ def test_include_filter(ts_with_features, include):
 )
 def test_exclude_filter(ts_with_features, exclude, expected_columns):
     """Test that transform removes only features in exclude."""
+    original_df = ts_with_features.to_pandas()
     transform = FilterFeaturesTransform(exclude=exclude)
     ts_with_features.fit_transform([transform])
-    df_transformed = ts_with_features.df
+    df_transformed = ts_with_features.to_pandas()
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == set(expected_columns)
     segments = ts_with_features.segments
     for column in got_columns:
         assert np.all(
             df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == ts_with_features.df.loc[:, pd.IndexSlice[segments, column]]
+            == original_df.loc[:, pd.IndexSlice[segments, column]]
         )
 
 
 def test_include_filter_wrong_column(ts_with_features):
     """Test that transform raises error with non-existent column in include."""
     transform = FilterFeaturesTransform(include=["non-existent-column"])
-    with pytest.raises(ValueError, match="Some features in include are not present in the dataset"):
+    with pytest.raises(ValueError, match="Features {.*} are not present in the dataset"):
         ts_with_features.fit_transform([transform])
 
 
 def test_exclude_filter_wrong_column(ts_with_features):
     """Test that transform raises error with non-existent column in exclude."""
     transform = FilterFeaturesTransform(exclude=["non-existent-column"])
-    with pytest.raises(ValueError, match="Some features in exclude are not present in the dataset"):
+    with pytest.raises(ValueError, match="Features {.*} are not present in the dataset"):
         ts_with_features.fit_transform([transform])
