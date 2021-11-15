@@ -56,7 +56,7 @@ class StackingEnsemble(Pipeline):
     2021-09-15      0.36      1.56      0.30
     """
 
-    support_confidence_interval = False
+    support_prediction_interval = False
 
     def __init__(
         self,
@@ -230,7 +230,7 @@ class StackingEnsemble(Pipeline):
         tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 
-    def forecast(self, confidence_interval: bool = False) -> TSDataset:
+    def forecast(self, prediction_interval: bool = False) -> TSDataset:
         """Forecast with ensemble: compute the combination of pipelines' forecasts using `final_model`.
 
         Returns
@@ -238,7 +238,7 @@ class StackingEnsemble(Pipeline):
         TSDataset:
             Dataset with forecasts.
         """
-        self.check_support_confidence_interval(confidence_interval)
+        self.check_support_prediction_interval(prediction_interval)
 
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(

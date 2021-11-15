@@ -37,7 +37,7 @@ def create_ts_by_column(ts: "TSDataset", column: str) -> "TSDataset":
     return TSDataset(new_df, freq=ts.freq)
 
 
-def get_anomalies_confidence_interval(
+def get_anomalies_prediction_interval(
     ts: "TSDataset",
     model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
     interval_width: float = 0.95,
@@ -45,17 +45,17 @@ def get_anomalies_confidence_interval(
     **model_params,
 ) -> Dict[str, List[pd.Timestamp]]:
     """
-    Get point outliers in time series using confidence intervals (estimation model-based method).
-    Outliers are all points out of the confidence interval predicted with the model.
+    Get point outliers in time series using prediction intervals (estimation model-based method).
+    Outliers are all points out of the prediction interval predicted with the model.
 
     Parameters
     ----------
     ts:
         dataset with timeseries data(should contains all the necessary features).
     model:
-        model for confidence interval estimation.
+        model for prediction interval estimation.
     interval_width:
-        the significance level for the confidence interval. By default a 95% confidence interval is taken.
+        the significance level for the prediction interval. By default a 95% prediction interval is taken.
     in_column:
         column to analyzes
         If it is set to "target", then all data will be used for prediction.
@@ -78,11 +78,11 @@ def get_anomalies_confidence_interval(
     time_points = np.array(ts.index.values)
     model_instance = model(**model_params)
     model_instance.fit(ts_inner)
-    confidence_interval = model_instance.forecast(
-        deepcopy(ts_inner), confidence_interval=True, interval_width=interval_width
+    prediction_interval = model_instance.forecast(
+        deepcopy(ts_inner), prediction_interval=True, interval_width=interval_width
     )
     for segment in ts_inner.segments:
-        segment_slice = confidence_interval[:, segment, :][segment]
+        segment_slice = prediction_interval[:, segment, :][segment]
         anomalies_mask = (segment_slice["target"] > segment_slice["target_upper"]) | (
             segment_slice["target"] < segment_slice["target_lower"]
         )

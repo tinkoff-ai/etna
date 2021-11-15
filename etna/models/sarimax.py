@@ -230,7 +230,7 @@ class _SARIMAXModel:
         self._result = self._model.fit(start_params=start_params, disp=False)
         return self
 
-    def predict(self, df: pd.DataFrame, confidence_interval: bool, interval_width: float) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, interval_width: float) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
@@ -238,10 +238,10 @@ class _SARIMAXModel:
         ----------
         df:
             Features dataframe
-        confidence_interval:
-             If True returns confidence interval for forecast
+        prediction_interval:
+             If True returns prediction interval for forecast
         interval_width:
-            The significance level for the confidence interval. By default a 95% confidence interval is taken
+            The significance level for the prediction interval. By default a 95% prediction interval is taken
         Returns
         -------
         y_pred: pd.DataFrame
@@ -260,7 +260,7 @@ class _SARIMAXModel:
             )
 
         exog_future = self._select_regressors(df)
-        if confidence_interval:
+        if prediction_interval:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
@@ -470,7 +470,7 @@ class SARIMAXModel(PerSegmentModel):
         model,
         segment: Union[str, List[str]],
         ts: TSDataset,
-        confidence_interval: bool,
+        prediction_interval: bool,
         interval_width: float,
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
@@ -479,7 +479,7 @@ class SARIMAXModel(PerSegmentModel):
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
         segment_predict = model.predict(
-            df=segment_features, confidence_interval=confidence_interval, interval_width=interval_width
+            df=segment_features, prediction_interval=prediction_interval, interval_width=interval_width
         )
         segment_predict = segment_predict.rename(
             {"mean": "target", "mean_ci_lower": "target_lower", "mean_ci_upper": "target_upper"}, axis=1
@@ -489,23 +489,23 @@ class SARIMAXModel(PerSegmentModel):
         return segment_predict
 
     @log_decorator
-    def forecast(self, ts: TSDataset, confidence_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
         """Make predictions.
         Parameters
         ----------
         ts:
             Dataframe with features
-        confidence_interval:
-            If True returns confidence interval for forecast
+        prediction_interval:
+            If True returns prediction interval for forecast
         interval_width:
-            The significance level for the confidence interval. By default a 95% confidence interval is taken
+            The significance level for the prediction interval. By default a 95% prediction interval is taken
         Returns
         -------
         pd.DataFrame
             Models result
         Notes
         -----
-        The width of the confidence interval is specified in the constructor of ProphetModel setting the interval_width
+        The width of the prediction interval is specified in the constructor of ProphetModel setting the interval_width
         """
         if self._segments is None:
             raise ValueError("The model is not fitted yet, use fit() to train it")
@@ -514,7 +514,7 @@ class SARIMAXModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_one_segment(model, segment, ts, confidence_interval, interval_width)
+            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, interval_width)
             result_list.append(segment_predict)
 
         # need real case to test

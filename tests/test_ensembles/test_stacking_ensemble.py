@@ -215,14 +215,14 @@ def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensem
     np.allclose(mae(test, forecast), 0)
 
 
-def test_forecast_warning_confidence_intervals(
+def test_forecast_warning_prediction_intervals(
     weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble
 ):
-    """Check that StackingEnsemble.forecast warns when called with confidence intervals"""
+    """Check that StackingEnsemble.forecast warns when called with prediction intervals"""
     train, test = weekly_period_ts
     ensemble = naive_ensemble.fit(train)
-    with pytest.warns(UserWarning, match="doesn't support confidence intervals"):
-        _ = ensemble.forecast(confidence_interval=True)
+    with pytest.warns(UserWarning, match="doesn't support prediction intervals"):
+        _ = ensemble.forecast(prediction_interval=True)
 
 
 @pytest.mark.long

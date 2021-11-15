@@ -25,23 +25,23 @@ from etna.transforms import DateFlagsTransform
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
-@pytest.mark.parametrize("horizon,interval_width,confidence_interval_cv", ([(1, 0.5, 2)]))
-def test_init_pass(horizon, interval_width, confidence_interval_cv):
+@pytest.mark.parametrize("horizon,interval_width,prediction_interval_cv", ([(1, 0.5, 2)]))
+def test_init_pass(horizon, interval_width, prediction_interval_cv):
     """Check that Pipeline initialization works correctly in case of valid parameters."""
     pipeline = Pipeline(
         model=LinearPerSegmentModel(),
         transforms=[],
         horizon=horizon,
         interval_width=interval_width,
-        confidence_interval_cv=confidence_interval_cv,
+        prediction_interval_cv=prediction_interval_cv,
     )
     assert pipeline.horizon == horizon
     assert pipeline.interval_width == interval_width
-    assert confidence_interval_cv == confidence_interval_cv
+    assert prediction_interval_cv == prediction_interval_cv
 
 
 @pytest.mark.parametrize(
-    "horizon,interval_width,confidence_interval_cv,error_msg",
+    "horizon,interval_width,prediction_interval_cv,error_msg",
     (
         [
             (-1, 0.5, 2, "At least one point in the future is expected."),
@@ -50,7 +50,7 @@ def test_init_pass(horizon, interval_width, confidence_interval_cv):
         ]
     ),
 )
-def test_init_fail(horizon, interval_width, confidence_interval_cv, error_msg):
+def test_init_fail(horizon, interval_width, prediction_interval_cv, error_msg):
     """Check that Pipeline initialization works correctly in case of invalid parameters."""
     with pytest.raises(ValueError, match=error_msg):
         _ = Pipeline(
@@ -58,7 +58,7 @@ def test_init_fail(horizon, interval_width, confidence_interval_cv, error_msg):
             transforms=[],
             horizon=horizon,
             interval_width=interval_width,
-            confidence_interval_cv=confidence_interval_cv,
+            prediction_interval_cv=prediction_interval_cv,
         )
 
 
@@ -92,27 +92,27 @@ def test_forecast(example_tsds):
 
 
 @pytest.mark.parametrize("model", (ProphetModel(), SARIMAXModel()))
-def test_forecast_confidence_interval_builtin(example_tsds, model):
-    """Test that forecast method uses built-in confidence intervals for the listed models."""
+def test_forecast_prediction_interval_builtin(example_tsds, model):
+    """Test that forecast method uses built-in prediction intervals for the listed models."""
     np.random.seed(1234)
     pipeline = Pipeline(model=model, transforms=[], horizon=5)
     pipeline.fit(example_tsds)
-    forecast_pipeline = pipeline.forecast(confidence_interval=True)
+    forecast_pipeline = pipeline.forecast(prediction_interval=True)
 
     np.random.seed(1234)
     model = model.fit(example_tsds)
     future = example_tsds.make_future(5)
-    forecast_model = model.forecast(ts=future, confidence_interval=True)
+    forecast_model = model.forecast(ts=future, prediction_interval=True)
 
     assert forecast_model.df.equals(forecast_pipeline.df)
 
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
-def test_forecast_confidence_interval_interface(example_tsds, model):
-    """Test the forecast interface for the models without built-in confidence intervals."""
+def test_forecast_prediction_interval_interface(example_tsds, model):
+    """Test the forecast interface for the models without built-in prediction intervals."""
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
-    forecast = pipeline.forecast(confidence_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True)
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
@@ -120,53 +120,53 @@ def test_forecast_confidence_interval_interface(example_tsds, model):
 
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
-def test_forecast_no_warning_confidence_intervals(example_tsds, model):
-    """Test that forecast doesn't warn when called with confidence intervals."""
+def test_forecast_no_warning_prediction_intervals(example_tsds, model):
+    """Test that forecast doesn't warn when called with prediction intervals."""
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
     with pytest.warns(None) as record:
-        _ = pipeline.forecast(confidence_interval=True)
-    # check absence of warnings about confidence intervals
+        _ = pipeline.forecast(prediction_interval=True)
+    # check absence of warnings about prediction intervals
     assert (
-        len([warning for warning in record.list if re.match("doesn't support confidence intervals", str(warning))]) == 0
+        len([warning for warning in record.list if re.match("doesn't support prediction intervals", str(warning))]) == 0
     )
 
 
-def test_forecast_confidence_interval(splited_piecewise_constant_ts):
-    """Test that the confidence interval for piecewise-constant dataset is correct."""
+def test_forecast_prediction_interval(splited_piecewise_constant_ts):
+    """Test that the prediction interval for piecewise-constant dataset is correct."""
     train, test = splited_piecewise_constant_ts
     pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=5)
     pipeline.fit(train)
-    forecast = pipeline.forecast(confidence_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True)
     assert (forecast.df.values == test.df.values).all()
 
 
 @pytest.mark.parametrize("interval_width_lower,interval_width_upper", ([(0.6, 0.95)]))
-def test_forecast_confidence_interval_size(example_tsds, interval_width_lower, interval_width_upper):
-    """Test that the higher value for interval_width parameter is passed, the wider confidence interval is forecasted."""
+def test_forecast_prediction_interval_size(example_tsds, interval_width_lower, interval_width_upper):
+    """Test that the higher value for interval_width parameter is passed, the wider prediction interval is forecasted."""
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, interval_width=interval_width_lower)
     pipeline.fit(example_tsds)
-    forecast = pipeline.forecast(confidence_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True)
     lower_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
 
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, interval_width=interval_width_upper)
     pipeline.fit(example_tsds)
-    forecast = pipeline.forecast(confidence_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True)
     upper_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
 
     assert (lower_interval_length <= upper_interval_length).all()
 
 
-def test_forecast_confidence_interval_noise(constant_ts, constant_noisy_ts):
-    """Test that confidence interval for noisy dataset is wider then for the dataset without noise."""
+def test_forecast_prediction_interval_noise(constant_ts, constant_noisy_ts):
+    """Test that prediction interval for noisy dataset is wider then for the dataset without noise."""
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(constant_ts)
-    forecast = pipeline.forecast(confidence_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True)
     lower_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
 
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(constant_noisy_ts)
-    forecast = pipeline.forecast(confidence_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True)
     upper_interval_length = forecast[:, :, "target_upper"].values - forecast[:, :, "target_lower"].values
 
     assert (lower_interval_length <= upper_interval_length).all()

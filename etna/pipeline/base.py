@@ -18,7 +18,7 @@ class BasePipeline(ABC, BaseMixin):
         Parameters
         ----------
         interval_width:
-            The significance level for the confidence interval.
+            The significance level for the prediction interval.
 
         Raises
         ------
@@ -29,8 +29,8 @@ class BasePipeline(ABC, BaseMixin):
 
     @property
     @abstractmethod
-    def support_confidence_interval(self) -> bool:
-        """Indicate if method supports confidence intervals."""
+    def support_prediction_interval(self) -> bool:
+        """Indicate if method supports prediction intervals."""
         pass
 
     @staticmethod
@@ -41,13 +41,13 @@ class BasePipeline(ABC, BaseMixin):
         else:
             raise ValueError("Interval width should be a number from (0,1).")
 
-    def check_support_confidence_interval(self, confidence_interval_option: bool = False):
-        """Check if pipeline supports confidence intervals, if not, warns a user.
+    def check_support_prediction_interval(self, prediction_interval_option: bool = False):
+        """Check if pipeline supports prediction intervals, if not, warns a user.
 
         Parameters
         ----------
-        confidence_interval_option:
-            indicate if forecast method is called with `confidence_interval=True`
+        prediction_interval_option:
+            indicate if forecast method is called with `prediction_interval=True`
         """
-        if not self.support_confidence_interval and confidence_interval_option:
-            warnings.warn("This class doesn't support confidence intervals and they won't be build")
+        if not self.support_prediction_interval and prediction_interval_option:
+            warnings.warn("This class doesn't support prediction intervals and they won't be build")
