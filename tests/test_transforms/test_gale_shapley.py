@@ -532,7 +532,7 @@ def relevance_table() -> pd.DataFrame:
 
 
 @pytest.mark.parametrize(
-    "matches,n,expected",
+    "matches,n,greater_is_better,expected",
     (
         (
             {
@@ -541,7 +541,18 @@ def relevance_table() -> pd.DataFrame:
                 "segment_3": "regressor_5",
             },
             2,
+            False,
             ["regressor_5", "regressor_7"],
+        ),
+        (
+            {
+                "segment_1": "regressor_4",
+                "segment_2": "regressor_7",
+                "segment_3": "regressor_5",
+            },
+            1,
+            True,
+            ["regressor_4"],
         ),
         (
             {
@@ -550,6 +561,7 @@ def relevance_table() -> pd.DataFrame:
                 "segment_3": "regressor_1",
             },
             2,
+            False,
             ["regressor_1", "regressor_2"],
         ),
         (
@@ -559,14 +571,15 @@ def relevance_table() -> pd.DataFrame:
                 "segment_3": "regressor_1",
             },
             3,
+            False,
             ["regressor_1", "regressor_2", "regressor_3"],
         ),
     ),
 )
 def test_gale_shapley_transform_process_last_step(
-    matches: Dict[str, str], n: int, expected: List[str], relevance_table: pd.DataFrame
+    matches: Dict[str, str], n: int, greater_is_better: bool, expected: List[str], relevance_table: pd.DataFrame
 ):
     result = GaleShapleyFeatureSelectionTransform._process_last_step(
-        matches=matches, relevance_table=relevance_table, n=n
+        matches=matches, relevance_table=relevance_table, n=n, greater_is_better=greater_is_better
     )
     assert sorted(result) == sorted(expected)

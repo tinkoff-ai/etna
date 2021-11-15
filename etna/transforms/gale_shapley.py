@@ -283,27 +283,24 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         return segment_regressors_ranking
 
     @staticmethod
-    def _process_last_step(matches: Dict[str, str], relevance_table: pd.DataFrame, n: int) -> List[str]:
+    def _process_last_step(
+        matches: Dict[str, str], relevance_table: pd.DataFrame, n: int, greater_is_better: bool
+    ) -> List[str]:
         """Choose n regressors from given ones according to relevance_matrix."""
         regressors_relevance = {
             regressor: relevance_table[regressor][segment] for segment, regressor in matches.items()
         }
-        sorted_regressors = sorted(regressors_relevance.items(), key=lambda item: item[1])
+        sorted_regressors = sorted(regressors_relevance.items(), key=lambda item: item[1], reverse=greater_is_better)
         selected_regressors = [regressor[0] for regressor in sorted_regressors][:n]
         return selected_regressors
 
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Fit algo and drop not important columns.
+    def fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
+        """Fit Gale-Shapley algo and find a pool of top_k regressors.
 
         Parameters
         ----------
         df:
-            dataframe to fit and apply transformation
-
-        Returns
-        -------
-        transformed_df: pd.DataFrame
-            dataset without not important columns
+            dataframe to fit algo
         """
         regressors = self._get_regressors(df=df)
         relevance_table = self._compute_relevance_table(df=df, regressors=regressors)
@@ -326,7 +323,10 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             )
             if step == gale_shapley_steps_number - 1:
                 selected_regressors = self._process_last_step(
-                    matches=matches, relevance_table=relevance_table, n=last_step_regressors_number
+                    matches=matches,
+                    relevance_table=relevance_table,
+                    n=last_step_regressors_number,
+                    greater_is_better=self.greater_is_better,
                 )
             else:
                 selected_regressors = list(matches.values())
@@ -334,4 +334,4 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             segment_regressors_ranking = self._update_ranking_list(
                 segment_regressors_ranking=segment_regressors_ranking, regressors_to_drop=selected_regressors
             )
-        self.transform(df=df)
+        return self
