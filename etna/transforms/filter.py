@@ -66,7 +66,7 @@ class FilterFeaturesTransform(Transform):
             if not set(self.include).issubset(features):
                 raise ValueError("Some features in include are not present in the dataset")
             segments = sorted(set(df.columns.get_level_values("segment")))
-            result = result.loc[:, (segments, self.include)]
+            result = result.loc[:, pd.IndexSlice[segments, self.include]]
         if self.exclude is not None and self.exclude:
             if not set(self.exclude).issubset(features):
                 raise ValueError("Some features in exclude are not present in the dataset")

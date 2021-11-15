@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -47,9 +48,15 @@ def test_include_filter(ts_with_features, include):
     transform = FilterFeaturesTransform(include=include)
     ts_with_features.fit_transform([transform])
     df_transformed = ts_with_features.df
-    expected_columns = set(df_transformed.columns.get_level_values("feature"))
+    expected_columns = set(ts_with_features.columns.get_level_values("feature"))
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == expected_columns
+    segments = ts_with_features.segments
+    for column in got_columns:
+        assert np.all(
+            df_transformed.loc[:, pd.IndexSlice[segments, column]]
+            == ts_with_features.df.loc[:, pd.IndexSlice[segments, column]]
+        )
 
 
 @pytest.mark.parametrize(
@@ -68,6 +75,12 @@ def test_exclude_filter(ts_with_features, exclude, expected_columns):
     df_transformed = ts_with_features.df
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == set(expected_columns)
+    segments = ts_with_features.segments
+    for column in got_columns:
+        assert np.all(
+            df_transformed.loc[:, pd.IndexSlice[segments, column]]
+            == ts_with_features.df.loc[:, pd.IndexSlice[segments, column]]
+        )
 
 
 def test_include_filter_wrong_column(ts_with_features):
