@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add histogram method in outliers notebook ([#252](https://github.com/tinkoff-ai/etna-ts/pull/252)) 
 - Joblib parameters for backtest and ensembles ([#253](https://github.com/tinkoff-ai/etna-ts/pull/253))
 - Replace cycle over segments with vectorized expression in TSDataset._check_endings ([#264](https://github.com/tinkoff-ai/etna-ts/pull/264))
+- Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna-ts/pull/285))
 
 ### Fixed
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
