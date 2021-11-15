@@ -5,8 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
+from etna.datasets import generate_periodic_df
 from etna.transforms.gale_shapley import BaseGaleShapley
 from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
 from etna.transforms.gale_shapley import GaleShapleyMatcher
@@ -15,25 +17,21 @@ from etna.transforms.gale_shapley import SegmentGaleShapley
 
 
 @pytest.fixture
-def ts_with_complex_exog() -> TSDataset:
-    df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=4)
+def ts_with_large_regressors_number(random_seed) -> TSDataset:
+    df = generate_periodic_df(periods=100, start_time="2020-01-01", n_segments=3, period=7, scale=10)
 
-    df_exog_1 = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=4, random_seed=2).rename(
-        {"target": "exog"}, axis=1
-    )
-    df_exog_2 = generate_ar_df(periods=150, start_time="2019-12-01", n_segments=4, random_seed=3).rename(
+    exog_df = generate_periodic_df(periods=150, start_time="2020-01-01", n_segments=3, period=7).rename(
         {"target": "regressor_1"}, axis=1
     )
-    df_exog_3 = generate_ar_df(periods=150, start_time="2019-12-01", n_segments=4, random_seed=4).rename(
-        {"target": "regressor_2"}, axis=1
-    )
+    for i in range(1, 4):
+        tmp = generate_periodic_df(periods=150, start_time="2020-01-01", n_segments=3, period=7)
+        tmp["target"] += np.random.uniform(low=-i / 5, high=i / 5, size=(450,))
+        exog_df = exog_df.merge(tmp.rename({"target": f"regressor_{i + 1}"}, axis=1), on=["timestamp", "segment"])
+    for i in range(4, 8):
+        tmp = generate_ar_df(periods=150, start_time="2020-01-01", n_segments=3, ar_coef=[1], random_seed=i)
+        exog_df = exog_df.merge(tmp.rename({"target": f"regressor_{i + 1}"}, axis=1), on=["timestamp", "segment"])
 
-    df_exog = pd.merge(df_exog_1, df_exog_2, on=["timestamp", "segment"], how="right")
-    df_exog = pd.merge(df_exog, df_exog_3, on=["timestamp", "segment"])
-
-    df = TSDataset.to_dataset(df)
-    df_exog = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(exog_df))
     return ts
 
 
@@ -44,9 +42,79 @@ def relevance_matrix() -> pd.DataFrame:
     return table
 
 
-def test_get_regressors(ts_with_complex_exog: TSDataset):
-    regressors = GaleShapleyFeatureSelectionTransform._get_regressors(ts_with_complex_exog.df)
-    assert sorted(regressors) == ["regressor_1", "regressor_2"]
+@pytest.fixture
+def base_gale_shapley_player() -> BaseGaleShapley:
+    base = BaseGaleShapley(name="regressor_1", ranked_candidates=["segment_1", "segment_3", "segment_2", "segment_4"])
+    return base
+
+
+@pytest.fixture
+def regressor() -> RegressorGaleShapley:
+    reg = RegressorGaleShapley(
+        name="regressor_1", ranked_candidates=["segment_1", "segment_3", "segment_2", "segment_4"]
+    )
+    return reg
+
+
+@pytest.fixture
+def segment() -> SegmentGaleShapley:
+    segment = SegmentGaleShapley(
+        name="segment_1", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
+    )
+    return segment
+
+
+@pytest.fixture
+def matcher() -> GaleShapleyMatcher:
+    segments = [
+        SegmentGaleShapley(
+            name="segment_1",
+            ranked_candidates=["regressor_1", "regressor_2", "regressor_3"],
+        ),
+        SegmentGaleShapley(
+            name="segment_2",
+            ranked_candidates=["regressor_1", "regressor_3", "regressor_2"],
+        ),
+        SegmentGaleShapley(
+            name="segment_3",
+            ranked_candidates=["regressor_2", "regressor_3", "regressor_1"],
+        ),
+    ]
+    regressors = [
+        RegressorGaleShapley(
+            name="regressor_1",
+            ranked_candidates=["segment_3", "segment_1", "segment_2"],
+        ),
+        RegressorGaleShapley(
+            name="regressor_2",
+            ranked_candidates=["segment_2", "segment_3", "segment_1"],
+        ),
+        RegressorGaleShapley(
+            name="regressor_3",
+            ranked_candidates=["segment_1", "segment_2", "segment_3"],
+        ),
+    ]
+    gsh = GaleShapleyMatcher(segments=segments, regressors=regressors)
+    return gsh
+
+
+@pytest.fixture
+def relevance_matrix_big() -> pd.DataFrame:
+    matrix = np.array([[1, 2, 3, 4, 5, 6, 7], [6, 1, 3, 4, 7, 5, 2], [1, 5, 4, 3, 2, 7, 6]])
+    table = pd.DataFrame(
+        matrix,
+        index=["segment_1", "segment_2", "segment_3"],
+        columns=[
+            "regressor_1",
+            "regressor_2",
+            "regressor_3",
+            "regressor_4",
+            "regressor_5",
+            "regressor_6",
+            "regressor_7",
+        ],
+    )
+    return table
 
 
 @pytest.mark.parametrize(
@@ -163,62 +231,6 @@ def test_gale_shapley_transform_update_ranking_list(
     )
     for key in result:
         assert result[key] == expected[key]
-
-
-@pytest.fixture
-def base_gale_shapley_player() -> BaseGaleShapley:
-    base = BaseGaleShapley(name="regressor_1", ranked_candidates=["segment_1", "segment_3", "segment_2", "segment_4"])
-    return base
-
-
-@pytest.fixture
-def regressor() -> RegressorGaleShapley:
-    reg = RegressorGaleShapley(
-        name="regressor_1", ranked_candidates=["segment_1", "segment_3", "segment_2", "segment_4"]
-    )
-    return reg
-
-
-@pytest.fixture
-def segment() -> SegmentGaleShapley:
-    segment = SegmentGaleShapley(
-        name="segment_1", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
-    )
-    return segment
-
-
-@pytest.fixture
-def matcher() -> GaleShapleyMatcher:
-    segments = [
-        SegmentGaleShapley(
-            name="segment_1",
-            ranked_candidates=["regressor_1", "regressor_2", "regressor_3"],
-        ),
-        SegmentGaleShapley(
-            name="segment_2",
-            ranked_candidates=["regressor_1", "regressor_3", "regressor_2"],
-        ),
-        SegmentGaleShapley(
-            name="segment_3",
-            ranked_candidates=["regressor_2", "regressor_3", "regressor_1"],
-        ),
-    ]
-    regressors = [
-        RegressorGaleShapley(
-            name="regressor_1",
-            ranked_candidates=["segment_3", "segment_1", "segment_2"],
-        ),
-        RegressorGaleShapley(
-            name="regressor_2",
-            ranked_candidates=["segment_2", "segment_3", "segment_1"],
-        ),
-        RegressorGaleShapley(
-            name="regressor_3",
-            ranked_candidates=["segment_1", "segment_2", "segment_3"],
-        ),
-    ]
-    gsh = GaleShapleyMatcher(segments=segments, regressors=regressors)
-    return gsh
 
 
 def test_base_update_segment(base_gale_shapley_player: BaseGaleShapley):
@@ -512,25 +524,6 @@ def test_gale_shapley_transform_gale_shapley_iteration(
     )
 
 
-@pytest.fixture
-def relevance_table() -> pd.DataFrame:
-    matrix = np.array([[1, 2, 3, 4, 5, 6, 7], [6, 1, 3, 4, 7, 5, 2], [1, 5, 4, 3, 2, 7, 6]])
-    table = pd.DataFrame(
-        matrix,
-        index=["segment_1", "segment_2", "segment_3"],
-        columns=[
-            "regressor_1",
-            "regressor_2",
-            "regressor_3",
-            "regressor_4",
-            "regressor_5",
-            "regressor_6",
-            "regressor_7",
-        ],
-    )
-    return table
-
-
 @pytest.mark.parametrize(
     "matches,n,greater_is_better,expected",
     (
@@ -577,9 +570,35 @@ def relevance_table() -> pd.DataFrame:
     ),
 )
 def test_gale_shapley_transform_process_last_step(
-    matches: Dict[str, str], n: int, greater_is_better: bool, expected: List[str], relevance_table: pd.DataFrame
+    matches: Dict[str, str], n: int, greater_is_better: bool, expected: List[str], relevance_matrix_big: pd.DataFrame
 ):
     result = GaleShapleyFeatureSelectionTransform._process_last_step(
-        matches=matches, relevance_table=relevance_table, n=n, greater_is_better=greater_is_better
+        matches=matches, relevance_table=relevance_matrix_big, n=n, greater_is_better=greater_is_better
     )
     assert sorted(result) == sorted(expected)
+
+
+@pytest.mark.parametrize("use_rank", (True, False))
+@pytest.mark.parametrize("top_k", (2, 3, 5, 6))
+def test_gale_shapley_transform_fit(ts_with_large_regressors_number: TSDataset, top_k: int, use_rank: bool):
+    df = ts_with_large_regressors_number.df
+    transform = GaleShapleyFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=top_k, use_rank=use_rank
+    )
+    transform.fit(df=df)
+
+
+def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: TSDataset):
+    df = ts_with_large_regressors_number.df
+    transform = GaleShapleyFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
+    )
+    transformed = transform.fit_transform(df=df)
+    assert set(transformed.columns.get_level_values("feature")) == {
+        "target",
+        "regressor_1",
+        "regressor_2",
+        "regressor_3",
+        "regressor_4",
+        "regressor_5",
+    }

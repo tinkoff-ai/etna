@@ -215,7 +215,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         """Compute relevance table with given data."""
         targets_df = df.loc[:, pd.IndexSlice[:, "target"]]
         regressors_df = df.loc[:, pd.IndexSlice[:, regressors]]
-        table = self.relevance_table(df=targets_df, df_exog=regressors_df)
+        table = self.relevance_table(df=targets_df, df_exog=regressors_df, return_ranks=self.use_rank)
         return table
 
     @staticmethod
