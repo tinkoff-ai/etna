@@ -34,7 +34,7 @@ def get_anomalies_median(
     outliers_per_segment = {}
     segments = ts.segments
     for seg in segments:
-        anomal = []
+        anomalies = []
 
         segment_df = ts.df[seg].reset_index()
         values = segment_df[in_column].values
@@ -47,6 +47,6 @@ def get_anomalies_median(
             med = np.median(values[left_border:right_border])
             std = np.std(values[left_border:right_border])
             diff = np.abs(values[left_border:right_border] - med)
-            anomal.extend(np.where(diff > std * alpha)[0] + left_border)
-        outliers_per_segment[seg] = [timestamp[i] for i in anomal]
+            anomalies.extend(np.where(diff > std * alpha)[0] + left_border)
+        outliers_per_segment[seg] = [timestamp[i] for i in anomalies]
     return outliers_per_segment

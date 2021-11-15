@@ -42,7 +42,7 @@ def test_get_change_points(multitrend_df: pd.DataFrame, n_bkps: int):
 
 
 def test_build_trend_intervals():
-    """Check correctnes of intervals generation with list of change points."""
+    """Check correctness of intervals generation with list of change points."""
     change_points = [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")]
     expected_intervals = [
         (pd.Timestamp.min, pd.Timestamp("2020-01-01")),

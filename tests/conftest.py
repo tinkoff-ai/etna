@@ -9,7 +9,7 @@ from etna.datasets.tsdataset import TSDataset
 
 @pytest.fixture(autouse=True)
 def random_seed():
-    "Fixture to fix random state for every test case"
+    """Fixture to fix random state for every test case."""
     import random
 
     import torch

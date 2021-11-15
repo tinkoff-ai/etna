@@ -56,7 +56,7 @@ class TFTModel(Model):
         gpus:
             0 - is CPU, or [n_{i}] - to choose n_{i} GPU from cluster.
         gradient_clip_val:
-            Cliping by norm is using, choose 0 to not clip.
+            Clipping by norm is using, choose 0 to not clip.
         learning_rate:
             Learning rate.
         hidden_size:
@@ -68,7 +68,7 @@ class TFTModel(Model):
         dropout:
             Dropout rate.
         hidden_continuous_size:
-            Hidden size for processing continous variables.
+            Hidden size for processing continuous variables.
         """
         self.max_epochs = max_epochs
         self.gpus = gpus
