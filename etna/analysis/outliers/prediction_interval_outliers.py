@@ -78,13 +78,14 @@ def get_anomalies_prediction_interval(
     time_points = np.array(ts.index.values)
     model_instance = model(**model_params)
     model_instance.fit(ts_inner)
+    lower_p, upper_p = [(1 - interval_width) / 2, (1 + interval_width) / 2]
     prediction_interval = model_instance.forecast(
-        deepcopy(ts_inner), prediction_interval=True, interval_width=interval_width
+        deepcopy(ts_inner), prediction_interval=True, quantiles=[lower_p, upper_p]
     )
     for segment in ts_inner.segments:
         segment_slice = prediction_interval[:, segment, :][segment]
-        anomalies_mask = (segment_slice["target"] > segment_slice["target_upper"]) | (
-            segment_slice["target"] < segment_slice["target_lower"]
+        anomalies_mask = (segment_slice["target"] > segment_slice[f"target_{upper_p}"]) | (
+            segment_slice["target"] < segment_slice[f"target_{lower_p}"]
         )
         outliers_per_segment[segment] = list(time_points[anomalies_mask])
     return outliers_per_segment

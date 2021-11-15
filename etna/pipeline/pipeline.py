@@ -42,7 +42,7 @@ class Pipeline(BasePipeline):
         model: Model,
         transforms: Sequence[Transform] = (),
         horizon: int = 1,
-        interval_width: float = 0.95,
+        quantiles: Sequence[float] = (0.025, 0.975),
         prediction_interval_cv: int = 3,
     ):
         """
@@ -56,17 +56,17 @@ class Pipeline(BasePipeline):
             Sequence of the transforms
         horizon:
             Number of timestamps in the future for forecasting
-        interval_width:
-            The significance level for the prediction interval. By default a 95% prediction interval is taken
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         prediction_interval_cv:
             Number of folds to use in the backtest for prediction interval estimation
 
         Raises
         ------
         ValueError:
-            If the horizon is less than 1, interval_width is out of (0,1) or prediction_interval_cv is less than 2.
+            If the horizon is less than 1, quantile is out of (0,1) or prediction_interval_cv is less than 2.
         """
-        super().__init__(interval_width=interval_width)
+        super().__init__(quantiles=quantiles)
         self.model = model
         self.transforms = transforms
         self.horizon = self._validate_horizon(horizon)
@@ -119,14 +119,15 @@ class Pipeline(BasePipeline):
 
         predictions = self.model.forecast(ts=future)
         se = scipy.stats.sem(residuals)
-        quantile = norm.ppf(q=(1 + self.interval_width) / 2)
-        lower_border = predictions[:, :, "target"] - se * quantile
-        upper_border = predictions[:, :, "target"] + se * quantile
-        lower_border = lower_border.rename({"target": "target_lower"}, axis=1)
-        upper_border = upper_border.rename({"target": "target_upper"}, axis=1)
-        predictions.df = pd.concat([predictions.df, lower_border, upper_border], axis=1).sort_index(
-            axis=1, level=(0, 1)
-        )
+        borders = []
+        for quantile in self.quantiles:
+            z_q = norm.ppf(q=quantile)
+            border = predictions[:, :, "target"] + se * z_q
+            border.rename({"target": f"target_{quantile}"}, inplace=True, axis=1)
+            borders.append(border)
+
+        predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
+
         return predictions
 
     def forecast(self, prediction_interval: bool = False) -> TSDataset:
@@ -148,7 +149,7 @@ class Pipeline(BasePipeline):
         if prediction_interval:
             if "prediction_interval" in inspect.signature(self.model.forecast).parameters:
                 predictions = self.model.forecast(
-                    ts=future, prediction_interval=prediction_interval, interval_width=self.interval_width
+                    ts=future, prediction_interval=prediction_interval, quantiles=self.quantiles
                 )
             else:
                 predictions = self._forecast_prediction_interval(future=future)

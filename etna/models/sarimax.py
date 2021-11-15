@@ -2,6 +2,7 @@ import warnings
 from datetime import datetime
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -230,7 +231,7 @@ class _SARIMAXModel:
         self._result = self._model.fit(start_params=start_params, disp=False)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, interval_width: float) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
@@ -240,8 +241,9 @@ class _SARIMAXModel:
             Features dataframe
         prediction_interval:
              If True returns prediction interval for forecast
-        interval_width:
-            The significance level for the prediction interval. By default a 95% prediction interval is taken
+        quantiles:
+            Levels of prediction distribution
+
         Returns
         -------
         y_pred: pd.DataFrame
@@ -264,7 +266,19 @@ class _SARIMAXModel:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
-            y_pred = forecast.summary_frame(alpha=1 - interval_width)[["mean_ci_lower", "mean", "mean_ci_upper"]]
+            y_pred = pd.DataFrame(forecast.predicted_mean)
+            y_pred.rename(
+                {"predicted_mean": "mean"},
+            )
+            for quantile in quantiles:
+                # set alpha in the way to get a desirable quantile
+                alpha = min(quantile * 2, (1 - quantile) * 2)
+                borders = forecast.conf_int(alpha=alpha)
+                if quantile < 1 / 2:
+                    series = borders["lower target"]
+                else:
+                    series = borders["upper target"]
+                y_pred[f"mean_{quantile}"] = series
         else:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
@@ -471,7 +485,7 @@ class SARIMAXModel(PerSegmentModel):
         segment: Union[str, List[str]],
         ts: TSDataset,
         prediction_interval: bool,
-        interval_width: float,
+        quantiles: Sequence[float],
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
@@ -479,33 +493,35 @@ class SARIMAXModel(PerSegmentModel):
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
         segment_predict = model.predict(
-            df=segment_features, prediction_interval=prediction_interval, interval_width=interval_width
+            df=segment_features, prediction_interval=prediction_interval, quantiles=quantiles
         )
-        segment_predict = segment_predict.rename(
-            {"mean": "target", "mean_ci_lower": "target_lower", "mean_ci_upper": "target_upper"}, axis=1
-        )
+        rename_dict = {
+            column: column.replace("mean", "target") for column in segment_predict.columns if column.startswith("mean")
+        }
+        segment_predict = segment_predict.rename(rename_dict, axis=1)
         segment_predict["segment"] = segment
         segment_predict["timestamp"] = dates
         return segment_predict
 
     @log_decorator
-    def forecast(self, ts: TSDataset, prediction_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
         """Make predictions.
+
         Parameters
         ----------
         ts:
             Dataframe with features
         prediction_interval:
             If True returns prediction interval for forecast
-        interval_width:
-            The significance level for the prediction interval. By default a 95% prediction interval is taken
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+
         Returns
         -------
         pd.DataFrame
             Models result
-        Notes
-        -----
-        The width of the prediction interval is specified in the constructor of ProphetModel setting the interval_width
         """
         if self._segments is None:
             raise ValueError("The model is not fitted yet, use fit() to train it")
@@ -514,7 +530,7 @@ class SARIMAXModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, interval_width)
+            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, quantiles)
             result_list.append(segment_predict)
 
         # need real case to test

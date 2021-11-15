@@ -47,19 +47,19 @@ def test_run_with_reg(new_format_df, new_format_exog):
 def test_prediction_interval_run_insample(example_tsds):
     model = ProphetModel()
     model.fit(example_tsds)
-    forecast = model.forecast(example_tsds, prediction_interval=True, interval_width=0.95)
+    forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
-        assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
-        assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
 def test_prediction_interval_run_infuture(example_tsds):
     model = ProphetModel()
     model.fit(example_tsds)
     future = example_tsds.make_future(10)
-    forecast = model.forecast(future, prediction_interval=True, interval_width=0.95)
+    forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
-        assert {"target_lower", "target_upper", "target"}.issubset(segment_slice.columns)
-        assert (segment_slice["target_upper"] - segment_slice["target_lower"] >= 0).all()
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()

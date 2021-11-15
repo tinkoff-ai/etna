@@ -4,6 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 from typing import List
+from typing import Sequence
 from typing import Union
 
 import pandas as pd
@@ -47,7 +48,9 @@ class Model(ABC, BaseMixin):
         pass
 
     @abstractmethod
-    def forecast(self, ts: TSDataset, prediction_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -56,8 +59,8 @@ class Model(ABC, BaseMixin):
             Dataframe with features
         prediction_interval:
             If True returns confidence interval for forecast
-        interval_width:
-            The significance level for the prediction interval. By default a 95% prediction interval is taken
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
 
         Returns
         -------

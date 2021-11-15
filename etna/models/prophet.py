@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
 
 import pandas as pd
@@ -100,7 +101,7 @@ class _ProphetModel:
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, interval_width: float):
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]):
         """
         Compute Prophet predictions.
 
@@ -110,8 +111,9 @@ class _ProphetModel:
             Features dataframe
         prediction_interval:
             If True returns prediction interval for forecast
-        interval_width:
-            The significance level for the prediction interval. By default a 95% prediction interval is taken
+        quantiles:
+            Levels of prediction distribution
+
         Returns
         -------
         y_pred: pd.DataFrame
@@ -128,14 +130,14 @@ class _ProphetModel:
                 else:
                     prophet_column_name = column_name
                 prophet_df[prophet_column_name] = df[column_name]
-        if prediction_interval:
-            self.model.interval_width = interval_width
+
         forecast = self.model.predict(prophet_df)
+        y_pred = pd.DataFrame(forecast["yhat"])
         if prediction_interval:
-            y_pred = forecast[["yhat_lower", "yhat", "yhat_upper"]]
-        else:
-            y_pred = pd.DataFrame(forecast["yhat"])
-        self.model.interval_width = self.interval_width
+            sim_values = self.model.predictive_samples(prophet_df)
+            for quantile in quantiles:
+                percentile = quantile * 100
+                y_pred[f"yhat_{quantile}"] = self.model.percentile(sim_values["yhat"], percentile, axis=1)
         return y_pred
 
 
@@ -318,7 +320,7 @@ class ProphetModel(PerSegmentModel):
         segment: Union[str, List[str]],
         ts: TSDataset,
         prediction_interval: bool,
-        interval_width: float,
+        quantiles: Sequence[float],
     ) -> pd.DataFrame:
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
@@ -326,17 +328,20 @@ class ProphetModel(PerSegmentModel):
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
         segment_predict = model.predict(
-            df=segment_features, prediction_interval=prediction_interval, interval_width=interval_width
+            df=segment_features, prediction_interval=prediction_interval, quantiles=quantiles
         )
-        segment_predict = segment_predict.rename(
-            {"yhat": "target", "yhat_lower": "target_lower", "yhat_upper": "target_upper"}, axis=1
-        )
+        rename_dict = {
+            column: column.replace("yhat", "target") for column in segment_predict.columns if column.startswith("yhat")
+        }
+        segment_predict = segment_predict.rename(rename_dict, axis=1)
         segment_predict["segment"] = segment
         segment_predict["timestamp"] = dates
         return segment_predict
 
     @log_decorator
-    def forecast(self, ts: TSDataset, prediction_interval: bool = False, interval_width: float = 0.95) -> TSDataset:
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -345,17 +350,13 @@ class ProphetModel(PerSegmentModel):
             Dataframe with features
         prediction_interval:
             If True returns prediction interval for forecast
-        interval_width:
-            The significance level for the prediction interval. By default a 95% prediction interval is taken
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
 
         Returns
         -------
         TSDataset
             Models result
-
-        Notes
-        -----
-        The width of the prediction interval is specified in the constructor of ProphetModel setting the interval_width.
         """
         if self._segments is None:
             raise ValueError("The model is not fitted yet, use fit() to train it")
@@ -364,7 +365,7 @@ class ProphetModel(PerSegmentModel):
         for segment in self._segments:
             model = self._models[segment]
 
-            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, interval_width)
+            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, quantiles)
             result_list.append(segment_predict)
 
         # need real case to test
