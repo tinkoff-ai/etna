@@ -2,10 +2,10 @@
 
 ## Before submitting (must do checklist)
 
-- [ ] Did you read the [contribution guide](https://github.com/tinkoff-ai/etna-ts/blob/master/CONTRIBUTING.md)?
+- [ ] Did you read the [contribution guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md)?
 - [ ] Did you update the docs? We use Numpy format for all the methods and classes.
 - [ ] Did you write any new necessary tests?
-- [ ] Did you update the [CHANGELOG](https://github.com/tinkoff-ai/etna-ts/blob/master/CHANGELOG.md)?
+- [ ] Did you update the [CHANGELOG](https://github.com/tinkoff-ai/etna/blob/master/CHANGELOG.md)?
 <!-- For CHANGELOG separate each item in unreleased section by blank line to reduce collisions -->
 
 ## Type of Change

@@ -12,7 +12,7 @@ body:
       Search the [Issues][issues] first.
       Search the [Documentation][docs] second.
 
-      [issues]: https://github.com/tinkoff-ai/etna-ts/issues
+      [issues]: https://github.com/tinkoff-ai/etna/issues
       [docs]: https://etna-docs.netlify.app
     options:
       - label: I have searched the issues.
