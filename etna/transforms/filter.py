@@ -10,7 +10,7 @@ class FilterFeaturesTransform(Transform):
     """Filters features in each segment of the dataframe."""
 
     def __init__(self, include: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]] = None):
-        """Create instance of LagTransform.
+        """Create instance of FilterFeaturesTransform.
 
         Parameters
         ----------
@@ -39,11 +39,11 @@ class FilterFeaturesTransform(Transform):
         Parameters
         ----------
         df:
-            dataframe with data to fit label encoder.
+            dataframe with data.
 
         Returns
         -------
-        self
+        result: FilterFeaturesTransform
         """
         return self
 
