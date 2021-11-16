@@ -25,7 +25,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Point outliers
     - Median method
     - Density method
-    - Confidence interval method
+    - Prediction interval method
     - Histogram method
 - Sequence outliers
 - Interactive visualization

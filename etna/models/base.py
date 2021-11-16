@@ -58,7 +58,7 @@ class Model(ABC, BaseMixin):
         ts:
             Dataframe with features
         prediction_interval:
-            If True returns confidence interval for forecast
+            If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
 
