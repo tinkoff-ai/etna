@@ -77,7 +77,7 @@ class SegmentGaleShapley(BaseGaleShapley):
         super().update_tmp_match(name=name)
         self.last_candidate = self.tmp_match_rank
 
-    def get_next_candidate(self) -> str:
+    def get_next_candidate(self) -> Optional[str]:
         """Get name of the next regressor to try.
 
         Returns
@@ -89,6 +89,9 @@ class SegmentGaleShapley(BaseGaleShapley):
             self.last_candidate = 0
         else:
             self.last_candidate += 1
+
+        if self.last_candidate >= len(self.ranked_candidate):
+            return None
         return self.ranked_candidate[self.last_candidate]
 
 
@@ -159,10 +162,33 @@ class GaleShapleyMatcher(BaseMixin):
         segment.reset_tmp_match()
         regressor.reset_tmp_match()
 
-    def _gale_shapley_iteration(self, available_segments: List[SegmentGaleShapley]):
-        """Run iteration of Gale-Shapley matching for given available_segments."""
+    def _gale_shapley_iteration(self, available_segments: List[SegmentGaleShapley]) -> bool:
+        """
+        Run iteration of Gale-Shapley matching for given available_segments.
+
+        Parameters
+        ----------
+        available_segments:
+            list of segments that have no match at this iteration
+
+        Returns
+        -------
+        success: bool
+            True if there is at least one match attempt at the iteration
+
+        Notes
+        -----
+        Success code is necessary because in ETNA usage we can not guarantee that number of regressors will be
+        big enough to build matches with all the segments. In case n_regressors < n_segments some segments always stay
+        available that can cause infinite while loop in __call__.
+        """
+        success = False
         for segment in available_segments:
-            next_regressor_candidate = self.regressor_by_name[segment.get_next_candidate()]
+            next_regressor_candidate_name = segment.get_next_candidate()
+            if next_regressor_candidate_name is None:
+                continue
+            next_regressor_candidate = self.regressor_by_name[next_regressor_candidate_name]
+            success = True
             if next_regressor_candidate.check_segment(segment=segment.name):
                 if not next_regressor_candidate.is_available:
                     self.break_match(
@@ -170,6 +196,7 @@ class GaleShapleyMatcher(BaseMixin):
                         regressor=next_regressor_candidate,
                     )
                 self.match(segment=segment, regressor=next_regressor_candidate)
+        return success
 
     def _get_available_segments(self) -> List[SegmentGaleShapley]:
         """Get list of available segments."""
@@ -183,11 +210,12 @@ class GaleShapleyMatcher(BaseMixin):
         matching: Dict[str, str]
             matching dict of segment x regressor
         """
+        success_run = True
         available_segments = self._get_available_segments()
-        while available_segments:
-            self._gale_shapley_iteration(available_segments=available_segments)
+        while available_segments and success_run:
+            success_run = self._gale_shapley_iteration(available_segments=available_segments)
             available_segments = self._get_available_segments()
-        return {segment.name: segment.tmp_match for segment in self.segments}
+        return {segment.name: segment.tmp_match for segment in self.segments if segment.tmp_match is not None}
 
 
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):

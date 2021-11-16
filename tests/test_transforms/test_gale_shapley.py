@@ -285,7 +285,7 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
 
 def test_gale_shapley_matcher_gale_shapley_iteration(matcher: GaleShapleyMatcher):
     available_segments = matcher._get_available_segments()
-    matcher._gale_shapley_iteration(available_segments=available_segments)
+    assert matcher._gale_shapley_iteration(available_segments=available_segments)
     assert not matcher.segments[0].is_available
     assert matcher.segments[0].tmp_match == "regressor_1"
     assert matcher.segments[1].is_available
@@ -293,13 +293,15 @@ def test_gale_shapley_matcher_gale_shapley_iteration(matcher: GaleShapleyMatcher
     assert not matcher.segments[2].is_available
     assert matcher.segments[2].tmp_match == "regressor_2"
     available_segments = matcher._get_available_segments()
-    matcher._gale_shapley_iteration(available_segments=available_segments)
+    assert matcher._gale_shapley_iteration(available_segments=available_segments)
     assert not matcher.segments[0].is_available
     assert matcher.segments[0].tmp_match == "regressor_1"
     assert not matcher.segments[1].is_available
     assert matcher.segments[1].tmp_match == "regressor_3"
     assert not matcher.segments[2].is_available
     assert matcher.segments[2].tmp_match == "regressor_2"
+    available_segments = matcher._get_available_segments()
+    assert not matcher._gale_shapley_iteration(available_segments=available_segments)
 
 
 @pytest.mark.parametrize(
@@ -579,7 +581,7 @@ def test_gale_shapley_transform_process_last_step(
 
 
 @pytest.mark.parametrize("use_rank", (True, False))
-@pytest.mark.parametrize("top_k", (2, 3, 5, 6))
+@pytest.mark.parametrize("top_k", (2, 3, 5, 6, 7))
 def test_gale_shapley_transform_fit(ts_with_large_regressors_number: TSDataset, top_k: int, use_rank: bool):
     df = ts_with_large_regressors_number.df
     transform = GaleShapleyFeatureSelectionTransform(
