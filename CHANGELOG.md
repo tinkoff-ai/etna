@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna-ts/pull/268/))
+- FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna-ts/pull/277))
 
 ### Changed
 
@@ -27,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna-ts/pull/258))
 - Feature relevance table calculation using feature importance ([#261](https://github.com/tinkoff-ai/etna-ts/pull/261))
 - MeanSegmentEncoderTransform ([#265](https://github.com/tinkoff-ai/etna-ts/pull/265))
-- FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna-ts/pull/277))
 
 ### Changed
 - Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
