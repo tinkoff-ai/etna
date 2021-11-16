@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna-ts/pull/268/))
+
+### Changed
+
+### Fixed
+
+## [1.3.1] - 2021-11-12
+### Changed
+- Delete restriction on version of pandas ([#274](https://github.com/tinkoff-ai/etna-ts/pull/274))
+
+## [1.3.0] - 2021-11-12
+### Added
 - Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223), [#259](https://github.com/tinkoff-ai/etna-ts/pull/259))
 - TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
-- MRMRFeatureSelectionTransform ([#251](https://github.com/tinkoff-ai/etna-ts/pull/251))
-- Feature relevance table calculation ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
 - Feature relevance table calculation using tsfresh ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
 - Method to_flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
 - Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna-ts/pull/211))

@@ -9,15 +9,11 @@ from sklearn.metrics import r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
-from etna.analysis import StatisticsRelevanceTable
-from etna.clustering import DTWClustering
-from etna.clustering import EuclideanClustering
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import SegmentEncoderTransform
-from etna.transforms.feature_importance import MRMRFeatureSelectionTransform
 from etna.transforms.feature_importance import TreeFeatureSelectionTransform
 
 
@@ -60,61 +56,6 @@ def ts_with_regressors():
     # construct TSDataset
     df = df[df["timestamp"] <= timestamp[200]]
     return TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq="D")
-
-
-@pytest.mark.parametrize(
-    "relevance_method, clustering_method",
-    [
-        [StatisticsRelevanceTable(), EuclideanClustering()],
-        [StatisticsRelevanceTable(), DTWClustering()],
-    ],
-)
-@pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
-def test_mrmr_right_len(relevance_method, clustering_method, top_k, ts_with_regressors):
-    """Check that transform selects exactly top_k regressors."""
-    df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_method, top_k, clustering_method, n_clusters=2)
-    df_selected = mrmr.fit_transform(df)
-    all_regressors = ts_with_regressors.regressors
-    selected_regressors = set()
-    for column in df_selected.columns.get_level_values("feature"):
-        if column.startswith("regressor"):
-            selected_regressors.add(column)
-
-    assert len(selected_regressors) == min(len(all_regressors), top_k)
-
-
-@pytest.mark.parametrize(
-    "relevance_method, clustering_method",
-    [
-        [StatisticsRelevanceTable(), EuclideanClustering()],
-    ],
-)
-def test_mrmr_right_regressors(relevance_method, clustering_method, ts_with_regressors):
-    """Check that transform selects right top_k regressors."""
-    df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_method, 3, clustering_method, n_clusters=2)
-    df_selected = mrmr.fit_transform(df)
-    selected_regressors = set()
-    for column in df_selected.columns.get_level_values("feature"):
-        if column.startswith("regressor"):
-            selected_regressors.add(column)
-    assert set(selected_regressors) == set(["regressor_useful_1", "regressor_useful_2", "regressor_useless_9"])
-
-
-def test_mrmr_fails_negative_parameters():
-    """Check that transform doesn't allow you to set top_k to negative values and n_clusters >= 2."""
-    with pytest.raises(ValueError, match="positive integer"):
-        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), top_k=-1)
-    with pytest.raises(ValueError, match="greater than"):
-        MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), top_k=1, n_clusters=1)
-
-
-def test_mrmr_fails(ts_with_regressors):
-    """Check that transform doesn't allow you to set n_clusters greater than number of regressors."""
-    mrmr = MRMRFeatureSelectionTransform(StatisticsRelevanceTable(), top_k=4, freq="D", n_clusters=25)
-    with pytest.raises(ValueError, match="strictly less than"):
-        mrmr.fit_transform(ts_with_regressors.to_pandas())
 
 
 @pytest.mark.parametrize(
