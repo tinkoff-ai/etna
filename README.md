@@ -1,5 +1,5 @@
 <h1 align="center">ETNA Time Series Library</h1>
-<h3 align="center">Predict your time series the easy way</h3>
+<h3 align="center">Predict your time series the easiest way</h3>
 
 [![Pipi version](https://img.shields.io/pypi/v/etna.svg)](https://pypi.org/project/etna/)
 [![PyPI Status](https://static.pepy.tech/personalized-badge/etna?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna)
@@ -93,9 +93,9 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 [Kolesnikov Sergey](https://github.com/Scitator),
 [Makhin Artem](https://github.com/Ama16),
 [Mitskovets Ivan](https://github.com/imitskovets),
-[Munirova Albina](https://github.com/albinamunirova)
+[Munirova Albina](https://github.com/albinamunirova),
 [Romantsov Nikolay](https://github.com/WinstonDovlatov),
-[Shenshina Julia](https://github.com/julia-shenshina),
+[Shenshina Julia](https://github.com/julia-shenshina)
 
 ### ETNA.Contributors
 [Levashov Artem](https://github.com/soft1q),
