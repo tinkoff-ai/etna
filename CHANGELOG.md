@@ -7,129 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna-ts/pull/268/))
+- RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
 
 ### Changed
+- Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna-ts/pull/285))
 
 ### Fixed
 
 ## [1.3.1] - 2021-11-12
 ### Changed
-- Delete restriction on version of pandas ([#274](https://github.com/tinkoff-ai/etna-ts/pull/274))
+- Delete restriction on version of pandas ([#274](https://github.com/tinkoff-ai/etna/pull/274))
 
 ## [1.3.0] - 2021-11-12
 ### Added
-- Backtest cli ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223), [#259](https://github.com/tinkoff-ai/etna-ts/pull/259))
-- TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna-ts/pull/229))
-- Feature relevance table calculation using tsfresh ([#227](https://github.com/tinkoff-ai/etna-ts/pull/227), [#249](https://github.com/tinkoff-ai/etna-ts/pull/249))
-- Method to_flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna-ts/pull/241)
-- Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna-ts/pull/211))
-- omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna-ts/pull/258))
-- Feature relevance table calculation using feature importance ([#261](https://github.com/tinkoff-ai/etna-ts/pull/261))
-- MeanSegmentEncoderTransform ([#265](https://github.com/tinkoff-ai/etna-ts/pull/265))
+- Backtest cli ([#223](https://github.com/tinkoff-ai/etna/pull/223), [#259](https://github.com/tinkoff-ai/etna/pull/259))
+- TreeFeatureSelectionTransform ([#229](https://github.com/tinkoff-ai/etna/pull/229))
+- Feature relevance table calculation using tsfresh ([#227](https://github.com/tinkoff-ai/etna/pull/227), [#249](https://github.com/tinkoff-ai/etna/pull/249))
+- Method to_flatten to TSDataset ([#241](https://github.com/tinkoff-ai/etna/pull/241)
+- Out_column parameter to not inplace transforms([#211](https://github.com/tinkoff-ai/etna/pull/211))
+- omegaconf config parser in cli ([#258](https://github.com/tinkoff-ai/etna/pull/258))
+- Feature relevance table calculation using feature importance ([#261](https://github.com/tinkoff-ai/etna/pull/261))
+- MeanSegmentEncoderTransform ([#265](https://github.com/tinkoff-ai/etna/pull/265))
 
 ### Changed
-- Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna-ts/pull/240))
-- Make `in_column` the first argument in every transform ([#247](https://github.com/tinkoff-ai/etna-ts/pull/247))
-- Update mypy checking and fix issues with it ([#248](https://github.com/tinkoff-ai/etna-ts/pull/248))
-- Add histogram method in outliers notebook ([#252](https://github.com/tinkoff-ai/etna-ts/pull/252)) 
-- Joblib parameters for backtest and ensembles ([#253](https://github.com/tinkoff-ai/etna-ts/pull/253))
-- Replace cycle over segments with vectorized expression in TSDataset._check_endings ([#264](https://github.com/tinkoff-ai/etna-ts/pull/264))
+- Add possibility to set custom in_column for ConfidenceIntervalOutliersTransform ([#240](https://github.com/tinkoff-ai/etna/pull/240))
+- Make `in_column` the first argument in every transform ([#247](https://github.com/tinkoff-ai/etna/pull/247))
+- Update mypy checking and fix issues with it ([#248](https://github.com/tinkoff-ai/etna/pull/248))
+- Add histogram method in outliers notebook ([#252](https://github.com/tinkoff-ai/etna/pull/252)) 
+- Joblib parameters for backtest and ensembles ([#253](https://github.com/tinkoff-ai/etna/pull/253))
+- Replace cycle over segments with vectorized expression in TSDataset._check_endings ([#264](https://github.com/tinkoff-ai/etna/pull/264))
 
 ### Fixed
-- Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna-ts/pull/223))
-- Fix default value for TSDataset.tail ([#245](https://github.com/tinkoff-ai/etna-ts/pull/245))
-- Fix raising warning on fitting SklearnModel on dataset categorical columns ([#250](https://github.com/tinkoff-ai/etna-ts/issues/207)) 
-- Fix working TSDataset.make_future with empty exog values ([#244](https://github.com/tinkoff-ai/etna-ts/pull/244))
-- Fix issue with aggregate_metrics=True for ConsoleLogger and WandbLogger ([#254](https://github.com/tinkoff-ai/etna-ts/pull/254))
-- Fix binder requirements to work with optional dependencies ([#257](https://github.com/tinkoff-ai/etna-ts/pull/257))
+- Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna/pull/223))
+- Fix default value for TSDataset.tail ([#245](https://github.com/tinkoff-ai/etna/pull/245))
+- Fix raising warning on fitting SklearnModel on dataset categorical columns ([#250](https://github.com/tinkoff-ai/etna/issues/207)) 
+- Fix working TSDataset.make_future with empty exog values ([#244](https://github.com/tinkoff-ai/etna/pull/244))
+- Fix issue with aggregate_metrics=True for ConsoleLogger and WandbLogger ([#254](https://github.com/tinkoff-ai/etna/pull/254))
+- Fix binder requirements to work with optional dependencies ([#257](https://github.com/tinkoff-ai/etna/pull/257))
 
 ## [1.2.0] - 2021-10-27
 ### Added
-- BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna-ts/pull/87))
-- Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna-ts/pull/95))
-- Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna-ts/pull/92))
-- WandbLogger ([#71](https://github.com/tinkoff-ai/etna-ts/pull/71))
-- Pipeline ([#78](https://github.com/tinkoff-ai/etna-ts/pull/78))
-- Sequence anomalies ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96)), Histogram anomalies ([#79](https://github.com/tinkoff-ai/etna-ts/pull/79))
-- 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna-ts/pull/101))
-- Documentation example for models and note about inplace nature of forecast ([#112](https://github.com/tinkoff-ai/etna-ts/pull/112))
-- Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna-ts/pull/82))
-- Clustering ([#110](https://github.com/tinkoff-ai/etna-ts/pull/110))
-- Outliers notebook ([#123](https://github.com/tinkoff-ai/etna-ts/pull/123)))
-- Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna-ts/pull/135))
-- VotingEnsemble ([#150](https://github.com/tinkoff-ai/etna-ts/pull/150))
-- Forecast command for cli ([#133](https://github.com/tinkoff-ai/etna-ts/issues/133))
-- MyPy checks in CI/CD and lint commands ([#39](https://github.com/tinkoff-ai/etna-ts/issues/39))
-- TrendTransform ([#139](https://github.com/tinkoff-ai/etna-ts/pull/139))
-- Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna-ts/issues/134))
-- Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna-ts/pull/169))
-- Pipeline.backtest method ([#161](https://github.com/tinkoff-ai/etna-ts/pull/161), [#192](https://github.com/tinkoff-ai/etna-ts/pull/192))
-- STLTransform class ([#158](https://github.com/tinkoff-ai/etna-ts/pull/158))
-- NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna-ts/pull/159))
-- Example for ProphetModel ([#178](https://github.com/tinkoff-ai/etna-ts/pull/178))
-- Instruction notebook for custom model and transform creation ([#180](https://github.com/tinkoff-ai/etna-ts/pull/180))
-- Add inverse_transform in *OutliersTransform ([#160](https://github.com/tinkoff-ai/etna-ts/pull/160))
-- Examples for CatBoostModelMultiSegment and CatBoostModelPerSegment ([#181](https://github.com/tinkoff-ai/etna-ts/pull/181))
-- Simplify TSDataset.train_test_split method by allowing to pass not all values ([#191](https://github.com/tinkoff-ai/etna-ts/pull/191))
-- Confidence interval anomalies detection to EDA ([#182](https://github.com/tinkoff-ai/etna-ts/pull/182))
-- ConfidenceIntervalOutliersTransform ([#196](https://github.com/tinkoff-ai/etna-ts/pull/196))
-- Add 'in_column' parameter to get_anomalies methods([#199](https://github.com/tinkoff-ai/etna-ts/pull/199))
-- Clustering notebook ([#152](https://github.com/tinkoff-ai/etna-ts/pull/152))
-- StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna-ts/pull/195))
-- Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna-ts/pull/209))
-- Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna-ts/pull/218))
-- Function plot_backtest_interactive ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
-- Confidence intervals in Pipeline ([#221](https://github.com/tinkoff-ai/etna-ts/pull/221)) 
+- BinsegTrendTransform, ChangePointsTrendTransform ([#87](https://github.com/tinkoff-ai/etna/pull/87))
+- Interactive plot for anomalies (#[95](https://github.com/tinkoff-ai/etna/pull/95))
+- Examples to TSDataset methods with doctest ([#92](https://github.com/tinkoff-ai/etna/pull/92))
+- WandbLogger ([#71](https://github.com/tinkoff-ai/etna/pull/71))
+- Pipeline ([#78](https://github.com/tinkoff-ai/etna/pull/78))
+- Sequence anomalies ([#96](https://github.com/tinkoff-ai/etna/pull/96)), Histogram anomalies ([#79](https://github.com/tinkoff-ai/etna/pull/79))
+- 'is_weekend' feature in DateFlagsTransform ([#101](https://github.com/tinkoff-ai/etna/pull/101))
+- Documentation example for models and note about inplace nature of forecast ([#112](https://github.com/tinkoff-ai/etna/pull/112))
+- Property regressors to TSDataset ([#82](https://github.com/tinkoff-ai/etna/pull/82))
+- Clustering ([#110](https://github.com/tinkoff-ai/etna/pull/110))
+- Outliers notebook ([#123](https://github.com/tinkoff-ai/etna/pull/123)))
+- Method inverse_transform in TimeSeriesImputerTransform ([#135](https://github.com/tinkoff-ai/etna/pull/135))
+- VotingEnsemble ([#150](https://github.com/tinkoff-ai/etna/pull/150))
+- Forecast command for cli ([#133](https://github.com/tinkoff-ai/etna/issues/133))
+- MyPy checks in CI/CD and lint commands ([#39](https://github.com/tinkoff-ai/etna/issues/39))
+- TrendTransform ([#139](https://github.com/tinkoff-ai/etna/pull/139))
+- Running notebooks in ci ([#134](https://github.com/tinkoff-ai/etna/issues/134))
+- Cluster plotter to EDA ([#169](https://github.com/tinkoff-ai/etna/pull/169))
+- Pipeline.backtest method ([#161](https://github.com/tinkoff-ai/etna/pull/161), [#192](https://github.com/tinkoff-ai/etna/pull/192))
+- STLTransform class ([#158](https://github.com/tinkoff-ai/etna/pull/158))
+- NN_examples notebook ([#159](https://github.com/tinkoff-ai/etna/pull/159))
+- Example for ProphetModel ([#178](https://github.com/tinkoff-ai/etna/pull/178))
+- Instruction notebook for custom model and transform creation ([#180](https://github.com/tinkoff-ai/etna/pull/180))
+- Add inverse_transform in *OutliersTransform ([#160](https://github.com/tinkoff-ai/etna/pull/160))
+- Examples for CatBoostModelMultiSegment and CatBoostModelPerSegment ([#181](https://github.com/tinkoff-ai/etna/pull/181))
+- Simplify TSDataset.train_test_split method by allowing to pass not all values ([#191](https://github.com/tinkoff-ai/etna/pull/191))
+- Confidence interval anomalies detection to EDA ([#182](https://github.com/tinkoff-ai/etna/pull/182))
+- ConfidenceIntervalOutliersTransform ([#196](https://github.com/tinkoff-ai/etna/pull/196))
+- Add 'in_column' parameter to get_anomalies methods([#199](https://github.com/tinkoff-ai/etna/pull/199))
+- Clustering notebook ([#152](https://github.com/tinkoff-ai/etna/pull/152))
+- StackingEnsemble ([#195](https://github.com/tinkoff-ai/etna/pull/195))
+- Add AutoRegressivePipeline ([#209](https://github.com/tinkoff-ai/etna/pull/209))
+- Ensembles notebook ([#218](https://github.com/tinkoff-ai/etna/pull/218))
+- Function plot_backtest_interactive ([#225](https://github.com/tinkoff-ai/etna/pull/225))
+- Confidence intervals in Pipeline ([#221](https://github.com/tinkoff-ai/etna/pull/221)) 
 
 ### Changed
-- Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna-ts/pull/111))
-- Add Pipeline example in Get started notebook ([#115](https://github.com/tinkoff-ai/etna-ts/pull/115))
-- Internal implementation of BinsegTrendTransform ([#141](https://github.com/tinkoff-ai/etna-ts/pull/141))
-- Colorebar scaling in Correlation heatmap plotter ([#143](https://github.com/tinkoff-ai/etna-ts/pull/143))
-- Add Correlation heatmap in EDA notebook ([#144](https://github.com/tinkoff-ai/etna-ts/pull/144))
-- Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna-ts/pull/151))
-- Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna-ts/pull/155))
-- Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna-ts/pull/153))
-- Add confidence intervals to SARIMA ([#172](https://github.com/tinkoff-ai/etna-ts/pull/172))
-- Add badges to all example notebooks ([#220](https://github.com/tinkoff-ai/etna-ts/pull/220)) 
-- Update backtest notebook by adding Pipeline.backtest ([222](https://github.com/tinkoff-ai/etna-ts/pull/222))
+- Delete offset from WindowStatisticsTransform ([#111](https://github.com/tinkoff-ai/etna/pull/111))
+- Add Pipeline example in Get started notebook ([#115](https://github.com/tinkoff-ai/etna/pull/115))
+- Internal implementation of BinsegTrendTransform ([#141](https://github.com/tinkoff-ai/etna/pull/141))
+- Colorebar scaling in Correlation heatmap plotter ([#143](https://github.com/tinkoff-ai/etna/pull/143))
+- Add Correlation heatmap in EDA notebook ([#144](https://github.com/tinkoff-ai/etna/pull/144))
+- Add `__repr__` for Pipeline ([#151](https://github.com/tinkoff-ai/etna/pull/151))
+- Defined random state for every test cases ([#155](https://github.com/tinkoff-ai/etna/pull/155))
+- Add confidence intervals to Prophet ([#153](https://github.com/tinkoff-ai/etna/pull/153))
+- Add confidence intervals to SARIMA ([#172](https://github.com/tinkoff-ai/etna/pull/172))
+- Add badges to all example notebooks ([#220](https://github.com/tinkoff-ai/etna/pull/220)) 
+- Update backtest notebook by adding Pipeline.backtest ([222](https://github.com/tinkoff-ai/etna/pull/222))
 
 ### Fixed
-- Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna-ts/pull/170))
-- Categorical and fillna issues with pandas >=1.2 ([#190](https://github.com/tinkoff-ai/etna-ts/pull/190))
-- Fix `TSDataset.to_dataset` method sorting bug ([#183](https://github.com/tinkoff-ai/etna-ts/pull/183))
-- Undefined behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna-ts/pull/188))
-- Fix typo in word "length" in `get_segment_sequence_anomalies`,`get_sequence_anomalies`,`SAXOutliersTransform` arguments ([#212](https://github.com/tinkoff-ai/etna-ts/pull/212))
-- Make possible to send backtest plots with many segments ([#225](https://github.com/tinkoff-ai/etna-ts/pull/225))
+- Set default value of `TSDataset.head` method ([#170](https://github.com/tinkoff-ai/etna/pull/170))
+- Categorical and fillna issues with pandas >=1.2 ([#190](https://github.com/tinkoff-ai/etna/pull/190))
+- Fix `TSDataset.to_dataset` method sorting bug ([#183](https://github.com/tinkoff-ai/etna/pull/183))
+- Undefined behaviour of DataFrame.loc[:, pd.IndexSlice[:, ["a", "b"]]] between 1.1.* and >= 1.2 ([#188](https://github.com/tinkoff-ai/etna/pull/188))
+- Fix typo in word "length" in `get_segment_sequence_anomalies`,`get_sequence_anomalies`,`SAXOutliersTransform` arguments ([#212](https://github.com/tinkoff-ai/etna/pull/212))
+- Make possible to send backtest plots with many segments ([#225](https://github.com/tinkoff-ai/etna/pull/225))
 
 ## [1.1.3] - 2021-10-08
 ### Fixed
-- Limit version of pandas by 1.2 (excluding) ([#163](https://github.com/tinkoff-ai/etna-ts/pull/163))
+- Limit version of pandas by 1.2 (excluding) ([#163](https://github.com/tinkoff-ai/etna/pull/163))
 
 ## [1.1.2] - 2021-10-08
 ### Changed
-- SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna-ts/pull/99))
-- Update EDA notebook ([#96](https://github.com/tinkoff-ai/etna-ts/pull/96))
+- SklearnTransform out column names ([#99](https://github.com/tinkoff-ai/etna/pull/99))
+- Update EDA notebook ([#96](https://github.com/tinkoff-ai/etna/pull/96))
 - Add 'regressor_' prefix to output columns of LagTransform, DateFlagsTransform, SpecialDaysTransform, SegmentEncoderTransform
 ### Fixed
-- Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna-ts/pull/102))
-- Fix bug with hardcoded frequency in PytorchForecastingTransform ([#107](https://github.com/tinkoff-ai/etna-ts/pull/107))
-- Bug with inverse_transform method of TimeSeriesImputerTransform ([#148](https://github.com/tinkoff-ai/etna-ts/pull/148))
+- Add more obvious Exception Error for forecasting with unfitted model ([#102](https://github.com/tinkoff-ai/etna/pull/102))
+- Fix bug with hardcoded frequency in PytorchForecastingTransform ([#107](https://github.com/tinkoff-ai/etna/pull/107))
+- Bug with inverse_transform method of TimeSeriesImputerTransform ([#148](https://github.com/tinkoff-ai/etna/pull/148))
 
 ## [1.1.1] - 2021-09-23
 ### Fixed
-- Documentation build workflow ([#85](https://github.com/tinkoff-ai/etna-ts/pull/85))
+- Documentation build workflow ([#85](https://github.com/tinkoff-ai/etna/pull/85))
 
 ## [1.1.0] - 2021-09-23
 ### Added 
-- MedianOutliersTransform, DensityOutliersTransform ([#30](https://github.com/tinkoff-ai/etna-ts/pull/30))
+- MedianOutliersTransform, DensityOutliersTransform ([#30](https://github.com/tinkoff-ai/etna/pull/30))
 - Issues and Pull Request templates
-- TSDataset checks ([#24](https://github.com/tinkoff-ai/etna-ts/pull/24), [#20](https://github.com/tinkoff-ai/etna-ts/pull/20))\
-- Pytorch-Forecasting models ([#29](https://github.com/tinkoff-ai/etna-ts/pull/29))
-- SARIMAX model ([#10](https://github.com/tinkoff-ai/etna-ts/pull/10))
-- Logging, including ConsoleLogger ([#46](https://github.com/tinkoff-ai/etna-ts/pull/46))
-- Correlation heatmap plotter ([#77](https://github.com/tinkoff-ai/etna-ts/pull/77))
+- TSDataset checks ([#24](https://github.com/tinkoff-ai/etna/pull/24), [#20](https://github.com/tinkoff-ai/etna/pull/20))\
+- Pytorch-Forecasting models ([#29](https://github.com/tinkoff-ai/etna/pull/29))
+- SARIMAX model ([#10](https://github.com/tinkoff-ai/etna/pull/10))
+- Logging, including ConsoleLogger ([#46](https://github.com/tinkoff-ai/etna/pull/46))
+- Correlation heatmap plotter ([#77](https://github.com/tinkoff-ai/etna/pull/77))
 
 ### Changed
 - Backtest is fully parallel 
@@ -137,13 +138,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add 'regressor_' prefix to output columns of LagTransform, DateFlagsTransform, SpecialDaysTransform, SegmentEncoderTransform
 
 ### Fixed
-- Documentation fixes ([#55](https://github.com/tinkoff-ai/etna-ts/pull/55), [#53](https://github.com/tinkoff-ai/etna-ts/pull/53), [#52](https://github.com/tinkoff-ai/etna-ts/pull/52))
-- Solved warning in LogTransform and AddConstantTransform ([#26](https://github.com/tinkoff-ai/etna-ts/pull/26))
-- Regressors do not have enough history bug ([#35](https://github.com/tinkoff-ai/etna-ts/pull/35))
+- Documentation fixes ([#55](https://github.com/tinkoff-ai/etna/pull/55), [#53](https://github.com/tinkoff-ai/etna/pull/53), [#52](https://github.com/tinkoff-ai/etna/pull/52))
+- Solved warning in LogTransform and AddConstantTransform ([#26](https://github.com/tinkoff-ai/etna/pull/26))
+- Regressors do not have enough history bug ([#35](https://github.com/tinkoff-ai/etna/pull/35))
 - make_future(1) and make_future(2) bug
-- Fix working with 'cap' and 'floor' features in Prophet model ([#62](https://github.com/tinkoff-ai/etna-ts/pull/62))
-- Fix saving init params for SARIMAXModel ([#81](https://github.com/tinkoff-ai/etna-ts/pull/81))
-- Imports of nn models, PytorchForecastingTransform and Transform ([#80](https://github.com/tinkoff-ai/etna-ts/pull/80))
+- Fix working with 'cap' and 'floor' features in Prophet model ([#62](https://github.com/tinkoff-ai/etna/pull/62))
+- Fix saving init params for SARIMAXModel ([#81](https://github.com/tinkoff-ai/etna/pull/81))
+- Imports of nn models, PytorchForecastingTransform and Transform ([#80](https://github.com/tinkoff-ai/etna/pull/80))
 
 ## [1.0.0] - 2021-09-05
 ### Added

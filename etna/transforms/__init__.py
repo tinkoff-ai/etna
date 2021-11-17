@@ -11,9 +11,9 @@ from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform
-from etna.transforms.outliers import ConfidenceIntervalOutliersTransform
 from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
+from etna.transforms.outliers import PredictionIntervalOutliersTransform
 from etna.transforms.outliers import SAXOutliersTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform

@@ -1,4 +1,4 @@
-#  etna-ts roadmap
+#  etna roadmap
 
 **work in progress**
 

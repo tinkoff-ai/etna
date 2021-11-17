@@ -47,7 +47,7 @@ class VotingEnsemble(Pipeline):
     2021-07-07	       -13.51	       -307.02	        215.73
     """
 
-    support_confidence_interval = False
+    support_prediction_interval = False
 
     def __init__(
         self,
@@ -146,12 +146,12 @@ class VotingEnsemble(Pipeline):
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
-    def forecast(self, confidence_interval: bool = False) -> TSDataset:
+    def forecast(self, prediction_interval: bool = False) -> TSDataset:
         """Forecast with ensemble: compute weighted average of pipelines' forecasts.
 
         Parameters
         ----------
-        confidence_interval:
+        prediction_interval:
             This parameter is ignored
 
         Returns
@@ -159,7 +159,7 @@ class VotingEnsemble(Pipeline):
         TSDataset:
             dataset with forecasts
         """
-        self.check_support_confidence_interval(confidence_interval)
+        self.check_support_prediction_interval(prediction_interval)
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
