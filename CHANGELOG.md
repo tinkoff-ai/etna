@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna-ts/pull/268/))
 
 ### Changed
+- Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna-ts/pull/285))
 
 ### Fixed
 

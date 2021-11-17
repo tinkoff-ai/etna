@@ -61,25 +61,27 @@ def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset"
 
 @pytest.fixture
 def splited_piecewise_constant_ts(
-    first_constant_len=40, constant_1_1=7, constant_1_2=2, constant_2_1=50, constant_2_2=10, horizon=5
+    first_constant_len=40, constant_1_1=7.0, constant_1_2=2.0, constant_2_1=50.0, constant_2_2=10.0, horizon=5
 ) -> Tuple["TSDataset", "TSDataset"]:
 
     segment_1 = [constant_1_1] * first_constant_len + [constant_1_2] * horizon * 2
     segment_2 = [constant_2_1] * first_constant_len + [constant_2_2] * horizon * 2
 
     quantile = norm.ppf(q=(1 + INTERVAL_WIDTH) / 2)
-    se_1 = scipy.stats.sem([0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
-    se_2 = scipy.stats.sem([0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
+    se_1 = scipy.stats.sem([0.0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
+    se_2 = scipy.stats.sem([0.0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
     lower = [x - se_1 * quantile for x in segment_1] + [x - se_2 * quantile for x in segment_2]
     upper = [x + se_1 * quantile for x in segment_1] + [x + se_2 * quantile for x in segment_2]
 
     ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
+    lower_p = (1 - INTERVAL_WIDTH) / 2
+    upper_p = (1 + INTERVAL_WIDTH) / 2
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
             "target": segment_1 + segment_2,
-            "target_lower": lower,
-            "target_upper": upper,
+            f"target_{lower_p:.4g}": lower,
+            f"target_{upper_p:.4g}": upper,
             "segment": ["segment_1"] * len(segment_1) + ["segment_2"] * len(segment_2),
         }
     )
@@ -88,7 +90,7 @@ def splited_piecewise_constant_ts(
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train.drop(["target_lower", "target_upper"], axis=1)), "D")
+    train = TSDataset(TSDataset.to_dataset(train.drop([f"target_{lower_p:.4g}", f"target_{upper_p:.4g}"], axis=1)), "D")
     test = TSDataset(TSDataset.to_dataset(test), "D")
     return train, test
 
