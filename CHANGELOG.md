@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
+- GaleShapleyFeatureSelectionTransform ([#284](https://github.com/tinkoff-ai/etna/pull/284))
 - FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna/pull/277))
 
 ### Changed
