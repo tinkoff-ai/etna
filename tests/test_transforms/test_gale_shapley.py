@@ -283,27 +283,6 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
     assert regressor.is_available
 
 
-def test_gale_shapley_matcher_gale_shapley_iteration(matcher: GaleShapleyMatcher):
-    available_segments = matcher._get_available_segments()
-    assert matcher._gale_shapley_iteration(available_segments=available_segments)
-    assert not matcher.segments[0].is_available
-    assert matcher.segments[0].tmp_match == "regressor_1"
-    assert matcher.segments[1].is_available
-    assert matcher.segments[1].tmp_match is None
-    assert not matcher.segments[2].is_available
-    assert matcher.segments[2].tmp_match == "regressor_2"
-    available_segments = matcher._get_available_segments()
-    assert matcher._gale_shapley_iteration(available_segments=available_segments)
-    assert not matcher.segments[0].is_available
-    assert matcher.segments[0].tmp_match == "regressor_1"
-    assert not matcher.segments[1].is_available
-    assert matcher.segments[1].tmp_match == "regressor_3"
-    assert not matcher.segments[2].is_available
-    assert matcher.segments[2].tmp_match == "regressor_2"
-    available_segments = matcher._get_available_segments()
-    assert not matcher._gale_shapley_iteration(available_segments=available_segments)
-
-
 @pytest.mark.parametrize(
     "segments,regressors,expected",
     (
