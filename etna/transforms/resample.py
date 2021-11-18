@@ -17,8 +17,6 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
         Parameters
         ----------
-        Parameters
-        ----------
         in_column:
             name of column to be resampled
         distribution_column:
