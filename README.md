@@ -84,22 +84,22 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 ## Acknowledgments
 
 ### ETNA.Team
-[Alekseev Andrey](https://github.com/iKintosh),
-[Barinov Nikita](https://github.com/diadorer),
-[Bunin Dmitriy](https://github.com/Mr-Geekman),
-[Chikov Aleksandr](https://github.com/alex-hse-repository),
-[Denisov Vladislav](https://github.com/v-v-denisov),
-[Gabdushev Martin](https://github.com/martins0n),
-[Kolesnikov Sergey](https://github.com/Scitator),
-[Makhin Artem](https://github.com/Ama16),
-[Mitskovets Ivan](https://github.com/imitskovets),
-[Munirova Albina](https://github.com/albinamunirova),
-[Romantsov Nikolay](https://github.com/WinstonDovlatov),
-[Shenshina Julia](https://github.com/julia-shenshina)
+[Andrey Alekseev](https://github.com/iKintosh),
+[Nikita Barinov](https://github.com/diadorer),
+[Dmitriy Bunin](https://github.com/Mr-Geekman),
+[Aleksandr Chikov](https://github.com/alex-hse-repository),
+[Vladislav Denisov](https://github.com/v-v-denisov),
+[Martin Gabdushev](https://github.com/martins0n),
+[Sergey Kolesnikov](https://github.com/Scitator),
+[Artem Makhin](https://github.com/Ama16),
+[Ivan Mitskovets](https://github.com/imitskovets),
+[Albina Munirova](https://github.com/albinamunirova),
+[Nikolay Romantsov](https://github.com/WinstonDovlatov),
+[Julia Shenshina](https://github.com/julia-shenshina)
 
 ### ETNA.Contributors
-[Levashov Artem](https://github.com/soft1q),
-[Podkidyshev Aleksey](https://github.com/alekseyen)
+[Artem Levashov](https://github.com/soft1q),
+[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ## License
 
