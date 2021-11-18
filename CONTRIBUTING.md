@@ -3,7 +3,7 @@
 ## How to start?
 
 Contributing is quite easy: suggest ideas and make them done.
-We use [GitHub issues](https://github.com/tinkoff-ai/etna-ts/issues) for bug reports and feature requests.
+We use [GitHub issues](https://github.com/tinkoff-ai/etna/issues) for bug reports and feature requests.
 
 Every good PR usually consists of:
 - feature implementation :)
@@ -27,7 +27,7 @@ Please ensure that you have read the following docs:
 
 ### Bugfix
 
-1. Goto [GitHub issues](https://github.com/tinkoff-ai/etna-ts/issues);
+1. Goto [GitHub issues](https://github.com/tinkoff-ai/etna/issues);
 2. Pick an issue and comment on the task that you want to work on this feature;
 3. If you need more context on a specific issue, please ask, and we will discuss the details.
 
@@ -40,7 +40,7 @@ If you are not familiar with creating a Pull Request, here are some guides:
 
 ### Documentation
 
-etna-ts uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings.
+etna uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings.
 Length of a line inside docstrings block must be limited to 100 characters to fit into Jupyter documentation popups.
 
 You could check the docs with:

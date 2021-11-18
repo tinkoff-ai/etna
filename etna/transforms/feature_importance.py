@@ -1,7 +1,6 @@
 import warnings
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -15,7 +14,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
 from etna.datasets import TSDataset
-from etna.transforms.base import Transform
+from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 
 TreeBasedRegressor = Union[
     DecisionTreeRegressor,
@@ -27,7 +26,7 @@ TreeBasedRegressor = Union[
 ]
 
 
-class TreeFeatureSelectionTransform(Transform):
+class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """Transform that selects regressors according to tree-based models feature importance."""
 
     def __init__(self, model: TreeBasedRegressor, top_k: int):
@@ -44,19 +43,9 @@ class TreeFeatureSelectionTransform(Transform):
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
-
+        super().__init__()
         self.model = model
         self.top_k = top_k
-        self.selected_regressors: Optional[List[str]] = None
-
-    @staticmethod
-    def _get_regressors(df: pd.DataFrame) -> List[str]:
-        """Get list of regressors in the dataframe."""
-        result = set()
-        for column in df.columns.get_level_values("feature"):
-            if column.startswith("regressor_"):
-                result.add(column)
-        return sorted(list(result))
 
     @staticmethod
     def _get_train(df: pd.DataFrame) -> Tuple[np.array, np.array]:
@@ -105,28 +94,3 @@ class TreeFeatureSelectionTransform(Transform):
         weights = self._get_regressors_weights(df)
         self.selected_regressors = self._select_top_k_regressors(weights, self.top_k)
         return self
-
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Select top_k regressors.
-
-        Parameters
-        ----------
-        df:
-            dataframe with all segments data
-
-        Returns
-        -------
-        result: pd.DataFrame
-            Dataframe with with only selected regressors
-        """
-        result = df.copy()
-        selected_columns = sorted(
-            [
-                column
-                for column in df.columns.get_level_values("feature").unique()
-                if not column.startswith("regressor_") or column in self.selected_regressors
-            ]
-        )
-        result = result.loc[:, pd.IndexSlice[:, selected_columns]]
-        return result

@@ -2,15 +2,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etna.analysis import get_anomalies_confidence_interval
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
+from etna.analysis import get_anomalies_prediction_interval
 from etna.analysis import get_sequence_anomalies
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
-from etna.transforms import ConfidenceIntervalOutliersTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
+from etna.transforms import PredictionIntervalOutliersTransform
 from etna.transforms import SAXOutliersTransform
 
 
@@ -42,7 +42,7 @@ def outliers_solid_tsds():
         (MedianOutliersTransform, {}),
         (DensityOutliersTransform, {}),
         (SAXOutliersTransform, {}),
-        (ConfidenceIntervalOutliersTransform, dict(model=ProphetModel)),
+        (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
     ],
 )
 def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsds: TSDataset, in_column):
@@ -61,9 +61,9 @@ def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsd
         (DensityOutliersTransform, {}, get_anomalies_density, {}),
         (SAXOutliersTransform, {}, get_sequence_anomalies, {}),
         (
-            ConfidenceIntervalOutliersTransform,
+            PredictionIntervalOutliersTransform,
             dict(model=ProphetModel),
-            get_anomalies_confidence_interval,
+            get_anomalies_prediction_interval,
             dict(model=ProphetModel),
         ),
     ],
@@ -92,7 +92,7 @@ def test_outliers_detection(transform_constructor, constructor_kwargs, method, o
         (MedianOutliersTransform, {}),
         (DensityOutliersTransform, {}),
         (SAXOutliersTransform, {}),
-        (ConfidenceIntervalOutliersTransform, dict(model=ProphetModel)),
+        (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
     ],
 )
 def test_inverse_transform_train(transform_constructor, constructor_kwargs, outliers_solid_tsds, in_column):
@@ -112,7 +112,7 @@ def test_inverse_transform_train(transform_constructor, constructor_kwargs, outl
         (MedianOutliersTransform, {}),
         (DensityOutliersTransform, {}),
         (SAXOutliersTransform, {}),
-        (ConfidenceIntervalOutliersTransform, dict(model=ProphetModel)),
+        (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
     ],
 )
 def test_inverse_transform_future(transform_constructor, constructor_kwargs, outliers_solid_tsds, in_column):
