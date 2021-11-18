@@ -278,9 +278,18 @@ def test_generate_constant_timeranges_hours():
 
 
 @pytest.mark.parametrize(
-    "aggregate_metrics,expected_columns",
-    ((False, ["fold_number", "MAE", "MSE", "segment", "SMAPE"]), (True, ["MAE", "MSE", "segment", "SMAPE"])),
-)
+     "aggregate_metrics,expected_columns",
+     (
+         (
+             False,
+             ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
+         ),
+         (
+             True,
+             ["MAE", "MSE", "segment", "SMAPE"],
+         ),
+     ),
+ )
 def test_get_metrics_interface(
     catboost_pipeline: Pipeline, aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset
 ):
