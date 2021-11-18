@@ -5,13 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-### Added
-- RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
-
+## [1.3.2] - 2021-11-18
 ### Changed
-
-### Fixed
+- Add sum for omegaconf resolvers ([#300](https://github.com/tinkoff-ai/etna/pull/300/))
 
 ## [1.3.1] - 2021-11-12
 ### Changed
