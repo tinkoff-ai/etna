@@ -1,4 +1,5 @@
-# ETNA Time Series Library
+<h1 align="center">ETNA Time Series Library</h1>
+<h3 align="center">Predict your time series the easiest way</h3>
 
 [![Pipi version](https://img.shields.io/pypi/v/etna.svg)](https://pypi.org/project/etna/)
 [![PyPI Status](https://static.pepy.tech/personalized-badge/etna?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna)
@@ -12,6 +13,7 @@
 [Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md) |
 [Release Notes](https://github.com/tinkoff-ai/etna/releases)
 
+  
 ETNA is an easy-to-use time series forecasting framework. 
 It includes built in toolkits for time series preprocessing, feature generation, 
 a variety of predictive models with unified interface - from classic machine learning
@@ -82,23 +84,22 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 ## Acknowledgments
 
 ### ETNA.Team
-[Alekseev Andrey](https://github.com/iKintosh), 
-[Shenshina Julia](https://github.com/julia-shenshina),
-[Gabdushev Martin](https://github.com/martins0n),
-[Kolesnikov Sergey](https://github.com/Scitator),
-[Bunin Dmitriy](https://github.com/Mr-Geekman),
-[Chikov Aleksandr](https://github.com/alex-hse-repository),
-[Barinov Nikita](https://github.com/diadorer),
-[Romantsov Nikolay](https://github.com/WinstonDovlatov),
-[Makhin Artem](https://github.com/Ama16),
-[Denisov Vladislav](https://github.com/v-v-denisov),
-[Mitskovets Ivan](https://github.com/imitskovets),
-[Munirova Albina](https://github.com/albinamunirova)
-
+[Andrey Alekseev](https://github.com/iKintosh),
+[Nikita Barinov](https://github.com/diadorer),
+[Dmitriy Bunin](https://github.com/Mr-Geekman),
+[Aleksandr Chikov](https://github.com/alex-hse-repository),
+[Vladislav Denisov](https://github.com/v-v-denisov),
+[Martin Gabdushev](https://github.com/martins0n),
+[Sergey Kolesnikov](https://github.com/Scitator),
+[Artem Makhin](https://github.com/Ama16),
+[Ivan Mitskovets](https://github.com/imitskovets),
+[Albina Munirova](https://github.com/albinamunirova),
+[Nikolay Romantsov](https://github.com/WinstonDovlatov),
+[Julia Shenshina](https://github.com/julia-shenshina)
 
 ### ETNA.Contributors
-[Levashov Artem](https://github.com/soft1q),
-[Podkidyshev Aleksey](https://github.com/alekseyen)
+[Artem Levashov](https://github.com/soft1q),
+[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ## License
 
