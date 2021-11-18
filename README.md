@@ -43,6 +43,7 @@ Here's some example code for a quick start.
 import pandas as pd
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
+from etna.pipeline import Pipeline
 
 # Read the data
 df = pd.read_csv("examples/data/example_dataset.csv")
@@ -54,13 +55,12 @@ ts = TSDataset(df, freq="D")
 # Choose a horizon
 HORIZON = 8
 
-# Fit the model
-model = ProphetModel()
-model.fit(ts)
+# Fit the pipeline
+pipeline = Pipeline(model=ProphetModel(), horizon=HORIZON)
+pipeline.fit(ts)
 
 # Make the forecast
-future_ts = ts.make_future(HORIZON)
-forecast_ts = model.forecast(future_ts)
+forecast_ts = pipeline.forecast()
 ```
 
 ## Tutorials
