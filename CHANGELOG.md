@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
 - GaleShapleyFeatureSelectionTransform ([#284](https://github.com/tinkoff-ai/etna/pull/284))
 - FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna/pull/277))
+- Spell checking for source code and md files ([#303](https://github.com/tinkoff-ai/etna/pull/303))
 
 ### Changed
 - Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna/pull/285))
