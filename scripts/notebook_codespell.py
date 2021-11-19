@@ -1,6 +1,6 @@
-from pathlib import Path
-import tempfile
 import json
+import tempfile
+from pathlib import Path
 
 import typer
 
@@ -13,6 +13,7 @@ NOTEBOOKS_FOLDER = ROOT_PATH / "examples"
 NOTEBOOKS_TO_SKIP = []
 
 L_FLAG = "mape,hist"
+
 
 def codespell_notebook(notebook_path: Path):
     with tempfile.TemporaryDirectory() as tmpdirname:
