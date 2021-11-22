@@ -41,7 +41,28 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
 
     Examples
     --------
-    # TODO: add example of usage
+    >>> from etna.datasets import generate_const_df
+    >>> from etna.datasets import duplicate_data
+    >>> from etna.datasets import TSDataset
+    >>> df = generate_const_df(
+    ...    periods=50, start_time="2020-03-10",
+    ...    n_segments=2, scale=1
+    ... )
+    >>> timestamp = pd.date_range("2020-03-10", periods=100, freq="D")
+    >>> is_friday_13 = (timestamp.weekday == 4) & (timestamp.day == 13)
+    >>> df_exog_raw = pd.DataFrame({"timestamp": timestamp, "regressor_is_friday_13": is_friday_13})
+    >>> df_exog = duplicate_data(df_exog_raw, segments=["segment_0", "segment_1"], format="wide")
+    >>> df_ts_format = TSDataset.to_dataset(df)
+    >>> ts = TSDataset(df=df_ts_format, df_exog=df_exog, freq="D")
+    >>> ts.head()
+    segment                 segment_0                     segment_1
+    feature    regressor_is_friday_13 target regressor_is_friday_13 target
+    timestamp
+    2020-03-10                  False    1.0                  False    1.0
+    2020-03-11                  False    1.0                  False    1.0
+    2020-03-12                  False    1.0                  False    1.0
+    2020-03-13                   True    1.0                   True    1.0
+    2020-03-14                  False    1.0                  False    1.0
     """
     # check segments length
     if len(segments) == 0:
