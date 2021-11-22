@@ -33,9 +33,9 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     Raises
     ------
     ValueError:
-        if segments is empty
+        if segments list is empty
     ValueError:
-        if incorrect strategy given
+        if incorrect strategy is given
     ValueError:
         if dataframe doesn't contain "timestamp" column
 
