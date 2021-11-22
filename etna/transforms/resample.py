@@ -38,8 +38,8 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
         Here the in_column frequency gap is divided into the folds with the size of dataset frequency gap.
         """
-        in_column_index = df.index[~df[self.in_column].isna()]
-        if len(in_column_index) <= 1:
+        in_column_index = df[self.in_column].dropna().index
+        if len(in_column_index) <= 1 or (len(in_column_index) >= 3 and not pd.infer_freq(in_column_index)):
             raise ValueError(
                 "Can not infer in_column frequency!"
                 "Check that in_column frequency is compatible with dataset frequency."
@@ -49,8 +49,9 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         n_folds_per_gap = in_column_freq // dataset_freq
         n_periods = len(df) // n_folds_per_gap + 2
 
-        left_tie_len = len(df[: in_column_index[0]]) - 1
-        right_tie_len = len(df[in_column_index[0] :])
+        in_column_start_index = in_column_index[0]
+        left_tie_len = len(df[:in_column_start_index]) - 1
+        right_tie_len = len(df[in_column_start_index:])
         folds_for_left_tie = [fold for fold in range(n_folds_per_gap - left_tie_len, n_folds_per_gap)]
         folds_for_right_tie = [fold for _ in range(n_periods) for fold in range(n_folds_per_gap)][:right_tie_len]
         return folds_for_left_tie + folds_for_right_tie
