@@ -19,6 +19,7 @@ from etna.transforms.outliers import SAXOutliersTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform
 from etna.transforms.pytorch_forecasting import PytorchForecastingTransform
+from etna.transforms.resample import ResampleWithDistributionTransform
 from etna.transforms.scalers import MaxAbsScalerTransform
 from etna.transforms.scalers import MinMaxScalerTransform
 from etna.transforms.scalers import RobustScalerTransform
