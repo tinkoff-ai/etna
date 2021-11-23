@@ -8,6 +8,7 @@ from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.feature_importance import TreeFeatureSelectionTransform
 from etna.transforms.filter import FilterFeaturesTransform
+from etna.transforms.fourier import FourierTransform
 from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
