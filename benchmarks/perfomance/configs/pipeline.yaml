@@ -1,0 +1,11 @@
+_target_: etna.pipeline.Pipeline
+horizon: 4
+model:
+  _target_: etna.models.CatBoostModelMultiSegment
+transforms:
+  - _target_: etna.transforms.LinearTrendTransform
+    in_column: target
+  - _target_: etna.transforms.SegmentEncoderTransform
+  - _target_: etna.transforms.LagTransform
+    in_column: target
+    lags: [5, 10, 11]
