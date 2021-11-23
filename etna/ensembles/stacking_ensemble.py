@@ -62,7 +62,7 @@ class StackingEnsemble(Pipeline):
         self,
         pipelines: List[Pipeline],
         final_model: RegressorMixin = LinearRegression(),
-        cv: int = 3,
+        n_folds: int = 3,
         features_to_use: Union[None, Literal["all"], List[str]] = None,
         n_jobs: int = 1,
         joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
@@ -75,7 +75,7 @@ class StackingEnsemble(Pipeline):
             List of pipelines that should be used in ensemble.
         final_model:
             Regression model with fit/predict interface which will be used to combine the base estimators.
-        cv:
+        n_folds:
             Number of folds to use in the backtest. Backtest is not used for model evaluation but for prediction.
         features_to_use:
             Features except the forecasts of the base models to use in the `final_model`.
@@ -93,7 +93,7 @@ class StackingEnsemble(Pipeline):
         self.pipelines = pipelines
         self.horizon = self._get_horizon(pipelines=pipelines)
         self.final_model = final_model
-        self.cv = self._validate_cv(cv)
+        self.n_folds = self._validate_cv(n_folds)
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
@@ -149,7 +149,7 @@ class StackingEnsemble(Pipeline):
 
     def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
         """Get forecasts from backtest for given pipeline."""
-        _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.cv)
+        _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 

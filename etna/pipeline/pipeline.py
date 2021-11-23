@@ -43,7 +43,7 @@ class Pipeline(BasePipeline):
         transforms: Sequence[Transform] = (),
         horizon: int = 1,
         quantiles: Sequence[float] = (0.025, 0.975),
-        prediction_interval_cv: int = 3,
+        n_folds: int = 3,
     ):
         """
         Create instance of Pipeline with given parameters.
@@ -58,19 +58,19 @@ class Pipeline(BasePipeline):
             Number of timestamps in the future for forecasting
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-        prediction_interval_cv:
+        n_folds:
             Number of folds to use in the backtest for prediction interval estimation
 
         Raises
         ------
         ValueError:
-            If the horizon is less than 1, quantile is out of (0,1) or prediction_interval_cv is less than 2.
+            If the horizon is less than 1, quantile is out of (0,1) or n_folds is less than 2.
         """
         super().__init__(quantiles=quantiles)
         self.model = model
         self.transforms = transforms
         self.horizon = self._validate_horizon(horizon)
-        self.prediction_interval_cv = self._validate_cv(prediction_interval_cv)
+        self.n_folds = self._validate_cv(n_folds)
         self.ts: Optional[TSDataset] = None
 
     @staticmethod
@@ -110,7 +110,7 @@ class Pipeline(BasePipeline):
 
     def _forecast_prediction_interval(self, future: TSDataset) -> TSDataset:
         """Forecast prediction interval for the future."""
-        _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.prediction_interval_cv)
+        _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
