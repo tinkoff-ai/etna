@@ -1,11 +1,23 @@
-lint:
+lint: isort-check black-check flake8-check mypy-check spell-check
+
+isort-check:
 	isort --skip etna/libs --sl -c etna/
 	isort --skip etna/libs --sl -c tests/
+
+black-check:
 	black --check etna/
 	black --check tests/
+
+flake8-check:
 	flake8 --exclude etna/libs etna/
 	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
+
+mypy-check:
 	mypy
+
+spell-check:
+	codespell etna/ *.md tests/ -L mape,hist
+	python -m scripts.notebook_codespell
 
 format:
 	isort --skip etna/libs --sl etna/
