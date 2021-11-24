@@ -13,7 +13,7 @@ class DataFrameFormat(str, Enum):
     long = "long"
 
 
-def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = DataFrameFormat.long) -> pd.DataFrame:
+def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = DataFrameFormat.wide) -> pd.DataFrame:
     """Duplicate dataframe for all the segments.
 
     Parameters
