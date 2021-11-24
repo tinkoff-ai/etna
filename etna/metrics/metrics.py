@@ -19,7 +19,8 @@ class MAE(Metric):
         .. math::
             MAE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{\\mid y\_true_i - y\_pred_i \\mid}}{n}
 
-        Notes:
+        Notes
+        -----
         You can read more about logic of multi-segment metrics in Metric docs.
 
         Parameters

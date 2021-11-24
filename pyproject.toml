@@ -51,6 +51,7 @@ loguru = "^0.5.3"
 saxpy = "^1.0.1-dev167"
 hydra-slayer = "^0.2.0"
 typer = "^0.4.0"
+omegaconf = "^2.1.1"
 
 prophet = {version = "^1.0", optional = true}
 
@@ -61,10 +62,10 @@ wandb = {version = "^0.12.2", optional = true}
 
 sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
 nbsphinx = {version = "^0.8.2", optional = true}
-Sphinx = {version = "^3.5.1", optional = true}
+Sphinx = {version = "^4.1", optional = true}
 numpydoc = {version = "^1.1.0", optional = true}
 sphinx-rtd-theme = {version = "^0.5.1", optional = true}
-myst-parser = {version = "^0.14.0", optional = true}
+myst-parser = {version = "^0.15.0", optional = true}
 GitPython = {version = "^3.1.20", optional = true}
 
 pytest = {version = "^6.2", optional = true}
@@ -86,7 +87,6 @@ ipywidgets = {version = "^7.6.5", optional = true}
 
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
-omegaconf = "^2.1.1"
 
 [tool.poetry.extras]
 # optional deps
