@@ -160,6 +160,7 @@ class TSDataset:
 
         Returns
         -------
+        :
             dataset with features in the future.
 
         Examples
