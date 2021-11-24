@@ -109,10 +109,10 @@ def test_mrmr_not_depend_on_columns_order(random_classification_task):
 def test_mrmr_not_depend_on_rows_order(random_classification_task):
     x, y = random_classification_task
     expected_answer = mrmr(x=x, y=y, top_k=5)
-    index = list(X.index)
+    index = list(x.index)
     for i in range(10):
         np.random.shuffle(index)
-        answer = mrmr(x=x.iloc[index], y=y, top_k=5)
+        answer = mrmr(x=x.iloc[index], y=y[index], top_k=5)
         assert answer == expected_answer
 
 
