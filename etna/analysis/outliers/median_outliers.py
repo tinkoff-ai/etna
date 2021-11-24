@@ -26,8 +26,8 @@ def get_anomalies_median(
     alpha:
         coefficient for determining the threshold
 
-    Return
-    ------
+    Returns
+    -------
     :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
