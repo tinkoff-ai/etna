@@ -1,24 +1,10 @@
-import warnings
-from multiprocessing import cpu_count
 from typing import List
 
 import numpy as np
 import pandas as pd
-from joblib import Parallel
-from joblib import delayed
 from sklearn.feature_selection import f_classif as sklearn_f_classif
 
-warnings.filterwarnings("ignore")
-
 FLOOR = 0.00001
-
-
-def parallel_df(func, df, series):
-    """Parallelize functions."""
-    n_jobs = min(cpu_count(), len(df.columns))
-    col_chunks = np.array_split(range(len(df.columns)), n_jobs)
-    lst = Parallel(n_jobs=n_jobs)(delayed(func)(df.iloc[:, col_chunk], series) for col_chunk in col_chunks)
-    return pd.concat(lst)
 
 
 def mrmr(x: pd.DataFrame, y: np.ndarray, k: int) -> List[str]:
@@ -27,12 +13,12 @@ def mrmr(x: pd.DataFrame, y: np.ndarray, k: int) -> List[str]:
 
     Parameters:
     ----------
-    X:
+    x:
         dataframe of shape n_segment x n_exog_series with relevance table, where relevance_table[i][j] contains relevance
         of j-th df_exog series to i-th df series
     y:
-       class(cluster) labels of the segments
-    K:
+        class(cluster) labels of the segments
+    k:
         num of regressors to select; if there are not enough regressors, then all will be selected
 
     Returns:
