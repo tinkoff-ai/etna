@@ -1,5 +1,5 @@
 _target_: etna.pipeline.Pipeline
-horizon: 4
+horizon: 14
 model:
   _target_: etna.models.CatBoostModelMultiSegment
 transforms:
@@ -8,4 +8,4 @@ transforms:
   - _target_: etna.transforms.SegmentEncoderTransform
   - _target_: etna.transforms.LagTransform
     in_column: target
-    lags: [5, 10, 11]
+    lags: [15, 16, 17, 18, 19]
