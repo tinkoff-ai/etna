@@ -8,6 +8,7 @@ from omegaconf import OmegaConf
 
 from etna.datasets import TSDataset, generate_ar_df
 from etna.pipeline import Pipeline
+from etna.commands import *
 
 FILE_PATH = Path(__file__).parent
 

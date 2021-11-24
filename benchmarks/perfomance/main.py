@@ -5,6 +5,8 @@ import threading
 
 import hydra
 from omegaconf import DictConfig
+from etna.commands import *
+
 
 from scripts.utils import get_perfomance_dataframe_py_spy
 
@@ -25,7 +27,6 @@ def bench(cfg: DictConfig) -> None:
     )
     t = threading.Thread(target=output_reader, args=(proc,))
     t.start()
-    print(proc)
     proc.wait()
 
     if proc.returncode != 0:
@@ -35,7 +36,7 @@ def bench(cfg: DictConfig) -> None:
     with open("speedscope.json", "r") as f:
         py_spy_dict = json.load(f)
 
-    df = get_perfomance_dataframe_py_spy(py_spy_dict)
+    df = get_perfomance_dataframe_py_spy(py_spy_dict, top=cfg.top, pattern_to_filter=cfg.pattern_to_filter)
     df["line"] = df["line"].apply(lambda x: str(x).strip().replace("\\n", ""))
     df.to_csv("py_spy.csv")
 
