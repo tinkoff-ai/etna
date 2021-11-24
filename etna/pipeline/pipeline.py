@@ -35,15 +35,15 @@ class CrossValidationMode(Enum):
 class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
 
-    support_confidence_interval = True
+    support_prediction_interval = True
 
     def __init__(
         self,
         model: Model,
         transforms: Sequence[Transform] = (),
         horizon: int = 1,
-        interval_width: float = 0.95,
-        confidence_interval_cv: int = 3,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        prediction_interval_cv: int = 3,
     ):
         """
         Create instance of Pipeline with given parameters.
@@ -56,21 +56,21 @@ class Pipeline(BasePipeline):
             Sequence of the transforms
         horizon:
             Number of timestamps in the future for forecasting
-        interval_width:
-            The significance level for the confidence interval. By default a 95% confidence interval is taken
-        confidence_interval_cv:
-            Number of folds to use in the backtest for confidence interval estimation
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+        prediction_interval_cv:
+            Number of folds to use in the backtest for prediction interval estimation
 
         Raises
         ------
         ValueError:
-            If the horizon is less than 1, interval_width is out of (0,1) or confidence_interval_cv is less than 2.
+            If the horizon is less than 1, quantile is out of (0,1) or prediction_interval_cv is less than 2.
         """
-        super().__init__(interval_width=interval_width)
+        super().__init__(quantiles=quantiles)
         self.model = model
         self.transforms = transforms
         self.horizon = self._validate_horizon(horizon)
-        self.confidence_interval_cv = self._validate_cv(confidence_interval_cv)
+        self.prediction_interval_cv = self._validate_cv(prediction_interval_cv)
         self.ts: Optional[TSDataset] = None
 
     @staticmethod
@@ -108,9 +108,9 @@ class Pipeline(BasePipeline):
         self.model.fit(self.ts)
         return self
 
-    def _forecast_confidence_interval(self, future: TSDataset) -> TSDataset:
-        """Forecast confidence interval for the future."""
-        _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.confidence_interval_cv)
+    def _forecast_prediction_interval(self, future: TSDataset) -> TSDataset:
+        """Forecast prediction interval for the future."""
+        _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.prediction_interval_cv)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
@@ -119,39 +119,40 @@ class Pipeline(BasePipeline):
 
         predictions = self.model.forecast(ts=future)
         se = scipy.stats.sem(residuals)
-        quantile = norm.ppf(q=(1 + self.interval_width) / 2)
-        lower_border = predictions[:, :, "target"] - se * quantile
-        upper_border = predictions[:, :, "target"] + se * quantile
-        lower_border = lower_border.rename({"target": "target_lower"}, axis=1)
-        upper_border = upper_border.rename({"target": "target_upper"}, axis=1)
-        predictions.df = pd.concat([predictions.df, lower_border, upper_border], axis=1).sort_index(
-            axis=1, level=(0, 1)
-        )
+        borders = []
+        for quantile in self.quantiles:
+            z_q = norm.ppf(q=quantile)
+            border = predictions[:, :, "target"] + se * z_q
+            border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
+            borders.append(border)
+
+        predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
+
         return predictions
 
-    def forecast(self, confidence_interval: bool = False) -> TSDataset:
+    def forecast(self, prediction_interval: bool = False) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
-        confidence_interval:
-            If True returns confidence interval for forecast
+        prediction_interval:
+            If True returns prediction interval for forecast
 
         Returns
         -------
         TSDataset
             TSDataset with forecast
         """
-        self.check_support_confidence_interval(confidence_interval)
+        self.check_support_prediction_interval(prediction_interval)
 
         future = self.ts.make_future(self.horizon)
-        if confidence_interval:
-            if "confidence_interval" in inspect.signature(self.model.forecast).parameters:
+        if prediction_interval:
+            if "prediction_interval" in inspect.signature(self.model.forecast).parameters:
                 predictions = self.model.forecast(
-                    ts=future, confidence_interval=confidence_interval, interval_width=self.interval_width
+                    ts=future, prediction_interval=prediction_interval, quantiles=self.quantiles
                 )
             else:
-                predictions = self._forecast_confidence_interval(future=future)
+                predictions = self._forecast_prediction_interval(future=future)
         else:
             predictions = self.model.forecast(ts=future)
         return predictions

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from etna.analysis import get_anomalies_confidence_interval
-from etna.analysis.outliers.confidence_interval_outliers import create_ts_by_column
+from etna.analysis import get_anomalies_prediction_interval
+from etna.analysis.outliers.prediction_interval_outliers import create_ts_by_column
 from etna.datasets import TSDataset
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
@@ -31,9 +31,9 @@ def test_create_ts_by_column_retain_column(outliers_tsds, column):
 
 @pytest.mark.parametrize("in_column", ["target", "exog"])
 @pytest.mark.parametrize("model", (ProphetModel, SARIMAXModel))
-def test_get_anomalies_confidence_interval_interface(outliers_tsds, model, in_column):
-    """Test that `get_anomalies_confidence_interval` produces correct columns."""
-    anomalies = get_anomalies_confidence_interval(outliers_tsds, model=model, interval_width=0.95, in_column=in_column)
+def test_get_anomalies_prediction_interval_interface(outliers_tsds, model, in_column):
+    """Test that `get_anomalies_prediction_interval` produces correct columns."""
+    anomalies = get_anomalies_prediction_interval(outliers_tsds, model=model, interval_width=0.95, in_column=in_column)
     assert isinstance(anomalies, dict)
     assert sorted(list(anomalies.keys())) == sorted(outliers_tsds.segments)
     for segment in anomalies.keys():
@@ -54,10 +54,10 @@ def test_get_anomalies_confidence_interval_interface(outliers_tsds, model, in_co
         (SARIMAXModel, 0.999, {"1": [], "2": [np.datetime64("2021-01-27")]}),
     ),
 )
-def test_get_anomalies_confidence_interval_values(outliers_tsds, model, interval_width, true_anomalies, in_column):
-    """Test that `get_anomalies_confidence_interval` generates correct values."""
+def test_get_anomalies_prediction_interval_values(outliers_tsds, model, interval_width, true_anomalies, in_column):
+    """Test that `get_anomalies_prediction_interval` generates correct values."""
     assert (
-        get_anomalies_confidence_interval(
+        get_anomalies_prediction_interval(
             outliers_tsds, model=model, interval_width=interval_width, in_column=in_column
         )
         == true_anomalies

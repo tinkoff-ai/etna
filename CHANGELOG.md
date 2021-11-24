@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
+- GaleShapleyFeatureSelectionTransform ([#284](https://github.com/tinkoff-ai/etna/pull/284))
+- FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna/pull/277))
+- Spell checking for source code and md files ([#303](https://github.com/tinkoff-ai/etna/pull/303))
+- ResampleWithDistributionTransform ([#296](https://github.com/tinkoff-ai/etna/pull/296))
+
+### Changed
+- Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna/pull/285))
+- Changed format of forecast and test dataframes in WandbLogger ([#309](https://github.com/tinkoff-ai/etna/pull/309))
+
+### Fixed
+
 ## [1.3.2] - 2021-11-18
 ### Changed
 - Add sum for omegaconf resolvers ([#300](https://github.com/tinkoff-ai/etna/pull/300/))
@@ -33,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace cycle over segments with vectorized expression in TSDataset._check_endings ([#264](https://github.com/tinkoff-ai/etna/pull/264))
 
 ### Fixed
+>>>>>>> master
 - Fixed broken links in docs command section ([#223](https://github.com/tinkoff-ai/etna/pull/223))
 - Fix default value for TSDataset.tail ([#245](https://github.com/tinkoff-ai/etna/pull/245))
 - Fix raising warning on fitting SklearnModel on dataset categorical columns ([#250](https://github.com/tinkoff-ai/etna/issues/207)) 

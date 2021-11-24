@@ -117,31 +117,6 @@ class WandbLogger(BaseLogger):
         """
         pass
 
-    @staticmethod
-    def _prepare_table(df_raw: pd.DataFrame) -> pd.DataFrame:
-        """
-        Prepare dataframe to be sent to wandb.
-
-        Parameters
-        ----------
-        df_raw:
-            Dataframe to change
-
-        Returns
-        -------
-        result: pd.DataFrame
-        """
-        df = df_raw.copy()
-        squashed_columns = [
-            f"{segment_column}/{feature_column}"
-            for segment_column, feature_column in zip(
-                df.columns.get_level_values("segment"), df.columns.get_level_values("feature")
-            )
-        ]
-        df.columns = squashed_columns
-        df.reset_index(inplace=True)
-        return df
-
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
     ):
@@ -158,10 +133,11 @@ class WandbLogger(BaseLogger):
             Fold information from backtest
         """
         from etna.analysis import plot_backtest_interactive
+        from etna.datasets import TSDataset
 
         if self.table:
             self.experiment.summary["metrics"] = wandb.Table(data=metrics_df)
-            self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast_df))
+            self.experiment.summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast_df))
             self.experiment.summary["fold_info"] = wandb.Table(data=fold_info_df)
 
         if self.plot:
@@ -202,13 +178,15 @@ class WandbLogger(BaseLogger):
         test:
             Dataframe with ground truth
         """
+        from etna.datasets import TSDataset
+
         columns_name = list(metrics.columns)
         metrics.reset_index(inplace=True)
         metrics.columns = ["segment"] + columns_name
         if self.table:
             self.experiment.summary["metrics"] = wandb.Table(data=metrics)
-            self.experiment.summary["forecast"] = wandb.Table(data=self._prepare_table(forecast))
-            self.experiment.summary["test"] = wandb.Table(data=self._prepare_table(test))
+            self.experiment.summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast))
+            self.experiment.summary["test"] = wandb.Table(data=TSDataset.to_flatten(test))
 
         metrics_dict = (
             metrics.drop(["segment"], axis=1)
