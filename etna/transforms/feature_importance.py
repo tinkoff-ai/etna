@@ -178,7 +178,7 @@ class MRMRFeatureSelectionTransform(Transform):
         y = np.empty(len(relevance_table))
         for k, cluster in enumerate(relevance_table.index):
             y[k] = s2c[cluster]
-        self.selected_regressors = mrmr(x=relevance_table, y=y, k=self.top_k)
+        self.selected_regressors = mrmr(x=relevance_table, y=y, top_k=self.top_k)
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
