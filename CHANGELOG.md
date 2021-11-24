@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.3.2] - 2021-11-18
+### Changed
+- Add sum for omegaconf resolvers ([#300](https://github.com/tinkoff-ai/etna/pull/300/))
+
 ## [1.3.1] - 2021-11-12
 ### Changed
 - Delete restriction on version of pandas ([#274](https://github.com/tinkoff-ai/etna/pull/274))
