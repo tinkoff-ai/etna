@@ -70,6 +70,7 @@ def test_fit(example_tsds):
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
     pipeline.fit(example_tsds)
     original_ts.fit_transform(transforms)
+    original_ts.inverse_transform()
     assert np.all(original_ts.df.values == pipeline.ts.df.values)
 
 
