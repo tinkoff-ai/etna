@@ -155,6 +155,7 @@ class Pipeline(BasePipeline):
                 predictions = self._forecast_prediction_interval(future=future)
         else:
             predictions = self.model.forecast(ts=future)
+        self.ts.inverse_transform()
         return predictions
 
     def _init_backtest(self):
@@ -169,7 +170,7 @@ class Pipeline(BasePipeline):
 
     @staticmethod
     def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int):
-        """Check that all the given timestamps have enough timestamp points to validate forecaster with given number of splits."""
+        """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon * n_folds
         segments = set(ts.df.columns.get_level_values("segment"))
         for segment in segments:
