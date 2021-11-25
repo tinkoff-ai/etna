@@ -106,6 +106,7 @@ class Pipeline(BasePipeline):
         self.ts = ts
         self.ts.fit_transform(self.transforms)
         self.model.fit(self.ts)
+        self.ts.inverse_transform()
         return self
 
     def _forecast_prediction_interval(self, future: TSDataset) -> TSDataset:
@@ -155,7 +156,6 @@ class Pipeline(BasePipeline):
                 predictions = self._forecast_prediction_interval(future=future)
         else:
             predictions = self.model.forecast(ts=future)
-        self.ts.inverse_transform()
         return predictions
 
     def _init_backtest(self):
