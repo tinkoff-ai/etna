@@ -46,6 +46,17 @@ class FourierTransform(Transform):
             if order is < 1 or > ceil(period/2)
         ValueError:
             if at least one mod is < 1 or >= period
+
+        Notes
+        -----
+        To understand how transform works we recommend: https://otexts.com/fpp2/useful-predictors.html#fourier-series
+
+        * Parameter `period` is responsible for the seasonality we want to capture.
+        * Parameters `order` and `mods` define which harmonics will be used.
+
+        Parameter `order` is a more user-friendly version of `mods`.
+        For example, `order=2` can be represented as `mods=[1, 2, 3, 4]` if `period` > 4 and
+        as `mods=[1, 2, 3]` if 3 <= `period` <= 4.
         """
         if period < 2:
             raise ValueError("Period should be at least 2")
