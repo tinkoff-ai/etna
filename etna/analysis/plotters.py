@@ -333,7 +333,7 @@ def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
-    -----------
+    ----------
     ts:
         TSDataset with timeseries data
     segments:
@@ -362,7 +362,7 @@ def plot_correlation_matrix(
     """Plot pairwise correlation heatmap for selected segments.
 
     Parameters
-    -----------
+    ----------
     ts:
         TSDataset with timeseries data
     segments:

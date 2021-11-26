@@ -6,12 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.3.3] - 2021-11-24
 ### Added
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
 - GaleShapleyFeatureSelectionTransform ([#284](https://github.com/tinkoff-ai/etna/pull/284))
 - FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna/pull/277))
 - Spell checking for source code and md files ([#303](https://github.com/tinkoff-ai/etna/pull/303))
 - ResampleWithDistributionTransform ([#296](https://github.com/tinkoff-ai/etna/pull/296))
+- Add function to duplicate exogenous data ([#305](https://github.com/tinkoff-ai/etna/pull/305))
 - FourierTransform ([#306](https://github.com/tinkoff-ai/etna/pull/306))
 
 ### Changed
