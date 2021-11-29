@@ -54,11 +54,7 @@ class SegmentEncoderTransform(Transform):
             index=df.index,
         )
         encoded_df = encoded_df.astype("category")
-
-        for segment in set(df.columns.get_level_values("segment")):
-            df.loc[self.idx[:], self.idx[segment, "regressor_segment_code"]] = encoded_df.loc[
-                self.idx[:], self.idx[segment, "regressor_segment_code"]
-            ]
+        df = df.join(encoded_df)
         df = df.sort_index(axis=1)
         return df
 
