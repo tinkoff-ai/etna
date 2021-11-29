@@ -33,7 +33,7 @@ def test_init_pass(horizon, quantiles, prediction_interval_cv):
         transforms=[],
         horizon=horizon,
         quantiles=quantiles,
-        prediction_interval_cv=prediction_interval_cv,
+        n_folds=prediction_interval_cv,
     )
     assert pipeline.horizon == horizon
     assert pipeline.quantiles == quantiles
@@ -58,7 +58,7 @@ def test_init_fail(horizon, quantiles, prediction_interval_cv, error_msg):
             transforms=[],
             horizon=horizon,
             quantiles=quantiles,
-            prediction_interval_cv=prediction_interval_cv,
+            n_folds=prediction_interval_cv,
         )
 
 
