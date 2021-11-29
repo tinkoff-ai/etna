@@ -6,9 +6,9 @@ import hydra_slayer
 import numpy as np
 from omegaconf import OmegaConf
 
+from etna.commands import *
 from etna.datasets import TSDataset, generate_ar_df
 from etna.pipeline import Pipeline
-from etna.commands import *
 
 FILE_PATH = Path(__file__).parent
 

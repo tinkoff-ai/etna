@@ -23,15 +23,15 @@ def bench(cfg: DictConfig) -> None:
     proc = subprocess.Popen(
         ["py-spy", "record", "-o", "speedscope.json", "-f", "speedscope", "python", FILE_FOLDER / "scripts" / "run.py"],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        #stderr=subprocess.PIPE,
     )
     t = threading.Thread(target=output_reader, args=(proc,))
     t.start()
     proc.wait()
 
-    if proc.returncode != 0:
-        for i in proc.stderr.readlines():
-            print(i.decode())
+    #if proc.returncode != 0:
+    #    for i in proc.stderr.readlines():
+    #        print(i.decode())
 
     with open("speedscope.json", "r") as f:
         py_spy_dict = json.load(f)

@@ -12,6 +12,6 @@ backtest:
     - _target_: etna.metrics.SMAPE
     - _target_: etna.metrics.R2
 
-top: 5
+top: null
 pattern_to_filter: 'etna'
 seed: 11
