@@ -302,9 +302,7 @@ class Pipeline(BasePipeline):
             forecast = forecast_ts.df
             fold_number_df = pd.DataFrame(
                 np.tile(fold_number, (forecast.index.shape[0], len(segments))),
-                columns=pd.MultiIndex.from_product(
-                    [segments, [self._fold_column]], names=("segment", "feature")
-                ),
+                columns=pd.MultiIndex.from_product([segments, [self._fold_column]], names=("segment", "feature")),
                 index=forecast.index,
             )
             forecast = forecast.join(fold_number_df)
