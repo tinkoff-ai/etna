@@ -19,7 +19,6 @@ from etna.analysis.feature_selection.mrmr import mrmr
 from etna.clustering import EuclideanClustering
 from etna.clustering import HierarchicalClustering
 from etna.datasets import TSDataset
-from etna.transforms import Transform
 from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 
 TreeBasedRegressor = Union[
@@ -102,7 +101,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         return self
 
 
-class MRMRFeatureSelectionTransform(Transform):
+class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """Transform that selects regressors according to mRMR variable selection method."""
 
     def __init__(
@@ -144,15 +143,6 @@ class MRMRFeatureSelectionTransform(Transform):
         self.relevance_params = relevance_params
         self.selected_regressors: Optional[List[str]] = None
 
-    @staticmethod
-    def _get_regressors(df: pd.DataFrame) -> List[str]:
-        """Get list of regressors in the dataframe."""
-        result = set()
-        for column in df.columns.get_level_values("feature"):
-            if column.startswith("regressor_"):
-                result.add(column)
-        return sorted(list(result))
-
     def fit(self, df: pd.DataFrame) -> "MRMRFeatureSelectionTransform":
         """
         Fit the method and remember features to select.
@@ -180,28 +170,3 @@ class MRMRFeatureSelectionTransform(Transform):
             y[k] = s2c[cluster]
         self.selected_regressors = mrmr(x=relevance_table, y=y, top_k=self.top_k)
         return self
-
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Select top_k regressors.
-
-        Parameters
-        ----------
-        df:
-            dataframe with all segments data
-
-        Returns
-        -------
-        result: pd.DataFrame
-            Dataframe with with only selected regressors
-        """
-        result = df.copy()
-        selected_columns = sorted(
-            [
-                column
-                for column in df.columns.get_level_values("feature").unique()
-                if not column.startswith("regressor_") or column in self.selected_regressors
-            ]
-        )
-        result = result.loc[:, pd.IndexSlice[:, selected_columns]]
-        return result
