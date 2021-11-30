@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Add `ts.inverse_transform` as final step at `Pipeline.fit` method ([#316](https://github.com/tinkoff-ai/etna/pull/316))
 - Make test_ts optional in plot_forecast ([#321](https://github.com/tinkoff-ai/etna/pull/321))
+- Speed up Pipeline._get_backtest_forecasts ([#336](https://github.com/tinkoff-ai/etna/pull/336))
 
 ## [1.3.3] - 2021-11-24
 ### Added
