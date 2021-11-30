@@ -37,7 +37,7 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.6.2, <3.10.0"
+python = ">=3.7.0, <3.10.0"
 scikit-learn = "^0.24.1"
 pandas = "^1"
 catboost = "^0.25"

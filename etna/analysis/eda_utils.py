@@ -2,7 +2,6 @@ import math
 import warnings
 from itertools import combinations
 from typing import TYPE_CHECKING
-from typing import Optional
 from typing import Sequence
 
 import matplotlib.pyplot as plt
@@ -19,7 +18,7 @@ plot_acf = sm.graphics.tsa.plot_acf
 plot_pacf = sm.graphics.tsa.plot_pacf
 
 
-def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, segments: Optional[Sequence] = None):
+def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, segments: Sequence = None):
     """
     Cross-correlation plot between multiple timeseries.
 
@@ -35,8 +34,9 @@ def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, se
         segments to plot
     """
     if not segments:
-        segments = list(ts.segments)
-        segments = np.random.choice(segments, size=min(len(segments), n_segments), replace=False)
+        exist_segments = list(ts.segments)
+        chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
+        segments = list(chosen_segments)
     segment_pairs = list(combinations(segments, r=2))
     if len(segment_pairs) == 0:
         raise ValueError("There are no pairs to plot! Try set n_segments > 1.")
@@ -169,8 +169,9 @@ def distribution_plot(
     df_pd = ts.to_pandas(flatten=True)
 
     if not segments:
-        segments = df_pd.segment.unique()
-        segments = np.random.choice(segments, size=min(len(segments), n_segments), replace=False)
+        exist_segments = df_pd.segment.unique()
+        chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
+        segments = list(chosen_segments)
     df_full = df_pd[df_pd.segment.isin(segments)]
     df_full.loc[:, "mean"] = (
         df_full.groupby("segment").target.shift(shift).transform(lambda s: s.rolling(window).mean())
