@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Spell checking for source code and md files ([#303](https://github.com/tinkoff-ai/etna/pull/303))
 - ResampleWithDistributionTransform ([#296](https://github.com/tinkoff-ai/etna/pull/296))
 - Add function to duplicate exogenous data ([#305](https://github.com/tinkoff-ai/etna/pull/305))
+- FourierTransform ([#306](https://github.com/tinkoff-ai/etna/pull/306))
 
 ### Changed
 - Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna/pull/285))
