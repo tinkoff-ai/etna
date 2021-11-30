@@ -1,7 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
 from typing import List
-from typing import Optional
 
 import pandas as pd
 import pytest
@@ -11,48 +10,28 @@ from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
 from etna.metrics.base import MetricAggregationMode
-from etna.model_selection.backtest import CrossValidationMode
-from etna.model_selection.backtest import TimeSeriesCrossValidation
-from etna.models.base import Model
 from etna.models.catboost import CatBoostModelMultiSegment
-from etna.models.linear import LinearPerSegmentModel
 from etna.models.prophet import ProphetModel
+from etna.pipeline.pipeline import CrossValidationMode
+from etna.pipeline.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
-from etna.transforms.base import Transform
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
-def test_repr():
-    """Check __repr__ method of TimeSeriesCrossValidation."""
-    model = LinearPerSegmentModel(fit_intercept=True, normalize=False)
-    mode = CrossValidationMode.expand.value
-    tscv = TimeSeriesCrossValidation(model=model, horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=mode)
-    model_repr = model.__repr__()
-    metrics_repr_inner = ", ".join([metric.__repr__() for metric in DEFAULT_METRICS])
-    metrics_repr = f"[{metrics_repr_inner}]"
-    mode_repr = CrossValidationMode[mode].__repr__()
-    tscv_repr = tscv.__repr__()
-    true_repr = (
-        f"TimeSeriesCrossValidation(model = {model_repr}, horizon = 12, metrics = {metrics_repr}, "
-        f"n_folds = 3, mode = {mode_repr}, n_jobs = 1, )"
-    )
-    assert tscv_repr == true_repr
-
-
 @pytest.mark.parametrize("n_folds", (0, -1))
-def test_invalid_n_split(n_folds: int):
+def test_invalid_n_split(n_folds: int, example_reg_tsds):
     """Check TimeSeriesCrossValidation behavior in case of invalid n_folds"""
     with pytest.raises(ValueError):
-        _ = TimeSeriesCrossValidation(model=ProphetModel(), horizon=12, metrics=DEFAULT_METRICS, n_folds=n_folds)
+        pipe = Pipeline(model=ProphetModel(), horizon=12)
+        pipe.backtest(ts=example_reg_tsds, metrics=DEFAULT_METRICS, n_folds=n_folds)
 
 
-def test_invalid_metrics():
+def test_invalid_metrics(example_reg_tsds):
     """Check TimeSeriesCrossValidation behavior in case of invalid metrics"""
     with pytest.raises(ValueError):
-        _ = TimeSeriesCrossValidation(
-            model=CatBoostModelMultiSegment(), horizon=14, metrics=[MAE(mode=MetricAggregationMode.macro)]
-        )
+        pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=14)
+        pipe.backtest(ts=example_reg_tsds, metrics=[MAE(mode=MetricAggregationMode.macro)])
 
 
 def test_validate_features(imbalanced_tsdf: TSDataset):
@@ -61,9 +40,9 @@ def test_validate_features(imbalanced_tsdf: TSDataset):
     can't be divided to required number of splits
     """
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    tscv = TimeSeriesCrossValidation(model=CatBoostModelMultiSegment(), horizon=24, n_folds=3, metrics=DEFAULT_METRICS)
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags])
     with pytest.raises(ValueError):
-        tscv.backtest(ts=imbalanced_tsdf, transforms=[date_flags])
+        pipe.backtest(ts=imbalanced_tsdf, n_folds=3, metrics=DEFAULT_METRICS)
 
 
 def test_generate_expandable_timeranges_days():
@@ -80,10 +59,9 @@ def test_generate_expandable_timeranges_days():
         (("2021-01-01", "2021-03-08"), ("2021-03-09", "2021-03-20")),
         (("2021-01-01", "2021-03-20"), ("2021-03-21", "2021-04-01")),
     )
-    tscv = TimeSeriesCrossValidation(
-        model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.expand.value
-    )
-    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
+    for i, stage_dfs in enumerate(
+        Pipeline._generate_folds_datasets(df, horizon=12, n_folds=3, mode=CrossValidationMode.expand.value)
+    ):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d").date()
@@ -103,10 +81,9 @@ def test_generate_expandable_timerange_hours():
         (("2020-01-01 00:00:00", "2020-01-31 00:00:00"), ("2020-01-31 01:00:00", "2020-01-31 12:00:00")),
         (("2020-01-01 00:00:00", "2020-01-31 12:00:00"), ("2020-01-31 13:00:00", "2020-02-01 00:00:00")),
     )
-    tscv = TimeSeriesCrossValidation(
-        model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.expand.value
-    )
-    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
+    for i, stage_dfs in enumerate(
+        Pipeline._generate_folds_datasets(df, horizon=12, n_folds=3, mode=CrossValidationMode.expand.value)
+    ):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d %H:%M:%S").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()
@@ -126,10 +103,9 @@ def test_generate_constant_timeranges_days():
         (("2021-01-13", "2021-03-08"), ("2021-03-09", "2021-03-20")),
         (("2021-01-25", "2021-03-20"), ("2021-03-21", "2021-04-01")),
     )
-    tscv = TimeSeriesCrossValidation(
-        model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.constant.value
-    )
-    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
+    for i, stage_dfs in enumerate(
+        Pipeline._generate_folds_datasets(df, horizon=12, n_folds=3, mode=CrossValidationMode.constant.value)
+    ):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d").date()
@@ -148,27 +124,12 @@ def test_generate_constant_timeranges_hours():
         (("2020-01-01 12:00:00", "2020-01-31 00:00:00"), ("2020-01-31 01:00:00", "2020-01-31 12:00:00")),
         (("2020-01-02 00:00:00", "2020-01-31 12:00:00"), ("2020-01-31 13:00:00", "2020-02-01 00:00:00")),
     )
-    tscv = TimeSeriesCrossValidation(
-        model=ProphetModel(), horizon=12, n_folds=3, metrics=DEFAULT_METRICS, mode=CrossValidationMode.constant.value
-    )
-    for i, stage_dfs in enumerate(tscv._generate_folds_dataframes(df)):
+    for i, stage_dfs in enumerate(
+        Pipeline._generate_folds_datasets(df, horizon=12, n_folds=3, mode=CrossValidationMode.constant.value)
+    ):
         for stage_df, borders in zip(stage_dfs, true_borders[i]):
             assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d %H:%M:%S").date()
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()
-
-
-def _fit_backtest_pipeline(
-    model: Model, horizon: int, ts: TSDataset, transforms: Optional[List[Transform]] = [], n_jobs: int = 1
-) -> TimeSeriesCrossValidation:
-    """Init pipeline and run backtest"""
-    tscv = TimeSeriesCrossValidation(
-        model=model,
-        horizon=horizon,
-        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")],
-        n_jobs=n_jobs,
-    )
-    tscv.backtest(ts=ts, transforms=transforms)
-    return tscv
 
 
 @pytest.mark.parametrize(
@@ -187,10 +148,12 @@ def _fit_backtest_pipeline(
 def test_get_metrics_interface(aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_metrics with aggregate_metrics=False mode"""
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    tscv = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=big_daily_example_tsdf, transforms=[date_flags]
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags])
+    metrics_df, _, _ = pipe.backtest(
+        ts=big_daily_example_tsdf,
+        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")],
+        aggregate_metrics=aggregate_metrics,
     )
-    metrics_df = tscv.get_metrics(aggregate_metrics=aggregate_metrics)
     assert sorted(expected_columns) == sorted(metrics_df.columns)
 
 
@@ -199,14 +162,15 @@ def test_get_forecasts_interface_daily(big_daily_example_tsdf: TSDataset):
     date_flags = DateFlagsTransform(
         day_number_in_week=True, day_number_in_month=True, is_weekend=False, out_column="regressor_dateflag"
     )
-    tscv = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=big_daily_example_tsdf, transforms=[date_flags]
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags])
+    _, forecast_df, _ = pipe.backtest(
+        ts=big_daily_example_tsdf, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")]
     )
-    forecast = tscv.get_forecasts()
     expected_columns = sorted(
         ["regressor_dateflag_day_number_in_month", "regressor_dateflag_day_number_in_week", "fold_number", "target"]
     )
-    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+    print(forecast_df.head())
+    assert expected_columns == sorted(set(forecast_df.columns.get_level_values("feature")))
 
 
 def test_get_forecasts_interface_hours(example_tsdf: TSDataset):
@@ -214,44 +178,48 @@ def test_get_forecasts_interface_hours(example_tsdf: TSDataset):
     date_flags = DateFlagsTransform(
         day_number_in_week=True, day_number_in_month=True, is_weekend=False, out_column="regressor_dateflag"
     )
-    tscv = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=example_tsdf, transforms=[date_flags]
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags])
+    _, forecast_df, _ = pipe.backtest(
+        ts=example_tsdf, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")]
     )
-    forecast = tscv.get_forecasts()
     expected_columns = sorted(
         ["regressor_dateflag_day_number_in_month", "regressor_dateflag_day_number_in_week", "fold_number", "target"]
     )
-    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+    assert expected_columns == sorted(set(forecast_df.columns.get_level_values("feature")))
 
 
 def test_get_fold_info_interface_daily(big_daily_example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_fold_info"""
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    tscv = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=big_daily_example_tsdf, transforms=[date_flags]
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags])
+    _, _, info_df = pipe.backtest(
+        ts=big_daily_example_tsdf, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")]
     )
-    forecast_df = tscv.get_fold_info()
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
-    assert expected_columns == list(sorted(forecast_df.columns))
+    assert expected_columns == list(sorted(info_df.columns))
 
 
 def test_get_fold_info_interface_hours(example_tsdf: TSDataset):
     """Test interface of TimeSeriesCrossValidation.get_fold_info"""
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    tscv = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=example_tsdf, transforms=[date_flags]
+
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags])
+    _, _, info_df = pipe.backtest(
+        ts=example_tsdf, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")]
     )
-    forecast_df = tscv.get_fold_info()
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
-    assert expected_columns == list(sorted(forecast_df.columns))
+    assert expected_columns == list(sorted(info_df.columns))
 
 
 @pytest.mark.long
 def test_autoregressiveforecaster_backtest_pipeline(big_daily_example_tsdf: TSDataset):
     """This test checks that TimeSeriesCrossValidation works with AutoRegressiveForecaster"""
-    tscv = _fit_backtest_pipeline(model=ProphetModel(), horizon=12, ts=big_daily_example_tsdf)
-    forecast = tscv.get_forecasts()
-    assert isinstance(forecast, pd.DataFrame)
+
+    pipe = Pipeline(model=ProphetModel(), horizon=12)
+    _, forecast_df, _ = pipe.backtest(
+        ts=big_daily_example_tsdf, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")]
+    )
+    assert isinstance(forecast_df, pd.DataFrame)
 
 
 @pytest.mark.long
@@ -261,12 +229,13 @@ def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     df2 = TSDataset(deepcopy(big_example_tsdf.df), freq=big_example_tsdf.freq)
     date_flags_1 = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
     date_flags_2 = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    tscv_1 = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=df1, transforms=[date_flags_1], n_jobs=1
+
+    pipe_1 = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags_1])
+    pipe_2 = Pipeline(model=CatBoostModelMultiSegment(), horizon=24, transforms=[date_flags_2])
+    _, forecast_df_1, _ = pipe_1.backtest(
+        ts=df1, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")], n_jobs=1
     )
-    tscv_2 = _fit_backtest_pipeline(
-        model=CatBoostModelMultiSegment(), horizon=24, ts=df2, transforms=[date_flags_2], n_jobs=3
+    _, forecast_df_2, _ = pipe_2.backtest(
+        ts=df2, metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")], n_jobs=3
     )
-    forecast_1 = tscv_1.get_forecasts()
-    forecast_2 = tscv_2.get_forecasts()
-    assert (forecast_1 == forecast_2).all().all()
+    assert (forecast_df_1 == forecast_df_2).all().all()
