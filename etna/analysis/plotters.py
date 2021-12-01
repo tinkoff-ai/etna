@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def plot_forecast(
     forecast_ts: "TSDataset",
-    test_ts: "TSDataset",
+    test_ts: Optional["TSDataset"] = None,
     train_ts: Optional["TSDataset"] = None,
     segments: Optional[List[str]] = None,
     n_train_samples: Optional[int] = None,
@@ -45,7 +45,7 @@ def plot_forecast(
         number of graphics columns
     """
     if not segments:
-        segments = list(set(test_ts.columns.get_level_values("segment")))
+        segments = list(set(forecast_ts.columns.get_level_values("segment")))
     segments_number = len(segments)
     columns_num = min(columns_num, len(segments))
     rows_num = math.ceil(segments_number / columns_num)
@@ -55,7 +55,8 @@ def plot_forecast(
 
     if train_ts is not None:
         train_ts.df.sort_values(by="timestamp", inplace=True)
-    test_ts.df.sort_values(by="timestamp", inplace=True)
+    if test_ts is not None:
+        test_ts.df.sort_values(by="timestamp", inplace=True)
     forecast_ts.df.sort_values(by="timestamp", inplace=True)
 
     for i, segment in enumerate(segments):
@@ -64,7 +65,10 @@ def plot_forecast(
         else:
             segment_train_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
-        segment_test_df = test_ts[:, segment, :][segment]
+        if test_ts is not None:
+            segment_test_df = test_ts[:, segment, :][segment]
+        else:
+            segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
         if n_train_samples is None:
             plot_df = segment_train_df
@@ -77,7 +81,8 @@ def plot_forecast(
 
         if (train_ts is not None) and (n_train_samples != 0):
             ax[i].plot(plot_df.index.values, plot_df.target.values, label="train")
-        ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, label="test")
+        if test_ts is not None:
+            ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, label="test")
         ax[i].plot(segment_forecast_df.index.values, segment_forecast_df.target.values, label="forecast")
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
@@ -333,7 +338,7 @@ def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters
-    -----------
+    ----------
     ts:
         TSDataset with timeseries data
     segments:
@@ -362,7 +367,7 @@ def plot_correlation_matrix(
     """Plot pairwise correlation heatmap for selected segments.
 
     Parameters
-    -----------
+    ----------
     ts:
         TSDataset with timeseries data
     segments:

@@ -28,7 +28,7 @@ def get_anomalies_median(
 
     Returns
     -------
-    dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
+    :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
     outliers_per_segment = {}

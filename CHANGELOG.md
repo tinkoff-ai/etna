@@ -7,15 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- ACF plot ([#318](https://github.com/tinkoff-ai/etna/pull/318))
+
+### Changed
+- Add `ts.inverse_transform` as final step at `Pipeline.fit` method ([#316](https://github.com/tinkoff-ai/etna/pull/316))
+- Make test_ts optional in plot_forecast ([#321](https://github.com/tinkoff-ai/etna/pull/321))
+- Speed up inference for multisegment regression models ([#333](https://github.com/tinkoff-ai/etna/pull/333))
+- Speed up Pipeline._get_backtest_forecasts ([#336](https://github.com/tinkoff-ai/etna/pull/336))
+- Speed up SegmentEncoderTransform ([#331](https://github.com/tinkoff-ai/etna/pull/331))
+
+## [1.3.3] - 2021-11-24
+### Added
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
 - GaleShapleyFeatureSelectionTransform ([#284](https://github.com/tinkoff-ai/etna/pull/284))
 - FilterFeaturesTransform ([#277](https://github.com/tinkoff-ai/etna/pull/277))
 - Spell checking for source code and md files ([#303](https://github.com/tinkoff-ai/etna/pull/303))
+- ResampleWithDistributionTransform ([#296](https://github.com/tinkoff-ai/etna/pull/296))
+- Add function to duplicate exogenous data ([#305](https://github.com/tinkoff-ai/etna/pull/305))
+- FourierTransform ([#306](https://github.com/tinkoff-ai/etna/pull/306))
 
 ### Changed
 - Rename confidence interval to prediction interval, start working with quantiles instead of interval_width ([#285](https://github.com/tinkoff-ai/etna/pull/285))
+- Changed format of forecast and test dataframes in WandbLogger ([#309](https://github.com/tinkoff-ai/etna/pull/309))
 
 ### Fixed
+
+## [1.3.2] - 2021-11-18
+### Changed
+- Add sum for omegaconf resolvers ([#300](https://github.com/tinkoff-ai/etna/pull/300/))
 
 ## [1.3.1] - 2021-11-12
 ### Changed

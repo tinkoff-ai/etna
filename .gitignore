@@ -124,3 +124,4 @@ config.env
 /docs/source/api/
 tmp
 wandb
+!examples/wandb

@@ -8,6 +8,7 @@ from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.feature_importance import TreeFeatureSelectionTransform
 from etna.transforms.filter import FilterFeaturesTransform
+from etna.transforms.fourier import FourierTransform
 from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
@@ -19,6 +20,7 @@ from etna.transforms.outliers import SAXOutliersTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform
 from etna.transforms.pytorch_forecasting import PytorchForecastingTransform
+from etna.transforms.resample import ResampleWithDistributionTransform
 from etna.transforms.scalers import MaxAbsScalerTransform
 from etna.transforms.scalers import MinMaxScalerTransform
 from etna.transforms.scalers import RobustScalerTransform
