@@ -234,8 +234,7 @@ class WandbLogger(BaseLogger):
         """Pytorch lightning loggers."""
         from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
 
-        if self._pl_logger is None:
-            self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=self.log_model)
+        self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=self.log_model)
         return self._pl_logger
 
     @property
