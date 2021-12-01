@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 import pytest
 
-from etna.analysis.outliers.density_outliers import default_distance
+from etna.analysis.outliers.density_outliers import absolute_difference_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.density_outliers import get_segment_density_outliers_indices
 from etna.datasets.tsdataset import TSDataset
@@ -32,7 +32,7 @@ def simple_window() -> np.array:
     ],
 )
 def test_default_distance(x, y, expected):
-    assert default_distance(x, y) == expected
+    assert absolute_difference_distance(x, y) == expected
 
 
 @pytest.mark.parametrize(
