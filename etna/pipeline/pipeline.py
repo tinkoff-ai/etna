@@ -295,7 +295,7 @@ class Pipeline(BasePipeline):
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:
         """Get forecasts from different folds."""
-        stacked_forecast = pd.DataFrame()
+        forecasts_list = []
         for fold_number, fold_info in self._folds.items():
             forecast_ts = fold_info["forecast"]
             segments = forecast_ts.segments
@@ -306,8 +306,9 @@ class Pipeline(BasePipeline):
                 index=forecast.index,
             )
             forecast = forecast.join(fold_number_df)
-            stacked_forecast = stacked_forecast.append(forecast)
-        return stacked_forecast
+            forecasts_list.append(forecast)
+        forecasts = pd.concat(forecasts_list)
+        return forecasts
 
     def backtest(
         self,
