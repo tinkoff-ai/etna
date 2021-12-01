@@ -7,6 +7,7 @@ from etna.analysis.feature_relevance.relevance import RelevanceTable
 from etna.analysis.feature_relevance.relevance import StatisticsRelevanceTable
 from etna.analysis.feature_relevance.relevance_table import get_model_relevance_table
 from etna.analysis.feature_relevance.relevance_table import get_statistics_relevance_table
+from etna.analysis.outliers.density_outliers import default_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.hist_outliers import get_anomalies_hist
 from etna.analysis.outliers.median_outliers import get_anomalies_median

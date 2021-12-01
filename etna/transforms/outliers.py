@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
+from etna.analysis import default_distance
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
@@ -176,7 +177,7 @@ class DensityOutliersTransform(OutliersTransform):
         window_size: int = 15,
         distance_coef: float = 3,
         n_neighbors: int = 3,
-        distance_func: Callable[[float, float], float] = lambda x, y: abs(x - y),
+        distance_func: Callable[[float, float], float] = default_distance,
     ):
         """Create instance of DensityOutliersTransform.
 
