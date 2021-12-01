@@ -54,14 +54,14 @@ def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
 
 @pytest.fixture
 def constant_ts(size=40) -> TSDataset:
-    segment_1 = [7] * size
-    segment_2 = [50] * size
+    constants = [7, 50, 130, 277, 370, 513]
+    segments = [constant for constant in constants for _ in range(size)]
     ts_range = list(pd.date_range("2020-01-03", freq="D", periods=size))
     df = pd.DataFrame(
         {
-            "timestamp": ts_range * 2,
-            "target": segment_1 + segment_2,
-            "segment": ["segment_1"] * size + ["segment_2"] * size,
+            "timestamp": ts_range * len(constants),
+            "target": segments,
+            "segment": [f"segment_{i+1}" for i in range(len(constants)) for _ in range(size)],
         }
     )
     ts = TSDataset(TSDataset.to_dataset(df), "D")
