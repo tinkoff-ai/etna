@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - ACF plot ([#318](https://github.com/tinkoff-ai/etna/pull/318))
+- MRMRFeatureSelectionTransform ([#310](https://github.com/tinkoff-ai/etna/pull/310))
 
 ### Changed
 - Add `ts.inverse_transform` as final step at `Pipeline.fit` method ([#316](https://github.com/tinkoff-ai/etna/pull/316))
