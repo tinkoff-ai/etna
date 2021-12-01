@@ -9,6 +9,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import scipy
 from joblib import Parallel
@@ -294,13 +295,20 @@ class Pipeline(BasePipeline):
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:
         """Get forecasts from different folds."""
-        stacked_forecast = pd.DataFrame()
+        forecasts_list = []
         for fold_number, fold_info in self._folds.items():
-            forecast = fold_info["forecast"]
-            for segment in forecast.segments:
-                forecast.loc[:, pd.IndexSlice[segment, self._fold_column]] = fold_number
-            stacked_forecast = stacked_forecast.append(forecast.df)
-        return stacked_forecast
+            forecast_ts = fold_info["forecast"]
+            segments = forecast_ts.segments
+            forecast = forecast_ts.df
+            fold_number_df = pd.DataFrame(
+                np.tile(fold_number, (forecast.index.shape[0], len(segments))),
+                columns=pd.MultiIndex.from_product([segments, [self._fold_column]], names=("segment", "feature")),
+                index=forecast.index,
+            )
+            forecast = forecast.join(fold_number_df)
+            forecasts_list.append(forecast)
+        forecasts = pd.concat(forecasts_list)
+        return forecasts
 
     def backtest(
         self,
