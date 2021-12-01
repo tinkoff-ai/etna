@@ -65,6 +65,41 @@ def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, se
     plt.show()
 
 
+def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None):
+    """
+    Autocorrelation plot for multiple timeseries.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    n_segments:
+        number of random segments to plot
+    lags:
+        number of timeseries shifts for cross-correlation
+    segments:
+        segments to plot
+
+    Notes
+    -----
+    https://en.wikipedia.org/wiki/Autocorrelation
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    k = min(n_segments, len(segments))
+    columns_num = min(2, k)
+    rows_num = math.ceil(k / columns_num)
+    fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True, squeeze=False)
+    ax = ax.ravel()
+    fig.suptitle("Partial Autocorrelation", fontsize=16)
+    for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
+        df_slice = ts[:, name, :][name]
+        plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)
+        ax[i].set_title(name)
+    plt.show()
+
+
 def sample_pacf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None):
     """
     Partial autocorrelation plot for multiple timeseries.

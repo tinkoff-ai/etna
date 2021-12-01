@@ -99,7 +99,8 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
 ### ETNA.Contributors
 [Artem Levashov](https://github.com/soft1q),
-[Aleksey Podkidyshev](https://github.com/alekseyen)
+[Aleksey Podkidyshev](https://github.com/alekseyen),
+[Carlosbogo](https://github.com/Carlosbogo)
 
 ## License
 

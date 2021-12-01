@@ -38,15 +38,15 @@ def test_get_horizon_fail(catboost_pipeline: Pipeline, naive_pipeline: Pipeline)
 @pytest.mark.parametrize("input_cv,true_cv", ([(2, 2)]))
 def test_cv_pass(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv, true_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of valid cv parameter."""
-    ensemble = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], cv=input_cv)
-    assert ensemble.cv == true_cv
+    ensemble = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], n_folds=input_cv)
+    assert ensemble.n_folds == true_cv
 
 
 @pytest.mark.parametrize("input_cv", ([1]))
 def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of wrong number for cv parameter."""
     with pytest.raises(ValueError, match="At least two folds for backtest are expected."):
-        _ = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], cv=input_cv)
+        _ = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], n_folds=input_cv)
 
 
 @pytest.mark.parametrize(
