@@ -5,7 +5,8 @@
 ```bash
     pip install -r requirements.txt
 ```
-
+- Override `config.pattern_to_filter`: it should be equal to substring of full path to library: `etna/etna` for example if you just make `git clone`.  
+N.B. `etna` is not proper substring cause `venv` folder usually in `..etna/venv` and you'll get noisy results of other libraries  
 - Run defined test cases
 
 ```bash
