@@ -1,5 +1,5 @@
 program:
-  ttt-hydra.py
+  hydra-example.py
 method: bayes
 parameters:
   preprocessing:
@@ -20,5 +20,5 @@ metric:
   goal: minimize
 command:
   - python3
-  - ttt-hydra.py
+  - hydra-example.py
   - ${args_no_hyphens}
