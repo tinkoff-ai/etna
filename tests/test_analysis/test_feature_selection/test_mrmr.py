@@ -74,7 +74,7 @@ def random_classification_task_with_nans(random_seed) -> Tuple[pd.DataFrame, np.
     x = pd.DataFrame(x)
     x.iloc[:, [-1, -2]] = np.NAN
     x.iloc[0, -3] = np.NAN
-    return x, y, list(x.columns[:-2])
+    return x, y, list(x.columns)
 
 
 @pytest.mark.parametrize(

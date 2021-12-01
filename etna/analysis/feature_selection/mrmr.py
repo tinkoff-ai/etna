@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_selection import f_classif
 
-FLOOR = 0.00001
 
-
-def mrmr(x: pd.DataFrame, y: np.ndarray, top_k: int) -> List[str]:
+def mrmr(x: pd.DataFrame, y: np.ndarray, top_k: int, atol: float = 1e-10) -> List[str]:
     """
     Maximum Relevance and Minimum Redundancy feature selection method.
 
@@ -20,21 +18,22 @@ def mrmr(x: pd.DataFrame, y: np.ndarray, top_k: int) -> List[str]:
         class(cluster) labels of the segments
     top_k:
         num of regressors to select; if there are not enough regressors, then all will be selected
-
+    atol:
+        the absolute tolerance to compare the float values
     Returns:
     -------
     selected_features: List[str]
         list of `top_k` selected regressors, sorted by their importance
     """
-    x = x.dropna(axis=1, how="all")
-    relevance_table = x.apply(lambda col: f_classif(col[~col.isna()].to_frame(), y[~col.isna()])[0][0])
-    relevance_table = relevance_table[relevance_table > 0]
+    relevance_table = x.apply(
+        lambda col: f_classif(col[~col.isna()].to_frame(), y[~col.isna()])[0][0] if len(col) != col.isna().sum() else 0
+    )
 
     all_features = relevance_table.index.to_list()
     selected_features: List[str] = []
     not_selected_features = all_features.copy()
 
-    redundancy_table = pd.DataFrame(FLOOR, index=all_features, columns=all_features)
+    redundancy_table = pd.DataFrame(np.inf, index=all_features, columns=all_features)
     top_k = min(top_k, len(all_features))
 
     for i in range(top_k):
@@ -43,14 +42,10 @@ def mrmr(x: pd.DataFrame, y: np.ndarray, top_k: int) -> List[str]:
         if i > 0:
             last_selected_feature = selected_features[-1]
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
-                x[not_selected_features].corrwith(x[last_selected_feature]).abs().clip(FLOOR).fillna(FLOOR)
+                x[not_selected_features].corrwith(x[last_selected_feature]).abs().clip(atol).fillna(np.inf)
             )
-            score_denominator = (
-                redundancy_table.loc[not_selected_features, selected_features]
-                .mean(axis=1)
-                .round(5)
-                .replace(1.0, float("Inf"))
-            )
+            score_denominator = redundancy_table.loc[not_selected_features, selected_features].mean(axis=1)
+            score_denominator[np.isclose(score_denominator, 1, atol=atol)] = np.inf
         score = score_numerator / score_denominator
         best_feature = score.index[score.argmax()]
         selected_features.append(best_feature)
