@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -49,3 +50,36 @@ def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
         assert True
     else:
         assert False
+
+
+@pytest.fixture
+def constant_ts(size=40) -> TSDataset:
+    constants = [7, 50, 130, 277, 370, 513]
+    segments = [constant for constant in constants for _ in range(size)]
+    ts_range = list(pd.date_range("2020-01-03", freq="D", periods=size))
+    df = pd.DataFrame(
+        {
+            "timestamp": ts_range * len(constants),
+            "target": segments,
+            "segment": [f"segment_{i+1}" for i in range(len(constants)) for _ in range(size)],
+        }
+    )
+    ts = TSDataset(TSDataset.to_dataset(df), "D")
+    train, test = ts.train_test_split(test_size=5)
+    return train, test
+
+
+def test_catboost_multi_segment_forecast(constant_ts):
+    train, test = constant_ts
+    horizon = len(test.df)
+
+    lags = LagTransform(in_column="target", lags=[10, 11, 12])
+    train.fit_transform([lags])
+    future = train.make_future(horizon)
+
+    model = CatBoostModelMultiSegment()
+    model.fit(train)
+    forecast = model.forecast(future)
+
+    for segment in forecast.segments:
+        assert np.allclose(test[:, segment, "target"], forecast[:, segment, "target"])
