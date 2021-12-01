@@ -1,0 +1,24 @@
+program:
+  ttt-hydra.py
+method: bayes
+parameters:
+  preprocessing:
+    values:
+      - '{_target_: etna.transforms.LogTransform, in_column: target}'
+      - '{_target_: etna.transforms.AddConstTransform, in_column: target, value: ${add_const_transform_value}}'
+      - null
+  add_const_transform_value:
+    distribution: int_uniform
+    min: 14
+    max: 30  
+  lag:
+    distribution: int_uniform
+    min: 14
+    max: 30
+metric:
+  name: MAE_median
+  goal: minimize
+command:
+  - python3
+  - ttt-hydra.py
+  - ${args_no_hyphens}
