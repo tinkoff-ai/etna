@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make test_ts optional in plot_forecast ([#321](https://github.com/tinkoff-ai/etna/pull/321))
 - Speed up inference for multisegment regression models ([#333](https://github.com/tinkoff-ai/etna/pull/333))
 - Speed up Pipeline._get_backtest_forecasts ([#336](https://github.com/tinkoff-ai/etna/pull/336))
+- Speed up SegmentEncoderTransform ([#331](https://github.com/tinkoff-ai/etna/pull/331))
 
 ## [1.3.3] - 2021-11-24
 ### Added
