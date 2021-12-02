@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Get rid of lambda in DensityOutliersTransform and get_anomalies_density ([#341](https://github.com/tinkoff-ai/etna/pull/341))
 
+### Removed
+- Remove TimeSeriesCrossValidation ([#337](https://github.com/tinkoff-ai/etna/pull/337))
+
 ## [1.3.3] - 2021-11-24
 ### Added
 - RelevanceTable returns rank ([#268](https://github.com/tinkoff-ai/etna/pull/268/))
