@@ -10,12 +10,30 @@ if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
+def absolute_difference_distance(x: float, y: float) -> float:
+    """Calculate distance for `get_anomalies_density` function by taking absolute value of difference.
+
+    Parameters
+    ----------
+    x:
+        first value
+    y:
+        second value
+
+    Returns
+    -------
+    result: float
+        absolute difference between values
+    """
+    return abs(x - y)
+
+
 def get_segment_density_outliers_indices(
     series: np.ndarray,
     window_size: int = 7,
     distance_threshold: float = 10,
     n_neighbors: int = 3,
-    distance_func: Callable[[float, float], float] = lambda x, y: abs(x - y),
+    distance_func: Callable[[float, float], float] = absolute_difference_distance,
 ) -> List[int]:
     """Get indices of outliers for one series.
 
@@ -71,7 +89,7 @@ def get_anomalies_density(
     window_size: int = 15,
     distance_coef: float = 3,
     n_neighbors: int = 3,
-    distance_func: Callable[[float, float], float] = lambda x, y: abs(x - y),
+    distance_func: Callable[[float, float], float] = absolute_difference_distance,
 ) -> Dict[str, List[pd.Timestamp]]:
     """Compute outliers according to density rule.
 
@@ -123,4 +141,4 @@ def get_anomalies_density(
     return outliers_per_segment
 
 
-__all__ = ["get_anomalies_density"]
+__all__ = ["get_anomalies_density", "absolute_difference_distance"]
