@@ -2,6 +2,7 @@ import math
 import warnings
 from itertools import combinations
 from typing import TYPE_CHECKING
+from typing import Optional
 from typing import Sequence
 
 import matplotlib.pyplot as plt
@@ -18,7 +19,7 @@ plot_acf = sm.graphics.tsa.plot_acf
 plot_pacf = sm.graphics.tsa.plot_pacf
 
 
-def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, segments: Sequence = None):
+def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, segments: Optional[Sequence] = None):
     """
     Cross-correlation plot between multiple timeseries.
 
