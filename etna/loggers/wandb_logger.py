@@ -14,15 +14,12 @@ from etna import SETTINGS
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
+    from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+
     from etna.datasets import TSDataset
 
 if SETTINGS.wandb_required:
     import wandb
-
-if SETTINGS.torch_required:
-    from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
-else:
-    PLWandbLogger = None  # type: ignore
 
 
 def percentile(n: int):
@@ -50,6 +47,7 @@ class WandbLogger(BaseLogger):
         table: bool = True,
         name_prefix: str = "",
         config: Optional[Union[Dict, str, None]] = None,
+        log_model: bool = False,
     ):
         """
         Create instance of WandbLogger.
@@ -90,12 +88,13 @@ class WandbLogger(BaseLogger):
         self.group = group
         self.config = config
         self._experiment = None
-        self._pl_logger: Optional[PLWandbLogger] = None
+        self._pl_logger: Optional["PLWandbLogger"] = None
         self.job_type = job_type
         self.tags = tags
         self.plot = plot
         self.table = table
         self.name_prefix = name_prefix
+        self.log_model = log_model
 
     def log(self, msg: Union[str, Dict[str, Any]], **kwargs):
         """
@@ -211,7 +210,6 @@ class WandbLogger(BaseLogger):
         self.job_type = job_type
         self.group = group
         self.reinit_experiment()
-        self._pl_logger = PLWandbLogger(experiment=self.experiment)
 
     def reinit_experiment(self):
         """Reinit experiment."""
@@ -234,7 +232,9 @@ class WandbLogger(BaseLogger):
     @property
     def pl_logger(self):
         """Pytorch lightning loggers."""
-        self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=True)
+        from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+
+        self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=self.log_model)
         return self._pl_logger
 
     @property
@@ -242,5 +242,4 @@ class WandbLogger(BaseLogger):
         """Init experiment."""
         if self._experiment is None:
             self.reinit_experiment()
-            self._pl_logger = PLWandbLogger(experiment=self.experiment)
         return self._experiment
