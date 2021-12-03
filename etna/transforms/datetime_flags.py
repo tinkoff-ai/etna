@@ -185,7 +185,7 @@ class DateFlagsTransform(Transform):
         return result
 
     @staticmethod
-    def _get_special_day_in_week(special_days: Sequence[int], timestamp_series: pd.Series) -> np.array:
+    def _get_special_day_in_week(special_days: Sequence[int], timestamp_series: pd.Series) -> np.ndarray:
         """Return array with special days marked 1.
 
         Accepts a list of special days IN WEEK as input and returns array where these days are marked with 1
@@ -193,7 +193,7 @@ class DateFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.weekday() in special_days).values
 
     @staticmethod
-    def _get_special_day_in_month(special_days: Sequence[int], timestamp_series: pd.Series) -> np.array:
+    def _get_special_day_in_month(special_days: Sequence[int], timestamp_series: pd.Series) -> np.ndarray:
         """Return array with special days marked 1.
 
         Accepts a list of special days IN MONTH as input and returns array where these days are marked with 1
@@ -201,17 +201,17 @@ class DateFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.day in special_days).values
 
     @staticmethod
-    def _get_day_number_in_week(timestamp_series: pd.Series) -> np.array:
+    def _get_day_number_in_week(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the number of the day in the week."""
         return timestamp_series.apply(lambda x: x.weekday()).values
 
     @staticmethod
-    def _get_day_number_in_month(timestamp_series: pd.Series) -> np.array:
+    def _get_day_number_in_month(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the number of the day in the month."""
         return timestamp_series.apply(lambda x: x.day).values
 
     @staticmethod
-    def _get_week_number_in_month(timestamp_series: pd.Series) -> np.array:
+    def _get_week_number_in_month(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the week number in the month."""
 
         def week_of_month(dt: pd.Timestamp) -> float:
@@ -240,22 +240,22 @@ class DateFlagsTransform(Transform):
         return timestamp_series.apply(week_of_month).values
 
     @staticmethod
-    def _get_week_number_in_year(timestamp_series: pd.Series) -> np.array:
+    def _get_week_number_in_year(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the week number in the year."""
         return timestamp_series.apply(lambda x: x.weekofyear).values
 
     @staticmethod
-    def _get_month_number_in_year(timestamp_series: pd.Series) -> np.array:
+    def _get_month_number_in_year(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the week number in the year."""
         return timestamp_series.apply(lambda x: x.month).values
 
     @staticmethod
-    def _get_year(timestamp_series: pd.Series) -> np.array:
+    def _get_year(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the week number in the year."""
         return timestamp_series.apply(lambda x: x.year).values
 
     @staticmethod
-    def _get_weekends(timestamp_series: pd.Series) -> np.array:
+    def _get_weekends(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the weekends flags."""
         weekend_days = (5, 6)
         return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
@@ -392,12 +392,12 @@ class TimeFlagsTransform(Transform):
         return result
 
     @staticmethod
-    def _get_minute_number(timestamp_series: pd.Series) -> np.array:
+    def _get_minute_number(timestamp_series: pd.Series) -> np.ndarray:
         """Generate array with the minute number in the hour."""
         return timestamp_series.apply(lambda x: x.minute).values
 
     @staticmethod
-    def _get_period_in_hour(timestamp_series: pd.Series, period_in_minutes: int = 15) -> np.array:
+    def _get_period_in_hour(timestamp_series: pd.Series, period_in_minutes: int = 15) -> np.ndarray:
         """Generate an array with the period number in the hour.
 
         Accepts a period length in minutes as input and returns array where timestamps marked by period number.
@@ -405,12 +405,12 @@ class TimeFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.minute // period_in_minutes).values
 
     @staticmethod
-    def _get_hour_number(timestamp_series: pd.Series) -> np.array:
+    def _get_hour_number(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the hour number in the day."""
         return timestamp_series.apply(lambda x: x.hour).values
 
     @staticmethod
-    def _get_period_in_day(timestamp_series: pd.Series, period_in_hours: int = 12) -> np.array:
+    def _get_period_in_day(timestamp_series: pd.Series, period_in_hours: int = 12) -> np.ndarray:
         """Generate an array with the period number in the day.
 
         Accepts a period length in hours as input and returns array where timestamps marked by period number.

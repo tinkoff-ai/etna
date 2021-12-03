@@ -49,7 +49,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model_predict_params = change_point_model_predict_params
 
-    def _prepare_signal(self, series: pd.Series) -> np.array:
+    def _prepare_signal(self, series: pd.Series) -> np.ndarray:
         """Prepare series for change point model."""
         signal = series.to_numpy()
         if isinstance(self.change_point_model.cost, CostLinear):
