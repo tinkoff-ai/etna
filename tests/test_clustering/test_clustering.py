@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -46,6 +48,21 @@ def test_dtw_clustering(eucl_ts: TSDataset):
     _ = clustering.fit_predict()
     n_clusters = len(set(clustering.clusters))
     assert n_clusters == 3
+
+
+@pytest.mark.parametrize(
+    "clustering,n_clusters",
+    ((EuclideanClustering(), 5), (EuclideanClustering(), 7), (DTWClustering(), 3), (DTWClustering(), 5)),
+)
+def test_pickle_unpickle(eucl_ts: TSDataset, clustering: HierarchicalClustering, n_clusters: int):
+    clustering.build_distance_matrix(ts=eucl_ts)
+    clustering.build_clustering_algo(n_clusters=n_clusters)
+    _ = clustering.fit_predict()
+    centroids_before_pickle = clustering.get_centroids()
+    dumped = pickle.dumps(clustering)
+    clustering_undumped = pickle.loads(dumped)
+    centroids_after_pickle = clustering_undumped.get_centroids()
+    assert np.all(centroids_after_pickle == centroids_before_pickle)
 
 
 @pytest.mark.parametrize(
