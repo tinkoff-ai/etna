@@ -7,6 +7,7 @@ from etna.transforms.datetime_flags import TimeFlagsTransform
 from etna.transforms.detrend import LinearTrendTransform
 from etna.transforms.detrend import TheilSenTrendTransform
 from etna.transforms.feature_importance import TreeFeatureSelectionTransform
+from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 from etna.transforms.filter import FilterFeaturesTransform
 from etna.transforms.fourier import FourierTransform
 from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
