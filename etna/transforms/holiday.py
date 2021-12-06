@@ -8,9 +8,7 @@ from etna.transforms.base import Transform
 
 
 class _OneSegmentHolidayTransform(Transform):
-    """
-    Mark holidays as 1 and usual days as 0.
-    """
+    """Mark holidays as 1 and usual days as 0."""
 
     def __init__(self, iso_code: str = "RUS"):
         """
@@ -61,9 +59,7 @@ class _OneSegmentHolidayTransform(Transform):
 
 
 class HolidayTransform(PerSegmentWrapper):
-    """HolidayTransform generates series that indicates holidays in given dataframe.
-    Creates column 'holidays'.
-    """
+    """HolidayTransform generates series that indicates holidays in given dataframe. Creates column 'holidays'."""
 
     def __init__(self, iso_code: str = "RUS"):
         """
