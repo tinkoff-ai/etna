@@ -6,6 +6,8 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing_extensions import Literal
+from copy import copy
 
 import numpy as np
 import pandas as pd
@@ -72,7 +74,7 @@ class TSDataset:
     idx = pd.IndexSlice
 
     def __init__(
-        self, df: pd.DataFrame, freq: str, df_exog: Optional[pd.DataFrame] = None, known_future: Sequence = ()
+        self, df: pd.DataFrame, freq: str, df_exog: Optional[pd.DataFrame] = None, known_future: Union[Literal["all"], Sequence] = ()
     ):
         """Init TSDataset.
 
@@ -86,13 +88,13 @@ class TSDataset:
             dataframe with exogenous data;
             if the series is known in the future features' names should start with prefix 'regressor_`.
         known_future:
-            series from columns in df_exog[known_future] are regressors
+            columns in df_exog[known_future] that are regressors,
+            if "all" value is given, all columns are meant to be regressors
         """
         self.raw_df = df.copy(deep=True)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
         self.freq = freq
         self.df_exog = None
-        self.known_future = known_future
 
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
 
@@ -111,7 +113,8 @@ class TSDataset:
 
         self.df = self.raw_df.copy(deep=True)
 
-        self._regressors = self._check_known_future(known_future, df_exog)
+        self.known_future = self._check_known_future(known_future, df_exog)
+        self._regressors = copy(self.known_future)
 
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
@@ -228,22 +231,27 @@ class TSDataset:
         return future_ts
 
     @staticmethod
-    def _check_known_future(known_future: Sequence[str], df_exog: Optional[pd.DataFrame]) -> List[str]:
+    def _check_known_future(known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]) -> List[str]:
         """Check that `known_future` corresponds to `df_exog` and returns initial list of regressors."""
-        if df_exog is not None:
-            columns = set(df_exog.columns.get_level_values("feature"))
+        if df_exog is None:
+            exog_columns = []
+        else:
+            exog_columns = set(df_exog.columns.get_level_values("feature"))
+
+        if isinstance(known_future, str):
+            if known_future == "all":
+                return sorted(list(exog_columns))
+            else:
+                raise ValueError("The only possible literal is 'all'")
+        else:
             known_future_unique = set(known_future)
-            if not known_future_unique.issubset(columns):
+            if not known_future_unique.issubset(exog_columns):
                 raise ValueError(
                     f"Some features in known_future are not present in df_exog: "
-                    f"{known_future_unique.difference(columns)}"
+                    f"{known_future_unique.difference(exog_columns)}"
                 )
             else:
                 return sorted(list(known_future_unique))
-        elif len(known_future) > 0:
-            raise ValueError("There is no exogenous data to extract known future features from")
-        else:
-            return []
 
     @staticmethod
     def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):

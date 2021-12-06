@@ -70,9 +70,15 @@ def test_check_endings_pass():
     ts._check_endings()
 
 
+def test_check_known_future_wrong_literal():
+    """Check that _check_known_future raises exception if wrong literal is given."""
+    with pytest.raises(ValueError, match="The only possible literal is 'all'"):
+        _ = TSDataset._check_known_future("wrong-literal", None)
+
+
 def test_check_known_future_error_no_df_exog():
     """Check that _check_known_future raises exception if there are no df_exog, but known_future isn't empty."""
-    with pytest.raises(ValueError, match="There is no exogenous data"):
+    with pytest.raises(ValueError, match="Some features in known_future are not present in df_exog"):
         _ = TSDataset._check_known_future(["regressor_1"], None)
 
 
@@ -91,13 +97,19 @@ def test_check_known_future_pass_all_empty():
 
 
 @pytest.mark.parametrize(
-    "known_future", [[], ["regressor_1"], ["regressor_1", "regressor_2"], ["regressor_1", "regressor_1"]]
+    "known_future, expected_columns", [
+        ([], []),
+        (["regressor_1"], ["regressor_1"]),
+        (["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
+        (["regressor_1", "regressor_1"], ["regressor_1"]),
+        ("all", ["regressor_1", "regressor_2"])
+    ]
 )
-def test_check_known_future_pass_non_empty(df_and_regressors, known_future):
+def test_check_known_future_pass_non_empty(df_and_regressors, known_future, expected_columns):
     _, df_exog, _ = df_and_regressors
     """Check that _check_known_future passes if df_exog is not empty."""
     regressors = TSDataset._check_known_future(known_future, df_exog)
-    assert regressors == sorted(list(set(known_future)))
+    assert regressors == expected_columns
 
 
 def test_categorical_after_call_to_pandas():
