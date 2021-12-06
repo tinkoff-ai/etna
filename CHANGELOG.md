@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wandb Logger does not work unless pytorch is installed ([#340](https://github.com/tinkoff-ai/etna/pull/340))
 
 ### Fixed
+- Fixed work of get_anomalies_density with constant series ([#334](https://github.com/tinkoff-ai/etna/issues/334))
 - Get rid of lambda in DensityOutliersTransform and get_anomalies_density ([#341](https://github.com/tinkoff-ai/etna/pull/341))
 - Fixed import in transforms ([#349](https://github.com/tinkoff-ai/etna/pull/349))
 - Pickle DTWClustering ([#350](https://github.com/tinkoff-ai/etna/pull/350))
