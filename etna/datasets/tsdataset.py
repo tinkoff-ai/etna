@@ -1,17 +1,17 @@
 import math
 import warnings
+from copy import copy
 from typing import TYPE_CHECKING
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
-from typing_extensions import Literal
-from copy import copy
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from typing_extensions import Literal
 
 from etna.loggers import tslogger
 
@@ -74,7 +74,11 @@ class TSDataset:
     idx = pd.IndexSlice
 
     def __init__(
-        self, df: pd.DataFrame, freq: str, df_exog: Optional[pd.DataFrame] = None, known_future: Union[Literal["all"], Sequence] = ()
+        self,
+        df: pd.DataFrame,
+        freq: str,
+        df_exog: Optional[pd.DataFrame] = None,
+        known_future: Union[Literal["all"], Sequence] = (),
     ):
         """Init TSDataset.
 
@@ -231,10 +235,12 @@ class TSDataset:
         return future_ts
 
     @staticmethod
-    def _check_known_future(known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]) -> List[str]:
+    def _check_known_future(
+        known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]
+    ) -> List[str]:
         """Check that `known_future` corresponds to `df_exog` and returns initial list of regressors."""
         if df_exog is None:
-            exog_columns = []
+            exog_columns = set()
         else:
             exog_columns = set(df_exog.columns.get_level_values("feature"))
 

@@ -97,13 +97,14 @@ def test_check_known_future_pass_all_empty():
 
 
 @pytest.mark.parametrize(
-    "known_future, expected_columns", [
+    "known_future, expected_columns",
+    [
         ([], []),
         (["regressor_1"], ["regressor_1"]),
         (["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
         (["regressor_1", "regressor_1"], ["regressor_1"]),
-        ("all", ["regressor_1", "regressor_2"])
-    ]
+        ("all", ["regressor_1", "regressor_2"]),
+    ],
 )
 def test_check_known_future_pass_non_empty(df_and_regressors, known_future, expected_columns):
     _, df_exog, _ = df_and_regressors
