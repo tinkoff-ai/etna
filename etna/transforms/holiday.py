@@ -12,15 +12,15 @@ class _OneSegmentHolidayTransform(Transform):
     Mark holidays as 1 and usual days as 0.
     """
 
-    def __init__(self, ISO_code: str = "RUS"):
+    def __init__(self, iso_code: str = "RUS"):
         """
         Create instance of _OneSegmentHolidayTransform.
         Parameters
         ----------
-        ISO_code:
+        iso_code:
             internationally recognised codes, designated to country for which we want to find the holidays
         """
-        self.holidays = holidays.CountryHoliday(ISO_code)
+        self.holidays = holidays.CountryHoliday(iso_code)
         self.out_prefix = "regressor_"
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentHolidayTransform":
@@ -65,13 +65,13 @@ class HolidayTransform(PerSegmentWrapper):
     Creates column 'holidays'.
     """
 
-    def __init__(self, ISO_code: str = "RUS"):
+    def __init__(self, iso_code: str = "RUS"):
         """
         Create instance of HolidayTransform.
         Parameters
         ----------
-        ISO_code:
+        iso_code:
             internationally recognised codes, designated to country for which we want to find the holidays
         """
-        self.ISO_code = ISO_code
-        super().__init__(transform=_OneSegmentHolidayTransform(self.ISO_code))
+        self.iso_code = iso_code
+        super().__init__(transform=_OneSegmentHolidayTransform(self.iso_code))

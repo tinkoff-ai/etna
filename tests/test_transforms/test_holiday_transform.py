@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -81,7 +79,7 @@ def two_segments_simple_df_min(simple_constant_df_min: pd.DataFrame):
 
 
 def test_interface_daily(simple_constant_df_daily: pd.DataFrame):
-    holidays_finder = _OneSegmentHolidayTransform(ISO_code="US")
+    holidays_finder = _OneSegmentHolidayTransform(iso_code="US")
     df = holidays_finder.fit_transform(simple_constant_df_daily)
     assert "regressor_holidays" in df.columns
     assert df["regressor_holidays"].dtype == "category"
@@ -96,7 +94,7 @@ def test_interface_two_segments_daily(two_segments_simple_df_daily: pd.DataFrame
 
 
 def test_interface_hour(simple_constant_df_hour: pd.DataFrame):
-    holidays_finder = _OneSegmentHolidayTransform(ISO_code="US")
+    holidays_finder = _OneSegmentHolidayTransform(iso_code="US")
     df = holidays_finder.fit_transform(simple_constant_df_hour)
     assert "regressor_holidays" in df.columns
     assert df["regressor_holidays"].dtype == "category"
@@ -111,7 +109,7 @@ def test_interface_two_segments_hour(two_segments_simple_df_hour: pd.DataFrame):
 
 
 def test_interface_min(simple_constant_df_min: pd.DataFrame):
-    holidays_finder = _OneSegmentHolidayTransform(ISO_code="US")
+    holidays_finder = _OneSegmentHolidayTransform(iso_code="US")
     df = holidays_finder.fit_transform(simple_constant_df_min)
     assert "regressor_holidays" in df.columns
     assert df["regressor_holidays"].dtype == "category"
@@ -126,42 +124,42 @@ def test_interface_two_segments_min(two_segments_simple_df_min: pd.DataFrame):
 
 
 @pytest.mark.parametrize(
-    "ISO_code,answer",
+    "iso_code,answer",
     (
         ("RUS", np.array([1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0])),
         ("US", np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
-def test_holidays_day(ISO_code: str, answer: np.array, two_segments_simple_df_daily):
-    holidays_finder = HolidayTransform(ISO_code)
+def test_holidays_day(iso_code: str, answer: np.array, two_segments_simple_df_daily):
+    holidays_finder = HolidayTransform(iso_code)
     df = holidays_finder.fit_transform(two_segments_simple_df_daily)
     for segment in df.columns.get_level_values("segment").unique():
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
 
 
 @pytest.mark.parametrize(
-    "ISO_code,answer",
+    "iso_code,answer",
     (
         ("RUS", np.array([1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
         ("US", np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
-def test_holidays_hour(ISO_code: str, answer: np.array, two_segments_simple_df_hour):
-    holidays_finder = HolidayTransform(ISO_code)
+def test_holidays_hour(iso_code: str, answer: np.array, two_segments_simple_df_hour):
+    holidays_finder = HolidayTransform(iso_code)
     df = holidays_finder.fit_transform(two_segments_simple_df_hour)
     for segment in df.columns.get_level_values("segment").unique():
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
 
 
 @pytest.mark.parametrize(
-    "ISO_code,answer",
+    "iso_code,answer",
     (
         ("RUS", np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
         ("US", np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])),
     ),
 )
-def test_holidays_min(ISO_code: str, answer: np.array, two_segments_simple_df_min):
-    holidays_finder = HolidayTransform(ISO_code)
+def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_df_min):
+    holidays_finder = HolidayTransform(iso_code)
     df = holidays_finder.fit_transform(two_segments_simple_df_min)
     for segment in df.columns.get_level_values("segment").unique():
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
