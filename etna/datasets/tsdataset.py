@@ -225,26 +225,29 @@ class TSDataset:
         """Check that regressors in df_exog begin not later than in df and end later than in df."""
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
-            target = df[segment]["target"].dropna()
+            target_min = df[segment]["target"].first_valid_index()
+            target_max = df[segment]["target"].last_valid_index()
             exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
-            for series in exog_regressor_columns:
-                exog_series = df_exog[segment][series].dropna()
-                if target.index.min() < exog_series.index.min():
-                    raise ValueError(
-                        f"All the regressor series should start not later than corresponding 'target'."
-                        f"Series {series} of segment {segment} have not enough history: "
-                        f"{target.index.min()} < {exog_series.index.min()}."
-                    )
-                if target.index.max() >= exog_series.index.max():
-                    raise ValueError(
-                        f"All the regressor series should finish later than corresponding 'target'."
-                        f"Series {series} of segment {segment} have not enough history: "
-                        f"{target.index.max()} >= {exog_series.index.max()}."
-                    )
+            if len(exog_regressor_columns) == 0:
+                continue
+            exog_series_min = df_exog[segment][exog_regressor_columns].first_valid_index()
+            exog_series_max = df_exog[segment][exog_regressor_columns].last_valid_index()
+            if target_min < exog_series_min:
+                raise ValueError(
+                    f"All the regressor series should start not later than corresponding 'target'."
+                    f"Series of segment {segment} have not enough history: "
+                    f"{target_min} < {exog_series_min}."
+                )
+            if target_max >= exog_series_max:
+                raise ValueError(
+                    f"All the regressor series should finish later than corresponding 'target'."
+                    f"Series of segment {segment} have not enough history: "
+                    f"{target_max} >= {exog_series_max}."
+                )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         self._check_regressors(df=df, df_exog=self.df_exog)
-        df = pd.merge(df, self.df_exog, left_index=True, right_index=True, how="left").sort_index(axis=1, level=(0, 1))
+        df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
 
     def _check_endings(self):
