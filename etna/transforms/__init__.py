@@ -11,6 +11,7 @@ from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 from etna.transforms.filter import FilterFeaturesTransform
 from etna.transforms.fourier import FourierTransform
 from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
+from etna.transforms.holiday import HolidayTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform

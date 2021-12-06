@@ -87,6 +87,7 @@ ipywidgets = {version = "^7.6.5", optional = true}
 
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
+holidays = "^0.11.3"
 
 [tool.poetry.extras]
 # optional deps
