@@ -72,7 +72,7 @@ def test_check_endings_pass():
 
 def test_check_known_future_error_no_df_exog():
     """Check that _check_known_future raises exception if there are no df_exog, but known_future isn't empty."""
-    with pytest.raises(ValueError, match="There are is exogenous data"):
+    with pytest.raises(ValueError, match="There is no exogenous data"):
         _ = TSDataset._check_known_future(["regressor_1"], None)
 
 

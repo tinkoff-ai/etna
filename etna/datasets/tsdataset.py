@@ -241,7 +241,7 @@ class TSDataset:
             else:
                 return sorted(list(known_future_unique))
         elif len(known_future) > 0:
-            raise ValueError("There are is exogenous data to extract known future features")
+            raise ValueError("There is no exogenous data to extract known future features from")
         else:
             return []
 
