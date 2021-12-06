@@ -14,6 +14,13 @@ def simple_window() -> np.array:
     return np.array([4, 5, 6, 4, 100, 200, 2])
 
 
+def test_const_ts(const_ts_anomal):
+    anomal = get_anomalies_density(const_ts_anomal)
+    assert set(["segment_0", "segment_1"]) == set(anomal.keys())
+    for seg in anomal.keys():
+        assert len(anomal[seg]) == 0
+
+
 @pytest.mark.parametrize(
     "x, y, expected",
     [
