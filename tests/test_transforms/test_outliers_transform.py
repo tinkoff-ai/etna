@@ -35,7 +35,7 @@ def outliers_solid_tsds():
         df=TSDataset.to_dataset(df).iloc[:-10],
         df_exog=TSDataset.to_dataset(df_exog),
         freq="D",
-        known_future=["regressor_1"],
+        known_future="all",
     )
     return ts
 

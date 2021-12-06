@@ -207,7 +207,7 @@ def example_reg_tsds(random_seed) -> TSDataset:
     df = TSDataset.to_dataset(df)
     exog = TSDataset.to_dataset(exog)
 
-    tsds = TSDataset(df, freq="D", df_exog=exog, known_future=["regressor_exog_weekend"])
+    tsds = TSDataset(df, freq="D", df_exog=exog, known_future="all")
 
     return tsds
 

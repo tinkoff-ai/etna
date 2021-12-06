@@ -58,8 +58,7 @@ class TSDataset:
     >>> df_regressors["segment"] = "segment_0"
     >>> df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     >>> df_regressors = TSDataset.to_dataset(df_regressors)
-    >>> known_future = [f"regressor_{i}" for i in range(5)]
-    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future=known_future)
+    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
     >>> tsdataset.df.head(5)
     segment      segment_0
     feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
@@ -190,7 +189,7 @@ class TSDataset:
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
         >>> ts = TSDataset(
-        ...     df_ts_format, "D", df_exog=df_regressors_ts_format, known_future=["regressor_1", "regressor_2"]
+        ...     df_ts_format, "D", df_exog=df_regressors_ts_format, known_future="all"
         ... )
         >>> ts.make_future(4)
         segment      segment_0                      segment_1
@@ -342,7 +341,7 @@ class TSDataset:
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(
-        ...     df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future=["regressor_1"]
+        ...     df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all"
         ... )
         >>> ts.regressors
         ['regressor_1']

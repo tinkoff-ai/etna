@@ -28,7 +28,7 @@ def test_run_with_reg(new_format_df, new_format_exog):
     regressors_cap.columns.set_levels(["regressor_cap"], level="feature", inplace=True)
     exog = pd.concat([regressors, regressors_cap], axis=1)
 
-    ts = TSDataset(df, "1d", df_exog=exog, known_future=["regressor_exog", "regressor_cap"])
+    ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
     model = ProphetModel()
     model.fit(ts)
