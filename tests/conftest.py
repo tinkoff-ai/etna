@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import generate_const_df
 from etna.datasets.tsdataset import TSDataset
 
 
@@ -403,3 +404,10 @@ def simple_df_relevance() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_exog = TSDataset.to_dataset(df_exog)
 
     return df, df_exog
+
+
+@pytest.fixture
+def const_ts_anomal() -> TSDataset:
+    df = generate_const_df(periods=15, start_time="2020-01-01", scale=1.0, n_segments=2)
+    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    return ts

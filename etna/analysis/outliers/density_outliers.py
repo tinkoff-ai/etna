@@ -129,15 +129,18 @@ def get_anomalies_density(
         segment_df = ts[:, seg, :][seg].dropna().reset_index()
         series = segment_df[in_column].values
         timestamps = segment_df["timestamp"].values
-        outliers_idxs = get_segment_density_outliers_indices(
-            series=series,
-            window_size=window_size,
-            distance_threshold=distance_coef * np.std(series),
-            n_neighbors=n_neighbors,
-            distance_func=distance_func,
-        )
-        outliers = [timestamps[i] for i in outliers_idxs]
-        outliers_per_segment[seg] = outliers
+        if np.std(series):
+            outliers_idxs = get_segment_density_outliers_indices(
+                series=series,
+                window_size=window_size,
+                distance_threshold=distance_coef * np.std(series),
+                n_neighbors=n_neighbors,
+                distance_func=distance_func,
+            )
+            outliers = [timestamps[i] for i in outliers_idxs]
+            outliers_per_segment[seg] = outliers
+        else:
+            outliers_per_segment[seg] = []
     return outliers_per_segment
 
 
