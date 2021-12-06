@@ -58,7 +58,9 @@ def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
         }
     )
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future=["regressor_exog"]
+    )
     distribution = {"segment_1": target1, "segment_2": target2}
     return {"ts": ts, "distribution": distribution}
 
@@ -97,7 +99,9 @@ def inplace_resampled_daily_exog_ts() -> TSDataset:
     )
     df_exog = pd.concat([df_exog1, df_exog2], ignore_index=True)
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future=["regressor_exog"]
+    )
     return ts
 
 
@@ -137,7 +141,9 @@ def noninplace_resampled_daily_exog_ts() -> TSDataset:
     )
     df_exog = pd.concat([df_exog1, df_exog2], ignore_index=True)
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future=["regressor_exog"]
+    )
     return ts
 
 
@@ -189,7 +195,9 @@ def weekly_exog_same_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
         }
     )
     distribution = {"segment_1": target1, "segment_2": target2}
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future=["regressor_exog"]
+    )
 
     return {"ts": ts, "distribution": distribution}
 
@@ -242,7 +250,9 @@ def weekly_exog_diff_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
         }
     )
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future=["regressor_exog"]
+    )
     distribution = {"segment_1": target1, "segment_2": target2}
     return {"ts": ts, "distribution": distribution}
 

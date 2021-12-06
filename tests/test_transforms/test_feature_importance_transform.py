@@ -54,8 +54,14 @@ def ts_with_regressors():
     df_exog_all_segments = pd.concat(classic_exog_list)
 
     # construct TSDataset
+    known_future = list(set(df_exog.columns).difference({"timestamp"}))
     df = df[df["timestamp"] <= timestamp[200]]
-    return TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq="D")
+    return TSDataset(
+        df=TSDataset.to_dataset(df),
+        df_exog=TSDataset.to_dataset(df_exog_all_segments),
+        freq="D",
+        known_future=known_future,
+    )
 
 
 @pytest.mark.parametrize(

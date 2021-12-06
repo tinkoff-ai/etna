@@ -31,7 +31,12 @@ def outliers_solid_tsds():
     df = pd.concat([df1, df2], ignore_index=True)
     df_exog = df.copy()
     df_exog.columns = ["timestamp", "regressor_1", "segment"]
-    ts = TSDataset(df=TSDataset.to_dataset(df).iloc[:-10], df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df).iloc[:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq="D",
+        known_future=["regressor_1"],
+    )
     return ts
 
 

@@ -31,7 +31,10 @@ def ts_with_large_regressors_number(random_seed) -> TSDataset:
         tmp = generate_ar_df(periods=150, start_time="2020-01-01", n_segments=3, ar_coef=[1], random_seed=i)
         exog_df = exog_df.merge(tmp.rename({"target": f"regressor_{i + 1}"}, axis=1), on=["timestamp", "segment"])
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(exog_df))
+    known_future = [f"regressor_{i}" for i in range(1, 9)]
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(exog_df), known_future=known_future
+    )
     return ts
 
 
