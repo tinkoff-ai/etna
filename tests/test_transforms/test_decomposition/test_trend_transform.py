@@ -120,7 +120,7 @@ def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
 def test_transform_interface_repr(example_tsds: TSDataset) -> None:
     """Test transform interface without out_column param"""
     trend_transform = TrendTransform(in_column="target", detrend_model=LinearRegression(), model="rbf")
-    out_column = f"regressor_{trend_transform.__repr__()}"
+    out_column = f"{trend_transform.__repr__()}"
     result = trend_transform.fit_transform(example_tsds.df)
     for seg in result.columns.get_level_values(0).unique():
         assert out_column in result[seg].columns
