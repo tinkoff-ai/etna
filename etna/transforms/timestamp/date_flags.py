@@ -6,11 +6,18 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class DateFlagsTransform(Transform):
-    """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column."""
+class DateFlagsTransform(Transform, FutureMixin):
+    """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
+    Creates columns named '{out_column}_{feature_name}' or '{__repr__()}_{feature_name}' if not given.
+
+    Notes
+    -----
+    tables with freq types in pandas: https://nagornyy.me/courses/data-science/dates-and-time-in-python-and-pandas
+    """
 
     def __init__(
         self,

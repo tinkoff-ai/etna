@@ -92,7 +92,6 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_df_two
             transformed_df.loc[:, pd.IndexSlice[segments, column]]
         )
 
-
 @pytest.mark.parametrize("lags", (12, [4, 6, 8, 16]))
 def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_df_two_segments):
     """Test that transform generates correct values."""
