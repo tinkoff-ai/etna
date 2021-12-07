@@ -226,12 +226,16 @@ class TSDataset:
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
             target_min = df[segment]["target"].first_valid_index()
+            target_min = pd.NaT if target_min is None else target_min
             target_max = df[segment]["target"].last_valid_index()
+            target_max = pd.NaT if target_max is None else target_max
             exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
             if len(exog_regressor_columns) == 0:
                 continue
             exog_series_min = df_exog[segment][exog_regressor_columns].first_valid_index()
+            exog_series_min = pd.NaT if exog_series_min is None else exog_series_min
             exog_series_max = df_exog[segment][exog_regressor_columns].last_valid_index()
+            exog_series_max = pd.NaT if exog_series_max is None else exog_series_max
             if target_min < exog_series_min:
                 raise ValueError(
                     f"All the regressor series should start not later than corresponding 'target'."
