@@ -5,6 +5,7 @@ from ruptures import Binseg
 from ruptures.base import BaseCost
 from sklearn.linear_model import LinearRegression
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.change_points_trend import BaseEstimator
 from etna.transforms.change_points_trend import TDetrendModel
@@ -117,7 +118,7 @@ class _TrendTransform(PerSegmentWrapper):
         )
 
 
-class TrendTransform(_TrendTransform):
+class TrendTransform(_TrendTransform, FutureMixin):
     """TrendTransform adds trend as a feature.
     TrendTransform uses Binseg model as a change point detection model in _TrendTransform.
     """
@@ -142,8 +143,8 @@ class TrendTransform(_TrendTransform):
         in_column:
             name of column to apply transform to
         out_column:
-            name of added column. Don't forget to add regressor prefix if necessary.
-            If not given, use 'regressor_{self.__repr__()}'
+            name of added column.
+            If not given, use '{self.__repr__()}'
         detrend_model:
             model to get trend in data
         model:
@@ -173,7 +174,7 @@ class TrendTransform(_TrendTransform):
         self.epsilon = epsilon
         super().__init__(
             in_column=self.in_column,
-            out_column=self.out_column if self.out_column is not None else f"regressor_{self.__repr__()}",
+            out_column=self.out_column if self.out_column is not None else f"{self.__repr__()}",
             change_point_model=Binseg(
                 model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
             ),

@@ -125,8 +125,6 @@ class MeanTransform(WindowStatisticsTransform):
             name of processed column
         window: int
             size of window to aggregate
-        out_column: str, optional
-            result column name. If not given use __repr__()
         seasonality: int
             seasonality of lags to compute window's aggregation with
         alpha: float
@@ -136,6 +134,8 @@ class MeanTransform(WindowStatisticsTransform):
             return None
         fillna: float
             value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use __repr__()
         """
         self.window = window
         self.in_column = in_column
@@ -204,8 +204,6 @@ class StdTransform(WindowStatisticsTransform):
             name of processed column
         window: int
             size of window to aggregate
-        out_column: str, optional
-            result column name. If not given use __repr__()
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
@@ -213,6 +211,8 @@ class StdTransform(WindowStatisticsTransform):
             return None
         fillna: float
             value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use __repr__()
         """
         self.in_column = in_column
         self.window = window
@@ -258,8 +258,6 @@ class QuantileTransform(WindowStatisticsTransform):
             quantile to calculate
         window: int
             size of window to aggregate
-        out_column: str, optional
-            result column name. If not given use __repr__()
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
@@ -267,6 +265,8 @@ class QuantileTransform(WindowStatisticsTransform):
             return None
         fillna: float
             value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use __repr__()
         """
         self.in_column = in_column
         self.quantile = quantile
@@ -310,8 +310,6 @@ class MinTransform(WindowStatisticsTransform):
             name of processed column
         window: int
             size of window to aggregate
-        out_column: str, optional
-            result column name. If not given use __repr__()
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
@@ -319,6 +317,8 @@ class MinTransform(WindowStatisticsTransform):
             return None
         fillna: float
             value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use __repr__()
         """
         self.in_column = in_column
         self.window = window
@@ -361,8 +361,6 @@ class MaxTransform(WindowStatisticsTransform):
             name of processed column
         window: int
             size of window to aggregate
-        out_column: str, optional
-            result column name. If not given use __repr__()
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
@@ -370,6 +368,8 @@ class MaxTransform(WindowStatisticsTransform):
             return None
         fillna: float
             value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use __repr__()
         """
         self.in_column = in_column
         self.window = window
@@ -412,8 +412,6 @@ class MedianTransform(WindowStatisticsTransform):
             name of processed column
         window: int
             size of window to aggregate
-        out_column: str, optional
-            result column name. If not given use __repr__()
         seasonality: int
             seasonality of lags to compute window's aggregation with
         min_periods: int
@@ -421,6 +419,8 @@ class MedianTransform(WindowStatisticsTransform):
             return None
         fillna: float
             value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use __repr__()
         """
         self.in_column = in_column
         self.window = window
