@@ -5,13 +5,13 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class DateFlagsTransform(Transform):
+class DateFlagsTransform(Transform, FutureMixin):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
-    Creates columns named '{out_column}_{feature_name}'(don't forget to add regressor prefix if necessary)
-    or 'regressor_{__repr__()}_{feature_name}' if not given.
+    Creates columns named '{out_column}_{feature_name}' or '{__repr__()}_{feature_name}' if not given.
 
     Notes
     -----
@@ -57,7 +57,7 @@ class DateFlagsTransform(Transform):
             with flag that shows given date is a special day
         out_column:
             name of added column. We get '{out_column}_{feature_name}'.
-            If not given, use 'regressor_{self.__repr__()}_{feature_name}'
+            If not given, use '{self.__repr__()}_{feature_name}'
 
         Notes
         -----
@@ -107,7 +107,7 @@ class DateFlagsTransform(Transform):
         self.special_days_in_month = special_days_in_month
 
         self.out_column = out_column
-        self.out_column_prefix = out_column if out_column is not None else f"regressor_{self.__repr__()}"
+        self.out_column_prefix = out_column if out_column is not None else f"{self.__repr__()}"
 
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
@@ -261,10 +261,9 @@ class DateFlagsTransform(Transform):
         return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
 
 
-class TimeFlagsTransform(Transform):
+class TimeFlagsTransform(Transform, FutureMixin):
     """Class for holding time transform.
-    Creates columns named '{out_column}_{feature_name}'(don't forget to add regressor prefix if necessary)
-    or 'regressor_{__repr__()}_{feature_name}' if not given.
+    Creates columns named '{out_column}_{feature_name}' or '{__repr__()}_{feature_name}' if not given.
     """
 
     def __init__(
@@ -299,7 +298,7 @@ class TimeFlagsTransform(Transform):
             to feature dataframe in transform
         out_column:
             name of added column. We get '{out_column}_{feature_name}'.
-            If not given, use 'regressor_{self.__repr__()}_{feature_name}'
+            If not given, use '{self.__repr__()}_{feature_name}'
 
         Raises
         ------
@@ -330,7 +329,7 @@ class TimeFlagsTransform(Transform):
         self.one_third_day_number: bool = one_third_day_number
 
         self.out_column = out_column
-        self.out_column_prefix = out_column if out_column is not None else f"regressor_{self.__repr__()}"
+        self.out_column_prefix = out_column if out_column is not None else f"{self.__repr__()}"
 
     def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""

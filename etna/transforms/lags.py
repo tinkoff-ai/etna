@@ -4,6 +4,7 @@ from typing import Union
 
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -34,7 +35,7 @@ class _OneSegmentLagFeature(Transform):
         return result
 
 
-class LagTransform(PerSegmentWrapper):
+class LagTransform(PerSegmentWrapper, FutureMixin):
     """Generates series of lags from given dataframe."""
 
     def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
@@ -47,8 +48,8 @@ class LagTransform(PerSegmentWrapper):
         lags:
             int value or list of values for lags computation; if int, generate range of lags from 1 to given value
         out_column:
-            name of added column. We get '{out_column}_{lag_number}'(don't forget to add regressor prefix if necessary).
-            If not given, use 'regressor_{self.__repr__()}_{lag_number}'
+            name of added column. We get '{out_column}_{lag_number}'.
+            If not given, use '{self.__repr__()}_{lag_number}'
 
         Raises
         ------
@@ -63,6 +64,6 @@ class LagTransform(PerSegmentWrapper):
             transform=_OneSegmentLagFeature(
                 in_column=self.in_column,
                 lags=self.lags,
-                out_column=out_column if out_column is not None else f"regressor_{self.__repr__()}",
+                out_column=out_column if out_column is not None else f"{self.__repr__()}",
             )
         )

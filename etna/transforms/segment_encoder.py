@@ -2,11 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 from etna.transforms.statistics import MeanTransform
 
 
-class SegmentEncoderTransform(Transform):
+class SegmentEncoderTransform(Transform, FutureMixin):
     """Encode segment label to categorical. Creates column 'regressor_segment_code'."""
 
     idx = pd.IndexSlice
@@ -59,7 +60,7 @@ class SegmentEncoderTransform(Transform):
         return df
 
 
-class MeanSegmentEncoderTransform(Transform):
+class MeanSegmentEncoderTransform(Transform, FutureMixin):
     """Makes expanding mean target encoding of the segment. Creates column 'regressor_segment_mean'."""
 
     idx = pd.IndexSlice

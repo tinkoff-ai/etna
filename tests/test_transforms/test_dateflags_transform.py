@@ -202,7 +202,7 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
+    true_params = [f"{transform.__repr__()}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
@@ -226,7 +226,7 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
     assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
 
-    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
+    true_params = [f"{transform.__repr__()}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
         assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])

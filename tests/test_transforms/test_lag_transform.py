@@ -79,13 +79,13 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_df_two
     expected_columns = []
     if isinstance(lags, int):
         for lag in range(1, lags + 1):
-            expected_columns.append(f"regressor_{lf.__repr__()}_{lag}")
+            expected_columns.append(f"{lf.__repr__()}_{lag}")
     else:
         for lag in lags:
-            expected_columns.append(f"regressor_{lf.__repr__()}_{lag}")
+            expected_columns.append(f"{lf.__repr__()}_{lag}")
     lags_df = lf.fit_transform(df=int_df_two_segments)
     for segment in lags_df.columns.get_level_values("segment").unique():
-        lags_df_lags_columns = sorted(filter(lambda x: x.startswith("regressor"), lags_df[segment].columns))
+        lags_df_lags_columns = sorted(filter(lambda x: "lag" in x, lags_df[segment].columns))
         assert lags_df_lags_columns == expected_columns
 
 
