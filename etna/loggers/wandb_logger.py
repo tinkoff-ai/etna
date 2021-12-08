@@ -7,11 +7,10 @@ from typing import Optional
 from typing import Union
 from uuid import uuid4
 
-import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
-from etna.loggers.base import BaseLogger
+from etna.loggers.base import BaseLogger, percentile
 
 if TYPE_CHECKING:
     from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
@@ -20,16 +19,6 @@ if TYPE_CHECKING:
 
 if SETTINGS.wandb_required:
     import wandb
-
-
-def percentile(n: int):
-    """Percentile for pandas agg."""
-
-    def percentile_(x):
-        return np.percentile(x.values, n)
-
-    percentile_.__name__ = "percentile_%s" % n
-    return percentile_
 
 
 class WandbLogger(BaseLogger):
@@ -124,8 +113,10 @@ class WandbLogger(BaseLogger):
 
         Parameters
         ----------
+        ts:
+            TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics() or TimeSeriesCrossValidation.get_metrics()
+            Dataframe produced with Pipeline._get_backtest_metrics()
         forecast_df:
             Forecast from backtest
         fold_info_df:
