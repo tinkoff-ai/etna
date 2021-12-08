@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2021-12-03
 ### Added
 - ACF plot ([#318](https://github.com/tinkoff-ai/etna/pull/318))
+- Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
 
 ### Changed
 - Add `ts.inverse_transform` as final step at `Pipeline.fit` method ([#316](https://github.com/tinkoff-ai/etna/pull/316))

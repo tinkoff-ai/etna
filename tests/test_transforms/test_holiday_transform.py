@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets.tsdataset import TSDataset
 from etna.transforms.holiday import HolidayTransform
 
 
@@ -23,10 +24,7 @@ def two_segments_simple_df_daily(simple_constant_df_daily: pd.DataFrame):
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
+    df = TSDataset.to_dataset(classic_df)
     return df
 
 
@@ -48,10 +46,7 @@ def two_segments_simple_df_hour(simple_constant_df_hour: pd.DataFrame):
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
+    df = TSDataset.to_dataset(classic_df)
     return df
 
 
@@ -73,15 +68,12 @@ def two_segments_simple_df_min(simple_constant_df_min: pd.DataFrame):
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
+    df = TSDataset.to_dataset(classic_df)
     return df
 
 
 def test_interface_two_segments_daily(two_segments_simple_df_daily: pd.DataFrame):
-    holidays_finder = HolidayTransform()
+    holidays_finder = HolidayTransform(out_column="regressor_holidays")
     df = holidays_finder.fit_transform(two_segments_simple_df_daily)
     for segment in df.columns.get_level_values("segment").unique():
         assert "regressor_holidays" in df[segment].columns
@@ -89,7 +81,7 @@ def test_interface_two_segments_daily(two_segments_simple_df_daily: pd.DataFrame
 
 
 def test_interface_two_segments_hour(two_segments_simple_df_hour: pd.DataFrame):
-    holidays_finder = HolidayTransform()
+    holidays_finder = HolidayTransform(out_column="regressor_holidays")
     df = holidays_finder.fit_transform(two_segments_simple_df_hour)
     for segment in df.columns.get_level_values("segment").unique():
         assert "regressor_holidays" in df[segment].columns
@@ -97,7 +89,7 @@ def test_interface_two_segments_hour(two_segments_simple_df_hour: pd.DataFrame):
 
 
 def test_interface_two_segments_min(two_segments_simple_df_min: pd.DataFrame):
-    holidays_finder = HolidayTransform()
+    holidays_finder = HolidayTransform(out_column="regressor_holidays")
     df = holidays_finder.fit_transform(two_segments_simple_df_min)
     for segment in df.columns.get_level_values("segment").unique():
         assert "regressor_holidays" in df[segment].columns
@@ -111,8 +103,8 @@ def test_interface_two_segments_min(two_segments_simple_df_min: pd.DataFrame):
         ("US", np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
-def test_holidays_day(iso_code: str, answer: np.array, two_segments_simple_df_daily):
-    holidays_finder = HolidayTransform(iso_code)
+def test_holidays_day(iso_code: str, answer: np.array, two_segments_simple_df_daily: pd.DataFrame):
+    holidays_finder = HolidayTransform(iso_code=iso_code, out_column="regressor_holidays")
     df = holidays_finder.fit_transform(two_segments_simple_df_daily)
     for segment in df.columns.get_level_values("segment").unique():
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
@@ -125,8 +117,8 @@ def test_holidays_day(iso_code: str, answer: np.array, two_segments_simple_df_da
         ("US", np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
-def test_holidays_hour(iso_code: str, answer: np.array, two_segments_simple_df_hour):
-    holidays_finder = HolidayTransform(iso_code)
+def test_holidays_hour(iso_code: str, answer: np.array, two_segments_simple_df_hour: pd.DataFrame):
+    holidays_finder = HolidayTransform(iso_code=iso_code, out_column="regressor_holidays")
     df = holidays_finder.fit_transform(two_segments_simple_df_hour)
     for segment in df.columns.get_level_values("segment").unique():
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
@@ -139,8 +131,8 @@ def test_holidays_hour(iso_code: str, answer: np.array, two_segments_simple_df_h
         ("US", np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])),
     ),
 )
-def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_df_min):
-    holidays_finder = HolidayTransform(iso_code)
+def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_df_min: pd.DataFrame):
+    holidays_finder = HolidayTransform(iso_code=iso_code, out_column="regressor_holidays")
     df = holidays_finder.fit_transform(two_segments_simple_df_min)
     for segment in df.columns.get_level_values("segment").unique():
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
@@ -153,9 +145,9 @@ def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_df_mi
         (pd.date_range(start="2019-11-25", end="2021-02-25", freq="M")),
     ),
 )
-def holidays_failed(index, two_segments_simple_df_daily):
+def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_df_daily: pd.DataFrame):
     df = two_segments_simple_df_daily
-    df["index"] = index
+    df.index = index
     holidays_finder = HolidayTransform()
     with pytest.raises(ValueError, match="Frequency of data should be no more than daily."):
         df = holidays_finder.fit_transform(df)
