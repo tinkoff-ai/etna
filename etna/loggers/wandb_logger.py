@@ -10,7 +10,8 @@ from uuid import uuid4
 import pandas as pd
 
 from etna import SETTINGS
-from etna.loggers.base import BaseLogger, percentile
+from etna.loggers.base import BaseLogger
+from etna.loggers.base import percentile
 
 if TYPE_CHECKING:
     from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
