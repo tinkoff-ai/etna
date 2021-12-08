@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 
 from etna.transforms.holiday import HolidayTransform
-from etna.transforms.holiday import _OneSegmentHolidayTransform
 
 
 @pytest.fixture()
@@ -18,6 +17,7 @@ def simple_constant_df_daily():
 def two_segments_simple_df_daily(simple_constant_df_daily: pd.DataFrame):
     df_1 = simple_constant_df_daily.reset_index()
     df_2 = simple_constant_df_daily.reset_index()
+    df_1 = df_1[3:]
 
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
@@ -42,6 +42,7 @@ def simple_constant_df_hour():
 def two_segments_simple_df_hour(simple_constant_df_hour: pd.DataFrame):
     df_1 = simple_constant_df_hour.reset_index()
     df_2 = simple_constant_df_hour.reset_index()
+    df_1 = df_1[3:]
 
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
@@ -66,6 +67,7 @@ def simple_constant_df_min():
 def two_segments_simple_df_min(simple_constant_df_min: pd.DataFrame):
     df_1 = simple_constant_df_min.reset_index()
     df_2 = simple_constant_df_min.reset_index()
+    df_1 = df_1[3:]
 
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
@@ -78,13 +80,6 @@ def two_segments_simple_df_min(simple_constant_df_min: pd.DataFrame):
     return df
 
 
-def test_interface_daily(simple_constant_df_daily: pd.DataFrame):
-    holidays_finder = _OneSegmentHolidayTransform(iso_code="US")
-    df = holidays_finder.fit_transform(simple_constant_df_daily)
-    assert "regressor_holidays" in df.columns
-    assert df["regressor_holidays"].dtype == "category"
-
-
 def test_interface_two_segments_daily(two_segments_simple_df_daily: pd.DataFrame):
     holidays_finder = HolidayTransform()
     df = holidays_finder.fit_transform(two_segments_simple_df_daily)
@@ -93,26 +88,12 @@ def test_interface_two_segments_daily(two_segments_simple_df_daily: pd.DataFrame
         assert df[segment]["regressor_holidays"].dtype == "category"
 
 
-def test_interface_hour(simple_constant_df_hour: pd.DataFrame):
-    holidays_finder = _OneSegmentHolidayTransform(iso_code="US")
-    df = holidays_finder.fit_transform(simple_constant_df_hour)
-    assert "regressor_holidays" in df.columns
-    assert df["regressor_holidays"].dtype == "category"
-
-
 def test_interface_two_segments_hour(two_segments_simple_df_hour: pd.DataFrame):
     holidays_finder = HolidayTransform()
     df = holidays_finder.fit_transform(two_segments_simple_df_hour)
     for segment in df.columns.get_level_values("segment").unique():
         assert "regressor_holidays" in df[segment].columns
         assert df[segment]["regressor_holidays"].dtype == "category"
-
-
-def test_interface_min(simple_constant_df_min: pd.DataFrame):
-    holidays_finder = _OneSegmentHolidayTransform(iso_code="US")
-    df = holidays_finder.fit_transform(simple_constant_df_min)
-    assert "regressor_holidays" in df.columns
-    assert df["regressor_holidays"].dtype == "category"
 
 
 def test_interface_two_segments_min(two_segments_simple_df_min: pd.DataFrame):
