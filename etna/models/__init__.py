@@ -1,4 +1,6 @@
 from etna import SETTINGS
+from etna.models.base import Model
+from etna.models.base import PerSegmentModel
 from etna.models.catboost import CatBoostModelMultiSegment
 from etna.models.catboost import CatBoostModelPerSegment
 from etna.models.linear import ElasticMultiSegmentModel
