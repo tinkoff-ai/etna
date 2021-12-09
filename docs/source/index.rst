@@ -4,7 +4,7 @@ Welcome to ETNA's documentation!
 
 .. toctree::
    :titlesonly:
-   :maxdepth: 2
+   :maxdepth: 3
 
    tutorials
    models
@@ -14,7 +14,6 @@ Welcome to ETNA's documentation!
    ensembles
    pipeline
    analysis
-   model_selection
    loggers
    commands
    settings
