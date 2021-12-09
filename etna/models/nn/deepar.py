@@ -20,6 +20,7 @@ if SETTINGS.torch_required:
 
 class DeepARModel(Model):
     """Wrapper for DeepAR from Pytorch Forecasting library.
+
     Notes
     -----
     We save TimeSeriesDataSet in instance to use it in the model.
