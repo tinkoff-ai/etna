@@ -1,5 +1,6 @@
 import math
 import warnings
+from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
@@ -12,6 +13,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from typing_extensions import Literal
 
 from etna.loggers import tslogger
 
@@ -58,7 +60,7 @@ class TSDataset:
     >>> df_regressors["segment"] = "segment_0"
     >>> df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     >>> df_regressors = TSDataset.to_dataset(df_regressors)
-    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
     >>> tsdataset.df.head(5)
     segment      segment_0
     feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
@@ -72,7 +74,13 @@ class TSDataset:
 
     idx = pd.IndexSlice
 
-    def __init__(self, df: pd.DataFrame, freq: str, df_exog: Optional[pd.DataFrame] = None):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        freq: str,
+        df_exog: Optional[pd.DataFrame] = None,
+        known_future: Union[Literal["all"], Sequence] = (),
+    ):
         """Init TSDataset.
 
         Parameters
@@ -84,6 +92,9 @@ class TSDataset:
         df_exog:
             dataframe with exogenous data;
             if the series is known in the future features' names should start with prefix 'regressor_`.
+        known_future:
+            columns in df_exog[known_future] that are regressors,
+            if "all" value is given, all columns are meant to be regressors
         """
         self.raw_df = df.copy(deep=True)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
@@ -107,13 +118,15 @@ class TSDataset:
 
         self.df = self.raw_df.copy(deep=True)
 
+        self.known_future = self._check_known_future(known_future, df_exog)
+        self._regressors = copy(self.known_future)
+
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.df = self._merge_exog(self.df)
 
         self.transforms: Optional[Sequence["Transform"]] = None
-        self._update_regressors()
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
@@ -122,7 +135,6 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
-        self._update_regressors()
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
@@ -131,7 +143,6 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
-        self._update_regressors()
 
     def __repr__(self):
         return self.df.__repr__()
@@ -179,7 +190,9 @@ class TSDataset:
         ... })
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
-        >>> ts = TSDataset(df_ts_format, "D", df_exog=df_regressors_ts_format)
+        >>> ts = TSDataset(
+        ...     df_ts_format, "D", df_exog=df_regressors_ts_format, known_future="all"
+        ... )
         >>> ts.make_future(4)
         segment      segment_0                      segment_1
         feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
@@ -224,8 +237,34 @@ class TSDataset:
         return future_ts
 
     @staticmethod
-    def _check_regressors(df: pd.DataFrame, df_exog: pd.DataFrame):
-        """Check that regressors in df_exog begin not later than in df and end later than in df."""
+    def _check_known_future(
+        known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]
+    ) -> List[str]:
+        """Check that `known_future` corresponds to `df_exog` and returns initial list of regressors."""
+        if df_exog is None:
+            exog_columns = set()
+        else:
+            exog_columns = set(df_exog.columns.get_level_values("feature"))
+
+        if isinstance(known_future, str):
+            if known_future == "all":
+                return sorted(list(exog_columns))
+            else:
+                raise ValueError("The only possible literal is 'all'")
+        else:
+            known_future_unique = set(known_future)
+            if not known_future_unique.issubset(exog_columns):
+                raise ValueError(
+                    f"Some features in known_future are not present in df_exog: "
+                    f"{known_future_unique.difference(exog_columns)}"
+                )
+            else:
+                return sorted(list(known_future_unique))
+
+    @staticmethod
+    def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
+        """Check that regressors begin not later than in df and end later than in df."""
+        # TODO: check performance
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
             target_min = df[segment]["target"].first_valid_index()
@@ -253,7 +292,9 @@ class TSDataset:
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
-        self._check_regressors(df=df, df_exog=self.df_exog)
+        segments = sorted(set(df.columns.get_level_values("segment")))
+        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
+        self._check_regressors(df=df, df_regressors=df_regressors)
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
 
@@ -296,13 +337,6 @@ class TSDataset:
         """
         return self.df.columns.get_level_values("segment").unique().tolist()
 
-    def _update_regressors(self):
-        result = set()
-        for column in self.columns.get_level_values("feature"):
-            if column.startswith("regressor"):
-                result.add(column)
-        self._regressors = list(result)
-
     @property
     def regressors(self) -> List[str]:
         """Get list of all regressors across all segments in dataset.
@@ -324,7 +358,9 @@ class TSDataset:
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts = TSDataset(
+        ...     df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all"
+        ... )
         >>> ts.regressors
         ['regressor_1']
         """

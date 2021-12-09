@@ -1,3 +1,4 @@
+from typing import List
 from typing import Tuple
 
 import numpy as np
@@ -7,7 +8,6 @@ from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms import DateFlagsTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -21,24 +21,18 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     df_2["target"] = [x ** 0.5 + np.random.uniform(-2, 2) for x in list(range(len(df_2)))]
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
 
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
+    df = TSDataset.to_dataset(classic_df)
 
-    exog = generate_ar_df(start_time="2021-01-01", periods=600, n_segments=2)
-    exog = exog.pivot(index="timestamp", columns="segment")
-    exog = exog.reorder_levels([1, 0], axis=1)
-    exog = exog.sort_index(axis=1)
-    exog.columns.names = ["segment", "feature"]
-    exog.columns = pd.MultiIndex.from_arrays([["Moscow", "Omsk"], ["exog", "exog"]])
+    classic_df_exog = generate_ar_df(start_time="2021-01-01", periods=600, n_segments=2)
+    classic_df_exog.rename(columns={"target": "exog"}, inplace=True)
+    df_exog = TSDataset.to_dataset(classic_df_exog)
 
-    ts = TSDataset(df=df, df_exog=exog, freq="1D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq="1D")
     return ts
 
 
 @pytest.fixture()
-def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
+def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
@@ -51,7 +45,7 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
     df_exog = TSDataset.to_dataset(df_exog)
 
-    return df, df_exog
+    return df, df_exog, ["regressor_1", "regressor_2"]
 
 
 @pytest.fixture()
@@ -95,7 +89,7 @@ def test_check_endings_error_raise():
         ts._check_endings()
 
 
-def test_check_endings_error_pass():
+def test_check_endings_pass():
     """Check that _check_endings method passes if there is no nans at the end of all segments."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
@@ -104,6 +98,49 @@ def test_check_endings_error_pass():
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
     ts._check_endings()
+
+
+def test_check_known_future_wrong_literal():
+    """Check that _check_known_future raises exception if wrong literal is given."""
+    with pytest.raises(ValueError, match="The only possible literal is 'all'"):
+        _ = TSDataset._check_known_future("wrong-literal", None)
+
+
+def test_check_known_future_error_no_df_exog():
+    """Check that _check_known_future raises exception if there are no df_exog, but known_future isn't empty."""
+    with pytest.raises(ValueError, match="Some features in known_future are not present in df_exog"):
+        _ = TSDataset._check_known_future(["regressor_1"], None)
+
+
+def test_check_known_future_error_not_matching(df_and_regressors):
+    """Check that _check_known_future raises exception if df_exog doesn't contain some features in known_future."""
+    _, df_exog, known_future = df_and_regressors
+    known_future.append("regressor_new")
+    with pytest.raises(ValueError, match="Some features in known_future are not present in df_exog"):
+        _ = TSDataset._check_known_future(known_future, df_exog)
+
+
+def test_check_known_future_pass_all_empty():
+    """Check that _check_known_future passes if known_future and df_exog are empty."""
+    regressors = TSDataset._check_known_future([], None)
+    assert len(regressors) == 0
+
+
+@pytest.mark.parametrize(
+    "known_future, expected_columns",
+    [
+        ([], []),
+        (["regressor_1"], ["regressor_1"]),
+        (["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
+        (["regressor_1", "regressor_1"], ["regressor_1"]),
+        ("all", ["regressor_1", "regressor_2"]),
+    ],
+)
+def test_check_known_future_pass_non_empty(df_and_regressors, known_future, expected_columns):
+    _, df_exog, _ = df_and_regressors
+    """Check that _check_known_future passes if df_exog is not empty."""
+    regressors = TSDataset._check_known_future(known_future, df_exog)
+    assert regressors == expected_columns
 
 
 def test_categorical_after_call_to_pandas():
@@ -349,44 +386,49 @@ def test_make_future_with_exog():
 
 
 def test_make_future_with_regressors(df_and_regressors):
-    df, df_exog = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
     assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
 
 
+def test_make_future_warn_not_enough_regressors(df_and_regressors):
+    """Check that warning is thrown if regressors don't have enough values for the future."""
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
+        ts.make_future(ts.df_exog.shape[0] + 100)
+
+
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
-def test_dataset_check_exog_raise_error(exog_starts_later: bool, exog_ends_earlier: bool):
-    start_time = "2021-01-10" if exog_starts_later else "2021-01-01"
-    end_time = "2021-01-20" if exog_ends_earlier else "2021-02-01"
+def test_check_regressors_error(exog_starts_later: bool, exog_ends_earlier: bool):
+    """Check that error is raised if regressors don't have enough values for the train data."""
+    start_time_main = "2021-01-01"
+    end_time_main = "2021-02-01"
+    start_time_regressors = "2021-01-10" if exog_starts_later else start_time_main
+    end_time_regressors = "2021-01-20" if exog_ends_earlier else end_time_main
+
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
     df2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
 
-    timestamp = pd.date_range(start_time, end_time)
+    timestamp = pd.date_range(start_time_regressors, end_time_regressors)
     df1 = pd.DataFrame({"timestamp": timestamp, "regressor_aaa": 1, "segment": "1"})
     df2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_aaa": 2, "segment": "2"})
-    dfexog = pd.concat([df1, df2], ignore_index=True)
-    dfexog = TSDataset.to_dataset(dfexog)
+    df_regressors = pd.concat([df1, df2], ignore_index=True)
+    df_regressors = TSDataset.to_dataset(df_regressors)
 
     with pytest.raises(ValueError):
-        TSDataset._check_regressors(df=df, df_exog=dfexog)
+        TSDataset._check_regressors(df=df, df_regressors=df_regressors)
 
 
-def test_dataset_check_exog_pass(df_and_regressors):
-    df, df_exog = df_and_regressors
-    _ = TSDataset._check_regressors(df=df, df_exog=df_exog)
-
-
-def test_warn_not_enough_exog(df_and_regressors):
-    """Check that warning is thrown if regressors don't have enough values."""
-    df, df_exog = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
-    with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
-        ts.make_future(ts.df_exog.shape[0] + 100)
+def test_check_regressors_pass(df_and_regressors):
+    """Check that regressors check on creation passes with correct regressors."""
+    df, df_exog, _ = df_and_regressors
+    _ = TSDataset._check_regressors(df=df, df_regressors=df_exog)
 
 
 def test_getitem_only_date(tsdf_with_exog):
@@ -421,11 +463,18 @@ def test_getitem_all_indexes(tsdf_with_exog):
     pd.testing.assert_frame_equal(df_expected, df_slice)
 
 
-def test_finding_regressors(df_and_regressors):
-    """Check that ts.regressors property works correctly."""
-    df, df_exog = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+def test_finding_regressors_marked(df_and_regressors):
+    """Check that ts.regressors property works correctly when regressors set."""
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=["regressor_1", "regressor_2"])
     assert sorted(ts.regressors) == ["regressor_1", "regressor_2"]
+
+
+def test_finding_regressors_unmarked(df_and_regressors):
+    """Check that ts.regressors property works correctly when regressors don't set."""
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    assert sorted(ts.regressors) == []
 
 
 def test_head_default(tsdf_with_exog):
@@ -434,28 +483,6 @@ def test_head_default(tsdf_with_exog):
 
 def test_tail_default(tsdf_with_exog):
     np.all(tsdf_with_exog.tail() == tsdf_with_exog.df.tail())
-
-
-def test_updating_regressors_fit_transform(df_and_regressors):
-    """Check that ts.regressors is updated after making ts.fit_transform()."""
-    df, df_exog = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
-    date_flags_transform = DateFlagsTransform(
-        day_number_in_week=True,
-        day_number_in_month=False,
-        week_number_in_month=False,
-        week_number_in_year=False,
-        month_number_in_year=False,
-        year_number=False,
-        is_weekend=True,
-        out_column="regressor_dateflag",
-    )
-    initial_regressors = set(ts.regressors)
-    ts.fit_transform(transforms=[date_flags_transform])
-    final_regressors = set(ts.regressors)
-    expected_columns = {"regressor_dateflag_day_number_in_week", "regressor_dateflag_is_weekend"}
-    assert initial_regressors.issubset(final_regressors)
-    assert final_regressors.difference(initial_regressors) == expected_columns
 
 
 def test_right_format_sorting():
