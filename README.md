@@ -83,11 +83,11 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
 ## Resources
 
-[Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
+- [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
 
-[Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
+- [Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
 
-[PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
+- [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
 
 ## Acknowledgments
 
