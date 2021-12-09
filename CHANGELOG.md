@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
+
+
+## [1.4.1] - 2021-12-09
+### Changed
+- Speed up `_check_regressors` and `_merge_exog` ([#360](https://github.com/tinkoff-ai/etna/pull/360))
+
+### Fixed
+- `Model`, `PerSegmentModel`, `PerSegmentWrapper` imports ([#362](https://github.com/tinkoff-ai/etna/pull/362))
+- Docs generation ([#363](https://github.com/tinkoff-ai/etna/pull/363))
+- Fixed work of get_anomalies_density with constant series ([#334](https://github.com/tinkoff-ai/etna/issues/334))
+
 ## [1.4.0] - 2021-12-03
 ### Added
 - ACF plot ([#318](https://github.com/tinkoff-ai/etna/pull/318))

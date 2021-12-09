@@ -1,4 +1,5 @@
 from etna.transforms.add_constant import AddConstTransform
+from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.binseg import BinsegTrendTransform
 from etna.transforms.change_points_trend import ChangePointsTrendTransform
