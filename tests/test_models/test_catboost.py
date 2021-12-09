@@ -31,11 +31,9 @@ def test_run(catboostmodel, new_format_df):
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
     exog = new_format_exog
-    exog.columns = pd.MultiIndex.from_arrays(
-        [exog.columns.get_level_values("segment").unique().tolist(), ["regressor_exog", "regressor_exog"]]
-    )
+    exog.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
 
-    ts = TSDataset(df, "1d", df_exog=exog)
+    ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
     lags_exog = LagTransform(lags=[3, 4, 5, 6], in_column="regressor_exog")
