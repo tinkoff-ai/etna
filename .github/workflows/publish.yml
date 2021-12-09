@@ -62,6 +62,7 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install -vv
           poetry install -E docs
+          poetry install -E all
       - name: Build docs
         if: steps.check-tag.outputs.IS_LATEST == 'true'
         run: |
