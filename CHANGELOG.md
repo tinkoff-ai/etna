@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
+
+### Changed
+- Speed up `_check_regressors` and `_merge_exog` ([#360](https://github.com/tinkoff-ai/etna/pull/360))
+
+### Fixed
+
 ## [1.4.0] - 2021-12-03
 ### Added
 - ACF plot ([#318](https://github.com/tinkoff-ai/etna/pull/318))
-- Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
 
 ### Changed
 - Add `ts.inverse_transform` as final step at `Pipeline.fit` method ([#316](https://github.com/tinkoff-ai/etna/pull/316))
