@@ -14,7 +14,6 @@ Welcome to ETNA's documentation!
    ensembles
    pipeline
    analysis
-   model_selection
    loggers
    commands
    settings
