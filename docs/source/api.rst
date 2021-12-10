@@ -15,7 +15,6 @@ API
    ensembles
    pipeline
    analysis
-   model_selection
    loggers
    commands
    settings

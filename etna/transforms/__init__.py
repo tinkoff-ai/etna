@@ -1,4 +1,5 @@
 from etna.transforms.add_constant import AddConstTransform
+from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.binseg import BinsegTrendTransform
 from etna.transforms.change_points_trend import ChangePointsTrendTransform
@@ -11,6 +12,7 @@ from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 from etna.transforms.filter import FilterFeaturesTransform
 from etna.transforms.fourier import FourierTransform
 from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
+from etna.transforms.holiday import HolidayTransform
 from etna.transforms.imputation import TimeSeriesImputerTransform
 from etna.transforms.lags import LagTransform
 from etna.transforms.log import LogTransform
