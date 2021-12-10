@@ -237,15 +237,9 @@ def test_s3_file_logger_fail_init_aws_secret_access_key(monkeypatch):
         _ = S3FileLogger(bucket="example", experiments_folder="experiments_folder")
 
 
-@pytest.fixture
-def set_s3_env_variables(monkeypatch):
-    monkeypatch.setenv("endpoint_url", "https://s3.example.com")
-    monkeypatch.setenv("aws_access_key_id", "example")
-    monkeypatch.setenv("aws_secret_access_key", "example")
-
-
-@mock.patch.object(S3FileLogger, "_check_bucket", return_value=None)
-def test_s3_file_logger_fail_save_table(set_s3_env_variables):
+@mock.patch("etna.loggers.S3FileLogger._check_bucket", return_value=None)
+@mock.patch("etna.loggers.S3FileLogger._get_s3_client", return_value=None)
+def test_s3_file_logger_fail_save_table(check_bucket_fn, get_s3_client_fn):
     """Test that S3FileLogger can't save table before starting the experiment."""
     logger = S3FileLogger(bucket="example", experiments_folder="experiments_folder")
 
@@ -254,8 +248,9 @@ def test_s3_file_logger_fail_save_table(set_s3_env_variables):
         logger._save_table(example_df, "example")
 
 
-@mock.patch.object(S3FileLogger, "_check_bucket", return_value=None)
-def test_s3_file_logger_fail_save_dict(set_s3_env_variables):
+@mock.patch("etna.loggers.S3FileLogger._check_bucket", return_value=None)
+@mock.patch("etna.loggers.S3FileLogger._get_s3_client", return_value=None)
+def test_s3_file_logger_fail_save_dict(check_bucket_fn, get_s3_client_fn):
     """Test that S3FileLogger can't save dict before starting the experiment."""
     logger = S3FileLogger(bucket="example", experiments_folder="experiments_folder")
 
