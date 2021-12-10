@@ -20,6 +20,8 @@ from etna.loggers.base import percentile
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
+DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
+
 
 class BaseFileLogger(BaseLogger):
     """Base logger for logging files."""
@@ -212,7 +214,7 @@ class LocalFileLogger(BaseFileLogger):
 
         # create subfolder for current experiment
         cur_datetime = datetime.datetime.now()
-        subfolder_name = cur_datetime.strftime("%Y-%m-%d %H-%M-%S")
+        subfolder_name = cur_datetime.strftime(DATETIME_FORMAT)
         self.experiment_folder = pathlib.Path(self.experiments_folder).joinpath(subfolder_name)
         self.experiment_folder.mkdir()
         self._current_experiment_folder: Optional[pathlib.Path] = None
@@ -297,7 +299,7 @@ class S3FileLogger(BaseFileLogger):
 
         # create subfolder for current experiment
         cur_datetime = datetime.datetime.now()
-        subfolder_name = cur_datetime.strftime("%Y-%m-%d %H-%M-%S")
+        subfolder_name = cur_datetime.strftime(DATETIME_FORMAT)
         self.experiment_folder = os.path.join(experiments_folder, subfolder_name)
         self._current_experiment_folder: Optional[str] = None
 
@@ -309,18 +311,17 @@ class S3FileLogger(BaseFileLogger):
 
     @staticmethod
     def _get_s3_client():
-        try:
-            endpoint_url = os.environ["endpoint_url"]
-        except KeyError:
-            raise ValueError("Environment variable `endpoint_url` should be specified for using this class")
-        try:
-            aws_access_key_id = os.environ["aws_access_key_id"]
-        except KeyError:
-            raise ValueError("Environment variable `aws_access_key_id` should be specified for using this class")
-        try:
-            aws_secret_access_key = os.environ["aws_secret_access_key"]
-        except KeyError:
-            raise ValueError("Environment variable `aws_secret_access_key` should be specified for using this class")
+        endpoint_url = os.getenv("endpoint_url")
+        if endpoint_url is None:
+            raise OSError("Environment variable `endpoint_url` should be specified for using this class")
+
+        aws_access_key_id = os.getenv("aws_access_key_id")
+        if aws_access_key_id is None:
+            raise OSError("Environment variable `aws_access_key_id` should be specified for using this class")
+
+        aws_secret_access_key = os.getenv("aws_secret_access_key")
+        if aws_secret_access_key is None:
+            raise OSError("Environment variable `aws_secret_access_key` should be specified for using this class")
 
         s3_client = boto3.client(
             "s3",

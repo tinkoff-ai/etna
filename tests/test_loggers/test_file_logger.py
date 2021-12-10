@@ -19,7 +19,7 @@ from etna.metrics import SMAPE
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 
-DATETIME_FORMAT = "%Y-%m-%d %H-%M-%S"
+DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
 
 
 def test_local_file_logger_fail_init():
@@ -215,7 +215,7 @@ def test_s3_file_logger_fail_init_endpoint_url(monkeypatch):
     monkeypatch.delenv("endpoint_url", raising=False)
     monkeypatch.setenv("aws_access_key_id", "example")
     monkeypatch.setenv("aws_secret_access_key", "example")
-    with pytest.raises(ValueError, match="Environment variable `endpoint_url` should be specified"):
+    with pytest.raises(OSError, match="Environment variable `endpoint_url` should be specified"):
         _ = S3FileLogger(bucket="example", experiments_folder="experiments_folder")
 
 
@@ -224,7 +224,7 @@ def test_s3_file_logger_fail_init_aws_access_key_id(monkeypatch):
     monkeypatch.setenv("endpoint_url", "https://s3.example.com")
     monkeypatch.delenv("aws_access_key_id", raising=False)
     monkeypatch.setenv("aws_secret_access_key", "example")
-    with pytest.raises(ValueError, match="Environment variable `aws_access_key_id` should be specified"):
+    with pytest.raises(OSError, match="Environment variable `aws_access_key_id` should be specified"):
         _ = S3FileLogger(bucket="example", experiments_folder="experiments_folder")
 
 
@@ -233,7 +233,7 @@ def test_s3_file_logger_fail_init_aws_secret_access_key(monkeypatch):
     monkeypatch.setenv("endpoint_url", "https://s3.example.com")
     monkeypatch.setenv("aws_access_key_id", "example")
     monkeypatch.delenv("aws_secret_access_key", raising=False)
-    with pytest.raises(ValueError, match="Environment variable `aws_secret_access_key` should be specified"):
+    with pytest.raises(OSError, match="Environment variable `aws_secret_access_key` should be specified"):
         _ = S3FileLogger(bucket="example", experiments_folder="experiments_folder")
 
 
@@ -270,7 +270,9 @@ def test_s3_file_logger_save_table():
 
     This test is optional and requires environment variable 'etna_test_s3_bucket' to be set.
     """
-    bucket = os.environ["etna_test_s3_bucket"]
+    bucket = os.getenv("etna_test_s3_bucket")
+    if bucket is None:
+        raise OSError("To perform this test you should set 'etna_test_s3_bucket' environment variable first")
     experiments_folder = "s3_logger_test"
     logger = S3FileLogger(bucket=bucket, experiments_folder=experiments_folder)
     logger.start_experiment(job_type="test_simple", group="1")
