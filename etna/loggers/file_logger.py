@@ -214,6 +214,8 @@ class LocalFileLogger(BaseFileLogger):
         name:
             filename without extensions
         """
+        if self._current_experiment_folder is None:
+            raise ValueError("You should start experiment before using log_backtest_run or log_backtest_metrics")
         filename = f"{name}.csv"
         table.to_csv(self._current_experiment_folder.joinpath(filename), index=False)
 
@@ -227,6 +229,8 @@ class LocalFileLogger(BaseFileLogger):
         name:
             filename without extensions
         """
+        if self._current_experiment_folder is None:
+            raise ValueError("You should start experiment before using log_backtest_run or log_backtest_metrics")
         filename = f"{name}.json"
         with open(self._current_experiment_folder.joinpath(filename), "w") as ouf:
             json.dump(dictionary, ouf)

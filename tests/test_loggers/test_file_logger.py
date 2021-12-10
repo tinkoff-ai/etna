@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import pathlib
@@ -33,18 +34,80 @@ def test_local_file_logger_init_new_dir():
 
 def test_local_file_logger_start_experiment():
     """Test that LocalFileLogger creates new subfolder according to the parameters."""
+    datetime_format = "%Y-%m-%d %H-%M-%S"
     with tempfile.TemporaryDirectory() as dirname:
         cur_dir = pathlib.Path(dirname)
+        # get rid of seconds fractions
+        start_datetime = datetime.datetime.strptime(datetime.datetime.now().strftime(datetime_format), datetime_format)
         logger = LocalFileLogger(experiments_folder=dirname)
         experiment_folder = os.listdir(dirname)[0]
+        # get rid of seconds fractions
+        end_datetime = datetime.datetime.strptime(datetime.datetime.now().strftime(datetime_format), datetime_format)
+
+        folder_creation_datetime = datetime.datetime.strptime(experiment_folder, datetime_format)
+        assert end_datetime >= folder_creation_datetime >= start_datetime
         assert len(os.listdir(cur_dir.joinpath(experiment_folder))) == 0
+
         logger.start_experiment(job_type="test", group="1")
         assert len(os.listdir(cur_dir.joinpath(experiment_folder))) == 1
+
         filename = os.listdir(cur_dir.joinpath(experiment_folder))[0]
         assert filename == f"test_1"
 
 
-def test_local_file_logger_log_backtest_run(example_tsds: TSDataset):
+def test_local_file_logger_fail_save_table():
+    """Test that LocalFileLogger can't save table before starting the experiment."""
+    with tempfile.TemporaryDirectory() as dirname:
+        logger = LocalFileLogger(experiments_folder=dirname)
+
+        example_df = pd.DataFrame({"keys": [1, 2, 3], "values": ["1", "2", "3"]})
+        with pytest.raises(ValueError, match="You should start experiment before"):
+            logger._save_table(example_df, "example")
+
+
+def test_local_file_logger_save_table():
+    """Test that LocalFileLogger saves table after starting the experiment."""
+    with tempfile.TemporaryDirectory() as dirname:
+        cur_dir = pathlib.Path(dirname)
+        logger = LocalFileLogger(experiments_folder=dirname)
+        experiment_folder_name = os.listdir(dirname)[0]
+        experiment_folder = cur_dir.joinpath(experiment_folder_name)
+
+        logger.start_experiment(job_type="example", group="example")
+        example_df = pd.DataFrame({"keys": [1, 2, 3], "values": ["1", "2", "3"]})
+        logger._save_table(example_df, "example")
+
+        experiment_subfolder = experiment_folder.joinpath("example_example")
+        assert "example.csv" in os.listdir(experiment_subfolder)
+
+
+def test_local_file_logger_fail_save_dict():
+    """Test that LocalFileLogger can't save dict before starting the experiment."""
+    with tempfile.TemporaryDirectory() as dirname:
+        logger = LocalFileLogger(experiments_folder=dirname)
+
+        example_dict = {"keys": [1, 2, 3], "values": ["1", "2", "3"]}
+        with pytest.raises(ValueError, match="You should start experiment before"):
+            logger._save_dict(example_dict, "example")
+
+
+def test_local_file_logger_save_dict():
+    """Test that LocalFileLogger saves dict after starting the experiment."""
+    with tempfile.TemporaryDirectory() as dirname:
+        cur_dir = pathlib.Path(dirname)
+        logger = LocalFileLogger(experiments_folder=dirname)
+        experiment_folder_name = os.listdir(dirname)[0]
+        experiment_folder = cur_dir.joinpath(experiment_folder_name)
+
+        logger.start_experiment(job_type="example", group="example")
+        example_dict = {"keys": [1, 2, 3], "values": ["1", "2", "3"]}
+        logger._save_dict(example_dict, "example")
+
+        experiment_subfolder = experiment_folder.joinpath("example_example")
+        assert "example.json" in os.listdir(experiment_subfolder)
+
+
+def test_base_file_logger_log_backtest_run(example_tsds: TSDataset):
     """Test that BaseLogger correclty works in log_backtest_run on LocalFileLogger example."""
     with tempfile.TemporaryDirectory() as dirname:
         cur_dir = pathlib.Path(dirname)
