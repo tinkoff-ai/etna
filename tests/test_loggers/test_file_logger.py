@@ -22,12 +22,6 @@ from etna.pipeline import Pipeline
 DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
 
 
-def test_local_file_logger_fail_init():
-    """Test that LocalFileLogger can't be created with wrong experiment_folder."""
-    with pytest.raises(ValueError, match="Folder non-existent-dir doesn't exist"):
-        _ = LocalFileLogger("non-existent-dir")
-
-
 def test_local_file_logger_init_new_dir():
     """Test that LocalFileLogger creates subfolder during init."""
     with tempfile.TemporaryDirectory() as dirname:

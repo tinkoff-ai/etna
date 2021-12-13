@@ -211,15 +211,15 @@ class LocalFileLogger(BaseFileLogger):
             if wrong path is given
         """
         super().__init__()
-        if not os.path.isdir(experiments_folder):
-            raise ValueError(f"Folder {experiments_folder} doesn't exist")
         self.experiments_folder = experiments_folder
         self.gzip = gzip
 
         # create subfolder for current experiment
         cur_datetime = datetime.datetime.now()
         subfolder_name = cur_datetime.strftime(DATETIME_FORMAT)
-        self.experiment_folder = pathlib.Path(self.experiments_folder).joinpath(subfolder_name)
+        experiments_folder_path = pathlib.Path(self.experiments_folder)
+        experiments_folder_path.mkdir(exist_ok=True)
+        self.experiment_folder = experiments_folder_path.joinpath(subfolder_name)
         self.experiment_folder.mkdir()
         self._current_experiment_folder: Optional[pathlib.Path] = None
 
