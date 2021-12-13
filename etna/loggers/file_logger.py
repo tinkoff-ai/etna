@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
 
 
+# TODO: add examples
 class BaseFileLogger(BaseLogger):
     """Base logger for logging files."""
 
@@ -193,7 +194,7 @@ class BaseFileLogger(BaseLogger):
 class LocalFileLogger(BaseFileLogger):
     """Logger for logging files into local folder."""
 
-    def __init__(self, experiments_folder: str):
+    def __init__(self, experiments_folder: str, gzip: bool = False):
         """
         Create instance of LocalFileLogger.
 
@@ -201,6 +202,8 @@ class LocalFileLogger(BaseFileLogger):
         ----------
         experiments_folder:
             path to folder to create experiment in
+        gzip:
+            indicator whether to use compression during saving tables or not
 
         Raises
         ------
@@ -211,6 +214,7 @@ class LocalFileLogger(BaseFileLogger):
         if not os.path.isdir(experiments_folder):
             raise ValueError(f"Folder {experiments_folder} doesn't exist")
         self.experiments_folder = experiments_folder
+        self.gzip = gzip
 
         # create subfolder for current experiment
         cur_datetime = datetime.datetime.now()
@@ -245,8 +249,12 @@ class LocalFileLogger(BaseFileLogger):
         """
         if self._current_experiment_folder is None:
             raise ValueError("You should start experiment before using log_backtest_run or log_backtest_metrics")
-        filename = f"{name}.csv"
-        table.to_csv(self._current_experiment_folder.joinpath(filename), index=False)
+        if self.gzip:
+            filename = f"{name}.csv.gz"
+            table.to_csv(self._current_experiment_folder.joinpath(filename), index=False, compression="gzip")
+        else:
+            filename = f"{name}.csv"
+            table.to_csv(self._current_experiment_folder.joinpath(filename), index=False)
 
     def _save_dict(self, dictionary: Dict[str, Any], name: str):
         """Save dictionary with given name.
@@ -268,7 +276,7 @@ class LocalFileLogger(BaseFileLogger):
 class S3FileLogger(BaseFileLogger):
     """Logger for logging files into S3 bucket."""
 
-    def __init__(self, bucket: str, experiments_folder: str):
+    def __init__(self, bucket: str, experiments_folder: str, gzip: bool = False):
         """
         Create instance of S3FileLogger.
 
@@ -278,6 +286,8 @@ class S3FileLogger(BaseFileLogger):
             name of the S3 bucket
         experiments_folder:
             path to folder to create experiment in
+        gzip:
+            indicator whether to use compression during saving tables or not
 
 
         Raises
@@ -295,6 +305,7 @@ class S3FileLogger(BaseFileLogger):
         self.bucket = bucket
         self.experiments_folder = experiments_folder
         self.s3_client = self._get_s3_client()
+        self.gzip = gzip
         self._check_bucket()
 
         # create subfolder for current experiment
@@ -358,8 +369,12 @@ class S3FileLogger(BaseFileLogger):
             raise ValueError("You should start experiment before using log_backtest_run or log_backtest_metrics")
 
         with tempfile.NamedTemporaryFile() as ouf:
-            table.to_csv(ouf.name, index=False)
-            filename = f"{name}.csv"
+            if self.gzip:
+                table.to_csv(ouf.name, index=False, compression="gzip")
+                filename = f"{name}.csv.gz"
+            else:
+                table.to_csv(ouf.name, index=False)
+                filename = f"{name}.csv"
             key = os.path.join(self._current_experiment_folder, filename)
             self.s3_client.upload_file(Bucket=self.bucket, Key=key, Filename=ouf.name)
 

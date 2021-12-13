@@ -72,7 +72,7 @@ def test_local_file_logger_save_table():
     """Test that LocalFileLogger saves table after starting the experiment."""
     with tempfile.TemporaryDirectory() as dirname:
         cur_dir = pathlib.Path(dirname)
-        logger = LocalFileLogger(experiments_folder=dirname)
+        logger = LocalFileLogger(experiments_folder=dirname, gzip=False)
         experiment_folder_name = os.listdir(dirname)[0]
         experiment_folder = cur_dir.joinpath(experiment_folder_name)
 
@@ -121,7 +121,7 @@ def test_base_file_logger_log_backtest_run(example_tsds: TSDataset):
     """Test that BaseLogger correctly works in log_backtest_run on LocalFileLogger example."""
     with tempfile.TemporaryDirectory() as dirname:
         cur_dir = pathlib.Path(dirname)
-        logger = LocalFileLogger(experiments_folder=dirname)
+        logger = LocalFileLogger(experiments_folder=dirname, gzip=False)
         experiment_folder_name = os.listdir(dirname)[0]
         experiment_folder = cur_dir.joinpath(experiment_folder_name)
 
@@ -160,7 +160,7 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
     """Test that BaseFileLogger correctly works in log_backtest_metrics on LocaFileLogger example."""
     with tempfile.TemporaryDirectory() as dirname:
         cur_dir = pathlib.Path(dirname)
-        logger = LocalFileLogger(experiments_folder=dirname)
+        logger = LocalFileLogger(experiments_folder=dirname, gzip=False)
         experiment_folder_name = os.listdir(dirname)[0]
         experiment_folder = cur_dir.joinpath(experiment_folder_name)
 
@@ -269,7 +269,7 @@ def test_s3_file_logger_save_table():
     if bucket is None:
         raise OSError("To perform this test you should set 'etna_test_s3_bucket' environment variable first")
     experiments_folder = "s3_logger_test"
-    logger = S3FileLogger(bucket=bucket, experiments_folder=experiments_folder)
+    logger = S3FileLogger(bucket=bucket, experiments_folder=experiments_folder, gzip=False)
     logger.start_experiment(job_type="test_simple", group="1")
     example_df = pd.DataFrame({"keys": [1, 2, 3], "values": ["first", "second", "third"]})
     logger._save_table(example_df, "example")
@@ -293,7 +293,7 @@ def test_s3_file_logger_save_dict():
     """
     bucket = os.environ["etna_test_s3_bucket"]
     experiments_folder = "s3_logger_test"
-    logger = S3FileLogger(bucket=bucket, experiments_folder=experiments_folder)
+    logger = S3FileLogger(bucket=bucket, experiments_folder=experiments_folder, gzip=False)
     logger.start_experiment(job_type="test_simple", group="1")
     example_dict = {"keys": [1, 2, 3], "values": ["first", "second", "third"]}
     logger._save_dict(example_dict, "example")
