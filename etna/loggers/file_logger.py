@@ -17,7 +17,7 @@ import pandas as pd
 from botocore.exceptions import ClientError
 
 from etna.loggers.base import BaseLogger
-from etna.loggers.base import percentile
+from etna.loggers.base import aggregate_metrics_df
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -130,20 +130,10 @@ class BaseFileLogger(BaseLogger):
         except Exception as e:
             warnings.warn(str(e), UserWarning)
 
-        metrics_dict = (
-            metrics.drop(["segment"], axis=1)
-            .apply(["median", "mean", "std", percentile(5), percentile(25), percentile(75), percentile(95)])
-            .to_dict()
-        )
-
-        metrics_dict_wide = {
-            f"{metrics_key}_{statistics_key}": value
-            for metrics_key, values in metrics_dict.items()
-            for statistics_key, value in values.items()
-        }
+        metrics_dict = aggregate_metrics_df(metrics)
 
         try:
-            self._save_dict(metrics_dict_wide, "metrics_summary")
+            self._save_dict(metrics_dict, "metrics_summary")
         except Exception as e:
             warnings.warn(str(e), UserWarning)
 
@@ -177,32 +167,10 @@ class BaseFileLogger(BaseLogger):
         except Exception as e:
             warnings.warn(str(e), UserWarning)
 
-        # case for aggregate_metrics=False
-        if "fold_number" in metrics_df.columns:
-            metrics_dict = (
-                metrics_df.groupby("segment")
-                .mean()
-                .reset_index()
-                .drop(["segment", "fold_number"], axis=1)
-                .apply(["median", "mean", "std", percentile(5), percentile(25), percentile(75), percentile(95)])
-                .to_dict()
-            )
-        # case for aggregate_metrics=True
-        else:
-            metrics_dict = (
-                metrics_df.drop(["segment"], axis=1)
-                .apply(["median", "mean", "std", percentile(5), percentile(25), percentile(75), percentile(95)])
-                .to_dict()
-            )
-
-        metrics_dict_wide = {
-            f"{metrics_key}_{statistics_key}": value
-            for metrics_key, values in metrics_dict.items()
-            for statistics_key, value in values.items()
-        }
+        metrics_dict = aggregate_metrics_df(metrics_df)
 
         try:
-            self._save_dict(metrics_dict_wide, "metrics_summary")
+            self._save_dict(metrics_dict, "metrics_summary")
         except Exception as e:
             warnings.warn(str(e), UserWarning)
 
