@@ -172,7 +172,7 @@ class WandbLogger(BaseLogger):
         from etna.datasets import TSDataset
 
         columns_name = list(metrics.columns)
-        metrics.reset_index(inplace=True)
+        metrics = metrics.reset_index()
         metrics.columns = ["segment"] + columns_name
         if self.table:
             self.experiment.summary["metrics"] = wandb.Table(data=metrics)
