@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -132,7 +133,10 @@ class TSDataset:
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            columns_before = set(self.df.columns.get_level_values("feature"))
             self.df = transform.transform(self.df)
+            columns_after = set(self.df.columns.get_level_values("feature"))
+            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
@@ -140,7 +144,19 @@ class TSDataset:
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            columns_before = set(self.df.columns.get_level_values("feature"))
             self.df = transform.fit_transform(self.df)
+            columns_after = set(self.df.columns.get_level_values("feature"))
+            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+
+    def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
+        from etna.transforms.base import FutureMixin
+
+        new_columns = columns_after - columns_before
+        if isinstance(transform, FutureMixin) or (
+            hasattr(transform, "in_column") and transform.in_column in self._regressors  # type: ignore
+        ):
+            self._regressors.extend(new_columns)
 
     def __repr__(self):
         return self.df.__repr__()

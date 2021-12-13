@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List
 from typing import Tuple
 
@@ -7,6 +8,10 @@ import pytest
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
+from etna.transforms import AddConstTransform
+from etna.transforms import LagTransform
+from etna.transforms import MaxAbsScalerTransform
+from etna.transforms import SegmentEncoderTransform
 
 
 @pytest.fixture()
@@ -464,3 +469,69 @@ def test_to_flatten(example_df):
     obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(example_df))
     assert sorted_columns == sorted(obtained_df.columns)
     assert (expected_df.values == obtained_df[sorted_columns].values).all()
+
+
+@pytest.fixture()
+def ts_with_regressors(df_and_regressors):
+    df, df_exog, regressors = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
+    return ts
+
+
+def _test_update_regressors(ts_with_regressors, transforms, expected_regressors):
+    ts = deepcopy(ts_with_regressors)
+    ts.fit_transform(transforms)
+    regressors = ts.regressors
+    assert sorted(regressors) == sorted(expected_regressors)
+
+
+@pytest.mark.parametrize(
+    "transforms, expected_regressors",
+    (
+        ([SegmentEncoderTransform()], ["regressor_1", "regressor_2", "regressor_segment_code"]),
+        (
+            [LagTransform(in_column="target", lags=[1], out_column="regressor_lag")],
+            ["regressor_1", "regressor_2", "regressor_lag_1"],
+        ),
+    ),
+)
+def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transforms, expected_regressors):
+    _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
+
+
+@pytest.mark.parametrize(
+    "transforms, expected_regressors",
+    (
+        (
+            [MaxAbsScalerTransform(in_column="regressor_1", inplace=False, out_column="scaled_regressor_1")],
+            ["regressor_1", "regressor_2", "scaled_regressor_1"],
+        ),
+        (
+            [
+                AddConstTransform(
+                    in_column="regressor_1", value=2, inplace=False, out_column="regressor_add_constant_regressor_1"
+                )
+            ],
+            ["regressor_1", "regressor_2", "regressor_add_constant_regressor_1"],
+        ),
+    ),
+)
+def test_update_regressors_with_regressor_in_column(ts_with_regressors, transforms, expected_regressors):
+    _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
+
+
+@pytest.mark.parametrize(
+    "transforms, expected_regressors",
+    (
+        (
+            [MaxAbsScalerTransform(in_column="target", inplace=False, out_column="scaled_target")],
+            ["regressor_1", "regressor_2"],
+        ),
+        (
+            [AddConstTransform(in_column="target", value=2, inplace=False, out_column="add_constant_target")],
+            ["regressor_1", "regressor_2"],
+        ),
+    ),
+)
+def test_update_regressors_not_add_not_regressors(ts_with_regressors, transforms, expected_regressors):
+    _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
