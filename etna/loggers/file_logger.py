@@ -69,6 +69,22 @@ class BaseFileLogger(BaseLogger):
         """
         pass
 
+    def _save_config(self, config: Optional[Dict[str, Any]]):
+        """Save config during init.
+
+        Parameters
+        ----------
+        config:
+            a dictionary-like object for saving inputs to your job,
+            like hyperparameters for a model or settings for a data preprocessing job
+        """
+        if config is not None:
+            self.start_experiment(job_type="init", group="config")
+            try:
+                self._save_dict(config, "config")
+            except Exception as e:
+                warnings.warn(str(e), UserWarning)
+
     @abstractmethod
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
@@ -96,10 +112,9 @@ class BaseFileLogger(BaseLogger):
         test:
             Dataframe with ground truth
 
-        Raises
-        ------
-        ValueError:
-            if experiment wasn't started
+        Notes
+        -----
+        If some exception during saving is raised, then it becomes a warning.
         """
         from etna.datasets import TSDataset
 
@@ -111,7 +126,7 @@ class BaseFileLogger(BaseLogger):
             self._save_table(metrics, "metrics")
             self._save_table(TSDataset.to_flatten(forecast), "forecast")
             self._save_table(TSDataset.to_flatten(test), "test")
-        except ValueError as e:
+        except Exception as e:
             warnings.warn(str(e), UserWarning)
 
         metrics_dict = (
@@ -128,9 +143,7 @@ class BaseFileLogger(BaseLogger):
 
         try:
             self._save_dict(metrics_dict_wide, "metrics_summary")
-        except ValueError as e:
-            warnings.warn(str(e), UserWarning)
-        except TypeError as e:
+        except Exception as e:
             warnings.warn(str(e), UserWarning)
 
     def log_backtest_metrics(
@@ -150,10 +163,9 @@ class BaseFileLogger(BaseLogger):
         fold_info_df:
             Fold information from backtest
 
-        Raises
-        ------
-        ValueError:
-            if experiment wasn't started
+        Notes
+        -----
+        If some exception during saving is raised, then it becomes a warning.
         """
         from etna.datasets import TSDataset
 
@@ -161,7 +173,7 @@ class BaseFileLogger(BaseLogger):
             self._save_table(metrics_df, "metrics")
             self._save_table(TSDataset.to_flatten(forecast_df), "forecast")
             self._save_table(fold_info_df, "fold_info")
-        except ValueError as e:
+        except Exception as e:
             warnings.warn(str(e), UserWarning)
 
         # case for aggregate_metrics=False
@@ -190,16 +202,14 @@ class BaseFileLogger(BaseLogger):
 
         try:
             self._save_dict(metrics_dict_wide, "metrics_summary")
-        except ValueError as e:
-            warnings.warn(str(e), UserWarning)
-        except TypeError as e:
+        except Exception as e:
             warnings.warn(str(e), UserWarning)
 
 
 class LocalFileLogger(BaseFileLogger):
     """Logger for logging files into local folder."""
 
-    def __init__(self, experiments_folder: str, gzip: bool = False):
+    def __init__(self, experiments_folder: str, config: Optional[Dict[str, Any]] = None, gzip: bool = False):
         """
         Create instance of LocalFileLogger.
 
@@ -207,16 +217,15 @@ class LocalFileLogger(BaseFileLogger):
         ----------
         experiments_folder:
             path to folder to create experiment in
+        config:
+            a dictionary-like object for saving inputs to your job,
+            like hyperparameters for a model or settings for a data preprocessing job
         gzip:
             indicator whether to use compression during saving tables or not
-
-        Raises
-        ------
-        ValueError:
-            if wrong path is given
         """
         super().__init__()
         self.experiments_folder = experiments_folder
+        self.config = config
         self.gzip = gzip
 
         # create subfolder for current experiment
@@ -227,6 +236,7 @@ class LocalFileLogger(BaseFileLogger):
         self.experiment_folder = experiments_folder_path.joinpath(subfolder_name)
         self.experiment_folder.mkdir()
         self._current_experiment_folder: Optional[pathlib.Path] = None
+        self._save_config(self.config)
 
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
@@ -281,7 +291,9 @@ class LocalFileLogger(BaseFileLogger):
 class S3FileLogger(BaseFileLogger):
     """Logger for logging files into S3 bucket."""
 
-    def __init__(self, bucket: str, experiments_folder: str, gzip: bool = False):
+    def __init__(
+        self, bucket: str, experiments_folder: str, config: Optional[Dict[str, Any]] = None, gzip: bool = False
+    ):
         """
         Create instance of S3FileLogger.
 
@@ -291,6 +303,9 @@ class S3FileLogger(BaseFileLogger):
             name of the S3 bucket
         experiments_folder:
             path to folder to create experiment in
+        config:
+            a dictionary-like object for saving inputs to your job,
+            like hyperparameters for a model or settings for a data preprocessing job
         gzip:
             indicator whether to use compression during saving tables or not
 
@@ -309,6 +324,7 @@ class S3FileLogger(BaseFileLogger):
         super().__init__()
         self.bucket = bucket
         self.experiments_folder = experiments_folder
+        self.config = config
         self.s3_client = self._get_s3_client()
         self.gzip = gzip
         self._check_bucket()
@@ -318,6 +334,8 @@ class S3FileLogger(BaseFileLogger):
         subfolder_name = cur_datetime.strftime(DATETIME_FORMAT)
         self.experiment_folder = os.path.join(experiments_folder, subfolder_name)
         self._current_experiment_folder: Optional[str] = None
+
+        self._save_config(self.config)
 
     def _check_bucket(self):
         try:

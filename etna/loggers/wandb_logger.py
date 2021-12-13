@@ -36,7 +36,7 @@ class WandbLogger(BaseLogger):
         plot: bool = True,
         table: bool = True,
         name_prefix: str = "",
-        config: Optional[Union[Dict, str, None]] = None,
+        config: Optional[Dict[str, Any]] = None,
         log_model: bool = False,
     ):
         """

@@ -30,6 +30,22 @@ def test_local_file_logger_init_new_dir():
         assert len(os.listdir(dirname)) == 1
 
 
+def test_local_file_logger_save_config():
+    """Test that LocalFileLogger creates folder with config during init."""
+    with tempfile.TemporaryDirectory() as dirname:
+        cur_dir = pathlib.Path(dirname)
+        example_config = {"key": "value"}
+        _ = LocalFileLogger(experiments_folder=dirname, config=example_config)
+        experiment_folder_name = os.listdir(dirname)[0]
+        experiment_folder = cur_dir.joinpath(experiment_folder_name)
+        assert len(os.listdir(experiment_folder)) == 1
+        config_folder = experiment_folder.joinpath(os.listdir(experiment_folder)[0])
+        assert len(os.listdir(config_folder)) == 1
+        with open(config_folder.joinpath("config.json")) as inf:
+            read_config = json.load(inf)
+        assert read_config == example_config
+
+
 def test_local_file_logger_start_experiment():
     """Test that LocalFileLogger creates new subfolder according to the parameters."""
     with tempfile.TemporaryDirectory() as dirname:
