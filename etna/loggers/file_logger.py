@@ -13,7 +13,7 @@ from typing import Union
 
 import boto3
 import pandas as pd
-from botocore.exceptions import ParamValidationError
+from botocore.exceptions import ClientError
 
 from etna.loggers.base import BaseLogger
 from etna.loggers.base import percentile
@@ -340,8 +340,8 @@ class S3FileLogger(BaseFileLogger):
     def _check_bucket(self):
         try:
             self.s3_client.head_bucket(Bucket=self.bucket)
-        except ParamValidationError:
-            raise ValueError(f"Provided bucket doesn't exist: {self.bucket}")
+        except ClientError as e:
+            raise ValueError(f"Error occurred during checking bucket: {str(e)}")
 
     @staticmethod
     def _get_s3_client():
