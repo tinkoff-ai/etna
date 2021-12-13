@@ -231,7 +231,7 @@ class LocalFileLogger(BaseFileLogger):
         # create subfolder for current experiment
         cur_datetime = datetime.datetime.now()
         subfolder_name = cur_datetime.strftime(DATETIME_FORMAT)
-        experiments_folder_path = pathlib.Path(self.experiments_folder)
+        experiments_folder_path = pathlib.Path(self.experiments_folder).resolve()
         experiments_folder_path.mkdir(exist_ok=True)
         self.experiment_folder = experiments_folder_path.joinpath(subfolder_name)
         self.experiment_folder.mkdir()
