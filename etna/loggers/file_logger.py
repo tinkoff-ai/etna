@@ -3,6 +3,7 @@ import json
 import os
 import pathlib
 import tempfile
+import warnings
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 from typing import Any
@@ -111,7 +112,7 @@ class BaseFileLogger(BaseLogger):
             self._save_table(TSDataset.to_flatten(forecast), "forecast")
             self._save_table(TSDataset.to_flatten(test), "test")
         except ValueError as e:
-            raise e
+            warnings.warn(str(e), UserWarning)
 
         metrics_dict = (
             metrics.drop(["segment"], axis=1)
@@ -128,7 +129,9 @@ class BaseFileLogger(BaseLogger):
         try:
             self._save_dict(metrics_dict_wide, "metrics_summary")
         except ValueError as e:
-            raise e
+            warnings.warn(str(e), UserWarning)
+        except TypeError as e:
+            warnings.warn(str(e), UserWarning)
 
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
@@ -159,7 +162,7 @@ class BaseFileLogger(BaseLogger):
             self._save_table(TSDataset.to_flatten(forecast_df), "forecast")
             self._save_table(fold_info_df, "fold_info")
         except ValueError as e:
-            raise e
+            warnings.warn(str(e), UserWarning)
 
         # case for aggregate_metrics=False
         if "fold_number" in metrics_df.columns:
@@ -188,7 +191,9 @@ class BaseFileLogger(BaseLogger):
         try:
             self._save_dict(metrics_dict_wide, "metrics_summary")
         except ValueError as e:
-            raise e
+            warnings.warn(str(e), UserWarning)
+        except TypeError as e:
+            warnings.warn(str(e), UserWarning)
 
 
 class LocalFileLogger(BaseFileLogger):
