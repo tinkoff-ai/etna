@@ -90,7 +90,7 @@ class AddConstTransform(PerSegmentWrapper):
         inplace:
             if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
-            name of added column.Don't forget to add regressor prefix if necessary. If not given, use self.__repr__()
+            name of added column. If not given, use self.__repr__()
         """
         self.in_column = in_column
         self.value = value
