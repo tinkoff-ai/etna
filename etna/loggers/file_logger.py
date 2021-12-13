@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 import warnings
 from abc import abstractmethod
+from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
@@ -79,7 +80,7 @@ class BaseFileLogger(BaseLogger):
             like hyperparameters for a model or settings for a data preprocessing job
         """
         if config is not None:
-            self.start_experiment(job_type="init", group="config")
+            self.start_experiment()
             try:
                 self._save_dict(config, "config")
             except Exception as e:
@@ -241,6 +242,10 @@ class LocalFileLogger(BaseFileLogger):
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
 
+        As a result, within `self.experiment_folder` subfolder `job_type`/`group` is created.
+        If `job_type` or `group` isn't set then only one-level subfolder is created.
+        If none of `job_type` and `group` is set then experiment logs files into `self.experiment_folder`.
+
         Parameters
         ----------
         job_type:
@@ -249,8 +254,16 @@ class LocalFileLogger(BaseFileLogger):
         group:
             Specify a group to organize individual runs into a larger experiment.
         """
-        self._current_experiment_folder = self.experiment_folder.joinpath(f"{job_type}_{group}")
-        self._current_experiment_folder.mkdir()
+        if job_type is None and group is None:
+            self._current_experiment_folder = copy(self.experiment_folder)
+            return
+        elif job_type is None:
+            self._current_experiment_folder = self.experiment_folder.joinpath(group)
+        elif group is None:
+            self._current_experiment_folder = self.experiment_folder.joinpath(job_type)
+        else:
+            self._current_experiment_folder = self.experiment_folder.joinpath(job_type).joinpath(group)
+        self._current_experiment_folder.mkdir(parents=True)
 
     def _save_table(self, table: pd.DataFrame, name: str):
         """Save table with given name.
@@ -368,6 +381,10 @@ class S3FileLogger(BaseFileLogger):
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
 
+        As a result, `self.experiment_folder` key is extended with `job_type`/`group`.
+        If `job_type` or `group` isn't set then key is extended with one value.
+        If none of `job_type` and `group` is set then `self.experiment_folder` is not extended.
+
         Parameters
         ----------
         job_type:
@@ -376,7 +393,14 @@ class S3FileLogger(BaseFileLogger):
         group:
             Specify a group to organize individual runs into a larger experiment.
         """
-        self._current_experiment_folder = os.path.join(self.experiment_folder, f"{job_type}_{group}")
+        if job_type is None and group is None:
+            self._current_experiment_folder = copy(self.experiment_folder)
+        elif job_type is None:
+            self._current_experiment_folder = f"{self.experiment_folder}/{group}"
+        elif group is None:
+            self._current_experiment_folder = f"{self.experiment_folder}/{job_type}"
+        else:
+            self._current_experiment_folder = f"{self.experiment_folder}/{job_type}/{group}"
 
     def _save_table(self, table: pd.DataFrame, name: str):
         """Save table with given name.
@@ -398,7 +422,7 @@ class S3FileLogger(BaseFileLogger):
             else:
                 table.to_csv(ouf.name, index=False)
                 filename = f"{name}.csv"
-            key = os.path.join(self._current_experiment_folder, filename)
+            key = f"{self._current_experiment_folder}/{filename}"
             self.s3_client.upload_file(Bucket=self.bucket, Key=key, Filename=ouf.name)
 
     def _save_dict(self, dictionary: Dict[str, Any], name: str):

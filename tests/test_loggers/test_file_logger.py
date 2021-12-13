@@ -39,9 +39,7 @@ def test_local_file_logger_save_config():
         experiment_folder_name = os.listdir(dirname)[0]
         experiment_folder = cur_dir.joinpath(experiment_folder_name)
         assert len(os.listdir(experiment_folder)) == 1
-        config_folder = experiment_folder.joinpath(os.listdir(experiment_folder)[0])
-        assert len(os.listdir(config_folder)) == 1
-        with open(config_folder.joinpath("config.json")) as inf:
+        with open(experiment_folder.joinpath("config.json")) as inf:
             read_config = json.load(inf)
         assert read_config == example_config
 
@@ -53,19 +51,19 @@ def test_local_file_logger_start_experiment():
         # get rid of seconds fractions
         start_datetime = datetime.datetime.strptime(datetime.datetime.now().strftime(DATETIME_FORMAT), DATETIME_FORMAT)
         logger = LocalFileLogger(experiments_folder=dirname)
-        experiment_folder = os.listdir(dirname)[0]
+        experiment_folder_name = os.listdir(dirname)[0]
+        experiment_folder = cur_dir.joinpath(experiment_folder_name)
         # get rid of seconds fractions
         end_datetime = datetime.datetime.strptime(datetime.datetime.now().strftime(DATETIME_FORMAT), DATETIME_FORMAT)
 
-        folder_creation_datetime = datetime.datetime.strptime(experiment_folder, DATETIME_FORMAT)
+        folder_creation_datetime = datetime.datetime.strptime(experiment_folder_name, DATETIME_FORMAT)
         assert end_datetime >= folder_creation_datetime >= start_datetime
-        assert len(os.listdir(cur_dir.joinpath(experiment_folder))) == 0
+        assert len(os.listdir(experiment_folder)) == 0
 
         logger.start_experiment(job_type="test", group="1")
-        assert len(os.listdir(cur_dir.joinpath(experiment_folder))) == 1
+        assert len(os.listdir(experiment_folder)) == 1
 
-        filename = os.listdir(cur_dir.joinpath(experiment_folder))[0]
-        assert filename == f"test_1"
+        assert experiment_folder.joinpath("test").joinpath("1").exists()
 
 
 def test_local_file_logger_fail_save_table():
@@ -90,7 +88,7 @@ def test_local_file_logger_save_table():
         example_df = pd.DataFrame({"keys": [1, 2, 3], "values": ["first", "second", "third"]})
         logger._save_table(example_df, "example")
 
-        experiment_subfolder = experiment_folder.joinpath("example_example")
+        experiment_subfolder = experiment_folder.joinpath("example").joinpath("example")
         assert "example.csv" in os.listdir(experiment_subfolder)
 
         read_example_df = pd.read_csv(experiment_subfolder.joinpath("example.csv"))
@@ -119,7 +117,7 @@ def test_local_file_logger_save_dict():
         example_dict = {"keys": [1, 2, 3], "values": ["first", "second", "third"]}
         logger._save_dict(example_dict, "example")
 
-        experiment_subfolder = experiment_folder.joinpath("example_example")
+        experiment_subfolder = experiment_folder.joinpath("example").joinpath("example")
         assert "example.json" in os.listdir(experiment_subfolder)
 
         with open(experiment_subfolder.joinpath("example.json")) as inf:
@@ -142,7 +140,7 @@ def test_base_file_logger_log_backtest_run(example_tsds: TSDataset):
         pipeline.backtest(ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds)
 
         for fold_number in range(n_folds):
-            fold_folder = experiment_folder.joinpath(f"crossval_{fold_number}")
+            fold_folder = experiment_folder.joinpath("crossval").joinpath(str(fold_number))
             assert "metrics.csv" in os.listdir(fold_folder)
             assert "forecast.csv" in os.listdir(fold_folder)
             assert "test.csv" in os.listdir(fold_folder)
@@ -182,7 +180,7 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
             ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds, aggregate_metrics=aggregate_metrics
         )
 
-        crossval_results_folder = experiment_folder.joinpath("crossval_results_all")
+        crossval_results_folder = experiment_folder.joinpath("crossval_results").joinpath("all")
 
         # check metrics_df
         metrics_df = metrics_df.reset_index(drop=True)
