@@ -49,8 +49,9 @@ class OutliersTransform(Transform, ABC):
         ts:
             original TSDataset
         """
+        if self.outliers_timestamps is None:
+            raise ValueError("Something went wrong during outliers detection stage! Check the transform parameters.")
         self.original_values = dict()
-
         for segment, timestamps in self.outliers_timestamps.items():
             segment_ts = ts[:, segment, :]
             segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
@@ -90,6 +91,8 @@ class OutliersTransform(Transform, ABC):
         result: pd.DataFrame
             dataframe with in_column series with filled with NaNs
         """
+        if self.outliers_timestamps is None:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         result_df = df.copy()
         for segment in df.columns.get_level_values("segment").unique():
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
@@ -109,8 +112,9 @@ class OutliersTransform(Transform, ABC):
         result: pd.DataFrame
             data with reconstructed values
         """
+        if self.original_values is None or self.outliers_timestamps is None:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         result = df.copy()
-
         for segment in self.original_values.keys():
             segment_ts = result[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
