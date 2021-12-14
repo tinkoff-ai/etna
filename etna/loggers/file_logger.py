@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
 
 
-# TODO: add examples
 class BaseFileLogger(BaseLogger):
     """Base logger for logging files."""
 
@@ -176,7 +175,13 @@ class BaseFileLogger(BaseLogger):
 
 
 class LocalFileLogger(BaseFileLogger):
-    """Logger for logging files into local folder."""
+    """Logger for logging files into local folder.
+
+    It writes its result into folder like `experiments_folder`/`2021-12-12T12-12-12`, where the second part
+    is related to datetime of starting the experiment.
+    After every `start_experiment` it creates a new subfolder `job_type`/`group`.
+    If some of these two values are None then behaviour is little different and described in `start_experiment` method.
+    """
 
     def __init__(self, experiments_folder: str, config: Optional[Dict[str, Any]] = None, gzip: bool = False):
         """
@@ -270,7 +275,11 @@ class LocalFileLogger(BaseFileLogger):
 
 
 class S3FileLogger(BaseFileLogger):
-    """Logger for logging files into S3 bucket."""
+    """Logger for logging files into S3 bucket.
+
+    This logger is very similar to :class:`~etna.loggers.file_logger.LocalFileLogger`,
+    but works with S3 keys instead of paths at local file system.
+    """
 
     def __init__(
         self, bucket: str, experiments_folder: str, config: Optional[Dict[str, Any]] = None, gzip: bool = False
