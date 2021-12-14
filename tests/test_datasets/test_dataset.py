@@ -478,8 +478,14 @@ def ts_with_regressors(df_and_regressors):
     return ts
 
 
-def _test_update_regressors(ts_with_regressors, transforms, expected_regressors):
-    ts = deepcopy(ts_with_regressors)
+def _test_update_regressors_transform(ts, transforms, expected_regressors):
+    fitted_transforms = [transform.fit(ts.df) for transform in transforms]
+    ts.transform(fitted_transforms)
+    regressors = ts.regressors
+    assert sorted(regressors) == sorted(expected_regressors)
+
+
+def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
     ts.fit_transform(transforms)
     regressors = ts.regressors
     assert sorted(regressors) == sorted(expected_regressors)
@@ -496,7 +502,8 @@ def _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
     ),
 )
 def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
+    _test_update_regressors_transform(deepcopy(ts_with_regressors), transforms, expected_regressors)
+    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), transforms, expected_regressors)
 
 
 @pytest.mark.parametrize(
@@ -517,7 +524,8 @@ def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transf
     ),
 )
 def test_update_regressors_with_regressor_in_column(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
+    _test_update_regressors_transform(deepcopy(ts_with_regressors), transforms, expected_regressors)
+    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), transforms, expected_regressors)
 
 
 @pytest.mark.parametrize(
@@ -534,4 +542,5 @@ def test_update_regressors_with_regressor_in_column(ts_with_regressors, transfor
     ),
 )
 def test_update_regressors_not_add_not_regressors(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors(ts_with_regressors, transforms, expected_regressors)
+    _test_update_regressors_transform(deepcopy(ts_with_regressors), transforms, expected_regressors)
+    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), transforms, expected_regressors)
