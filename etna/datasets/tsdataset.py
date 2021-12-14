@@ -152,11 +152,15 @@ class TSDataset:
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
         from etna.transforms.base import FutureMixin
 
-        new_columns = columns_after - columns_before
-        if isinstance(transform, FutureMixin) or (
-            hasattr(transform, "in_column") and transform.in_column in self._regressors  # type: ignore
-        ):
+        new_columns = list(columns_after - columns_before)
+        if isinstance(transform, FutureMixin):
             self._regressors.extend(new_columns)
+        elif hasattr(transform, "in_column"):
+            in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
+            new_columns = [new_column for i, new_column in enumerate(new_columns) if in_columns[i] in self.regressors]
+            self._regressors.extend(new_columns)
+        else:
+            pass
 
     def __repr__(self):
         return self.df.__repr__()
