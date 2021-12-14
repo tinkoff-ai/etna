@@ -117,7 +117,7 @@ def test_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segment):
 
 
 def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segment):
-    """Test that transform for one segment raise error when calling transform without being fit."""
+    """Test that transform for one segment raise error when calling inverse_transform without being fit."""
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model="arima")
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.inverse_transform(df_trend_seasonal_one_segment)
