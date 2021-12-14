@@ -396,7 +396,7 @@ def test_backtest_forecasts_sanity(step_ts):
 
 
 def test_forecast_raise_error_if_not_fitted():
-    """Test that transform for one segment raise error when calling transform without being fit."""
+    """Test that Pipeline raise error when calling forecast without being fit."""
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
     with pytest.raises(ValueError, match="Pipeline is not fitted!"):
         _ = pipeline.forecast()
