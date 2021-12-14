@@ -183,4 +183,4 @@ def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
     """Test that transform for one segment raise error when calling transform without being fit."""
     transform = _OneSegmentSpecialDaysTransform()
     with pytest.raises(ValueError, match="Transform is not fitted!"):
-        _ = transform.transform(constant_days_df)
+        _ = transform.transform(df=constant_days_df)

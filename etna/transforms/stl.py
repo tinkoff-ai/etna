@@ -135,10 +135,9 @@ class _OneSegmentSTLTransform(Transform):
             Dataframe with extracted features
         """
         result = df.copy()
-        if self.fit_results is not None:
-            season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
-        else:
+        if self.fit_results is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
+        season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
         result[self.in_column] += season_trend
         return result
 
