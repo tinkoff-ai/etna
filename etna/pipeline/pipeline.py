@@ -112,6 +112,8 @@ class Pipeline(BasePipeline):
 
     def _forecast_prediction_interval(self, future: TSDataset) -> TSDataset:
         """Forecast prediction interval for the future."""
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
@@ -145,6 +147,8 @@ class Pipeline(BasePipeline):
         TSDataset
             TSDataset with forecast
         """
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         self.check_support_prediction_interval(prediction_interval)
 
         future = self.ts.make_future(self.horizon)
@@ -243,7 +247,7 @@ class Pipeline(BasePipeline):
         train: TSDataset,
         test: TSDataset,
         fold_number: int,
-        metrics: Optional[List[Metric]] = None,
+        metrics: List[Metric],
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
@@ -267,6 +271,8 @@ class Pipeline(BasePipeline):
 
     def _get_backtest_metrics(self, aggregate_metrics: bool = False) -> pd.DataFrame:
         """Get dataframe with metrics."""
+        if self._folds is None:
+            raise ValueError("Something went wrong during backtest initialisation!")
         metrics_df = pd.DataFrame()
 
         for i, fold in self._folds.items():
@@ -283,6 +289,8 @@ class Pipeline(BasePipeline):
 
     def _get_fold_info(self) -> pd.DataFrame:
         """Get information about folds."""
+        if self._folds is None:
+            raise ValueError("Something went wrong during backtest initialisation!")
         timerange_df = pd.DataFrame()
         for fold_number, fold_info in self._folds.items():
             tmp_df = pd.DataFrame()
@@ -295,6 +303,8 @@ class Pipeline(BasePipeline):
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:
         """Get forecasts from different folds."""
+        if self._folds is None:
+            raise ValueError("Something went wrong during backtest initialisation!")
         forecasts_list = []
         for fold_number, fold_info in self._folds.items():
             forecast_ts = fold_info["forecast"]
