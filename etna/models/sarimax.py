@@ -175,7 +175,8 @@ class _SARIMAXModel:
         ----------
         df:
             Features dataframe
-
+        regressors:
+            List of the columns with regressors
         Returns
         -------
         self: SARIMAX
@@ -290,6 +291,12 @@ class _SARIMAXModel:
         return y_pred.reset_index(drop=True, inplace=False)
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
+        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if column_to_drop:
+            warnings.warn(
+                message=f"SARIMAX model does not work with exogenous features (features unknown in future).\n "
+                f"{column_to_drop} will be dropped"
+            )
         if horizon:
             short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
             if short_regressors:
@@ -470,6 +477,21 @@ class SARIMAXModel(PerSegmentModel):
                 **self.kwargs,
             )
         )
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "SARIMAXModel":
+        """Fit model."""
+        self._segments = ts.segments
+        self._build_models()
+
+        for segment in self._segments:
+            model = self._models[segment]
+            segment_features = ts[:, segment, :]
+            segment_features = segment_features.dropna()
+            segment_features = segment_features.droplevel("segment", axis=1)
+            segment_features = segment_features.reset_index()
+            model.fit(df=segment_features, regressors=ts.regressors)
+        return self
 
     @staticmethod
     def _forecast_one_segment(
