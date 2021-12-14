@@ -253,3 +253,9 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
     results = stacking_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
     for df in results:
         assert isinstance(df, pd.DataFrame)
+
+
+def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
+    """Test that StackingEnsemble raise error when calling forecast without being fit."""
+    with pytest.raises(ValueError, match="StackingEnsemble is not fitted!"):
+        _ = naive_ensemble.forecast()
