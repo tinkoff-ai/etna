@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Callable
 from typing import Dict
-from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -36,20 +35,18 @@ class Metric(BaseMixin):
     dataset and aggregates it according to mode.
     """
 
-    def __init__(
-        self, metric_fn: Optional[Callable[..., float]] = None, mode: str = MetricAggregationMode.per_segment, **kwargs
-    ):
+    def __init__(self, metric_fn: Callable[..., float], mode: str = MetricAggregationMode.per_segment, **kwargs):
         """
         Init Metric.
 
         Parameters
         ----------
+        metric_fn:
+            functional metric
         mode:
             "macro" or "per-segment", way to aggregate metric values over segments
             if "macro" computes average value
             if "per-segment" -- does not aggregate metrics
-        metric_fn:
-            functional metric
         kwargs:
             functional metric's params
         """
