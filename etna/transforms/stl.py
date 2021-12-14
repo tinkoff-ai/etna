@@ -113,7 +113,10 @@ class _OneSegmentSTLTransform(Transform):
             Dataframe with extracted features
         """
         result = df.copy()
-        season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
+        if self.fit_results:
+            season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
+        else:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         result[self.in_column] -= season_trend
         return result
 
@@ -132,7 +135,10 @@ class _OneSegmentSTLTransform(Transform):
             Dataframe with extracted features
         """
         result = df.copy()
-        season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
+        if self.fit_results:
+            season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
+        else:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         result[self.in_column] += season_trend
         return result
 
