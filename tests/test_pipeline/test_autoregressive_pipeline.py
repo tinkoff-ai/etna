@@ -101,3 +101,10 @@ def test_forecast_with_fit_transforms(example_tsds):
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
     pipeline.fit(example_tsds)
     pipeline.forecast()
+
+
+def test_forecast_raise_error_if_not_fitted():
+    """Test that transform for one segment raise error when calling transform without being fit."""
+    pipeline = AutoRegressivePipeline(model=LinearPerSegmentModel(), horizon=5)
+    with pytest.raises(ValueError, match="AutoRegressivePipeline is not fitted!"):
+        _ = pipeline.forecast()
