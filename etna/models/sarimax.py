@@ -165,8 +165,9 @@ class _SARIMAXModel:
         self.kwargs = kwargs
         self._model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
+        self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame) -> "_SARIMAXModel":
+    def fit(self, df: pd.DataFrame, regressors: Optional[List[str]]) -> "_SARIMAXModel":
         """
         Fits a SARIMAX model.
 
@@ -174,12 +175,14 @@ class _SARIMAXModel:
         ----------
         df:
             Features dataframe
-
+        regressors:
+            List of the columns with regressors
         Returns
         -------
         self: SARIMAX
             fitted model
         """
+        self.regressor_columns = regressors
         categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
         try:
             df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
@@ -288,17 +291,14 @@ class _SARIMAXModel:
         return y_pred.reset_index(drop=True, inplace=False)
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
-        column_to_drop = [
-            col for col in df.columns if not col.startswith("regressor") and col not in ["target", "timestamp"]
-        ]
-        regressor_columns = [col for col in df.columns if col.startswith("regressor")]
+        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
         if column_to_drop:
             warnings.warn(
                 message=f"SARIMAX model does not work with exogenous features (features unknown in future).\n "
                 f"{column_to_drop} will be dropped"
             )
         if horizon:
-            short_regressors = [regressor for regressor in regressor_columns if df[regressor].count() < horizon]
+            short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
             if short_regressors:
                 raise ValueError(
                     f"Regressors {short_regressors} are too short for chosen horizon value.\n "
@@ -306,9 +306,8 @@ class _SARIMAXModel:
                 )
 
     def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
-        regressor_columns = [col for col in df.columns if col.startswith("regressor")]
-        if regressor_columns:
-            exog_future = df[regressor_columns]
+        if self.regressor_columns:
+            exog_future = df[self.regressor_columns]
             exog_future.index = df["timestamp"]
         else:
             exog_future = None
@@ -478,6 +477,21 @@ class SARIMAXModel(PerSegmentModel):
                 **self.kwargs,
             )
         )
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "SARIMAXModel":
+        """Fit model."""
+        self._segments = ts.segments
+        self._build_models()
+
+        for segment in self._segments:
+            model = self._models[segment]
+            segment_features = ts[:, segment, :]
+            segment_features = segment_features.dropna()
+            segment_features = segment_features.droplevel("segment", axis=1)
+            segment_features = segment_features.reset_index()
+            model.fit(df=segment_features, regressors=ts.regressors)
+        return self
 
     @staticmethod
     def _forecast_one_segment(
