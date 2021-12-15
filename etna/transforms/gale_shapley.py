@@ -111,7 +111,7 @@ class RegressorGaleShapley(BaseGaleShapley):
         is_better: bool
             returns True if given segment is a better candidate than current match.
         """
-        if self.tmp_match is None:
+        if self.tmp_match is None or self.tmp_match_rank is None:
             return True
         return self.candidates_rank[segment] < self.tmp_match_rank
 
@@ -190,9 +190,9 @@ class GaleShapleyMatcher(BaseMixin):
             next_regressor_candidate = self.regressor_by_name[next_regressor_candidate_name]
             success = True
             if next_regressor_candidate.check_segment(segment=segment.name):
-                if not next_regressor_candidate.is_available:
+                if not next_regressor_candidate.is_available:  # is_available = tmp_match is not None
                     self.break_match(
-                        segment=self.segment_by_name[next_regressor_candidate.tmp_match],
+                        segment=self.segment_by_name[next_regressor_candidate.tmp_match],  # type: ignore
                         regressor=next_regressor_candidate,
                     )
                 self.match(segment=segment, regressor=next_regressor_candidate)

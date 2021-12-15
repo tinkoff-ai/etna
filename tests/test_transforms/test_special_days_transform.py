@@ -177,3 +177,10 @@ def test_no_false_positive_month(constant_days_df: pd.DataFrame):
     special_days_finder = _OneSegmentSpecialDaysTransform()
     res = special_days_finder.fit_transform(constant_days_df)
     assert res["regressor_anomaly_monthdays"].astype("bool").sum() == 0
+
+
+def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
+    """Test that transform for one segment raise error when calling transform without being fit."""
+    transform = _OneSegmentSpecialDaysTransform()
+    with pytest.raises(ValueError, match="Transform is not fitted!"):
+        _ = transform.transform(df=constant_days_df)

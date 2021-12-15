@@ -25,7 +25,7 @@ class ClusteringLinkageMode(Enum):
 class HierarchicalClustering(Clustering):
     """Base class for hierarchical clustering."""
 
-    def __init__(self, distance: Optional[Distance] = None):
+    def __init__(self, distance: Distance):
         """Init HierarchicalClustering."""
         super().__init__()
         self.n_clusters: Optional[int] = None
@@ -35,7 +35,7 @@ class HierarchicalClustering(Clustering):
         self.clusters: Optional[List[int]] = None
         self.ts: Optional["TSDataset"] = None
         self.segment2cluster: Optional[Dict[str, int]] = None
-        self.distance: Optional[Distance] = distance
+        self.distance: Distance = distance
         self.centroids_df: Optional[pd.DataFrame] = None
 
     def build_distance_matrix(self, ts: "TSDataset"):
@@ -57,7 +57,7 @@ class HierarchicalClustering(Clustering):
 
     def build_clustering_algo(
         self,
-        n_clusters: Optional[int] = 30,
+        n_clusters: int = 30,
         linkage: Union[str, ClusteringLinkageMode] = ClusteringLinkageMode.average,
         **clustering_algo_params,
     ):
@@ -91,7 +91,17 @@ class HierarchicalClustering(Clustering):
         Dict[str, int]:
             dict in format {segment: cluster}
         """
+        if self.clustering_algo is None:
+            raise ValueError(
+                "Clustering algorithm is not built! Build clustering algorithm using build_clustering_algo method before calling fit_predict!"
+            )
+        if self.distance_matrix is None:
+            raise ValueError(
+                "Distance matrix is not built! Build distance matrix using build_distance_matrix method before calling fit_predict!"
+            )
         self.clusters = self.clustering_algo.fit_predict(X=self.distance_matrix.matrix)
+        if self.clusters is None:
+            raise ValueError("Something went wrong during predicting the clusters!")
         self.segment2cluster = {
             self.distance_matrix.idx2segment[i]: self.clusters[i] for i in range(len(self.clusters))
         }
@@ -99,6 +109,10 @@ class HierarchicalClustering(Clustering):
 
     def _get_series_in_cluster(self, cluster: int) -> TSDataset:
         """Get series in cluster."""
+        if self.ts is None or self.segment2cluster is None:
+            raise ValueError(
+                "HierarchicalClustering is not fitted! Fit the HierarchicalClustering before calling get_centroids!"
+            )
         segments_in_cluster = [segment for segment in self.ts.segments if self.segment2cluster[segment] == cluster]
         cluster_ts = TSDataset(df=self.ts[:, segments_in_cluster, "target"], freq=self.ts.freq)
         return cluster_ts
@@ -118,6 +132,10 @@ class HierarchicalClustering(Clustering):
         pd.DataFrame:
             dataframe with centroids
         """
+        if self.clusters is None:
+            raise ValueError(
+                "HierarchicalClustering is not fitted! Fit the HierarchicalClustering before calling get_centroids!"
+            )
         centroids = []
         clusters = set(self.clusters)
         for cluster in clusters:

@@ -94,6 +94,8 @@ class _OneSegmentChangePointsTrendTransform(Transform):
 
     def _fit_per_interval_model(self, series: pd.Series):
         """Fit per-interval models with corresponding data from series."""
+        if self.intervals is None or self.per_interval_models is None:
+            raise ValueError("Something went wrong on fit! Check the parameters of the transform.")
         for interval in self.intervals:
             tmp_series = series[interval[0] : interval[1]]
             x = self._get_timestamps(series=tmp_series)
@@ -102,6 +104,8 @@ class _OneSegmentChangePointsTrendTransform(Transform):
 
     def _predict_per_interval_model(self, series: pd.Series) -> pd.Series:
         """Apply per-interval detrending to series."""
+        if self.intervals is None or self.per_interval_models is None:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         trend_series = pd.Series(index=series.index)
         for interval in self.intervals:
             tmp_series = series[interval[0] : interval[1]]

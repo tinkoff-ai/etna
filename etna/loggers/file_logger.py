@@ -230,12 +230,12 @@ class LocalFileLogger(BaseFileLogger):
         if job_type is None and group is None:
             self._current_experiment_folder = copy(self.experiment_folder)
             return
-        elif job_type is None:
+        elif job_type is None and group is not None:
             self._current_experiment_folder = self.experiment_folder.joinpath(group)
-        elif group is None:
+        elif job_type is not None and group is None:
             self._current_experiment_folder = self.experiment_folder.joinpath(job_type)
         else:
-            self._current_experiment_folder = self.experiment_folder.joinpath(job_type).joinpath(group)
+            self._current_experiment_folder = self.experiment_folder.joinpath(job_type).joinpath(group)  # type: ignore
         self._current_experiment_folder.mkdir(parents=True)
 
     def _save_table(self, table: pd.DataFrame, name: str):

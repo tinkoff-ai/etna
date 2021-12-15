@@ -130,7 +130,7 @@ class ResampleWithDistributionTransform(PerSegmentWrapper):
             )
         )
 
-    def _get_out_column(self, out_column: str) -> str:
+    def _get_out_column(self, out_column: Optional[str]) -> str:
         """Get the `out_column` depending on the transform's parameters."""
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")

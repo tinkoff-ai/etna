@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -21,7 +22,7 @@ class SklearnTransform(Transform):
 
     def __init__(
         self,
-        in_column: Union[str, List[str]],
+        in_column: Optional[Union[str, List[str]]],
         out_column: str,
         transformer: TransformerMixin,
         inplace: bool = True,

@@ -171,3 +171,12 @@ def test_inverse_transform_post_history(multitrend_df: pd.DataFrame, post_multit
     # trend + last point of seen data + trend for offset interval
     expected = [x * (-0.6) - 52.6 - 0.6 * 30 for x in list(range(1, 32))]
     np.testing.assert_array_almost_equal(transformed["target"], expected, decimal=10)
+
+
+def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
+    """Test that transform for one segment raise error when calling transform without being fit."""
+    transform = _OneSegmentChangePointsTrendTransform(
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+    )
+    with pytest.raises(ValueError, match="Transform is not fitted!"):
+        _ = transform.transform(df=multitrend_df["segment_1"])
