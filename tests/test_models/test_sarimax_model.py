@@ -19,6 +19,23 @@ def test_sarimax_forecaster_run(example_tsds):
     assert len(res) == 14
 
 
+def test_sarimax_save_regressors_on_fit(example_reg_tsds):
+    model = SARIMAXModel()
+    model.fit(ts=example_reg_tsds)
+    for segment_model in model._models.values():
+        assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
+
+
+def test_sarimax_select_regressors_correctly(example_reg_tsds):
+    model = SARIMAXModel()
+    model.fit(ts=example_reg_tsds)
+    for segment, segment_model in model._models.items():
+        segment_features = example_reg_tsds[:, segment, :].droplevel("segment", axis=1)
+        segment_regressors_expected = segment_features[example_reg_tsds.regressors]
+        segment_regressors = segment_model._select_regressors(df=segment_features.reset_index())
+        assert (segment_regressors == segment_regressors_expected).all().all()
+
+
 def test_sarimax_forecaster_run_with_reg(example_reg_tsds):
     """
     Given: I have dataframe with 2 segments
