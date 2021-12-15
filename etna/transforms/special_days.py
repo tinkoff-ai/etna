@@ -103,13 +103,13 @@ class _OneSegmentSpecialDaysTransform(Transform):
         to_add = pd.DataFrame([self.res_type["df_sample"]] * len(df), columns=self.res_type["columns"])
 
         if self.find_special_weekday:
-            if self.anomaly_week_days is not None:
+            if self.anomaly_week_days is None:
                 raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
             to_add["anomaly_weekdays"] += self._marked_special_week_day(common_df, self.anomaly_week_days)
             to_add["anomaly_weekdays"] = to_add["anomaly_weekdays"].astype("category")
 
         if self.find_special_month_day:
-            if self.anomaly_month_days is  None:
+            if self.anomaly_month_days is None:
                 raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
             to_add["anomaly_monthdays"] += self._marked_special_month_day(common_df, self.anomaly_month_days)
             to_add["anomaly_monthdays"] = to_add["anomaly_monthdays"].astype("category")
