@@ -133,9 +133,9 @@ class TSDataset:
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
-            columns_before = set(self.df.columns.get_level_values("feature"))
+            columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.transform(self.df)
-            columns_after = set(self.df.columns.get_level_values("feature"))
+            columns_after = set(self.columns.get_level_values("feature"))
             self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
@@ -144,9 +144,9 @@ class TSDataset:
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
-            columns_before = set(self.df.columns.get_level_values("feature"))
+            columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.fit_transform(self.df)
-            columns_after = set(self.df.columns.get_level_values("feature"))
+            columns_after = set(self.columns.get_level_values("feature"))
             self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
 
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
@@ -154,8 +154,10 @@ class TSDataset:
 
         new_columns = list(columns_after - columns_before)
         if isinstance(transform, FutureMixin):
+            # Every column from FutureMixin is regressor
             self._regressors.extend(new_columns)
         elif hasattr(transform, "in_column"):
+            # Only the columns created with the other transforms from regressors are regressors
             in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
             new_columns = [new_column for i, new_column in enumerate(new_columns) if in_columns[i] in self.regressors]
             self._regressors.extend(new_columns)
