@@ -64,3 +64,23 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon):
     mae = MAE("macro")
 
     assert mae(ts_test, ts_pred) < 0.2207
+
+
+def test_forecast_without_make_future(weekly_period_df):
+    ts = TSDataset(TSDataset.to_dataset(weekly_period_df), "D")
+    pft = PytorchForecastingTransform(
+        max_encoder_length=21,
+        min_encoder_length=21,
+        max_prediction_length=8,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        static_categoricals=["segment"],
+        target_normalizer=None,
+    )
+
+    ts.fit_transform([pft])
+
+    model = DeepARModel(max_epochs=1)
+    model.fit(ts)
+    with pytest.raises(ValueError, match="The future is not generated!"):
+        _ = model.forecast(ts=ts)

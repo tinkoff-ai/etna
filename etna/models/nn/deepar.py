@@ -155,6 +155,10 @@ class DeepARModel(Model):
             TSDataset with predictions.
         """
         pf_transform = self._get_pf_transform(ts)
+        if pf_transform.pf_dataset_predict is None:
+            raise ValueError(
+                "The future is not generated! Generate future using TSDataset make_future before calling forecast method!"
+            )
         prediction_dataloader = pf_transform.pf_dataset_predict.to_dataloader(
             train=False, batch_size=self.batch_size * 2
         )

@@ -173,6 +173,8 @@ class MeanTransform(WindowStatisticsTransform):
 
     def _aggregate_window(self, series: pd.Series) -> float:
         """Compute weighted average for window series."""
+        if self._alpha_range is None:
+            raise ValueError("Something went wrong generating the alphas!")
         tmp_series = self._get_required_lags(series)
         size = len(tmp_series)
         tmp = tmp_series * self._alpha_range[-size:]

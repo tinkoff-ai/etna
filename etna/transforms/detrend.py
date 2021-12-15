@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pandas as pd
 from sklearn.base import RegressorMixin
 from sklearn.linear_model import LinearRegression
@@ -12,7 +10,7 @@ from etna.transforms.base import Transform
 class _OneSegmentLinearTrendBaseTransform(Transform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
-    def __init__(self, in_column: str, regressor: Optional[RegressorMixin] = None):
+    def __init__(self, in_column: str, regressor: RegressorMixin):
         """
         Create instance of _OneSegmentLinearTrendBaseTransform.
 

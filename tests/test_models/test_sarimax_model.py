@@ -1,3 +1,5 @@
+import pytest
+
 from etna.models import SARIMAXModel
 
 
@@ -55,3 +57,10 @@ def test_prediction_interval_run_infuture(example_tsds):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+
+def test_forecast_raise_error_if_not_fitted(example_tsds):
+    """Test that SARIMAX raise error when calling forecast without being fit."""
+    model = SARIMAXModel()
+    with pytest.raises(ValueError, match="The model is not fitted yet"):
+        _ = model.forecast(ts=example_tsds)

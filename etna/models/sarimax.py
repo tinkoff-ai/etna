@@ -249,6 +249,8 @@ class _SARIMAXModel:
         y_pred: pd.DataFrame
             DataFrame with predictions
         """
+        if self._result is None or self._model is None:
+            raise ValueError("SARIMAX model is not fitted! Fit the model before calling predict method!")
         horizon = len(df)
         self._check_df(df, horizon)
 

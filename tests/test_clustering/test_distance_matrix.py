@@ -62,3 +62,10 @@ def test_dtw_matrix_value(simple_multisegment_ts: TSDataset):
 
     expected = np.array([[0, 0, 1, 2], [0, 0, 1, 2], [1, 1, 0, 1], [2, 2, 1, 0]])
     np.testing.assert_array_almost_equal(matrix, expected)
+
+
+def test_distance_matrix_fails_on_predict_without_fit():
+    """Check that distance matrix fails on predict if it is not fitted."""
+    dm = DistanceMatrix(distance=EuclideanDistance())
+    with pytest.raises(ValueError, match="DistanceMatrix is not fitted!"):
+        _ = dm.predict()

@@ -393,3 +393,10 @@ def test_backtest_forecasts_sanity(step_ts):
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
     assert np.all(forecast_df == expected_forecast_df)
+
+
+def test_forecast_raise_error_if_not_fitted():
+    """Test that Pipeline raise error when calling forecast without being fit."""
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    with pytest.raises(ValueError, match="Pipeline is not fitted!"):
+        _ = pipeline.forecast()

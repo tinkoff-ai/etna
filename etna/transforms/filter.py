@@ -24,11 +24,11 @@ class FilterFeaturesTransform(Transform):
         ValueError:
             if both options set or non of them
         """
+        self.include: Optional[Sequence[str]] = None
+        self.exclude: Optional[Sequence[str]] = None
         if include is not None and exclude is None:
             self.include = list(set(include))
-            self.exclude = None
         elif exclude is not None and include is None:
-            self.include = None
             self.exclude = list(set(exclude))
         else:
             raise ValueError("There should be exactly one option set: include or exclude")
