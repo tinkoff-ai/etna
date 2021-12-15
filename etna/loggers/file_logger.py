@@ -322,7 +322,7 @@ class S3FileLogger(BaseFileLogger):
         # create subfolder for current experiment
         cur_datetime = datetime.datetime.now()
         subfolder_name = cur_datetime.strftime(DATETIME_FORMAT)
-        self.experiment_folder = os.path.join(experiments_folder, subfolder_name)
+        self.experiment_folder = f"{experiments_folder}/{subfolder_name}"
         self._current_experiment_folder: Optional[str] = None
 
         self._save_config(self.config)
@@ -419,5 +419,5 @@ class S3FileLogger(BaseFileLogger):
             json.dump(dictionary, ouf)
             filename = f"{name}.json"
             ouf.flush()
-            key = os.path.join(self._current_experiment_folder, filename)
+            key = f"{self._current_experiment_folder}/{filename}"
             self.s3_client.upload_file(Bucket=self.bucket, Key=key, Filename=ouf.name)
