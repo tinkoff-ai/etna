@@ -50,7 +50,7 @@ class ConsoleLogger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics() or TimeSeriesCrossValidation.get_metrics()
+            Dataframe produced with Pipeline._get_backtest_metrics()
         forecast_df:
             Forecast from backtest
         fold_info_df:
