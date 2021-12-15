@@ -263,6 +263,11 @@ class ProphetModel(PerSegmentModel):
             parameters that describe additional (not 'daily', 'weekly', 'yearly') seasonality that should be
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
             'mode', 'condition_name' will be used for prophet.Prophet().add_seasonality method call.
+
+        Notes
+        -----
+        Original Prophet can use features 'cap' and 'floor',
+        they should be added to the known_future list on dataset initialization.
         """
         self.growth = growth
         self.n_changepoints = n_changepoints
