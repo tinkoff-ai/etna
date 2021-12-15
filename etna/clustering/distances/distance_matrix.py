@@ -109,6 +109,8 @@ class DistanceMatrix(BaseMixin):
         np.ndarray:
             2D array with distances between series
         """
+        if self.matrix is None:
+            raise ValueError("DistanceMatrix is not fitted! Fit the DistanceMatrix before calling predict method!")
         return self.matrix
 
     def fit_predict(self, ts: "TSDataset") -> np.ndarray:
