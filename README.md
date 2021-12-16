@@ -6,6 +6,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna)](https://codecov.io/gh/tinkoff-ai/etna)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
+[![Slack](https://img.shields.io/badge/slack-ods.ai-orange)](https://opendatascience.slack.com/archives/C02Q62NEPH8)
 
 [Homepage](https://etna.tinkoff.ru) |
 [Documentation](https://etna-docs.netlify.app/) |
