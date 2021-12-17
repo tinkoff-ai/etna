@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set `strict_optional = True` for mypy ([#381](https://github.com/tinkoff-ai/etna/pull/381))
 
 ### Fixed
+- Sarimax bug in future prediction with quantiles ([#391](https://github.com/tinkoff-ai/etna/pull/391))
 
 ## [1.4.2] - 2021-12-09
 ### Fixed

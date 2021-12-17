@@ -269,9 +269,7 @@ class _SARIMAXModel:
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
             y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename(
-                {"predicted_mean": "mean"},  axis=1, inplace=True
-            )
+            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
