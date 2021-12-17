@@ -152,22 +152,34 @@ class TSDataset:
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
         from etna.transforms.base import FutureMixin
 
-        new_columns = list(columns_after - columns_before)
+        out_columns = list(columns_after - columns_before)
+        new_regressors = []
+
         if isinstance(transform, FutureMixin):
             # Every column from FutureMixin is regressor
-            self._regressors.extend(new_columns)
+            new_regressors = out_columns
+
         elif hasattr(transform, "in_column"):
             # Only the columns created with the other transforms from regressors are regressors
             in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
-            regressors_in_columns = [in_column for in_column in in_columns if in_column in self.regressors]
-            new_regressors = [
-                new_column
-                for new_column in new_columns
-                if np.any([regressor in new_column for regressor in regressors_in_columns])
-            ]
-            self._regressors.extend(new_regressors)
+            if hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
+                # User defined out_columns
+                out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
+                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
+                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
+            else:
+                # Default out_columns
+                regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
+                new_regressors = [
+                    out_column
+                    for out_column in out_columns
+                    if np.any([regressor in out_column for regressor in regressors_in_column])
+                ]
+
         else:
-            pass
+            raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
+
+        self._regressors.extend(new_regressors)
 
     def __repr__(self):
         return self.df.__repr__()
