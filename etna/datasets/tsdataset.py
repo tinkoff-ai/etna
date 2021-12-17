@@ -159,8 +159,13 @@ class TSDataset:
         elif hasattr(transform, "in_column"):
             # Only the columns created with the other transforms from regressors are regressors
             in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
-            new_columns = [new_column for i, new_column in enumerate(new_columns) if in_columns[i] in self.regressors]
-            self._regressors.extend(new_columns)
+            regressors_in_columns = [in_column for in_column in in_columns if in_column in self.regressors]
+            new_regressors = [
+                new_column
+                for new_column in new_columns
+                if np.any([regressor in new_column for regressor in regressors_in_columns])
+            ]
+            self._regressors.extend(new_regressors)
         else:
             pass
 
