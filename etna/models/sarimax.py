@@ -270,7 +270,7 @@ class _SARIMAXModel:
             )
             y_pred = pd.DataFrame(forecast.predicted_mean)
             y_pred.rename(
-                {"predicted_mean": "mean"},
+                {"predicted_mean": "mean"},  axis=1, inplace=True
             )
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
@@ -540,6 +540,7 @@ class SARIMAXModel(PerSegmentModel):
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
         df = df.set_index(["timestamp", "segment"])
+        # N.B. inplace forecast will not change target values, because `combine_first` only fill nan values
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)
