@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Sarimax bug in future prediction with quantiles ([#391](https://github.com/tinkoff-ai/etna/pull/391))
+- Catboost version too high ([#394](https://github.com/tinkoff-ai/etna/pull/394))
 - Inverse transform doesn't affect quantiles ([#395](https://github.com/tinkoff-ai/etna/pull/395))
 
 ## [1.4.2] - 2021-12-09
