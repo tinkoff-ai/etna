@@ -5,6 +5,7 @@ from sklearn.linear_model import TheilSenRegressor
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
+from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentLinearTrendBaseTransform(Transform):
@@ -113,6 +114,10 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         trend = self._linear_model.predict(x)
         add_trend_timeseries = y + trend
         result[self.in_column] = add_trend_timeseries
+        if self.in_column == "target":
+            quantiles = match_target_quantiles(set(result.columns))
+            for quantile_column_nm in quantiles:
+                result.loc[:, quantile_column_nm] += trend
         return result
 
 
