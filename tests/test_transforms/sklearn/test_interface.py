@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -24,6 +26,16 @@ def multicolumn_ts(random_seed):
     df_exog_formatted = TSDataset.to_dataset(df_exog)
 
     return TSDataset(df=df_formatted, df_exog=df_exog_formatted, freq="D")
+
+
+def extract_new_features_columns(transformed_df: pd.DataFrame, initial_df: pd.DataFrame) -> List[str]:
+    """Extract columns from feature level that are present in transformed_df but not present in initial_df."""
+    return (
+        transformed_df.columns.get_level_values("feature")
+        .difference(initial_df.columns.get_level_values("feature"))
+        .unique()
+        .tolist()
+    )
 
 
 @pytest.mark.parametrize(
@@ -93,11 +105,7 @@ def test_inplace_no_new_columns(transform_constructor, in_column, multicolumn_ts
     initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
 
-    new_columns = set(
-        transformed_df.columns.get_level_values("feature")
-        .difference(initial_df.columns.get_level_values("feature"))
-        .tolist()
-    )
+    new_columns = extract_new_features_columns(transformed_df, initial_df)
     assert len(new_columns) == 0
 
 
@@ -128,11 +136,7 @@ def test_creating_columns(transform_constructor, in_column, multicolumn_ts):
     initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
 
-    new_columns = set(
-        transformed_df.columns.get_level_values("feature")
-        .difference(initial_df.columns.get_level_values("feature"))
-        .tolist()
-    )
+    new_columns = set(extract_new_features_columns(transformed_df, initial_df))
     in_column = [in_column] if isinstance(in_column, str) else in_column
     expected_columns = {f"new_exog_{column}" for column in in_column}
     assert new_columns == expected_columns
@@ -166,14 +170,9 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
     segments = sorted(multicolumn_ts.segments)
 
-    columns = (
-        transformed_df.columns.get_level_values("feature")
-        .difference(initial_df.columns.get_level_values("feature"))
-        .unique()
-        .tolist()
-    )
+    new_columns = extract_new_features_columns(transformed_df, initial_df)
 
-    for column in columns:
+    for column in new_columns:
         # create transform from column
         transform_temp = eval(column)
         df_temp = transform_temp.fit_transform(multicolumn_ts.to_pandas())
@@ -214,12 +213,8 @@ def test_all_columns(transform_constructor, multicolumn_ts):
     initial_df = multicolumn_ts.df.copy()
     transformed_df = transform.fit_transform(multicolumn_ts.df)
 
-    new_features = set(
-        transformed_df.columns.get_level_values("feature")
-        .difference(initial_df.columns.get_level_values("feature"))
-        .tolist()
-    )
-    assert len(new_features) == initial_df.columns.get_level_values("feature").nunique()
+    new_columns = extract_new_features_columns(transformed_df, initial_df)
+    assert len(new_columns) == initial_df.columns.get_level_values("feature").nunique()
 
 
 @pytest.mark.parametrize(
@@ -261,23 +256,14 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
     for transform_one_column in transforms_one_column:
         transformed_dfs_one_column.append(transform_one_column.fit_transform(multicolumn_ts.to_pandas()))
 
-    new_columns = (
-        transformed_df.columns.get_level_values("feature")
-        .difference(initial_df.columns.get_level_values("feature"))
-        .tolist()
-    )
+    new_columns = extract_new_features_columns(transformed_df, initial_df)
 
     for i, column in enumerate(in_column):
         # find relevant column name in transformed_df
         column_multi = [x for x in new_columns if column in x][0]
 
         # find relevant column name in transformed_dfs_one_column[i]
-        column_single = (
-            transformed_dfs_one_column[i]
-            .columns.get_level_values("feature")
-            .difference(initial_df.columns.get_level_values("feature"))
-            .tolist()[0]
-        )
+        column_single = extract_new_features_columns(transformed_dfs_one_column[i], initial_df)[0]
 
         df_multi = transformed_df.loc[:, pd.IndexSlice[segments, column_multi]]
         df_single = transformed_dfs_one_column[i].loc[:, pd.IndexSlice[segments, column_single]]
