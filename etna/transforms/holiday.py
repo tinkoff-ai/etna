@@ -50,7 +50,7 @@ class HolidayTransform(Transform):
         if (df.index[1] - df.index[0]) > datetime.timedelta(days=1):
             raise ValueError("Frequency of data should be no more than daily.")
 
-        cols = df.columns.get_level_values("segment")
+        cols = np.unique(df.columns.get_level_values("segment"))
 
         encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)
