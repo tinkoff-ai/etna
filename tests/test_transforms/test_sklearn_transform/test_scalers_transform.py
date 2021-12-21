@@ -1,4 +1,3 @@
-from typing import Any
 from typing import List
 from typing import Optional
 from typing import Union
@@ -33,7 +32,7 @@ class DummyTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
-        out_column: str = None,
+        out_column: Optional[Union[str, List[str]]] = None,
         mode: Union[TransformMode, str] = "per-segment",
     ):
         self.in_column = in_column
@@ -43,7 +42,7 @@ class DummyTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column=out_column if out_column is not None else self.__repr__(),
+            out_column=out_column,
             transformer=DummySkTransform(),
             mode=mode,
         )
@@ -62,24 +61,6 @@ def normal_distributed_df() -> pd.DataFrame:
     df_2["exog"] = generator.normal(loc=3, scale=1, size=len(df_2))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     return TSDataset.to_dataset(classic_df)
-
-
-@pytest.mark.parametrize(
-    "scaler",
-    (
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
-        MaxAbsScalerTransform,
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
-    ),
-)
-def test_transform_invalid_mode(scaler):
-    """Check scaler behavior in case of invalid transform mode"""
-    with pytest.raises(ValueError):
-        _ = scaler(mode="a")
 
 
 @pytest.mark.parametrize(
@@ -142,61 +123,8 @@ def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler, mode)
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
 def test_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
     """Check that inversed values the same for not inplace version."""
-    inplace_scaler = scaler(mode=mode)
     not_inplace_scaler = scaler(inplace=False, mode=mode)
-    columns_to_compare = pd.MultiIndex.from_tuples(
-        [(segment_name, not_inplace_scaler.__repr__()) for segment_name, _ in normal_distributed_df.columns]
-    )
-    inplace_feature_df = inplace_scaler.fit_transform(df=normal_distributed_df.copy())
-    not_inplace_feature_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
-
-    inplace_feature_df.columns = columns_to_compare
-    npt.assert_array_almost_equal(
-        inplace_feature_df.loc[:, columns_to_compare].values, not_inplace_feature_df.loc[:, columns_to_compare]
-    )
-
-
-@pytest.mark.parametrize(
-    "scaler",
-    (
-        DummyTransform,
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
-        MaxAbsScalerTransform,
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
-    ),
-)
-@pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_interface_out_column(normal_distributed_df: pd.DataFrame, scaler: Any, mode: str):
-    """Check transform interface in non inplace mode with given out_column param."""
-    out_column = "result"
-    transform = scaler(inplace=False, mode=mode, out_column=out_column)
-    result = transform.fit_transform(df=normal_distributed_df)
-    for segment in result.columns.get_level_values("segment").unique():
-        assert out_column in result[segment].columns
-
-
-@pytest.mark.parametrize(
-    "scaler",
-    (
-        DummyTransform,
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
-        MaxAbsScalerTransform,
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
-    ),
-)
-@pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_interface_repr(normal_distributed_df: pd.DataFrame, scaler: Any, mode: str):
-    """Check transform interface in non inplace mode without given out_column param."""
-    transform = scaler(inplace=False, mode=mode)
-    excepted_column = transform.__repr__()
-    result = transform.fit_transform(df=normal_distributed_df)
-    for segment in result.columns.get_level_values("segment").unique():
-        assert excepted_column in result[segment].columns
+    columns_to_compare = normal_distributed_df.columns
+    transformed_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
+    inverse_transformed_df = not_inplace_scaler.inverse_transform(transformed_df)
+    assert np.all(inverse_transformed_df[columns_to_compare] == normal_distributed_df)
