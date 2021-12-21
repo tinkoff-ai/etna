@@ -28,8 +28,8 @@ class BaseMixin:
 
 
 class StringEnumWithRepr(str, Enum):
-    """Base class for str enum objects."""
+    """Base class for str enums, that has alternative __repr__ method."""
 
     def __repr__(self):
-        """Get string representation for enum strings."""
+        """Get string representation for enum string so that enum can be created from it."""
         return self.value.__repr__()
