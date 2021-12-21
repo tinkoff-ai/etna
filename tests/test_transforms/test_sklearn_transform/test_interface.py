@@ -175,7 +175,7 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
 
     for column in columns:
         # create transform from column
-        transform_temp = eval(column[len("regressor_") :])
+        transform_temp = eval(column)
         df_temp = transform_temp.fit_transform(multicolumn_ts.to_pandas())
         columns_temp = (
             df_temp.columns.get_level_values("feature")

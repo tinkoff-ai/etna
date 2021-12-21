@@ -72,7 +72,7 @@ class SklearnTransform(Transform):
         if self.out_column is None:
             new_transform = deepcopy(self)
             new_transform.in_column = [in_column]
-            return f"regressor_{new_transform.__repr__()}"
+            return f"{new_transform.__repr__()}"
         else:
             return f"{self.out_column}_{in_column}"
 

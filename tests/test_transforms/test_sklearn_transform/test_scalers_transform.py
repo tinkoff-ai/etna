@@ -32,13 +32,9 @@ class DummyTransform(SklearnTransform):
         self,
         in_column: Optional[Union[str, List[str]]] = None,
         inplace: bool = True,
-        out_column: Optional[Union[str, List[str]]] = None,
+        out_column: Optional[str] = None,
         mode: Union[TransformMode, str] = "per-segment",
     ):
-        self.in_column = in_column
-        self.inplace = inplace
-        self.out_column = out_column
-        self.mode = TransformMode(mode)
         super().__init__(
             in_column=in_column,
             inplace=inplace,

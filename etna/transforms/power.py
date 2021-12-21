@@ -34,15 +34,17 @@ class YeoJohnsonTransform(SklearnTransform):
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect mode given
         """
         self.standardize = standardize
-        self.inplace = inplace
-        self.out_column = out_column
-        self.mode = TransformMode(mode)
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column=self.out_column,
+            out_column=out_column,
             transformer=PowerTransformer(method="yeo-johnson", standardize=self.standardize),
             mode=mode,
         )
@@ -74,15 +76,17 @@ class BoxCoxTransform(SklearnTransform):
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.
+
+        Raises
+        ------
+        ValueError:
+            if incorrect mode given
         """
         self.standardize = standardize
-        self.inplace = inplace
-        self.out_column = out_column
-        self.mode = TransformMode(mode)
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column=self.out_column,
+            out_column=out_column,
             transformer=PowerTransformer(method="box-cox", standardize=self.standardize),
             mode=mode,
         )
