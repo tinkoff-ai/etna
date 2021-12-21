@@ -164,6 +164,7 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
     transform = transform_constructor(in_column=in_column, out_column=None, inplace=False)
     initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
+    segments = sorted(multicolumn_ts.segments)
 
     columns = (
         transformed_df.columns.get_level_values("feature")
@@ -173,6 +174,7 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
     )
 
     for column in columns:
+        # create transform from column
         transform_temp = eval(column[len("regressor_") :])
         df_temp = transform_temp.fit_transform(multicolumn_ts.to_pandas())
         columns_temp = (
@@ -181,8 +183,15 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
             .unique()
             .tolist()
         )
+
+        # compare column names and column values
         assert len(columns_temp) == 1
-        assert columns_temp[0] == column
+        column_temp = columns_temp[0]
+        assert column_temp == column
+        assert np.all(
+            df_temp.loc[:, pd.IndexSlice[segments, column_temp]]
+            == transformed_df.loc[:, pd.IndexSlice[segments, column]]
+        )
 
 
 @pytest.mark.parametrize(
@@ -259,7 +268,10 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
     )
 
     for i, column in enumerate(in_column):
+        # find relevant column name in transformed_df
         column_multi = [x for x in new_columns if column in x][0]
+
+        # find relevant column name in transformed_dfs_one_column[i]
         column_single = (
             transformed_dfs_one_column[i]
             .columns.get_level_values("feature")
