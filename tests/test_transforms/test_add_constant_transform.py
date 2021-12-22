@@ -57,3 +57,12 @@ def test_inverse_transform_out_column(example_df_: pd.DataFrame):
     inversed = preprocess.inverse_transform(df=transformed_target)
     for segment in ["segment_1", "segment_2"]:
         assert out_column in inversed[segment]
+
+
+def test_fit_transform_with_nans(ts_diff_endings):
+    transform = AddConstTransform(in_column="target", value=10, inplace=True)
+    processed_df = transform.fit_transform(ts_diff_endings.df)
+    for segment in ts_diff_endings.segments:
+        np.testing.assert_array_equal(
+            processed_df[segment]["target"], ts_diff_endings.df[segment]["target"] + 10
+        )
