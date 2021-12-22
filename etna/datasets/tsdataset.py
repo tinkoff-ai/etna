@@ -119,7 +119,6 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
-        self._check_endings()
         self._update_regressors()
 
     def fit_transform(self, transforms: Sequence["Transform"]):
@@ -128,7 +127,6 @@ class TSDataset:
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
-        self._check_endings()
         self._update_regressors()
 
     def __repr__(self):
@@ -187,6 +185,7 @@ class TSDataset:
         2021-07-03          32          37    nan          72          77    nan
         2021-07-04          33          38    nan          73          78    nan
         """
+        self._check_endings()
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
             start=max_date_in_dataset, periods=future_steps + 1, freq=self.freq, closed="right"
