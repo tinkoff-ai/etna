@@ -779,6 +779,7 @@ class TSDataset:
         Examples
         --------
         >>> from etna.datasets import generate_const_df
+        >>> pd.options.display.width = 100
         >>> df = generate_const_df(
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
