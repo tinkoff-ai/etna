@@ -13,6 +13,7 @@ from sklearn.base import RegressorMixin
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
+from etna.transforms.utils import match_target_quantiles
 
 TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
 TDetrendModel = Type[RegressorMixin]
@@ -171,6 +172,10 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df.loc[:, self.in_column] += trend_series
+        if self.in_column == "target":
+            quantiles = match_target_quantiles(set(df.columns))
+            for quantile_column_nm in quantiles:
+                df.loc[:, quantile_column_nm] += trend_series
         return df
 
 
