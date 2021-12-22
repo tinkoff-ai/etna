@@ -282,18 +282,21 @@ class TimeFlagsTransform(Transform):
         Parameters
         ----------
         minute_in_hour_number:
-            if True: add column with weekends flags to feature dataframe in transform
+            if True: add column with minute number to feature dataframe in transform
         fifteen_minutes_in_hour_number:
-            if True: add column with weekends flags
+            if True: add column with number of fifteen-minute interval within hour with numeration from 0
             to feature dataframe in transform
         hour_number:
-            if True: add column with weekends flags to feature dataframe in transform
+            if True: add column with hour number to feature dataframe in transform
         half_hour_number:
-            if True: add column with weekends flags to feature dataframe in transform
+            if True: add column with 0 for the first half of the hour and 1 for the second
+            to feature dataframe in transform
         half_day_number:
-            if True: add column with weekends flags to feature dataframe in transform
+            if True: add column with 0 for the first half of the day and 1 for the second
+            to feature dataframe in transform
         one_third_day_number:
-            if True: add column with weekends flags to feature dataframe in transform
+            if True: add column with number of 8-hour interval within day with numeration from 0
+            to feature dataframe in transform
         out_column:
             name of added column. We get '{out_column}_{feature_name}'.
             If not given, use 'regressor_{self.__repr__()}_{feature_name}'

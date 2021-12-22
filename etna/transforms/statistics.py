@@ -28,7 +28,7 @@ class WindowStatisticsTransform(Transform, ABC):
         in_column: str
             name of processed column
         window: int
-            size of window to aggregate
+            size of window to aggregate, if -1 is set all history is used
         out_column: str
             result column name
         seasonality: int
