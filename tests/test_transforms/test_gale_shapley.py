@@ -4,8 +4,10 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.ensemble import RandomForestRegressor
 
-from etna.analysis.feature_relevance import StatisticsRelevanceTable, ModelRelevanceTable
+from etna.analysis.feature_relevance import ModelRelevanceTable
+from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.datasets import generate_periodic_df
@@ -14,7 +16,6 @@ from etna.transforms.gale_shapley import GaleShapleyFeatureSelectionTransform
 from etna.transforms.gale_shapley import GaleShapleyMatcher
 from etna.transforms.gale_shapley import RegressorGaleShapley
 from etna.transforms.gale_shapley import SegmentGaleShapley
-from sklearn.ensemble import RandomForestRegressor
 
 
 @pytest.fixture
@@ -584,6 +585,7 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
         "regressor_4",
         "regressor_5",
     }
+
 
 @pytest.mark.parametrize("use_rank", (True, False))
 @pytest.mark.parametrize("top_k", (2, 3, 5, 6, 7))
