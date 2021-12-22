@@ -2,19 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etna.datasets import TSDataset
-from etna.datasets import generate_const_df
+from etna.datasets.tsdataset import TSDataset
 from etna.transforms.holiday import HolidayTransform
-
-
-@pytest.fixture()
-def simple_ts_with_regressors():
-    df = generate_const_df(scale=1, n_segments=3, start_time="2020-01-01", periods=100)
-    df_exog = generate_const_df(scale=10, n_segments=3, start_time="2020-01-01", periods=150).rename(
-        {"target": "regressor_a"}, axis=1
-    )
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog))
-    return ts
 
 
 @pytest.fixture()
@@ -81,12 +70,6 @@ def two_segments_simple_df_min(simple_constant_df_min: pd.DataFrame):
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
     return df
-
-
-def test_holiday_with_regressors(simple_ts_with_regressors: TSDataset):
-    simple_ts_with_regressors.fit_transform([HolidayTransform(out_column="holiday")])
-    len_holiday = len([cols for cols in simple_ts_with_regressors.columns if cols[1] == "holiday"])
-    assert len_holiday == len(np.unique(simple_ts_with_regressors.columns.get_level_values("segment")))
 
 
 def test_interface_two_segments_daily(two_segments_simple_df_daily: pd.DataFrame):
