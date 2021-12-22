@@ -1,4 +1,3 @@
-import warnings
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -38,7 +37,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            name of added column. Use self.__repr__() if not given.
+            base for the names of generated columns, uses self.__repr__() if not given.
         with_mean:
             if True, center the data before scaling.
         with_std:
@@ -53,18 +52,12 @@ class StandardScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if inplace and (out_column is not None):
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = [in_column] if isinstance(in_column, str) else in_column
-        self.inplace = inplace
-        self.mode = TransformMode(mode)
         self.with_mean = with_mean
         self.with_std = with_std
-        self.out_column = out_column
         super().__init__(
             in_column=in_column,
-            transformer=StandardScaler(with_mean=with_mean, with_std=with_std, copy=True),
-            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            transformer=StandardScaler(with_mean=self.with_mean, with_std=self.with_std, copy=True),
+            out_column=out_column,
             inplace=inplace,
             mode=mode,
         )
@@ -97,7 +90,7 @@ class RobustScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            name of added column. Use self.__repr__() if not given.
+            base for the names of generated columns, uses self.__repr__() if not given.
         with_centering:
             if True, center the data before scaling.
         with_scaling:
@@ -119,12 +112,6 @@ class RobustScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if inplace and (out_column is not None):
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = [in_column] if isinstance(in_column, str) else in_column
-        self.out_column = out_column
-        self.inplace = inplace
-        self.mode = TransformMode(mode)
         self.with_centering = with_centering
         self.with_scaling = with_scaling
         self.quantile_range = quantile_range
@@ -132,12 +119,12 @@ class RobustScalerTransform(SklearnTransform):
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            out_column=out_column,
             transformer=RobustScaler(
-                with_centering=with_centering,
-                with_scaling=with_scaling,
-                quantile_range=quantile_range,
-                unit_variance=unit_variance,
+                with_centering=self.with_centering,
+                with_scaling=self.with_scaling,
+                quantile_range=self.quantile_range,
+                unit_variance=self.unit_variance,
                 copy=True,
             ),
             mode=mode,
@@ -169,7 +156,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            name of added column. Use self.__repr__() if not given.
+            base for the names of generated columns, uses self.__repr__() if not given.
         feature_range:
             desired range of transformed data.
         clip:
@@ -184,19 +171,13 @@ class MinMaxScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if inplace and (out_column is not None):
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = [in_column] if isinstance(in_column, str) else in_column
-        self.out_column = out_column
-        self.inplace = inplace
-        self.mode = TransformMode(mode)
         self.feature_range = feature_range
         self.clip = clip
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column=self.out_column if self.out_column is not None else self.__repr__(),
-            transformer=MinMaxScaler(feature_range=feature_range, clip=clip, copy=True),
+            out_column=out_column,
+            transformer=MinMaxScaler(feature_range=self.feature_range, clip=self.clip, copy=True),
             mode=mode,
         )
 
@@ -223,7 +204,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            name of added column. Use self.__repr__() if not given.
+            base for the names of generated columns, uses self.__repr__() if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -234,16 +215,10 @@ class MaxAbsScalerTransform(SklearnTransform):
         ValueError:
             if incorrect mode given
         """
-        if inplace and (out_column is not None):
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        self.in_column = [in_column] if isinstance(in_column, str) else in_column
-        self.inplace = inplace
-        self.mode = TransformMode(mode)
-        self.out_column = out_column
         super().__init__(
             in_column=in_column,
             inplace=inplace,
-            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            out_column=out_column,
             transformer=MaxAbsScaler(copy=True),
             mode=mode,
         )
