@@ -23,7 +23,7 @@ def toy_dataset_equal_targets_and_quantiles():
         "timestamp": time * n_segments,
         "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
-        "target_q": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
+        "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
     return TSDataset.to_dataset(pd.DataFrame(df))
 
@@ -43,7 +43,7 @@ def toy_dataset_with_mean_shift_in_target():
         "target": np.concatenate((np.array((-1, 3, 3, -4, -1)) + mean_1, np.array((-2, 3, -4, 5, -2)) + mean_2)).astype(
             np.float64
         ),
-        "target_q": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
+        "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
     return TSDataset.to_dataset(pd.DataFrame(df))
 
