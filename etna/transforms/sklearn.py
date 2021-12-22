@@ -94,7 +94,10 @@ class SklearnTransform(Transform):
         if self.in_column is None:
             self.in_column = sorted(set(df.columns.get_level_values("feature")))
 
-        self.out_columns = [self._get_column_name(column) for column in self.in_column]
+        if self.inplace:
+            self.out_columns = self.in_column
+        else:
+            self.out_columns = [self._get_column_name(column) for column in self.in_column]
 
         if self.mode == TransformMode.per_segment:
             x = df.loc[:, (segments, self.in_column)].values

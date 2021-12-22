@@ -105,8 +105,12 @@ def test_inplace_no_new_columns(transform_constructor, in_column, multicolumn_ts
     initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
 
+    # check new columns
     new_columns = extract_new_features_columns(transformed_df, initial_df)
     assert len(new_columns) == 0
+
+    # check that output columns are input columns
+    assert transform.out_columns == transform.in_column
 
 
 @pytest.mark.parametrize(
@@ -136,10 +140,17 @@ def test_creating_columns(transform_constructor, in_column, multicolumn_ts):
     initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
 
+    # check new columns
     new_columns = set(extract_new_features_columns(transformed_df, initial_df))
     in_column = [in_column] if isinstance(in_column, str) else in_column
     expected_columns = {f"new_exog_{column}" for column in in_column}
     assert new_columns == expected_columns
+
+    # check that output columns are matching input columns
+    assert len(transform.in_column) == len(transform.out_columns)
+    assert all(
+        [f"new_exog_{column}" == new_column for column, new_column in zip(transform.in_column, transform.out_columns)]
+    )
 
 
 @pytest.mark.parametrize(
@@ -172,16 +183,12 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
 
     new_columns = extract_new_features_columns(transformed_df, initial_df)
 
+    # check new columns
     for column in new_columns:
         # create transform from column
         transform_temp = eval(column)
         df_temp = transform_temp.fit_transform(multicolumn_ts.to_pandas())
-        columns_temp = (
-            df_temp.columns.get_level_values("feature")
-            .difference(initial_df.columns.get_level_values("feature"))
-            .unique()
-            .tolist()
-        )
+        columns_temp = extract_new_features_columns(df_temp, initial_df)
 
         # compare column names and column values
         assert len(columns_temp) == 1
@@ -191,6 +198,11 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
             df_temp.loc[:, pd.IndexSlice[segments, column_temp]]
             == transformed_df.loc[:, pd.IndexSlice[segments, column]]
         )
+
+    # check that output columns are matching input columns
+    assert len(transform.in_column) == len(transform.out_columns)
+    # check that name if this input column is present inside name of this output column
+    assert all([(column in new_column) for column, new_column in zip(transform.in_column, transform.out_columns)])
 
 
 @pytest.mark.parametrize(
@@ -249,21 +261,18 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
     ]
 
     segments = sorted(multicolumn_ts.segments)
-    initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
 
     transformed_dfs_one_column = []
     for transform_one_column in transforms_one_column:
         transformed_dfs_one_column.append(transform_one_column.fit_transform(multicolumn_ts.to_pandas()))
 
-    new_columns = extract_new_features_columns(transformed_df, initial_df)
-
     for i, column in enumerate(in_column):
         # find relevant column name in transformed_df
-        column_multi = [x for x in new_columns if column in x][0]
+        column_multi = {key: value for key, value in zip(transform.in_column, transform.out_columns)}[column]
 
         # find relevant column name in transformed_dfs_one_column[i]
-        column_single = extract_new_features_columns(transformed_dfs_one_column[i], initial_df)[0]
+        column_single = transforms_one_column[i].out_columns[0]
 
         df_multi = transformed_df.loc[:, pd.IndexSlice[segments, column_multi]]
         df_single = transformed_dfs_one_column[i].loc[:, pd.IndexSlice[segments, column_single]]
