@@ -1,4 +1,5 @@
-from enum import Enum
+import warnings
+from copy import deepcopy
 from typing import List
 from typing import Union
 
@@ -6,10 +7,11 @@ import numpy as np
 import pandas as pd
 from sklearn.base import TransformerMixin
 
+from etna.core import StringEnumWithRepr
 from etna.transforms.base import Transform
 
 
-class TransformMode(str, Enum):
+class TransformMode(StringEnumWithRepr):
     """Enum for different metric aggregation modes."""
 
     macro = "macro"
@@ -21,8 +23,8 @@ class SklearnTransform(Transform):
 
     def __init__(
         self,
-        in_column: Union[str, List[str]],
-        out_column: str,
+        in_column: Optional[Union[str, List[str]]],
+        out_column: Optional[str],
         transformer: TransformerMixin,
         inplace: bool = True,
         mode: Union[TransformMode, str] = "per-segment",
@@ -33,13 +35,13 @@ class SklearnTransform(Transform):
         Parameters
         ----------
         in_column:
-            columns to be transformed, if None - all columns will be scaled.
+            columns to be transformed, if None - all columns will be transformed.
         transformer:
             sklearn.base.TransformerMixin instance.
         inplace:
             features are changed by transformed.
         out_column:
-            name of result column
+            base for the names of generated columns, uses self.__repr__() if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -50,13 +52,28 @@ class SklearnTransform(Transform):
         ValueError:
             if incorrect mode given
         """
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+
         self.transformer = transformer
+
         if isinstance(in_column, str):
             in_column = [in_column]
         self.in_column = in_column if in_column is None else sorted(in_column)
+
         self.inplace = inplace
         self.mode = TransformMode(mode)
-        self.out_column_name = out_column
+        self.out_column = out_column
+
+        self.out_columns: Optional[List[str]] = None
+
+    def _get_column_name(self, in_column: str) -> str:
+        if self.out_column is None:
+            new_transform = deepcopy(self)
+            new_transform.in_column = [in_column]
+            return f"{new_transform.__repr__()}"
+        else:
+            return f"{self.out_column}_{in_column}"
 
     def fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
@@ -72,14 +89,22 @@ class SklearnTransform(Transform):
         self
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
+
         if self.in_column is None:
             self.in_column = sorted(set(df.columns.get_level_values("feature")))
+
+        if self.inplace:
+            self.out_columns = self.in_column
+        else:
+            self.out_columns = [self._get_column_name(column) for column in self.in_column]
+
         if self.mode == TransformMode.per_segment:
             x = df.loc[:, (segments, self.in_column)].values
         elif self.mode == TransformMode.macro:
             x = self._reshape(df)
         else:
             raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
+
         self.transformer.fit(X=x)
         return self
 
@@ -113,9 +138,7 @@ class SklearnTransform(Transform):
             transformed_features = pd.DataFrame(
                 transformed, columns=df.loc[:, (segments, self.in_column)].columns, index=df.index
             )
-            transformed_features.columns = pd.MultiIndex.from_tuples(
-                [(segment_name, self.out_column_name) for segment_name, feature_name in transformed_features.columns]
-            )
+            transformed_features.columns = pd.MultiIndex.from_product([segments, self.out_columns])
             df = pd.concat((df, transformed_features), axis=1)
             df = df.sort_index(axis=1)
 
