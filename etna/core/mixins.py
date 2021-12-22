@@ -1,5 +1,6 @@
 import inspect
 import warnings
+from enum import Enum
 
 
 class BaseMixin:
@@ -24,3 +25,11 @@ class BaseMixin:
                     warnings.warn(f"You haven't set all parameters inside class __init__ method: {e}")
                 args_str_representation += f"{arg} = {value.__repr__()}, "
         return f"{self.__class__.__name__}({args_str_representation})"
+
+
+class StringEnumWithRepr(str, Enum):
+    """Base class for str enums, that has alternative __repr__ method."""
+
+    def __repr__(self):
+        """Get string representation for enum string so that enum can be created from it."""
+        return self.value.__repr__()
