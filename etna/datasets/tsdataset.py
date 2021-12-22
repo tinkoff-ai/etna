@@ -115,20 +115,20 @@ class TSDataset:
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
-        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.transform(self.df)
+        self._check_endings()
         self._update_regressors()
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
-        self._check_endings()
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
             self.df = transform.fit_transform(self.df)
+        self._check_endings()
         self._update_regressors()
 
     def __repr__(self):
