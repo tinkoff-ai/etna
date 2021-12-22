@@ -437,3 +437,21 @@ def test_to_flatten(example_df):
     obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(example_df))
     assert sorted_columns == sorted(obtained_df.columns)
     assert (expected_df.values == obtained_df[sorted_columns].values).all()
+
+
+def test_describe(df_and_regressors):
+    """Check that TSDataset.describe works correctly."""
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    description = ts.describe()
+    assert np.all(description.index == ts.segments)
+    assert description.loc["1", "start_date"] == pd.Timestamp("2021-01-01")
+    assert description.loc["2", "start_date"] == pd.Timestamp("2021-01-06")
+    assert np.all(description["end_date"] == pd.Timestamp("2021-02-01"))
+    assert description.loc["1", "length"] == 32
+    assert description.loc["2", "length"] == 32 - 5
+    assert np.all(description["num_missing"] == 0)
+    assert np.all(description["num_segments"] == 2)
+    assert np.all(description["num_exogs"] == 2)
+    assert np.all(description["num_regressors"] == 2)
+    assert np.all(description["freq"] == "D")
