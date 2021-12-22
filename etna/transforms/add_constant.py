@@ -5,6 +5,7 @@ import pandas as pd
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
+from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentAddConstTransform(Transform):
@@ -71,6 +72,10 @@ class _OneSegmentAddConstTransform(Transform):
         result_df = df.copy()
         if self.inplace:
             result_df[self.in_column] = result_df[self.out_column] - self.value
+            if self.in_column == "target":
+                quantiles = match_target_quantiles(set(result_df.columns))
+                for quantile_column_nm in quantiles:
+                    result_df[quantile_column_nm] = result_df[quantile_column_nm] - self.value
         return result_df
 
 
