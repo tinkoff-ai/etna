@@ -7,6 +7,8 @@ import pytest
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import DateFlagsTransform
+from etna.transforms import TimeSeriesImputerTransform
+from pandas.testing import assert_frame_equal
 
 
 @pytest.fixture()
@@ -50,6 +52,11 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_exog = TSDataset.to_dataset(df_exog)
 
     return df, df_exog
+
+@pytest.fixture()
+def ts_future(example_reg_tsds):
+    future = example_reg_tsds.make_future(10)
+    return future
 
 
 def test_check_endings_error_raise():
@@ -266,6 +273,21 @@ def test_dataset_datetime_conversion_during_init():
     ts = TSDataset(df, "D", exog)
     assert ts.df.index.dtype == "datetime64[ns]"
 
+def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
+    with pytest.raises(ValueError, match="All segments should end at the same timestamp"):
+        ts_diff_endings.make_future(10)
+
+def test_make_future_raise_error_on_nan_endings(ts_nan_endings):
+    with pytest.raises(ValueError, match="All segments should end at the same timestamp"):
+        ts_nan_endings.make_future(10)
+
+@pytest.mark.parametrize("ts",("ts_diff_endings","ts_nan_endings"))
+def test_make_future_with_imputer(ts, ts_future, request):
+    ts = request.getfixturevalue(ts)
+    imputer = TimeSeriesImputerTransform(in_column="target")
+    ts.fit_transform([imputer])
+    future = ts.make_future(10)
+    assert_frame_equal(future.df, ts_future.df)
 
 def test_make_future():
     timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
