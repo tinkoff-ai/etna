@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
 - S3FileLogger and LocalFileLogger ([#372](https://github.com/tinkoff-ai/etna/pull/372))
+- Parameter `changepoint_prior_scale` to `ProphetModel` ([#408](https://github.com/tinkoff-ai/etna/pull/408))
 
 ### Changed
 - Set `strict_optional = True` for mypy ([#381](https://github.com/tinkoff-ai/etna/pull/381))
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - nn notebook in docs ([#396](https://github.com/tinkoff-ai/etna/pull/396))
 - SklearnTransform column name generation ([#398](https://github.com/tinkoff-ai/etna/pull/398))
 - Add relevance_params in GaleShapleyFeatureSelectionTransform ([#410](https://github.com/tinkoff-ai/etna/pull/410))
+- Inverse transform doesn't affect quantiles ([#395](https://github.com/tinkoff-ai/etna/pull/395))
 
 ## [1.4.2] - 2021-12-09
 ### Fixed

@@ -33,6 +33,7 @@ class _ProphetModel:
         seasonality_mode: str = "additive",
         seasonality_prior_scale: float = 10.0,
         holidays_prior_scale: float = 10.0,
+        changepoint_prior_scale: float = 0.05,
         mcmc_samples: int = 0,
         interval_width: float = 0.8,
         uncertainty_samples: Union[int, bool] = 1000,
@@ -51,6 +52,7 @@ class _ProphetModel:
         self.seasonality_mode = seasonality_mode
         self.seasonality_prior_scale = seasonality_prior_scale
         self.holidays_prior_scale = holidays_prior_scale
+        self.changepoint_prior_scale = changepoint_prior_scale
         self.mcmc_samples = mcmc_samples
         self.interval_width = interval_width
         self.uncertainty_samples = uncertainty_samples
@@ -69,6 +71,7 @@ class _ProphetModel:
             seasonality_mode=self.seasonality_mode,
             seasonality_prior_scale=self.seasonality_prior_scale,
             holidays_prior_scale=self.holidays_prior_scale,
+            changepoint_prior_scale=self.changepoint_prior_scale,
             mcmc_samples=self.mcmc_samples,
             interval_width=self.interval_width,
             uncertainty_samples=self.uncertainty_samples,
@@ -164,8 +167,8 @@ class ProphetModel(PerSegmentModel):
     ProphetModel(growth = 'flat', changepoints = None, n_changepoints = 25,
     changepoint_range = 0.8, yearly_seasonality = 'auto', weekly_seasonality = 'auto',
     daily_seasonality = 'auto', holidays = None, seasonality_mode = 'additive',
-    seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, mcmc_samples = 0,
-    interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
+    seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, changepoint_prior_scale = 0.05,
+    mcmc_samples = 0, interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
     additional_seasonality_params = (), )
     >>> forecast = model.forecast(future)
     >>> forecast
@@ -194,6 +197,7 @@ class ProphetModel(PerSegmentModel):
         seasonality_mode: str = "additive",
         seasonality_prior_scale: float = 10.0,
         holidays_prior_scale: float = 10.0,
+        changepoint_prior_scale: float = 0.05,
         mcmc_samples: int = 0,
         interval_width: float = 0.8,
         uncertainty_samples: Union[int, bool] = 1000,
@@ -249,6 +253,10 @@ class ProphetModel(PerSegmentModel):
         holidays_prior_scale:
             Parameter modulating the strength of the holiday components model, unless overridden
             in the holidays input.
+        changepoint_prior_scale:
+            Parameter modulating the flexibility of the
+            automatic changepoint selection. Large values will allow many
+            changepoints, small values will allow few changepoints.
         mcmc_samples:
             Integer, if greater than 0, will do full Bayesian inference
             with the specified number of MCMC samples. If 0, will do MAP
@@ -287,6 +295,7 @@ class ProphetModel(PerSegmentModel):
         self.seasonality_mode = seasonality_mode
         self.seasonality_prior_scale = seasonality_prior_scale
         self.holidays_prior_scale = holidays_prior_scale
+        self.changepoint_prior_scale = changepoint_prior_scale
         self.mcmc_samples = mcmc_samples
         self.interval_width = interval_width
         self.uncertainty_samples = uncertainty_samples
@@ -306,6 +315,7 @@ class ProphetModel(PerSegmentModel):
                 seasonality_mode=self.seasonality_mode,
                 seasonality_prior_scale=self.seasonality_prior_scale,
                 holidays_prior_scale=self.holidays_prior_scale,
+                changepoint_prior_scale=self.changepoint_prior_scale,
                 mcmc_samples=self.mcmc_samples,
                 interval_width=self.interval_width,
                 uncertainty_samples=self.uncertainty_samples,

@@ -12,6 +12,7 @@ from statsmodels.tsa.forecasting.stl import STLForecastResults
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
+from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentSTLTransform(Transform):
@@ -139,6 +140,10 @@ class _OneSegmentSTLTransform(Transform):
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
         result[self.in_column] += season_trend
+        if self.in_column == "target":
+            quantiles = match_target_quantiles(set(result.columns))
+            for quantile_column_nm in quantiles:
+                result.loc[:, quantile_column_nm] += season_trend
         return result
 
 
