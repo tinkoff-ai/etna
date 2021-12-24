@@ -52,3 +52,9 @@ def test_binseg_runs_with_different_series_length(ts_with_different_series_lengt
     ts.fit_transform([bs])
     ts.inverse_transform()
     np.allclose(ts.df.values, ts_with_different_series_length.df.values, equal_nan=True)
+
+
+@pytest.xfail
+def test_fit_transform_with_nans(ts_diff_endings):
+    transform = BinsegTrendTransform(in_column="target")
+    ts_diff_endings.fit_transform([transform])

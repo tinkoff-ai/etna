@@ -5,6 +5,7 @@ from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
+from etna.transforms.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.change_points_trend import _OneSegmentChangePointsTrendTransform
 
 
@@ -180,3 +181,11 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
     )
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.transform(df=multitrend_df["segment_1"])
+
+
+@pytest.xfail
+def test_fit_transform_with_nans(ts_diff_endings):
+    transform = ChangePointsTrendTransform(
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+    )
+    ts_diff_endings.fit_transform([transform])

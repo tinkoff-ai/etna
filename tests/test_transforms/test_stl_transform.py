@@ -121,3 +121,10 @@ def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segme
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model="arima")
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.inverse_transform(df=df_trend_seasonal_one_segment)
+
+
+@pytest.xfail
+@pytest.mark.parametrize("model_stl", ["arima", "holt"])
+def test_fit_transform_with_nans(model_stl, ts_diff_endings):
+    transform = STLTransform(in_column="target", period=7, model=model_stl)
+    ts_diff_endings.fit_transform([transform])
