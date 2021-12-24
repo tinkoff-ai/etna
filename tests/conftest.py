@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Tuple
 
 import numpy as np
@@ -412,12 +413,9 @@ def const_ts_anomal() -> TSDataset:
     ts = TSDataset(TSDataset.to_dataset(df), freq="D")
     return ts
 
-@pytest.fixture()
-def ts_diff_endings(example_reg_tsds):
-    example_reg_tsds.loc[example_reg_tsds.index[-5]:, pd.IndexSlice["segment_1","target"]] = np.NAN
-    return example_reg_tsds
 
-@pytest.fixture()
-def ts_nan_endings(example_reg_tsds):
-    example_reg_tsds.loc[example_reg_tsds.index[-5]:, pd.IndexSlice[:,"target"]] = np.NAN
-    return example_reg_tsds
+@pytest.fixture
+def ts_diff_endings(example_reg_tsds):
+    ts = deepcopy(example_reg_tsds)
+    ts.loc[example_reg_tsds.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    return ts
