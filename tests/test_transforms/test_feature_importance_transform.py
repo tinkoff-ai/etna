@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 from catboost import CatBoostRegressor
@@ -57,12 +56,6 @@ def ts_with_regressors():
     # construct TSDataset
     df = df[df["timestamp"] <= timestamp[200]]
     return TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq="D")
-
-
-@pytest.fixture()
-def ts_with_regressors_diff_endings(ts_with_regressors):
-    ts_with_regressors.loc[ts_with_regressors.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
-    return ts_with_regressors
 
 
 @pytest.mark.parametrize(
@@ -220,9 +213,9 @@ def test_sanity_model(model, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_exog_weekend"]),
     ],
 )
-def test_fit_transform_with_nans(model, ts_with_regressors_diff_endings):
+def test_fit_transform_with_nans(model, ts_diff_endings):
     selector = TreeFeatureSelectionTransform(model=model, top_k=10)
-    ts_with_regressors_diff_endings.fit_transform([selector])
+    ts_diff_endings.fit_transform([selector])

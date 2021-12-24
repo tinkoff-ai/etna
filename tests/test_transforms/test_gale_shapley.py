@@ -35,14 +35,6 @@ def ts_with_large_regressors_number(random_seed) -> TSDataset:
     return ts
 
 
-@pytest.fixture()
-def ts_with_regressors_diff_endings(ts_with_large_regressors_number):
-    ts_with_large_regressors_number.loc[
-        ts_with_large_regressors_number.index[-5] :, pd.IndexSlice["segment_1", "target"]
-    ] = np.NAN
-    return ts_with_large_regressors_number
-
-
 @pytest.fixture
 def relevance_matrix() -> pd.DataFrame:
     table = pd.DataFrame({"regressor_1": [1, 2, 3, 4], "regressor_2": [4, 1, 5, 2], "regressor_3": [2, 4, 1, 3]})
@@ -594,8 +586,8 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
 
 
 @pytest.mark.xfail
-def test_fit_transform_with_nans(ts_with_regressors_diff_endings):
+def test_fit_transform_with_nans(regressor_exog_weekend):
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
     )
-    ts_with_regressors_diff_endings.fit_transform([transform])
+    regressor_exog_weekend.fit_transform([transform])
