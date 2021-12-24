@@ -101,7 +101,7 @@ class _SingleDifferencingTransform(Transform):
             transformed dataframe
         """
         if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise ValueError("Transform is not fitted")
+            raise AttributeError("Transform is not fitted")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
         transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
@@ -183,7 +183,7 @@ class _SingleDifferencingTransform(Transform):
             transformed DataFrame.
         """
         if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise ValueError("Transform is not fitted")
+            raise AttributeError("Transform is not fitted")
 
         if not self.inplace:
             return df

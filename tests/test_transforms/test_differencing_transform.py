@@ -80,7 +80,7 @@ def test_single_transform_not_inplace(df_nans):
 def test_single_transform_fail_not_fitted(period, inplace, out_column, df_nans):
     """Test that _SingleDifferencingTransform fails to make transform before fitting."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=inplace, out_column=out_column)
-    with pytest.raises(ValueError, match="Transform is not fitted"):
+    with pytest.raises(AttributeError, match="Transform is not fitted"):
         _ = transform.transform(df_nans)
 
 
@@ -107,7 +107,7 @@ def test_single_transform(period, inplace, out_column, df_nans):
 def test_single_inverse_transform_fail_not_fitted(period, inplace, out_column, df_nans):
     """Test that _SingleDifferencingTransform fails to make inverse_transform before fitting."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=inplace, out_column=out_column)
-    with pytest.raises(ValueError, match="Transform is not fitted"):
+    with pytest.raises(AttributeError, match="Transform is not fitted"):
         _ = transform.inverse_transform(df_nans)
 
 
