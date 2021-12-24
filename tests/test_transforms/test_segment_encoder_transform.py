@@ -117,3 +117,8 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
 
     # R2=0 => model predicts the optimal constant
     assert np.allclose(metric(pred_mean_segment_encoding, test), 0)
+
+
+def test_fit_transform_with_nans(ts_diff_endings):
+    encoder = MeanSegmentEncoderTransform()
+    ts_diff_endings.fit_transform([encoder])

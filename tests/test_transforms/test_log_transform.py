@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.transforms import AddConstTransform
 from etna.transforms.log import LogTransform
 
 
@@ -97,3 +98,8 @@ def test_inverse_transform_out_column(positive_df_: pd.DataFrame):
     inversed = preprocess.inverse_transform(df=transformed_target)
     for segment in ["segment_1", "segment_2"]:
         assert out_column in inversed[segment]
+
+
+def test_fit_transform_with_nans(ts_diff_endings):
+    transform = LogTransform(in_column="target", inplace=True)
+    ts_diff_endings.fit_transform([AddConstTransform(in_column="target", value=100)] + [transform])

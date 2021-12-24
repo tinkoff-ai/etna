@@ -162,3 +162,22 @@ def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
     res = transform.fit_transform(simple_df_for_agg)
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MaxTransform(in_column="target", window=5),
+        MaxTransform(in_column="target", window=5),
+        MinTransform(in_column="target", window=5),
+        MinTransform(in_column="target", window=5),
+        MedianTransform(in_column="target", window=5),
+        MedianTransform(in_column="target", window=5),
+        MeanTransform(in_column="target", window=5),
+        MeanTransform(in_column="target", window=5),
+        StdTransform(in_column="target", window=5),
+        StdTransform(in_column="target", window=5),
+    ),
+)
+def test_fit_transform_with_nans(transform, ts_diff_endings):
+    ts_diff_endings.fit_transform([transform])

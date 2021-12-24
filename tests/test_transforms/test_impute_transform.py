@@ -248,3 +248,10 @@ def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segment
     for segment in ts.segments:
         true_value = ts[:, segment, "target"].values[-1]
         assert np.all(ts_forecast[:, segment, "target"] == true_value)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
+def test_fit_transform_with_nans(fill_strategy, ts_diff_endings):
+    imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
+    ts_diff_endings.fit_transform([imputer])
+    assert (ts_diff_endings[:, :, "target"].isna()).sum().sum() == 0

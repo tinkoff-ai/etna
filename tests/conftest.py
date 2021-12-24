@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Tuple
 
 import numpy as np
@@ -410,4 +411,11 @@ def simple_df_relevance() -> Tuple[pd.DataFrame, pd.DataFrame]:
 def const_ts_anomal() -> TSDataset:
     df = generate_const_df(periods=15, start_time="2020-01-01", scale=1.0, n_segments=2)
     ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_diff_endings(example_reg_tsds):
+    ts = deepcopy(example_reg_tsds)
+    ts.loc[example_reg_tsds.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
     return ts

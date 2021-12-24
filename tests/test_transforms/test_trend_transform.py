@@ -3,6 +3,7 @@ from copy import deepcopy
 import pandas as pd
 import pytest
 from ruptures import Binseg
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets.tsdataset import TSDataset
@@ -123,3 +124,10 @@ def test_transform_interface_repr(example_tsds: TSDataset) -> None:
     result = trend_transform.fit_transform(example_tsds.df)
     for seg in result.columns.get_level_values(0).unique():
         assert out_column in result[seg].columns
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
+def test_fit_transform_with_nans(model, ts_diff_endings):
+    transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")
+    ts_diff_endings.fit_transform([transform])

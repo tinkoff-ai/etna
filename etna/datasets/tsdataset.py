@@ -115,7 +115,7 @@ class TSDataset:
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
-        self._check_endings()
+        self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
@@ -124,7 +124,7 @@ class TSDataset:
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
-        self._check_endings()
+        self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
@@ -187,6 +187,7 @@ class TSDataset:
         2021-07-03          32          37    nan          72          77    nan
         2021-07-04          33          38    nan          73          78    nan
         """
+        self._check_endings()
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
             start=max_date_in_dataset, periods=future_steps + 1, freq=self.freq, closed="right"
@@ -254,11 +255,18 @@ class TSDataset:
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
 
-    def _check_endings(self):
+    def _check_endings(self, warning=False):
         """Check that all targets ends at the same timestamp."""
         max_index = self.df.index.max()
         if np.any(pd.isna(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
-            raise ValueError(f"All segments should end at the same timestamp")
+            if warning:
+                warnings.warn(
+                    "Segments contains NaNs in the last timestamps."
+                    "Some of the transforms might work incorrectly or even fail."
+                    "Make sure that you use the impurer before making the forecast."
+                )
+            else:
+                raise ValueError("All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
