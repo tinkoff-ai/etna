@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import Optional
 
 import numpy as np
@@ -9,7 +10,6 @@ from etna.transforms.base import Transform
 # TODO: do smth with quantiles
 # TODO: to understand what to do with regressors columns
 # TODO: consider adding some checks on the nans inside series
-# TODO: don't save all dataframe inside fit
 class _SingleDifferencingTransform(Transform):
     """Calculate a time series difference of order 1."""
 
@@ -52,7 +52,10 @@ class _SingleDifferencingTransform(Transform):
 
         self.inplace = inplace
         self.out_column = out_column
-        self._df: Optional[pd.DataFrame] = None
+
+        self._train_timestamp: Optional[pd.DatetimeIndex] = None
+        self._train_init_dict: Optional[Dict[str, pd.Series]] = None
+        self._test_init_df: Optional[pd.DataFrame] = None
 
     def _get_column_name(self) -> str:
         if self.out_column is None:
@@ -73,7 +76,15 @@ class _SingleDifferencingTransform(Transform):
         result: _SingleDifferencingTransform
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
-        self._df = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
+        fit_df = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
+
+        self._train_timestamp = fit_df.index
+        self._train_init_dict = {}
+        for segment in segments:
+            cur_series = fit_df.loc[:, pd.IndexSlice[segment, self.in_column]]
+            cur_series = cur_series.loc[cur_series.first_valid_index() :]
+            self._train_init_dict[segment] = cur_series[: self.period]
+        self._test_init_df = fit_df.iloc[-self.period :, :]
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -89,7 +100,7 @@ class _SingleDifferencingTransform(Transform):
         result: pd.Dataframe
             transformed dataframe
         """
-        if self._df is None:
+        if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
             raise ValueError("Transform is not fitted")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
@@ -114,6 +125,50 @@ class _SingleDifferencingTransform(Transform):
 
         return result_df
 
+    def _reconstruct_train(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Reconstruct the train in inverse_transform."""
+        segments = sorted(set(df.columns.get_level_values("segment")))
+        result_df = df.copy()
+
+        # impute values for reconstruction and run reconstruction
+        for segment in segments:
+            init_segment = self._train_init_dict[segment]  # type: ignore
+            cur_series = result_df.loc[:, pd.IndexSlice[segment, self.in_column]]
+            cur_series[init_segment.index] = init_segment
+            for i in range(self.period):
+                cur_series.iloc[i :: self.period] = cur_series.iloc[i :: self.period].cumsum()
+
+            result_df.loc[cur_series.index, pd.IndexSlice[segment, self.in_column]] = cur_series
+        return result_df
+
+    def _reconstruct_test(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Reconstruct the test in inverse_transform."""
+        segments = sorted(set(df.columns.get_level_values("segment")))
+        result_df = df.copy()
+
+        # check that test is right after the train
+        expected_min_test_timestamp = pd.date_range(
+            start=self._test_init_df.index.max(),  # type: ignore
+            periods=2,
+            freq=pd.infer_freq(self._train_timestamp),
+            closed="right",
+        )[0]
+        if expected_min_test_timestamp != df.index.min():
+            raise ValueError("Test should go after the train without gaps")
+
+        # we can reconstruct the values by concatenating saved fit values before test values
+        to_transform = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
+        to_transform = pd.concat([self._test_init_df, to_transform])
+
+        # run reconstruction
+        for i in range(self.period):
+            to_transform.iloc[i :: self.period] = to_transform.iloc[i :: self.period].cumsum()
+
+        # save result
+        result_df.loc[:, pd.IndexSlice[segments, self.in_column]] = to_transform
+
+        return result_df
+
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
@@ -127,40 +182,20 @@ class _SingleDifferencingTransform(Transform):
         result: pd.DataFrame
             transformed DataFrame.
         """
-        if self._df is None:
+        if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
             raise ValueError("Transform is not fitted")
 
         if not self.inplace:
             return df
 
-        segments = sorted(set(df.columns.get_level_values("segment")))
+        # determine if we are working with train or test
+        if self._train_timestamp.shape[0] == df.index.shape[0] and np.all(self._train_timestamp == df.index):
+            # we are on the train
+            result_df = self._reconstruct_train(df)
 
-        # determine if we working with train or test
-        if self._df.index.shape[0] == df.index.shape[0] and np.all(self._df.index == df.index):
-            # we are on the train and can return saved dataframe
-            result_df = df.copy()
-            result_df[self._df.columns] = self._df
-
-        elif df.index.min() > self._df.index.max():
+        elif df.index.min() > self._train_timestamp.max():
             # we are on the test
-            # check that test is right after the train
-            expected_min_test_timestamp = pd.date_range(
-                start=self._df.index.max(), periods=2, freq=pd.infer_freq(self._df), closed="right"
-            )[0]
-            if expected_min_test_timestamp != df.index.min():
-                raise ValueError("Test should go after the train without gaps")
-
-            # we can reconstruct the values by concatenating saved fit values before test values
-            to_transform = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
-            to_transform = pd.concat([self._df.iloc[-self.period :, :], to_transform])
-
-            # run reconstruction
-            for i in range(self.period):
-                to_transform.iloc[i :: self.period] = to_transform.iloc[i :: self.period].cumsum()
-
-            # save result
-            result_df = df.copy()
-            result_df.loc[:, pd.IndexSlice[segments, self.in_column]] = to_transform
+            result_df = self._reconstruct_test(df)
 
         else:
             raise ValueError("Inverse transform can be applied only to full train or test that should be in the future")
