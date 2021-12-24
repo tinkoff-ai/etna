@@ -1,6 +1,7 @@
 import warnings
 from copy import deepcopy
 from typing import List
+from typing import Optional
 from typing import Union
 
 import numpy as np

@@ -496,8 +496,8 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
     (
         ([SegmentEncoderTransform()], ["regressor_1", "regressor_2", "regressor_segment_code"]),
         (
-            [LagTransform(in_column="target", lags=[1], out_column="regressor_lag")],
-            ["regressor_1", "regressor_2", "regressor_lag_1"],
+            [LagTransform(in_column="target", lags=[1, 2], out_column="regressor_lag")],
+            ["regressor_1", "regressor_2", "regressor_lag_1", "regressor_lag_2"],
         ),
     ),
 )
@@ -510,8 +510,17 @@ def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transf
     "transforms, expected_regressors",
     (
         (
-            [MaxAbsScalerTransform(in_column="regressor_1", inplace=False, out_column="scaled_regressor_1")],
+            [MaxAbsScalerTransform(in_column="regressor_1", inplace=False, out_column="scaled")],
             ["regressor_1", "regressor_2", "scaled_regressor_1"],
+        ),
+        (
+            [MaxAbsScalerTransform(in_column=["regressor_1", "regressor_2"], inplace=False, out_column=None)],
+            [
+                "regressor_1",
+                "regressor_2",
+                MaxAbsScalerTransform(in_column=["regressor_1"], inplace=False, out_column=None).__repr__(),
+                MaxAbsScalerTransform(in_column=["regressor_2"], inplace=False, out_column=None).__repr__(),
+            ],
         ),
         (
             [

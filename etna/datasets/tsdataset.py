@@ -153,6 +153,9 @@ class TSDataset:
         from etna.transforms.base import FutureMixin
 
         out_columns = list(columns_after - columns_before)
+        if len(out_columns) == 0:
+            return
+
         new_regressors = []
 
         if isinstance(transform, FutureMixin):
@@ -162,7 +165,12 @@ class TSDataset:
         elif hasattr(transform, "in_column"):
             # Only the columns created with the other transforms from regressors are regressors
             in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
-            if hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
+            if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
+                # User defined out_columns in sklearn
+                out_columns = transform.out_columns  # type: ignore
+                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
+                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
+            elif hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
                 # User defined out_columns
                 out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
                 regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
