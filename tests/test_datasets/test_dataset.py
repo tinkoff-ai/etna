@@ -439,8 +439,8 @@ def test_to_flatten(example_df):
     assert (expected_df.values == obtained_df[sorted_columns].values).all()
 
 
-def test_describe_gather_common_data(df_and_regressors):
-    """Check that TSDataset.describe correctly finds common data."""
+def test_gather_common_data(df_and_regressors):
+    """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
     df, df_exog = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     common_data = ts._gather_common_data()
@@ -451,8 +451,8 @@ def test_describe_gather_common_data(df_and_regressors):
     assert common_data["freq"] == "D"
 
 
-def test_describe_gather_segments_data(df_and_regressors):
-    """Check that TSDataset.describe correctly finds segment data."""
+def test_gather_segments_data(df_and_regressors):
+    """Check that TSDataset._gather_segments_data correctly finds segment data for info/describe methods."""
     df, df_exog = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     segments = ts.segments
@@ -468,15 +468,19 @@ def test_describe_gather_segments_data(df_and_regressors):
     assert segment_df.loc["2", "num_missing"] == 0
 
 
-# TODO: delete
-def test_describe():
-    from etna.datasets import generate_const_df
-    df = generate_const_df(periods=30, start_time="2021-06-01", n_segments=2, scale=1)
-    df_ts_format = TSDataset.to_dataset(df)
-    regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
-    df_regressors_1 = pd.DataFrame({"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"})
-    df_regressors_2 = pd.DataFrame({"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"})
-    df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
-    df_exog_ts_format = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
-    ts.describe()
+def test_describe(df_and_regressors):
+    """Check that TSDataset.describe works correctly."""
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    description = ts.describe()
+    assert np.all(description.index == ts.segments)
+    assert description.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
+    assert description.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
+    assert np.all(description["end_timestamp"] == pd.Timestamp("2021-02-01"))
+    assert description.loc["1", "length"] == 32
+    assert description.loc["2", "length"] == 32 - 5
+    assert np.all(description["num_missing"] == 0)
+    assert np.all(description["num_segments"] == 2)
+    assert np.all(description["num_exogs"] == 2)
+    assert np.all(description["num_regressors"] == 2)
+    assert np.all(description["freq"] == "D")

@@ -1,13 +1,13 @@
 import math
 import warnings
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -761,7 +761,7 @@ class TSDataset:
             "num_segments": len(self.segments),
             "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
             "num_regressors": len(self.regressors),
-            "freq": self.freq
+            "freq": self.freq,
         }
 
         return common_dict
@@ -783,8 +783,88 @@ class TSDataset:
 
         return segments_dict
 
-    def describe(self, segments: Optional[Sequence[str]] = None) -> None:
-        """Overview of the dataset.
+    def describe(self, segments: Optional[Sequence[str]] = None) -> pd.DataFrame:
+        """Overview of the dataset that returns a DataFrame.
+
+        Method describes dataset in segment-wise fashion. Description columns:
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+        * end_timestamp: ending of the segment, missing values are not ignored, common for all segments
+        * length: length according to start_date and end_date
+        * num_missing: number of missing variables between start_date and end_date
+        * num_segments: total number of segments, common for all segments
+        * num_exogs: number of exogenous features, common for all segments
+        * num_regressors: number of exogenous factors, that are regressors, common for all segments
+        * freq: frequency of the series, common for all segments
+
+        Parameters
+        ----------
+        segments:
+            segments to show in overview, if None all segments are shown.
+
+        Returns
+        -------
+        result_table: pd.DataFrame
+            table with results of the overview
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> pd.options.display.expand_frame_repr = False
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.describe()
+                  start_date   end_date  length  num_missing  num_segments  num_exogs  num_regressors freq
+        segments
+        segment_0 2021-06-01 2021-06-30      30            0             2          1               1    D
+        segment_1 2021-06-01 2021-06-30      30            0             2          1               1    D
+        """
+        if segments is None:
+            segments = self.segments
+
+        # gather common information
+        common_dict = self._gather_common_data()
+
+        # gather segment information
+        segments_dict = self._gather_segments_data(segments)
+
+        # combine information
+        segments_dict["end_timestamp"] = [common_dict["end_timestamp"]] * len(segments)
+        segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
+        segments_dict["num_exogs"] = [common_dict["num_exogs"]] * len(segments)
+        segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
+        segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
+        segments_dict["freq"] = [common_dict["freq"]] * len(segments)
+
+        result_df = pd.DataFrame(segments_dict, index=segments)
+        columns_order = [
+            "start_timestamp",
+            "end_timestamp",
+            "length",
+            "num_missing",
+            "num_segments",
+            "num_exogs",
+            "num_regressors",
+            "freq",
+        ]
+        result_df = result_df[columns_order]
+        result_df.index.name = "segments"
+        return result_df
+
+    def info(self, segments: Optional[Sequence[str]] = None) -> None:
+        """Overview of the dataset that prints the result.
 
         Method describes dataset in segment-wise fashion.
 
@@ -806,11 +886,6 @@ class TSDataset:
         segments:
             segments to show in overview, if None all segments are shown.
 
-        Returns
-        -------
-        result_table: pd.DataFrame
-            table with results of the overview
-
         Examples
         --------
         >>> from etna.datasets import generate_const_df
@@ -829,7 +904,7 @@ class TSDataset:
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
-        >>> ts.describe()
+        >>> ts.info()
         <class 'etna.datasets.TSDataset'>
         end_timestamp: 2021-06-30 00:00:00
         num_segments: 2
@@ -841,6 +916,8 @@ class TSDataset:
         segment_0      2021-06-01      30            0
         segment_1      2021-06-01      30            0
         """
+        if segments is None:
+            segments = self.segments
         lines = []
 
         # add header
@@ -853,8 +930,6 @@ class TSDataset:
             lines.append(f"{key}: {value}")
 
         # add segment information
-        if segments is None:
-            segments = self.segments
         segments_dict = self._gather_segments_data(segments)
         segment_df = pd.DataFrame(segments_dict, index=segments)
         segment_df.index.name = "segments"
