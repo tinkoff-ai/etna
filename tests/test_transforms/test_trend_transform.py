@@ -126,7 +126,7 @@ def test_transform_interface_repr(example_tsds: TSDataset) -> None:
         assert out_column in result[seg].columns
 
 
-@pytest.xfail
+@pytest.mark.xfail
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans(model, ts_diff_endings):
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")

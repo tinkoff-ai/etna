@@ -593,7 +593,7 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
     }
 
 
-@pytest.xfail
+@pytest.mark.xfail
 def test_fit_transform_with_nans(ts_with_regressors_diff_endings):
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False

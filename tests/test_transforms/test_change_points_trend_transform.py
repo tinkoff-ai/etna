@@ -183,7 +183,7 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
         _ = transform.transform(df=multitrend_df["segment_1"])
 
 
-@pytest.xfail
+@pytest.mark.xfail
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
