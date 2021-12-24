@@ -793,7 +793,7 @@ class TSDataset:
         * num_segments: total number of segments
         * num_exogs: number of exogenous features
         * num_regressors: number of exogenous factors, that are regressors
-        * freq: frequency of the series
+        * freq: frequency of the dataset
 
         Information about individual segments:
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
