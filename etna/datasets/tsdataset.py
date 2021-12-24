@@ -7,6 +7,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -753,18 +754,52 @@ class TSDataset:
         """
         return self.df.tail(n_rows)
 
-    def describe(self, segments: Optional[Sequence[str]] = None) -> pd.DataFrame:
+    def _gather_common_data(self) -> Dict[str, Any]:
+        """Gather information about dataset in general."""
+        common_dict: Dict[str, Any] = {
+            "end_timestamp": self.index.max(),
+            "num_segments": len(self.segments),
+            "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
+            "num_regressors": len(self.regressors),
+            "freq": self.freq
+        }
+
+        return common_dict
+
+    def _gather_segments_data(self, segments: Sequence[str]) -> Dict[str, List[Any]]:
+        """Gather information about each segment."""
+        # gather segment information
+        segments_dict: Dict[str, list] = {
+            "start_timestamp": [],
+            "length": [],
+            "num_missing": [],
+        }
+
+        for segment in segments:
+            segment_series = self[:, segment, "target"]
+            segments_dict["start_timestamp"].append(segment_series.index.min())
+            segments_dict["length"].append(segment_series.shape[0])
+            segments_dict["num_missing"].append(pd.isna(segment_series).sum())
+
+        return segments_dict
+
+    def describe(self, segments: Optional[Sequence[str]] = None) -> None:
         """Overview of the dataset.
 
-        Method describes dataset in segment-wise fashion. Description columns:
-        * start_date: beginning of the segment, missing values in the beginning are ignored
-        * end_date: ending of the segment, missing values are not ignored, common for all segments
+        Method describes dataset in segment-wise fashion.
+
+        Information about dataset in general:
+        * end_timestamp: ending of the segment, missing values are not ignored
+        * num_segments: total number of segments
+        * num_exogs: number of exogenous features
+        * num_regressors: number of exogenous factors, that are regressors
+        * freq: frequency of the series
+
+        Information about individual segments:
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
         * length: length according to start_date and end_date
         * num_missing: number of missing variables between start_date and end_date
-        * num_segments: total number of segments, common for all segments
-        * num_exogs: number of exogenous features, common for all segments
-        * num_regressors: number of exogenous factors, that are regressors, common for all segments
-        * freq: frequency of the series, common for all segments
+
 
         Parameters
         ----------
@@ -779,7 +814,6 @@ class TSDataset:
         Examples
         --------
         >>> from etna.datasets import generate_const_df
-        >>> pd.options.display.expand_frame_repr = False
         >>> df = generate_const_df(
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
@@ -796,38 +830,38 @@ class TSDataset:
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
         >>> ts.describe()
-                  start_date   end_date  length  num_missing  num_segments  num_exogs  num_regressors freq
+        <class 'etna.datasets.TSDataset'>
+        end_timestamp: 2021-06-30 00:00:00
+        num_segments: 2
+        num_exogs: 1
+        num_regressors: 1
+        freq: D
+                  start_timestamp  length  num_missing
         segments
-        segment_0 2021-06-01 2021-06-30      30            0             2          1               1    D
-        segment_1 2021-06-01 2021-06-30      30            0             2          1               1    D
+        segment_0      2021-06-01      30            0
+        segment_1      2021-06-01      30            0
         """
+        lines = []
+
+        # add header
+        lines.append("<class 'etna.datasets.TSDataset'>")
+
+        # add common information
+        common_dict = self._gather_common_data()
+
+        for key, value in common_dict.items():
+            lines.append(f"{key}: {value}")
+
+        # add segment information
         if segments is None:
             segments = self.segments
+        segments_dict = self._gather_segments_data(segments)
+        segment_df = pd.DataFrame(segments_dict, index=segments)
+        segment_df.index.name = "segments"
 
-        result_dict: Dict[str, list] = {
-            "start_date": [],
-            "end_date": [],
-            "length": [],
-            "num_missing": [],
-            "num_segments": [],
-            "num_exogs": [],
-            "num_regressors": [],
-            "freq": [],
-        }
+        with pd.option_context("display.width", None):
+            lines += segment_df.to_string().split("\n")
 
-        for segment in segments:
-            segment_series = self[:, segment, "target"]
-            result_dict["start_date"].append(segment_series.index.min())
-            result_dict["end_date"].append(segment_series.index.max())
-            result_dict["length"].append(segment_series.shape[0])
-            result_dict["num_missing"].append(pd.isna(segment_series).sum())
-            result_dict["num_segments"].append(len(self.segments))
-            result_dict["num_exogs"].append(
-                self.df.columns.get_level_values("feature").difference(["target"]).nunique()
-            )
-            result_dict["num_regressors"].append(len(self.regressors))
-            result_dict["freq"].append(self.freq)
-
-        result_df = pd.DataFrame(result_dict, index=segments)
-        result_df.index.name = "segments"
-        return result_df
+        # print the results
+        result_string = "\n".join(lines)
+        print(result_string)
