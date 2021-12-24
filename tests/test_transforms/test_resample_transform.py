@@ -63,6 +63,13 @@ def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
     return {"ts": ts, "distribution": distribution}
 
 
+@pytest.fixture()
+def daily_exog_ts_diff_endings(daily_exog_ts):
+    ts = daily_exog_ts["ts"]
+    ts.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    return ts
+
+
 @pytest.fixture
 def inplace_resampled_daily_exog_ts() -> TSDataset:
     df1 = pd.DataFrame(
@@ -353,3 +360,10 @@ def test_transform_future(daily_exog_ts, inplace, out_column, expected_resampled
     future = daily_exog_ts.make_future(3)
     expected_future = expected_resampled_ts.make_future(3)
     assert future.df.equals(expected_future.df)
+
+
+def test_fit_transform_with_nans(daily_exog_ts_diff_endings):
+    resampler = ResampleWithDistributionTransform(
+        in_column="regressor_exog", inplace=True, distribution_column="target"
+    )
+    daily_exog_ts_diff_endings.fit_transform([resampler])

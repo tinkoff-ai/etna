@@ -184,3 +184,8 @@ def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
     transform = _OneSegmentSpecialDaysTransform()
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.transform(df=constant_days_df)
+
+
+def test_fit_transform_with_nans(ts_diff_endings):
+    transform = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
+    ts_diff_endings.fit_transform([transform])
