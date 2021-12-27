@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+
+## Changed
+- Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+
+## [1.5.0] - 2021-12-24
+### Added
 - Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
 - S3FileLogger and LocalFileLogger ([#372](https://github.com/tinkoff-ai/etna/pull/372))
-- Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+- Parameter `changepoint_prior_scale` to `ProphetModel` ([#408](https://github.com/tinkoff-ai/etna/pull/408))
 
 ### Changed
 - Set `strict_optional = True` for mypy ([#381](https://github.com/tinkoff-ai/etna/pull/381))
-- Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+- Move checking the series endings to `make_future` step ([#413](https://github.com/tinkoff-ai/etna/pull/413)) 
 
 ### Fixed
 - Sarimax bug in future prediction with quantiles ([#391](https://github.com/tinkoff-ai/etna/pull/391))
@@ -21,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add sorting of classes in left bar in docs ([#397](https://github.com/tinkoff-ai/etna/pull/397))
 - nn notebook in docs ([#396](https://github.com/tinkoff-ai/etna/pull/396))
 - SklearnTransform column name generation ([#398](https://github.com/tinkoff-ai/etna/pull/398))
+- Inverse transform doesn't affect quantiles ([#395](https://github.com/tinkoff-ai/etna/pull/395))
 
 ## [1.4.2] - 2021-12-09
 ### Fixed

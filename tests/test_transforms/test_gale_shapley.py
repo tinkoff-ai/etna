@@ -583,3 +583,11 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
         "regressor_4",
         "regressor_5",
     }
+
+
+@pytest.mark.xfail
+def test_fit_transform_with_nans(regressor_exog_weekend):
+    transform = GaleShapleyFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
+    )
+    regressor_exog_weekend.fit_transform([transform])

@@ -7,6 +7,7 @@ import pandas as pd
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
+from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentLogTransform(Transform):
@@ -79,6 +80,10 @@ class _OneSegmentLogTransform(Transform):
         result_df = df.copy()
         if self.inplace:
             result_df[self.in_column] = result_df[self.out_column].apply(lambda x: pow(self.base, x) - 1)
+            if self.in_column == "target":
+                quantiles = match_target_quantiles(set(result_df.columns))
+                for quantile_column_nm in quantiles:
+                    result_df[quantile_column_nm] = result_df[quantile_column_nm].apply(lambda x: pow(self.base, x) - 1)
         return result_df
 
 

@@ -132,7 +132,7 @@ def test_inverse_transform_future(transform_constructor, constructor_kwargs, out
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
-        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel()),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ),
 )
 def test_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
@@ -147,10 +147,23 @@ def test_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
         SAXOutliersTransform(in_column="target"),
-        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel()),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ),
 )
 def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
     """Test that transform for one segment raise error when calling inverse_transform without being fit."""
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.inverse_transform(df=outliers_solid_tsds.df)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        SAXOutliersTransform(in_column="target"),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+    ),
+)
+def test_fit_transform_with_nans(transform, ts_diff_endings):
+    ts_diff_endings.fit_transform([transform])
