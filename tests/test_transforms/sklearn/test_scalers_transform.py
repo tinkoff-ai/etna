@@ -124,3 +124,22 @@ def test_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
     transformed_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
     inverse_transformed_df = not_inplace_scaler.inverse_transform(transformed_df)
     assert np.all(inverse_transformed_df[columns_to_compare] == normal_distributed_df)
+
+
+@pytest.mark.parametrize(
+    "scaler",
+    (
+        DummyTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ),
+)
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_fit_transform_with_nans(scaler, mode, ts_diff_endings):
+    preprocess = scaler(in_column="target", mode=mode)
+    ts_diff_endings.fit_transform([preprocess])

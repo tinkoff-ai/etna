@@ -7,6 +7,7 @@ import pytest
 from sklearn.preprocessing import PowerTransformer
 
 from etna.datasets import TSDataset
+from etna.transforms import AddConstTransform
 from etna.transforms.power import BoxCoxTransform
 from etna.transforms.power import YeoJohnsonTransform
 
@@ -99,3 +100,10 @@ def test_inverse_transform_one_column(positive_df: pd.DataFrame, preprocessing_c
     transformed_target = preprocess.fit_transform(df=positive_df.copy())
     inversed_target = preprocess.inverse_transform(df=transformed_target)
     np.testing.assert_array_almost_equal(inversed_target.values, positive_df.values)
+
+
+@pytest.mark.parametrize("preprocessing_class", (BoxCoxTransform, YeoJohnsonTransform))
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_fit_transform_with_nans(preprocessing_class, mode, ts_diff_endings):
+    preprocess = preprocessing_class(in_column="target", mode=mode)
+    ts_diff_endings.fit_transform([AddConstTransform(in_column="target", value=100)] + [preprocess])

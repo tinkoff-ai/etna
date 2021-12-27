@@ -587,6 +587,7 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
     }
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize("use_rank", (True, False))
 @pytest.mark.parametrize("top_k", (2, 3, 5, 6, 7))
 def test_gale_shapley_transform_fit_model_based(ts_with_large_regressors_number: TSDataset, top_k: int, use_rank: bool):
@@ -595,3 +596,11 @@ def test_gale_shapley_transform_fit_model_based(ts_with_large_regressors_number:
         relevance_table=ModelRelevanceTable(), top_k=top_k, use_rank=use_rank, model=RandomForestRegressor()
     )
     transform.fit(df=df)
+=======
+@pytest.mark.xfail
+def test_fit_transform_with_nans(regressor_exog_weekend):
+    transform = GaleShapleyFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
+    )
+    regressor_exog_weekend.fit_transform([transform])
+>>>>>>> 00b20e515f0c921df10a596e4fd7f2e2cf36def8
