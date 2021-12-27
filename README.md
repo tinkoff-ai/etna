@@ -92,8 +92,6 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
 - [ETNA Tutorial. Part 1 (Rus)](https://youtu.be/4iFVRfB2j30), [ETNA Tutorial. Part 2 (Rus)](https://youtu.be/Ct9dyUdHlmc) on YouTube thanks to [RC Gewissta](https://github.com/Gewissta)
 
-- [ETNA Docker container](https://hub.docker.com/r/bve81/etna) thanks to [bve81](https://github.com/bve81)
-
 ## Acknowledgments
 
 ### ETNA.Team
