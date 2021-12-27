@@ -7,6 +7,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import R2
 from etna.models import NaiveModel
+from etna.models import ProphetModel
 from etna.pipeline import Pipeline
 from etna.transforms.differencing import _SingleDifferencingTransform
 
@@ -29,7 +30,7 @@ def equals_with_nans(first_df: pd.DataFrame, second_df: pd.DataFrame) -> bool:
     return np.all(compare_result)
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_nans() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-03-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": np.arange(timestamp.shape[0]), "segment": "1"})
@@ -39,7 +40,16 @@ def df_nans() -> pd.DataFrame:
     return df
 
 
-def test_single_interface_out_column(df_nans):
+@pytest.fixture
+def df_nans_with_noise(df_nans, random_seed) -> pd.DataFrame:
+    df_nans.loc[:, pd.IndexSlice["1", "target"]] += np.random.normal(scale=0.05, size=df_nans.shape[0])
+    df_nans.loc[df_nans.index[5] :, pd.IndexSlice["2", "target"]] += np.random.normal(
+        scale=0.05, size=df_nans.shape[0] - 5
+    )
+    return df_nans
+
+
+def test_single_interface_transform_out_column(df_nans):
     """Test that _SingleDifferencingTransform generates new column in transform according to out_column parameter."""
     transform = _SingleDifferencingTransform(in_column="target", period=1, inplace=False, out_column="diff")
     transformed_df = transform.fit_transform(df_nans)
@@ -48,22 +58,35 @@ def test_single_interface_out_column(df_nans):
     assert new_columns == {"diff"}
 
 
-def test_single_interface_autogenerate_column(df_nans):
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_interface_transform_autogenerate_column(df_nans, period):
     """Test that _SingleDifferencingTransform generates new column in transform according to repr."""
-    transform = _SingleDifferencingTransform(in_column="target", period=1, inplace=False)
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False)
     transformed_df = transform.fit_transform(df_nans)
 
     new_columns = set(extract_new_features_columns(transformed_df, df_nans))
     assert new_columns == {transform.__repr__()}
 
 
-def test_single_interface_inplace(df_nans):
+def test_single_interface_transform_inplace(df_nans):
     """Test that _SingleDifferencingTransform doesn't generate new column in transform in inplace mode."""
     transform = _SingleDifferencingTransform(in_column="target", period=1, inplace=True)
     transformed_df = transform.fit_transform(df_nans)
 
     new_columns = set(extract_new_features_columns(transformed_df, df_nans))
     assert len(new_columns) == 0
+
+
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_fit_fail_nans(df_nans, period):
+    """Test that _SingleDifferencingTransform fails to fit on segments with NaNs inside."""
+    # put nans inside one segment
+    df_nans.iloc[-3, 0] = np.NaN
+
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False, out_column="diff")
+
+    with pytest.raises(ValueError, match="There should be no NaNs inside the segments"):
+        transform.fit(df_nans)
 
 
 def test_single_transform_not_inplace(df_nans):
@@ -154,6 +177,25 @@ def test_single_inverse_transform_inplace_train(df_nans):
 
 
 @pytest.mark.parametrize("period", [1, 7])
+def test_single_inverse_transform_inplace_test_fail_nans(period, df_nans):
+    """Test that _SingleDifferencingTransform fails to make inverse_transform on test data if there are NaNs."""
+    ts = TSDataset(df_nans, freq="D")
+    ts_train, ts_test = ts.train_test_split(test_size=20)
+
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
+    ts_train.fit_transform(transforms=[transform])
+
+    # make predictions by hand
+    future_ts = ts_train.make_future(20)
+    future_ts.df.loc[:, pd.IndexSlice["1", "target"]] = np.NaN
+    future_ts.df.loc[:, pd.IndexSlice["2", "target"]] = 2 * period
+
+    # check fail on inverse_transform
+    with pytest.raises(ValueError, match="There should be no NaNs inside the segments"):
+        future_ts.inverse_transform()
+
+
+@pytest.mark.parametrize("period", [1, 7])
 def test_single_inverse_transform_inplace_test(period, df_nans):
     """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data in inplace mode."""
     ts = TSDataset(df_nans, freq="D")
@@ -173,17 +215,33 @@ def test_single_inverse_transform_inplace_test(period, df_nans):
 
 
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_backtest_sanity(period, df_nans, random_seed):
+def test_single_inverse_transform_inplace_test_quantiles(period, df_nans_with_noise):
+    """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data with quantiles."""
+    ts = TSDataset(df_nans_with_noise, freq="D")
+    ts_train, ts_test = ts.train_test_split(test_size=20)
+
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
+    ts_train.fit_transform(transforms=[transform])
+    model = ProphetModel()
+    model.fit(ts_train)
+
+    # make predictions by Prophet with prediction interval
+    future_ts = ts_train.make_future(20)
+    predict_ts = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    # check that predicted value is within the interval
+    for segment in predict_ts.segments:
+        assert np.all(predict_ts[:, segment, "target_0.025"] <= predict_ts[:, segment, "target"])
+        assert np.all(predict_ts[:, segment, "target"] <= predict_ts[:, segment, "target_0.975"])
+
+
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_backtest_sanity(period, df_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly works in backtest."""
-    # add some noise for realism
-    df_nans.loc[:, pd.IndexSlice["1", "target"]] += np.random.normal(scale=0.05, size=df_nans.shape[0])
-    df_nans.loc[df_nans.index[5] :, pd.IndexSlice["2", "target"]] += np.random.normal(
-        scale=0.05, size=df_nans.shape[0] - 5
-    )
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
 
     # create pipeline with naive model
-    ts = TSDataset(df_nans, freq="D")
+    ts = TSDataset(df_nans_with_noise, freq="D")
     model = NaiveModel(lag=period)
     pipeline = Pipeline(model=model, transforms=[transform], horizon=7)
 
