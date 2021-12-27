@@ -114,3 +114,8 @@ def test_invalid_lags_value_two_segments(lags):
     """This test check LagTransform's behavior in case of invalid set of params."""
     with pytest.raises(ValueError):
         _ = LagTransform(in_column="target", lags=lags)
+
+
+def test_fit_transform_with_nans(ts_diff_endings):
+    transform = LagTransform(in_column="target", lags=10)
+    ts_diff_endings.fit_transform([transform])
