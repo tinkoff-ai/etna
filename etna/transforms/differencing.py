@@ -1,4 +1,5 @@
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
@@ -10,9 +11,8 @@ from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
 
 
-# TODO: add multiorder transform
 class _SingleDifferencingTransform(Transform):
-    """Calculate a time series difference of order 1.
+    """Calculate a time series differences of order 1.
 
     This transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
 
@@ -51,7 +51,7 @@ class _SingleDifferencingTransform(Transform):
         self.in_column = in_column
 
         if not isinstance(period, int) or period < 1:
-            raise ValueError("Period should be at least 2")
+            raise ValueError("Period should be at least 1")
         self.period = period
 
         self.inplace = inplace
@@ -71,7 +71,7 @@ class _SingleDifferencingTransform(Transform):
             return self.out_column
 
     def fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
-        """Fit method does nothing and is kept for compatibility.
+        """Fit the transform.
 
         Parameters
         ----------
@@ -228,4 +228,143 @@ class _SingleDifferencingTransform(Transform):
         else:
             raise ValueError("Inverse transform can be applied only to full train or test that should be in the future")
 
+        return result_df
+
+
+class DifferencingTransform(Transform):
+    """Calculate a time series differences.
+
+    This transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+
+    Notes
+    -----
+    To understand how transform works we recommend: https://otexts.com/fpp2/stationarity.html
+    """
+
+    def __init__(
+        self,
+        in_column: str,
+        period: int = 1,
+        order: int = 1,
+        inplace: bool = True,
+        out_column: Optional[str] = None,
+    ):
+        """Create instance of DifferencingTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of processed column
+        period:
+            number of steps back to calculate the difference with, it should be >= 1
+        order:
+            number of differences to make, it should be >= 1
+        inplace:
+            if True, apply transformation inplace to in_column, if False, add transformed column to dataset
+        out_column:
+            if set, name of added column, the final name will be '{out_column}',
+            don't forget to add 'regressor_' prefix
+            if don't set, name will be '{repr}'
+
+        Raises
+        ------
+        ValueError:
+            if period is not integer >= 1
+        ValueError:
+            if order is not integer >= 1
+        """
+        self.in_column = in_column
+
+        if not isinstance(period, int) or period < 1:
+            raise ValueError("Period should be at least 1")
+        self.period = period
+
+        if not isinstance(order, int) or order < 1:
+            raise ValueError("Order should be at least 1")
+        self.order = order
+
+        self.inplace = inplace
+        self.out_column = out_column
+
+        # add differencing transforms for each order
+        result_out_column = self._get_column_name()
+        self._differencing_transforms: List[_SingleDifferencingTransform] = []
+        # first transform should work like this transform but with prepared out_column name
+        self._differencing_transforms.append(
+            _SingleDifferencingTransform(
+                in_column=self.in_column, period=self.period, inplace=self.inplace, out_column=result_out_column
+            )
+        )
+        # other transforms should make differences inplace
+        for _ in range(self.order - 1):
+            self._differencing_transforms.append(
+                _SingleDifferencingTransform(in_column=result_out_column, period=self.period, inplace=True)
+            )
+
+    def _get_column_name(self) -> str:
+        if self.inplace:
+            return self.in_column
+        if self.out_column is None:
+            prefix = ""
+            if self.in_column.startswith("regressor_"):
+                prefix = "regressor_"
+            return f"{prefix}{self.__repr__()}"
+        else:
+            return self.out_column
+
+    def fit(self, df: pd.DataFrame) -> "DifferencingTransform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        df:
+            dataframe with data.
+
+        Returns
+        -------
+        result: DifferencingTransform
+        """
+        # this is made because transforms of high order may need some columns created by transforms of lower order
+        result_df = df.copy()
+        for transform in self._differencing_transforms:
+            result_df = transform.fit_transform(result_df)
+        return self
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Make a differencing transformation.
+
+        Parameters
+        ----------
+        df:
+            dataframe with data to transform.
+
+        Returns
+        -------
+        result: pd.Dataframe
+            transformed dataframe
+        """
+        result_df = df.copy()
+        for transform in self._differencing_transforms:
+            result_df = transform.transform(result_df)
+        return result_df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply inverse transformation to DataFrame.
+
+        Parameters
+        ----------
+        df:
+            DataFrame to apply inverse transform.
+
+        Returns
+        -------
+        result: pd.DataFrame
+            transformed DataFrame.
+        """
+        if not self.inplace:
+            return df
+
+        result_df = df.copy()
+        for transform in self._differencing_transforms[::-1]:
+            result_df = transform.inverse_transform(result_df)
         return result_df
