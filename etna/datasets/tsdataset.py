@@ -834,10 +834,10 @@ class TSDataset:
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
         >>> ts.describe()
-                  start_date   end_date  length  num_missing  num_segments  num_exogs  num_regressors freq
+                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors freq
         segments
-        segment_0 2021-06-01 2021-06-30      30            0             2          1               1    D
-        segment_1 2021-06-01 2021-06-30      30            0             2          1               1    D
+        segment_0      2021-06-01    2021-06-30      30            0             2          1               1    D
+        segment_1      2021-06-01    2021-06-30      30            0             2          1               1    D
         """
         if segments is None:
             segments = self.segments
