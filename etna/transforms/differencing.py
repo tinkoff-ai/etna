@@ -11,7 +11,6 @@ from etna.transforms.utils import match_target_quantiles
 
 
 # TODO: add multiorder transform
-# TODO: to understand what to do with regressors columns
 class _SingleDifferencingTransform(Transform):
     """Calculate a time series difference of order 1.
 
@@ -64,7 +63,10 @@ class _SingleDifferencingTransform(Transform):
 
     def _get_column_name(self) -> str:
         if self.out_column is None:
-            return self.__repr__()
+            prefix = ""
+            if self.in_column.startswith("regressor_"):
+                prefix = "regressor_"
+            return f"{prefix}{self.__repr__()}"
         else:
             return self.out_column
 

@@ -41,6 +41,18 @@ def df_nans() -> pd.DataFrame:
 
 
 @pytest.fixture
+def df_regressors(df_nans) -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-04-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": np.sin(np.arange(timestamp.shape[0])), "segment": "1"})
+    df_2 = pd.DataFrame(
+        {"timestamp": timestamp[5:], "regressor_1": np.sin(np.arange(timestamp[5:].shape[0])) * 2, "segment": "2"}
+    )
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
 def df_nans_with_noise(df_nans, random_seed) -> pd.DataFrame:
     df_nans.loc[:, pd.IndexSlice["1", "target"]] += np.random.normal(scale=0.05, size=df_nans.shape[0])
     df_nans.loc[df_nans.index[5] :, pd.IndexSlice["2", "target"]] += np.random.normal(
@@ -59,13 +71,24 @@ def test_single_interface_transform_out_column(df_nans):
 
 
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_interface_transform_autogenerate_column(df_nans, period):
-    """Test that _SingleDifferencingTransform generates new column in transform according to repr."""
+def test_single_interface_transform_autogenerate_column_non_regressor(df_nans, period):
+    """Test that _SingleDifferencingTransform generates non-regressor column in transform according to repr."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False)
     transformed_df = transform.fit_transform(df_nans)
 
     new_columns = set(extract_new_features_columns(transformed_df, df_nans))
     assert new_columns == {transform.__repr__()}
+
+
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_interface_transform_autogenerate_column_regressor(df_nans, df_regressors, period):
+    """Test that _SingleDifferencingTransform generates regressor column in transform according to repr."""
+    transform = _SingleDifferencingTransform(in_column="regressor_1", period=period, inplace=False)
+    ts = TSDataset(df=df_nans, df_exog=df_regressors, freq="D")
+    transformed_df = transform.fit_transform(ts.to_pandas())
+
+    new_columns = set(extract_new_features_columns(transformed_df, ts.to_pandas()))
+    assert new_columns == {f"regressor_{transform.__repr__()}"}
 
 
 def test_single_interface_transform_inplace(df_nans):
