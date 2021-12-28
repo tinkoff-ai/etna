@@ -7,8 +7,8 @@ from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
 from etna.models.linear import LinearPerSegmentModel
-from etna.transforms.datetime_flags import DateFlagsTransform
-from etna.transforms.lags import LagTransform
+from etna.transforms.math.lags import LagTransform
+from etna.transforms.timestamp.time_flags import DateFlagsTransform
 
 
 @pytest.fixture
