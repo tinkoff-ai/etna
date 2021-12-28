@@ -41,7 +41,7 @@ class _SingleDifferencingTransform(Transform):
         out_column:
             if set, name of added column, the final name will be '{out_column}',
             don't forget to add 'regressor_' prefix
-            if don't set, name will be '{repr}'
+            if isn't set, name will be based on `self.__repr__`
 
         Raises
         ------
@@ -264,7 +264,7 @@ class DifferencingTransform(Transform):
         out_column:
             if set, name of added column, the final name will be '{out_column}',
             don't forget to add 'regressor_' prefix
-            if don't set, name will be '{repr}'
+            if isn't set, name will be based on `self.__repr__`
 
         Raises
         ------
