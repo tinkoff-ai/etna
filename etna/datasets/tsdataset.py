@@ -797,8 +797,8 @@ class TSDataset:
         Method describes dataset in segment-wise fashion. Description columns:
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
         * end_timestamp: ending of the segment, missing values are not ignored, common for all segments
-        * length: length according to start_date and end_date
-        * num_missing: number of missing variables between start_date and end_date
+        * length: length according to start_timestamp and end_timestamp
+        * num_missing: number of missing variables between start_timestamp and end_timestamp
         * num_segments: total number of segments, common for all segments
         * num_exogs: number of exogenous features, common for all segments
         * num_regressors: number of exogenous factors, that are regressors, common for all segments
@@ -885,8 +885,8 @@ class TSDataset:
 
         Information about individual segments:
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
-        * length: length according to start_date and end_date
-        * num_missing: number of missing variables between start_date and end_date
+        * length: length according to start_timestamp and end_timestamp
+        * num_missing: number of missing variables between start_timestamp and end_timestamp
 
 
         Parameters
