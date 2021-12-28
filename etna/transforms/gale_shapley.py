@@ -221,7 +221,7 @@ class GaleShapleyMatcher(BaseMixin):
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table."""
 
-    def __init__(self, relevance_table: RelevanceTable, top_k: int, use_rank: bool = False):
+    def __init__(self, relevance_table: RelevanceTable, top_k: int, use_rank: bool = False, **relevance_params):
         """Init GaleShapleyFeatureSelectionTransform.
 
         Parameters
@@ -238,12 +238,15 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.top_k = top_k
         self.use_rank = use_rank
         self.greater_is_better = False if use_rank else relevance_table.greater_is_better
+        self.relevance_params = relevance_params
 
     def _compute_relevance_table(self, df: pd.DataFrame, regressors: List[str]) -> pd.DataFrame:
         """Compute relevance table with given data."""
         targets_df = df.loc[:, pd.IndexSlice[:, "target"]]
         regressors_df = df.loc[:, pd.IndexSlice[:, regressors]]
-        table = self.relevance_table(df=targets_df, df_exog=regressors_df, return_ranks=self.use_rank)
+        table = self.relevance_table(
+            df=targets_df, df_exog=regressors_df, return_ranks=self.use_rank, **self.relevance_params
+        )
         return table
 
     @staticmethod

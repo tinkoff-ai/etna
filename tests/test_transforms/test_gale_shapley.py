@@ -4,7 +4,9 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.ensemble import RandomForestRegressor
 
+from etna.analysis.feature_relevance import ModelRelevanceTable
 from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -583,6 +585,16 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
         "regressor_4",
         "regressor_5",
     }
+
+
+@pytest.mark.parametrize("use_rank", (True, False))
+@pytest.mark.parametrize("top_k", (2, 3, 5, 6, 7))
+def test_gale_shapley_transform_fit_model_based(ts_with_large_regressors_number: TSDataset, top_k: int, use_rank: bool):
+    df = ts_with_large_regressors_number.df
+    transform = GaleShapleyFeatureSelectionTransform(
+        relevance_table=ModelRelevanceTable(), top_k=top_k, use_rank=use_rank, model=RandomForestRegressor()
+    )
+    transform.fit(df=df)
 
 
 @pytest.mark.xfail
