@@ -5,7 +5,7 @@ import pytest
 from etna.datasets.tsdataset import TSDataset
 from etna.models import CatBoostModelMultiSegment
 from etna.models import CatBoostModelPerSegment
-from etna.transforms.math.lags import LagTransform
+from etna.transforms.math import LagTransform
 
 
 @pytest.mark.parametrize("catboostmodel", [CatBoostModelMultiSegment, CatBoostModelPerSegment])
