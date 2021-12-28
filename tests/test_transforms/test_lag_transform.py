@@ -96,7 +96,10 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_df_two
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
         assert generated_column == column
-        assert equals_with_nans(df_temp.loc[:, pd.IndexSlice[segments, generated_column]], transformed_df.loc[:, pd.IndexSlice[segments, column]])
+        assert equals_with_nans(
+            df_temp.loc[:, pd.IndexSlice[segments, generated_column]],
+            transformed_df.loc[:, pd.IndexSlice[segments, column]],
+        )
 
 
 @pytest.mark.parametrize("lags", (12, [4, 6, 8, 16]))
