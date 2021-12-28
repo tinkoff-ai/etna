@@ -17,7 +17,7 @@ GeneralDifferencingTransform = Union[_SingleDifferencingTransform, DifferencingT
 
 
 def extract_new_features_columns(transformed_df: pd.DataFrame, initial_df: pd.DataFrame) -> List[str]:
-    """Extract columns from feature level that are present in transformed_df but not present in initial_df."""
+    """Extract columns from feature level that are present in transformed_df but not in initial_df."""
     return (
         transformed_df.columns.get_level_values("feature")
         .difference(initial_df.columns.get_level_values("feature"))
@@ -36,6 +36,7 @@ def equals_with_nans(first_df: pd.DataFrame, second_df: pd.DataFrame) -> bool:
 
 @pytest.fixture
 def df_nans() -> pd.DataFrame:
+    """Create DataFrame with nans at the beginning of one segment."""
     timestamp = pd.date_range("2021-01-01", "2021-04-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": np.arange(timestamp.shape[0]), "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": np.arange(timestamp[5:].shape[0]) * 2, "segment": "2"})
@@ -46,6 +47,7 @@ def df_nans() -> pd.DataFrame:
 
 @pytest.fixture
 def df_regressors(df_nans) -> pd.DataFrame:
+    """Create df_exog for df_nans."""
     timestamp = pd.date_range("2021-01-01", "2021-05-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": np.sin(np.arange(timestamp.shape[0])), "segment": "1"})
     df_2 = pd.DataFrame(
@@ -58,6 +60,7 @@ def df_regressors(df_nans) -> pd.DataFrame:
 
 @pytest.fixture
 def df_nans_with_noise(df_nans, random_seed) -> pd.DataFrame:
+    """Create noised version of df_nans."""
     df_nans.loc[:, pd.IndexSlice["1", "target"]] += np.random.normal(scale=0.03, size=df_nans.shape[0])
     df_nans.loc[df_nans.index[5] :, pd.IndexSlice["2", "target"]] += np.random.normal(
         scale=0.05, size=df_nans.shape[0] - 5
@@ -186,7 +189,7 @@ def test_full_fail_wrong_period():
 
 
 def test_full_fail_wrong_order():
-    """Test that DifferencingTransform can't be created with period < 1."""
+    """Test that DifferencingTransform can't be created with order < 1."""
     with pytest.raises(ValueError, match="Order should be at least 1"):
         _ = DifferencingTransform(in_column="target", period=1, order=0, inplace=False, out_column="diff")
 
