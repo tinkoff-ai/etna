@@ -474,7 +474,6 @@ def test_gather_common_data(df_and_regressors):
     df, df_exog = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     common_data = ts._gather_common_data()
-    assert common_data["end_timestamp"] == pd.Timestamp("2021-02-01")
     assert common_data["num_segments"] == 2
     assert common_data["num_exogs"] == 2
     assert common_data["num_regressors"] == 2
@@ -484,6 +483,10 @@ def test_gather_common_data(df_and_regressors):
 def test_gather_segments_data(df_and_regressors):
     """Check that TSDataset._gather_segments_data correctly finds segment data for info/describe methods."""
     df, df_exog = df_and_regressors
+    # add NaN in the middle
+    df.iloc[-5, 0] = np.NaN
+    # add NaNs at the end
+    df.iloc[-3:, 1] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     segments = ts.segments
     segments_dict = ts._gather_segments_data(segments)
@@ -492,24 +495,33 @@ def test_gather_segments_data(df_and_regressors):
     assert np.all(segment_df.index == ts.segments)
     assert segment_df.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert segment_df.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
+    assert segment_df.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
+    assert segment_df.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
     assert segment_df.loc["1", "length"] == 32
-    assert segment_df.loc["2", "length"] == 32 - 5
-    assert segment_df.loc["1", "num_missing"] == 0
+    assert segment_df.loc["2", "length"] == 24
+    assert segment_df.loc["1", "num_missing"] == 1
     assert segment_df.loc["2", "num_missing"] == 0
 
 
 def test_describe(df_and_regressors):
     """Check that TSDataset.describe works correctly."""
     df, df_exog = df_and_regressors
+    # add NaN in the middle
+    df.iloc[-5, 0] = np.NaN
+    # add NaNs at the end
+    df.iloc[-3:, 1] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     description = ts.describe()
+
     assert np.all(description.index == ts.segments)
     assert description.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert description.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
-    assert np.all(description["end_timestamp"] == pd.Timestamp("2021-02-01"))
+    assert description.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
+    assert description.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
     assert description.loc["1", "length"] == 32
-    assert description.loc["2", "length"] == 32 - 5
-    assert np.all(description["num_missing"] == 0)
+    assert description.loc["2", "length"] == 24
+    assert description.loc["1", "num_missing"] == 1
+    assert description.loc["2", "num_missing"] == 0
     assert np.all(description["num_segments"] == 2)
     assert np.all(description["num_exogs"] == 2)
     assert np.all(description["num_regressors"] == 2)

@@ -765,7 +765,6 @@ class TSDataset:
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
         common_dict: Dict[str, Any] = {
-            "end_timestamp": self.index.max(),
             "num_segments": len(self.segments),
             "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
             "num_regressors": len(self.regressors),
@@ -779,13 +778,18 @@ class TSDataset:
         # gather segment information
         segments_dict: Dict[str, list] = {
             "start_timestamp": [],
+            "end_timestamp": [],
             "length": [],
             "num_missing": [],
         }
 
         for segment in segments:
             segment_series = self[:, segment, "target"]
-            segments_dict["start_timestamp"].append(segment_series.index.min())
+            first_index = segment_series.first_valid_index()
+            last_index = segment_series.last_valid_index()
+            segment_series = segment_series.loc[first_index:last_index]
+            segments_dict["start_timestamp"].append(first_index)
+            segments_dict["end_timestamp"].append(last_index)
             segments_dict["length"].append(segment_series.shape[0])
             segments_dict["num_missing"].append(pd.isna(segment_series).sum())
 
@@ -796,7 +800,7 @@ class TSDataset:
 
         Method describes dataset in segment-wise fashion. Description columns:
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
-        * end_timestamp: ending of the segment, missing values are not ignored, common for all segments
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
         * length: length according to start_timestamp and end_timestamp
         * num_missing: number of missing variables between start_timestamp and end_timestamp
         * num_segments: total number of segments, common for all segments
@@ -849,10 +853,8 @@ class TSDataset:
         segments_dict = self._gather_segments_data(segments)
 
         # combine information
-        segments_dict["end_timestamp"] = [common_dict["end_timestamp"]] * len(segments)
         segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
         segments_dict["num_exogs"] = [common_dict["num_exogs"]] * len(segments)
-        segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
         segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
         segments_dict["freq"] = [common_dict["freq"]] * len(segments)
 
@@ -877,7 +879,6 @@ class TSDataset:
         Method describes dataset in segment-wise fashion.
 
         Information about dataset in general:
-        * end_timestamp: ending of the segment, missing values are not ignored
         * num_segments: total number of segments
         * num_exogs: number of exogenous features
         * num_regressors: number of exogenous factors, that are regressors
@@ -885,6 +886,7 @@ class TSDataset:
 
         Information about individual segments:
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
         * length: length according to start_timestamp and end_timestamp
         * num_missing: number of missing variables between start_timestamp and end_timestamp
 
@@ -914,15 +916,14 @@ class TSDataset:
         >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
         >>> ts.info()
         <class 'etna.datasets.TSDataset'>
-        end_timestamp: 2021-06-30 00:00:00
         num_segments: 2
         num_exogs: 1
         num_regressors: 1
         freq: D
-                  start_timestamp  length  num_missing
+                  start_timestamp end_timestamp  length  num_missing
         segments
-        segment_0      2021-06-01      30            0
-        segment_1      2021-06-01      30            0
+        segment_0      2021-06-01    2021-06-30      30            0
+        segment_1      2021-06-01    2021-06-30      30            0
         """
         if segments is None:
             segments = self.segments
