@@ -8,7 +8,7 @@ from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
 
-class _OneSegmentLagFeature(Transform):
+class _OneSegmentLagTransform(Transform):
     """Generates series of lags from given segment."""
 
     def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
@@ -24,13 +24,20 @@ class _OneSegmentLagFeature(Transform):
         self.in_column = in_column
         self.out_column = out_column
 
-    def fit(self, *args) -> "_OneSegmentLagFeature":
+    def _get_column_name(self, lag: int) -> str:
+        if self.out_column is None:
+            temp_transform = LagTransform(in_column=self.in_column, out_column=self.out_column, lags=[lag])
+            return f"regressor_{temp_transform.__repr__()}"
+        else:
+            return f"{self.out_column}_{lag}"
+
+    def fit(self, *args) -> "_OneSegmentLagTransform":
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         result = df.copy()
         for lag in self.lags:
-            result[f"{self.out_column}_{lag}"] = df[self.in_column].shift(lag)
+            result[self._get_column_name(lag)] = df[self.in_column].shift(lag)
         return result
 
 
@@ -47,8 +54,10 @@ class LagTransform(PerSegmentWrapper):
         lags:
             int value or list of values for lags computation; if int, generate range of lags from 1 to given value
         out_column:
-            name of added column. We get '{out_column}_{lag_number}'(don't forget to add regressor prefix if necessary).
-            If not given, use 'regressor_{self.__repr__()}_{lag_number}'
+            base for the name of created columns;
+            if set the final name is '{out_column}_{lag_number}', don't forget to add 'regressor_' prefix if necessary;
+            if don't set, name will be 'regressor_{transform.__repr__()}',
+            repr will be made for transform that creates exactly this column
 
         Raises
         ------
@@ -60,9 +69,9 @@ class LagTransform(PerSegmentWrapper):
         self.out_column = out_column
 
         super().__init__(
-            transform=_OneSegmentLagFeature(
+            transform=_OneSegmentLagTransform(
                 in_column=self.in_column,
                 lags=self.lags,
-                out_column=out_column if out_column is not None else f"regressor_{self.__repr__()}",
+                out_column=self.out_column
             )
         )

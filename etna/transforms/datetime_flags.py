@@ -52,8 +52,8 @@ class DateFlagsTransform(Transform):
         out_column:
             base for the name of created columns;
             if set the final name is '{out_column}_{feature_name}', don't forget to add 'regressor_' prefix;
-            if don't set, name will be 'regressor_{self.__repr__()}',
-            repr will represent class that creates exactly this column
+            if don't set, name will be 'regressor_{transform.__repr__()}',
+            repr will be made for transform that creates exactly this column
 
         Notes
         -----
@@ -314,8 +314,8 @@ class TimeFlagsTransform(Transform):
         out_column:
             base for the name of created columns;
             if set the final name is '{out_column}_{feature_name}', don't forget to add 'regressor_' prefix;
-            if don't set, name will be 'regressor_{self.__repr__()}',
-            repr will represent class that creates exactly this column
+            if don't set, name will be 'regressor_{transform.__repr__()}',
+            repr will be made for transform that creates exactly this column
 
         Raises
         ------
