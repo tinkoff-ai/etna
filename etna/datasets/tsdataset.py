@@ -1,6 +1,8 @@
 import math
 import warnings
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -760,60 +762,190 @@ class TSDataset:
         """
         return self.df.tail(n_rows)
 
-    def describe(
-        self,
-        percentiles: Optional[List[float]] = None,
-        include: Optional[Union[str, List[np.dtype]]] = None,
-        exclude: Optional[Union[str, List[np.dtype]]] = None,
-        datetime_is_numeric: bool = False,
-    ) -> pd.DataFrame:
-        """Generate descriptive statistics.
+    def _gather_common_data(self) -> Dict[str, Any]:
+        """Gather information about dataset in general."""
+        common_dict: Dict[str, Any] = {
+            "num_segments": len(self.segments),
+            "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
+            "num_regressors": len(self.regressors),
+            "freq": self.freq,
+        }
 
-        Mimics pandas method.
+        return common_dict
 
-        Descriptive statistics include those that summarize the central
-        tendency, dispersion and shape of a
-        dataset's distribution, excluding ``NaN`` values.
+    def _gather_segments_data(self, segments: Sequence[str]) -> Dict[str, List[Any]]:
+        """Gather information about each segment."""
+        # gather segment information
+        segments_dict: Dict[str, list] = {
+            "start_timestamp": [],
+            "end_timestamp": [],
+            "length": [],
+            "num_missing": [],
+        }
+
+        for segment in segments:
+            segment_series = self[:, segment, "target"]
+            first_index = segment_series.first_valid_index()
+            last_index = segment_series.last_valid_index()
+            segment_series = segment_series.loc[first_index:last_index]
+            segments_dict["start_timestamp"].append(first_index)
+            segments_dict["end_timestamp"].append(last_index)
+            segments_dict["length"].append(segment_series.shape[0])
+            segments_dict["num_missing"].append(pd.isna(segment_series).sum())
+
+        return segments_dict
+
+    def describe(self, segments: Optional[Sequence[str]] = None) -> pd.DataFrame:
+        """Overview of the dataset that returns a DataFrame.
+
+        Method describes dataset in segment-wise fashion. Description columns:
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
+        * length: length according to start_timestamp and end_timestamp
+        * num_missing: number of missing variables between start_timestamp and end_timestamp
+        * num_segments: total number of segments, common for all segments
+        * num_exogs: number of exogenous features, common for all segments
+        * num_regressors: number of exogenous factors, that are regressors, common for all segments
+        * freq: frequency of the series, common for all segments
 
         Parameters
         ----------
-        percentiles : list-like of numbers, optional
-            The percentiles to include in the output. All should
-            fall between 0 and 1. The default is
-            ``[.25, .5, .75]``, which returns the 25th, 50th, and
-            75th percentiles.
-        include : 'all', list-like of dtypes or None (default), optional
-            A white list of data types to include in the result. Ignored
-            for ``Series``. Here are the options:
-            - 'all' : All columns of the input will be included in the output.
-            - A list-like of dtypes : Limits the results to the
-              provided data types.
-              To limit the result to numeric types submit
-              ``numpy.number``. To limit it instead to object columns submit
-              the ``numpy.object`` data type. Strings
-              can also be used in the style of
-              ``select_dtypes`` (e.g. ``df.describe(include=['O'])``). To
-              select pandas categorical columns, use ``'category'``
-            - None (default) : The result will include all numeric columns.
-        exclude : list-like of dtypes or None (default), optional,
-            A black list of data types to omit from the result. Ignored
-            for ``Series``. Here are the options:
-            - A list-like of dtypes : Excludes the provided data types
-              from the result. To exclude numeric types submit
-              ``numpy.number``. To exclude object columns submit the data
-              type ``numpy.object``. Strings can also be used in the style of
-              ``select_dtypes`` (e.g. ``df.describe(include=['O'])``). To
-              exclude pandas categorical columns, use ``'category'``
-            - None (default) : The result will exclude nothing.
-        datetime_is_numeric : bool, default False
-            Whether to treat datetime dtypes as numeric. This affects statistics
-            calculated for the column. For DataFrame input, this also
-            controls whether datetime columns are included by default.
+        segments:
+            segments to show in overview, if None all segments are shown.
 
         Returns
         -------
-        pd.DataFrame
-            Summary statistics of the TSDataset provided.
+        result_table: pd.DataFrame
+            table with results of the overview
 
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> pd.options.display.expand_frame_repr = False
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.describe()
+                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors freq
+        segments
+        segment_0      2021-06-01    2021-06-30      30            0             2          1               1    D
+        segment_1      2021-06-01    2021-06-30      30            0             2          1               1    D
         """
-        return self.df.describe(percentiles, include, exclude, datetime_is_numeric)
+        if segments is None:
+            segments = self.segments
+
+        # gather common information
+        common_dict = self._gather_common_data()
+
+        # gather segment information
+        segments_dict = self._gather_segments_data(segments)
+
+        # combine information
+        segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
+        segments_dict["num_exogs"] = [common_dict["num_exogs"]] * len(segments)
+        segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
+        segments_dict["freq"] = [common_dict["freq"]] * len(segments)
+
+        result_df = pd.DataFrame(segments_dict, index=segments)
+        columns_order = [
+            "start_timestamp",
+            "end_timestamp",
+            "length",
+            "num_missing",
+            "num_segments",
+            "num_exogs",
+            "num_regressors",
+            "freq",
+        ]
+        result_df = result_df[columns_order]
+        result_df.index.name = "segments"
+        return result_df
+
+    def info(self, segments: Optional[Sequence[str]] = None) -> None:
+        """Overview of the dataset that prints the result.
+
+        Method describes dataset in segment-wise fashion.
+
+        Information about dataset in general:
+        * num_segments: total number of segments
+        * num_exogs: number of exogenous features
+        * num_regressors: number of exogenous factors, that are regressors
+        * freq: frequency of the dataset
+
+        Information about individual segments:
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
+        * length: length according to start_timestamp and end_timestamp
+        * num_missing: number of missing variables between start_timestamp and end_timestamp
+
+
+        Parameters
+        ----------
+        segments:
+            segments to show in overview, if None all segments are shown.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.info()
+        <class 'etna.datasets.TSDataset'>
+        num_segments: 2
+        num_exogs: 1
+        num_regressors: 1
+        freq: D
+                  start_timestamp end_timestamp  length  num_missing
+        segments
+        segment_0      2021-06-01    2021-06-30      30            0
+        segment_1      2021-06-01    2021-06-30      30            0
+        """
+        if segments is None:
+            segments = self.segments
+        lines = []
+
+        # add header
+        lines.append("<class 'etna.datasets.TSDataset'>")
+
+        # add common information
+        common_dict = self._gather_common_data()
+
+        for key, value in common_dict.items():
+            lines.append(f"{key}: {value}")
+
+        # add segment information
+        segments_dict = self._gather_segments_data(segments)
+        segment_df = pd.DataFrame(segments_dict, index=segments)
+        segment_df.index.name = "segments"
+
+        with pd.option_context("display.width", None):
+            lines += segment_df.to_string().split("\n")
+
+        # print the results
+        result_string = "\n".join(lines)
+        print(result_string)
