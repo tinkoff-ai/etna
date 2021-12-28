@@ -78,7 +78,9 @@ class _ProphetModel:
         for seasonality_params in self.additional_seasonality_params:
             self.model.add_seasonality(**seasonality_params)
 
-    def fit(self, df: pd.DataFrame) -> "_ProphetModel":
+        self.regressor_columns: Optional[List[str]] = None
+
+    def fit(self, df: pd.DataFrame, regressors: Optional[List[str]]) -> "_ProphetModel":
         """
         Fits a Prophet model.
 
@@ -86,18 +88,16 @@ class _ProphetModel:
         ----------
         df:
             Features dataframe
+        regressors:
+            List of the columns with regressors
         """
+        self.regressor_columns = regressors
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
         prophet_df["ds"] = df["timestamp"]
-        for column_name in df.columns:
-            if column_name.startswith("regressor"):
-                if column_name in ["regressor_cap", "regressor_floor"]:
-                    prophet_column_name = column_name[len("regressor_") :]
-                else:
-                    self.model.add_regressor(column_name)
-                    prophet_column_name = column_name
-                prophet_df[prophet_column_name] = df[column_name]
+        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        for regressor in self.regressor_columns:
+            self.model.add_regressor(regressor)
         self.model.fit(prophet_df)
         return self
 
@@ -123,14 +123,7 @@ class _ProphetModel:
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
         prophet_df["ds"] = df["timestamp"]
-        for column_name in df.columns:
-            if column_name.startswith("regressor"):
-                if column_name in ["regressor_cap", "regressor_floor"]:
-                    prophet_column_name = column_name[len("regressor_") :]
-                else:
-                    prophet_column_name = column_name
-                prophet_df[prophet_column_name] = df[column_name]
-
+        prophet_df[self.regressor_columns] = df[self.regressor_columns]
         forecast = self.model.predict(prophet_df)
         y_pred = pd.DataFrame(forecast["yhat"])
         if prediction_interval:
@@ -274,7 +267,7 @@ class ProphetModel(PerSegmentModel):
         Notes
         -----
         Original Prophet can use features 'cap' and 'floor',
-        but our wrapper expects it under names 'regressor_cap' and 'regressor_floor'.
+        they should be added to the known_future list on dataset initialization.
         """
         self.growth = growth
         self.n_changepoints = n_changepoints
@@ -313,6 +306,21 @@ class ProphetModel(PerSegmentModel):
                 additional_seasonality_params=self.additional_seasonality_params,
             )
         )
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "ProphetModel":
+        """Fit model."""
+        self._segments = ts.segments
+        self._build_models()
+
+        for segment in self._segments:
+            model = self._models[segment]
+            segment_features = ts[:, segment, :]
+            segment_features = segment_features.dropna()
+            segment_features = segment_features.droplevel("segment", axis=1)
+            segment_features = segment_features.reset_index()
+            model.fit(df=segment_features, regressors=ts.regressors)
+        return self
 
     @staticmethod
     def _forecast_one_segment(
