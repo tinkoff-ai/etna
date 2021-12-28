@@ -152,14 +152,15 @@ class TSDataset:
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
         from etna.transforms.base import FutureMixin
 
-        out_columns = list(columns_after - columns_before)
-        if len(out_columns) == 0:
+        unseen_columns = list(columns_after - columns_before)
+        if len(unseen_columns) == 0:
             return
 
         new_regressors = []
 
         if isinstance(transform, FutureMixin):
             # Every column from FutureMixin is regressor
+            out_columns = list(columns_after - columns_before)
             new_regressors = out_columns
 
         elif hasattr(transform, "in_column"):
@@ -167,6 +168,7 @@ class TSDataset:
             in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
             if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
                 # User defined out_columns in sklearn
+                # TODO: remove this case after fixing the out_column attribute in SklearnTransform
                 out_columns = transform.out_columns  # type: ignore
                 regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
                 new_regressors = [out_columns[i] for i in regressors_in_column_ids]
@@ -177,6 +179,7 @@ class TSDataset:
                 new_regressors = [out_columns[i] for i in regressors_in_column_ids]
             else:
                 # Default out_columns
+                out_columns = list(columns_after - columns_before)
                 regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
                 new_regressors = [
                     out_column
