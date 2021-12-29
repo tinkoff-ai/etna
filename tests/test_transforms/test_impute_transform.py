@@ -13,14 +13,14 @@ frequencies = ["D", "15min"]
 
 
 @pytest.fixture(params=frequencies, ids=frequencies)
-def date_range(request) -> pd.Series:
+def date_range(request) -> pd.DatetimeIndex:
     """Create pd.Series with range of dates."""
     freq = request.param
     dtr = pd.date_range(start="2020-01-01", end="2020-03-01", freq=freq)
     return dtr
 
 
-@pytest.fixture()
+@pytest.fixture
 def all_date_present_df(date_range: pd.Series) -> pd.DataFrame:
     """Create pd.DataFrame that contains some target on given range of dates without gaps."""
     df = pd.DataFrame({"timestamp": date_range})
@@ -29,7 +29,7 @@ def all_date_present_df(date_range: pd.Series) -> pd.DataFrame:
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def all_date_present_df_two_segments(all_date_present_df: pd.Series) -> pd.DataFrame:
     """Create pd.DataFrame that contains two segments with some targets on given range of dates without gaps."""
     df_1 = all_date_present_df.reset_index()
@@ -43,19 +43,7 @@ def all_date_present_df_two_segments(all_date_present_df: pd.Series) -> pd.DataF
     return df
 
 
-def test_wrong_init_one_segment():
-    """Check that imputer for one segment fails to init with wrong imputing strategy."""
-    with pytest.raises(ValueError):
-        _ = _OneSegmentTimeSeriesImputerTransform(strategy="wrong_strategy")
-
-
-def test_wrong_init_two_segments(all_date_present_df_two_segments):
-    """Check that imputer for two segments fails to fit_transform with wrong imputing strategy."""
-    with pytest.raises(ValueError):
-        _ = TimeSeriesImputerTransform(strategy="wrong_strategy")
-
-
-@pytest.fixture()
+@pytest.fixture
 def df_with_missing_value_x_index(random_seed, all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
     """Create pd.DataFrame that contains some target on given range of dates with one gap."""
     # index cannot be first or last value,
@@ -67,7 +55,7 @@ def df_with_missing_value_x_index(random_seed, all_date_present_df: pd.DataFrame
     return df, idx
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
     timestamps = sorted(all_date_present_df.index)
@@ -77,7 +65,7 @@ def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd
     return df, rng
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_with_missing_range_x_index_two_segments(
     df_with_missing_range_x_index: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, list]:
@@ -90,6 +78,32 @@ def df_with_missing_range_x_index_two_segments(
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
     return df, rng
+
+
+@pytest.fixture
+def df_all_missing(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
+    """Create pd.DataFrame with all values set to nan."""
+    all_date_present_df.loc[:, :] = np.NaN
+    return all_date_present_df
+
+
+@pytest.fixture
+def df_all_missing_two_segments(all_date_present_df_two_segments: pd.DataFrame) -> pd.DataFrame:
+    """Create pd.DataFrame with all values set to nan."""
+    all_date_present_df_two_segments.loc[:, :] = np.NaN
+    return all_date_present_df_two_segments
+
+
+def test_wrong_init_one_segment():
+    """Check that imputer for one segment fails to init with wrong imputing strategy."""
+    with pytest.raises(ValueError):
+        _ = _OneSegmentTimeSeriesImputerTransform(strategy="wrong_strategy")
+
+
+def test_wrong_init_two_segments(all_date_present_df_two_segments):
+    """Check that imputer for two segments fails to fit_transform with wrong imputing strategy."""
+    with pytest.raises(ValueError):
+        _ = TimeSeriesImputerTransform(strategy="wrong_strategy")
 
 
 @pytest.mark.smoke
@@ -109,6 +123,36 @@ def test_all_dates_present_impute_two_segments(all_date_present_df_two_segments:
     result = imputer.fit_transform(all_date_present_df_two_segments)
     for segment in result.columns.get_level_values("segment"):
         np.testing.assert_array_equal(all_date_present_df_two_segments[segment]["target"], result[segment]["target"])
+
+
+def test_all_missing_impute_zero(df_all_missing: pd.DataFrame):
+    """Check that imputer fills zero value if all values are nans and strategy is zero."""
+    imputer = _OneSegmentTimeSeriesImputerTransform(strategy="zero")
+    result = imputer.fit_transform(df_all_missing)
+    assert np.all(result == 0)
+
+
+def test_all_missing_impute_zero_two_segments(df_all_missing_two_segments: pd.DataFrame):
+    """Check that imputer fills zero value if all values are nans and strategy is zero."""
+    imputer = TimeSeriesImputerTransform(strategy="zero")
+    result = imputer.fit_transform(df_all_missing_two_segments)
+    assert np.all(result == 0)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill"])
+def test_all_missing_impute_fail(df_all_missing: pd.DataFrame, fill_strategy: str):
+    """Check that imputer can't fill nans if all values are nans."""
+    imputer = _OneSegmentTimeSeriesImputerTransform(strategy=fill_strategy)
+    with pytest.raises(ValueError, match="It isn't possible to make imputation"):
+        _ = imputer.fit_transform(df_all_missing)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill"])
+def test_all_missing_impute_fail_two_segments(df_all_missing_two_segments: pd.DataFrame, fill_strategy: str):
+    """Check that imputer can't fill nans if all values are nans."""
+    imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
+    with pytest.raises(ValueError, match="It isn't possible to make imputation"):
+        _ = imputer.fit_transform(df_all_missing_two_segments)
 
 
 def test_one_missing_value_zero(df_with_missing_value_x_index: pd.DataFrame):
@@ -252,6 +296,7 @@ def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segment
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
 def test_fit_transform_with_nans(fill_strategy, ts_diff_endings):
+    """Check that transform correctly works with NaNs at the end."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
     ts_diff_endings.fit_transform([imputer])
     assert (ts_diff_endings[:, :, "target"].isna()).sum().sum() == 0
