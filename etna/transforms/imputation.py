@@ -22,7 +22,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 
     - This transform can't fill NaNs in the future, only on train data.
     - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
-    - In 'forward_fill' strategy first NaNs are replaced with zero.
+    - In 'forward_fill' strategy very first value and first NaNs are replaced with zero.
     """
 
     def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
@@ -145,6 +145,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             df = df.fillna(value=self.fill_value)
         elif self.strategy == ImputerMode.forward_fill:
             df = df.fillna(method="ffill")
+            # very first value or first NaNs should be filled
             df = df.fillna(value=0)
         elif self.strategy == ImputerMode.running_mean:
             for i, val in enumerate(df):
@@ -159,7 +160,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
 
     - This transform can't fill NaNs in the future, only on train data.
     - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
-    - In 'forward_fill' strategy first NaNs are replaced with zero.
+    - In 'forward_fill' strategy very first value and first NaNs are replaced with zero.
     """
 
     def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
