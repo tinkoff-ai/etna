@@ -78,16 +78,23 @@ def test_fail_set_both():
 def test_column_names(example_df, period, order, num_columns):
     """Test that transform creates expected number of columns and they can be recreated by its name."""
     df = TSDataset.to_dataset(example_df)
+    segments = df.columns.get_level_values("segment").unique()
     transform = FourierTransform(period=period, order=order)
     transformed_df = transform.fit_transform(df)
     columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
     assert len(columns) == num_columns
     for column in columns:
+        # check that a transform can be created from column name and it generates the same results
         transform_temp = eval(column[len("regressor_") :])
         df_temp = transform_temp.fit_transform(df)
         columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1
-        assert columns_temp[0] == column
+        generated_column = columns_temp[0]
+        assert generated_column == column
+        assert np.all(
+            df_temp.loc[:, pd.IndexSlice[segments, generated_column]]
+            == transformed_df.loc[:, pd.IndexSlice[segments, column]]
+        )
 
 
 def test_column_names_out_column(example_df):

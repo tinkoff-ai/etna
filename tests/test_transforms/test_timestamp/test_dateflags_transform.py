@@ -5,6 +5,7 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -12,6 +13,7 @@ from etna.transforms.timestamp import DateFlagsTransform
 
 WEEKEND_DAYS = (5, 6)
 SPECIAL_DAYS = [1, 4]
+SPECIAL_DAYS_PARAMS = {"special_days_in_week", "special_days_in_month"}
 INIT_PARAMS_TEMPLATE = {
     "day_number_in_week": False,
     "day_number_in_month": False,
@@ -27,8 +29,7 @@ INIT_PARAMS_TEMPLATE = {
 
 @pytest.fixture
 def dateflags_true_df() -> pd.DataFrame:
-    """
-    Generate dataset for TimeFlags feature
+    """Generate dataset for TimeFlags feature.
 
     Returns
     -------
@@ -70,9 +71,7 @@ def dateflags_true_df() -> pd.DataFrame:
 
 @pytest.fixture
 def train_df() -> pd.DataFrame:
-    """
-    Generate dataset without dateflags
-    """
+    """Generate dataset without dateflags"""
     dataframes = [pd.DataFrame({"timestamp": pd.date_range("2010-06-01", "2021-06-01", freq="3h")}) for i in range(5)]
 
     for i in range(len(dataframes)):
@@ -89,7 +88,7 @@ def train_df() -> pd.DataFrame:
 
 
 def test_invalid_arguments_configuration():
-    """This test check DateFlagsFeature's behavior in case of invalid set of params"""
+    """Test that transform can't be created with no features to generate."""
     with pytest.raises(ValueError):
         _ = DateFlagsTransform(
             day_number_in_month=False,
@@ -105,7 +104,7 @@ def test_invalid_arguments_configuration():
 
 
 def test_repr():
-    """This test checks that __repr__ method works fine."""
+    """Test that __repr__ method works fine."""
     transform_class_repr = "DateFlagsTransform"
     transform = DateFlagsTransform(
         day_number_in_week=True,
@@ -149,17 +148,17 @@ def test_repr():
     ),
 )
 def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.DataFrame):
-    """This test checks generated columns in transform using out_column."""
+    """Test that transform generates correct column names using out_column parameter."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    test_segs = train_df.columns.get_level_values(0).unique()
+    segments = train_df.columns.get_level_values("segment").unique()
     out_column = "dateflags"
     for key in true_params:
         init_params[key] = True
     transform = DateFlagsTransform(**init_params, out_column=out_column)
     result = transform.fit_transform(df=train_df.copy())
 
-    assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
+    assert sorted(segments) == sorted(result.columns.get_level_values("segment").unique())
 
     true_params = [f"{out_column}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
@@ -188,50 +187,42 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
             "year_number",
             "is_weekend",
         ],
+        ["special_days_in_week"],
+        ["special_days_in_month"],
+        ["special_days_in_week", "special_days_in_month"],
     ),
 )
 def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFrame):
-    """This test checks generated columns in transform using no out_column, that is, repr in the name of column."""
+    """Test that transform generates correct column names without setting out_column parameter."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    test_segs = train_df.columns.get_level_values(0).unique()
+    segments = train_df.columns.get_level_values("segment").unique()
     for key in true_params:
-        init_params[key] = True
+        if key in SPECIAL_DAYS_PARAMS:
+            init_params[key] = SPECIAL_DAYS
+        else:
+            init_params[key] = True
     transform = DateFlagsTransform(**init_params)
     result = transform.fit_transform(df=train_df.copy())
 
-    assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
     assert sorted(result.columns.names) == ["feature", "segment"]
+    assert sorted(segments) == sorted(result.columns.get_level_values("segment").unique())
 
-    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
-    for seg in result.columns.get_level_values(0).unique():
-        tmp_df = result[seg]
-        assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
-        for param in true_params:
-            assert tmp_df[param].dtype == "category"
+    columns = result.columns.get_level_values("feature").unique().drop("target")
+    assert len(columns) == len(true_params)
+    for column in columns:
+        # check category dtype
+        assert np.all(result.loc[:, pd.IndexSlice[segments, column]].dtypes == "category")
 
-
-@pytest.mark.parametrize(
-    "true_params",
-    (["special_days_in_week"], ["special_days_in_month"], ["special_days_in_week", "special_days_in_month"]),
-)
-def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataFrame):
-    """This test checks that feature generates all the expected columns and no unexpected ones in transform"""
-    init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    test_segs = train_df.columns.get_level_values(0).unique()
-    for key in true_params:
-        init_params[key] = SPECIAL_DAYS
-    transform = DateFlagsTransform(**init_params)
-    result = transform.fit_transform(df=train_df.copy())
-
-    assert sorted(test_segs) == sorted(result.columns.get_level_values(0).unique())
-    assert sorted(result.columns.names) == ["feature", "segment"]
-
-    true_params = [f"regressor_{transform.__repr__()}_{param}" for param in true_params]
-    for seg in result.columns.get_level_values(0).unique():
-        tmp_df = result[seg]
-        assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
-        for param in true_params:
-            assert tmp_df[param].dtype == "category"
+        # check that a transform can be created from column name and it generates the same results
+        transform_temp = eval(column[len("regressor_") :])
+        df_temp = transform_temp.fit_transform(df=train_df.copy())
+        columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
+        assert len(columns_temp) == 1
+        generated_column = columns_temp[0]
+        assert generated_column == column
+        assert np.all(
+            df_temp.loc[:, pd.IndexSlice[segments, generated_column]] == result.loc[:, pd.IndexSlice[segments, column]]
+        )
 
 
 @pytest.mark.parametrize(
@@ -251,15 +242,15 @@ def test_interface_correct_tuple_args(true_params: List[str], train_df: pd.DataF
 def test_feature_values(
     true_params: Dict[str, Union[bool, Tuple[int, int]]], train_df: pd.DataFrame, dateflags_true_df: pd.DataFrame
 ):
-    """This test checks that feature generates correct values"""
+    """Test that transform generates correct values."""
     out_column = "regressor_dateflag"
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     init_params.update(true_params)
     transform = DateFlagsTransform(**init_params, out_column=out_column)
     result = transform.fit_transform(df=train_df.copy())
 
-    segments_true = dateflags_true_df.columns.get_level_values(0).unique()
-    segment_result = result.columns.get_level_values(0).unique()
+    segments_true = dateflags_true_df.columns.get_level_values("segment").unique()
+    segment_result = result.columns.get_level_values("segment").unique()
 
     assert sorted(segment_result) == sorted(segments_true)
 

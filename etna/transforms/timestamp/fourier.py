@@ -33,8 +33,9 @@ class FourierTransform(Transform):
             mods should be >= 1 and < period
         out_column:
             if set, name of added column, the final name will be '{out_columnt}_{mod}',
-            don't forget to add 'regressor_' prefix
-            if don't set, name will be 'regressor_{repr}', repr will represent class that creates exactly this column
+            don't forget to add 'regressor_' prefix;
+            if don't set, name will be 'regressor_{transform.repr}',
+            repr will be made for transform that creates exactly this column
 
         Raises
         ------
