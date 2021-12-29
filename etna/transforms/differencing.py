@@ -116,13 +116,13 @@ class _SingleDifferencingTransform(Transform):
 
         segments = sorted(set(df.columns.get_level_values("segment")))
         transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
-        for segment in segments:
-            to_transform = transformed.loc[:, pd.IndexSlice[segment, self.in_column]]
+        for current_segment in segments:
+            to_transform = transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]]
             start_idx = to_transform.first_valid_index()
             # make a differentiation
-            transformed.loc[start_idx:, pd.IndexSlice[segment, self.in_column]] = to_transform.loc[start_idx:].diff(
-                periods=self.period
-            )
+            transformed.loc[start_idx:, pd.IndexSlice[current_segment, self.in_column]] = to_transform.loc[
+                start_idx:
+            ].diff(periods=self.period)
 
         if self.inplace:
             result_df = df.copy()
@@ -150,13 +150,13 @@ class _SingleDifferencingTransform(Transform):
         result_df = df.copy()
 
         # impute values for reconstruction and run reconstruction
-        for segment in segments:
-            init_segment = self._train_init_dict[segment]  # type: ignore
-            for column_to_inverse in columns_to_inverse:
-                cur_series = result_df.loc[:, pd.IndexSlice[segment, column_to_inverse]]
+        for current_segment in segments:
+            init_segment = self._train_init_dict[current_segment]  # type: ignore
+            for column in columns_to_inverse:
+                cur_series = result_df.loc[:, pd.IndexSlice[current_segment, column]]
                 cur_series[init_segment.index] = init_segment.values
                 cur_series = self._make_inv_diff(cur_series)
-                result_df.loc[cur_series.index, pd.IndexSlice[segment, column_to_inverse]] = cur_series
+                result_df.loc[cur_series.index, pd.IndexSlice[current_segment, column]] = cur_series
         return result_df
 
     def _reconstruct_test(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
@@ -175,10 +175,10 @@ class _SingleDifferencingTransform(Transform):
             raise ValueError("Test should go after the train without gaps")
 
         # we can reconstruct the values by concatenating saved fit values before test values
-        for column_to_inverse in columns_to_inverse:
-            to_transform = df.loc[:, pd.IndexSlice[segments, column_to_inverse]].copy()
+        for column in columns_to_inverse:
+            to_transform = df.loc[:, pd.IndexSlice[segments, column]].copy()
             init_df = self._test_init_df.copy()  # type: ignore
-            init_df.columns.set_levels([column_to_inverse], level="feature", inplace=True)
+            init_df.columns.set_levels([column], level="feature", inplace=True)
             to_transform = pd.concat([init_df, to_transform])
 
             # validate values inside the series to transform
@@ -187,7 +187,7 @@ class _SingleDifferencingTransform(Transform):
 
             # run reconstruction and save the result
             to_transform = self._make_inv_diff(to_transform)
-            result_df.loc[:, pd.IndexSlice[segments, column_to_inverse]] = to_transform
+            result_df.loc[:, pd.IndexSlice[segments, column]] = to_transform
 
         return result_df
 
