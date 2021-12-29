@@ -39,7 +39,7 @@ jobs:
       - name: Check tag is latest
         id: check-tag
         run: |
-          git fetch --tags
+          git fetch --tags -f
           TAGS=$(git tag -l --sort=-version:refname '1.*')
           UNSTABLE_TAGS_MATCH='\-dev\|\-alpha\|\-beta\|\-rc'
           if [[ ${{ github.event.release.prerelease }} == true ]]; then
