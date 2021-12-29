@@ -1,3 +1,4 @@
+from copy import deepcopy
 from math import ceil
 from typing import Optional
 from typing import Sequence
@@ -9,14 +10,7 @@ from etna.transforms.base import Transform
 
 
 class DateFlagsTransform(Transform):
-    """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
-    Creates columns named '{out_column}_{feature_name}'(don't forget to add regressor prefix if necessary)
-    or 'regressor_{__repr__()}_{feature_name}' if not given.
-
-    Notes
-    -----
-    tables with freq types in pandas: https://nagornyy.me/courses/data-science/dates-and-time-in-python-and-pandas
-    """
+    """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column."""
 
     def __init__(
         self,
@@ -56,8 +50,10 @@ class DateFlagsTransform(Transform):
             list of days number (from [1, 31]) that should be interpreted as special ones, if given add column
             with flag that shows given date is a special day
         out_column:
-            name of added column. We get '{out_column}_{feature_name}'.
-            If not given, use 'regressor_{self.__repr__()}_{feature_name}'
+            base for the name of created columns;
+            if set the final name is '{out_column}_{feature_name}', don't forget to add 'regressor_' prefix;
+            if don't set, name will be 'regressor_{transform.__repr__()}',
+            repr will be made for transform that creates exactly this column
 
         Notes
         -----
@@ -107,7 +103,28 @@ class DateFlagsTransform(Transform):
         self.special_days_in_month = special_days_in_month
 
         self.out_column = out_column
-        self.out_column_prefix = out_column if out_column is not None else f"regressor_{self.__repr__()}"
+
+        # create empty init parameters
+        self._empty_parameters = dict(
+            day_number_in_week=False,
+            day_number_in_month=False,
+            week_number_in_month=False,
+            week_number_in_year=False,
+            month_number_in_year=False,
+            year_number=False,
+            is_weekend=False,
+            special_days_in_week=(),
+            special_days_in_month=(),
+        )
+
+    def _get_column_name(self, feature_name) -> str:
+        if self.out_column is None:
+            init_parameters = deepcopy(self._empty_parameters)
+            init_parameters[feature_name] = self.__dict__[feature_name]
+            temp_transform = DateFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
+            return f"regressor_{temp_transform.__repr__()}"
+        else:
+            return f"{self.out_column}_{feature_name}"
 
     def fit(self, *args) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
@@ -129,43 +146,43 @@ class DateFlagsTransform(Transform):
         timestamp_series = pd.Series(df.index)
 
         if self.day_number_in_week:
-            features[f"{self.out_column_prefix}_day_number_in_week"] = self._get_day_number_in_week(
+            features[self._get_column_name("day_number_in_week")] = self._get_day_number_in_week(
                 timestamp_series=timestamp_series
             )
 
         if self.day_number_in_month:
-            features[f"{self.out_column_prefix}_day_number_in_month"] = self._get_day_number_in_month(
+            features[self._get_column_name("day_number_in_month")] = self._get_day_number_in_month(
                 timestamp_series=timestamp_series
             )
 
         if self.week_number_in_month:
-            features[f"{self.out_column_prefix}_week_number_in_month"] = self._get_week_number_in_month(
+            features[self._get_column_name("week_number_in_month")] = self._get_week_number_in_month(
                 timestamp_series=timestamp_series
             )
 
         if self.week_number_in_year:
-            features[f"{self.out_column_prefix}_week_number_in_year"] = self._get_week_number_in_year(
+            features[self._get_column_name("week_number_in_year")] = self._get_week_number_in_year(
                 timestamp_series=timestamp_series
             )
 
         if self.month_number_in_year:
-            features[f"{self.out_column_prefix}_month_number_in_year"] = self._get_month_number_in_year(
+            features[self._get_column_name("month_number_in_year")] = self._get_month_number_in_year(
                 timestamp_series=timestamp_series
             )
 
         if self.year_number:
-            features[f"{self.out_column_prefix}_year_number"] = self._get_year(timestamp_series=timestamp_series)
+            features[self._get_column_name("year_number")] = self._get_year(timestamp_series=timestamp_series)
 
         if self.is_weekend:
-            features[f"{self.out_column_prefix}_is_weekend"] = self._get_weekends(timestamp_series=timestamp_series)
+            features[self._get_column_name("is_weekend")] = self._get_weekends(timestamp_series=timestamp_series)
 
         if self.special_days_in_week:
-            features[f"{self.out_column_prefix}_special_days_in_week"] = self._get_special_day_in_week(
+            features[self._get_column_name("special_days_in_week")] = self._get_special_day_in_week(
                 special_days=self.special_days_in_week, timestamp_series=timestamp_series
             )
 
         if self.special_days_in_month:
-            features[f"{self.out_column_prefix}_special_days_in_month"] = self._get_special_day_in_month(
+            features[self._get_column_name("special_days_in_month")] = self._get_special_day_in_month(
                 special_days=self.special_days_in_month, timestamp_series=timestamp_series
             )
 
@@ -262,10 +279,7 @@ class DateFlagsTransform(Transform):
 
 
 class TimeFlagsTransform(Transform):
-    """Class for holding time transform.
-    Creates columns named '{out_column}_{feature_name}'(don't forget to add regressor prefix if necessary)
-    or 'regressor_{__repr__()}_{feature_name}' if not given.
-    """
+    """TimeFlagsTransform is a class that implements extraction of the main time-based features from datetime column."""
 
     def __init__(
         self,
@@ -298,8 +312,10 @@ class TimeFlagsTransform(Transform):
             if True: add column with number of 8-hour interval within day with numeration from 0
             to feature dataframe in transform
         out_column:
-            name of added column. We get '{out_column}_{feature_name}'.
-            If not given, use 'regressor_{self.__repr__()}_{feature_name}'
+            base for the name of created columns;
+            if set the final name is '{out_column}_{feature_name}', don't forget to add 'regressor_' prefix;
+            if don't set, name will be 'regressor_{transform.__repr__()}',
+            repr will be made for transform that creates exactly this column
 
         Raises
         ------
@@ -330,7 +346,25 @@ class TimeFlagsTransform(Transform):
         self.one_third_day_number: bool = one_third_day_number
 
         self.out_column = out_column
-        self.out_column_prefix = out_column if out_column is not None else f"regressor_{self.__repr__()}"
+
+        # create empty init parameters
+        self._empty_parameters = dict(
+            minute_in_hour_number=False,
+            fifteen_minutes_in_hour_number=False,
+            hour_number=False,
+            half_hour_number=False,
+            half_day_number=False,
+            one_third_day_number=False,
+        )
+
+    def _get_column_name(self, feature_name) -> str:
+        if self.out_column is None:
+            init_parameters = deepcopy(self._empty_parameters)
+            init_parameters[feature_name] = self.__dict__[feature_name]
+            temp_transform = TimeFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
+            return f"regressor_{temp_transform.__repr__()}"
+        else:
+            return f"{self.out_column}_{feature_name}"
 
     def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
@@ -355,29 +389,29 @@ class TimeFlagsTransform(Transform):
 
         if self.minute_in_hour_number:
             minute_in_hour_number = self._get_minute_number(timestamp_series=timestamp_series)
-            features[f"{self.out_column_prefix}_minute_in_hour_number"] = minute_in_hour_number
+            features[self._get_column_name("minute_in_hour_number")] = minute_in_hour_number
 
         if self.fifteen_minutes_in_hour_number:
             fifteen_minutes_in_hour_number = self._get_period_in_hour(
                 timestamp_series=timestamp_series, period_in_minutes=15
             )
-            features[f"{self.out_column_prefix}_fifteen_minutes_in_hour_number"] = fifteen_minutes_in_hour_number
+            features[self._get_column_name("fifteen_minutes_in_hour_number")] = fifteen_minutes_in_hour_number
 
         if self.hour_number:
             hour_number = self._get_hour_number(timestamp_series=timestamp_series)
-            features[f"{self.out_column_prefix}_hour_number"] = hour_number
+            features[self._get_column_name("hour_number")] = hour_number
 
         if self.half_hour_number:
             half_hour_number = self._get_period_in_hour(timestamp_series=timestamp_series, period_in_minutes=30)
-            features[f"{self.out_column_prefix}_half_hour_number"] = half_hour_number
+            features[self._get_column_name("half_hour_number")] = half_hour_number
 
         if self.half_day_number:
             half_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=12)
-            features[f"{self.out_column_prefix}_half_day_number"] = half_day_number
+            features[self._get_column_name("half_day_number")] = half_day_number
 
         if self.one_third_day_number:
             one_third_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=8)
-            features[f"{self.out_column_prefix}_one_third_day_number"] = one_third_day_number
+            features[self._get_column_name("one_third_day_number")] = one_third_day_number
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
