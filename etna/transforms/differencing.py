@@ -87,14 +87,14 @@ class _SingleDifferencingTransform(Transform):
 
         self._train_timestamp = fit_df.index
         self._train_init_dict = {}
-        for segment in segments:
-            cur_series = fit_df.loc[:, pd.IndexSlice[segment, self.in_column]]
+        for current_segment in segments:
+            cur_series = fit_df.loc[:, pd.IndexSlice[current_segment, self.in_column]]
             cur_series = cur_series.loc[cur_series.first_valid_index() :]
 
             if cur_series.isna().sum() > 0:
                 raise ValueError(f"There should be no NaNs inside the segments")
 
-            self._train_init_dict[segment] = cur_series[: self.period]
+            self._train_init_dict[current_segment] = cur_series[: self.period]
         self._test_init_df = fit_df.iloc[-self.period :, :]
         return self
 
