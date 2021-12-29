@@ -7,8 +7,6 @@ from etna.models import NaiveModel
 from etna.transforms.missing_values import TimeSeriesImputerTransform
 from etna.transforms.missing_values.imputation import _OneSegmentTimeSeriesImputerTransform
 
-frequencies = ["D", "15min"]
-
 
 def test_wrong_init_one_segment():
     """Check that imputer for one segment fails to init with wrong imputing strategy."""

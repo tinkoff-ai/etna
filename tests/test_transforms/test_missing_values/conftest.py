@@ -13,7 +13,7 @@ DistributionDict = Dict[str, pd.DataFrame]
 
 
 @pytest.fixture(params=frequencies, ids=frequencies)
-def date_range(request) -> pd.Series:
+def date_range(request) -> pd.DatetimeIndex:
     """Create pd.Series with range of dates."""
     freq = request.param
     dtr = pd.date_range(start="2020-01-01", end="2020-03-01", freq=freq)
