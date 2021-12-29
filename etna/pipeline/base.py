@@ -166,7 +166,6 @@ class BacktestMixin(PipelineBase, ABC):
         self._folds: Optional[Dict[int, Any]] = None
         self._fold_column = "fold_number"
 
-
     @staticmethod
     def _validate_backtest_n_folds(n_folds: int):
         """Check that given n_folds value is valid."""
@@ -200,11 +199,11 @@ class BacktestMixin(PipelineBase, ABC):
                 )
 
     def _run_fold(
-        self,
-        train: TSDataset,
-        test: TSDataset,
-        fold_number: int,
-        metrics: List[Metric],
+            self,
+            train: TSDataset,
+            test: TSDataset,
+            fold_number: int,
+            metrics: List[Metric],
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
@@ -236,7 +235,7 @@ class BacktestMixin(PipelineBase, ABC):
 
     @staticmethod
     def _generate_folds_datasets(
-        ts: TSDataset, n_folds: int, horizon: int, mode: str = "expand"
+            ts: TSDataset, n_folds: int, horizon: int, mode: str = "expand"
     ) -> Generator[Tuple[TSDataset, TSDataset], None, None]:
         """Generate a sequence of train-test pairs according to timestamp."""
         mode_enum = CrossValidationMode[mode.lower()]

@@ -1,28 +1,16 @@
 import inspect
-from copy import deepcopy
 from enum import Enum
-from typing import Any
-from typing import Dict
-from typing import Generator
-from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 
-import numpy as np
 import pandas as pd
 import scipy
-from joblib import Parallel
-from joblib import delayed
 from scipy.stats import norm
 
 from etna.datasets import TSDataset
-from etna.loggers import tslogger
 from etna.metrics import MAE
-from etna.metrics import Metric
-from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
-from etna.pipeline.base import PipelineBase, BacktestMixin, IntervalMixin
+from etna.pipeline.base import BacktestMixin, IntervalMixin
 from etna.transforms.base import Transform
 
 
@@ -39,12 +27,12 @@ class Pipeline(BacktestMixin, IntervalMixin):
     support_prediction_interval = True
 
     def __init__(
-        self,
-        model: Model,
-        transforms: Sequence[Transform] = (),
-        horizon: int = 1,
-        quantiles: Sequence[float] = (0.025, 0.975),
-        n_folds: int = 3,
+            self,
+            model: Model,
+            transforms: Sequence[Transform] = (),
+            horizon: int = 1,
+            quantiles: Sequence[float] = (0.025, 0.975),
+            n_folds: int = 3,
     ):
         """
         Create instance of Pipeline with given parameters.
@@ -110,8 +98,8 @@ class Pipeline(BacktestMixin, IntervalMixin):
         _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
+                forecasts.loc[:, pd.IndexSlice[:, "target"]]
+                - self.ts[forecasts.index.min(): forecasts.index.max(), :, "target"]
         )
 
         predictions = self.model.forecast(ts=future)
