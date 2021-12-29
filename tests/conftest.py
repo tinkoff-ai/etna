@@ -419,3 +419,39 @@ def ts_diff_endings(example_reg_tsds):
     ts = deepcopy(example_reg_tsds)
     ts.loc[example_reg_tsds.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
     return ts
+
+
+@pytest.fixture
+def toy_dataset_equal_targets_and_quantiles():
+    n_periods = 5
+    n_segments = 2
+
+    time = list(pd.date_range("2020-01-01", periods=n_periods, freq="1D"))
+
+    df = {
+        "timestamp": time * n_segments,
+        "segment": ["a"] * n_periods + ["b"] * n_periods,
+        "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
+        "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
+    }
+    return TSDataset.to_dataset(pd.DataFrame(df))
+
+
+@pytest.fixture
+def toy_dataset_with_mean_shift_in_target():
+    mean_1 = 10
+    mean_2 = 20
+    n_periods = 5
+    n_segments = 2
+
+    time = list(pd.date_range("2020-01-01", periods=n_periods, freq="1D"))
+
+    df = {
+        "timestamp": time * n_segments,
+        "segment": ["a"] * n_periods + ["b"] * n_periods,
+        "target": np.concatenate((np.array((-1, 3, 3, -4, -1)) + mean_1, np.array((-2, 3, -4, 5, -2)) + mean_2)).astype(
+            np.float64
+        ),
+        "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
+    }
+    return TSDataset.to_dataset(pd.DataFrame(df))
