@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 - Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+- Group Transforms according to their impact ([#420](https://github.com/tinkoff-ai/etna/pull/420))
 
 ### Fixed
 - Add relevance_params in GaleShapleyFeatureSelectionTransform ([#410](https://github.com/tinkoff-ai/etna/pull/410))
