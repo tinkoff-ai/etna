@@ -24,7 +24,7 @@ class CrossValidationMode(Enum):
     constant = "constant"
 
 
-class PipelineBase(ABC, BaseMixin):
+class BasePipeline(ABC, BaseMixin):
     @abstractmethod
     def __init__(self):
         self.horizon = None
@@ -70,7 +70,7 @@ class PipelineBase(ABC, BaseMixin):
         raise NotImplementedError("This method is not implemented")
 
 
-class IntervalMixin(PipelineBase, ABC):
+class IntervalMixin(BasePipeline, ABC):
     @staticmethod
     def _validate_quantiles(quantiles: Sequence[float]) -> Sequence[float]:
         """Check that given number of folds is grater than 1."""
@@ -102,7 +102,7 @@ class IntervalMixin(PipelineBase, ABC):
         return predictions
 
 
-class BacktestMixin(PipelineBase, ABC):
+class BacktestMixin(BasePipeline, ABC):
     def backtest(
             self,
             ts: TSDataset,
