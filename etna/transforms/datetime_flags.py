@@ -117,7 +117,7 @@ class DateFlagsTransform(Transform):
             special_days_in_month=(),
         )
 
-    def _get_column_name(self, feature_name) -> str:
+    def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
             init_parameters[feature_name] = self.__dict__[feature_name]
@@ -357,7 +357,7 @@ class TimeFlagsTransform(Transform):
             one_third_day_number=False,
         )
 
-    def _get_column_name(self, feature_name) -> str:
+    def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
             init_parameters[feature_name] = self.__dict__[feature_name]
