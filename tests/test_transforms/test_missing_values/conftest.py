@@ -81,6 +81,20 @@ def df_with_missing_range_x_index_two_segments(
 
 
 @pytest.fixture
+def df_all_missing(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
+    """Create pd.DataFrame with all values set to nan."""
+    all_date_present_df.loc[:, :] = np.NaN
+    return all_date_present_df
+
+
+@pytest.fixture
+def df_all_missing_two_segments(all_date_present_df_two_segments: pd.DataFrame) -> pd.DataFrame:
+    """Create pd.DataFrame with all values set to nan."""
+    all_date_present_df_two_segments.loc[:, :] = np.NaN
+    return all_date_present_df_two_segments
+
+
+@pytest.fixture
 def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
     df1 = pd.DataFrame(
         {
