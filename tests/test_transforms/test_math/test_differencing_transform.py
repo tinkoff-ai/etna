@@ -10,8 +10,8 @@ from etna.metrics import R2
 from etna.models import ProphetModel
 from etna.models import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
-from etna.transforms.differencing import DifferencingTransform
-from etna.transforms.differencing import _SingleDifferencingTransform
+from etna.transforms.math import DifferencingTransform
+from etna.transforms.math.differencing import _SingleDifferencingTransform
 
 GeneralDifferencingTransform = Union[_SingleDifferencingTransform, DifferencingTransform]
 
