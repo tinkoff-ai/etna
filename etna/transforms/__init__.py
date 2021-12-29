@@ -13,6 +13,7 @@ from etna.transforms.feature_selection import GaleShapleyFeatureSelectionTransfo
 from etna.transforms.feature_selection import TreeFeatureSelectionTransform
 from etna.transforms.math import AddConstTransform
 from etna.transforms.math import BoxCoxTransform
+from etna.transforms.math import DifferencingTransform
 from etna.transforms.math import LagTransform
 from etna.transforms.math import LogTransform
 from etna.transforms.math import MaxAbsScalerTransform
