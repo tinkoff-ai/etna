@@ -13,7 +13,7 @@ DistributionDict = Dict[str, pd.DataFrame]
 
 
 @pytest.fixture(params=frequencies, ids=frequencies)
-def date_range(request) -> pd.Series:
+def date_range(request) -> pd.DatetimeIndex:
     """Create pd.Series with range of dates."""
     freq = request.param
     dtr = pd.date_range(start="2020-01-01", end="2020-03-01", freq=freq)
@@ -78,6 +78,20 @@ def df_with_missing_range_x_index_two_segments(
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
     return df, rng
+
+
+@pytest.fixture
+def df_all_missing(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
+    """Create pd.DataFrame with all values set to nan."""
+    all_date_present_df.loc[:, :] = np.NaN
+    return all_date_present_df
+
+
+@pytest.fixture
+def df_all_missing_two_segments(all_date_present_df_two_segments: pd.DataFrame) -> pd.DataFrame:
+    """Create pd.DataFrame with all values set to nan."""
+    all_date_present_df_two_segments.loc[:, :] = np.NaN
+    return all_date_present_df_two_segments
 
 
 @pytest.fixture

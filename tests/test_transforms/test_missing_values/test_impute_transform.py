@@ -39,6 +39,36 @@ def test_all_dates_present_impute_two_segments(all_date_present_df_two_segments:
         np.testing.assert_array_equal(all_date_present_df_two_segments[segment]["target"], result[segment]["target"])
 
 
+def test_all_missing_impute_zero(df_all_missing: pd.DataFrame):
+    """Check that imputer fills zero value if all values are nans and strategy is zero."""
+    imputer = _OneSegmentTimeSeriesImputerTransform(strategy="zero")
+    result = imputer.fit_transform(df_all_missing)
+    assert np.all(result == 0)
+
+
+def test_all_missing_impute_zero_two_segments(df_all_missing_two_segments: pd.DataFrame):
+    """Check that imputer fills zero value if all values are nans and strategy is zero."""
+    imputer = TimeSeriesImputerTransform(strategy="zero")
+    result = imputer.fit_transform(df_all_missing_two_segments)
+    assert np.all(result == 0)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill"])
+def test_all_missing_impute_fail(df_all_missing: pd.DataFrame, fill_strategy: str):
+    """Check that imputer can't fill nans if all values are nans."""
+    imputer = _OneSegmentTimeSeriesImputerTransform(strategy=fill_strategy)
+    with pytest.raises(ValueError, match="It isn't possible to make imputation"):
+        _ = imputer.fit_transform(df_all_missing)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill"])
+def test_all_missing_impute_fail_two_segments(df_all_missing_two_segments: pd.DataFrame, fill_strategy: str):
+    """Check that imputer can't fill nans if all values are nans."""
+    imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
+    with pytest.raises(ValueError, match="It isn't possible to make imputation"):
+        _ = imputer.fit_transform(df_all_missing_two_segments)
+
+
 def test_one_missing_value_zero(df_with_missing_value_x_index: pd.DataFrame):
     """Check that imputer with zero-strategy works correctly in case of one missing value in data."""
     df, idx = df_with_missing_value_x_index
@@ -180,6 +210,7 @@ def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segment
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
 def test_fit_transform_with_nans(fill_strategy, ts_diff_endings):
+    """Check that transform correctly works with NaNs at the end."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
     ts_diff_endings.fit_transform([imputer])
     assert (ts_diff_endings[:, :, "target"].isna()).sum().sum() == 0

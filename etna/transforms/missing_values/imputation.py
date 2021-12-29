@@ -18,7 +18,12 @@ class ImputerMode(str, Enum):
 
 
 class _OneSegmentTimeSeriesImputerTransform(Transform):
-    """Fills Nans in series of DataFrame with zeros, previous value, average or moving average."""
+    """One segment version of transform to fill NaNs in series of a given dataframe.
+
+    - This transform can't fill NaNs in the future, only on train data.
+    - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
+    - In 'forward_fill' strategy very first value and first NaNs are replaced with zero.
+    """
 
     def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
         """
@@ -29,7 +34,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         in_column:
             name of processed column
         strategy:
-            filling value in missed dates:
+            filling value in missing timestamps:
             - If "zero", then replace missing dates with zeros
             - If "mean", then replace missing dates using the mean in fit stage.
             - If "running_mean" then replace missing dates using mean of subset of data
@@ -87,6 +92,13 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         """
         result_df = df.copy()
         cur_nans = result_df[result_df[self.in_column].isna()].index
+
+        # check if all values are nans
+        if cur_nans.shape[0] == result_df.shape[0] and self.strategy != ImputerMode.zero:
+            raise ValueError(
+                f"It isn't possible to make imputation in {self.strategy.value} mode if all values are NaNs"
+            )
+
         result_df[self.in_column] = self._fill(result_df[self.in_column])
 
         # restore nans not in self.nan_timestamps
@@ -133,6 +145,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             df = df.fillna(value=self.fill_value)
         elif self.strategy == ImputerMode.forward_fill:
             df = df.fillna(method="ffill")
+            # very first value or first NaNs should be filled
             df = df.fillna(value=0)
         elif self.strategy == ImputerMode.running_mean:
             for i, val in enumerate(df):
@@ -143,7 +156,12 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 
 
 class TimeSeriesImputerTransform(PerSegmentWrapper):
-    """TimeSeriesImputerTransform fills the gaps in series from given dataframe."""
+    """Transform to fill NaNs in series of a given dataframe.
+
+    - This transform can't fill NaNs in the future, only on train data.
+    - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
+    - In 'forward_fill' strategy very first value and first NaNs are replaced with zero.
+    """
 
     def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
         """
@@ -154,7 +172,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
         in_column:
             name of processed column
         strategy:
-            filling value in missed dates:
+            filling value in missing timestamps:
             - If "zero", then replace missing dates with zeros
             - If "mean", then replace missing dates using the mean in fit stage.
             - If "running_mean" then replace missing dates using mean of subset of data
