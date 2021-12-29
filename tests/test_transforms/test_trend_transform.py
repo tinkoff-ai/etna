@@ -9,7 +9,6 @@ from sklearn.linear_model import LinearRegression
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.trend import TrendTransform
 from etna.transforms.trend import _OneSegmentTrendTransform
-from etna.transforms.trend import _TrendTransform
 
 DEFAULT_SEGMENT = "segment_1"
 
@@ -61,9 +60,8 @@ def test_fit_transform_many_segments(example_tsds: TSDataset) -> None:
     """
     out_column = "regressor_result"
     example_tsds_original = deepcopy(example_tsds)
-    trend_transform = _TrendTransform(
+    trend_transform = TrendTransform(
         in_column="target",
-        change_point_model=Binseg(),
         detrend_model=LinearRegression(),
         n_bkps=5,
         out_column=out_column,
@@ -82,9 +80,8 @@ def test_inverse_transform_many_segments(example_tsds: TSDataset) -> None:
     """
     Test that inverse_transform interface works correctly for many segment.
     """
-    trend_transform = _TrendTransform(
+    trend_transform = TrendTransform(
         in_column="target",
-        change_point_model=Binseg(),
         detrend_model=LinearRegression(),
         n_bkps=5,
         out_column="test",

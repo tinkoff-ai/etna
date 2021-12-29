@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -132,7 +133,10 @@ class TSDataset:
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.transform(self.df)
+            columns_after = set(self.columns.get_level_values("feature"))
+            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
@@ -140,7 +144,53 @@ class TSDataset:
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.fit_transform(self.df)
+            columns_after = set(self.columns.get_level_values("feature"))
+            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+
+    def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
+        from etna.transforms.base import FutureMixin
+
+        unseen_columns = list(columns_after - columns_before)
+        if len(unseen_columns) == 0:
+            return
+
+        new_regressors = []
+
+        if isinstance(transform, FutureMixin):
+            # Every column from FutureMixin is regressor
+            out_columns = list(columns_after - columns_before)
+            new_regressors = out_columns
+
+        elif hasattr(transform, "in_column"):
+            # Only the columns created with the other transforms from regressors are regressors
+            in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
+            if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
+                # User defined out_columns in sklearn
+                # TODO: remove this case after fixing the out_column attribute in SklearnTransform
+                out_columns = transform.out_columns  # type: ignore
+                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
+                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
+            elif hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
+                # User defined out_columns
+                out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
+                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
+                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
+            else:
+                # Default out_columns
+                out_columns = list(columns_after - columns_before)
+                regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
+                new_regressors = [
+                    out_column
+                    for out_column in out_columns
+                    if np.any([regressor in out_column for regressor in regressors_in_column])
+                ]
+
+        else:
+            raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
+
+        self._regressors.extend(new_regressors)
 
     def __repr__(self):
         return self.df.__repr__()
