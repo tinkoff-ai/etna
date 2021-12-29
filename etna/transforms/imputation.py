@@ -18,7 +18,7 @@ class ImputerMode(str, Enum):
 
 
 class _OneSegmentTimeSeriesImputerTransform(Transform):
-    """Fills NaNs in series of DataFrame with various strategies.
+    """One segment version of transform to fill NaNs in series of a given dataframe.
 
     - This transform can't fill NaNs in the future, only on train data.
     - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
@@ -155,7 +155,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 
 
 class TimeSeriesImputerTransform(PerSegmentWrapper):
-    """TimeSeriesImputerTransform fills the gaps in series from given dataframe.
+    """Transform to fill NaNs in series of a given dataframe.
 
     - This transform can't fill NaNs in the future, only on train data.
     - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
