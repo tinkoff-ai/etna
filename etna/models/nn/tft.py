@@ -20,6 +20,7 @@ if SETTINGS.torch_required:
 
 class TFTModel(Model):
     """Wrapper for TemporalFusionTransformer from Pytorch Forecasting library.
+
     Notes
     -----
     We save TimeSeriesDataSet in instance to use it in the model.
@@ -161,6 +162,10 @@ class TFTModel(Model):
             TSDataset with predictions.
         """
         pf_transform = self._get_pf_transform(ts)
+        if pf_transform.pf_dataset_predict is None:
+            raise ValueError(
+                "The future is not generated! Generate future using TSDataset make_future before calling forecast method!"
+            )
         prediction_dataloader = pf_transform.pf_dataset_predict.to_dataloader(
             train=False, batch_size=self.batch_size * 2
         )

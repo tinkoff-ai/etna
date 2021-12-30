@@ -67,12 +67,8 @@ class AutoRegressivePipeline(Pipeline):
         step:
             Size of prediction for one step of forecasting
         """
-        self.model = model
-        self.horizon = horizon
-        self.transforms = transforms
+        super().__init__(model=model, horizon=horizon, transforms=transforms)
         self.step = step
-        self.transforms = transforms
-        self.model = model
 
     def fit(self, ts: TSDataset) -> Pipeline:
         """Fit the Pipeline.
@@ -95,6 +91,10 @@ class AutoRegressivePipeline(Pipeline):
 
     def _create_predictions_template(self) -> pd.DataFrame:
         """Create dataframe to fill with forecasts."""
+        if self.ts is None:
+            raise ValueError(
+                "AutoRegressivePipeline is not fitted! Fit the AutoRegressivePipeline before calling forecast method."
+            )
         prediction_df = self.ts.to_pandas()
         future_dates = pd.date_range(
             start=prediction_df.index.max(), periods=self.horizon + 1, freq=self.ts.freq, closed="right"
@@ -116,6 +116,10 @@ class AutoRegressivePipeline(Pipeline):
         TSDataset:
             TSDataset with forecast
         """
+        if self.ts is None:
+            raise ValueError(
+                "AutoRegressivePipeline is not fitted! Fit the AutoRegressivePipeline before calling forecast method."
+            )
         self.check_support_prediction_interval(prediction_interval)
 
         prediction_df = self._create_predictions_template()

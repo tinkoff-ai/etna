@@ -120,7 +120,7 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
     return sse
 
 
-def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> np.ndarray:
+def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> typing.Tuple[np.ndarray, list]:
     """
     Compute F. F[a][b][k] - minimum approximation error on series[a:b+1] with k outliers.
     http://www.vldb.org/conf/1999/P9.pdf

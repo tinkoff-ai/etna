@@ -328,13 +328,15 @@ def plot_anomalies(
         ax[i].set_title(segment)
         ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
 
-        anomaly = sorted(anomaly)
+        anomaly = sorted(anomaly)  # type: ignore
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)]["target"].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
 
 
-def get_correlation_matrix(ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson") -> np.array:
+def get_correlation_matrix(
+    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson"
+) -> np.ndarray:
     """Compute pairwise correlation of timeseries for selected segments.
 
     Parameters

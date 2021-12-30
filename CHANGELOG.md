@@ -5,13 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
+### Added
+- Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+- DifferencingTransform ([#414](https://github.com/tinkoff-ai/etna/pull/414))
+
+## Changed
+- Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))
+- Group Transforms according to their impact ([#420](https://github.com/tinkoff-ai/etna/pull/420))
+- Change the way `LagTransform`, `DateFlagsTransform` and `TimeFlagsTransform` generate column names ([#421](https://github.com/tinkoff-ai/etna/pull/421))
+- Clarify the behaviour of TimeSeriesImputerTransform in case of all NaN values ([#427](https://github.com/tinkoff-ai/etna/pull/427))
+- Fixed bug in title in `sample_acf_plot` method ([#432](https://github.com/tinkoff-ai/etna/pull/432))
+
+### Fixed
+- Add relevance_params in GaleShapleyFeatureSelectionTransform ([#410](https://github.com/tinkoff-ai/etna/pull/410))
+
+## [1.5.0] - 2021-12-24
+### Added
+- Holiday Transform ([#359](https://github.com/tinkoff-ai/etna/pull/359))
+- S3FileLogger and LocalFileLogger ([#372](https://github.com/tinkoff-ai/etna/pull/372))
+- Parameter `changepoint_prior_scale` to `ProphetModel` ([#408](https://github.com/tinkoff-ai/etna/pull/408))
+
+### Changed
+- Set `strict_optional = True` for mypy ([#381](https://github.com/tinkoff-ai/etna/pull/381))
+- Move checking the series endings to `make_future` step ([#413](https://github.com/tinkoff-ai/etna/pull/413)) 
+
+### Fixed
+- Sarimax bug in future prediction with quantiles ([#391](https://github.com/tinkoff-ai/etna/pull/391))
+- Catboost version too high ([#394](https://github.com/tinkoff-ai/etna/pull/394))
+- Add sorting of classes in left bar in docs ([#397](https://github.com/tinkoff-ai/etna/pull/397))
+- nn notebook in docs ([#396](https://github.com/tinkoff-ai/etna/pull/396))
+- SklearnTransform column name generation ([#398](https://github.com/tinkoff-ai/etna/pull/398))
+- Inverse transform doesn't affect quantiles ([#395](https://github.com/tinkoff-ai/etna/pull/395))
+
+## [1.4.2] - 2021-12-09
+### Fixed
+- Docs generation for neural networks
+
+## [1.4.1] - 2021-12-09
+### Changed
+- Speed up `_check_regressors` and `_merge_exog` ([#360](https://github.com/tinkoff-ai/etna/pull/360))
+
+### Fixed
+- `Model`, `PerSegmentModel`, `PerSegmentWrapper` imports ([#362](https://github.com/tinkoff-ai/etna/pull/362))
+- Docs generation ([#363](https://github.com/tinkoff-ai/etna/pull/363))
+- Fixed work of get_anomalies_density with constant series ([#334](https://github.com/tinkoff-ai/etna/issues/334))
+
+## [1.4.0] - 2021-12-03
 ### Added
 - ACF plot ([#318](https://github.com/tinkoff-ai/etna/pull/318))
 
 ### Changed
 - Add `ts.inverse_transform` as final step at `Pipeline.fit` method ([#316](https://github.com/tinkoff-ai/etna/pull/316))
 - Make test_ts optional in plot_forecast ([#321](https://github.com/tinkoff-ai/etna/pull/321))
+- Speed up inference for multisegment regression models ([#333](https://github.com/tinkoff-ai/etna/pull/333))
+- Speed up Pipeline._get_backtest_forecasts ([#336](https://github.com/tinkoff-ai/etna/pull/336))
+- Speed up SegmentEncoderTransform ([#331](https://github.com/tinkoff-ai/etna/pull/331))
+- Wandb Logger does not work unless pytorch is installed ([#340](https://github.com/tinkoff-ai/etna/pull/340))
+
+### Fixed
+- Get rid of lambda in DensityOutliersTransform and get_anomalies_density ([#341](https://github.com/tinkoff-ai/etna/pull/341))
+- Fixed import in transforms ([#349](https://github.com/tinkoff-ai/etna/pull/349))
+- Pickle DTWClustering ([#350](https://github.com/tinkoff-ai/etna/pull/350))
+
+### Removed
+- Remove TimeSeriesCrossValidation ([#337](https://github.com/tinkoff-ai/etna/pull/337))
 
 ## [1.3.3] - 2021-11-24
 ### Added

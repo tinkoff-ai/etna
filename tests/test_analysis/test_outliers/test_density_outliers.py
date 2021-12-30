@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 import pytest
 
+from etna.analysis.outliers.density_outliers import absolute_difference_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.density_outliers import get_segment_density_outliers_indices
 from etna.datasets.tsdataset import TSDataset
@@ -11,6 +12,34 @@ from etna.datasets.tsdataset import TSDataset
 @pytest.fixture
 def simple_window() -> np.array:
     return np.array([4, 5, 6, 4, 100, 200, 2])
+
+
+def test_const_ts(const_ts_anomal):
+    anomal = get_anomalies_density(const_ts_anomal)
+    assert set(["segment_0", "segment_1"]) == set(anomal.keys())
+    for seg in anomal.keys():
+        assert len(anomal[seg]) == 0
+
+
+@pytest.mark.parametrize(
+    "x, y, expected",
+    [
+        (0, 0, 0),
+        (2, 0, 2),
+        (0, 2, 2),
+        (-2, 0, 2),
+        (0, -2, 2),
+        (2, 2, 0),
+        (5, 3, 2),
+        (3, 5, 2),
+        (5, -3, 8),
+        (-3, 5, 8),
+        (-5, -2, 3),
+        (-2, -5, 3),
+    ],
+)
+def test_default_distance(x, y, expected):
+    assert absolute_difference_distance(x, y) == expected
 
 
 @pytest.mark.parametrize(

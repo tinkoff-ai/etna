@@ -1,6 +1,8 @@
 import math
 import warnings
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -115,7 +117,7 @@ class TSDataset:
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
-        self._check_endings()
+        self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
@@ -124,7 +126,7 @@ class TSDataset:
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
-        self._check_endings()
+        self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
             tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
@@ -187,6 +189,7 @@ class TSDataset:
         2021-07-03          32          37    nan          72          77    nan
         2021-07-04          33          38    nan          73          78    nan
         """
+        self._check_endings()
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
             start=max_date_in_dataset, periods=future_steps + 1, freq=self.freq, closed="right"
@@ -225,33 +228,47 @@ class TSDataset:
         """Check that regressors in df_exog begin not later than in df and end later than in df."""
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
-            target = df[segment]["target"].dropna()
+            target_min = df[segment]["target"].first_valid_index()
+            target_min = pd.NaT if target_min is None else target_min
+            target_max = df[segment]["target"].last_valid_index()
+            target_max = pd.NaT if target_max is None else target_max
             exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
-            for series in exog_regressor_columns:
-                exog_series = df_exog[segment][series].dropna()
-                if target.index.min() < exog_series.index.min():
-                    raise ValueError(
-                        f"All the regressor series should start not later than corresponding 'target'."
-                        f"Series {series} of segment {segment} have not enough history: "
-                        f"{target.index.min()} < {exog_series.index.min()}."
-                    )
-                if target.index.max() >= exog_series.index.max():
-                    raise ValueError(
-                        f"All the regressor series should finish later than corresponding 'target'."
-                        f"Series {series} of segment {segment} have not enough history: "
-                        f"{target.index.max()} >= {exog_series.index.max()}."
-                    )
+            if len(exog_regressor_columns) == 0:
+                continue
+            exog_series_min = df_exog[segment][exog_regressor_columns].first_valid_index()
+            exog_series_min = pd.NaT if exog_series_min is None else exog_series_min
+            exog_series_max = df_exog[segment][exog_regressor_columns].last_valid_index()
+            exog_series_max = pd.NaT if exog_series_max is None else exog_series_max
+            if target_min < exog_series_min:
+                raise ValueError(
+                    f"All the regressor series should start not later than corresponding 'target'."
+                    f"Series of segment {segment} have not enough history: "
+                    f"{target_min} < {exog_series_min}."
+                )
+            if target_max >= exog_series_max:
+                raise ValueError(
+                    f"All the regressor series should finish later than corresponding 'target'."
+                    f"Series of segment {segment} have not enough history: "
+                    f"{target_max} >= {exog_series_max}."
+                )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         self._check_regressors(df=df, df_exog=self.df_exog)
-        df = pd.merge(df, self.df_exog, left_index=True, right_index=True, how="left").sort_index(axis=1, level=(0, 1))
+        df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
 
-    def _check_endings(self):
+    def _check_endings(self, warning=False):
         """Check that all targets ends at the same timestamp."""
         max_index = self.df.index.max()
         if np.any(pd.isna(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
-            raise ValueError(f"All segments should end at the same timestamp")
+            if warning:
+                warnings.warn(
+                    "Segments contains NaNs in the last timestamps."
+                    "Some of the transforms might work incorrectly or even fail."
+                    "Make sure that you use the impurer before making the forecast."
+                )
+            else:
+                raise ValueError("All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
@@ -745,60 +762,190 @@ class TSDataset:
         """
         return self.df.tail(n_rows)
 
-    def describe(
-        self,
-        percentiles: Optional[List[float]] = None,
-        include: Optional[Union[str, List[np.dtype]]] = None,
-        exclude: Optional[Union[str, List[np.dtype]]] = None,
-        datetime_is_numeric: bool = False,
-    ) -> pd.DataFrame:
-        """Generate descriptive statistics.
+    def _gather_common_data(self) -> Dict[str, Any]:
+        """Gather information about dataset in general."""
+        common_dict: Dict[str, Any] = {
+            "num_segments": len(self.segments),
+            "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
+            "num_regressors": len(self.regressors),
+            "freq": self.freq,
+        }
 
-        Mimics pandas method.
+        return common_dict
 
-        Descriptive statistics include those that summarize the central
-        tendency, dispersion and shape of a
-        dataset's distribution, excluding ``NaN`` values.
+    def _gather_segments_data(self, segments: Sequence[str]) -> Dict[str, List[Any]]:
+        """Gather information about each segment."""
+        # gather segment information
+        segments_dict: Dict[str, list] = {
+            "start_timestamp": [],
+            "end_timestamp": [],
+            "length": [],
+            "num_missing": [],
+        }
+
+        for segment in segments:
+            segment_series = self[:, segment, "target"]
+            first_index = segment_series.first_valid_index()
+            last_index = segment_series.last_valid_index()
+            segment_series = segment_series.loc[first_index:last_index]
+            segments_dict["start_timestamp"].append(first_index)
+            segments_dict["end_timestamp"].append(last_index)
+            segments_dict["length"].append(segment_series.shape[0])
+            segments_dict["num_missing"].append(pd.isna(segment_series).sum())
+
+        return segments_dict
+
+    def describe(self, segments: Optional[Sequence[str]] = None) -> pd.DataFrame:
+        """Overview of the dataset that returns a DataFrame.
+
+        Method describes dataset in segment-wise fashion. Description columns:
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
+        * length: length according to start_timestamp and end_timestamp
+        * num_missing: number of missing variables between start_timestamp and end_timestamp
+        * num_segments: total number of segments, common for all segments
+        * num_exogs: number of exogenous features, common for all segments
+        * num_regressors: number of exogenous factors, that are regressors, common for all segments
+        * freq: frequency of the series, common for all segments
 
         Parameters
         ----------
-        percentiles : list-like of numbers, optional
-            The percentiles to include in the output. All should
-            fall between 0 and 1. The default is
-            ``[.25, .5, .75]``, which returns the 25th, 50th, and
-            75th percentiles.
-        include : 'all', list-like of dtypes or None (default), optional
-            A white list of data types to include in the result. Ignored
-            for ``Series``. Here are the options:
-            - 'all' : All columns of the input will be included in the output.
-            - A list-like of dtypes : Limits the results to the
-              provided data types.
-              To limit the result to numeric types submit
-              ``numpy.number``. To limit it instead to object columns submit
-              the ``numpy.object`` data type. Strings
-              can also be used in the style of
-              ``select_dtypes`` (e.g. ``df.describe(include=['O'])``). To
-              select pandas categorical columns, use ``'category'``
-            - None (default) : The result will include all numeric columns.
-        exclude : list-like of dtypes or None (default), optional,
-            A black list of data types to omit from the result. Ignored
-            for ``Series``. Here are the options:
-            - A list-like of dtypes : Excludes the provided data types
-              from the result. To exclude numeric types submit
-              ``numpy.number``. To exclude object columns submit the data
-              type ``numpy.object``. Strings can also be used in the style of
-              ``select_dtypes`` (e.g. ``df.describe(include=['O'])``). To
-              exclude pandas categorical columns, use ``'category'``
-            - None (default) : The result will exclude nothing.
-        datetime_is_numeric : bool, default False
-            Whether to treat datetime dtypes as numeric. This affects statistics
-            calculated for the column. For DataFrame input, this also
-            controls whether datetime columns are included by default.
+        segments:
+            segments to show in overview, if None all segments are shown.
 
         Returns
         -------
-        pd.DataFrame
-            Summary statistics of the TSDataset provided.
+        result_table: pd.DataFrame
+            table with results of the overview
 
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> pd.options.display.expand_frame_repr = False
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.describe()
+                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors freq
+        segments
+        segment_0      2021-06-01    2021-06-30      30            0             2          1               1    D
+        segment_1      2021-06-01    2021-06-30      30            0             2          1               1    D
         """
-        return self.df.describe(percentiles, include, exclude, datetime_is_numeric)
+        if segments is None:
+            segments = self.segments
+
+        # gather common information
+        common_dict = self._gather_common_data()
+
+        # gather segment information
+        segments_dict = self._gather_segments_data(segments)
+
+        # combine information
+        segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
+        segments_dict["num_exogs"] = [common_dict["num_exogs"]] * len(segments)
+        segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
+        segments_dict["freq"] = [common_dict["freq"]] * len(segments)
+
+        result_df = pd.DataFrame(segments_dict, index=segments)
+        columns_order = [
+            "start_timestamp",
+            "end_timestamp",
+            "length",
+            "num_missing",
+            "num_segments",
+            "num_exogs",
+            "num_regressors",
+            "freq",
+        ]
+        result_df = result_df[columns_order]
+        result_df.index.name = "segments"
+        return result_df
+
+    def info(self, segments: Optional[Sequence[str]] = None) -> None:
+        """Overview of the dataset that prints the result.
+
+        Method describes dataset in segment-wise fashion.
+
+        Information about dataset in general:
+        * num_segments: total number of segments
+        * num_exogs: number of exogenous features
+        * num_regressors: number of exogenous factors, that are regressors
+        * freq: frequency of the dataset
+
+        Information about individual segments:
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
+        * length: length according to start_timestamp and end_timestamp
+        * num_missing: number of missing variables between start_timestamp and end_timestamp
+
+
+        Parameters
+        ----------
+        segments:
+            segments to show in overview, if None all segments are shown.
+
+        Examples
+        --------
+        >>> from etna.datasets import generate_const_df
+        >>> df = generate_const_df(
+        ...    periods=30, start_time="2021-06-01",
+        ...    n_segments=2, scale=1
+        ... )
+        >>> df_ts_format = TSDataset.to_dataset(df)
+        >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
+        >>> df_regressors_1 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
+        ... )
+        >>> df_regressors_2 = pd.DataFrame(
+        ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
+        ... )
+        >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
+        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts.info()
+        <class 'etna.datasets.TSDataset'>
+        num_segments: 2
+        num_exogs: 1
+        num_regressors: 1
+        freq: D
+                  start_timestamp end_timestamp  length  num_missing
+        segments
+        segment_0      2021-06-01    2021-06-30      30            0
+        segment_1      2021-06-01    2021-06-30      30            0
+        """
+        if segments is None:
+            segments = self.segments
+        lines = []
+
+        # add header
+        lines.append("<class 'etna.datasets.TSDataset'>")
+
+        # add common information
+        common_dict = self._gather_common_data()
+
+        for key, value in common_dict.items():
+            lines.append(f"{key}: {value}")
+
+        # add segment information
+        segments_dict = self._gather_segments_data(segments)
+        segment_df = pd.DataFrame(segments_dict, index=segments)
+        segment_df.index.name = "segments"
+
+        with pd.option_context("display.width", None):
+            lines += segment_df.to_string().split("\n")
+
+        # print the results
+        result_string = "\n".join(lines)
+        print(result_string)

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
-@numba.cfunc(numba.float64(numba.float64, numba.float64))
+@numba.njit
 def simple_dist(x1: float, x2: float) -> float:
     """Get distance between two samples for dtw distance.
 

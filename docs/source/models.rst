@@ -48,3 +48,4 @@ See the API documentation for further details on available models:
    :template: custom-module-template.rst
 
    etna.models
+   etna.models.nn

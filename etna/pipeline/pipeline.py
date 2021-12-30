@@ -9,6 +9,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import scipy
 from joblib import Parallel
@@ -111,6 +112,8 @@ class Pipeline(BasePipeline):
 
     def _forecast_prediction_interval(self, future: TSDataset) -> TSDataset:
         """Forecast prediction interval for the future."""
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
@@ -144,6 +147,8 @@ class Pipeline(BasePipeline):
         TSDataset
             TSDataset with forecast
         """
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         self.check_support_prediction_interval(prediction_interval)
 
         future = self.ts.make_future(self.horizon)
@@ -242,7 +247,7 @@ class Pipeline(BasePipeline):
         train: TSDataset,
         test: TSDataset,
         fold_number: int,
-        metrics: Optional[List[Metric]] = None,
+        metrics: List[Metric],
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
@@ -266,6 +271,8 @@ class Pipeline(BasePipeline):
 
     def _get_backtest_metrics(self, aggregate_metrics: bool = False) -> pd.DataFrame:
         """Get dataframe with metrics."""
+        if self._folds is None:
+            raise ValueError("Something went wrong during backtest initialization!")
         metrics_df = pd.DataFrame()
 
         for i, fold in self._folds.items():
@@ -282,6 +289,8 @@ class Pipeline(BasePipeline):
 
     def _get_fold_info(self) -> pd.DataFrame:
         """Get information about folds."""
+        if self._folds is None:
+            raise ValueError("Something went wrong during backtest initialization!")
         timerange_df = pd.DataFrame()
         for fold_number, fold_info in self._folds.items():
             tmp_df = pd.DataFrame()
@@ -294,13 +303,22 @@ class Pipeline(BasePipeline):
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:
         """Get forecasts from different folds."""
-        stacked_forecast = pd.DataFrame()
+        if self._folds is None:
+            raise ValueError("Something went wrong during backtest initialization!")
+        forecasts_list = []
         for fold_number, fold_info in self._folds.items():
-            forecast = fold_info["forecast"]
-            for segment in forecast.segments:
-                forecast.loc[:, pd.IndexSlice[segment, self._fold_column]] = fold_number
-            stacked_forecast = stacked_forecast.append(forecast.df)
-        return stacked_forecast
+            forecast_ts = fold_info["forecast"]
+            segments = forecast_ts.segments
+            forecast = forecast_ts.df
+            fold_number_df = pd.DataFrame(
+                np.tile(fold_number, (forecast.index.shape[0], len(segments))),
+                columns=pd.MultiIndex.from_product([segments, [self._fold_column]], names=("segment", "feature")),
+                index=forecast.index,
+            )
+            forecast = forecast.join(fold_number_df)
+            forecasts_list.append(forecast)
+        forecasts = pd.concat(forecasts_list)
+        return forecasts
 
     def backtest(
         self,

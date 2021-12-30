@@ -9,7 +9,7 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+# Some code in conf.py and `_templates` are used from `github.com/jdb78/pytorch-forecasting/tree/v0.9.2/docs/source` under MIT License
 import os
 from pathlib import Path
 import shutil
@@ -146,7 +146,7 @@ class ModuleAutoSummary(Autosummary):
                         t = f"{mod_name}.{t}"
                     if t.startswith("etna"):
                         new_names.append(t)
-        new_items = super().get_items(sorted(new_names))
+        new_items = super().get_items(sorted(new_names, key=lambda x:  x.split(".")[-1]))
         return new_items
 
 

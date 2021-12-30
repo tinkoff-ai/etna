@@ -3,10 +3,12 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import DateFlagsTransform
+from etna.transforms import TimeSeriesImputerTransform
 
 
 @pytest.fixture()
@@ -50,6 +52,12 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_exog = TSDataset.to_dataset(df_exog)
 
     return df, df_exog
+
+
+@pytest.fixture()
+def ts_future(example_reg_tsds):
+    future = example_reg_tsds.make_future(10)
+    return future
 
 
 def test_check_endings_error_raise():
@@ -267,6 +275,18 @@ def test_dataset_datetime_conversion_during_init():
     assert ts.df.index.dtype == "datetime64[ns]"
 
 
+def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
+    with pytest.raises(ValueError, match="All segments should end at the same timestamp"):
+        ts_diff_endings.make_future(10)
+
+
+def test_make_future_with_imputer(ts_diff_endings, ts_future):
+    imputer = TimeSeriesImputerTransform(in_column="target")
+    ts_diff_endings.fit_transform([imputer])
+    future = ts_diff_endings.make_future(10)
+    assert_frame_equal(future.df, ts_future.df)
+
+
 def test_make_future():
     timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
     df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
@@ -437,3 +457,72 @@ def test_to_flatten(example_df):
     obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(example_df))
     assert sorted_columns == sorted(obtained_df.columns)
     assert (expected_df.values == obtained_df[sorted_columns].values).all()
+
+
+def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
+    with pytest.warns(Warning, match="Segments contains NaNs in the last timestamps."):
+        ts_diff_endings.transform([])
+
+
+def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
+    with pytest.warns(Warning, match="Segments contains NaNs in the last timestamps."):
+        ts_diff_endings.fit_transform([])
+
+
+def test_gather_common_data(df_and_regressors):
+    """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
+    df, df_exog = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    common_data = ts._gather_common_data()
+    assert common_data["num_segments"] == 2
+    assert common_data["num_exogs"] == 2
+    assert common_data["num_regressors"] == 2
+    assert common_data["freq"] == "D"
+
+
+def test_gather_segments_data(df_and_regressors):
+    """Check that TSDataset._gather_segments_data correctly finds segment data for info/describe methods."""
+    df, df_exog = df_and_regressors
+    # add NaN in the middle
+    df.iloc[-5, 0] = np.NaN
+    # add NaNs at the end
+    df.iloc[-3:, 1] = np.NaN
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    segments = ts.segments
+    segments_dict = ts._gather_segments_data(segments)
+    segment_df = pd.DataFrame(segments_dict, index=segments)
+
+    assert np.all(segment_df.index == ts.segments)
+    assert segment_df.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
+    assert segment_df.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
+    assert segment_df.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
+    assert segment_df.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
+    assert segment_df.loc["1", "length"] == 32
+    assert segment_df.loc["2", "length"] == 24
+    assert segment_df.loc["1", "num_missing"] == 1
+    assert segment_df.loc["2", "num_missing"] == 0
+
+
+def test_describe(df_and_regressors):
+    """Check that TSDataset.describe works correctly."""
+    df, df_exog = df_and_regressors
+    # add NaN in the middle
+    df.iloc[-5, 0] = np.NaN
+    # add NaNs at the end
+    df.iloc[-3:, 1] = np.NaN
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    description = ts.describe()
+
+    assert np.all(description.index == ts.segments)
+    assert description.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
+    assert description.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
+    assert description.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
+    assert description.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
+    assert description.loc["1", "length"] == 32
+    assert description.loc["2", "length"] == 24
+    assert description.loc["1", "num_missing"] == 1
+    assert description.loc["2", "num_missing"] == 0
+    assert np.all(description["num_segments"] == 2)
+    assert np.all(description["num_exogs"] == 2)
+    assert np.all(description["num_regressors"] == 2)
+    assert np.all(description["freq"] == "D")

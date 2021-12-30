@@ -64,11 +64,15 @@ class DistanceMatrix(BaseMixin):
 
     def _compute_dist(self, series: List[pd.Series], idx: int) -> np.ndarray:
         """Compute distance from idx-th series to other ones."""
+        if self.series_number is None:
+            raise ValueError("Something went wrong during getting the series from dataset!")
         distances = np.array([self.distance(series[idx], series[j]) for j in range(self.series_number)])
         return distances
 
     def _compute_dist_matrix(self, series: List[pd.Series]) -> np.ndarray:
         """Compute distance matrix for given series."""
+        if self.series_number is None:
+            raise ValueError("Something went wrong during getting the series from dataset!")
         distances = np.empty(shape=(self.series_number, self.series_number))
         logging_freq = max(1, self.series_number // 10)
         tslogger.log(f"Calculating distance matrix...")
@@ -105,6 +109,8 @@ class DistanceMatrix(BaseMixin):
         np.ndarray:
             2D array with distances between series
         """
+        if self.matrix is None:
+            raise ValueError("DistanceMatrix is not fitted! Fit the DistanceMatrix before calling predict method!")
         return self.matrix
 
     def fit_predict(self, ts: "TSDataset") -> np.ndarray:

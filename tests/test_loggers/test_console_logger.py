@@ -9,10 +9,10 @@ from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
-from etna.model_selection import TimeSeriesCrossValidation
 from etna.models import CatBoostModelMultiSegment
 from etna.models import LinearMultiSegmentModel
 from etna.models import LinearPerSegmentModel
+from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
@@ -41,13 +41,14 @@ def test_backtest_logging(example_tsds: TSDataset):
     metrics = [MAE(), MSE(), SMAPE()]
     metrics_str = ["MAE", "MSE", "SMAPE"]
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    tscv = TimeSeriesCrossValidation(model=CatBoostModelMultiSegment(), horizon=10, metrics=metrics, n_jobs=1)
-    tscv.backtest(ts=example_tsds, transforms=[date_flags])
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=10, transforms=[date_flags])
+    n_folds = 5
+    pipe.backtest(ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds)
     with open(file.name, "r") as in_file:
         lines = in_file.readlines()
         # remain lines only about backtest
         lines = [line for line in lines if "backtest" in line]
-        assert len(lines) == len(metrics) * tscv.n_folds * len(example_tsds.segments)
+        assert len(lines) == len(metrics) * n_folds * len(example_tsds.segments)
         assert all([any([metric_str in line for metric_str in metrics_str]) for line in lines])
     tslogger.remove(idx)
 

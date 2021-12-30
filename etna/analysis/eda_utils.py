@@ -35,8 +35,9 @@ def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, se
         segments to plot
     """
     if not segments:
-        segments = list(ts.segments)
-        segments = np.random.choice(segments, size=min(len(segments), n_segments), replace=False)
+        exist_segments = list(ts.segments)
+        chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
+        segments = list(chosen_segments)
     segment_pairs = list(combinations(segments, r=2))
     if len(segment_pairs) == 0:
         raise ValueError("There are no pairs to plot! Try set n_segments > 1.")
@@ -92,7 +93,7 @@ def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segme
     rows_num = math.ceil(k / columns_num)
     fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True, squeeze=False)
     ax = ax.ravel()
-    fig.suptitle("Partial Autocorrelation", fontsize=16)
+    fig.suptitle("Autocorrelation", fontsize=16)
     for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
         df_slice = ts[:, name, :][name]
         plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)
@@ -169,8 +170,9 @@ def distribution_plot(
     df_pd = ts.to_pandas(flatten=True)
 
     if not segments:
-        segments = df_pd.segment.unique()
-        segments = np.random.choice(segments, size=min(len(segments), n_segments), replace=False)
+        exist_segments = df_pd.segment.unique()
+        chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
+        segments = list(chosen_segments)
     df_full = df_pd[df_pd.segment.isin(segments)]
     df_full.loc[:, "mean"] = (
         df_full.groupby("segment").target.shift(shift).transform(lambda s: s.rolling(window).mean())

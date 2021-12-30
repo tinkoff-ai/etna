@@ -98,6 +98,7 @@ class StackingEnsemble(Pipeline):
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
         self.joblib_params = joblib_params
+        self.ts: Optional[TSDataset] = None
 
     @staticmethod
     def _validate_pipeline_number(pipelines: List[Pipeline]):
@@ -188,6 +189,9 @@ class StackingEnsemble(Pipeline):
         self, forecasts: List[TSDataset], train: bool = False
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the `final_model`."""
+        if self.ts is None:
+            raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
+
         # Stack targets from the forecasts
         targets = [
             forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
@@ -238,6 +242,8 @@ class StackingEnsemble(Pipeline):
         TSDataset:
             Dataset with forecasts.
         """
+        if self.ts is None:
+            raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
         self.check_support_prediction_interval(prediction_interval)
 
         # Get forecast

@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -52,6 +54,21 @@ def test_dtw_clustering(eucl_ts: TSDataset):
     "clustering,n_clusters",
     ((EuclideanClustering(), 5), (EuclideanClustering(), 7), (DTWClustering(), 3), (DTWClustering(), 5)),
 )
+def test_pickle_unpickle(eucl_ts: TSDataset, clustering: HierarchicalClustering, n_clusters: int):
+    clustering.build_distance_matrix(ts=eucl_ts)
+    clustering.build_clustering_algo(n_clusters=n_clusters)
+    _ = clustering.fit_predict()
+    centroids_before_pickle = clustering.get_centroids()
+    dumped = pickle.dumps(clustering)
+    clustering_undumped = pickle.loads(dumped)
+    centroids_after_pickle = clustering_undumped.get_centroids()
+    assert np.all(centroids_after_pickle == centroids_before_pickle)
+
+
+@pytest.mark.parametrize(
+    "clustering,n_clusters",
+    ((EuclideanClustering(), 5), (EuclideanClustering(), 7), (DTWClustering(), 3), (DTWClustering(), 5)),
+)
 def test_centroids(eucl_ts: TSDataset, clustering: HierarchicalClustering, n_clusters: int):
     """Check that centroids work in euclidean clustering pipeline."""
     clustering.build_distance_matrix(ts=eucl_ts)
@@ -63,3 +80,28 @@ def test_centroids(eucl_ts: TSDataset, clustering: HierarchicalClustering, n_clu
     assert centroids.columns.get_level_values(0).name == "cluster"
     assert set(centroids.columns.get_level_values(1)) == {"target"}
     assert n_clusters_pred == n_clusters
+
+
+@pytest.mark.parametrize("clustering", (EuclideanClustering(), DTWClustering()))
+def test_fit_predict_raise_error_when_distance_matrix_is_not_built(clustering: HierarchicalClustering):
+    """Test that HierarchicalClustering raise error when calling fit_predict without building distance matrix."""
+    clustering.build_clustering_algo(n_clusters=5)
+    with pytest.raises(ValueError, match="Distance matrix is not built!"):
+        _ = clustering.fit_predict()
+
+
+@pytest.mark.parametrize("clustering", (EuclideanClustering(), DTWClustering()))
+def test_fit_predict_raise_error_when_clustering_algo_is_not_built(
+    eucl_ts: TSDataset, clustering: HierarchicalClustering
+):
+    """Test that HierarchicalClustering raise error when calling fit_predict without building clustering algorithm."""
+    clustering.build_distance_matrix(ts=eucl_ts)
+    with pytest.raises(ValueError, match="Clustering algorithm is not built!"):
+        _ = clustering.fit_predict()
+
+
+@pytest.mark.parametrize("clustering", (EuclideanClustering(), DTWClustering()))
+def test_get_centroids_raise_error_when_clustering_is_not_fitted(clustering: HierarchicalClustering):
+    """Test that HierarchicalClustering raise error when calling get_centroids without being fit."""
+    with pytest.raises(ValueError, match="HierarchicalClustering is not fitted!"):
+        _ = clustering.get_centroids()

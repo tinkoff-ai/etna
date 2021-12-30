@@ -82,19 +82,9 @@ class SklearnMultiSegmentModel(Model):
         DataFrame
             Models result
         """
-        result_list = list()
-        for segment in ts.segments:
-            segment_predict = self._forecast_segment(self._base_model, segment, ts)
-            result_list.append(segment_predict)
-
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
+        horizon = len(ts.df)
+        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
+        y = self._base_model.predict(x).reshape(-1, horizon).T
+        ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts

@@ -249,6 +249,8 @@ class _SARIMAXModel:
         y_pred: pd.DataFrame
             DataFrame with predictions
         """
+        if self._result is None or self._model is None:
+            raise ValueError("SARIMAX model is not fitted! Fit the model before calling predict method!")
         horizon = len(df)
         self._check_df(df, horizon)
 
@@ -267,9 +269,7 @@ class _SARIMAXModel:
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
             y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename(
-                {"predicted_mean": "mean"},
-            )
+            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
@@ -538,6 +538,7 @@ class SARIMAXModel(PerSegmentModel):
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
         df = df.set_index(["timestamp", "segment"])
+        # N.B. inplace forecast will not change target values, because `combine_first` only fill nan values
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)

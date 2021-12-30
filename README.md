@@ -6,6 +6,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna)](https://codecov.io/gh/tinkoff-ai/etna)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
+[![Slack](https://img.shields.io/badge/slack-ods.ai-orange)](https://opendatascience.slack.com/archives/C02Q62NEPH8)
 
 [Homepage](https://etna.tinkoff.ru) |
 [Documentation](https://etna-docs.netlify.app/) |
@@ -80,6 +81,16 @@ We have also prepared a set of tutorials for an easy introduction:
 
 ## Documentation
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
+
+## Resources
+
+- [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
+
+- [Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
+
+- [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
+
+- [ETNA Tutorial. Part 1 (Rus)](https://youtu.be/4iFVRfB2j30), [ETNA Tutorial. Part 2 (Rus)](https://youtu.be/Ct9dyUdHlmc) on YouTube thanks to [RC Gewissta](https://github.com/Gewissta)
 
 ## Acknowledgments
 
