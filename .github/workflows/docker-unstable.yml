@@ -1,0 +1,41 @@
+name: Build and push docker image from trunk
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  push:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        dockerfile:
+          - {"name": etna-cpu, "path": docker/etna-cpu/Dockerfile}
+          - {"name": etna-cuda-10.2, "path": docker/etna-cuda-10.2/Dockerfile}
+          - {"name": etna-cuda-11.1, "path": docker/etna-cuda-11.1/Dockerfile}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: |
+          cd $( dirname ${{ matrix.dockerfile.path }})
+          sed -i 's#etna\[all\]#etna[all] @ git+git://github.com/${{ github.actor }}/${{ github.repository }}.git@${{ github.sha }}#g' requirements.txt
+          cat requirements.txt
+          docker build . --tag image
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository }}/${{ matrix.dockerfile.name }}
+          VERSION=latest
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag image $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION

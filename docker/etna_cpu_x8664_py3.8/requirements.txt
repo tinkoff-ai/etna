@@ -1,4 +1,0 @@
-etna
-etna[torch]
-etna[wandb]
-etna[prophet]
