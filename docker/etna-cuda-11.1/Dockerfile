@@ -4,7 +4,7 @@ ARG CUDA_VERSION=cu111
 FROM ${BASE_IMAGE}
 
 RUN apt-get -y update \
-    && apt-get install --no-install-recommends  -y software-properties-common curl \
+    && apt-get install --no-install-recommends  -y software-properties-common curl git \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get -y update \
     && apt-get --no-install-recommends  -y install build-essential python3.8 python3.8-distutils python3.8-dev \
