@@ -3,6 +3,8 @@ ARG CUDA_VERSION_FOR_TORCH=cu111
 
 FROM ${BASE_IMAGE}
 
+ARG CUDA_VERSION_FOR_TORCH
+
 RUN apt-get -y update \
     && apt-get install --no-install-recommends  -y software-properties-common curl git openssh-client \
     && add-apt-repository ppa:deadsnakes/ppa -y \
