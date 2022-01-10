@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
 - DifferencingTransform ([#414](https://github.com/tinkoff-ai/etna/pull/414))
+- MADTransform ([#441](https://github.com/tinkoff-ai/etna/pull/441))
 
 ## Changed
 - Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))
