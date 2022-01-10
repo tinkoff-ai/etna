@@ -54,6 +54,8 @@ def df_for_agg() -> pd.DataFrame:
         (MeanTransform, "test_mean"),
         (StdTransform, None),
         (StdTransform, "test_std"),
+        (MADTransform, None),
+        (MADTransform, "test_mad"),
     ),
 )
 def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_column: str):
