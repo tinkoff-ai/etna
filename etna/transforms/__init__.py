@@ -10,6 +10,7 @@ from etna.transforms.encoders import MeanSegmentEncoderTransform
 from etna.transforms.encoders import SegmentEncoderTransform
 from etna.transforms.feature_selection import FilterFeaturesTransform
 from etna.transforms.feature_selection import GaleShapleyFeatureSelectionTransform
+from etna.transforms.feature_selection import MRMRFeatureSelectionTransform
 from etna.transforms.feature_selection import TreeFeatureSelectionTransform
 from etna.transforms.math import AddConstTransform
 from etna.transforms.math import BoxCoxTransform
