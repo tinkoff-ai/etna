@@ -1,1 +1,2 @@
 etna[all]
+jupyter
