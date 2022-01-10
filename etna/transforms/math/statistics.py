@@ -445,6 +445,59 @@ class MedianTransform(WindowStatisticsTransform):
         return tmp_series.median(**self.kwargs)
 
 
+class MADTransform(WindowStatisticsTransform):
+    """MADTransform computes Mean Absolute Deviation over the window."""
+
+    def __init__(
+        self,
+        in_column: str,
+        window: int,
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+        out_column: Optional[str] = None,
+    ):
+        """Init MADTransform.
+
+        Parameters
+        ----------
+        in_column: str
+            name of processed column
+        window: int
+            size of window to aggregate
+        out_column: str, optional
+            result column name. If not given use __repr__()
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation; if there is less than min_periods number of targets
+            return None
+        fillna: float
+            value to fill results NaNs with
+        """
+        self.in_column = in_column
+        self.window = window
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        self.out_column = out_column
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
+
+    def _aggregate_window(self, series: pd.Series) -> float:
+        tmp_series = self._get_required_lags(series)
+        mean = tmp_series.mean(**self.kwargs)
+        ad = (tmp_series - mean).abs()
+        mad = ad.mean()
+        return mad
+
+
 __all__ = [
     "MedianTransform",
     "MaxTransform",
@@ -453,4 +506,5 @@ __all__ = [
     "StdTransform",
     "MeanTransform",
     "WindowStatisticsTransform",
+    "MADTransform",
 ]

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.transforms.math import MADTransform
 from etna.transforms.math import MaxTransform
 from etna.transforms.math import MeanTransform
 from etna.transforms.math import MedianTransform
@@ -17,6 +18,20 @@ def simple_df_for_agg() -> pd.DataFrame:
     n = 10
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
     df["target"] = list(range(n))
+    df["segment"] = "segment_1"
+
+    df = df.pivot(index="timestamp", columns="segment")
+    df = df.reorder_levels([1, 0], axis=1)
+    df = df.sort_index(axis=1)
+    df.columns.names = ["segment", "feature"]
+    return df
+
+
+@pytest.fixture
+def df_for_agg() -> pd.DataFrame:
+    n = 10
+    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
+    df["target"] = [-1, 1, 3, 2, 4, 9, 8, 5, 6, 0]
     df["segment"] = "segment_1"
 
     df = df.pivot(index="timestamp", columns="segment")
@@ -165,6 +180,22 @@ def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
 
 
 @pytest.mark.parametrize(
+    "window,periods,fill_na,expected",
+    (
+        (3, 3, -17, [-17, -17, -17, 4 / 3, 2 / 3, 2 / 3, 8 / 3, 2, 14 / 9, 10 / 9]),
+        (4, 1, -17, [-17, 0, 1, 4 / 3, 1.25, 1, 2.25, 2.75, 2, 1.5]),
+        (-1, 1, 0, [0, 0, 1, 4 / 3, 1.25, 1.44, 7 / 3, 138 / 49, 2.625, 208 / 81]),
+    ),
+)
+def test_mad_transform(df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray):
+    transform = MADTransform(
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
+    )
+    res = transform.fit_transform(df_for_agg)
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+
+
+@pytest.mark.parametrize(
     "transform",
     (
         MaxTransform(in_column="target", window=5),
@@ -177,6 +208,7 @@ def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
         MeanTransform(in_column="target", window=5),
         StdTransform(in_column="target", window=5),
         StdTransform(in_column="target", window=5),
+        MADTransform(in_column="target", window=5),
     ),
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
