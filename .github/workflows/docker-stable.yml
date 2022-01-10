@@ -26,7 +26,7 @@ jobs:
         run: |
           cd $( dirname ${{ matrix.dockerfile.path }})
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          sed -i 's/etna[all]/etna[all]==$VERSION/g' requirements.txt
+          sed -i "s#etna\[all\]#etna\[all\]==$VERSION#g" requirements.txt
           cat requirements.txt
           docker build . --tag image
 
