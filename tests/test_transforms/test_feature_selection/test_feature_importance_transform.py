@@ -184,6 +184,7 @@ def test_sanity_selected(model, ts_with_regressors):
     assert len(useful_regressors) == 3
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     "model",
     [
