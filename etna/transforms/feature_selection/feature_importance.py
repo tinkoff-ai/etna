@@ -105,7 +105,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
     def __init__(
         self,
-        relevance_method: RelevanceTable,
+        relevance_table: RelevanceTable,
         top_k: int,
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
@@ -116,7 +116,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
         Parameters
         ----------
-        relevance_method:
+        relevance_table:
             method to calculate relevance table
         top_k:
             num of regressors to select; if there are not enough regressors, then all will be selected
@@ -128,7 +128,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
 
-        self.relevance_method = relevance_method
+        self.relevance_table = relevance_table
         self.top_k = top_k
         self.relevance_aggregation_mode = relevance_aggregation_mode
         self.redundancy_aggregation_mode = redundancy_aggregation_mode
@@ -150,8 +150,8 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             instance after fitting
         """
         ts = TSDataset(df=df, freq=pd.infer_freq(df.index))
-        relevance_table = self.relevance_method(ts[:, :, "target"], ts[:, :, ts.regressors], **self.relevance_params)
-        if not self.relevance_method.greater_is_better:
+        relevance_table = self.relevance_table(ts[:, :, "target"], ts[:, :, ts.regressors], **self.relevance_params)
+        if not self.relevance_table.greater_is_better:
             relevance_table *= -1
         self.selected_regressors = mrmr(
             relevance_table=relevance_table,

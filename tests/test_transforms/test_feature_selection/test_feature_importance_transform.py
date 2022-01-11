@@ -224,12 +224,12 @@ def test_fit_transform_with_nans(model, ts_diff_endings):
     ts_diff_endings.fit_transform([selector])
 
 
-@pytest.mark.parametrize("relevance_method", ([StatisticsRelevanceTable()]))
+@pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
-def test_mrmr_right_len(relevance_method, top_k, ts_with_regressors):
+def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
     """Check that transform selects exactly top_k regressors."""
     df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_method=relevance_method, top_k=top_k)
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
     df_selected = mrmr.fit_transform(df)
     all_regressors = ts_with_regressors.regressors
     selected_regressors = set()
@@ -240,11 +240,11 @@ def test_mrmr_right_len(relevance_method, top_k, ts_with_regressors):
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
-@pytest.mark.parametrize("relevance_method", ([ModelRelevanceTable()]))
-def test_mrmr_right_regressors(relevance_method, ts_with_regressors):
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
     """Check that transform selects right top_k regressors."""
     df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_method=relevance_method, top_k=3, model=RandomForestRegressor())
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=3, model=RandomForestRegressor())
     df_selected = mrmr.fit_transform(df)
     selected_regressors = set()
     for column in df_selected.columns.get_level_values("feature"):
