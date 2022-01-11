@@ -1,3 +1,6 @@
+from typing import List
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
@@ -11,10 +14,12 @@ from etna.models.base import log_decorator
 class _SklearnModel:
     def __init__(self, regressor: RegressorMixin):
         self.model = regressor
+        self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame) -> "_SklearnModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SklearnModel":
+        self.regressor_columns = regressors
         try:
-            features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
+            features = df[self.regressor_columns].apply(pd.to_numeric)
         except ValueError:
             raise ValueError("Only convertible to numeric features are accepted!")
         target = df["target"]
@@ -23,7 +28,7 @@ class _SklearnModel:
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         try:
-            features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
+            features = df[self.regressor_columns].apply(pd.to_numeric)
         except ValueError:
             raise ValueError("Only convertible to numeric features are accepted!")
         pred = self.model.predict(features)
@@ -43,6 +48,21 @@ class SklearnPerSegmentModel(PerSegmentModel):
             sklearn model for regression
         """
         super().__init__(base_model=_SklearnModel(regressor=regressor))
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "SklearnPerSegmentModel":
+        """Fit model."""
+        self._segments = ts.segments
+        self._build_models()
+
+        for segment in self._segments:
+            model = self._models[segment]
+            segment_features = ts[:, segment, :]
+            segment_features = segment_features.dropna()
+            segment_features = segment_features.droplevel("segment", axis=1)
+            segment_features = segment_features.reset_index()
+            model.fit(df=segment_features, regressors=ts.regressors)
+        return self
 
 
 class SklearnMultiSegmentModel(Model):
@@ -66,7 +86,7 @@ class SklearnMultiSegmentModel(Model):
         df = ts.to_pandas(flatten=True)
         df = df.dropna()
         df = df.drop(columns="segment")
-        self._base_model.fit(df=df)
+        self._base_model.fit(df=df, regressors=ts.regressors)
         return self
 
     @log_decorator
