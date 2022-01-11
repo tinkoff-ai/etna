@@ -101,7 +101,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
 
 class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """Transform that selects regressors according to MRMR variable selection method."""
+    """Transform that selects regressors according to MRMR variable selection method adapted to the timeseries case."""
 
     def __init__(
         self,
@@ -109,6 +109,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         top_k: int,
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
+        atol: float = 1e-10,
         **relevance_params,
     ):
         """
@@ -124,6 +125,8 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             the method for relevance values per-segment aggregation
         redundancy_aggregation_mode:
             the method for redundancy values per-segment aggregation
+        atol:
+            the absolute tolerance to compare the float values
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
@@ -132,6 +135,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.top_k = top_k
         self.relevance_aggregation_mode = relevance_aggregation_mode
         self.redundancy_aggregation_mode = redundancy_aggregation_mode
+        self.atol = atol
         self.relevance_params = relevance_params
         self.selected_regressors: Optional[List[str]] = None
 
@@ -159,5 +163,6 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             top_k=self.top_k,
             relevance_aggregation_mode=self.relevance_aggregation_mode,
             redundancy_aggregation_mode=self.redundancy_aggregation_mode,
+            atol=self.atol,
         )
         return self
