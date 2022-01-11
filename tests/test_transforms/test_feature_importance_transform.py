@@ -180,7 +180,7 @@ def test_sanity_selected(model, ts_with_regressors):
     useful_regressors = [column for column in selected_regressors if "useful" in column]
     assert len(useful_regressors) == 3
 
-
+@pytest.mark.xfail
 @pytest.mark.parametrize(
     "model",
     [

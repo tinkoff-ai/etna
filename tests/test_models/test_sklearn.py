@@ -8,7 +8,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms.lags import LagTransform
 
 
-@pytest.fixture()
+@pytest.fixture
 def ts_with_regressors(example_df):
     transforms = [
         AddConstTransform(in_column="target", value=10, out_column="add_const_target"),
@@ -21,6 +21,7 @@ def ts_with_regressors(example_df):
 
 @pytest.mark.parametrize("model", ([SklearnPerSegmentModel(regressor=LinearRegression())]))
 def test_sklearn_persegment_model_saves_regressors(ts_with_regressors, model):
+    """Test that SklearnPerSegmentModel saves the list of regressors from dataset on fit."""
     model.fit(ts_with_regressors)
     for segment_model in model._models.values():
         assert sorted(segment_model.regressor_columns) == sorted(ts_with_regressors.regressors)
@@ -28,5 +29,6 @@ def test_sklearn_persegment_model_saves_regressors(ts_with_regressors, model):
 
 @pytest.mark.parametrize("model", ([SklearnMultiSegmentModel(regressor=LinearRegression())]))
 def test_sklearn_multisegment_model_saves_regressors(ts_with_regressors, model):
+    """Test that SklearnMultiSegmentModel saves the list of regressors from dataset on fit."""
     model.fit(ts_with_regressors)
     assert sorted(model._base_model.regressor_columns) == sorted(ts_with_regressors.regressors)
