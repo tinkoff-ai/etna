@@ -35,14 +35,14 @@ class _LabelEncoder(preprocessing.LabelEncoder):
         elif strategy == "mean":
             filling_value = np.mean(encoded[~np.isin(y, diff)])
         else:
-            raise ValueError(f"There are no '{strategy}' strategy exists")
+            raise ValueError(f"The strategy '{strategy}' doesn't exist")
 
         encoded[index] = filling_value
         return encoded
 
 
 class _OneSegmentLabelEncoderTransform(Transform):
-    """Replace the values in the column with the Label encoding"""
+    """Replace the values in the column with the Label encoding."""
 
     def __init__(self, in_column: str, out_column: str, strategy: str, inplace: bool):
         """
@@ -60,7 +60,7 @@ class _OneSegmentLabelEncoderTransform(Transform):
             - If "mean", then replace missing dates using the mean in encoded column
             - If "none", then replace missing dates with None
         inplace:
-            if True, apply resampling inplace to in_column, if False, add transformed column to dataset
+            if True, apply transform inplace to in_column, if False, add transformed column to dataset
         """
         self.in_column = in_column
         self.out_column = out_column
@@ -119,6 +119,8 @@ class _OneSegmentLabelEncoderTransform(Transform):
 
 
 class LabelEncoderTransform(PerSegmentWrapper):
+    """Encode categorical feature with value between 0 and n_classes-1."""
+
     def __init__(
         self, in_column: str, inplace: bool = True, out_column: Optional[str] = None, strategy: str = ImputerMode.mean
     ):
@@ -128,9 +130,9 @@ class LabelEncoderTransform(PerSegmentWrapper):
         Parameters
         ----------
         in_column:
-            name of column to be resampled
+            name of column to be transformed
         inplace:
-            if True, apply resampling inplace to in_column, if False, add transformed column to dataset
+            if True, apply transform inplace to in_column, if False, add transformed column to dataset
         out_column:
             name of added column. If not given, use `self.__repr__()` or `regressor_{self.__repr__()}` if it is a regressor
         strategy:
@@ -144,16 +146,18 @@ class LabelEncoderTransform(PerSegmentWrapper):
         self.strategy = strategy
         self.out_column = out_column
         super().__init__(
-            transform=_OneSegmentLabelEncoderTransform(self.in_column, self.out_column, self.strategy, self.inplace)
+            transform=_OneSegmentLabelEncoderTransform(
+                in_column=self.in_column, out_column=self.out_column, strategy=self.strategy, inplace=self.inplace
+            )
         )
 
 
-class _OneSegmentLabelBinarizerTransform(Transform):
-    """Create one-hot encoding columns"""
+class _OneSegmentOneHotEncoderTransform(Transform):
+    """Create one-hot encoding columns."""
 
     def __init__(self, in_column: str, out_column: str):
         """
-        Create instance of _OneSegmentLabelBinarizerTransform.
+        Create instance of _OneSegmentOneHotEncoderTransform.
 
         Parameters
         ----------
@@ -168,18 +172,17 @@ class _OneSegmentLabelBinarizerTransform(Transform):
 
     def _get_column_name(self) -> str:
         """Get the `out_column` depending on the transform's parameters."""
-
         if self.out_column:
             return self.out_column
         if self.in_column.startswith("regressor"):
-            temp_transform = LabelBinarizerTransform(in_column=self.in_column, out_column=self.out_column)
+            temp_transform = OneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
             return f"regressor_{temp_transform.__repr__()}"
-        temp_transform = LabelBinarizerTransform(in_column=self.in_column, out_column=self.out_column)
+        temp_transform = OneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
         return temp_transform.__repr__()
 
-    def fit(self, df: pd.DataFrame) -> "_OneSegmentLabelBinarizerTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentOneHotEncoderTransform":
         """
-        Fit Label Binarizer encoder.
+        Fit One Hot encoder.
 
         Parameters
         ----------
@@ -211,10 +214,12 @@ class _OneSegmentLabelBinarizerTransform(Transform):
         return result_df
 
 
-class LabelBinarizerTransform(PerSegmentWrapper):
+class OneHotEncoderTransform(PerSegmentWrapper):
+    """Encode categorical feature as a one-hot numeric features."""
+
     def __init__(self, in_column: str, out_column: Optional[str] = None):
         """
-        Init LabelBinarizerTransform.
+        Init OneHotEncoderTransform.
 
         Parameters
         ----------
@@ -225,4 +230,6 @@ class LabelBinarizerTransform(PerSegmentWrapper):
         """
         self.in_column = in_column
         self.out_column = out_column
-        super().__init__(transform=_OneSegmentLabelBinarizerTransform(self.in_column, self.out_column))
+        super().__init__(
+            transform=_OneSegmentOneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
+        )

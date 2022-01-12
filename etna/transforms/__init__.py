@@ -8,6 +8,7 @@ from etna.transforms.decomposition import TheilSenTrendTransform
 from etna.transforms.decomposition import TrendTransform
 from etna.transforms.encoders import LabelEncoderTransform
 from etna.transforms.encoders import MeanSegmentEncoderTransform
+from etna.transforms.encoders import OneHotEncoderTransform
 from etna.transforms.encoders import SegmentEncoderTransform
 from etna.transforms.feature_selection import FilterFeaturesTransform
 from etna.transforms.feature_selection import GaleShapleyFeatureSelectionTransform
