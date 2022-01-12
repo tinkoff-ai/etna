@@ -207,7 +207,7 @@ class StackingEnsemble(Pipeline):
                 for forecast in forecasts
             ]
             features = pd.concat(
-                [forecast[:, :, features_in_forecasts[i]] for i, forecast in enumerate(forecasts)], axis=1
+                [forecast[:, :, frozenset(features_in_forecasts[i])] for i, forecast in enumerate(forecasts)], axis=1
             )
             features = features.loc[:, ~features.columns.duplicated()]
         features_df = pd.concat([features, targets], axis=1)
