@@ -278,7 +278,9 @@ class TSDataset:
 
         future_dataset = df.tail(future_steps).copy(deep=True)
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
-        future_ts = TSDataset(future_dataset, freq=self.freq)
+        future_ts = TSDataset(df=future_dataset, freq=self.freq)
+        future_ts.known_future = self.regressors
+        future_ts._regressors = self.regressors
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
@@ -332,7 +334,7 @@ class TSDataset:
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         segments = sorted(set(df.columns.get_level_values("segment")))
-        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
+        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.regressors]]
         self._check_regressors(df=df, df_regressors=df_regressors)
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True, how="left").sort_index(axis=1, level=(0, 1))
         return df
@@ -730,12 +732,12 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq)
+        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.regressors)
         train.raw_df = train_raw_df
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq)
+        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.regressors)
         test.raw_df = test_raw_df
 
         return train, test

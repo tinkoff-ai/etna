@@ -289,6 +289,14 @@ def test_train_test_split_failed(test_size, borders, match, tsdf_with_exog):
         )
 
 
+def test_train_test_split_pass_regressors_to_output(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    train, test = ts.train_test_split(test_size=5)
+    assert train.regressors == ts.regressors
+    assert test.regressors == ts.regressors
+
+
 def test_dataset_datetime_conversion():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["timestamp"] = classic_df["timestamp"].astype(str)
@@ -353,6 +361,13 @@ def test_make_future_with_regressors(df_and_regressors):
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
     assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
+
+
+def test_make_future_inherits_regressors(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts_future = ts.make_future(10)
+    assert ts_future.regressors == ts.regressors
 
 
 def test_make_future_warn_not_enough_regressors(df_and_regressors):
