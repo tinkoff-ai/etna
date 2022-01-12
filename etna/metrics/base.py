@@ -49,6 +49,11 @@ class Metric(BaseMixin):
             if "per-segment" -- does not aggregate metrics
         kwargs:
             functional metric's params
+
+        Raises
+        ------
+        NotImplementedError:
+            it non existent mode is used
         """
         self.metric_fn = metric_fn
         self.kwargs = kwargs
