@@ -62,7 +62,7 @@ class PytorchForecastingTransform(Transform):
 
         Reference
         ---------
-        https://github.com/jdb78/pytorch-forecasting/blob/v0.8.5/pytorch_forecasting/data/timeseries.py#L117
+        https://github.com/jdb78/pytorch-forecasting/blob/v0.9.2/pytorch_forecasting/data/timeseries.py#L117
         """
         super().__init__()
         self.max_encoder_length = max_encoder_length
