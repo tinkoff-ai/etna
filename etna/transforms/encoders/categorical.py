@@ -197,8 +197,10 @@ class _OneSegmentOneHotEncoderTransform(Transform):
 
 
 class OneHotEncoderTransform(PerSegmentWrapper):
-    """Encode categorical feature as a one-hot numeric features.
-    If unknown category is encountered during transform, the resulting one-hot encoded columns for this feature will be all zeros."""
+    """
+    Encode categorical feature as a one-hot numeric features.
+    If unknown category is encountered during transform, the resulting one-hot encoded columns for this feature will be all zeros.
+    """
 
     def __init__(self, in_column: str, out_column: Optional[str] = None):
         """

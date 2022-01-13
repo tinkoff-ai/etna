@@ -4,8 +4,49 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.datasets import generate_periodic_df
+from etna.metrics import R2
+from etna.models import LinearPerSegmentModel
+from etna.transforms import FilterFeaturesTransform
 from etna.transforms.encoders.categorical import LabelEncoderTransform
 from etna.transforms.encoders.categorical import OneHotEncoderTransform
+
+
+@pytest.fixture
+def ts_for_ohe_sanity():
+    df_to_forecast = generate_ar_df(100, start_time="2021-01-01", n_segments=1)
+    df_regressors = generate_periodic_df(120, start_time="2021-01-01", scale=10, period=4, n_segments=1)
+    df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
+    df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(1)]
+    df_regressors["segment"] = "segment_0"
+    df_to_forecast = TSDataset.to_dataset(df_to_forecast)
+    df_regressors = TSDataset.to_dataset(df_regressors)
+    rng = np.random.default_rng(12345)
+
+    def f(x):
+        if x == 5:
+            return 10 + rng.normal(0, 0.01)
+        elif x == 8:
+            return 15 + rng.normal(0, 0.01)
+        else:
+            return 3 + rng.normal(0, 0.01)
+
+    df_to_forecast["segment_0", "target"] = df_regressors["segment_0"]["regressor_0"][:100].apply(f)
+    ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    train_ts, test_ts = ts.train_test_split(test_size=10)
+    return train_ts, test_ts
+
+
+def test_ohe_sanity(ts_for_ohe_sanity):
+    train_ts, test_ts = ts_for_ohe_sanity
+    ohe = OneHotEncoderTransform(in_column="regressor_0")
+    filt = FilterFeaturesTransform(exclude=["regressor_0"])
+    train_ts.fit_transform([ohe, filt])
+    model = LinearPerSegmentModel()
+    model.fit(train_ts)
+    future_ts = train_ts.make_future(10)
+    forecast_ts = model.forecast(future_ts)
+    r2 = R2()
+    assert 1 - r2(forecast_ts, test_ts)["segment_0"] < 1e-5
 
 
 @pytest.fixture
