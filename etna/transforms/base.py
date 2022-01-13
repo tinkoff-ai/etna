@@ -42,7 +42,7 @@ class Transform(ABC, BaseMixin):
         """
         pass
 
-    def fit_transform(self, df: pd.DataFrame):
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         May be reimplemented. But it is not recommended.
 
