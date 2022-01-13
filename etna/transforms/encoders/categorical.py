@@ -28,7 +28,7 @@ class _LabelEncoder(preprocessing.LabelEncoder):
 
         encoded = _encode(y, uniques=self.classes_, check_unknown=False).astype(float)
 
-        if strategy == "None":
+        if strategy == "none":
             filling_value = None
         elif strategy == "new_value":
             filling_value = -1
@@ -44,7 +44,7 @@ class _LabelEncoder(preprocessing.LabelEncoder):
 class _OneSegmentLabelEncoderTransform(Transform):
     """Replace the values in the column with the Label encoding."""
 
-    def __init__(self, in_column: str, out_column: str, strategy: str, inplace: bool):
+    def __init__(self, in_column: str, out_column: str, strategy: str):
         """
         Create instance of _OneSegmentLabelEncoderTransform.
 
@@ -59,32 +59,11 @@ class _OneSegmentLabelEncoderTransform(Transform):
             - If "new_value", then replace missing dates with '-1'
             - If "mean", then replace missing dates using the mean in encoded column
             - If "none", then replace missing dates with None
-        inplace:
-            if True, apply transform inplace to in_column, if False, add transformed column to dataset
         """
         self.in_column = in_column
         self.out_column = out_column
         self.strategy = strategy
         self.le = _LabelEncoder()
-        self.inplace = inplace
-
-    def _get_column_name(self) -> str:
-        """Get the `out_column` depending on the transform's parameters."""
-        if self.inplace and self.out_column:
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        if self.inplace:
-            return self.in_column
-        if self.out_column:
-            return self.out_column
-        if self.in_column.startswith("regressor"):
-            temp_transform = LabelEncoderTransform(
-                in_column=self.in_column, inplace=self.inplace, out_column=self.out_column, strategy=self.strategy
-            )
-            return f"regressor_{temp_transform.__repr__()}"
-        temp_transform = LabelEncoderTransform(
-            in_column=self.in_column, inplace=self.inplace, out_column=self.out_column, strategy=self.strategy
-        )
-        return temp_transform.__repr__()
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentLabelEncoderTransform":
         """
@@ -114,7 +93,8 @@ class _OneSegmentLabelEncoderTransform(Transform):
         result dataframe
         """
         result_df = df.copy()
-        result_df[self._get_column_name()] = self.le.transform(df[self.in_column], self.strategy)
+        result_df[self.out_column] = self.le.transform(df[self.in_column], self.strategy)
+        result_df[self.out_column] = result_df[self.out_column].astype("category")
         return result_df
 
 
@@ -145,11 +125,20 @@ class LabelEncoderTransform(PerSegmentWrapper):
         self.inplace = inplace
         self.strategy = strategy
         self.out_column = out_column
-        super().__init__(
-            transform=_OneSegmentLabelEncoderTransform(
-                in_column=self.in_column, out_column=self.out_column, strategy=self.strategy, inplace=self.inplace
-            )
-        )
+        self.out_column = self._get_column_name()
+        super().__init__(transform=_OneSegmentLabelEncoderTransform(self.in_column, self.out_column, self.strategy))
+
+    def _get_column_name(self) -> str:
+        """Get the `out_column` depending on the transform's parameters."""
+        if self.inplace and self.out_column:
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+        if self.inplace:
+            return self.in_column
+        if self.out_column:
+            return self.out_column
+        if self.in_column.startswith("regressor"):
+            return f"regressor_{self.__repr__()}"
+        return self.__repr__()
 
 
 class _OneSegmentOneHotEncoderTransform(Transform):
@@ -169,16 +158,6 @@ class _OneSegmentOneHotEncoderTransform(Transform):
         self.in_column = in_column
         self.out_column = out_column
         self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False)
-
-    def _get_column_name(self) -> str:
-        """Get the `out_column` depending on the transform's parameters."""
-        if self.out_column:
-            return self.out_column
-        if self.in_column.startswith("regressor"):
-            temp_transform = OneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
-            return f"regressor_{temp_transform.__repr__()}"
-        temp_transform = OneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
-        return temp_transform.__repr__()
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentOneHotEncoderTransform":
         """
@@ -208,14 +187,18 @@ class _OneSegmentOneHotEncoderTransform(Transform):
         result dataframe
         """
         result_df = df.copy()
-        result_df[
-            [self._get_column_name() + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]
-        ] = self.ohe.transform(np.array(df[self.in_column]).reshape(-1, 1))
+        result_df[[self.out_column + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]] = self.ohe.transform(
+            np.array(df[self.in_column]).reshape(-1, 1)
+        )
+        result_df[[self.out_column + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]] = result_df[
+            [self.out_column + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]
+        ].astype("category")
         return result_df
 
 
 class OneHotEncoderTransform(PerSegmentWrapper):
-    """Encode categorical feature as a one-hot numeric features."""
+    """Encode categorical feature as a one-hot numeric features.
+    If unknown category is encountered during transform, the resulting one-hot encoded columns for this feature will be all zeros."""
 
     def __init__(self, in_column: str, out_column: Optional[str] = None):
         """
@@ -230,6 +213,15 @@ class OneHotEncoderTransform(PerSegmentWrapper):
         """
         self.in_column = in_column
         self.out_column = out_column
+        self.out_column = self._get_column_name()
         super().__init__(
             transform=_OneSegmentOneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
         )
+
+    def _get_column_name(self) -> str:
+        """Get the `out_column` depending on the transform's parameters."""
+        if self.out_column:
+            return self.out_column
+        if self.in_column.startswith("regressor"):
+            return f"regressor_{self.__repr__()}"
+        return self.__repr__()
