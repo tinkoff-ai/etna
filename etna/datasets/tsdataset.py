@@ -279,7 +279,7 @@ class TSDataset:
         future_dataset = df.tail(future_steps).copy(deep=True)
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
-        future_ts.known_future = self.regressors
+        future_ts.known_future = self.known_future
         future_ts._regressors = self.regressors
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
@@ -732,13 +732,15 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.regressors)
+        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
         train.raw_df = train_raw_df
+        train._regressors = self.regressors
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.regressors)
+        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
         test.raw_df = test_raw_df
+        test._regressors = self.regressors
 
         return train, test
 
