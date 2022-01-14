@@ -9,6 +9,7 @@ from etna.transforms.math.scalers import MinMaxScalerTransform
 from etna.transforms.math.scalers import RobustScalerTransform
 from etna.transforms.math.scalers import StandardScalerTransform
 from etna.transforms.math.sklearn import SklearnTransform
+from etna.transforms.math.statistics import MADTransform
 from etna.transforms.math.statistics import MaxTransform
 from etna.transforms.math.statistics import MeanTransform
 from etna.transforms.math.statistics import MedianTransform

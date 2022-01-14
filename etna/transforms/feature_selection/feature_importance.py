@@ -1,6 +1,7 @@
 import warnings
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -13,8 +14,11 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
+from etna.analysis import RelevanceTable
+from etna.analysis.feature_selection.mrmr import AggregationMode
+from etna.analysis.feature_selection.mrmr import mrmr
 from etna.datasets import TSDataset
-from etna.transforms.feature_selection.base import BaseFeatureSelectionTransform
+from etna.transforms.feature_selection import BaseFeatureSelectionTransform
 
 TreeBasedRegressor = Union[
     DecisionTreeRegressor,
@@ -93,4 +97,72 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             return self
         weights = self._get_regressors_weights(df)
         self.selected_regressors = self._select_top_k_regressors(weights, self.top_k)
+        return self
+
+
+class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
+    """Transform that selects regressors according to MRMR variable selection method adapted to the timeseries case."""
+
+    def __init__(
+        self,
+        relevance_table: RelevanceTable,
+        top_k: int,
+        relevance_aggregation_mode: str = AggregationMode.mean,
+        redundancy_aggregation_mode: str = AggregationMode.mean,
+        atol: float = 1e-10,
+        **relevance_params,
+    ):
+        """
+        Init MRMRFeatureSelectionTransform.
+
+        Parameters
+        ----------
+        relevance_table:
+            method to calculate relevance table
+        top_k:
+            num of regressors to select; if there are not enough regressors, then all will be selected
+        relevance_aggregation_mode:
+            the method for relevance values per-segment aggregation
+        redundancy_aggregation_mode:
+            the method for redundancy values per-segment aggregation
+        atol:
+            the absolute tolerance to compare the float values
+        """
+        if not isinstance(top_k, int) or top_k < 0:
+            raise ValueError("Parameter top_k should be positive integer")
+
+        self.relevance_table = relevance_table
+        self.top_k = top_k
+        self.relevance_aggregation_mode = relevance_aggregation_mode
+        self.redundancy_aggregation_mode = redundancy_aggregation_mode
+        self.atol = atol
+        self.relevance_params = relevance_params
+        self.selected_regressors: Optional[List[str]] = None
+
+    def fit(self, df: pd.DataFrame) -> "MRMRFeatureSelectionTransform":
+        """
+        Fit the method and remember features to select.
+
+        Parameters
+        ----------
+        df:
+            dataframe with all segments data
+
+        Returns
+        -------
+        result: MRMRFeatureSelectionTransform
+            instance after fitting
+        """
+        ts = TSDataset(df=df, freq=pd.infer_freq(df.index))
+        relevance_table = self.relevance_table(ts[:, :, "target"], ts[:, :, ts.regressors], **self.relevance_params)
+        if not self.relevance_table.greater_is_better:
+            relevance_table *= -1
+        self.selected_regressors = mrmr(
+            relevance_table=relevance_table,
+            regressors=ts[:, :, ts.regressors],
+            top_k=self.top_k,
+            relevance_aggregation_mode=self.relevance_aggregation_mode,
+            redundancy_aggregation_mode=self.redundancy_aggregation_mode,
+            atol=self.atol,
+        )
         return self

@@ -203,7 +203,11 @@ class StackingEnsemble(Pipeline):
         features = pd.DataFrame()
         if self.filtered_features_for_final_model is not None:
             features_in_forecasts = [
-                set(forecast.columns.get_level_values("feature")).intersection(self.filtered_features_for_final_model)
+                list(
+                    set(forecast.columns.get_level_values("feature")).intersection(
+                        self.filtered_features_for_final_model
+                    )
+                )
                 for forecast in forecasts
             ]
             features = pd.concat(

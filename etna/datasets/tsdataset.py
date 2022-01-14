@@ -184,10 +184,10 @@ class TSDataset:
         segment      segment_0                      segment_1
         feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
         timestamp
-        2021-07-01          30          35    nan          70          75    nan
-        2021-07-02          31          36    nan          71          76    nan
-        2021-07-03          32          37    nan          72          77    nan
-        2021-07-04          33          38    nan          73          78    nan
+        2021-07-01          30          35    NaN          70          75    NaN
+        2021-07-02          31          36    NaN          71          76    NaN
+        2021-07-03          32          37    NaN          72          77    NaN
+        2021-07-04          33          38    NaN          73          78    NaN
         """
         self._check_endings()
         max_date_in_dataset = self.df.index.max()
