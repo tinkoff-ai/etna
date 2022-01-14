@@ -21,6 +21,7 @@ from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -283,11 +284,11 @@ def test_generate_constant_timeranges_hours():
     (
         (
             False,
-            ["fold_number", "MAE", "MSE", "segment", "SMAPE"],
+            ["fold_number", "MAE", "MSE", "segment", "SMAPE", DummyMetric("per-segment", alpha=0.0).__repr__()],
         ),
         (
             True,
-            ["MAE", "MSE", "segment", "SMAPE"],
+            ["MAE", "MSE", "segment", "SMAPE", DummyMetric("per-segment", alpha=0.0).__repr__()],
         ),
     ),
 )
@@ -298,7 +299,7 @@ def test_get_metrics_interface(
     metrics_df, _, _ = catboost_pipeline.backtest(
         ts=big_daily_example_tsdf,
         aggregate_metrics=aggregate_metrics,
-        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment")],
+        metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment"), DummyMetric("per-segment", alpha=0.0)],
     )
     assert sorted(expected_columns) == sorted(metrics_df.columns)
 

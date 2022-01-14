@@ -63,6 +63,11 @@ class Metric(BaseMixin):
             self._aggregate_metrics = identity
         self.mode = mode
 
+    @property
+    def name(self) -> str:
+        """Name of the metric for representation."""
+        return self.__class__.__name__
+
     @staticmethod
     def _validate_segment_columns(y_true: TSDataset, y_pred: TSDataset):
         """
