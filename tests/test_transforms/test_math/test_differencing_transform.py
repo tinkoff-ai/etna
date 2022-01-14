@@ -12,6 +12,7 @@ from etna.models import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
+from tests.utils import equals_with_nans
 
 GeneralDifferencingTransform = Union[_SingleDifferencingTransform, DifferencingTransform]
 
@@ -24,14 +25,6 @@ def extract_new_features_columns(transformed_df: pd.DataFrame, initial_df: pd.Da
         .unique()
         .tolist()
     )
-
-
-def equals_with_nans(first_df: pd.DataFrame, second_df: pd.DataFrame) -> bool:
-    """Compare two dataframes with consideration NaN == NaN is true."""
-    if first_df.shape != second_df.shape:
-        return False
-    compare_result = (first_df.isna() & second_df.isna()) | (first_df == second_df)
-    return np.all(compare_result)
 
 
 @pytest.fixture

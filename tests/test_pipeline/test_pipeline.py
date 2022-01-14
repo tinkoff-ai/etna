@@ -2,7 +2,6 @@ import re
 from copy import deepcopy
 from datetime import datetime
 from typing import List
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -346,43 +345,6 @@ def test_backtest_with_n_jobs(catboost_pipeline: Pipeline, big_example_tsdf: TSD
     _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, metrics=DEFAULT_METRICS)
     _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, metrics=DEFAULT_METRICS)
     assert (forecast_1 == forecast_2).all().all()
-
-
-@pytest.fixture
-def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
-    horizon = 5
-    n_folds = 3
-    train_size = 20
-    start_value = 10.0
-    add_value = 5.0
-    segment = 0
-    timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq="D")
-    target = [start_value] * train_size
-    for i in range(n_folds):
-        target += [target[-1] + add_value] * horizon
-
-    df = pd.DataFrame({"timestamp": timestamp, "target": target, "segment": 0})
-    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
-
-    metrics_df = pd.DataFrame(
-        {"segment": [segment, segment, segment], "MAE": [add_value, add_value, add_value], "fold_number": [0, 1, 2]}
-    )
-
-    timestamp_forecast = timestamp[train_size:]
-    target_forecast = []
-    fold_number_forecast = []
-    for i in range(n_folds):
-        target_forecast += [start_value + i * add_value] * horizon
-        fold_number_forecast += [i] * horizon
-    forecast_df = pd.DataFrame(
-        {"target": target_forecast, "fold_number": fold_number_forecast},
-        index=timestamp_forecast,
-    )
-    forecast_df.columns = pd.MultiIndex.from_product(
-        [[segment], ["target", "fold_number"]], names=("segment", "feature")
-    )
-
-    return ts, metrics_df, forecast_df
 
 
 def test_backtest_forecasts_sanity(step_ts):
