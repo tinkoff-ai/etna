@@ -112,7 +112,7 @@ class Pipeline(BasePipeline):
 
     def _forecast_prediction_interval(self, future: TSDataset) -> TSDataset:
         """Forecast prediction interval for the future."""
-        _, forecasts, _ = self.backtest(self.ts, metrics=[MAE()], n_folds=self.n_folds)
+        _, forecasts, _ = self.backtest(ts=deepcopy(self.ts), metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
