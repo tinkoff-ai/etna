@@ -9,12 +9,15 @@ from sklearn.metrics import r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
+from etna.analysis import ModelRelevanceTable
+from etna.analysis import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms.feature_selection import TreeFeatureSelectionTransform
+from etna.transforms.feature_selection.feature_importance import MRMRFeatureSelectionTransform
 
 
 @pytest.fixture
@@ -219,3 +222,32 @@ def test_sanity_model(model, ts_with_regressors):
 def test_fit_transform_with_nans(model, ts_diff_endings):
     selector = TreeFeatureSelectionTransform(model=model, top_k=10)
     ts_diff_endings.fit_transform([selector])
+
+
+@pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
+@pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
+def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
+    """Check that transform selects exactly top_k regressors."""
+    df = ts_with_regressors.to_pandas()
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
+    df_selected = mrmr.fit_transform(df)
+    all_regressors = ts_with_regressors.regressors
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert len(selected_regressors) == min(len(all_regressors), top_k)
+
+
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
+    """Check that transform selects right top_k regressors."""
+    df = ts_with_regressors.to_pandas()
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=3, model=RandomForestRegressor())
+    df_selected = mrmr.fit_transform(df)
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+    assert set(selected_regressors) == set(["regressor_useful_0", "regressor_useful_1", "regressor_useful_2"])

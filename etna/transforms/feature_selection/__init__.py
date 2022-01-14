@@ -1,4 +1,5 @@
 from etna.transforms.feature_selection.base import BaseFeatureSelectionTransform
+from etna.transforms.feature_selection.feature_importance import MRMRFeatureSelectionTransform
 from etna.transforms.feature_selection.feature_importance import TreeFeatureSelectionTransform
 from etna.transforms.feature_selection.filter import FilterFeaturesTransform
 from etna.transforms.feature_selection.gale_shapley import GaleShapleyFeatureSelectionTransform
