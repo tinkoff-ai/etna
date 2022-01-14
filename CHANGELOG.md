@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
 - DifferencingTransform ([#414](https://github.com/tinkoff-ai/etna/pull/414))
+- MADTransform ([#441](https://github.com/tinkoff-ai/etna/pull/441))
 - `MRMRFeatureSelectionTransform` ([#439](https://github.com/tinkoff-ai/etna/pull/439))
 
 ## Changed
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Add relevance_params in GaleShapleyFeatureSelectionTransform ([#410](https://github.com/tinkoff-ai/etna/pull/410))
+- Docs for statistics transforms ([#441](https://github.com/tinkoff-ai/etna/pull/441))
 
 ## [1.5.0] - 2021-12-24
 ### Added
