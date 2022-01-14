@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -10,7 +9,6 @@ from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
 from etna.metrics import smape
-from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE
@@ -19,28 +17,8 @@ from etna.metrics.metrics import MSLE
 from etna.metrics.metrics import R2
 from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import MedAE
-
-
-def create_dummy_functional_metric(alpha: float = 1.0):
-    def dummy_functional_metric(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        return alpha
-
-    return dummy_functional_metric
-
-
-class DummyMetric(Metric):
-    """Dummy metric returning always given parameter.
-
-    It is made to test name property.
-    """
-
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, alpha: float = 1.0, **kwargs):
-        self.alpha = alpha
-        super().__init__(mode=mode, metric_fn=create_dummy_functional_metric(alpha), **kwargs)
-
-    @property
-    def name(self) -> str:
-        return self.__repr__()
+from tests.utils import DummyMetric
+from tests.utils import create_dummy_functional_metric
 
 
 @pytest.mark.parametrize(
