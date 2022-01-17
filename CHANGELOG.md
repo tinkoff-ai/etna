@@ -9,13 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
 - DifferencingTransform ([#414](https://github.com/tinkoff-ai/etna/pull/414))
-<<<<<<< HEAD
 - OneHotEncoderTransform and LabelEncoderTransform ([#431](https://github.com/tinkoff-ai/etna/pull/431))
-=======
 - MADTransform ([#441](https://github.com/tinkoff-ai/etna/pull/441))
 - `MRMRFeatureSelectionTransform` ([#439](https://github.com/tinkoff-ai/etna/pull/439))
 - Possibility to change metric representation in backtest using Metric.name ([#454](https://github.com/tinkoff-ai/etna/pull/454))
->>>>>>> 94eb0694ade3c779040e7924588282942b004999
 
 ## Changed
 - Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))

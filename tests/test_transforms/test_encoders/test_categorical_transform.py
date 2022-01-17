@@ -232,14 +232,14 @@ def ts_for_ohe_sanity():
 
 def test_ohe_sanity(ts_for_ohe_sanity):
     """Test for correct work in the full forecasting pipeline."""
-    HORIZON = 10
-    train_ts, test_ts = ts_for_ohe_sanity.train_test_split(test_size=HORIZON)
+    horizon = 10
+    train_ts, test_ts = ts_for_ohe_sanity.train_test_split(test_size=horizon)
     ohe = OneHotEncoderTransform(in_column="regressor_0")
     filt = FilterFeaturesTransform(exclude=["regressor_0"])
     train_ts.fit_transform([ohe, filt])
     model = LinearPerSegmentModel()
     model.fit(train_ts)
-    future_ts = train_ts.make_future(HORIZON)
+    future_ts = train_ts.make_future(horizon)
     forecast_ts = model.forecast(future_ts)
     r2 = R2()
     assert 1 - r2(test_ts, forecast_ts)["segment_0"] < 1e-5
