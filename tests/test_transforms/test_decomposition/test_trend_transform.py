@@ -136,6 +136,7 @@ def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
         residue = segment_slice["target"] - segment_slice[out_column]
         assert residue.mean() < 1
 
+
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans, model):
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")

@@ -51,6 +51,7 @@ def ts_trend_seasonal() -> TSDataset:
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
 
+
 @pytest.fixture
 def ts_trend_seasonal_nan_tails() -> TSDataset:
     df_1 = get_one_df(coef=0.1, period=7, magnitude=1)
@@ -61,8 +62,9 @@ def ts_trend_seasonal_nan_tails() -> TSDataset:
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    df.loc[[df.index[0],df.index[1],df.index[-2],df.index[-1]], pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[[df.index[0], df.index[1], df.index[-2], df.index[-1]], pd.IndexSlice["segment_1", "target"]] = None
     return TSDataset(df, freq="D")
+
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
 def test_transform_one_segment(df_trend_seasonal_one_segment, model):
@@ -140,6 +142,7 @@ def test_fit_transform_with_nans_in_tails(ts_trend_seasonal_nan_tails, model_stl
     transform = STLTransform(in_column="target", period=7, model=model_stl)
     ts_trend_seasonal_nan_tails.fit_transform(transforms=[transform])
     np.testing.assert_allclose(ts_trend_seasonal_nan_tails[:, :, "target"].dropna(), 0, atol=0.25)
+
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     transform = STLTransform(in_column="target", period=7)

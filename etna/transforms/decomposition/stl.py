@@ -88,7 +88,7 @@ class _OneSegmentSTLTransform(Transform):
         result: _OneSegmentSTLTransform
             instance after processing
         """
-        df = df.loc[df[self.in_column].first_valid_index():df[self.in_column].last_valid_index()]
+        df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
         model = STLForecast(
@@ -118,7 +118,9 @@ class _OneSegmentSTLTransform(Transform):
         """
         result = df.copy()
         if self.fit_results is not None:
-            season_trend = self.fit_results.get_prediction(start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()).predicted_mean
+            season_trend = self.fit_results.get_prediction(
+                start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
+            ).predicted_mean
         else:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         result[self.in_column] -= season_trend

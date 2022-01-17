@@ -5,7 +5,6 @@ from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
-from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
 
 
@@ -28,15 +27,22 @@ def pre_multitrend_df() -> pd.DataFrame:
     df = TSDataset.to_dataset(df=df)
     return df
 
+
 @pytest.fixture
 def multitrend_df_with_nans_in_tails(multitrend_df):
-    multitrend_df.loc[[multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]], pd.IndexSlice["segment_1", "target"]] = None
+    multitrend_df.loc[
+        [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],
+        pd.IndexSlice["segment_1", "target"],
+    ] = None
     return multitrend_df
 
 
 @pytest.fixture
 def multitrend_df_with_nans(multitrend_df_with_nans_in_tails):
-    multitrend_df_with_nans_in_tails.loc[[multitrend_df_with_nans_in_tails.index[7], multitrend_df_with_nans_in_tails.index[10]], pd.IndexSlice["segment_1", "target"]] = None
+    multitrend_df_with_nans_in_tails.loc[
+        [multitrend_df_with_nans_in_tails.index[7], multitrend_df_with_nans_in_tails.index[10]],
+        pd.IndexSlice["segment_1", "target"],
+    ] = None
     return multitrend_df_with_nans_in_tails
 
 
@@ -198,8 +204,9 @@ def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
     bs = _OneSegmentChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    transformed= bs.fit_transform(df=multitrend_df_with_nans_in_tails["segment_1"])
+    transformed = bs.fit_transform(df=multitrend_df_with_nans_in_tails["segment_1"])
     assert abs(transformed["target"].mean()) < 0.1
+
 
 def test_fit_transform_with_nans_in_middle_raise_error(multitrend_df_with_nans):
     bs = _OneSegmentChangePointsTrendTransform(
