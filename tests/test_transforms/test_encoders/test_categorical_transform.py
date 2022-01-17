@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
@@ -14,69 +15,89 @@ from etna.transforms.encoders.categorical import OneHotEncoderTransform
 
 @pytest.fixture
 def two_df_with_new_values():
-    df1 = TSDataset.to_dataset(
-        generate_periodic_df(periods=3, start_time="2020-01-01", scale=10, period=2, n_segments=2)
-    )
-    df2 = TSDataset.to_dataset(
-        generate_periodic_df(periods=3, start_time="2020-01-01", scale=10, period=3, n_segments=2)
-    )
+    d = {
+        "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03"))
+        + list(pd.date_range(start="2021-01-01", end="2021-01-03")),
+        "segment": ["segment_0", "segment_0", "segment_0", "segment_1", "segment_1", "segment_1"],
+        "regressor_0": [5, 8, 5, 9, 5, 9],
+        "target": [1, 2, 3, 4, 5, 6],
+    }
+    df1 = TSDataset.to_dataset(pd.DataFrame(d))
+    d = {
+        "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03"))
+        + list(pd.date_range(start="2021-01-01", end="2021-01-03")),
+        "segment": ["segment_0", "segment_0", "segment_0", "segment_1", "segment_1", "segment_1"],
+        "regressor_0": [5, 8, 9, 5, 0, 0],
+        "target": [1, 2, 3, 4, 5, 6],
+    }
+    df2 = TSDataset.to_dataset(pd.DataFrame(d))
     return df1, df2
 
 
 @pytest.fixture
 def df_for_ohe_encoding():
     df_to_forecast = generate_ar_df(10, start_time="2021-01-01", n_segments=1)
-    df_regressors = generate_periodic_df(12, start_time="2021-01-01", scale=10, period=2, n_segments=5)
-    df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
-    df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(5)]
+    d = {
+        "timestamp": pd.date_range(start="2021-01-01", end="2021-01-12"),
+        "regressor_0": [5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8],
+        "regressor_1": [9, 5, 9, 5, 9, 5, 9, 5, 9, 5, 9, 5],
+        "regressor_2": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "regressor_3": [1, 7, 1, 7, 1, 7, 1, 7, 1, 7, 1, 7],
+    }
+    df_regressors = pd.DataFrame(d)
     df_regressors["segment"] = "segment_0"
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
-    regressor_0 = tsdataset.df.copy()["segment_0"]
-    regressor_0["test_0"] = regressor_0["regressor_0"].apply(lambda x: float(x == 5))
-    regressor_0["test_1"] = regressor_0["regressor_0"].apply(lambda x: float(x == 8))
-    regressor_0["test_0"] = regressor_0["test_0"].astype("category")
-    regressor_0["test_1"] = regressor_0["test_1"].astype("category")
+    answer_on_regressor_0 = tsdataset.df.copy()["segment_0"]
+    answer_on_regressor_0["test_0"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(x == 5))
+    answer_on_regressor_0["test_1"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(x == 8))
+    answer_on_regressor_0["test_0"] = answer_on_regressor_0["test_0"].astype("category")
+    answer_on_regressor_0["test_1"] = answer_on_regressor_0["test_1"].astype("category")
 
-    regressor_1 = tsdataset.df.copy()["segment_0"]
-    regressor_1["test_0"] = regressor_1["regressor_1"].apply(lambda x: float(x == 5))
-    regressor_1["test_1"] = regressor_1["regressor_1"].apply(lambda x: float(x == 9))
-    regressor_1["test_0"] = regressor_1["test_0"].astype("category")
-    regressor_1["test_1"] = regressor_1["test_1"].astype("category")
+    answer_on_regressor_1 = tsdataset.df.copy()["segment_0"]
+    answer_on_regressor_1["test_0"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(x == 5))
+    answer_on_regressor_1["test_1"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(x == 9))
+    answer_on_regressor_1["test_0"] = answer_on_regressor_1["test_0"].astype("category")
+    answer_on_regressor_1["test_1"] = answer_on_regressor_1["test_1"].astype("category")
 
-    regressor_2 = tsdataset.df.copy()["segment_0"]
-    regressor_2["test_0"] = regressor_2["regressor_2"].apply(lambda x: float(x == 0))
-    regressor_2["test_0"] = regressor_2["test_0"].astype("category")
+    answer_on_regressor_2 = tsdataset.df.copy()["segment_0"]
+    answer_on_regressor_2["test_0"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(x == 0))
+    answer_on_regressor_2["test_0"] = answer_on_regressor_2["test_0"].astype("category")
 
-    return tsdataset.df, (regressor_0, regressor_1, regressor_2)
+    return tsdataset.df, (answer_on_regressor_0, answer_on_regressor_1, answer_on_regressor_2)
 
 
 @pytest.fixture
 def df_for_label_encoding():
     df_to_forecast = generate_ar_df(10, start_time="2021-01-01", n_segments=1)
-    df_regressors = generate_periodic_df(12, start_time="2021-01-01", scale=10, period=2, n_segments=5)
-    df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
-    df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(5)]
+    d = {
+        "timestamp": pd.date_range(start="2021-01-01", end="2021-01-12"),
+        "regressor_0": [5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8],
+        "regressor_1": [9, 5, 9, 5, 9, 5, 9, 5, 9, 5, 9, 5],
+        "regressor_2": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "regressor_3": [1, 7, 1, 7, 1, 7, 1, 7, 1, 7, 1, 7],
+    }
+    df_regressors = pd.DataFrame(d)
     df_regressors["segment"] = "segment_0"
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
-    regressor_0 = tsdataset.df.copy()["segment_0"]
-    regressor_0["test"] = regressor_0["regressor_0"].apply(lambda x: float(x == 8))
-    regressor_0["test"] = regressor_0["test"].astype("category")
+    answer_on_regressor_0 = tsdataset.df.copy()["segment_0"]
+    answer_on_regressor_0["test"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(x == 8))
+    answer_on_regressor_0["test"] = answer_on_regressor_0["test"].astype("category")
 
-    regressor_1 = tsdataset.df.copy()["segment_0"]
-    regressor_1["test"] = regressor_1["regressor_1"].apply(lambda x: float(x == 9))
-    regressor_1["test"] = regressor_1["test"].astype("category")
+    answer_on_regressor_1 = tsdataset.df.copy()["segment_0"]
+    answer_on_regressor_1["test"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(x == 9))
+    answer_on_regressor_1["test"] = answer_on_regressor_1["test"].astype("category")
 
-    regressor_2 = tsdataset.df.copy()["segment_0"]
-    regressor_2["test"] = regressor_2["regressor_2"].apply(lambda x: float(x == 1))
-    regressor_2["test"] = regressor_2["test"].astype("category")
+    answer_on_regressor_2 = tsdataset.df.copy()["segment_0"]
+    answer_on_regressor_2["test"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(x == 1))
+    answer_on_regressor_2["test"] = answer_on_regressor_2["test"].astype("category")
 
-    return tsdataset.df, (regressor_0, regressor_1, regressor_2)
+    return tsdataset.df, (answer_on_regressor_0, answer_on_regressor_1, answer_on_regressor_2)
 
 
 @pytest.fixture
@@ -96,7 +117,7 @@ def test_label_encoder_simple(df_for_label_encoding):
     """Test that LabelEncoderTransform works correct in a simple cases."""
     df, answers = df_for_label_encoding
     for i in range(3):
-        le = LabelEncoderTransform(in_column=f"regressor_{i}", inplace=False, out_column="test")
+        le = LabelEncoderTransform(in_column=f"regressor_{i}", out_column="test")
         le.fit(df)
         cols = le.transform(df)["segment_0"].columns
         assert le.transform(df)["segment_0"][cols].equals(answers[i][cols])
@@ -124,15 +145,15 @@ def test_value_error_label_encoder(df_for_label_encoding):
 @pytest.mark.parametrize(
     "strategy, expected_values",
     [
-        ("new_value", np.array([[0, 0], [1, -1], [-1, -1]])),
-        ("none", np.array([[0, 0], [1, np.nan], [np.nan, np.nan]])),
-        ("mean", np.array([[0, 0], [1, 0], [0.5, 0]])),
+        ("new_value", np.array([[5, 0, 1, 5, 0, 4], [8, 1, 2, 0, -1, 5], [9, -1, 3, 0, -1, 6]])),
+        ("none", np.array([[5, 0, 1, 5, 0, 4], [8, 1, 2, 0, np.nan, 5], [9, np.nan, 3, 0, np.nan, 6]])),
+        ("mean", np.array([[5, 0, 1, 5, 0, 4], [8, 1, 2, 0, 0, 5], [9, 0.5, 3, 0, 0, 6]])),
     ],
 )
 def test_new_value_label_encoder(two_df_with_new_values, strategy, expected_values):
     """Test LabelEncoderTransform correct works with unknown values."""
     df1, df2 = two_df_with_new_values
-    le = LabelEncoderTransform(in_column="target", strategy=strategy)
+    le = LabelEncoderTransform(in_column="regressor_0", strategy=strategy)
     le.fit(df1)
     np.testing.assert_array_almost_equal(le.transform(df2).values, expected_values)
 
@@ -140,10 +161,14 @@ def test_new_value_label_encoder(two_df_with_new_values, strategy, expected_valu
 def test_new_value_ohe_encoder(two_df_with_new_values):
     """Test OneHotEncoderTransform correct works with unknown values."""
     expected_values = np.array(
-        [[5.0, 1.0, 0.0, 5.0, 1.0, 0.0], [8.0, 0.0, 1.0, 0.0, 0.0, 0.0], [9.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
+        [
+            [5.0, 1.0, 1.0, 0.0, 5.0, 4.0, 1.0, 0.0],
+            [8.0, 2.0, 0.0, 1.0, 0.0, 5.0, 0.0, 0.0],
+            [9.0, 3.0, 0.0, 0.0, 0.0, 6.0, 0.0, 0.0],
+        ]
     )
     df1, df2 = two_df_with_new_values
-    ohe = OneHotEncoderTransform(in_column="target", out_column="targets")
+    ohe = OneHotEncoderTransform(in_column="regressor_0", out_column="targets")
     ohe.fit(df1)
     np.testing.assert_array_almost_equal(ohe.transform(df2).values, expected_values)
 
@@ -151,10 +176,10 @@ def test_new_value_ohe_encoder(two_df_with_new_values):
 def test_naming_ohe_encoder(two_df_with_new_values):
     """Test OneHotEncoderTransform gives the correct columns."""
     df1, df2 = two_df_with_new_values
-    ohe = OneHotEncoderTransform(in_column="target", out_column="targets")
+    ohe = OneHotEncoderTransform(in_column="regressor_0", out_column="targets")
     ohe.fit(df1)
     segments = ["segment_0", "segment_1"]
-    target = ["target", "targets_0", "targets_1"]
+    target = ["target", "targets_0", "targets_1", "regressor_0"]
     assert set([(i, j) for i in segments for j in target]) == set(ohe.transform(df2).columns.values)
 
 
@@ -180,7 +205,7 @@ def test_naming_ohe_encoder_no_out_column(df_for_naming, in_column, prefix):
 def test_naming_label_encoder_no_out_column(df_for_naming, in_column, prefix):
     """Test LabelEncoderTransform gives the correct columns with no out_column."""
     df = df_for_naming
-    le = LabelEncoderTransform(in_column=in_column, inplace=False)
+    le = LabelEncoderTransform(in_column=in_column)
     le.fit(df)
     answer = set(list(df["segment_0"].columns) + [prefix + str(le.__repr__())])
     assert answer == set(le.transform(df)["segment_0"].columns.values)

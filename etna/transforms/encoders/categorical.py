@@ -1,4 +1,3 @@
-import warnings
 from enum import Enum
 from typing import Optional
 
@@ -101,9 +100,7 @@ class _OneSegmentLabelEncoderTransform(Transform):
 class LabelEncoderTransform(PerSegmentWrapper):
     """Encode categorical feature with value between 0 and n_classes-1."""
 
-    def __init__(
-        self, in_column: str, inplace: bool = True, out_column: Optional[str] = None, strategy: str = ImputerMode.mean
-    ):
+    def __init__(self, in_column: str, out_column: Optional[str] = None, strategy: str = ImputerMode.mean):
         """
         Init LabelEncoderTransform.
 
@@ -111,8 +108,6 @@ class LabelEncoderTransform(PerSegmentWrapper):
         ----------
         in_column:
             name of column to be transformed
-        inplace:
-            if True, apply transform inplace to in_column, if False, add transformed column to dataset
         out_column:
             name of added column. If not given, use `self.__repr__()` or `regressor_{self.__repr__()}` if it is a regressor
         strategy:
@@ -122,7 +117,6 @@ class LabelEncoderTransform(PerSegmentWrapper):
             - If "none", then replace missing values with None
         """
         self.in_column = in_column
-        self.inplace = inplace
         self.strategy = strategy
         self.out_column = out_column
         super().__init__(
@@ -133,10 +127,6 @@ class LabelEncoderTransform(PerSegmentWrapper):
 
     def _get_column_name(self) -> str:
         """Get the `out_column` depending on the transform's parameters."""
-        if self.inplace and self.out_column:
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-        if self.inplace:
-            return self.in_column
         if self.out_column:
             return self.out_column
         if self.in_column.startswith("regressor"):
