@@ -49,6 +49,11 @@ class Metric(BaseMixin):
             if "per-segment" -- does not aggregate metrics
         kwargs:
             functional metric's params
+
+        Raises
+        ------
+        NotImplementedError:
+            it non existent mode is used
         """
         self.metric_fn = metric_fn
         self.kwargs = kwargs
@@ -57,6 +62,11 @@ class Metric(BaseMixin):
         elif MetricAggregationMode(mode) == MetricAggregationMode.per_segment:
             self._aggregate_metrics = identity
         self.mode = mode
+
+    @property
+    def name(self) -> str:
+        """Name of the metric for representation."""
+        return self.__class__.__name__
 
     @staticmethod
     def _validate_segment_columns(y_true: TSDataset, y_pred: TSDataset):

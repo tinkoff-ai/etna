@@ -93,7 +93,7 @@ def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segme
     rows_num = math.ceil(k / columns_num)
     fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True, squeeze=False)
     ax = ax.ravel()
-    fig.suptitle("Partial Autocorrelation", fontsize=16)
+    fig.suptitle("Autocorrelation", fontsize=16)
     for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
         df_slice = ts[:, name, :][name]
         plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)

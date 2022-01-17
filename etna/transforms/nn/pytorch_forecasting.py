@@ -44,9 +44,8 @@ class PytorchForecastingTransform(Transform):
         time_varying_unknown_categoricals: Optional[List[str]] = None,
         time_varying_unknown_reals: Optional[List[str]] = None,
         variable_groups: Optional[Dict[str, List[int]]] = None,
-        dropout_categoricals: Optional[List[str]] = None,
         constant_fill_strategy: Optional[Dict[str, Union[str, float, int, bool]]] = None,
-        allow_missings: bool = True,
+        allow_missing_timesteps: bool = True,
         lags: Optional[Dict[str, List[int]]] = None,
         add_relative_time_idx: bool = True,
         add_target_scales: bool = True,
@@ -63,7 +62,7 @@ class PytorchForecastingTransform(Transform):
 
         Reference
         ---------
-        https://github.com/jdb78/pytorch-forecasting/blob/v0.8.5/pytorch_forecasting/data/timeseries.py#L117
+        https://github.com/jdb78/pytorch-forecasting/blob/v0.9.2/pytorch_forecasting/data/timeseries.py#L117
         """
         super().__init__()
         self.max_encoder_length = max_encoder_length
@@ -85,10 +84,9 @@ class PytorchForecastingTransform(Transform):
         self.add_relative_time_idx = add_relative_time_idx
         self.add_target_scales = add_target_scales
         self.add_encoder_length = add_encoder_length
-        self.allow_missings = allow_missings
+        self.allow_missing_timesteps = allow_missing_timesteps
         self.target_normalizer = target_normalizer
         self.categorical_encoders = categorical_encoders if categorical_encoders else {}
-        self.dropout_categoricals = dropout_categoricals if dropout_categoricals else []
         self.constant_fill_strategy = constant_fill_strategy if constant_fill_strategy else []
         self.lags = lags if lags else {}
         self.scalers = scalers if scalers else {}
@@ -144,14 +142,14 @@ class PytorchForecastingTransform(Transform):
             add_relative_time_idx=self.add_relative_time_idx,
             add_target_scales=self.add_target_scales,
             add_encoder_length=self.add_encoder_length,
-            allow_missings=self.allow_missings,
+            allow_missing_timesteps=self.allow_missing_timesteps,
             target_normalizer=self.target_normalizer,
             static_categoricals=self.static_categoricals,
             min_prediction_idx=self.min_prediction_idx,
             variable_groups=self.variable_groups,
-            dropout_categoricals=self.dropout_categoricals,
             constant_fill_strategy=self.constant_fill_strategy,
             lags=self.lags,
+            categorical_encoders=self.categorical_encoders,
             scalers=self.scalers,
         )
 

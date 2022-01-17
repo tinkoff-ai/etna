@@ -17,21 +17,58 @@ from etna.metrics.metrics import MSLE
 from etna.metrics.metrics import R2
 from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import MedAE
+from tests.utils import DummyMetric
+from tests.utils import create_dummy_functional_metric
 
 
 @pytest.mark.parametrize(
-    "metric_class, metric_class_repr",
-    ((MAE, "MAE"), (MSE, "MSE"), (MedAE, "MedAE"), (MSLE, "MSLE"), (MAPE, "MAPE"), (SMAPE, "SMAPE"), (R2, "R2")),
+    "metric_class, metric_class_repr, metric_params, param_repr",
+    (
+        (MAE, "MAE", {}, ""),
+        (MSE, "MSE", {}, ""),
+        (MedAE, "MedAE", {}, ""),
+        (MSLE, "MSLE", {}, ""),
+        (MAPE, "MAPE", {}, ""),
+        (SMAPE, "SMAPE", {}, ""),
+        (R2, "R2", {}, ""),
+        (DummyMetric, "DummyMetric", {"alpha": 1.0}, "alpha = 1.0, "),
+    ),
 )
-def test_repr(metric_class, metric_class_repr):
+def test_repr(metric_class, metric_class_repr, metric_params, param_repr):
     """Check metrics __repr__ method"""
     metric_mode = "per-segment"
-    kwargs = {"kwarg_1": "value_1", "kwarg_2": "value_2"}
-    kwargs_repr = "kwarg_1 = 'value_1', kwarg_2 = 'value_2'"
+    kwargs = {**metric_params, "kwarg_1": "value_1", "kwarg_2": "value_2"}
+    kwargs_repr = param_repr + "kwarg_1 = 'value_1', kwarg_2 = 'value_2'"
     metric = metric_class(mode=metric_mode, **kwargs)
     metric_repr = metric.__repr__()
     true_repr = f"{metric_class_repr}(mode = '{metric_mode}', {kwargs_repr}, )"
     assert metric_repr == true_repr
+
+
+@pytest.mark.parametrize(
+    "metric_class",
+    (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2),
+)
+def test_name_class_name(metric_class):
+    """Check metrics name property without changing its during inheritance"""
+    metric_mode = "per-segment"
+    metric = metric_class(mode=metric_mode)
+    metric_name = metric.name
+    true_name = metric_class.__name__
+    assert metric_name == true_name
+
+
+@pytest.mark.parametrize(
+    "metric_class",
+    (DummyMetric,),
+)
+def test_name_repr(metric_class):
+    """Check metrics name property with changing its during inheritance to repr"""
+    metric_mode = "per-segment"
+    metric = metric_class(mode=metric_mode)
+    metric_name = metric.name
+    true_name = metric.__repr__()
+    assert metric_name == true_name
 
 
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
@@ -43,7 +80,7 @@ def test_metrics_macro(metric_class, train_test_dfs):
     assert isinstance(value, float)
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
+@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, DummyMetric))
 def test_metrics_per_segment(metric_class, train_test_dfs):
     """Check metrics interface in 'per-segment' mode"""
     forecast_df, true_df = train_test_dfs
@@ -54,14 +91,14 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
         assert segment in value
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
+@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, DummyMetric))
 def test_metrics_invalid_aggregation(metric_class):
     """Check metrics behavior in case of invalid aggregation mode"""
     with pytest.raises(NotImplementedError):
         _ = metric_class(mode="a")
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
+@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, DummyMetric))
 def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
     """Check metrics behavior in case of invalid timeranges"""
     forecast_df, true_df = two_dfs_with_different_timestamps
@@ -70,7 +107,7 @@ def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
+@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, DummyMetric))
 def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
     forecast_df, true_df = two_dfs_with_different_segments_sets
@@ -79,7 +116,7 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2))
+@pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, DummyMetric))
 def test_invalid_segments_target(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
     forecast_df, true_df = train_test_dfs
@@ -90,8 +127,17 @@ def test_invalid_segments_target(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class,metric_fn",
-    ((MAE, mae), (MSE, mse), (MedAE, medae), (MSLE, msle), (MAPE, mape), (SMAPE, smape), (R2, r2_score)),
+    "metric_class, metric_fn",
+    (
+        (MAE, mae),
+        (MSE, mse),
+        (MedAE, medae),
+        (MSLE, msle),
+        (MAPE, mape),
+        (SMAPE, smape),
+        (R2, r2_score),
+        (DummyMetric, create_dummy_functional_metric()),
+    ),
 )
 def test_metrics_values(metric_class, metric_fn, train_test_dfs):
     """
