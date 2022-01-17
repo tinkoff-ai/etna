@@ -415,10 +415,23 @@ def const_ts_anomal() -> TSDataset:
 
 
 @pytest.fixture
-def ts_diff_endings(example_reg_tsds):
+def ts_diff_endings():
     ts = deepcopy(example_reg_tsds)
     ts.loc[example_reg_tsds.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
     return ts
+
+@pytest.fixture
+def df_with_nans_in_tails(example_df):
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[-3:, pd.IndexSlice["segment_1", "target"]] = None
+    return df
+
+@pytest.fixture
+def df_with_nans(df_with_nans_in_tails):
+    df = df_with_nans_in_tails
+    df.loc[[df.index[5],df.index[8]], pd.IndexSlice["segment_1", "target"]] = None
+    return df
 
 
 @pytest.fixture
