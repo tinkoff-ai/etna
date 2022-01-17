@@ -59,7 +59,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
             df with trend column
         """
         df._is_copy = False
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
+        series = df[self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df[self.out_column] = trend_series
         return df
