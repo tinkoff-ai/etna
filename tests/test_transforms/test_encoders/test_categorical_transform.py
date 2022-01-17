@@ -3,50 +3,13 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
+from etna.datasets import generate_const_df
 from etna.datasets import generate_periodic_df
 from etna.metrics import R2
 from etna.models import LinearPerSegmentModel
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms.encoders.categorical import LabelEncoderTransform
 from etna.transforms.encoders.categorical import OneHotEncoderTransform
-
-
-@pytest.fixture
-def ts_for_ohe_sanity():
-    df_to_forecast = generate_ar_df(100, start_time="2021-01-01", n_segments=1)
-    df_regressors = generate_periodic_df(120, start_time="2021-01-01", scale=10, period=4, n_segments=1)
-    df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
-    df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(1)]
-    df_regressors["segment"] = "segment_0"
-    df_to_forecast = TSDataset.to_dataset(df_to_forecast)
-    df_regressors = TSDataset.to_dataset(df_regressors)
-    rng = np.random.default_rng(12345)
-
-    def f(x):
-        if x == 5:
-            return 10 + rng.normal(0, 0.01)
-        elif x == 8:
-            return 15 + rng.normal(0, 0.01)
-        else:
-            return 3 + rng.normal(0, 0.01)
-
-    df_to_forecast["segment_0", "target"] = df_regressors["segment_0"]["regressor_0"][:100].apply(f)
-    ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
-    train_ts, test_ts = ts.train_test_split(test_size=10)
-    return train_ts, test_ts
-
-
-def test_ohe_sanity(ts_for_ohe_sanity):
-    train_ts, test_ts = ts_for_ohe_sanity
-    ohe = OneHotEncoderTransform(in_column="regressor_0")
-    filt = FilterFeaturesTransform(exclude=["regressor_0"])
-    train_ts.fit_transform([ohe, filt])
-    model = LinearPerSegmentModel()
-    model.fit(train_ts)
-    future_ts = train_ts.make_future(10)
-    forecast_ts = model.forecast(future_ts)
-    r2 = R2()
-    assert 1 - r2(forecast_ts, test_ts)["segment_0"] < 1e-5
 
 
 @pytest.fixture
@@ -72,19 +35,19 @@ def df_for_ohe_encoding():
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
     regressor_0 = tsdataset.df.copy()["segment_0"]
-    regressor_0["test_0"] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
-    regressor_0["test_1"] = [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]
+    regressor_0["test_0"] = regressor_0["regressor_0"].apply(lambda x: float(x == 5))
+    regressor_0["test_1"] = regressor_0["regressor_0"].apply(lambda x: float(x == 8))
     regressor_0["test_0"] = regressor_0["test_0"].astype("category")
     regressor_0["test_1"] = regressor_0["test_1"].astype("category")
 
     regressor_1 = tsdataset.df.copy()["segment_0"]
-    regressor_1["test_0"] = [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]
-    regressor_1["test_1"] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+    regressor_1["test_0"] = regressor_1["regressor_1"].apply(lambda x: float(x == 5))
+    regressor_1["test_1"] = regressor_1["regressor_1"].apply(lambda x: float(x == 9))
     regressor_1["test_0"] = regressor_1["test_0"].astype("category")
     regressor_1["test_1"] = regressor_1["test_1"].astype("category")
 
     regressor_2 = tsdataset.df.copy()["segment_0"]
-    regressor_2["test_0"] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    regressor_2["test_0"] = regressor_2["regressor_2"].apply(lambda x: float(x == 0))
     regressor_2["test_0"] = regressor_2["test_0"].astype("category")
 
     return tsdataset.df, (regressor_0, regressor_1, regressor_2)
@@ -102,18 +65,31 @@ def df_for_label_encoding():
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
     regressor_0 = tsdataset.df.copy()["segment_0"]
-    regressor_0["test"] = [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]
+    regressor_0["test"] = regressor_0["regressor_0"].apply(lambda x: float(x == 8))
     regressor_0["test"] = regressor_0["test"].astype("category")
 
     regressor_1 = tsdataset.df.copy()["segment_0"]
-    regressor_1["test"] = [1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
+    regressor_1["test"] = regressor_1["regressor_1"].apply(lambda x: float(x == 9))
     regressor_1["test"] = regressor_1["test"].astype("category")
 
     regressor_2 = tsdataset.df.copy()["segment_0"]
-    regressor_2["test"] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    regressor_2["test"] = regressor_2["regressor_2"].apply(lambda x: float(x == 1))
     regressor_2["test"] = regressor_2["test"].astype("category")
 
     return tsdataset.df, (regressor_0, regressor_1, regressor_2)
+
+
+@pytest.fixture
+def df_for_naming():
+    df_to_forecast = generate_ar_df(10, start_time="2021-01-01", n_segments=1)
+    df_regressors = generate_periodic_df(12, start_time="2021-01-01", scale=10, period=2, n_segments=2)
+    df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
+    df_regressors.columns = ["timestamp"] + ["regressor_1", "2"]
+    df_regressors["segment"] = "segment_0"
+    df_to_forecast = TSDataset.to_dataset(df_to_forecast)
+    df_regressors = TSDataset.to_dataset(df_regressors)
+    tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    return tsdataset.df
 
 
 def test_label_encoder_simple(df_for_label_encoding):
@@ -180,3 +156,65 @@ def test_naming_ohe_encoder(two_df_with_new_values):
     segments = ["segment_0", "segment_1"]
     target = ["target", "targets_0", "targets_1"]
     assert set([(i, j) for i in segments for j in target]) == set(ohe.transform(df2).columns.values)
+
+
+@pytest.mark.parametrize(
+    "in_column, prefix",
+    [("2", ""), ("regressor_1", "regressor_")],
+)
+def test_naming_ohe_encoder_no_out_column(df_for_naming, in_column, prefix):
+    """Test OneHotEncoderTransform gives the correct columns with no out_column."""
+    df = df_for_naming
+    ohe = OneHotEncoderTransform(in_column=in_column)
+    ohe.fit(df)
+    answer = set(
+        list(df["segment_0"].columns) + [prefix + str(ohe.__repr__()) + "_0", prefix + str(ohe.__repr__()) + "_1"]
+    )
+    assert answer == set(ohe.transform(df)["segment_0"].columns.values)
+
+
+@pytest.mark.parametrize(
+    "in_column, prefix",
+    [("2", ""), ("regressor_1", "regressor_")],
+)
+def test_naming_label_encoder_no_out_column(df_for_naming, in_column, prefix):
+    """Test LabelEncoderTransform gives the correct columns with no out_column."""
+    df = df_for_naming
+    le = LabelEncoderTransform(in_column=in_column, inplace=False)
+    le.fit(df)
+    answer = set(list(df["segment_0"].columns) + [prefix + str(le.__repr__())])
+    assert answer == set(le.transform(df)["segment_0"].columns.values)
+
+
+@pytest.fixture
+def ts_for_ohe_sanity():
+    df_to_forecast = generate_const_df(periods=100, start_time="2021-01-01", scale=0, n_segments=1)
+    df_regressors = generate_periodic_df(periods=120, start_time="2021-01-01", scale=10, period=4, n_segments=1)
+    df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
+    df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(1)]
+    df_regressors["segment"] = "segment_0"
+    df_to_forecast = TSDataset.to_dataset(df_to_forecast)
+    df_regressors = TSDataset.to_dataset(df_regressors)
+    rng = np.random.default_rng(12345)
+
+    def f(x):
+        return x ** 2 + rng.normal(0, 0.01)
+
+    df_to_forecast["segment_0", "target"] = df_regressors["segment_0"]["regressor_0"][:100].apply(f)
+    ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    return ts
+
+
+def test_ohe_sanity(ts_for_ohe_sanity):
+    """Test for correct work in the full forecasting pipeline."""
+    HORIZON = 10
+    train_ts, test_ts = ts_for_ohe_sanity.train_test_split(test_size=HORIZON)
+    ohe = OneHotEncoderTransform(in_column="regressor_0")
+    filt = FilterFeaturesTransform(exclude=["regressor_0"])
+    train_ts.fit_transform([ohe, filt])
+    model = LinearPerSegmentModel()
+    model.fit(train_ts)
+    future_ts = train_ts.make_future(HORIZON)
+    forecast_ts = model.forecast(future_ts)
+    r2 = R2()
+    assert 1 - r2(test_ts, forecast_ts)["segment_0"] < 1e-5

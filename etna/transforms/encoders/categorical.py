@@ -125,8 +125,11 @@ class LabelEncoderTransform(PerSegmentWrapper):
         self.inplace = inplace
         self.strategy = strategy
         self.out_column = out_column
-        self.out_column = self._get_column_name()
-        super().__init__(transform=_OneSegmentLabelEncoderTransform(self.in_column, self.out_column, self.strategy))
+        super().__init__(
+            transform=_OneSegmentLabelEncoderTransform(
+                in_column=self.in_column, out_column=self._get_column_name(), strategy=self.strategy
+            )
+        )
 
     def _get_column_name(self) -> str:
         """Get the `out_column` depending on the transform's parameters."""
@@ -197,9 +200,10 @@ class _OneSegmentOneHotEncoderTransform(Transform):
 
 
 class OneHotEncoderTransform(PerSegmentWrapper):
-    """
-    Encode categorical feature as a one-hot numeric features.
+    """Encode categorical feature as a one-hot numeric features.
+
     If unknown category is encountered during transform, the resulting one-hot encoded columns for this feature will be all zeros.
+
     """
 
     def __init__(self, in_column: str, out_column: Optional[str] = None):
@@ -215,9 +219,8 @@ class OneHotEncoderTransform(PerSegmentWrapper):
         """
         self.in_column = in_column
         self.out_column = out_column
-        self.out_column = self._get_column_name()
         super().__init__(
-            transform=_OneSegmentOneHotEncoderTransform(in_column=self.in_column, out_column=self.out_column)
+            transform=_OneSegmentOneHotEncoderTransform(in_column=self.in_column, out_column=self._get_column_name())
         )
 
     def _get_column_name(self) -> str:
