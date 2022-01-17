@@ -27,11 +27,11 @@ class _LabelEncoder(preprocessing.LabelEncoder):
 
         encoded = _encode(y, uniques=self.classes_, check_unknown=False).astype(float)
 
-        if strategy == "none":
+        if strategy == ImputerMode.none:
             filling_value = None
-        elif strategy == "new_value":
+        elif strategy == ImputerMode.new_value:
             filling_value = -1
-        elif strategy == "mean":
+        elif strategy == ImputerMode.mean:
             filling_value = np.mean(encoded[~np.isin(y, diff)])
         else:
             raise ValueError(f"The strategy '{strategy}' doesn't exist")
