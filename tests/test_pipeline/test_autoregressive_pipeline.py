@@ -140,7 +140,7 @@ def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     assert equals_with_nans(forecast_1, forecast_2)
 
 
-def test_backtest_forecasts_sanity(step_ts):
+def test_backtest_forecasts_sanity(step_ts: TSDataset):
     """Check that AutoRegressivePipeline.backtest gives correct forecasts according to the simple case."""
     ts, expected_metrics_df, expected_forecast_df = step_ts
     pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5, step=1)

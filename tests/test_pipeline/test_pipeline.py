@@ -348,7 +348,7 @@ def test_backtest_with_n_jobs(catboost_pipeline: Pipeline, big_example_tsdf: TSD
     assert (forecast_1 == forecast_2).all().all()
 
 
-def test_backtest_forecasts_sanity(step_ts):
+def test_backtest_forecasts_sanity(step_ts: TSDataset):
     """Check that Pipeline.backtest gives correct forecasts according to the simple case."""
     ts, expected_metrics_df, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
