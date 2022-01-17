@@ -26,14 +26,6 @@ def extract_new_features_columns(transformed_df: pd.DataFrame, initial_df: pd.Da
     )
 
 
-def equals_with_nans(first_df: pd.DataFrame, second_df: pd.DataFrame) -> bool:
-    """Compare two dataframes with consideration NaN == NaN is true."""
-    if first_df.shape != second_df.shape:
-        return False
-    compare_result = (first_df.isna() & second_df.isna()) | (first_df == second_df)
-    return np.all(compare_result)
-
-
 @pytest.fixture
 def df_nans() -> pd.DataFrame:
     """Create DataFrame with nans at the beginning of one segment."""
@@ -112,14 +104,14 @@ def check_inverse_transform_not_inplace(transform: GeneralDifferencingTransform,
     """Check that differencing transform does nothing during inverse_transform in non-inplace mode."""
     transformed_df = transform.fit_transform(df)
     inverse_transformed_df = transform.inverse_transform(transformed_df)
-    assert equals_with_nans(transformed_df, inverse_transformed_df)
+    assert transformed_df.equals(inverse_transformed_df)
 
 
 def check_inverse_transform_inplace_train(transform: GeneralDifferencingTransform, df: pd.DataFrame):
     """Check that differencing transform correctly makes inverse_transform on train data in inplace mode."""
     transformed_df = transform.fit_transform(df)
     inverse_transformed_df = transform.inverse_transform(transformed_df)
-    assert equals_with_nans(inverse_transformed_df, df)
+    assert inverse_transformed_df.equals(df)
 
 
 def check_inverse_transform_inplace_test(
@@ -266,7 +258,7 @@ def test_general_transform_not_inplace(transform, df_nans):
     transformed_df = transform.fit_transform(df_nans)
 
     transformed_df_compare = transformed_df[df_nans.columns]
-    assert equals_with_nans(df_nans, transformed_df_compare)
+    assert df_nans.equals(transformed_df_compare)
 
 
 @pytest.mark.parametrize(
