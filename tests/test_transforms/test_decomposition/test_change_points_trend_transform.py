@@ -28,6 +28,17 @@ def pre_multitrend_df() -> pd.DataFrame:
     df = TSDataset.to_dataset(df=df)
     return df
 
+@pytest.fixture
+def multitrend_df_with_nans_in_tails(multitrend_df):
+    multitrend_df.loc[[multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]], pd.IndexSlice["segment_1", "target"]] = None
+    return multitrend_df
+
+
+@pytest.fixture
+def multitrend_df_with_nans(multitrend_df_with_nans_in_tails):
+    multitrend_df_with_nans_in_tails.loc[[multitrend_df_with_nans_in_tails.index[7], multitrend_df_with_nans_in_tails.index[10]], pd.IndexSlice["segment_1", "target"]] = None
+    return multitrend_df_with_nans_in_tails
+
 
 @pytest.mark.parametrize("n_bkps", (5, 10, 12, 27))
 def test_get_change_points(multitrend_df: pd.DataFrame, n_bkps: int):
@@ -183,9 +194,16 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
         _ = transform.transform(df=multitrend_df["segment_1"])
 
 
-@pytest.mark.xfail
-def test_fit_transform_with_nans(ts_diff_endings):
-    transform = ChangePointsTrendTransform(
+def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
+    bs = _OneSegmentChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    ts_diff_endings.fit_transform([transform])
+    transformed= bs.fit_transform(df=multitrend_df_with_nans_in_tails["segment_1"])
+    assert abs(transformed["target"].mean()) < 0.1
+
+def test_fit_transform_with_nans_in_middle_raise_error(multitrend_df_with_nans):
+    bs = _OneSegmentChangePointsTrendTransform(
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+    )
+    with pytest.raises(ValueError, match="Input contains NaN"):
+        _ = bs.fit_transform(df=multitrend_df_with_nans["segment_1"])
