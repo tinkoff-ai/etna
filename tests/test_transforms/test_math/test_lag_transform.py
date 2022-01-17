@@ -10,7 +10,6 @@ from numpy.testing import assert_almost_equal
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.math import LagTransform
 from etna.transforms.math.lags import _OneSegmentLagTransform
-from tests.utils import equals_with_nans
 
 
 @pytest.fixture
@@ -89,9 +88,8 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_df_two
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
         assert generated_column == column
-        assert equals_with_nans(
-            df_temp.loc[:, pd.IndexSlice[segments, generated_column]],
-            transformed_df.loc[:, pd.IndexSlice[segments, column]],
+        assert df_temp.loc[:, pd.IndexSlice[segments, generated_column]].equals(
+            transformed_df.loc[:, pd.IndexSlice[segments, column]]
         )
 
 

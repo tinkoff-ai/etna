@@ -14,7 +14,6 @@ from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
-from tests.utils import equals_with_nans
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -137,7 +136,7 @@ def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, metrics=DEFAULT_METRICS)
 
     # compare the results taking into account NaNs
-    assert equals_with_nans(forecast_1, forecast_2)
+    assert forecast_1.equals(forecast_2)
 
 
 def test_backtest_forecasts_sanity(step_ts: TSDataset):
