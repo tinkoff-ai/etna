@@ -190,6 +190,7 @@ class TSDataset:
         else:
             raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
 
+        new_regressors = [regressor for regressor in new_regressors if regressor not in self.regressors]
         self._regressors.extend(new_regressors)
 
     def __repr__(self):
