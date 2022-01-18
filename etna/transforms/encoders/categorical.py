@@ -169,7 +169,7 @@ class _OneSegmentOneHotEncoderTransform(Transform):
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Encode the `in_column` by fitted Label Binarize encoder.
+        Encode the `in_column` by fitted One Hot encoder.
 
         Parameters
         ----------
