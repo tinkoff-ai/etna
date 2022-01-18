@@ -196,7 +196,7 @@ class Pipeline(BasePipeline):
             if not metric.mode == MetricAggregationMode.per_segment:
                 raise ValueError(
                     f"All the metrics should be in {MetricAggregationMode.per_segment}, "
-                    f"{metric.__class__.__name__} metric is in {metric.mode} mode"
+                    f"{metric.name} metric is in {metric.mode} mode"
                 )
 
     @staticmethod
@@ -239,7 +239,7 @@ class Pipeline(BasePipeline):
         """Compute metrics for given y_true, y_pred."""
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
-            metrics_values[metric.__class__.__name__] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
+            metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
     def _run_fold(

@@ -128,3 +128,45 @@ def constant_noisy_ts(size=40, use_noise=True) -> TSDataset:
         df.loc[:, "target"] += noise
     ts = TSDataset(TSDataset.to_dataset(df), "D")
     return ts
+
+
+@pytest.fixture
+def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
+    """Create TSDataset for backtest with expected metrics_df and forecast_df.
+
+    This dataset has a constant values at train, fold_1, fold_2, fold_3,
+    but in the next fragment value is increased by `add_value`.
+    """
+    horizon = 5
+    n_folds = 3
+    train_size = 20
+    start_value = 10.0
+    add_value = 5.0
+    segment = 0
+    timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq="D")
+    target = [start_value] * train_size
+    for i in range(n_folds):
+        target += [target[-1] + add_value] * horizon
+
+    df = pd.DataFrame({"timestamp": timestamp, "target": target, "segment": 0})
+    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+
+    metrics_df = pd.DataFrame(
+        {"segment": [segment, segment, segment], "MAE": [add_value, add_value, add_value], "fold_number": [0, 1, 2]}
+    )
+
+    timestamp_forecast = timestamp[train_size:]
+    target_forecast = []
+    fold_number_forecast = []
+    for i in range(n_folds):
+        target_forecast += [start_value + i * add_value] * horizon
+        fold_number_forecast += [i] * horizon
+    forecast_df = pd.DataFrame(
+        {"target": target_forecast, "fold_number": fold_number_forecast},
+        index=timestamp_forecast,
+    )
+    forecast_df.columns = pd.MultiIndex.from_product(
+        [[segment], ["target", "fold_number"]], names=("segment", "feature")
+    )
+
+    return ts, metrics_df, forecast_df
