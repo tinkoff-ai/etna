@@ -337,7 +337,7 @@ class TSDataset:
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         segments = sorted(set(df.columns.get_level_values("segment")))
-        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.regressors]]
+        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
         self._check_regressors(df=df, df_regressors=df_regressors)
         df = pd.merge(df, self.df_exog, left_index=True, right_index=True, how="left").sort_index(axis=1, level=(0, 1))
         return df
