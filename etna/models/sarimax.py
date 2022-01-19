@@ -195,14 +195,6 @@ class _SARIMAXModel:
         targets.index = df["timestamp"]
 
         exog_train = self._select_regressors(df)
-        regressor_columns = None
-        if exog_train is not None:
-            regressor_columns = exog_train.columns.values
-
-        if regressor_columns:
-            addition_to_params = len(regressor_columns) * [0]
-        else:
-            addition_to_params = []
 
         self._model = SARIMAX(
             endog=targets,
