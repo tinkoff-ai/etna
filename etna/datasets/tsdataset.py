@@ -281,7 +281,7 @@ class TSDataset:
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
-        # Can't put known_future into constructor, _check_known_future fails with df_exog=None
+        # can't put known_future into constructor, _check_known_future fails with df_exog=None
         future_ts.known_future = self.known_future
         future_ts._regressors = self.regressors
         future_ts.transforms = self.transforms
