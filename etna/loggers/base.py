@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
@@ -172,6 +173,14 @@ class _Logger(BaseLogger):
     def pl_loggers(self):
         """Pytorch lightning loggers."""
         return [logger.pl_logger for logger in self.loggers if "_pl_logger" in vars(logger)]
+
+    @contextmanager
+    def disable(self):
+        """Context manager for local logging disabling."""
+        temp_loggers = self.loggers
+        self.loggers = []
+        yield
+        self.loggers = temp_loggers
 
 
 def percentile(n: int):
