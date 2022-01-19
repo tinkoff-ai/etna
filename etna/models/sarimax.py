@@ -226,9 +226,7 @@ class _SARIMAXModel:
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        # expect every params but last to be near 0
-        start_params = [0, 0, 0, 0] + addition_to_params + [1]
-        self._result = self._model.fit(start_params=start_params, disp=False)
+        self._result = self._model.fit()
         return self
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
