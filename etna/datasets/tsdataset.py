@@ -190,6 +190,7 @@ class TSDataset:
         else:
             raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
 
+        new_regressors = [regressor for regressor in new_regressors if regressor not in self.regressors]
         self._regressors.extend(new_regressors)
 
     def __repr__(self):
@@ -278,7 +279,11 @@ class TSDataset:
 
         future_dataset = df.tail(future_steps).copy(deep=True)
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
-        future_ts = TSDataset(future_dataset, freq=self.freq)
+        future_ts = TSDataset(df=future_dataset, freq=self.freq)
+
+        # can't put known_future into constructor, _check_known_future fails with df_exog=None
+        future_ts.known_future = self.known_future
+        future_ts._regressors = self.regressors
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
@@ -730,13 +735,15 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq)
+        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
         train.raw_df = train_raw_df
+        train._regressors = self.regressors
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq)
+        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
         test.raw_df = test_raw_df
+        test._regressors = self.regressors
 
         return train, test
 
