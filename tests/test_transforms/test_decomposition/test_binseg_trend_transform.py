@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import pytest
 from ruptures.costs import CostAR
 from ruptures.costs import CostL1
@@ -54,7 +55,15 @@ def test_binseg_runs_with_different_series_length(ts_with_different_series_lengt
     np.allclose(ts.df.values, ts_with_different_series_length.df.values, equal_nan=True)
 
 
-@pytest.mark.xfail
-def test_fit_transform_with_nans(ts_diff_endings):
+def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails):
     transform = BinsegTrendTransform(in_column="target")
-    ts_diff_endings.fit_transform([transform])
+    transformed = transform.fit_transform(df=df_with_nans_in_tails)
+    for segment in transformed.columns.get_level_values("segment").unique():
+        segment_slice = transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
+        assert abs(segment_slice["target"].mean()) < 0.1
+
+
+def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+    transform = BinsegTrendTransform(in_column="target")
+    with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
+        _ = transform.fit_transform(df=df_with_nans)
