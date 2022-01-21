@@ -195,14 +195,6 @@ class _SARIMAXModel:
         targets.index = df["timestamp"]
 
         exog_train = self._select_regressors(df)
-        regressor_columns = None
-        if exog_train is not None:
-            regressor_columns = exog_train.columns.values
-
-        if regressor_columns:
-            addition_to_params = len(regressor_columns) * [0]
-        else:
-            addition_to_params = []
 
         self._model = SARIMAX(
             endog=targets,
@@ -226,9 +218,7 @@ class _SARIMAXModel:
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        # expect every params but last to be near 0
-        start_params = [0, 0, 0, 0] + addition_to_params + [1]
-        self._result = self._model.fit(start_params=start_params, disp=False)
+        self._result = self._model.fit()
         return self
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
