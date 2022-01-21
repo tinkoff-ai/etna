@@ -150,7 +150,8 @@ class StackingEnsemble(Pipeline):
 
     def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
         """Get forecasts from backtest for given pipeline."""
-        _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
+        with tslogger.disable():
+            _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
