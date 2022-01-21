@@ -222,9 +222,9 @@ def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.Data
     _test_inverse_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(
-    "transformer", [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")]
+    "transformer,decimal",
+    [(LinearTrendTransform(in_column="target"), 7), (TheilSenTrendTransform(in_column="target"), 0)],
 )
-def test_fit_transform_with_nans(transformer, ts_diff_endings):
-    ts_diff_endings.fit_transform([transformer])
+def test_fit_transform_with_nans(transformer, df_with_nans, decimal):
+    _test_fit_transform_many_segments(trend_transform=transformer, df=df_with_nans, decimal=decimal)

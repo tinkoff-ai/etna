@@ -129,7 +129,9 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         -------
         self
         """
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
+        series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
+        if series.isnull().values.any():
+            raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
         change_points = self._get_change_points(series=series)
         self.intervals = self._build_trend_intervals(change_points=change_points)
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
@@ -150,7 +152,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             df with detrended in_column series
         """
         df._is_copy = False
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
+        series = df[self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df.loc[:, self.in_column] -= trend_series
         return df
@@ -169,7 +171,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             df with restored trend in in_column
         """
         df._is_copy = False
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
+        series = df[self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df.loc[:, self.in_column] += trend_series
         if self.in_column == "target":
