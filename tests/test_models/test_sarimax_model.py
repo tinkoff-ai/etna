@@ -38,7 +38,7 @@ def test_sarimax_forecaster_run_with_reg(example_reg_tsds):
     assert len(res) == 14
 
 
-def test_sarimax_forecaster_run_with_reg_case2(example_reg_tsds):
+def test_sarimax_forececaster_run_with_reg_custom_order(example_reg_tsds):
     """
     Given: I have dataframe with 2 segments
     When: Sarimax have non standard `order` param
