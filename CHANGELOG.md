@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
--
+- [BUG] Check pytorch-forecasting models with freq > "1D" ([#463](https://github.com/tinkoff-ai/etna/pull/463))
 -
 -
 -
