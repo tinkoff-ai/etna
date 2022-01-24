@@ -92,14 +92,6 @@ class PytorchForecastingTransform(Transform):
         self.scalers = scalers if scalers else {}
         self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
 
-    @staticmethod
-    def _calculate_freq_unit(freq: str) -> pd.Timedelta:
-        """Calculate frequency unit by its string representation."""
-        if freq[0].isdigit():
-            return pd.Timedelta(freq)
-        else:
-            return pd.Timedelta(1, unit=freq)
-
     def fit(self, df: pd.DataFrame) -> "PytorchForecastingTransform":
         """
         Fit TimeSeriesDataSet.
@@ -123,9 +115,12 @@ class PytorchForecastingTransform(Transform):
             for feature_name in self.time_varying_known_categoricals:
                 df_flat[feature_name] = df_flat[feature_name].astype(str)
 
-        freq_unit = self._calculate_freq_unit(self.freq)
-        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
-        df_flat["time_idx"] = df_flat["time_idx"].astype(int)
+        # making time_idx feature.
+        # it's needed for pytorch-forecasting for proper train-test split.
+        # it should be incremented by 1 for every new timestamp.
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
+        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
+        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
 
         pf_dataset = TimeSeriesDataSet(
             df_flat,
@@ -180,9 +175,9 @@ class PytorchForecastingTransform(Transform):
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
         df_flat["target"] = df_flat["target"].fillna(0)
 
-        freq_unit = self._calculate_freq_unit(self.freq)
-        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
-        df_flat["time_idx"] = df_flat["time_idx"].astype(int)
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
+        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
+        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
@@ -197,3 +192,9 @@ class PytorchForecastingTransform(Transform):
             pf_dataset_train = TimeSeriesDataSet.from_parameters(self.pf_dataset_params, df_flat)
             self.pf_dataset_train = pf_dataset_train
         return df
+
+    def _time_encoder(self, values: List[int]) -> Dict[int, int]:
+        encoded_unix_times = dict()
+        for idx, value in enumerate(sorted(values)):
+            encoded_unix_times[value] = idx
+        return encoded_unix_times

@@ -1,15 +1,14 @@
-import pytest
 import pandas as pd
+import pytest
 from pytorch_forecasting.data import GroupNormalizer
-from etna import pipeline
 
 from etna.datasets.tsdataset import TSDataset
 from etna.metrics import MAE
 from etna.models.nn import DeepARModel
+from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import PytorchForecastingTransform
-from etna.pipeline import Pipeline
 
 
 def test_fit_wrong_order_transform(weekly_period_df):
@@ -88,30 +87,27 @@ def test_forecast_without_make_future(weekly_period_df):
     with pytest.raises(ValueError, match="The future is not generated!"):
         _ = model.forecast(ts=ts)
 
+
 @pytest.mark.parametrize("freq", ["1M", "1D", "A-DEC", "1B", "1H"])
 def test_forecast_with_different_freq(weekly_period_df, freq):
     df = TSDataset.to_dataset(weekly_period_df)
     df.index = pd.Index(pd.date_range("2021-01-01", freq=freq, periods=len(df)), name="timestamp")
 
     ts = TSDataset(df, freq=freq)
-    HORIZON = 20
+    horizon = 20
 
     transform_deepar = PytorchForecastingTransform(
-        max_encoder_length=HORIZON,
-        max_prediction_length=HORIZON,
+        max_encoder_length=horizon,
+        max_prediction_length=horizon,
         time_varying_known_reals=["time_idx"],
         time_varying_unknown_reals=["target"],
         target_normalizer=GroupNormalizer(groups=["segment"]),
     )
 
     model_deepar = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
-    pipeline_deepar = Pipeline(
-        model=model_deepar,
-        horizon=HORIZON,
-        transforms=[transform_deepar]
-    )
+    pipeline_deepar = Pipeline(model=model_deepar, horizon=horizon, transforms=[transform_deepar])
     pipeline_deepar.fit(ts=ts)
     forecast = pipeline_deepar.forecast()
-    
+
     assert len(forecast.df) == HORIZON
     assert pd.infer_freq(forecast.df.index) in {freq, freq[1:]}
