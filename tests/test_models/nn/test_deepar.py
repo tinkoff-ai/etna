@@ -109,5 +109,5 @@ def test_forecast_with_different_freq(weekly_period_df, freq):
     pipeline_deepar.fit(ts=ts)
     forecast = pipeline_deepar.forecast()
 
-    assert len(forecast.df) == HORIZON
+    assert len(forecast.df) == horizon
     assert pd.infer_freq(forecast.df.index) in {freq, freq[1:]}
