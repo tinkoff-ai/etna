@@ -25,6 +25,7 @@ def plot_forecast(
     segments: Optional[List[str]] = None,
     n_train_samples: Optional[int] = None,
     columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """
     Plot of prediction for forecast pipeline.
@@ -37,12 +38,14 @@ def plot_forecast(
         TSDataset with timeseries data
     train_ts:
         TSDataset with timeseries data
-    segments: list of str, optional
+    segments:
         segments to plot; if not given plot all the segments from forecast_df
-    n_train_samples: int, optional
+    n_train_samples:
         length of history of train to plot
-    columns_num: int
+    columns_num:
         number of graphics columns
+    figsize:
+        size of the figure per subplot with one segment in inches
     """
     if not segments:
         segments = list(set(forecast_ts.columns.get_level_values("segment")))
@@ -50,7 +53,8 @@ def plot_forecast(
     columns_num = min(columns_num, len(segments))
     rows_num = math.ceil(segments_number / columns_num)
 
-    _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True)
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
     ax = np.array([ax]).ravel()
 
     if train_ts is not None:
@@ -96,6 +100,7 @@ def plot_backtest(
     folds: Optional[List[int]] = None,
     columns_num: int = 2,
     history_len: int = 0,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot targets and forecast for backtest pipeline.
 
@@ -113,6 +118,8 @@ def plot_backtest(
         number of subplots columns
     history_len:
         length of pre-backtest history to plot
+    figsize:
+        size of the figure per subplot with one segment in inches
     """
     if not segments:
         segments = sorted(ts.segments)
@@ -124,7 +131,8 @@ def plot_backtest(
     if not folds:
         folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
 
-    _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True)
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
     ax = np.array([ax]).ravel()
 
     forecast_start = forecast_df.index.min()
@@ -165,6 +173,7 @@ def plot_backtest_interactive(
     segments: Optional[List[str]] = None,
     folds: Optional[List[int]] = None,
     history_len: int = 0,
+    figsize: Tuple[int, int] = (900, 600),
 ) -> go.Figure:
     """Plot targets and forecast for backtest pipeline using plotly.
 
@@ -180,7 +189,8 @@ def plot_backtest_interactive(
         folds to plot
     history_len:
         length of pre-backtest history to plot
-
+    figsize:
+        size of the figure in pixels
     Returns
     -------
     go.Figure:
@@ -263,8 +273,8 @@ def plot_backtest_interactive(
         )
 
     fig.update_layout(
-        height=600,
-        width=900,
+        height=figsize[1],
+        width=figsize[0],
         title="Backtest for all segments",
         xaxis_title="timestamp",
         yaxis_title="target",
@@ -297,6 +307,7 @@ def plot_anomalies(
     anomaly_dict: Dict[str, List[np.datetime64]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot a time series with indicated anomalies.
 
@@ -310,6 +321,8 @@ def plot_anomalies(
         segments to plot
     columns_num: int
         number of subplots columns
+    figsize:
+        size of the figure per subplot with one segment in inches
     """
     if not segments:
         segments = sorted(ts.segments)
@@ -318,7 +331,8 @@ def plot_anomalies(
     columns_num = min(columns_num, len(segments))
     rows_num = math.ceil(segments_number / columns_num)
 
-    _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True)
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
     ax = np.array([ax]).ravel()
 
     for i, segment in enumerate(segments):
@@ -364,7 +378,11 @@ def get_correlation_matrix(
 
 
 def plot_correlation_matrix(
-    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson", **heatmap_kwargs
+    ts: "TSDataset",
+    segments: Optional[List[str]] = None,
+    method: str = "pearson",
+    figsize: Tuple[int, int] = (10, 10),
+    **heatmap_kwargs,
 ):
     """Plot pairwise correlation heatmap for selected segments.
 
@@ -379,6 +397,8 @@ def plot_correlation_matrix(
         pearson : standard correlation coefficient
         kendall : Kendall Tau correlation coefficient
         spearman : Spearman rank correlation
+    figsize:
+        size of the figure in inches
     """
     if segments is None:
         segments = sorted(ts.segments)
@@ -388,7 +408,8 @@ def plot_correlation_matrix(
         heatmap_kwargs["vmax"] = 1
 
     correlation_matrix = get_correlation_matrix(ts, segments, method)
-    ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, **heatmap_kwargs)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
     labels = list(ts[:, segments, :].columns.values)
     ax.set_xticklabels(labels, rotation=45, horizontalalignment="right")
     ax.set_yticklabels(labels, rotation=0, horizontalalignment="right")
@@ -400,6 +421,7 @@ def plot_anomalies_interactive(
     segment: str,
     method: Callable[..., Dict[str, List[pd.Timestamp]]],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
+    figsize: Tuple[int, int] = (20, 10),
 ):
     """Plot a time series with indicated anomalies.
     Anomalies are obtained using the specified method. The method parameters values
@@ -415,6 +437,8 @@ def plot_anomalies_interactive(
         Method for outliers detection
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
+    figsize:
+        size of the figure in inches
 
     Notes
     -----
@@ -430,7 +454,7 @@ def plot_anomalies_interactive(
     >>> ts = TSDataset(df, "D")
     >>> params_bounds = {"window_size": (5, 20, 1), "distance_coef": (0.1, 3, 0.25)}
     >>> method = get_anomalies_density
-    >>> plot_anomalies_interactive(ts=ts, segment="segment_1", method=method, params_bounds=params_bounds) # doctest: +SKIP
+    >>> plot_anomalies_interactive(ts=ts, segment="segment_1", method=method, params_bounds=params_bounds, figsize=(20, 10)) # doctest: +SKIP
     """
     from ipywidgets import FloatSlider
     from ipywidgets import IntSlider
@@ -460,7 +484,7 @@ def plot_anomalies_interactive(
             cache[key] = anomalies
         else:
             anomalies = cache[key]
-        plt.figure(figsize=(20, 10))
+        plt.figure(figsize=figsize)
         plt.cla()
         plt.plot(x, y)
         plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
@@ -471,7 +495,11 @@ def plot_anomalies_interactive(
 
 
 def plot_clusters(
-    ts: "TSDataset", segment2cluster: Dict[str, int], centroids_df: Optional[pd.DataFrame] = None, columns_num: int = 2
+    ts: "TSDataset",
+    segment2cluster: Dict[str, int],
+    centroids_df: Optional[pd.DataFrame] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot clusters [with centroids].
 
@@ -485,10 +513,13 @@ def plot_clusters(
         dataframe with centroids
     columns_num:
         number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
     """
     unique_clusters = sorted(set(segment2cluster.values()))
     rows_num = math.ceil(len(unique_clusters) / columns_num)
-    fig, axs = plt.subplots(rows_num, columns_num, constrained_layout=True, figsize=(20, 5 * rows_num))
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    fig, axs = plt.subplots(rows_num, columns_num, constrained_layout=True, figsize=figsize)
     for i, cluster in enumerate(unique_clusters):
         segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
         h, w = i // columns_num, i % columns_num

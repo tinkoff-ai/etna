@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
--
+- Parameter `figsize` to all the plotters [#465](https://github.com/tinkoff-ai/etna/pull/465)
 -
 
 ### Changed
