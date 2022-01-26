@@ -98,7 +98,12 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
 
 class ResampleWithDistributionTransform(PerSegmentWrapper):
-    """ResampleWithDistributionTransform resamples the given column using the distribution of the other column."""
+    """ResampleWithDistributionTransform resamples the given column using the distribution of the other column.
+
+    Warnings
+    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self, in_column: str, distribution_column: str, inplace: bool = True, out_column: Optional[str] = None

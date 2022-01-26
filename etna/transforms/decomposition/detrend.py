@@ -122,7 +122,12 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
 
 
 class LinearTrendTransform(PerSegmentWrapper):
-    """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
+    """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data.
+
+    Warnings
+    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(self, in_column: str, **regression_params):
         """Create instance of LinearTrendTransform.
@@ -144,7 +149,12 @@ class LinearTrendTransform(PerSegmentWrapper):
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
-    """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
+    """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data.
+
+    Warnings
+    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(self, in_column: str, **regression_params):
         """Create instance of TheilSenTrendTransform.

@@ -9,7 +9,12 @@ from etna.transforms.decomposition.change_points_trend import TDetrendModel
 
 
 class BinsegTrendTransform(ChangePointsTrendTransform):
-    """BinsegTrendTransform uses Binseg model as a change point detection model in ChangePointsTrendTransform transform."""
+    """BinsegTrendTransform uses Binseg model as a change point detection model in ChangePointsTrendTransform transform.
+
+    Warnings
+    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,

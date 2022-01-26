@@ -20,7 +20,12 @@ if SETTINGS.prophet_required:
 
 
 class MedianOutliersTransform(OutliersTransform):
-    """Transform that uses get_anomalies_median to find anomalies in data."""
+    """Transform that uses get_anomalies_median to find anomalies in data.
+
+    Warnings
+    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(self, in_column: str, window_size: int = 10, alpha: float = 3):
         """Create instance of MedianOutliersTransform.
@@ -55,7 +60,12 @@ class MedianOutliersTransform(OutliersTransform):
 
 
 class DensityOutliersTransform(OutliersTransform):
-    """Transform that uses get_anomalies_density to find anomalies in data."""
+    """Transform that uses get_anomalies_density to find anomalies in data.
+
+    Warnings
+    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
