@@ -119,7 +119,13 @@ class _TrendTransform(PerSegmentWrapper):
 
 class TrendTransform(_TrendTransform):
     """TrendTransform adds trend as a feature.
+
     TrendTransform uses Binseg model as a change point detection model in _TrendTransform.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(

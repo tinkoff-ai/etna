@@ -122,7 +122,13 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
 
 
 class LinearTrendTransform(PerSegmentWrapper):
-    """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data."""
+    """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(self, in_column: str, **regression_params):
         """Create instance of LinearTrendTransform.
@@ -144,7 +150,13 @@ class LinearTrendTransform(PerSegmentWrapper):
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
-    """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data."""
+    """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(self, in_column: str, **regression_params):
         """Create instance of TheilSenTrendTransform.
@@ -156,9 +168,10 @@ class TheilSenTrendTransform(PerSegmentWrapper):
         regression_params:
             params that should be used to init TheilSenRegressor
 
-        Notes:
-            Setting parameter n_subsamples manually might cause the error. It should be at least the number
-            of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
+        Notes
+        -----
+        Setting parameter n_subsamples manually might cause the error. It should be at least the number
+        of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
         """
         self.in_column = in_column
         self.regression_params = regression_params

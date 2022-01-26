@@ -9,7 +9,13 @@ from etna.transforms.math.sklearn import TransformMode
 
 
 class YeoJohnsonTransform(SklearnTransform):
-    """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame."""
+    """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
@@ -51,7 +57,13 @@ class YeoJohnsonTransform(SklearnTransform):
 
 
 class BoxCoxTransform(SklearnTransform):
-    """BoxCoxTransform applies Box-Cox transformation to DataFrame."""
+    """BoxCoxTransform applies Box-Cox transformation to DataFrame.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
