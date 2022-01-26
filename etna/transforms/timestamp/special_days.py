@@ -171,7 +171,8 @@ class SpecialDaysTransform(PerSegmentWrapper):
 
     Creates columns 'regressor_anomaly_weekdays' and 'regressor_anomaly_monthdays'.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

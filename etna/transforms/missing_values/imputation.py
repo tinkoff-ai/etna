@@ -162,7 +162,8 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
     - This transform can't fill NaNs in non-zero strategy if all values are Nans. In this case exception is raised.
     - In 'forward_fill' strategy very first value and first NaNs are replaced with zero.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias in 'mean' mode. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

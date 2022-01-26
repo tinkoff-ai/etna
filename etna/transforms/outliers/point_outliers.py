@@ -22,7 +22,8 @@ if SETTINGS.prophet_required:
 class MedianOutliersTransform(OutliersTransform):
     """Transform that uses get_anomalies_median to find anomalies in data.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """
@@ -62,7 +63,8 @@ class MedianOutliersTransform(OutliersTransform):
 class DensityOutliersTransform(OutliersTransform):
     """Transform that uses get_anomalies_density to find anomalies in data.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

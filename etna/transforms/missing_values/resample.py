@@ -100,7 +100,8 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 class ResampleWithDistributionTransform(PerSegmentWrapper):
     """ResampleWithDistributionTransform resamples the given column using the distribution of the other column.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

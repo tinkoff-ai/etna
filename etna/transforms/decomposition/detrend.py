@@ -124,7 +124,8 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
 class LinearTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.LinearRegression to find linear trend in data.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """
@@ -151,7 +152,8 @@ class LinearTrendTransform(PerSegmentWrapper):
 class TheilSenTrendTransform(PerSegmentWrapper):
     """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear trend in data.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

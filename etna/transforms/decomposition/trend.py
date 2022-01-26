@@ -122,7 +122,8 @@ class TrendTransform(_TrendTransform):
 
     TrendTransform uses Binseg model as a change point detection model in _TrendTransform.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

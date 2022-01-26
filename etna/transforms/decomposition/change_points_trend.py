@@ -184,7 +184,8 @@ class _OneSegmentChangePointsTrendTransform(Transform):
 class ChangePointsTrendTransform(PerSegmentWrapper):
     """ChangePointsTrendTransform subtracts multiple linear trend from series.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """

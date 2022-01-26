@@ -17,7 +17,8 @@ class StandardScalerTransform(SklearnTransform):
 
     Uses sklearn.preprocessing.StandardScaler inside.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """
@@ -72,7 +73,8 @@ class RobustScalerTransform(SklearnTransform):
 
     Uses sklearn.preprocessing.RobustScaler inside.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """
@@ -144,7 +146,8 @@ class MinMaxScalerTransform(SklearnTransform):
 
     Uses sklearn.preprocessing.MinMaxScaler inside.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """
@@ -199,7 +202,8 @@ class MaxAbsScalerTransform(SklearnTransform):
 
     Uses sklearn.preprocessing.MaxAbsScaler inside.
 
-    Warnings
+    Warning
+    -------
     This transform can suffer from look-ahead bias. For transforming a data at some timestamp
     it uses information from the whole train part.
     """
