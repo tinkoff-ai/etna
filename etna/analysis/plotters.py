@@ -173,6 +173,7 @@ def plot_backtest_interactive(
     segments: Optional[List[str]] = None,
     folds: Optional[List[int]] = None,
     history_len: int = 0,
+    figsize: Tuple[int, int] = (900, 600),
 ) -> go.Figure:
     """Plot targets and forecast for backtest pipeline using plotly.
 
@@ -188,7 +189,8 @@ def plot_backtest_interactive(
         folds to plot
     history_len:
         length of pre-backtest history to plot
-
+    figsize:
+        size of the figure in pixels
     Returns
     -------
     go.Figure:
@@ -271,8 +273,8 @@ def plot_backtest_interactive(
         )
 
     fig.update_layout(
-        height=600,
-        width=900,
+        height=figsize[1],
+        width=figsize[0],
         title="Backtest for all segments",
         xaxis_title="timestamp",
         yaxis_title="target",
