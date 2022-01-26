@@ -331,7 +331,12 @@ class TSDataset:
         return self._regressors
 
     def plot(
-        self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence[str]] = None, seed: int = 1
+        self,
+        n_segments: int = 10,
+        column: str = "target",
+        segments: Optional[Sequence[str]] = None,
+        seed: int = 1,
+        figsize: Tuple[int, int] = (10, 5),
     ):
         """Plot of random or chosen segments.
 
@@ -345,13 +350,17 @@ class TSDataset:
             segments to plot
         seed:
             seed for local random state
+        figsize:
+            size of the figure per subplot with one segment in inches
         """
         if not segments:
             segments = self.segments
         k = min(n_segments, len(segments))
         columns_num = min(2, k)
         rows_num = math.ceil(k / columns_num)
-        _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), squeeze=False)
+
+        figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+        _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, squeeze=False)
         ax = ax.ravel()
         rnd_state = np.random.RandomState(seed)
         for i, segment in enumerate(sorted(rnd_state.choice(segments, size=k, replace=False))):
