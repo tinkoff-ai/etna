@@ -4,6 +4,7 @@ from itertools import combinations
 from typing import TYPE_CHECKING
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,13 @@ plot_acf = sm.graphics.tsa.plot_acf
 plot_pacf = sm.graphics.tsa.plot_pacf
 
 
-def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, segments: Optional[Sequence] = None):
+def cross_corr_plot(
+    ts: "TSDataset",
+    n_segments: int = 10,
+    maxlags: int = 21,
+    segments: Optional[Sequence] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
     """
     Cross-correlation plot between multiple timeseries.
 
@@ -33,6 +40,8 @@ def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, se
         number of timeseries shifts for cross-correlation
     segments:
         segments to plot
+    figsize:
+        size of the figure per subplot with one segment in inches
     """
     if not segments:
         exist_segments = list(ts.segments)
@@ -43,7 +52,9 @@ def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, se
         raise ValueError("There are no pairs to plot! Try set n_segments > 1.")
     columns_num = min(2, len(segment_pairs))
     rows_num = math.ceil(len(segment_pairs) / columns_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True, squeeze=False)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
     ax = ax.ravel()
     fig.suptitle("Cross-correlation", fontsize=16)
     for i, (segment_1, segment_2) in enumerate(segment_pairs):
@@ -66,7 +77,9 @@ def cross_corr_plot(ts: "TSDataset", n_segments: int = 10, maxlags: int = 21, se
     plt.show()
 
 
-def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None):
+def sample_acf_plot(
+    ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None, figsize: Tuple[int, int] = (10, 5)
+):
     """
     Autocorrelation plot for multiple timeseries.
 
@@ -80,7 +93,8 @@ def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segme
         number of timeseries shifts for cross-correlation
     segments:
         segments to plot
-
+    figsize:
+        size of the figure per subplot with one segment in inches
     Notes
     -----
     https://en.wikipedia.org/wiki/Autocorrelation
@@ -91,7 +105,9 @@ def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segme
     k = min(n_segments, len(segments))
     columns_num = min(2, k)
     rows_num = math.ceil(k / columns_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True, squeeze=False)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
     ax = ax.ravel()
     fig.suptitle("Autocorrelation", fontsize=16)
     for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
@@ -101,7 +117,9 @@ def sample_acf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segme
     plt.show()
 
 
-def sample_pacf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None):
+def sample_pacf_plot(
+    ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None, figsize: Tuple[int, int] = (10, 5)
+):
     """
     Partial autocorrelation plot for multiple timeseries.
 
@@ -115,7 +133,8 @@ def sample_pacf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segm
         number of timeseries shifts for cross-correlation
     segments:
         segments to plot
-
+    figsize:
+        size of the figure per subplot with one segment in inches
     Notes
     -----
     https://en.wikipedia.org/wiki/Partial_autocorrelation_function
@@ -126,7 +145,9 @@ def sample_pacf_plot(ts: "TSDataset", n_segments: int = 10, lags: int = 21, segm
     k = min(n_segments, len(segments))
     columns_num = min(2, k)
     rows_num = math.ceil(k / columns_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), constrained_layout=True, squeeze=False)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
     ax = ax.ravel()
     fig.suptitle("Partial Autocorrelation", fontsize=16)
     for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
@@ -144,6 +165,7 @@ def distribution_plot(
     window: int = 30,
     freq: str = "1M",
     n_rows: int = 10,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """Distribution of z-values grouped by segments and time frequency.
 
@@ -166,6 +188,8 @@ def distribution_plot(
         group for z_{i}
     n_rows:
         maximum number of rows to plot
+    figsize:
+        size of the figure per subplot with one segment in inches
     """
     df_pd = ts.to_pandas(flatten=True)
 
@@ -185,7 +209,9 @@ def distribution_plot(
     columns_num = min(2, len(grouped_data))
     rows_num = min(n_rows, math.ceil(len(grouped_data) / columns_num))
     groups = set(list(grouped_data.groups.keys())[-rows_num * columns_num :])
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=(20, 7.5 * rows_num), constrained_layout=True, squeeze=False)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
     fig.suptitle(f"Z statistic shift: {shift} window: {window}", fontsize=16)
     ax = ax.ravel()
     i = 0
