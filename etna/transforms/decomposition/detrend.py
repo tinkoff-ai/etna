@@ -126,7 +126,7 @@ class LinearTrendTransform(PerSegmentWrapper):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 
@@ -154,7 +154,7 @@ class TheilSenTrendTransform(PerSegmentWrapper):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 

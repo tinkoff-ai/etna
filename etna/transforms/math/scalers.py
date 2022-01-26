@@ -19,7 +19,7 @@ class StandardScalerTransform(SklearnTransform):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 
@@ -75,7 +75,7 @@ class RobustScalerTransform(SklearnTransform):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 
@@ -148,7 +148,7 @@ class MinMaxScalerTransform(SklearnTransform):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 
@@ -204,7 +204,7 @@ class MaxAbsScalerTransform(SklearnTransform):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 

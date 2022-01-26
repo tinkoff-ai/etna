@@ -164,7 +164,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
 
     Warning
     -------
-    This transform can suffer from look-ahead bias in 'mean' mode. For transforming a data at some timestamp
+    This transform can suffer from look-ahead bias in 'mean' mode. For transforming data at some timestamp
     it uses information from the whole train part.
     """
 
