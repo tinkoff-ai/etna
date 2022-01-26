@@ -20,9 +20,10 @@ class _OneSegmentSpecialDaysTransform(Transform):
     """
     Search for anomalies in values, marked this days as 1 (and return new column with 1 in corresponding places).
 
-    Notes:
-        You can read more about other anomalies detection methods in:
-        https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46
+    Notes
+    -----
+    You can read more about other anomalies detection methods in:
+    https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46
     """
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
@@ -168,7 +169,13 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
 class SpecialDaysTransform(PerSegmentWrapper):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
+
     Creates columns 'regressor_anomaly_weekdays' and 'regressor_anomaly_monthdays'.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):

@@ -153,7 +153,13 @@ class _OneSegmentSTLTransform(Transform):
 
 
 class STLTransform(PerSegmentWrapper):
-    """Transform that uses statsmodels.tsa.seasonal.STL to subtract season and trend from the data."""
+    """Transform that uses statsmodels.tsa.seasonal.STL to subtract season and trend from the data.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
