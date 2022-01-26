@@ -168,9 +168,10 @@ class TheilSenTrendTransform(PerSegmentWrapper):
         regression_params:
             params that should be used to init TheilSenRegressor
 
-        Notes:
-            Setting parameter n_subsamples manually might cause the error. It should be at least the number
-            of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
+        Notes
+        -----
+        Setting parameter n_subsamples manually might cause the error. It should be at least the number
+        of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
         """
         self.in_column = in_column
         self.regression_params = regression_params
