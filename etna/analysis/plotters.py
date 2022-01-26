@@ -401,7 +401,7 @@ def plot_correlation_matrix(
         size of the figure in inches
     """
     if segments is None:
-        segments = sorted(ts.segments)[:2]
+        segments = sorted(ts.segments)
     if "vmin" not in heatmap_kwargs:
         heatmap_kwargs["vmin"] = -1
     if "vmax" not in heatmap_kwargs:
