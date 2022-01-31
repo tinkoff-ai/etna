@@ -83,7 +83,7 @@ class _ProphetModel:
 
         self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame, regressors: Optional[List[str]]) -> "_ProphetModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetModel":
         """
         Fits a Prophet model.
 
@@ -95,6 +95,8 @@ class _ProphetModel:
             List of the columns with regressors
         """
         self.regressor_columns = regressors
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
         prophet_df["ds"] = df["timestamp"]
