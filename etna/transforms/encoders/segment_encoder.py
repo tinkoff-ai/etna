@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 
+from etna.transforms import MeanTransform
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
-from etna.transforms import MeanTransform
 
 
 class SegmentEncoderTransform(Transform, FutureMixin):
