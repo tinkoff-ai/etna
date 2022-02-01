@@ -9,11 +9,11 @@ from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms import TimeSeriesImputerTransform
 from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
 from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import SegmentEncoderTransform
+from etna.transforms import TimeSeriesImputerTransform
 
 
 @pytest.fixture()
@@ -514,6 +514,7 @@ def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
 def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
     with pytest.warns(Warning, match="Segments contains NaNs in the last timestamps."):
         ts_diff_endings.fit_transform([])
+
 
 @pytest.fixture()
 def ts_with_regressors(df_and_regressors):

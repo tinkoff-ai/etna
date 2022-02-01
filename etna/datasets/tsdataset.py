@@ -345,6 +345,8 @@ class TSDataset:
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self.df_exog is None:
+            raise ValueError("Something went wrong! Trying to merge df_exog which is None!")
         segments = sorted(set(df.columns.get_level_values("segment")))
         df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
         self._check_regressors(df=df, df_regressors=df_regressors)

@@ -167,7 +167,7 @@ class _SARIMAXModel:
         self._result: Optional[SARIMAX] = None
         self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame, regressors: Optional[List[str]]) -> "_SARIMAXModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXModel":
         """
         Fits a SARIMAX model.
 
@@ -291,6 +291,8 @@ class _SARIMAXModel:
         return y_pred.reset_index(drop=True, inplace=False)
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
         column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
         if column_to_drop:
             warnings.warn(
