@@ -82,7 +82,7 @@ def two_segments_simple_df_min(simple_constant_df_min: pd.DataFrame):
     df = TSDataset.to_dataset(classic_df)
     return df
 
-
+@pytest.mark.xfail
 def test_holiday_with_regressors(simple_ts_with_regressors: TSDataset):
     simple_ts_with_regressors.fit_transform([HolidayTransform(out_column="holiday")])
     len_holiday = len([cols for cols in simple_ts_with_regressors.columns if cols[1] == "holiday"])
