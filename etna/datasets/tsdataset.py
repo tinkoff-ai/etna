@@ -189,7 +189,7 @@ class TSDataset:
         2021-07-03          32          37    NaN          72          77    NaN
         2021-07-04          33          38    NaN          73          78    NaN
         """
-        self._check_endings()
+        self._check_endings(warning=True)
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
             start=max_date_in_dataset, periods=future_steps + 1, freq=self.freq, closed="right"
@@ -265,7 +265,7 @@ class TSDataset:
                 warnings.warn(
                     "Segments contains NaNs in the last timestamps."
                     "Some of the transforms might work incorrectly or even fail."
-                    "Make sure that you use the impurer before making the forecast."
+                    "Make sure that you use the imputer before making the forecast."
                 )
             else:
                 raise ValueError("All segments should end at the same timestamp")
