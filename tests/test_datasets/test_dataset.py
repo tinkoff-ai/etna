@@ -55,6 +55,28 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 
 @pytest.fixture()
+def df_and_regressors_flat() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Return flat versions of df and df_exog."""
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+
+    timestamp = pd.date_range("2020-12-01", "2021-02-11")
+    df_1 = pd.DataFrame(
+        {"timestamp": timestamp, "regressor_1": 1, "regressor_2": "3", "regressor_3": 5, "segment": "1"}
+    )
+    df_2 = pd.DataFrame(
+        {"timestamp": timestamp[5:], "regressor_1": 2, "regressor_2": "4", "regressor_3": 6, "segment": "2"}
+    )
+    df_exog = pd.concat([df_1, df_2], ignore_index=True)
+    df_exog["regressor_2"] = df_exog["regressor_2"].astype("category")
+    df_exog["regressor_3"] = df_exog["regressor_3"].astype("category")
+
+    return df, df_exog
+
+
+@pytest.fixture()
 def ts_future(example_reg_tsds):
     future = example_reg_tsds.make_future(10)
     return future
@@ -450,13 +472,35 @@ def test_right_format_sorting():
     pd.testing.assert_series_equal(df["reg_2"], inv_df["reg_2"])
 
 
-def test_to_flatten(example_df):
-    """Check that TSDataset.to_flatten works correctly."""
-    sorted_columns = sorted(example_df.columns)
-    expected_df = example_df[sorted_columns]
-    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(example_df))
-    assert sorted_columns == sorted(obtained_df.columns)
-    assert (expected_df.values == obtained_df[sorted_columns].values).all()
+def test_to_flatten_simple(example_df):
+    """Check that TSDataset.to_flatten works correctly in simple case."""
+    flat_df = example_df
+    sorted_columns = sorted(flat_df.columns)
+    expected_df = flat_df[sorted_columns]
+    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns]
+    assert np.all(expected_df.columns == obtained_df.columns)
+    assert np.all(expected_df.dtypes == obtained_df.dtypes)
+    assert np.all(expected_df.values == obtained_df.values)
+
+
+def test_to_flatten_with_exog(df_and_regressors_flat):
+    """Check that TSDataset.to_flatten works correctly with exogenous features."""
+    df, df_exog = df_and_regressors_flat
+    # add a category type
+    flat_df = pd.merge(left=df, right=df_exog, left_on=["timestamp", "segment"], right_on=["timestamp", "segment"])
+    sorted_columns = sorted(flat_df.columns)
+    expected_df = flat_df[sorted_columns]
+    # add values to absent timestamps at one segment
+    to_append = pd.DataFrame({"timestamp": df["timestamp"][:5], "segment": ["2"] * 5})
+    expected_df = expected_df.append(to_append).sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    # rebuild category type according to new values
+
+    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns].sort_values(
+        by=["segment", "timestamp"]
+    )
+    assert np.all(sorted_columns == obtained_df.columns)
+    assert np.all(expected_df.dtypes == obtained_df.dtypes)
+    assert expected_df.equals(obtained_df)
 
 
 def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
