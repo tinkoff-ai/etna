@@ -352,6 +352,10 @@ class TSDataset:
             segments to plot
         seed:
             seed for local random state
+        start:
+            start plot from this timestamp
+        end:
+            end plot at this timestamp
         figsize:
             size of the figure per subplot with one segment in inches
         """
