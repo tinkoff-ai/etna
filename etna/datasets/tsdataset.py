@@ -335,6 +335,8 @@ class TSDataset:
         n_segments: int = 10,
         column: str = "target",
         segments: Optional[Sequence[str]] = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
         seed: int = 1,
         figsize: Tuple[int, int] = (10, 5),
     ):
@@ -358,13 +360,15 @@ class TSDataset:
         k = min(n_segments, len(segments))
         columns_num = min(2, k)
         rows_num = math.ceil(k / columns_num)
+        start = self.df.index.min() if start is None else pd.Timestamp(start)
+        end = self.df.index.max() if end is None else pd.Timestamp(end)
 
         figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
         _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, squeeze=False)
         ax = ax.ravel()
         rnd_state = np.random.RandomState(seed)
         for i, segment in enumerate(sorted(rnd_state.choice(segments, size=k, replace=False))):
-            df_slice = self[:, segment, column]
+            df_slice = self[start:end, segment, column]
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
 
