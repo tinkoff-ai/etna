@@ -407,20 +407,22 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
+        # flatten dataframe
         aggregator_list = []
-        category = []
         segments = df.columns.get_level_values("segment").unique().tolist()
         for segment in segments:
-            if df[segment].select_dtypes(include=["category"]).columns.to_list():
-                category.extend(df[segment].select_dtypes(include=["category"]).columns.to_list())
             aggregator_list.append(df[segment].copy())
             aggregator_list[-1]["segment"] = segment
-        df = pd.concat(aggregator_list)
-        df = df.reset_index()
-        category = list(set(category))
-        df[category] = df[category].astype("category")
-        df.columns.name = None
-        return df
+        df_flat = pd.concat(aggregator_list)
+        df_flat = df_flat.reset_index()
+        df_flat.columns.name = None
+
+        # mark category as category
+        dtypes = df.dtypes
+        category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
+        df_flat[category_columns] = df_flat[category_columns].astype("category")
+
+        return df_flat
 
     def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
         """Return pandas DataFrame.
