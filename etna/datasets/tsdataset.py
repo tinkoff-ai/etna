@@ -152,7 +152,11 @@ class TSDataset:
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
         from etna.transforms.base import FutureMixin
 
+        # intersect list of regressors with columns after the transform
+        self._regressors = list(set(self._regressors).intersection(columns_after))
+
         unseen_columns = list(columns_after - columns_before)
+
         if len(unseen_columns) == 0:
             return
 
