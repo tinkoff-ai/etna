@@ -187,7 +187,7 @@ def percentile(n: int):
     """Percentile for pandas agg."""
 
     def percentile_(x):
-        return np.percentile(x.values, n)
+        return np.nanpercentile(a=x.values, q=n)
 
     percentile_.__name__ = "percentile_%s" % n
     return percentile_
