@@ -372,7 +372,7 @@ class TSDataset:
         ax = ax.ravel()
         rnd_state = np.random.RandomState(seed)
         for i, segment in enumerate(sorted(rnd_state.choice(segments, size=k, replace=False))):
-            df_slice = self[start:end, segment, column]
+            df_slice = self[start:end, segment, column]  # type: ignore
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
 
