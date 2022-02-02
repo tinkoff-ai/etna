@@ -4,6 +4,7 @@
 [![Pipi version](https://img.shields.io/pypi/v/etna.svg)](https://pypi.org/project/etna/)
 [![PyPI Status](https://static.pepy.tech/personalized-badge/etna?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna)
 [![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna)](https://codecov.io/gh/tinkoff-ai/etna)
+[![License](https://img.shields.io/github/license/tinkoff-ai/etna)](https://github.com/tinkoff-ai/etna/blob/master/LICENSE)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
 [![Slack](https://img.shields.io/badge/slack-ods.ai-orange)](https://opendatascience.slack.com/archives/C02Q62NEPH8)
