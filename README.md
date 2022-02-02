@@ -2,12 +2,16 @@
 <h3 align="center">Predict your time series the easiest way</h3>
 
 [![Pipi version](https://img.shields.io/pypi/v/etna.svg)](https://pypi.org/project/etna/)
+[![Versions](https://img.shields.io/pypi/pyversions/etna.svg)](https://pypi.org/project/etna/)
 [![PyPI Status](https://static.pepy.tech/personalized-badge/etna?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads)](https://pepy.tech/project/etna)
-[![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna)](https://codecov.io/gh/tinkoff-ai/etna)
-[![License](https://img.shields.io/github/license/tinkoff-ai/etna)](https://github.com/tinkoff-ai/etna/blob/master/LICENSE)
+[![Coverage](https://img.shields.io/codecov/c/github/tinkoff-ai/etna.svg)](https://codecov.io/gh/tinkoff-ai/etna)
+[![Test passing](https://img.shields.io/github/workflow/status/tinkoff-ai/etna/Test/master.svg)](https://github.com/tinkoff-ai/etna/actions/workflows/test.yml?query=branch%3Amaster++)
+[![License](https://img.shields.io/github/license/tinkoff-ai/etna.svg)](https://github.com/tinkoff-ai/etna/blob/master/LICENSE)
 
 [![Telegram](https://img.shields.io/badge/channel-telegram-blue)](https://t.me/etna_support)
 [![Slack](https://img.shields.io/badge/slack-ods.ai-orange)](https://opendatascience.slack.com/archives/C02Q62NEPH8)
+[![Contributors](https://img.shields.io/github/contributors/tinkoff-ai/etna.svg)](https://github.com/tinkoff-ai/etna/graphs/contributors) 
+[![Stars](https://img.shields.io/github/stars/tinkoff-ai/etna?style=social)](https://github.com/tinkoff-ai/etna/stargazers)
 
 [Homepage](https://etna.tinkoff.ru) |
 [Documentation](https://etna-docs.netlify.app/) |
