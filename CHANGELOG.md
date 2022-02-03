@@ -11,8 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Allow choosing start and end in `TSDataset.plot` method ([488](https://github.com/tinkoff-ai/etna/pull/488))
--
 -
 -
 -
@@ -25,11 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Make TSDataset.to_flatten faster ([#475](https://github.com/tinkoff-ai/etna/pull/475))
 -
--
--
-- Make logger percentile metric aggregation to work with NaNs ([#483](https://github.com/tinkoff-ai/etna/pull/483))
 -
 -
 -
@@ -37,18 +31,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 -
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+## [1.6.1] - 2022-02-03
+### Added
+- Allow choosing start and end in `TSDataset.plot` method ([488](https://github.com/tinkoff-ai/etna/pull/488))
+
+### Changed
+- Make TSDataset.to_flatten faster ([#475](https://github.com/tinkoff-ai/etna/pull/475))
+- Allow logger percentile metric aggregation to work with NaNs ([#483](https://github.com/tinkoff-ai/etna/pull/483))
+
+### Fixed
 - Can't make forecasting with pipelines, data with nans, and Imputers ([#473](https://github.com/tinkoff-ai/etna/pull/473))
--
--
--
--
--
--
--
--
--
--
--
+
 
 ## [1.6.0] - 2022-01-28
 
