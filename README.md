@@ -2,8 +2,8 @@
 <h3 align="center">Predict your time series the easiest way</h3>
 
 <p align="center">
-  <a href="https://pypi.org/project/etna/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/etna.svg?maxAge=86400" /></a>
-  <a href="https://pypi.org/project/etna/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/etna.svg?maxAge=86400" /></a>
+  <a href="https://pypi.org/project/etna/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/etna.svg" /></a>
+  <a href="https://pypi.org/project/etna/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/etna.svg" /></a>
   <a href="https://pepy.tech/project/etna"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/etna?period=total&units=international_system&left_color=grey&right_color=green&left_text=Downloads" /></a>
 </p>
  
