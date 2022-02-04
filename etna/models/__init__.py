@@ -3,6 +3,9 @@ from etna.models.base import Model
 from etna.models.base import PerSegmentModel
 from etna.models.catboost import CatBoostModelMultiSegment
 from etna.models.catboost import CatBoostModelPerSegment
+from etna.models.holt_winters import HoltModel
+from etna.models.holt_winters import HoltWintersModel
+from etna.models.holt_winters import SimpleExpSmoothingModel
 from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
