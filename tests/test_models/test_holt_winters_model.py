@@ -28,7 +28,7 @@ def const_ts():
     ],
 )
 def test_holt_winters_simple(model, example_tsds):
-    """Test that Holt Winter's models make predictions in simple case."""
+    """Test that Holt-Winters' models make predictions in simple case."""
     horizon = 7
     model.fit(example_tsds)
     future_ts = example_tsds.make_future(future_steps=horizon)
@@ -48,11 +48,11 @@ def test_holt_winters_simple(model, example_tsds):
     ],
 )
 def test_holt_winters_with_exog_warning(model, example_reg_tsds):
-    """Test that Holt Winter's models make predictions with exog with warning."""
+    """Test that Holt-Winters' models make predictions with exog with warning."""
     horizon = 7
     model.fit(example_reg_tsds)
     future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    with pytest.warns(UserWarning, match="Holt Winter's model does not work with exogenous features and regressors"):
+    with pytest.warns(UserWarning, match="Holt-Winters' model does not work with exogenous features and regressors"):
         res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
@@ -69,7 +69,7 @@ def test_holt_winters_with_exog_warning(model, example_reg_tsds):
     ],
 )
 def test_sanity_const_df(model, const_ts):
-    """Test that Holt Winter's models works good with almost constant dataset."""
+    """Test that Holt-Winters' models works good with almost constant dataset."""
     horizon = 7
     train_ts, test_ts = const_ts.train_test_split(test_size=horizon)
     pipeline = Pipeline(model=model, horizon=horizon)

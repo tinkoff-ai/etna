@@ -15,11 +15,11 @@ from etna.models.base import PerSegmentModel
 
 class _HoltWintersModel:
     """
-    Class for holding Holt Winter's exponential smoothing model.
+    Class for holding Holt-Winters' exponential smoothing model.
 
     Notes
     -----
-    We use Holt Winter's [1] model from statsmodels package.
+    We use Holt-Winters' [1] model from statsmodels package.
 
     .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
 
@@ -47,7 +47,7 @@ class _HoltWintersModel:
         **fit_kwargs,
     ):
         """
-        Init Holt Winter's model with given params.
+        Init Holt-Winters' model with given params.
 
         Parameters
         ----------
@@ -170,7 +170,7 @@ class _HoltWintersModel:
 
     def fit(self, df: pd.DataFrame) -> "_HoltWintersModel":
         """
-        Fits a Holt Winter's model.
+        Fits a Holt-Winters' model.
 
         Parameters
         ----------
@@ -214,7 +214,7 @@ class _HoltWintersModel:
 
     def predict(self, df: pd.DataFrame) -> pd.Series:
         """
-        Compute predictions from a Holt Winter's model.
+        Compute predictions from a Holt-Winters' model.
 
         Parameters
         ----------
@@ -227,7 +227,7 @@ class _HoltWintersModel:
             Series with predictions
         """
         if self._result is None or self._model is None:
-            raise ValueError("Holt Winter's model is not fitted! Fit the model before calling predict method!")
+            raise ValueError("Holt-Winters' model is not fitted! Fit the model before calling predict method!")
         self._check_df(df)
 
         forecast = self._result.predict(start=df["timestamp"].min(), end=df["timestamp"].max())
@@ -239,18 +239,18 @@ class _HoltWintersModel:
         columns_not_used = set(columns).difference({"target", "timestamp"})
         if columns_not_used:
             warnings.warn(
-                message=f"Holt Winter's model does not work with exogenous features and regressors.\n "
+                message=f"Holt-Winters' model does not work with exogenous features and regressors.\n "
                 f"{columns_not_used} will be dropped"
             )
 
 
 class HoltWintersModel(PerSegmentModel):
     """
-    Holt Winter's etna model.
+    Holt-Winters' etna model.
 
     Notes
     -----
-    We use Holt Winter's [1] model from statsmodels package.
+    We use Holt-Winters' [1] model from statsmodels package.
 
     .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
 
@@ -278,7 +278,7 @@ class HoltWintersModel(PerSegmentModel):
         **fit_kwargs,
     ):
         """
-        Init Holt Winter's model with given params.
+        Init Holt-Winters' model with given params.
 
         Parameters
         ----------
@@ -427,7 +427,7 @@ class HoltModel(HoltWintersModel):
 
     Notes
     -----
-    We use Holt Winter's [1] model from statsmodels package.
+    We use Holt-Winters' [1] model from statsmodels package.
     They implement Holt model as a restricted version of ExponentialSmoothing model.
 
     .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
@@ -447,7 +447,7 @@ class HoltModel(HoltWintersModel):
         **fit_kwargs,
     ):
         """
-        Init Holt Winter's model with given params.
+        Init Holt-Winters' model with given params.
 
         Parameters
         ----------
@@ -519,7 +519,7 @@ class SimpleExpSmoothingModel(HoltWintersModel):
 
     Notes
     -----
-    We use Holt Winter's [1] model from statsmodels package.
+    We use Holt-Winters' [1] model from statsmodels package.
     They implement SimpleExpSmoothing model as a restricted version of ExponentialSmoothing model.
 
     .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
@@ -534,7 +534,7 @@ class SimpleExpSmoothingModel(HoltWintersModel):
         **fit_kwargs,
     ):
         """
-        Init Holt Winter's model with given params.
+        Init Holt-Winters' model with given params.
 
         Parameters
         ----------
