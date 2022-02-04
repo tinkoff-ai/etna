@@ -131,16 +131,16 @@ class _HoltWintersModel:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
-        smoothing_level : float, optional
+        smoothing_level:
             The alpha value of the simple exponential smoothing, if the value
             is set then this value will be used as the value.
-        smoothing_trend :  float, optional
+        smoothing_trend:
             The beta value of the Holt's trend method, if the value is
             set then this value will be used as the value.
-        smoothing_seasonal : float, optional
+        smoothing_seasonal:
             The gamma value of the holt winters seasonal method, if the value
             is set then this value will be used as the value.
-        damping_trend : float, optional
+        damping_trend:
             The phi value of the damped method, if the value is
             set then this value will be used as the value.
         fit_kwargs:
@@ -362,16 +362,16 @@ class HoltWintersModel(PerSegmentModel):
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
             If 'raise', an error is raised. Default is 'none'.
-        smoothing_level : float, optional
+        smoothing_level:
             The alpha value of the simple exponential smoothing, if the value
             is set then this value will be used as the value.
-        smoothing_trend :  float, optional
+        smoothing_trend:
             The beta value of the Holt's trend method, if the value is
             set then this value will be used as the value.
-        smoothing_seasonal : float, optional
+        smoothing_seasonal:
             The gamma value of the holt winters seasonal method, if the value
             is set then this value will be used as the value.
-        damping_trend : float, optional
+        damping_trend:
             The phi value of the damped method, if the value is
             set then this value will be used as the value.
         fit_kwargs:
@@ -485,13 +485,13 @@ class HoltModel(HoltWintersModel):
             This allows one or more of the initial values to be set while
             deferring to the heuristic for others or estimating the unset
             parameters.
-        smoothing_level : float, optional
+        smoothing_level:
             The alpha value of the simple exponential smoothing, if the value
             is set then this value will be used as the value.
-        smoothing_trend :  float, optional
+        smoothing_trend:
             The beta value of the Holt's trend method, if the value is
             set then this value will be used as the value.
-        damping_trend : float, optional
+        damping_trend:
             The phi value of the damped method, if the value is
             set then this value will be used as the value.
         fit_kwargs:
@@ -560,7 +560,7 @@ class SimpleExpSmoothingModel(HoltWintersModel):
             This allows one or more of the initial values to be set while
             deferring to the heuristic for others or estimating the unset
             parameters.
-        smoothing_level : float, optional
+        smoothing_level:
             The alpha value of the simple exponential smoothing, if the value
             is set then this value will be used as the value.
         fit_kwargs:
