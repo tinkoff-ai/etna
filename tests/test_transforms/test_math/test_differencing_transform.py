@@ -7,9 +7,10 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.metrics import R2
+from etna.models import LinearPerSegmentModel
 from etna.models import ProphetModel
-from etna.models import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
+from etna.transforms import LagTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
 
@@ -156,12 +157,14 @@ def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencin
         assert np.all(predict_ts[:, segment, "target"] <= predict_ts[:, segment, "target_0.975"])
 
 
-def check_single_backtest_sanity(transform: GeneralDifferencingTransform, period: int, df: pd.DataFrame):
+def check_backtest_sanity(transform: GeneralDifferencingTransform, df: pd.DataFrame):
     """Check that differencing transform correctly works in backtest."""
-    # create pipeline with naive model
+    # create pipeline with linear model
     ts = TSDataset(df, freq="D")
-    model = SeasonalMovingAverageModel(window=5, seasonality=period)
-    pipeline = Pipeline(model=model, transforms=[transform], horizon=7)
+    model = LinearPerSegmentModel()
+    pipeline = Pipeline(
+        model=model, transforms=[LagTransform(in_column="target", lags=[7, 8, 9]), transform], horizon=7
+    )
 
     # run backtest
     metrics_df, _, _ = pipeline.backtest(ts, n_folds=3, aggregate_metrics=True, metrics=[R2()])
@@ -444,7 +447,7 @@ def test_full_inverse_transform_inplace_test_quantiles(period, order, df_nans_wi
 def test_single_backtest_sanity(period, df_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly works in backtest."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_single_backtest_sanity(transform, period, df_nans_with_noise)
+    check_backtest_sanity(transform, df_nans_with_noise)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -452,4 +455,4 @@ def test_single_backtest_sanity(period, df_nans_with_noise):
 def test_full_backtest_sanity(period, order, df_nans_with_noise):
     """Test that DifferencingTransform correctly works in backtest."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
-    check_single_backtest_sanity(transform, period, df_nans_with_noise)
+    check_backtest_sanity(transform, df_nans_with_noise)

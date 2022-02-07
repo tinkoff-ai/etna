@@ -96,6 +96,8 @@ class _SingleDifferencingTransform(Transform):
 
             self._train_init_dict[current_segment] = cur_series[: self.period]
         self._test_init_df = fit_df.iloc[-self.period :, :]
+        # make multiindex levels consistent
+        self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
