@@ -227,7 +227,7 @@ class _HoltWintersModel:
             Series with predictions
         """
         if self._result is None or self._model is None:
-            raise ValueError("Holt-Winters' model is not fitted! Fit the model before calling predict method!")
+            raise ValueError("This model is not fitted! Fit the model before calling predict method!")
         self._check_df(df)
 
         forecast = self._result.predict(start=df["timestamp"].min(), end=df["timestamp"].max())
@@ -239,7 +239,7 @@ class _HoltWintersModel:
         columns_not_used = set(columns).difference({"target", "timestamp"})
         if columns_not_used:
             warnings.warn(
-                message=f"Holt-Winters' model does not work with exogenous features and regressors.\n "
+                message=f"This model does not work with exogenous features and regressors.\n "
                 f"{columns_not_used} will be dropped"
             )
 
