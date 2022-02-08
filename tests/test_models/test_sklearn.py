@@ -5,7 +5,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models.sklearn import SklearnMultiSegmentModel
 from etna.models.sklearn import SklearnPerSegmentModel
 from etna.transforms import AddConstTransform
-from etna.transforms.lags import LagTransform
+from etna.transforms import LagTransform
 
 
 @pytest.fixture
