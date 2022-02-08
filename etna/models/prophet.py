@@ -83,7 +83,7 @@ class _ProphetModel:
 
         self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame, regressors: Optional[List[str]]) -> "_ProphetModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetModel":
         """
         Fits a Prophet model.
 

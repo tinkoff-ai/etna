@@ -323,6 +323,8 @@ class TSDataset:
     @staticmethod
     def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
         """Check that regressors begin not later than in df and end later than in df."""
+        if df_regressors.shape[1] == 0:
+            return
         # TODO: check performance
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
@@ -330,12 +332,10 @@ class TSDataset:
             target_min = pd.NaT if target_min is None else target_min
             target_max = df[segment]["target"].last_valid_index()
             target_max = pd.NaT if target_max is None else target_max
-            exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
-            if len(exog_regressor_columns) == 0:
-                continue
-            exog_series_min = df_exog[segment][exog_regressor_columns].first_valid_index()
+
+            exog_series_min = df_regressors[segment].first_valid_index()
             exog_series_min = pd.NaT if exog_series_min is None else exog_series_min
-            exog_series_max = df_exog[segment][exog_regressor_columns].last_valid_index()
+            exog_series_max = df_regressors[segment].last_valid_index()
             exog_series_max = pd.NaT if exog_series_max is None else exog_series_max
             if target_min < exog_series_min:
                 raise ValueError(
@@ -351,6 +351,8 @@ class TSDataset:
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self.df_exog is None:
+            raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
         segments = sorted(set(df.columns.get_level_values("segment")))
         df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
         self._check_regressors(df=df, df_regressors=df_regressors)
@@ -953,7 +955,7 @@ class TSDataset:
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
-        >>> ts.describe()
+        >>> ts.describe() # doctest: +SKIP
                   start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors freq
         segments
         segment_0      2021-06-01    2021-06-30      30            0             2          1               1    D
@@ -1030,7 +1032,7 @@ class TSDataset:
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
-        >>> ts.info()
+        >>> ts.info() # doctest: +SKIP
         <class 'etna.datasets.TSDataset'>
         num_segments: 2
         num_exogs: 1
