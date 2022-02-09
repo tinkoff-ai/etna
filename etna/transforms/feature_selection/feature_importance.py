@@ -56,10 +56,9 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.model = model
         self.top_k = top_k
 
-    @staticmethod
-    def _get_train(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _get_train(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get train data for model."""
-        regressors = TreeFeatureSelectionTransform._get_features_to_use(df)
+        regressors = self._get_features_to_use(df)
         df = TSDataset.to_flatten(df).dropna()
         train_target = df["target"]
         train_data = df[regressors]
