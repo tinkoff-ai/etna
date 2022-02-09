@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC
 from typing import List
 from typing import Union
@@ -15,14 +16,14 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         self.features_to_use = features_to_use
         self.selected_regressors: List[str] = []
 
-    @staticmethod
-    def _get_features_to_use(df: pd.DataFrame) -> List[str]:
-        """Get list of regressors in the dataframe."""
-        result = set()
-        for column in df.columns.get_level_values("feature"):
-            if column.startswith("regressor_"):
-                result.add(column)
-        return sorted(list(result))
+    def _get_features_to_use(self, df: pd.DataFrame) -> List[str]:
+        """Get list of features from the dataframe to preform the selection on."""
+        features = set(df.columns.get_level_values("feature"))
+        if self.features_to_use != "all":
+            features = features.intersection(self.features_to_use)
+            if sorted(features) != sorted(self.features_to_use):
+                warnings.warn("Columns from feature_to_use which are out of dataframe columns will be dropped!")
+        return sorted(features)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Select top_k regressors.
