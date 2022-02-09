@@ -452,6 +452,12 @@ def test_check_regressors_pass(df_and_regressors):
     _ = TSDataset._check_regressors(df=df, df_regressors=df_exog)
 
 
+def test_check_regressors_pass_empty(df_and_regressors):
+    """Check that regressors check on creation passes with no regressors."""
+    df, _, _ = df_and_regressors
+    _ = TSDataset._check_regressors(df=df, df_regressors=pd.DataFrame())
+
+
 def test_getitem_only_date(tsdf_with_exog):
     df_date_only = tsdf_with_exog["2021-02-01"]
     assert df_date_only.name == pd.Timestamp("2021-02-01")
