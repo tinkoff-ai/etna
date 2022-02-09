@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521/files))
+- Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
 -
 -
 
