@@ -1,7 +1,6 @@
 import warnings
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -13,6 +12,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
+from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection.mrmr import AggregationMode
@@ -33,7 +33,9 @@ TreeBasedRegressor = Union[
 class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """Transform that selects regressors according to tree-based models feature importance."""
 
-    def __init__(self, model: TreeBasedRegressor, top_k: int):
+    def __init__(
+        self, model: TreeBasedRegressor, top_k: int, features_to_use: Union[List[str], Literal["all"]] = "all"
+    ):
         """
         Init TreeFeatureSelectionTransform.
 
@@ -44,10 +46,13 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             (e.g. all tree-based regressors in sklearn)
         top_k:
             num of regressors to select; if there are not enough regressors, then all will be selected
+        features_to_use:
+            columns of the dataset to select from
+            if "all" value is given, all columns are used
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
-        super().__init__()
+        super().__init__(features_to_use=features_to_use)
         self.model = model
         self.top_k = top_k
 
@@ -107,6 +112,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self,
         relevance_table: RelevanceTable,
         top_k: int,
+        features_to_use: Union[List[str], Literal["all"]] = "all",
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
         atol: float = 1e-10,
@@ -121,6 +127,9 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             method to calculate relevance table
         top_k:
             num of regressors to select; if there are not enough regressors, then all will be selected
+        features_to_use:
+            columns of the dataset to select from
+            if "all" value is given, all columns are used
         relevance_aggregation_mode:
             the method for relevance values per-segment aggregation
         redundancy_aggregation_mode:
@@ -131,13 +140,13 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
 
+        super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.relevance_aggregation_mode = relevance_aggregation_mode
         self.redundancy_aggregation_mode = redundancy_aggregation_mode
         self.atol = atol
         self.relevance_params = relevance_params
-        self.selected_regressors: Optional[List[str]] = None
 
     def fit(self, df: pd.DataFrame) -> "MRMRFeatureSelectionTransform":
         """

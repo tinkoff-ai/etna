@@ -3,8 +3,10 @@ from math import ceil
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
 from etna.core import BaseMixin
@@ -221,7 +223,14 @@ class GaleShapleyMatcher(BaseMixin):
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table."""
 
-    def __init__(self, relevance_table: RelevanceTable, top_k: int, use_rank: bool = False, **relevance_params):
+    def __init__(
+        self,
+        relevance_table: RelevanceTable,
+        top_k: int,
+        features_to_use: Union[List[str], Literal["all"]] = "all",
+        use_rank: bool = False,
+        **relevance_params,
+    ):
         """Init GaleShapleyFeatureSelectionTransform.
 
         Parameters
@@ -230,10 +239,13 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             class to build relevance table
         top_k:
             number of regressors that should be selected from all the given ones
+        features_to_use:
+            columns of the dataset to select from
+            if "all" value is given, all columns are used
         use_rank:
             if True, use rank in relevance table computation
         """
-        super().__init__()
+        super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.use_rank = use_rank

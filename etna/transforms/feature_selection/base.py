@@ -1,7 +1,9 @@
 from abc import ABC
 from typing import List
+from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna.transforms import Transform
 
@@ -9,9 +11,9 @@ from etna.transforms import Transform
 class BaseFeatureSelectionTransform(Transform, ABC):
     """Base class for feature selection transforms."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.selected_regressors = []
+    def __init__(self, features_to_use: Union[List[str], Literal["all"]] = "all"):
+        self.features_to_use = features_to_use
+        self.selected_regressors: List[str] = []
 
     @staticmethod
     def _get_regressors(df: pd.DataFrame) -> List[str]:
