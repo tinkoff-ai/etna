@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 -
-- Holt-Winters', Holt and exponential smoothing models ([#502](https://github.com/tinkoff-ai/etna/pull/502))
 -
 -
 -
@@ -36,10 +35,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
+-
+-
+-
+
+## [1.6.2] - 2022-02-09
+### Added
+- Holt-Winters', Holt and exponential smoothing models ([#502](https://github.com/tinkoff-ai/etna/pull/502))
+
+### Fixed
 - Bug with exog features in DifferencingTransform.inverse_transform ([#503](https://github.com/tinkoff-ai/etna/pull/503))
--
--
--
 
 ## [1.6.1] - 2022-02-03
 ### Added
