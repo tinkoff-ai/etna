@@ -886,6 +886,7 @@ class TSDataset:
             "num_segments": len(self.segments),
             "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
             "num_regressors": len(self.regressors),
+            "num_known_future": len(self.known_future),
             "freq": self.freq,
         }
 
@@ -924,6 +925,7 @@ class TSDataset:
         * num_segments: total number of segments, common for all segments
         * num_exogs: number of exogenous features, common for all segments
         * num_regressors: number of exogenous factors, that are regressors, common for all segments
+        * num_known_future: number of regressors, that are known since creation, common for all segments
         * freq: frequency of the series, common for all segments
 
         Parameters
@@ -954,12 +956,12 @@ class TSDataset:
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
-        >>> ts.describe() # doctest: +SKIP
-                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors freq
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all")
+        >>> ts.describe()
+                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors  num_known_future freq
         segments
-        segment_0      2021-06-01    2021-06-30      30            0             2          1               1    D
-        segment_1      2021-06-01    2021-06-30      30            0             2          1               1    D
+        segment_0      2021-06-01    2021-06-30      30            0             2          1               1                 1    D
+        segment_1      2021-06-01    2021-06-30      30            0             2          1               1                 1    D
         """
         if segments is None:
             segments = self.segments
@@ -974,6 +976,7 @@ class TSDataset:
         segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
         segments_dict["num_exogs"] = [common_dict["num_exogs"]] * len(segments)
         segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
+        segments_dict["num_known_future"] = [common_dict["num_known_future"]] * len(segments)
         segments_dict["freq"] = [common_dict["freq"]] * len(segments)
 
         result_df = pd.DataFrame(segments_dict, index=segments)
@@ -985,6 +988,7 @@ class TSDataset:
             "num_segments",
             "num_exogs",
             "num_regressors",
+            "num_known_future",
             "freq",
         ]
         result_df = result_df[columns_order]
@@ -1000,6 +1004,7 @@ class TSDataset:
         * num_segments: total number of segments
         * num_exogs: number of exogenous features
         * num_regressors: number of exogenous factors, that are regressors
+        * num_known_future: number of regressors, that are known since creation
         * freq: frequency of the dataset
 
         Information about individual segments:
@@ -1007,7 +1012,6 @@ class TSDataset:
         * end_timestamp: ending of the segment, missing values in the ending are ignored
         * length: length according to start_timestamp and end_timestamp
         * num_missing: number of missing variables between start_timestamp and end_timestamp
-
 
         Parameters
         ----------
@@ -1031,12 +1035,13 @@ class TSDataset:
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
-        >>> ts.info() # doctest: +SKIP
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all")
+        >>> ts.info()
         <class 'etna.datasets.TSDataset'>
         num_segments: 2
         num_exogs: 1
         num_regressors: 1
+        num_known_future: 1
         freq: D
                   start_timestamp end_timestamp  length  num_missing
         segments
