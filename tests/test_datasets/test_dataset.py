@@ -476,6 +476,12 @@ def test_check_regressors_pass(df_and_regressors):
     _ = TSDataset._check_regressors(df=df, df_regressors=df_exog)
 
 
+def test_check_regressors_pass_empty(df_and_regressors):
+    """Check that regressors check on creation passes with no regressors."""
+    df, _, _ = df_and_regressors
+    _ = TSDataset._check_regressors(df=df, df_regressors=pd.DataFrame())
+
+
 def test_getitem_only_date(tsdf_with_exog):
     df_date_only = tsdf_with_exog["2021-02-01"]
     assert df_date_only.name == pd.Timestamp("2021-02-01")
@@ -586,27 +592,26 @@ def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
         ts_diff_endings.fit_transform([])
 
 
-@pytest.mark.xfail
 def test_gather_common_data(df_and_regressors):
     """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
-    df, df_exog = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     common_data = ts._gather_common_data()
     assert common_data["num_segments"] == 2
     assert common_data["num_exogs"] == 2
     assert common_data["num_regressors"] == 2
+    assert common_data["num_known_future"] == 2
     assert common_data["freq"] == "D"
 
 
-@pytest.mark.xfail
 def test_gather_segments_data(df_and_regressors):
     """Check that TSDataset._gather_segments_data correctly finds segment data for info/describe methods."""
-    df, df_exog = df_and_regressors
+    df, df_exog, known_future = df_and_regressors
     # add NaN in the middle
     df.iloc[-5, 0] = np.NaN
     # add NaNs at the end
     df.iloc[-3:, 1] = np.NaN
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     segments = ts.segments
     segments_dict = ts._gather_segments_data(segments)
     segment_df = pd.DataFrame(segments_dict, index=segments)
@@ -622,15 +627,14 @@ def test_gather_segments_data(df_and_regressors):
     assert segment_df.loc["2", "num_missing"] == 0
 
 
-@pytest.mark.xfail
 def test_describe(df_and_regressors):
     """Check that TSDataset.describe works correctly."""
-    df, df_exog = df_and_regressors
+    df, df_exog, known_future = df_and_regressors
     # add NaN in the middle
     df.iloc[-5, 0] = np.NaN
     # add NaNs at the end
     df.iloc[-3:, 1] = np.NaN
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     description = ts.describe()
 
     assert np.all(description.index == ts.segments)
@@ -645,6 +649,7 @@ def test_describe(df_and_regressors):
     assert np.all(description["num_segments"] == 2)
     assert np.all(description["num_exogs"] == 2)
     assert np.all(description["num_regressors"] == 2)
+    assert np.all(description["num_known_future"] == 2)
     assert np.all(description["freq"] == "D")
 
 
