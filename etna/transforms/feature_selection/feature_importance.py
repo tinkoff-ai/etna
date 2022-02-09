@@ -59,7 +59,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
     @staticmethod
     def _get_train(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get train data for model."""
-        regressors = TreeFeatureSelectionTransform._get_regressors(df)
+        regressors = TreeFeatureSelectionTransform._get_features_to_use(df)
         df = TSDataset.to_flatten(df).dropna()
         train_target = df["target"]
         train_data = df[regressors]
@@ -97,7 +97,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         result: TreeFeatureSelectionTransform
             instance after fitting
         """
-        if len(self._get_regressors(df)) == 0:
+        if len(self._get_features_to_use(df)) == 0:
             warnings.warn("It is not possible to select regressors if there aren't any")
             return self
         weights = self._get_regressors_weights(df)

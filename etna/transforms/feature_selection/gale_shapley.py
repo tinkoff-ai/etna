@@ -345,7 +345,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         df:
             dataframe to fit algo
         """
-        regressors = self._get_regressors(df=df)
+        regressors = self._get_features_to_use(df=df)
         relevance_table = self._compute_relevance_table(df=df, regressors=regressors)
         segment_regressors_ranking = self._get_ranked_list(
             table=relevance_table, ascending=not self.relevance_table.greater_is_better

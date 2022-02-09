@@ -16,7 +16,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         self.selected_regressors: List[str] = []
 
     @staticmethod
-    def _get_regressors(df: pd.DataFrame) -> List[str]:
+    def _get_features_to_use(df: pd.DataFrame) -> List[str]:
         """Get list of regressors in the dataframe."""
         result = set()
         for column in df.columns.get_level_values("feature"):
