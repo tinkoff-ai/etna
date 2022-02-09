@@ -8,7 +8,7 @@ from etna.transforms.feature_selection import MRMRFeatureSelectionTransform
 
 
 @pytest.fixture
-def ts_with_complex_exog(random_seed) -> TSDataset:
+def df_with_complex_exog(random_seed) -> pd.DataFrame:
     df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=4)
 
     df_exog_1 = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=4, random_seed=2).rename(
@@ -27,7 +27,7 @@ def ts_with_complex_exog(random_seed) -> TSDataset:
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["regressor_1", "regressor_2"])
-    return ts
+    return ts.df
 
 
 @pytest.mark.parametrize(
@@ -38,9 +38,19 @@ def ts_with_complex_exog(random_seed) -> TSDataset:
         (["regressor_1", "unknown_column"], ["regressor_1"]),
     ),
 )
-def test_get_features_to_use(ts_with_complex_exog: TSDataset, features_to_use, expected_features):
+def test_get_features_to_use(df_with_complex_exog: pd.DataFrame, features_to_use, expected_features):
     base_selector = MRMRFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=3, features_to_use=features_to_use
     )
-    features = base_selector._get_features_to_use(ts_with_complex_exog.df)
+    features = base_selector._get_features_to_use(df_with_complex_exog)
     assert sorted(features) == sorted(expected_features)
+
+
+def test_get_features_to_use_raise_warning(df_with_complex_exog: pd.DataFrame):
+    base_selector = MRMRFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=3, features_to_use=["regressor_1", "unknown_column"]
+    )
+    with pytest.warns(
+        UserWarning, match="Columns from feature_to_use which are out of dataframe columns will be dropped!"
+    ):
+        _ = base_selector._get_features_to_use(df_with_complex_exog)
