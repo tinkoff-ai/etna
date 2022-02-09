@@ -161,13 +161,13 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         result: MRMRFeatureSelectionTransform
             instance after fitting
         """
-        ts = TSDataset(df=df, freq=pd.infer_freq(df.index))
-        relevance_table = self.relevance_table(ts[:, :, "target"], ts[:, :, ts.regressors], **self.relevance_params)
+        regressors = self._get_features_to_use(df)
+        relevance_table = self.relevance_table(df[:, :, "target"], df[:, :, regressors], **self.relevance_params)
         if not self.relevance_table.greater_is_better:
             relevance_table *= -1
         self.selected_regressors = mrmr(
             relevance_table=relevance_table,
-            regressors=ts[:, :, ts.regressors],
+            regressors=df[:, :, regressors],
             top_k=self.top_k,
             relevance_aggregation_mode=self.relevance_aggregation_mode,
             redundancy_aggregation_mode=self.redundancy_aggregation_mode,
