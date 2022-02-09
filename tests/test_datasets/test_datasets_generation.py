@@ -13,7 +13,7 @@ def check_equals(generated_value, expected_value, **kwargs):
 
 
 def check_not_equal_within_3_sigma(generated_value, expected_value, sigma, **kwargs):
-    """Check that generated_value is not equal to expected_value, but withing 3 sigma range."""
+    """Check that generated_value is not equal to expected_value, but within 3 sigma range."""
     if generated_value == expected_value:
         return False
     return abs(generated_value - expected_value) <= 3 * sigma
