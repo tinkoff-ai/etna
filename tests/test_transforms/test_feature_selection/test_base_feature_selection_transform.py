@@ -1,9 +1,10 @@
 import pandas as pd
 import pytest
 
+from etna.analysis import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
-from etna.transforms.feature_selection import BaseFeatureSelectionTransform
+from etna.transforms.feature_selection import MRMRFeatureSelectionTransform
 
 
 @pytest.fixture
@@ -29,6 +30,17 @@ def ts_with_complex_exog(random_seed) -> TSDataset:
     return ts
 
 
-def test_get_regressors(ts_with_complex_exog: TSDataset):
-    regressors = BaseFeatureSelectionTransform._get_regressors(ts_with_complex_exog.df)
-    assert sorted(regressors) == ["regressor_1", "regressor_2"]
+@pytest.mark.parametrize(
+    "features_to_use, expected_features",
+    (
+        ("all", ["regressor_1", "regressor_2", "exog"]),
+        (["regressor_1"], ["regressor_1"]),
+        (["regressor_1", "unknown_column"], ["regressor_1"]),
+    ),
+)
+def test_get_features_to_use(ts_with_complex_exog: TSDataset, features_to_use, expected_features):
+    base_selector = MRMRFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=3, features_to_use=features_to_use
+    )
+    features = base_selector._get_features_to_use(ts_with_complex_exog.df)
+    assert sorted(features) == sorted(expected_features)
