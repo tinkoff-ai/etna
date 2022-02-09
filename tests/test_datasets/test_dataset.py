@@ -13,6 +13,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import MaxAbsScalerTransform
+from etna.transforms import OneHotEncoderTransform
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
@@ -74,6 +75,29 @@ def df_and_regressors_flat() -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_exog["regressor_3"] = df_exog["regressor_3"].astype("category")
 
     return df, df_exog
+
+
+@pytest.fixture
+def ts_with_categoricals():
+    timestamp = pd.date_range("2021-01-01", "2021-01-05")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    timestamp = pd.date_range("2021-01-01", "2021-01-06")
+    categorical_values = ["1", "2", "1", "2", "1", "2"]
+    df_1 = pd.DataFrame(
+        {"timestamp": timestamp, "regressor": categorical_values, "not_regressor": categorical_values, "segment": "1"}
+    )
+    df_2 = pd.DataFrame(
+        {"timestamp": timestamp, "regressor": categorical_values, "not_regressor": categorical_values, "segment": "2"}
+    )
+    df_exog = pd.concat([df_1, df_2], ignore_index=True)
+    df_exog = TSDataset.to_dataset(df_exog)
+
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["regressor"])
+    return ts
 
 
 @pytest.fixture()
@@ -657,6 +681,21 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
 def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transforms, expected_regressors):
     _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
+
+
+@pytest.mark.parametrize(
+    "transforms, expected_regressors",
+    (
+        (
+            [OneHotEncoderTransform(in_column="regressor", out_column="regressor_ohe")],
+            ["regressor_ohe_0", "regressor_ohe_1", "regressor"],
+        ),
+        ([OneHotEncoderTransform(in_column="not_regressor")], ["regressor"]),
+    ),
+)
+def test_update_regressors_with_onehotencoder_transform(ts_with_categoricals, transforms, expected_regressors):
+    _test_update_regressors_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
+    _test_update_regressors_fit_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
 
 
 @pytest.mark.parametrize(

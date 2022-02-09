@@ -226,11 +226,10 @@ def ts_for_ohe_sanity():
         return x ** 2 + rng.normal(0, 0.01)
 
     df_to_forecast["segment_0", "target"] = df_regressors["segment_0"]["regressor_0"][:100].apply(f)
-    ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
     return ts
 
 
-@pytest.mark.xfail
 def test_ohe_sanity(ts_for_ohe_sanity):
     """Test for correct work in the full forecasting pipeline."""
     horizon = 10
