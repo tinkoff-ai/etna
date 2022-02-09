@@ -152,6 +152,7 @@ class TSDataset:
             self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
 
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
+        from etna.transforms import OneHotEncoderTransform
         from etna.transforms.base import FutureMixin
 
         # intersect list of regressors with columns after the transform
@@ -168,7 +169,12 @@ class TSDataset:
             # Every column from FutureMixin is regressor
             out_columns = list(columns_after - columns_before)
             new_regressors = out_columns
-
+        elif isinstance(transform, OneHotEncoderTransform):
+            # Only the columns created with OneHotEncoderTransform from regressor are regressors
+            in_column = transform.in_column
+            out_columns = list(columns_after - columns_before)
+            if in_column in self.regressors:
+                new_regressors = out_columns
         elif hasattr(transform, "in_column"):
             # Only the columns created with the other transforms from regressors are regressors
             in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
