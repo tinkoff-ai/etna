@@ -46,13 +46,37 @@ Contributions are welcome - check our [Contribution Guide](https://github.com/ti
 
 ## Installation 
 
-ETNA is on [PyPI](https://pypi.org/project/etna), so you can use `pip` to install it.
+ETNA is available on [PyPI](https://pypi.org/project/etna), so you can use `pip` to install it.
 
+Install default version:
 ```bash
 pip install --upgrade pip
 pip install etna
 ```
 
+Default version hasn't all the dependencies, because some of them are needed only for specific models, e.g. Prophet, PyTorch. 
+Available extensions are listed at [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
+
+Without the appropriate extension you will get `ImportError` trying to import the model that needs it.
+For example `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
+
+
+To install the extension run:
+```bash
+pip install etna[extension-name]
+```
+
+If you want to install all the extensions run:
+```bash
+pip install etna[all]
+```
+
+### Configuration
+
+It can be useful to configure the library to check installed packages during init.
+For example, if you know that you need `Prophet` in you project and don't want to understand that it isn't installed only during the import of `etna.models.ProphetModel`.
+
+You can create a config file `.etna` at the root of your project, where this checking can be set up. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file. 
 
 ## Get started 
 Here's some example code for a quick start.
