@@ -14,7 +14,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
 
     def __init__(self, features_to_use: Union[List[str], Literal["all"]] = "all"):
         self.features_to_use = features_to_use
-        self.selected_regressors: List[str] = []
+        self.selected_features: List[str] = []
 
     def _get_features_to_use(self, df: pd.DataFrame) -> List[str]:
         """Get list of features from the dataframe to perform the selection on."""
@@ -26,7 +26,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         return sorted(features)
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Select top_k regressors.
+        """Select top_k features.
 
         Parameters
         ----------
@@ -36,10 +36,10 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         Returns
         -------
         result: pd.DataFrame
-            Dataframe with with only selected regressors
+            Dataframe with with only selected features
         """
         result = df.copy()
         rest_columns = set(df.columns.get_level_values("feature")) - set(self._get_features_to_use(df))
-        selected_columns = sorted(self.selected_regressors + list(rest_columns))
+        selected_columns = sorted(self.selected_features + list(rest_columns))
         result = result.loc[:, pd.IndexSlice[:, selected_columns]]
         return result
