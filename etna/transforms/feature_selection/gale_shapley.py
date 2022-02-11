@@ -244,6 +244,11 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             if "all" value is given, all columns are used
         use_rank:
             if True, use rank in relevance table computation
+
+        Notes
+        -----
+        Transform works with any type of features, however most of the models works only with regressors.
+        Therefore, it is recommended to pass the regressors into the feature selection transforms.
         """
         super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
