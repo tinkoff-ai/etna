@@ -57,16 +57,15 @@ pip install etna
 Default version hasn't all the dependencies, because some of them are needed only for specific models, e.g. Prophet, PyTorch. 
 Available extensions are listed at [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
 
-Without the appropriate extension you will get `ImportError` trying to import the model that needs it.
-For example `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
+Without the appropriate extension you will get an `ImportError` trying to import the model that needs it.
+For example, `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
 
-
-To install the extension run:
+Install extension:
 ```bash
 pip install etna[extension-name]
 ```
 
-If you want to install all the extensions run:
+Install all extensions:
 ```bash
 pip install etna[all]
 ```
