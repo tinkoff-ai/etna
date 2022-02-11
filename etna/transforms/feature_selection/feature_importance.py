@@ -31,7 +31,7 @@ TreeBasedRegressor = Union[
 
 
 class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """Transform that selects regressors according to tree-based models feature importance."""
+    """Transform that selects features according to tree-based models feature importance."""
 
     def __init__(
         self, model: TreeBasedRegressor, top_k: int, features_to_use: Union[List[str], Literal["all"]] = "all"
@@ -45,7 +45,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             model to make selection, it should have feature_importances_ property
             (e.g. all tree-based regressors in sklearn)
         top_k:
-            num of regressors to select; if there are not enough regressors, then all will be selected
+            num of features to select; if there are not enough features, then all will be selected
         features_to_use:
             columns of the dataset to select from
             if "all" value is given, all columns are used
@@ -58,14 +58,14 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
     def _get_train(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get train data for model."""
-        regressors = self._get_features_to_use(df)
+        features = self._get_features_to_use(df)
         df = TSDataset.to_flatten(df).dropna()
         train_target = df["target"]
-        train_data = df[regressors]
+        train_data = df[features]
         return train_data, train_target
 
-    def _get_regressors_weights(self, df: pd.DataFrame) -> Dict[str, float]:
-        """Get weights for regressors based on model feature importances."""
+    def _get_features_weights(self, df: pd.DataFrame) -> Dict[str, float]:
+        """Get weights for features based on model feature importances."""
         train_data, train_target = self._get_train(df)
         self.model.fit(train_data, train_target)
         weights_array = self.model.feature_importances_
@@ -73,7 +73,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         return weights_dict
 
     @staticmethod
-    def _select_top_k_regressors(weights: Dict[str, float], top_k: int) -> List[str]:
+    def _select_top_k_features(weights: Dict[str, float], top_k: int) -> List[str]:
         keys = np.array(list(weights.keys()))
         values = np.array(list(weights.values()))
         idx_sort = np.argsort(values)[::-1]
@@ -95,15 +95,15 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             instance after fitting
         """
         if len(self._get_features_to_use(df)) == 0:
-            warnings.warn("It is not possible to select regressors if there aren't any")
+            warnings.warn("It is not possible to select features if there aren't any")
             return self
-        weights = self._get_regressors_weights(df)
-        self.selected_regressors = self._select_top_k_regressors(weights, self.top_k)
+        weights = self._get_features_weights(df)
+        self.selected_features = self._select_top_k_features(weights, self.top_k)
         return self
 
 
 class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """Transform that selects regressors according to MRMR variable selection method adapted to the timeseries case."""
+    """Transform that selects features according to MRMR variable selection method adapted to the timeseries case."""
 
     def __init__(
         self,
@@ -123,7 +123,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         relevance_table:
             method to calculate relevance table
         top_k:
-            num of regressors to select; if there are not enough regressors, then all will be selected
+            num of features to select; if there are not enough features, then all will be selected
         features_to_use:
             columns of the dataset to select from
             if "all" value is given, all columns are used
@@ -159,14 +159,14 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         result: MRMRFeatureSelectionTransform
             instance after fitting
         """
-        regressors = self._get_features_to_use(df)
+        features = self._get_features_to_use(df)
         ts = TSDataset(df=df, freq=pd.infer_freq(df.index))
-        relevance_table = self.relevance_table(ts[:, :, "target"], ts[:, :, regressors], **self.relevance_params)
+        relevance_table = self.relevance_table(ts[:, :, "target"], ts[:, :, features], **self.relevance_params)
         if not self.relevance_table.greater_is_better:
             relevance_table *= -1
-        self.selected_regressors = mrmr(
+        self.selected_features = mrmr(
             relevance_table=relevance_table,
-            regressors=ts[:, :, regressors],
+            regressors=ts[:, :, features],
             top_k=self.top_k,
             relevance_aggregation_mode=self.relevance_aggregation_mode,
             redundancy_aggregation_mode=self.redundancy_aggregation_mode,
