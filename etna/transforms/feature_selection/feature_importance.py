@@ -69,9 +69,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         train_data, train_target = self._get_train(df)
         self.model.fit(train_data, train_target)
         weights_array = self.model.feature_importances_
-        weights_dict = {
-            column: weights_array[i] for i, column in enumerate(train_data.columns) if column.startswith("regressor_")
-        }
+        weights_dict = {column: weights_array[i] for i, column in enumerate(train_data.columns)}
         return weights_dict
 
     @staticmethod

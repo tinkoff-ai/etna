@@ -74,6 +74,22 @@ def ts_with_regressors():
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True),
+    ],
+)
+def test_work_with_non_regressors(ts_with_exog, model):
+    selector = TreeFeatureSelectionTransform(model=model, top_k=3, features_to_use="all")
+    ts_with_exog.fit_transform([selector])
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        DecisionTreeRegressor(random_state=42),
+        ExtraTreeRegressor(random_state=42),
+        RandomForestRegressor(n_estimators=10, random_state=42),
+        ExtraTreesRegressor(n_estimators=10, random_state=42),
+        GradientBoostingRegressor(n_estimators=10, random_state=42),
         CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
     ],
 )
