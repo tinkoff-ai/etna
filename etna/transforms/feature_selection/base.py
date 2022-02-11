@@ -39,8 +39,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
             Dataframe with with only selected regressors
         """
         result = df.copy()
-        rest_columns = set(df.columns.get_level_values("feature"))
-        rest_columns = rest_columns - set(self._get_features_to_use(df))
+        rest_columns = set(df.columns.get_level_values("feature")) - set(self._get_features_to_use(df))
         selected_columns = sorted(self.selected_regressors + list(rest_columns))
         result = result.loc[:, pd.IndexSlice[:, selected_columns]]
         return result

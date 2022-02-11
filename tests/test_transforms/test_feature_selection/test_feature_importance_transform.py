@@ -134,10 +134,10 @@ def test_retain_values(model, top_k, ts_with_regressors):
         CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
     ],
 )
-def test_fails_negative_top_k(model, ts_with_regressors):
+def test_fails_negative_top_k(model):
     """Check that transform doesn't allow you to set top_k to negative values."""
     with pytest.raises(ValueError, match="positive integer"):
-        TreeFeatureSelectionTransform(model=model, top_k=-1)
+        _ = TreeFeatureSelectionTransform(model=model, top_k=-1)
 
 
 @pytest.mark.parametrize(
@@ -229,7 +229,6 @@ def test_fit_transform_with_nans(model, ts_diff_endings):
     ts_diff_endings.fit_transform([selector])
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
 def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
@@ -246,7 +245,6 @@ def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
 def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
     """Check that transform selects right top_k regressors."""
