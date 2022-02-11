@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
--
+- Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
 -
 -
 -
