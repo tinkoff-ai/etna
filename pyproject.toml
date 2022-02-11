@@ -62,45 +62,11 @@ pytorch-forecasting = {version = "^0.9.0", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
-sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
-nbsphinx = {version = "^0.8.2", optional = true}
-Sphinx = {version = "^4.1", optional = true}
-numpydoc = {version = "^1.1.0", optional = true}
-sphinx-rtd-theme = {version = "^0.5.1", optional = true}
-myst-parser = {version = "^0.15.0", optional = true}
-GitPython = {version = "^3.1.20", optional = true}
-
-pytest = {version = "^6.2", optional = true}
-coverage = {version = "^5.4", optional = true}
-pytest-cov = {version = "^2.11.1", optional = true}
-
-black = {version = "21.9b0", optional = true}
-isort = {version = "^5.8.0", optional = true}
-flake8 = {version = "^3.9.2", optional = true}
-pep8-naming = {version = "^0.12.1", optional = true}
-flake8-docstrings = {version = "^1.6.0", optional = true}
-mypy = {version = "^0.910", optional = true}
-types-PyYAML = {version = "^6.0.0", optional = true}
-codespell = {version = "^2.0.0", optional = true}
-
-click = {version = "^8.0.1", optional = true}
-semver = {version = "^2.13.0", optional = true}
-ipywidgets = {version = "^7.6.5", optional = true}
-
-jupyter = {version = "*", optional = true}
-nbconvert = {version = "*", optional = true}
-
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting"]
 wandb = ["wandb"]
-# dev deps
-release = ["click", "semver"]
-docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
-tests = ["pytest-cov", "coverage", "pytest"]
-jupyter = ["jupyter", "nbconvert"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell"]
 
 all = [
     "prophet",
@@ -108,17 +74,34 @@ all = [
     "wandb",
 ]
 
-all-dev = [
-    "prophet",
-    "torch", "pytorch-forecasting",
-    "wandb",
-    "click", "semver",
-    "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
-    "pytest-cov", "coverage", "pytest",
-    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell",
-    "click", "semver",
-    "jupyter", "nbconvert"
-]
+[tool.poetry.dev-dependencies]
+sphinx-mathjax-offline = "^0.0.1"
+nbsphinx = "^0.8.2"
+Sphinx = "^4.1"
+numpydoc = "^1.1.0"
+sphinx-rtd-theme = "^0.5.1"
+myst-parser = "^0.15.0"
+GitPython = "^3.1.20"
+
+pytest = "^6.2"
+coverage = "^5.4"
+pytest-cov = "^2.11.1"
+
+black = "21.9b0"
+isort = "^5.8.0"
+flake8 = "^3.9.2"
+pep8-naming = "^0.12.1"
+flake8-docstrings = "^1.6.0"
+mypy = "^0.910"
+types-PyYAML = "^6.0.0"
+codespell = "^2.0.0"
+
+click = "^8.0.1"
+semver = "^2.13.0"
+ipywidgets = "^7.6.5"
+
+jupyter = "*"
+nbconvert = "*"
 
 [tool.poetry.scripts]
 etna = "etna.commands.__main__:app"
