@@ -17,10 +17,10 @@ def _prepare_signal(model: BaseEstimator, series: pd.Series) -> np.ndarray:
     return signal
 
 
-def _get_change_points_for_segment(
-    change_point_model: BaseEstimator, series: pd.Series, **model_predict_params
+def _find_change_points_segment(
+    series: pd.Series, change_point_model: BaseEstimator, **model_predict_params
 ) -> List[pd.Timestamp]:
-    """Fit change point model with series data and predict trends change points."""
+    """Find change trend points within one segment."""
     signal = _prepare_signal(series=series, model=change_point_model)
     timestamp = series.index
     change_point_model.fit(signal=signal)
@@ -57,5 +57,7 @@ def find_change_points(
         df_segment = df[segment]
         raw_series = df_segment[in_column]
         series = raw_series.loc[raw_series.first_valid_index() : raw_series.last_valid_index()]
-        result[segment] = _get_change_points_for_segment(change_point_model, series, **model_predict_params)
+        result[segment] = _find_change_points_segment(
+            series=series, change_point_model=change_point_model, **model_predict_params
+        )
     return result
