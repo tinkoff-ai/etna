@@ -178,7 +178,7 @@ def generate_from_patterns_df(
         noise = np.zeros(shape=(n_segments, periods))
     samples = noise
     for idx, pattern in enumerate(patterns):
-        samples[idx, :] = np.array(pattern * (periods // len(pattern) + 1))[:periods]
+        samples[idx, :] += np.array(pattern * (periods // len(pattern) + 1))[:periods]
     df = pd.DataFrame(data=samples.T, columns=[f"segment_{i}" for i in range(n_segments)])
     df["timestamp"] = pd.date_range(start=start_time, freq=freq, periods=periods)
     df = df.melt(id_vars=["timestamp"], value_name="target", var_name="segment")
