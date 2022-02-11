@@ -17,7 +17,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         self.selected_regressors: List[str] = []
 
     def _get_features_to_use(self, df: pd.DataFrame) -> List[str]:
-        """Get list of features from the dataframe to preform the selection on."""
+        """Get list of features from the dataframe to perform the selection on."""
         features = set(df.columns.get_level_values("feature")) - set(["target"])
         if self.features_to_use != "all":
             features = features.intersection(self.features_to_use)
