@@ -171,7 +171,7 @@ def test_warns_no_regressors(model, example_tsds):
     """Check that transform allows you to fit on dataset with no regressors but warns about it."""
     df = example_tsds.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=3)
-    with pytest.warns(UserWarning, match="not possible to select regressors"):
+    with pytest.warns(UserWarning, match="not possible to select features"):
         df_selected = selector.fit_transform(df)
         assert (df == df_selected).all().all()
 

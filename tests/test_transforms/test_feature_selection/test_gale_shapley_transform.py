@@ -13,8 +13,8 @@ from etna.datasets import generate_ar_df
 from etna.datasets import generate_periodic_df
 from etna.transforms.feature_selection import GaleShapleyFeatureSelectionTransform
 from etna.transforms.feature_selection.gale_shapley import BaseGaleShapley
+from etna.transforms.feature_selection.gale_shapley import FeatureGaleShapley
 from etna.transforms.feature_selection.gale_shapley import GaleShapleyMatcher
-from etna.transforms.feature_selection.gale_shapley import RegressorGaleShapley
 from etna.transforms.feature_selection.gale_shapley import SegmentGaleShapley
 
 
@@ -51,10 +51,8 @@ def base_gale_shapley_player() -> BaseGaleShapley:
 
 
 @pytest.fixture
-def regressor() -> RegressorGaleShapley:
-    reg = RegressorGaleShapley(
-        name="regressor_1", ranked_candidates=["segment_1", "segment_3", "segment_2", "segment_4"]
-    )
+def feature() -> FeatureGaleShapley:
+    reg = FeatureGaleShapley(name="regressor_1", ranked_candidates=["segment_1", "segment_3", "segment_2", "segment_4"])
     return reg
 
 
@@ -82,21 +80,21 @@ def matcher() -> GaleShapleyMatcher:
             ranked_candidates=["regressor_2", "regressor_3", "regressor_1"],
         ),
     ]
-    regressors = [
-        RegressorGaleShapley(
+    features = [
+        FeatureGaleShapley(
             name="regressor_1",
             ranked_candidates=["segment_3", "segment_1", "segment_2"],
         ),
-        RegressorGaleShapley(
+        FeatureGaleShapley(
             name="regressor_2",
             ranked_candidates=["segment_2", "segment_3", "segment_1"],
         ),
-        RegressorGaleShapley(
+        FeatureGaleShapley(
             name="regressor_3",
             ranked_candidates=["segment_1", "segment_2", "segment_3"],
         ),
     ]
-    gsh = GaleShapleyMatcher(segments=segments, regressors=regressors)
+    gsh = GaleShapleyMatcher(segments=segments, features=features)
     return gsh
 
 
@@ -170,7 +168,7 @@ def test_get_ranked_list(relevance_matrix: pd.DataFrame, ascending: bool, expect
         ),
     ),
 )
-def test_get_ranked_list_regressors(relevance_matrix: pd.DataFrame, ascending: bool, expected: Dict[str, List[str]]):
+def test_get_ranked_list_features(relevance_matrix: pd.DataFrame, ascending: bool, expected: Dict[str, List[str]]):
     result = GaleShapleyFeatureSelectionTransform._get_ranked_list(table=relevance_matrix.T, ascending=ascending)
     for key in expected.keys():
         assert key in result
@@ -178,7 +176,7 @@ def test_get_ranked_list_regressors(relevance_matrix: pd.DataFrame, ascending: b
 
 
 @pytest.mark.parametrize(
-    "top_k,n_segments,n_regressors,expected",
+    "top_k,n_segments,n_features,expected",
     (
         (20, 10, 50, 2),
         (27, 10, 40, 3),
@@ -187,15 +185,15 @@ def test_get_ranked_list_regressors(relevance_matrix: pd.DataFrame, ascending: b
         (30, 5, 20, 1),
     ),
 )
-def test_compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_regressors: int, expected: int):
+def test_compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_features: int, expected: int):
     result = GaleShapleyFeatureSelectionTransform._compute_gale_shapley_steps_number(
-        top_k=top_k, n_segments=n_segments, n_regressors=n_regressors
+        top_k=top_k, n_segments=n_segments, n_features=n_features
     )
     assert result == expected
 
 
 @pytest.mark.parametrize(
-    "ranked_regressors,regressors_to_drop,expected",
+    "ranked_features,features_to_drop,expected",
     (
         (
             {
@@ -226,10 +224,10 @@ def test_compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_regres
     ),
 )
 def test_gale_shapley_transform_update_ranking_list(
-    ranked_regressors: Dict[str, List[str]], regressors_to_drop: List[str], expected: Dict[str, List[str]]
+    ranked_features: Dict[str, List[str]], features_to_drop: List[str], expected: Dict[str, List[str]]
 ):
     result = GaleShapleyFeatureSelectionTransform._update_ranking_list(
-        segment_regressors_ranking=ranked_regressors, regressors_to_drop=regressors_to_drop
+        segment_features_ranking=ranked_features, features_to_drop=features_to_drop
     )
     for key in result:
         assert result[key] == expected[key]
@@ -241,11 +239,11 @@ def test_base_update_segment(base_gale_shapley_player: BaseGaleShapley):
     assert base_gale_shapley_player.tmp_match_rank == 2
 
 
-def test_regressor_check_segment(regressor: RegressorGaleShapley):
-    assert regressor.check_segment("segment_4")
-    regressor.update_tmp_match("segment_2")
-    assert not regressor.check_segment("segment_4")
-    assert regressor.check_segment("segment_1")
+def test_feature_check_segment(feature: FeatureGaleShapley):
+    assert feature.check_segment("segment_4")
+    feature.update_tmp_match("segment_2")
+    assert not feature.check_segment("segment_4")
+    assert feature.check_segment("segment_1")
 
 
 def test_segment_get_next_candidate(segment: SegmentGaleShapley):
@@ -256,37 +254,37 @@ def test_segment_get_next_candidate(segment: SegmentGaleShapley):
 
 def test_gale_shapley_matcher_match(matcher: GaleShapleyMatcher):
     segment = matcher.segments[0]
-    regressor = matcher.regressors[0]
+    feature = matcher.features[0]
     assert segment.tmp_match is None
     assert segment.is_available
-    assert regressor.tmp_match is None
-    assert regressor.is_available
-    matcher.match(segment=segment, regressor=regressor)
-    assert segment.tmp_match == regressor.name
+    assert feature.tmp_match is None
+    assert feature.is_available
+    matcher.match(segment=segment, feature=feature)
+    assert segment.tmp_match == feature.name
     assert segment.tmp_match_rank == 0
     assert not segment.is_available
-    assert regressor.tmp_match == segment.name
-    assert regressor.tmp_match_rank == 1
-    assert not regressor.is_available
+    assert feature.tmp_match == segment.name
+    assert feature.tmp_match_rank == 1
+    assert not feature.is_available
 
 
 def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
     segment = matcher.segments[0]
-    regressor = matcher.regressors[0]
+    feature = matcher.features[0]
     assert segment.tmp_match is None
     assert segment.is_available
-    assert regressor.tmp_match is None
-    assert regressor.is_available
-    matcher.match(segment=segment, regressor=regressor)
-    matcher.break_match(segment=segment, regressor=regressor)
+    assert feature.tmp_match is None
+    assert feature.is_available
+    matcher.match(segment=segment, feature=feature)
+    matcher.break_match(segment=segment, feature=feature)
     assert segment.tmp_match is None
     assert segment.is_available
-    assert regressor.tmp_match is None
-    assert regressor.is_available
+    assert feature.tmp_match is None
+    assert feature.is_available
 
 
 @pytest.mark.parametrize(
-    "segments,regressors,expected",
+    "segments,features,expected",
     (
         (
             [
@@ -308,19 +306,19 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
                 ),
             ],
             [
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_1",
                     ranked_candidates=["segment_2", "segment_1", "segment_3", "segment_4"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_2",
                     ranked_candidates=["segment_1", "segment_2", "segment_3", "segment_4"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_3",
                     ranked_candidates=["segment_3", "segment_2", "segment_4", "segment_1"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_4",
                     ranked_candidates=["segment_3", "segment_1", "segment_4", "segment_2"],
                 ),
@@ -352,19 +350,19 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
                 ),
             ],
             [
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_1",
                     ranked_candidates=["segment_2", "segment_1", "segment_3", "segment_4"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_2",
                     ranked_candidates=["segment_1", "segment_2", "segment_3", "segment_4"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_3",
                     ranked_candidates=["segment_3", "segment_2", "segment_4", "segment_1"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_4",
                     ranked_candidates=["segment_3", "segment_1", "segment_4", "segment_2"],
                 ),
@@ -392,23 +390,23 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
                 ),
             ],
             [
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_1",
                     ranked_candidates=["segment_3", "segment_1", "segment_2"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_2",
                     ranked_candidates=["segment_3", "segment_2", "segment_1"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_3",
                     ranked_candidates=["segment_3", "segment_1", "segment_2"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_4",
                     ranked_candidates=["segment_1", "segment_2", "segment_3"],
                 ),
-                RegressorGaleShapley(
+                FeatureGaleShapley(
                     name="regressor_5",
                     ranked_candidates=["segment_1", "segment_3", "segment_2"],
                 ),
@@ -423,10 +421,10 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
 )
 def test_gale_shapley_result(
     segments: List[SegmentGaleShapley],
-    regressors: List[RegressorGaleShapley],
+    features: List[FeatureGaleShapley],
     expected: Dict[str, str],
 ):
-    matcher = GaleShapleyMatcher(segments=segments, regressors=regressors)
+    matcher = GaleShapleyMatcher(segments=segments, features=features)
     matches = matcher()
     for k, v in expected.items():
         assert k in matches
@@ -434,7 +432,7 @@ def test_gale_shapley_result(
 
 
 @pytest.mark.parametrize(
-    "segment_regressor_ranking,regressor_segments_ranking,expected",
+    "segment_feature_ranking,feature_segments_ranking,expected",
     (
         (
             {
@@ -498,12 +496,12 @@ def test_gale_shapley_result(
     ),
 )
 def test_gale_shapley_transform_gale_shapley_iteration(
-    segment_regressor_ranking: Dict[str, List[str]],
-    regressor_segments_ranking: Dict[str, List[str]],
+    segment_feature_ranking: Dict[str, List[str]],
+    feature_segments_ranking: Dict[str, List[str]],
     expected: Dict[str, str],
 ):
     GaleShapleyFeatureSelectionTransform._gale_shapley_iteration(
-        segment_regressors_ranking=segment_regressor_ranking, regressor_segments_ranking=regressor_segments_ranking
+        segment_features_ranking=segment_feature_ranking, feature_segments_ranking=feature_segments_ranking
     )
 
 

@@ -42,7 +42,7 @@ def test_transform(ts_with_exog: pd.DataFrame, features_to_use, selected_feature
     base_selector = MRMRFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=3, features_to_use=features_to_use
     )
-    base_selector.selected_regressors = selected_features
+    base_selector.selected_features = selected_features
     transformed_df_with_exog = base_selector.transform(ts_with_exog.df)
     columns = set(transformed_df_with_exog.columns.get_level_values("feature"))
     assert sorted(columns) == sorted(expected_columns)
