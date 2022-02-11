@@ -77,9 +77,8 @@ class WindowStatisticsTransform(Transform, ABC):
         """
         features = (
             df.xs(self.in_column, level=1, axis=1)
-            .shift(1)
             .rolling(
-                window=self.seasonality * self.window if self.window != -1 else len(df) - 1,
+                window=self.seasonality * self.window if self.window != -1 else len(df),
                 min_periods=self.min_required_len,
             )
             .aggregate(self._aggregate_window)
@@ -167,7 +166,7 @@ class MeanTransform(WindowStatisticsTransform):
         result: pd.DataFrame
             dataframe with results
         """
-        size = self.window if self.window != -1 else len(df) - 1
+        size = self.window if self.window != -1 else len(df)
         self._alpha_range = [self.alpha ** i for i in range(0, size)]
         return super().transform(df=df)
 
@@ -177,7 +176,7 @@ class MeanTransform(WindowStatisticsTransform):
             raise ValueError("Something went wrong generating the alphas!")
         tmp_series = self._get_required_lags(series)
         size = len(tmp_series)
-        tmp = tmp_series * self._alpha_range[-size:]
+        tmp = tmp_series * self._alpha_range[:size]
         return tmp.mean(**self.kwargs)
 
 

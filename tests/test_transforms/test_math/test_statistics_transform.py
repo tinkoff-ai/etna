@@ -79,12 +79,12 @@ def test_interface_quantile(simple_df_for_agg: pd.DataFrame, out_column: str):
 @pytest.mark.parametrize(
     "window,seasonality,alpha,periods,fill_na,expected",
     (
-        (10, 1, 1, 1, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
-        (-1, 1, 1, 1, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
-        (3, 1, 1, 1, -17, np.array([-17, 0, 0.5, 1, 2, 3, 4, 5, 6, 7])),
-        (3, 1, 0.5, 1, -17, np.array([-17, 0, 0.5, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
-        (3, 1, 0.5, 3, -12, np.array([-12, -12, -12, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
-        (3, 2, 1, 1, -17, np.array([-17, 0, 1, 1, 2, 2, 3, 4, 5, 6])),
+        (10, 1, 1, 1, 0, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
+        (-1, 1, 1, 1, 0, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
+        (3, 1, 1, 1, -17, np.array([0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (3, 1, 0.5, 1, -17, np.array([0, 0.5, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3, 14.75 / 3])),
+        (3, 1, 0.5, 3, -12, np.array([-12, -12, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3, 14.75 / 3])),
+        (3, 2, 1, 1, -17, np.array([0, 1, 1, 2, 2, 3, 4, 5, 6, 7])),
     ),
 )
 def test_mean_feature(
@@ -115,8 +115,8 @@ def test_mean_feature(
     (
         (10, 1, 1, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
         (-1, 1, 1, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
-        (3, 1, 1, -17, np.array([-17, 0, 0, 0, 1, 2, 3, 4, 5, 6])),
-        (3, 2, 1, -17, np.array([-17, 0, 1, 0, 1, 0, 1, 2, 3, 4])),
+        (3, 1, 1, -17, np.array([0, 0, 0, 1, 2, 3, 4, 5, 6, 7])),
+        (3, 2, 1, -17, np.array([0, 1, 0, 1, 0, 1, 2, 3, 4, 5])),
     ),
 )
 def test_min_feature(
@@ -138,9 +138,9 @@ def test_min_feature(
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (10, 1, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (-1, 1, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (3, 2, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (10, 1, 0, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+        (-1, 1, 0, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+        (3, 2, -17, np.array([-17, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
     ),
 )
 def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
@@ -155,8 +155,8 @@ def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (3, 3, -17, np.array([-17, -17, -17, 1, 2, 3, 4, 5, 6, 7])),
-        (-1, 1, -17, np.array([-17, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
+        (3, 3, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (-1, 1, -17, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
     ),
 )
 def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
@@ -171,8 +171,8 @@ def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: i
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (3, 3, -17, np.array([-17, -17, -17, 1, 1, 1, 1, 1, 1, 1])),
-        (3, 1, -17, np.array([-17, -17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1])),
+        (3, 3, -17, np.array([-17, -17, 1, 1, 1, 1, 1, 1, 1, 1])),
+        (3, 1, -17, np.array([-17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1, 1])),
     ),
 )
 def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
@@ -187,9 +187,9 @@ def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (3, 3, -17, [-17, -17, -17, 4 / 3, 2 / 3, 2 / 3, 8 / 3, 2, 14 / 9, 10 / 9]),
-        (4, 1, -17, [-17, 0, 1, 4 / 3, 1.25, 1, 2.25, 2.75, 2, 1.5]),
-        (-1, 1, 0, [0, 0, 1, 4 / 3, 1.25, 1.44, 7 / 3, 138 / 49, 2.625, 208 / 81]),
+        (3, 3, -17, [-17, -17, 4 / 3, 2 / 3, 2 / 3, 8 / 3, 2, 14 / 9, 10 / 9, 22 / 9]),
+        (4, 1, -17, [0, 1, 4 / 3, 1.25, 1, 2.25, 2.75, 2, 1.5, 9.5 / 4]),
+        (-1, 1, 0, [0, 1, 4 / 3, 1.25, 1.44, 7 / 3, 138 / 49, 2.625, 208 / 81,  27 / 10]),
     ),
 )
 def test_mad_transform(df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray):
@@ -202,7 +202,7 @@ def test_mad_transform(df_for_agg: pd.DataFrame, window: int, periods: int, fill
 
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
-    ((3, 3, -17, [-17, -17, -17, 4 / 3, -17, -17, -17, 2, 14 / 9, 10 / 9]),),
+    ((3, 3, -17, [-17, -17, 4 / 3, -17, -17, -17, 2, 14 / 9, 10 / 9, 22 / 9]),),
 )
 def test_mad_transform_with_nans(
     df_for_agg_with_nan: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray
