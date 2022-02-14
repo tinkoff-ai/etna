@@ -164,7 +164,7 @@ class FitAbstractModel(ABC):
 
         Returns
         -------
-        result:
+        self:
             Model after fit
         """
         pass
@@ -197,7 +197,7 @@ class ForecastAbstractModel(ABC):
 
         Returns
         -------
-        result:
+        forecast:
             Dataset with predictions
         """
         pass
@@ -219,11 +219,11 @@ class PredictIntervalAbstractModel(ABC):
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
 
         Returns
         -------
-        result:
+        forecast:
             Dataset with predictions
         """
         pass
