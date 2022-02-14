@@ -74,6 +74,22 @@ def ts_with_regressors():
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True),
+    ],
+)
+def test_work_with_non_regressors(ts_with_exog, model):
+    selector = TreeFeatureSelectionTransform(model=model, top_k=3, features_to_use="all")
+    ts_with_exog.fit_transform([selector])
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        DecisionTreeRegressor(random_state=42),
+        ExtraTreeRegressor(random_state=42),
+        RandomForestRegressor(n_estimators=10, random_state=42),
+        ExtraTreesRegressor(n_estimators=10, random_state=42),
+        GradientBoostingRegressor(n_estimators=10, random_state=42),
         CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
     ],
 )
@@ -134,10 +150,10 @@ def test_retain_values(model, top_k, ts_with_regressors):
         CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
     ],
 )
-def test_fails_negative_top_k(model, ts_with_regressors):
+def test_fails_negative_top_k(model):
     """Check that transform doesn't allow you to set top_k to negative values."""
     with pytest.raises(ValueError, match="positive integer"):
-        TreeFeatureSelectionTransform(model=model, top_k=-1)
+        _ = TreeFeatureSelectionTransform(model=model, top_k=-1)
 
 
 @pytest.mark.parametrize(
@@ -155,7 +171,7 @@ def test_warns_no_regressors(model, example_tsds):
     """Check that transform allows you to fit on dataset with no regressors but warns about it."""
     df = example_tsds.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=3)
-    with pytest.warns(UserWarning, match="not possible to select regressors"):
+    with pytest.warns(UserWarning, match="not possible to select features"):
         df_selected = selector.fit_transform(df)
         assert (df == df_selected).all().all()
 
@@ -229,7 +245,6 @@ def test_fit_transform_with_nans(model, ts_diff_endings):
     ts_diff_endings.fit_transform([selector])
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
 def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
@@ -246,7 +261,6 @@ def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
 def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
     """Check that transform selects right top_k regressors."""
