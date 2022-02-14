@@ -8,9 +8,9 @@ from typing import Type
 import numpy as np
 import pandas as pd
 from ruptures.base import BaseEstimator
-from ruptures.costs import CostLinear
 from sklearn.base import RegressorMixin
 
+from etna.analysis.change_points_trend.find_change_points import _find_change_points_segment
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
@@ -49,23 +49,6 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         self.per_interval_models: Optional[Dict[TTimestampInterval, TDetrendModel]] = None
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model_predict_params = change_point_model_predict_params
-
-    def _prepare_signal(self, series: pd.Series) -> np.ndarray:
-        """Prepare series for change point model."""
-        signal = series.to_numpy()
-        if isinstance(self.change_point_model.cost, CostLinear):
-            signal = signal.reshape((-1, 1))
-        return signal
-
-    def _get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
-        """Fit change point model with series data and predict trends change points."""
-        signal = self._prepare_signal(series=series)
-        timestamp = series.index
-        self.change_point_model.fit(signal=signal)
-        # last point in change points is the first index after the series
-        change_points_indices = self.change_point_model.predict(**self.change_point_model_predict_params)[:-1]
-        change_points = [timestamp[idx] for idx in change_points_indices]
-        return change_points
 
     @staticmethod
     def _build_trend_intervals(change_points: List[pd.Timestamp]) -> List[TTimestampInterval]:
@@ -132,7 +115,9 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
         if series.isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
-        change_points = self._get_change_points(series=series)
+        change_points = _find_change_points_segment(
+            series=series, change_point_model=self.change_point_model, **self.change_point_model_predict_params
+        )
         self.intervals = self._build_trend_intervals(change_points=change_points)
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
         self._fit_per_interval_model(series=series)
