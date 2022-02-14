@@ -3,6 +3,8 @@ import inspect
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Sequence
 from typing import Union
@@ -146,3 +148,82 @@ class PerSegmentModel(Model):
         self._models = {}
         for segment in self._segments:
             self._models[segment] = deepcopy(self._base_model)
+
+
+class FitAbstractModel(ABC):
+    """Interface for model with fit method."""
+
+    @abstractmethod
+    def fit(self, ts: TSDataset) -> "FitAbstractModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        result:
+            Model after fit
+        """
+        pass
+
+    @abstractmethod
+    def get_model(self) -> Dict[str, Any]:
+        """Get models for segments.
+
+        Returns
+        -------
+        result:
+            Dictionary with internal model for each segment, e.g. CatBoostRegressor or Ridge:
+            * If model is per-segment, then keys are segments.
+            * If model is multi-segment, then key is "all_segments", because there is only one model.
+        """
+        pass
+
+
+class ForecastAbstractModel(ABC):
+    """Interface for model with forecast method."""
+
+    @abstractmethod
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        result:
+            Dataset with predictions
+        """
+        pass
+
+
+class PredictIntervalAbstractModel(ABC):
+    """Interface for model with forecast method that creates prediction interval."""
+
+    @abstractmethod
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+
+        Returns
+        -------
+        result:
+            Dataset with predictions
+        """
+        pass
