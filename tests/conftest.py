@@ -209,7 +209,7 @@ def example_reg_tsds(random_seed) -> TSDataset:
     df = TSDataset.to_dataset(df)
     exog = TSDataset.to_dataset(exog)
 
-    tsds = TSDataset(df, freq="D", df_exog=exog)
+    tsds = TSDataset(df, freq="D", df_exog=exog, known_future="all")
 
     return tsds
 
@@ -237,7 +237,7 @@ def outliers_tsds():
     df.columns.names = ["segment", "feature"]
 
     exog = df.copy()
-    exog.columns = pd.MultiIndex.from_arrays([["1", "2"], ["exog", "exog"]])
+    exog.columns.set_levels(["exog"], level="feature", inplace=True)
 
     tsds = TSDataset(df, "1d", exog)
 

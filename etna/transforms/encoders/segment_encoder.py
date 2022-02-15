@@ -1,10 +1,11 @@
 import pandas as pd
 from sklearn import preprocessing
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class SegmentEncoderTransform(Transform):
+class SegmentEncoderTransform(Transform, FutureMixin):
     """Encode segment label to categorical. Creates column 'regressor_segment_code'."""
 
     idx = pd.IndexSlice

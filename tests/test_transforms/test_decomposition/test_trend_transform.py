@@ -9,7 +9,6 @@ from sklearn.linear_model import LinearRegression
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.decomposition import TrendTransform
 from etna.transforms.decomposition.trend import _OneSegmentTrendTransform
-from etna.transforms.decomposition.trend import _TrendTransform
 
 DEFAULT_SEGMENT = "segment_1"
 
@@ -61,9 +60,8 @@ def test_fit_transform_many_segments(example_tsds: TSDataset) -> None:
     """
     out_column = "regressor_result"
     example_tsds_original = deepcopy(example_tsds)
-    trend_transform = _TrendTransform(
+    trend_transform = TrendTransform(
         in_column="target",
-        change_point_model=Binseg(),
         detrend_model=LinearRegression(),
         n_bkps=5,
         out_column=out_column,
@@ -82,9 +80,8 @@ def test_inverse_transform_many_segments(example_tsds: TSDataset) -> None:
     """
     Test that inverse_transform interface works correctly for many segment.
     """
-    trend_transform = _TrendTransform(
+    trend_transform = TrendTransform(
         in_column="target",
-        change_point_model=Binseg(),
         detrend_model=LinearRegression(),
         n_bkps=5,
         out_column="test",
@@ -120,7 +117,7 @@ def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
 def test_transform_interface_repr(example_tsds: TSDataset) -> None:
     """Test transform interface without out_column param"""
     trend_transform = TrendTransform(in_column="target", detrend_model=LinearRegression(), model="rbf")
-    out_column = f"regressor_{trend_transform.__repr__()}"
+    out_column = f"{trend_transform.__repr__()}"
     result = trend_transform.fit_transform(example_tsds.df)
     for seg in result.columns.get_level_values(0).unique():
         assert out_column in result[seg].columns

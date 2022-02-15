@@ -58,7 +58,28 @@ def ts_with_regressors():
 
     # construct TSDataset
     df = df[df["timestamp"] <= timestamp[200]]
-    return TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq="D")
+    return TSDataset(
+        df=TSDataset.to_dataset(df),
+        df_exog=TSDataset.to_dataset(df_exog_all_segments),
+        freq="D",
+        known_future="all",
+    )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        DecisionTreeRegressor(random_state=42),
+        ExtraTreeRegressor(random_state=42),
+        RandomForestRegressor(n_estimators=10, random_state=42),
+        ExtraTreesRegressor(n_estimators=10, random_state=42),
+        GradientBoostingRegressor(n_estimators=10, random_state=42),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True),
+    ],
+)
+def test_work_with_non_regressors(ts_with_exog, model):
+    selector = TreeFeatureSelectionTransform(model=model, top_k=3, features_to_use="all")
+    ts_with_exog.fit_transform([selector])
 
 
 @pytest.mark.parametrize(
@@ -129,10 +150,10 @@ def test_retain_values(model, top_k, ts_with_regressors):
         CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
     ],
 )
-def test_fails_negative_top_k(model, ts_with_regressors):
+def test_fails_negative_top_k(model):
     """Check that transform doesn't allow you to set top_k to negative values."""
     with pytest.raises(ValueError, match="positive integer"):
-        TreeFeatureSelectionTransform(model=model, top_k=-1)
+        _ = TreeFeatureSelectionTransform(model=model, top_k=-1)
 
 
 @pytest.mark.parametrize(
@@ -150,7 +171,7 @@ def test_warns_no_regressors(model, example_tsds):
     """Check that transform allows you to fit on dataset with no regressors but warns about it."""
     df = example_tsds.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=3)
-    with pytest.warns(UserWarning, match="not possible to select regressors"):
+    with pytest.warns(UserWarning, match="not possible to select features"):
         df_selected = selector.fit_transform(df)
         assert (df == df_selected).all().all()
 

@@ -4,6 +4,7 @@ from typing import Union
 
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -41,7 +42,7 @@ class _OneSegmentLagTransform(Transform):
         return result
 
 
-class LagTransform(PerSegmentWrapper):
+class LagTransform(PerSegmentWrapper, FutureMixin):
     """Generates series of lags from given dataframe."""
 
     def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
