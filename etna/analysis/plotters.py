@@ -536,3 +536,48 @@ def plot_clusters(
             centroid = centroids_df[cluster, "target"]
             axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
         axs[h][w].legend()
+
+
+def plot_time_series_with_change_points(
+    ts: "TSDataset",
+    change_points_dict: Dict[str, List[np.datetime64]],
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot segments with their trend change points.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries
+    change_points_dict:
+        dictionary derived from function for finding trend change points
+    segments:
+        segments to use
+    columns_num:
+        number of subplots columns
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    segments_number = len(segments)
+    columns_num = min(columns_num, len(segments))
+    rows_num = math.ceil(segments_number / columns_num)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
+    ax = np.array([ax]).ravel()
+
+    for i, segment in enumerate(segments):
+        segment_df = ts[:, segment, :][segment]
+        ax[i].set_title(segment)
+        ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
+
+        change_points_segment = change_points_dict[segment]
+        for change_point in change_points_segment:
+            ax[i].axvline(change_point, linestyle="dashed")
+
+        ax[i].tick_params("x", rotation=45)
