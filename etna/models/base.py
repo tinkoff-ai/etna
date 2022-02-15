@@ -170,15 +170,16 @@ class FitAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def get_model(self) -> Dict[str, Any]:
+    def get_model(self) -> Union[Any, Dict[str, Any]]:
         """Get models for segments.
 
         Returns
         -------
         result:
-            Dictionary with internal model for each segment, e.g. CatBoostRegressor or Ridge:
-            * If model is per-segment, then keys are segments.
-            * If model is multi-segment, then key is "all_segments", because there is only one model.
+            The result can be two types:
+            * if model is multi-segment, then the result is internal model, e.g. `catboost.CatBoostRegressor`
+            or `sklearn.linear_model.Ridge`
+            * if model is per-segment, then the result is dictionary where key is segment and value is internal model
         """
         pass
 
