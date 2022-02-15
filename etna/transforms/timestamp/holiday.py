@@ -5,10 +5,11 @@ import holidays
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class HolidayTransform(Transform):
+class HolidayTransform(Transform, FutureMixin):
     """HolidayTransform generates series that indicates holidays in given dataframe. Creates column 'regressor_holidays'."""
 
     def __init__(self, iso_code: str = "RUS", out_column: Optional[str] = None):

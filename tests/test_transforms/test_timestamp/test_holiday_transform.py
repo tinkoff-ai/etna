@@ -168,3 +168,10 @@ def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_df_daily: 
     holidays_finder = HolidayTransform()
     with pytest.raises(ValueError, match="Frequency of data should be no more than daily."):
         df = holidays_finder.fit_transform(df)
+
+
+@pytest.mark.parametrize("expected_regressors", ([["regressor_holidays"]]))
+def test_holidays_out_column_added_to_regressors(example_tsds, expected_regressors):
+    holidays_finder = HolidayTransform(out_column="regressor_holidays")
+    example_tsds.fit_transform([holidays_finder])
+    assert sorted(example_tsds.regressors) == sorted(expected_regressors)

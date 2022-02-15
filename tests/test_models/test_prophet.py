@@ -23,16 +23,12 @@ def test_run_with_reg(new_format_df, new_format_exog):
     df = new_format_df
 
     regressors = new_format_exog.copy()
-    regressors.columns = pd.MultiIndex.from_arrays(
-        [regressors.columns.get_level_values("segment").unique().tolist(), ["regressor_exog", "regressor_exog"]]
-    )
+    regressors.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
     regressors_cap = new_format_exog.copy()
-    regressors_cap.columns = pd.MultiIndex.from_arrays(
-        [regressors_cap.columns.get_level_values("segment").unique().tolist(), ["regressor_cap", "regressor_cap"]]
-    )
+    regressors_cap.columns.set_levels(["regressor_cap"], level="feature", inplace=True)
     exog = pd.concat([regressors, regressors_cap], axis=1)
 
-    ts = TSDataset(df, "1d", df_exog=exog)
+    ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
     model = ProphetModel()
     model.fit(ts)
@@ -63,3 +59,10 @@ def test_prediction_interval_run_infuture(example_tsds):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+
+def test_prophet_save_regressors_on_fit(example_reg_tsds):
+    model = ProphetModel()
+    model.fit(ts=example_reg_tsds)
+    for segment_model in model._models.values():
+        assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
