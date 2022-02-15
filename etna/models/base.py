@@ -171,14 +171,16 @@ class FitAbstractModel(ABC):
 
     @abstractmethod
     def get_model(self) -> Union[Any, Dict[str, Any]]:
-        """Get models for segments.
+        """Get internal model/models that are used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
+        or `sklearn.linear_model.Ridge`.
 
         Returns
         -------
         result:
-            The result can be two types:
-            * if model is multi-segment, then the result is internal model, e.g. `catboost.CatBoostRegressor`
-            or `sklearn.linear_model.Ridge`
+            The result can be of two types:
+            * if model is multi-segment, then the result is internal model
             * if model is per-segment, then the result is dictionary where key is segment and value is internal model
         """
         pass
