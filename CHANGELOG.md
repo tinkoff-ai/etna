@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Fix wandb summary issue with custom plots
+- Fix wandb summary issue with custom plots ([#535](https://github.com/tinkoff-ai/etna/pull/535))
 -
 -
 -
