@@ -38,19 +38,6 @@ def multitrend_df_with_nans_in_tails(multitrend_df):
     return multitrend_df
 
 
-@pytest.mark.parametrize("n_bkps", (5, 10, 12, 27))
-def test_get_change_points(multitrend_df: pd.DataFrame, n_bkps: int):
-    """Check that _get_change_points method return correct number of points in correct format."""
-    bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=n_bkps
-    )
-    change_points = bs._get_change_points(multitrend_df["segment_1"]["target"])
-    assert isinstance(change_points, list)
-    assert len(change_points) == n_bkps
-    for point in change_points:
-        assert isinstance(point, pd.Timestamp)
-
-
 def test_build_trend_intervals():
     """Check correctness of intervals generation with list of change points."""
     change_points = [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")]

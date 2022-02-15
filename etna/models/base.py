@@ -3,6 +3,8 @@ import inspect
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Sequence
 from typing import Union
@@ -146,3 +148,85 @@ class PerSegmentModel(Model):
         self._models = {}
         for segment in self._segments:
             self._models[segment] = deepcopy(self._base_model)
+
+
+class FitAbstractModel(ABC):
+    """Interface for model with fit method."""
+
+    @abstractmethod
+    def fit(self, ts: TSDataset) -> "FitAbstractModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        self:
+            Model after fit
+        """
+        pass
+
+    @abstractmethod
+    def get_model(self) -> Union[Any, Dict[str, Any]]:
+        """Get internal model/models that are used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
+        or `sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        result:
+            The result can be of two types:
+            * if model is multi-segment, then the result is internal model
+            * if model is per-segment, then the result is dictionary where key is segment and value is internal model
+        """
+        pass
+
+
+class ForecastAbstractModel(ABC):
+    """Interface for model with forecast method."""
+
+    @abstractmethod
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        forecast:
+            Dataset with predictions
+        """
+        pass
+
+
+class PredictIntervalAbstractModel(ABC):
+    """Interface for model with forecast method that creates prediction interval."""
+
+    @abstractmethod
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        forecast:
+            Dataset with predictions
+        """
+        pass

@@ -5,10 +5,11 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class FourierTransform(Transform):
+class FourierTransform(Transform, FutureMixin):
     """Adds fourier features to the dataset."""
 
     def __init__(
@@ -93,7 +94,7 @@ class FourierTransform(Transform):
 
     def _get_column_name(self, mod: int) -> str:
         if self.out_column is None:
-            return f"regressor_{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
+            return f"{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
         else:
             return f"{self.out_column}_{mod}"
 

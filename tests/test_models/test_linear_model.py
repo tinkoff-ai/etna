@@ -17,16 +17,23 @@ def ts_with_categoricals(random_seed) -> TSDataset:
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = "segment_1"
     df1["target"] = np.random.uniform(10, 20, size=periods)
-    df1["cat_feature"] = "x"
 
     df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df2["segment"] = "segment_2"
     df2["target"] = np.random.uniform(-15, 5, size=periods)
-    df1["cat_feature"] = "y"
+
+    df_exog1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods * 2)})
+    df_exog1["segment"] = "segment_1"
+    df_exog1["cat_feature"] = "x"
+
+    df_exog2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods * 2)})
+    df_exog2["segment"] = "segment_2"
+    df_exog2["cat_feature"] = "y"
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
-    df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    df_exog = pd.concat([df_exog1, df_exog2]).reset_index(drop=True)
+
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
 
     return ts
 

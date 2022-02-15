@@ -7,21 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
--
--
--
--
--
--
--
--
--
--
+- Regressors logic to TSDatasets init ([#357](https://github.com/tinkoff-ai/etna/pull/357))
+- `FutureMixin` into some transforms ([#361](https://github.com/tinkoff-ai/etna/pull/361))
+- Regressors updating in TSDataset transform loops ([#374](https://github.com/tinkoff-ai/etna/pull/374))
+- Regressors handling in TSDataset `make_future` and `train_test_split` ([#447](https://github.com/tinkoff-ai/etna/pull/447))
+- 
+- 
+- 
+- 
+- Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
+- 
+- 
 
 ### Changed
--
--
--
+- Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))
+- Change the way `SARIMAXModel` works with regressors ([#380](https://github.com/tinkoff-ai/etna/pull/380)) 
+- Change the way `Sklearn` models works with regressors ([#440](https://github.com/tinkoff-ai/etna/pull/440))
+- Change the way `FeatureSelectionTransform` works with regressors, rename variables replacing the "regressor" to "feature" ([#522](https://github.com/tinkoff-ai/etna/pull/522))
 -
 -
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
@@ -30,15 +32,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
+- Fix `TSDataset.info`, `TSDataset.describe` methods ([#519](https://github.com/tinkoff-ai/etna/pull/519))
+- Fix regressors handling for `OneHotEncoderTransform` and `HolidayTransform` ([#518](https://github.com/tinkoff-ai/etna/pull/518))
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [1.6.3] - 2022-02-14
+
+### Fixed
+
 - Fixed adding unnecessary lag=1 in statistics ([#523](https://github.com/tinkoff-ai/etna/pull/523))
 - Fixed wrong MeanTransform behaviour when using alpha parameter ([#523](https://github.com/tinkoff-ai/etna/pull/523))
 - Fix processing add_noise=True parameter in datasets generation ([#520](https://github.com/tinkoff-ai/etna/pull/520))
-- 
-- 
-- 
-- 
-- 
+- Fix scipy version ([#525](https://github.com/tinkoff-ai/etna/pull/525))
 
 ## [1.6.2] - 2022-02-09
 ### Added
