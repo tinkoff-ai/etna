@@ -16,7 +16,7 @@ Every good PR usually consists of:
 Please ensure that you have read the following docs:
 - [changelog](https://github.com/tinkoff-ai/etna/blob/master/CHANGELOG.md)
 - [documentation](https://etna-docs.netlify.app/)
-- [examples](https://github.com/tinkoff-ai/etna/tree/master/examples)
+- [tutorials](https://github.com/tinkoff-ai/etna/tree/master/examples)
 
 ### Setting up your development environment
 
