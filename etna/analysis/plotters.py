@@ -10,6 +10,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
-def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]):
+def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]) -> Sequence[matplotlib.axes.Axes]:
     """Prepare axes according to segments, figure size and number of columns."""
     segments_number = len(segments)
     columns_num = min(columns_num, len(segments))
@@ -564,13 +565,7 @@ def plot_time_series_with_change_points(
     if not segments:
         segments = sorted(ts.segments)
 
-    segments_number = len(segments)
-    columns_num = min(columns_num, len(segments))
-    rows_num = math.ceil(segments_number / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
-    ax = np.array([ax]).ravel()
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
@@ -624,29 +619,49 @@ def plot_residuals(
     figsize:
         size of the figure per subplot with one segment in inches
 
+    Raises
+    ------
+    ValueError:
+        if feature isn't present in the dataset after applying transformations
+
     Notes
     -----
     Parameter `transforms` is necessary because some pipelines doesn't save features in their forecasts,
     e.g. `etna.ensembles` pipelines.
     """
-    # TODO: add processing errors
-    # TODO: add plotting borders in timestamp case
     if not segments:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
-    inner_ts = deepcopy(ts)
-    inner_ts.fit_transform(transforms=transforms)
+    ts_copy = deepcopy(ts)
+    df = ts_copy.fit_transform(transforms=transforms).to_pandas()
+    # check if feature is present in dataset
+    if feature != "timestamp":
+        all_features = set(df.columns.get_level_values("feature").unique())
+        if feature not in all_features:
+            raise ValueError("Given feature isn't present in the dataset after applying transformations")
 
     for i, segment in enumerate(segments):
-        segment_df = inner_ts[:, segment, :][segment].reset_index()
-        segment_df.rename(columns={"target": "y_true"})
-        y_pred_segment = forecast_df.loc[:, pd.IndexSlice[segment, "target"]]
-        segment_df["y_pred"] = y_pred_segment
+        segment_df = df.loc[forecast_df.index, pd.IndexSlice[segment, :]][segment].reset_index()
+        segment_forecast_df = forecast_df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
+        segment_df.rename(columns={"target": "y_true"}, inplace=True)
+        segment_df["y_pred"] = segment_forecast_df["target"].values
 
-        residuals = segment_df["y_true"] - segment_df["y_pred"]
-        feature_values = segment_df[feature]
+        residuals = (segment_df["y_true"] - segment_df["y_pred"]).values
+        feature_values = segment_df[feature].values
+
+        # highlight different backtest folds
+        if feature == "timestamp":
+            folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
+            for fold_number in folds:
+                forecast_df_slice_fold = segment_forecast_df[segment_forecast_df["fold_number"] == fold_number]
+                ax[i].axvspan(
+                    forecast_df_slice_fold.index.min(),
+                    forecast_df_slice_fold.index.max(),
+                    alpha=0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2),
+                    color="skyblue",
+                )
 
         ax[i].scatter(feature_values, residuals, c="b")
 
