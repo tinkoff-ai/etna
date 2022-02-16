@@ -2,10 +2,11 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms import Transform
+from etna.transforms.base import FutureMixin
 from etna.transforms.math.statistics import MeanTransform
 
 
-class MeanSegmentEncoderTransform(Transform):
+class MeanSegmentEncoderTransform(Transform, FutureMixin):
     """Makes expanding mean target encoding of the segment. Creates column 'regressor_segment_mean'."""
 
     idx = pd.IndexSlice
