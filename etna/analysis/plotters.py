@@ -111,7 +111,7 @@ def plot_forecast(
         if test_ts is not None:
             ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, label="test")
 
-        if prediction_intervals:
+        if prediction_intervals and quantiles is not None:
             for quantile in quantiles:
                 ax[i].plot(
                     segment_forecast_df.index.values,
