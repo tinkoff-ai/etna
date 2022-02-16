@@ -654,13 +654,13 @@ def plot_residuals(
 
         # highlight different backtest folds
         if feature == "timestamp":
-            folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
+            folds = sorted(set(segment_forecast_df["fold_number"]))
             for fold_number in folds:
                 forecast_df_slice_fold = segment_forecast_df[segment_forecast_df["fold_number"] == fold_number]
                 ax[i].axvspan(
-                    forecast_df_slice_fold.index.min(),
-                    forecast_df_slice_fold.index.max(),
-                    alpha=0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2),
+                    forecast_df_slice_fold["timestamp"].min(),
+                    forecast_df_slice_fold["timestamp"].max(),
+                    alpha=0.15 * (int(forecast_df_slice_fold["fold_number"].max() + 1) % 2),
                     color="skyblue",
                 )
 
@@ -668,3 +668,4 @@ def plot_residuals(
 
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
+        ax[i].set_xlabel(feature)
