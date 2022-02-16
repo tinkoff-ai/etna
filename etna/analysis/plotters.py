@@ -1,9 +1,12 @@
 import math
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -14,8 +17,22 @@ import plotly
 import plotly.graph_objects as go
 import seaborn as sns
 
+from etna.transforms import Transform
+
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+
+
+def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]):
+    """Prepare axes according to segments, figure size and number of columns."""
+    segments_number = len(segments)
+    columns_num = min(columns_num, len(segments))
+    rows_num = math.ceil(segments_number / columns_num)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
+    ax = np.array([ax]).ravel()
+    return ax
 
 
 def plot_forecast(
@@ -49,13 +66,8 @@ def plot_forecast(
     """
     if not segments:
         segments = list(set(forecast_ts.columns.get_level_values("segment")))
-    segments_number = len(segments)
-    columns_num = min(columns_num, len(segments))
-    rows_num = math.ceil(segments_number / columns_num)
 
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
-    ax = np.array([ax]).ravel()
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
     if train_ts is not None:
         train_ts.df.sort_values(by="timestamp", inplace=True)
@@ -124,16 +136,11 @@ def plot_backtest(
     if not segments:
         segments = sorted(ts.segments)
     df = ts.df
-    segments_number = len(segments)
-    columns_num = min(columns_num, len(segments))
-    rows_num = math.ceil(segments_number / columns_num)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
     if not folds:
         folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
-    ax = np.array([ax]).ravel()
 
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
@@ -317,9 +324,9 @@ def plot_anomalies(
         TSDataset of timeseries that was used for detect anomalies
     anomaly_dict:
         dictionary derived from anomaly detection function
-    segments: list of str, optional
+    segments:
         segments to plot
-    columns_num: int
+    columns_num:
         number of subplots columns
     figsize:
         size of the figure per subplot with one segment in inches
@@ -327,13 +334,7 @@ def plot_anomalies(
     if not segments:
         segments = sorted(ts.segments)
 
-    segments_number = len(segments)
-    columns_num = min(columns_num, len(segments))
-    rows_num = math.ceil(segments_number / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
-    ax = np.array([ax]).ravel()
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
@@ -536,3 +537,61 @@ def plot_clusters(
             centroid = centroids_df[cluster, "target"]
             axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
         axs[h][w].legend()
+
+
+def plot_residuals(
+    forecast_df: pd.DataFrame,
+    ts: "TSDataset",
+    feature: Union[str, Literal["timestamp"]] = "timestamp",
+    transforms: Sequence[Transform] = (),
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot residuals for predictions from backtest against some feature.
+
+    Parameters
+    ----------
+    forecast_df:
+        forecasted dataframe with timeseries data
+    ts:
+        dataframe of timeseries that was used for backtest
+    feature:
+        feature name to draw against residuals, if "timestamp" plot residuals against the timestamp
+    transforms:
+        sequence of transforms to get feature column
+    segments:
+        segments to use
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Notes
+    -----
+    Parameter `transforms` is necessary because some pipelines doesn't save features in their forecasts,
+    e.g. `etna.ensembles` pipelines.
+    """
+    # TODO: add processing errors
+    # TODO: add plotting borders in timestamp case
+    if not segments:
+        segments = sorted(ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    inner_ts = deepcopy(ts)
+    inner_ts.fit_transform(transforms=transforms)
+
+    for i, segment in enumerate(segments):
+        segment_df = inner_ts[:, segment, :][segment].reset_index()
+        segment_df.rename(columns={"target": "y_true"})
+        y_pred_segment = forecast_df.loc[:, pd.IndexSlice[segment, "target"]]
+        segment_df["y_pred"] = y_pred_segment
+
+        residuals = segment_df["y_true"] - segment_df["y_pred"]
+        feature_values = segment_df[feature]
+
+        ax[i].scatter(feature_values, residuals, c="b")
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
