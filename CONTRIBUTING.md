@@ -30,6 +30,12 @@ cd etna
 ```bash
 poetry install -E all-dev
 ```
+3. Activate virtual environment created by poetry:
+```bash
+poetry shell
+```
+
+To connect virtual environment interpreter to IDE use `which python` command.
 
 ### New feature
 
@@ -52,19 +58,23 @@ If you are not familiar with creating a Pull Request, here are some guides:
 
 ### Tests
 
-Do not forget to check that your code passes the unit tests:
+Do not forget to check that your code passes the unit tests. 
 ```bash
 poetry install -E tests
 
 pytest tests -v
 pytest etna -v --doctest-modules
 ```
-And code style checks:
+
+ETNA uses the [`black`](https://github.com/psf/black) and [`flake8`](https://github.com/pycqa/flake8) with several plugins 
+for coding style checks as well as [`mypy`](https://github.com/python/mypy) for type checks, and you must ensure that your code follows it. 
 ```bash
 poetry install -E style
 
 make format
 ```
+
+If any of checks fails, the CI will fail and your Pull Request won't be merged.
 
 ### Documentation
 
