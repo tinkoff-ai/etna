@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
 
 ### Fixed
 - Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
