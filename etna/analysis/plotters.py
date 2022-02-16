@@ -540,7 +540,7 @@ def plot_clusters(
 
 def plot_time_series_with_change_points(
     ts: "TSDataset",
-    change_points: Dict[str, List[np.datetime64]],
+    change_points: Dict[str, List[pd.Timestamp]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
@@ -573,11 +573,23 @@ def plot_time_series_with_change_points(
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
-        ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
-
         change_points_segment = change_points[segment]
-        for change_point in change_points_segment:
-            ax[i].axvline(change_point, linestyle="dashed")
 
+        # plot each part of segment separately
+        timestamp = segment_df.index.values
+        target = segment_df["target"].values
+        all_change_points_segment = [pd.Timestamp(timestamp[0])] + change_points_segment + [pd.Timestamp(timestamp[-1])]
+        for idx in range(len(all_change_points_segment) - 1):
+            start_time = all_change_points_segment[idx]
+            end_time = all_change_points_segment[idx + 1]
+            selected_indices = (timestamp >= start_time) & (timestamp <= end_time)
+            cur_timestamp = timestamp[selected_indices]
+            cur_target = target[selected_indices]
+            ax[i].plot(cur_timestamp, cur_target)
+
+        # plot each trend change point
+        for change_point in change_points_segment:
+            ax[i].axvline(change_point, linestyle="dashed", c="grey")
+
+        ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
