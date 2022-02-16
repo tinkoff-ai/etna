@@ -635,7 +635,8 @@ def plot_residuals(
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
     ts_copy = deepcopy(ts)
-    df = ts_copy.fit_transform(transforms=transforms).to_pandas()
+    ts_copy.fit_transform(transforms=transforms)
+    df = ts_copy.to_pandas()
     # check if feature is present in dataset
     if feature != "timestamp":
         all_features = set(df.columns.get_level_values("feature").unique())
