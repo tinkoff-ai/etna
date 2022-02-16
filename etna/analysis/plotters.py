@@ -540,7 +540,7 @@ def plot_clusters(
 
 def plot_time_series_with_change_points(
     ts: "TSDataset",
-    change_points_dict: Dict[str, List[np.datetime64]],
+    change_points: Dict[str, List[np.datetime64]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
@@ -551,7 +551,7 @@ def plot_time_series_with_change_points(
     ----------
     ts:
         TSDataset with timeseries
-    change_points_dict:
+    change_points:
         dictionary with trend change points for each segment, can be derived from `etna.analysis.find_change_points`
     segments:
         segments to use
@@ -576,7 +576,7 @@ def plot_time_series_with_change_points(
         ax[i].set_title(segment)
         ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
 
-        change_points_segment = change_points_dict[segment]
+        change_points_segment = change_points[segment]
         for change_point in change_points_segment:
             ax[i].axvline(change_point, linestyle="dashed")
 
