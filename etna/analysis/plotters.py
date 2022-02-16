@@ -552,7 +552,7 @@ def plot_time_series_with_change_points(
     ts:
         TSDataset with timeseries
     change_points_dict:
-        dictionary derived from function for finding trend change points
+        dictionary with trend change points for each segment, can be derived from `etna.analysis.find_change_points`
     segments:
         segments to use
     columns_num:
