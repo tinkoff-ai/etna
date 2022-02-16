@@ -68,7 +68,7 @@ make format
 
 ### Documentation
 
-We use [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings.
+ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings.
 Length of a line inside docstrings block must be limited to 100 characters to fit into Jupyter documentation popups.
 
 You could check the docs with:
