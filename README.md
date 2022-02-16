@@ -60,11 +60,6 @@ Available user extensions are the following:
 * `torch`
 * `wandb`
 
-There are also developer extensions. All the extensions are listed at [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
-
-Without the appropriate extension you will get an `ImportError` trying to import the model that needs it.
-For example, `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
-
 Install extension:
 ```bash
 pip install etna[extension-name]
@@ -74,6 +69,11 @@ Install all extensions:
 ```bash
 pip install etna[all]
 ```
+
+There are also developer extensions. All the extensions are listed in [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
+
+Without the appropriate extension you will get an `ImportError` trying to import the model that needs it.
+For example, `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
 
 ### Configuration
 
