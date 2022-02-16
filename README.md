@@ -54,8 +54,13 @@ pip install --upgrade pip
 pip install etna
 ```
 
-Default version hasn't all the dependencies, because some of them are needed only for specific models, e.g. Prophet, PyTorch. 
-Available extensions are listed at [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
+The default version doesn't contain all the dependencies, because some of them are needed only for specific models, e.g. Prophet, PyTorch.
+Available user extensions are the following:
+* `prophet`
+* `torch`
+* `wandb`
+
+There are also developer extensions. All the extensions are listed at [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
 
 Without the appropriate extension you will get an `ImportError` trying to import the model that needs it.
 For example, `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
@@ -72,10 +77,9 @@ pip install etna[all]
 
 ### Configuration
 
-It can be useful to configure the library to check installed packages during init.
-For example, if you know that you need `Prophet` in you project and don't want to understand that it isn't installed only during the import of `etna.models.ProphetModel`.
+ETNA supports configuration files. It means that library will check that all the specified packages are installed prior to script start and NOT during runtime. 
 
-You can create a config file `.etna` at the root of your project, where this checking can be set up. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file. 
+To set up a configuration for your project you should create a `.etna` file at the project's root. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file. 
 
 ## Get started 
 Here's some example code for a quick start.
