@@ -1,6 +1,5 @@
 import math
 import warnings
-from turtle import colormode
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
