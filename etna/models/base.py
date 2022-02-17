@@ -279,7 +279,6 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
             segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
             result_list.append(segment_predict)
 
-        # need real case to test
         result_df = pd.concat(result_list, ignore_index=True)
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
@@ -333,7 +332,6 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
             )
             result_list.append(segment_predict)
 
-        # need real case to test
         result_df = pd.concat(result_list, ignore_index=True)
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
