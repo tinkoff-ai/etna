@@ -88,7 +88,7 @@ class TFTModel(Model):
         self.attention_head_size = attention_head_size
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
-        sefl.trainer_kwargs = trainer_kwargs
+        self.trainer_kwargs = trainer_kwargs
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
         self.trainer: Optional[pl.Trainer] = None
 
@@ -137,17 +137,16 @@ class TFTModel(Model):
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)
 
-        trainer_kwargs = dict(logger=tslogger.pl_loggers,
+        trainer_kwargs = dict(
+            logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
             checkpoint_callback=False,
-            gradient_clip_val=self.gradient_clip_val
+            gradient_clip_val=self.gradient_clip_val,
         )
         trainer_kwargs.update(self.trainer_kwargs)
 
-        self.trainer = pl.Trainer(
-            **trainer_kwargs
-        )
+        self.trainer = pl.Trainer(**trainer_kwargs)
 
         train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 

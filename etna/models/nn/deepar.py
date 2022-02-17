@@ -1,7 +1,6 @@
 from typing import Any
 from typing import Dict
 from typing import List
-
 from typing import Optional
 from typing import Union
 
@@ -42,7 +41,7 @@ class DeepARModel(Model):
         hidden_size: int = 10,
         rnn_layers: int = 2,
         dropout: float = 0.1,
-        trainer_kwargs: Dict[str, Any] = dict()
+        trainer_kwargs: Dict[str, Any] = dict(),
     ):
         """
         Initialize DeepAR wrapper.
@@ -130,18 +129,17 @@ class DeepARModel(Model):
         """
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)
-        
-        trainer_kwargs = dict(logger=tslogger.pl_loggers,
+
+        trainer_kwargs = dict(
+            logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
             checkpoint_callback=False,
-            gradient_clip_val=self.gradient_clip_val
+            gradient_clip_val=self.gradient_clip_val,
         )
         trainer_kwargs.update(self.trainer_kwargs)
 
-        self.trainer = pl.Trainer(
-            **trainer_kwargs
-        )
+        self.trainer = pl.Trainer(**trainer_kwargs)
 
         train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 
