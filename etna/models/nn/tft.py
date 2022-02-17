@@ -182,4 +182,5 @@ class TFTModel(Model):
         # shape (segments, encoder_length)
 
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
+        ts.inverse_transform()
         return ts
