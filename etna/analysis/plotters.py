@@ -597,3 +597,60 @@ def plot_clusters(
             centroid = centroids_df[cluster, "target"]
             axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
         axs[h][w].legend()
+
+
+def plot_time_series_with_change_points(
+    ts: "TSDataset",
+    change_points: Dict[str, List[pd.Timestamp]],
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot segments with their trend change points.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries
+    change_points:
+        dictionary with trend change points for each segment, can be derived from `etna.analysis.find_change_points`
+    segments:
+        segments to use
+    columns_num:
+        number of subplots columns
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    segments_number = len(segments)
+    columns_num = min(columns_num, len(segments))
+    rows_num = math.ceil(segments_number / columns_num)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
+    ax = np.array([ax]).ravel()
+
+    for i, segment in enumerate(segments):
+        segment_df = ts[:, segment, :][segment]
+        change_points_segment = change_points[segment]
+
+        # plot each part of segment separately
+        timestamp = segment_df.index.values
+        target = segment_df["target"].values
+        all_change_points_segment = [pd.Timestamp(timestamp[0])] + change_points_segment + [pd.Timestamp(timestamp[-1])]
+        for idx in range(len(all_change_points_segment) - 1):
+            start_time = all_change_points_segment[idx]
+            end_time = all_change_points_segment[idx + 1]
+            selected_indices = (timestamp >= start_time) & (timestamp <= end_time)
+            cur_timestamp = timestamp[selected_indices]
+            cur_target = target[selected_indices]
+            ax[i].plot(cur_timestamp, cur_target)
+
+        # plot each trend change point
+        for change_point in change_points_segment:
+            ax[i].axvline(change_point, linestyle="dashed", c="grey")
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)

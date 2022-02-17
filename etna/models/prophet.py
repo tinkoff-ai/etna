@@ -324,7 +324,7 @@ class ProphetModel(PerSegmentModel):
         self._build_models()
 
         for segment in self._segments:
-            model = self._models[segment]
+            model = self._models[segment]  # type: ignore
             segment_features = ts[:, segment, :]
             segment_features = segment_features.dropna()
             segment_features = segment_features.droplevel("segment", axis=1)
@@ -381,7 +381,7 @@ class ProphetModel(PerSegmentModel):
 
         result_list = list()
         for segment in self._segments:
-            model = self._models[segment]
+            model = self._models[segment]  # type: ignore
 
             segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, quantiles)
             result_list.append(segment_predict)
