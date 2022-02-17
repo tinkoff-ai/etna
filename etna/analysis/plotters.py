@@ -1,5 +1,6 @@
 import math
 import warnings
+from turtle import colormode
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
@@ -73,12 +74,12 @@ def plot_forecast(
         ]
         existing_quantiles = [float(col[7:]) for col in cols]
         if quantiles is None:
-            quantiles = existing_quantiles
+            quantiles = sorted(existing_quantiles)
         else:
             non_existent = set(quantiles) - set(existing_quantiles)
             if len(non_existent):
                 warnings.warn(f"Quantiles {non_existent} do not exist in forecast dataset. They will be dropped.")
-            quantiles = list(set(quantiles).intersection(set(existing_quantiles)))
+            quantiles = sorted(list(set(quantiles).intersection(set(existing_quantiles))))
 
     if train_ts is not None:
         train_ts.df.sort_values(by="timestamp", inplace=True)
@@ -109,17 +110,46 @@ def plot_forecast(
         if (train_ts is not None) and (n_train_samples != 0):
             ax[i].plot(plot_df.index.values, plot_df.target.values, label="train")
         if test_ts is not None:
-            ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, label="test")
+            ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
+        ax[i].plot(segment_forecast_df.index.values, segment_forecast_df.target.values, color="r", label="forecast")
 
         if prediction_intervals and quantiles is not None:
-            for quantile in quantiles:
+            alpha = np.linspace(0, 1, len(quantiles) // 2 + 2)[1:-1]
+            for quantile in range(len(quantiles) // 2):
+                values_low = segment_forecast_df["target_" + str(quantiles[quantile])].values
+                values_high = segment_forecast_df["target_" + str(quantiles[-quantile - 1])].values
+                if quantile == len(quantiles) // 2 - 1:
+                    ax[i].fill_between(
+                        segment_forecast_df.index.values,
+                        values_low,
+                        values_high,
+                        facecolor="g",
+                        alpha=alpha[quantile],
+                        label=f"{quantiles[quantile]}-{quantiles[-quantile-1]} prediction interval",
+                    )
+                else:
+                    values_next = segment_forecast_df["target_" + str(quantiles[quantile + 1])].values
+                    ax[i].fill_between(
+                        segment_forecast_df.index.values,
+                        values_low,
+                        values_next,
+                        facecolor="g",
+                        alpha=alpha[quantile],
+                        label=f"{quantiles[quantile]}-{quantiles[-quantile-1]} prediction interval",
+                    )
+                    values_prev = segment_forecast_df["target_" + str(quantiles[-quantile - 2])].values
+                    ax[i].fill_between(
+                        segment_forecast_df.index.values, values_high, values_prev, facecolor="g", alpha=alpha[quantile]
+                    )
+            if len(quantiles) % 2 != 0:
+                values = segment_forecast_df["target_" + str(quantiles[len(quantiles) // 2])].values
                 ax[i].plot(
                     segment_forecast_df.index.values,
-                    segment_forecast_df["target_" + str(quantile)].values,
-                    label="quantile " + str(quantile),
+                    values,
+                    "--",
+                    c="orange",
+                    label=f"{quantiles[len(quantiles)//2]} quantile",
                 )
-
-        ax[i].plot(segment_forecast_df.index.values, segment_forecast_df.target.values, label="forecast")
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend()
