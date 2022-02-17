@@ -56,7 +56,7 @@ class SklearnPerSegmentModel(PerSegmentModel):
         self._build_models()
 
         for segment in self._segments:
-            model = self._models[segment]
+            model = self._models[segment]  # type: ignore
             segment_features = ts[:, segment, :]
             segment_features = segment_features.dropna()
             segment_features = segment_features.droplevel("segment", axis=1)
