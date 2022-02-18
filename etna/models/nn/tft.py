@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -40,6 +42,7 @@ class TFTModel(Model):
         attention_head_size: int = 4,
         dropout: float = 0.1,
         hidden_continuous_size: int = 8,
+        trainer_kwargs: Dict[str, Any] = dict(),
         *args,
         **kwargs,
     ):
@@ -70,6 +73,8 @@ class TFTModel(Model):
             Dropout rate.
         hidden_continuous_size:
             Hidden size for processing continuous variables.
+        trainer_kwargs:
+            Additional arguments for pytorch_lightning Trainer.
         """
         self.max_epochs = max_epochs
         self.gpus = gpus
@@ -83,7 +88,7 @@ class TFTModel(Model):
         self.attention_head_size = attention_head_size
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
-
+        self.trainer_kwargs = trainer_kwargs
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
         self.trainer: Optional[pl.Trainer] = None
 
@@ -132,13 +137,16 @@ class TFTModel(Model):
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)
 
-        self.trainer = pl.Trainer(
+        trainer_kwargs = dict(
             logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
             checkpoint_callback=False,
             gradient_clip_val=self.gradient_clip_val,
         )
+        trainer_kwargs.update(self.trainer_kwargs)
+
+        self.trainer = pl.Trainer(**trainer_kwargs)
 
         train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 
