@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change the way `Sklearn` models works with regressors ([#440](https://github.com/tinkoff-ai/etna/pull/440))
 - Change the way `FeatureSelectionTransform` works with regressors, rename variables replacing the "regressor" to "feature" ([#522](https://github.com/tinkoff-ai/etna/pull/522))
 -
--
+- Add table option to ConsoleLogger ([#544](https://github.com/tinkoff-ai/etna/pull/544))
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
 -
 - Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
