@@ -53,6 +53,24 @@ def test_backtest_logging(example_tsds: TSDataset):
     tslogger.remove(idx)
 
 
+def test_backtest_logging_no_tables(example_tsds: TSDataset):
+    """Check working of logging inside backtest with `table=False`."""
+    file = NamedTemporaryFile()
+    _logger.add(file.name)
+    idx = tslogger.add(ConsoleLogger(table=False))
+    metrics = [MAE(), MSE(), SMAPE()]
+    date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
+    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=10, transforms=[date_flags])
+    n_folds = 5
+    pipe.backtest(ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds)
+    with open(file.name, "r") as in_file:
+        lines = in_file.readlines()
+        # remain lines only about backtest
+        lines = [line for line in lines if "backtest" in line]
+        assert len(lines) == 0
+    tslogger.remove(idx)
+
+
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), LinearMultiSegmentModel()])
 def test_model_logging(example_tsds, model):
     """Check working of logging in fit/forecast of model."""
