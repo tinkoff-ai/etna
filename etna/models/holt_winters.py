@@ -7,6 +7,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters import HoltWintersResults
@@ -171,17 +172,18 @@ class _HoltWintersAdapter:
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
         """
-        Fits a Holt-Winters' model.
+        Fit Holt-Winters' model.
 
         Parameters
         ----------
         df:
             Features dataframe
-
+        regressors:
+            List of the columns with regressors(ignored in this model)
         Returns
         -------
-        self: _HoltWintersAdapter
-            fitted model
+        self:
+            Fitted model
         """
         self._check_df(df)
 
@@ -213,7 +215,7 @@ class _HoltWintersAdapter:
         )
         return self
 
-    def predict(self, df: pd.DataFrame) -> pd.Series:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         """
         Compute predictions from a Holt-Winters' model.
 
@@ -224,15 +226,15 @@ class _HoltWintersAdapter:
 
         Returns
         -------
-        y_pred: pd.Series
-            Series with predictions
+        y_pred:
+            Array with predictions
         """
         if self._result is None or self._model is None:
             raise ValueError("This model is not fitted! Fit the model before calling predict method!")
         self._check_df(df)
 
         forecast = self._result.predict(start=df["timestamp"].min(), end=df["timestamp"].max())
-        y_pred = pd.Series(data=forecast.values, name="target")
+        y_pred = forecast.values
         return y_pred
 
     def _check_df(self, df: pd.DataFrame):

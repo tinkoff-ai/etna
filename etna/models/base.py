@@ -10,6 +10,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 from etna.core.mixins import BaseMixin
@@ -181,7 +182,6 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
             Internal model which will be used to forecast segments, expected to have fit/predict interface
         """
         self._base_model = base_model
-        self._segments: Optional[List[str]] = None
         self._models: Optional[Dict[str, Any]] = None
 
     @log_decorator
@@ -198,7 +198,6 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         self:
             Model after fit
         """
-        self._segments = ts.segments
         self._models = {}
         for segment in ts.segments:
             self._models[segment] = deepcopy(self._base_model)
@@ -235,16 +234,11 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
         segment_predict = model.predict(df=segment_features, *args, **kwargs)
-        segment_predict = pd.DataFrame({"target": segment_predict})
+        if isinstance(segment_predict, np.ndarray):
+            segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
         segment_predict["timestamp"] = dates
         return segment_predict
-
-    def _build_models(self):
-        """Create a dict with models for each segment (if required)."""
-        self._models = {}
-        for segment in self._segments:  # type: ignore
-            self._models[segment] = deepcopy(self._base_model)
 
 
 class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
