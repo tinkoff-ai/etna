@@ -9,15 +9,13 @@ from typing import Union
 import pandas as pd
 
 from etna import SETTINGS
-from etna.datasets import TSDataset
-from etna.models.base import PerSegmentModel
-from etna.models.base import log_decorator
+from etna.models.base import PerSegmentPredictionIntervalModel
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
 
 
-class _ProphetModel:
+class _ProphetAdapter:
     """Class for holding Prophet model."""
 
     def __init__(
@@ -83,7 +81,7 @@ class _ProphetModel:
 
         self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetAdapter":
         """
         Fits a Prophet model.
 
@@ -104,9 +102,9 @@ class _ProphetModel:
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]):
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
         """
-        Compute Prophet predictions.
+        Compute predictions from a Prophet model.
 
         Parameters
         ----------
@@ -119,7 +117,7 @@ class _ProphetModel:
 
         Returns
         -------
-        y_pred: pd.DataFrame
+        y_pred:
             DataFrame with predictions
         """
         df = df.reset_index()
@@ -134,10 +132,14 @@ class _ProphetModel:
             for quantile in quantiles:
                 percentile = quantile * 100
                 y_pred[f"yhat_{quantile:.4g}"] = self.model.percentile(sim_values["yhat"], percentile, axis=1)
+        rename_dict = {
+            column: column.replace("yhat", "target") for column in y_pred.columns if column.startswith("yhat")
+        }
+        y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
 
 
-class ProphetModel(PerSegmentModel):
+class ProphetModel(PerSegmentPredictionIntervalModel):
     """Class for holding Prophet model.
 
     Examples
@@ -296,7 +298,7 @@ class ProphetModel(PerSegmentModel):
         self.additional_seasonality_params = additional_seasonality_params
 
         super(ProphetModel, self).__init__(
-            base_model=_ProphetModel(
+            base_model=_ProphetAdapter(
                 growth=self.growth,
                 n_changepoints=self.n_changepoints,
                 changepoints=self.changepoints,
@@ -316,84 +318,3 @@ class ProphetModel(PerSegmentModel):
                 additional_seasonality_params=self.additional_seasonality_params,
             )
         )
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "ProphetModel":
-        """Fit model."""
-        self._segments = ts.segments
-        self._build_models()
-
-        for segment in self._segments:
-            model = self._models[segment]  # type: ignore
-            segment_features = ts[:, segment, :]
-            segment_features = segment_features.dropna()
-            segment_features = segment_features.droplevel("segment", axis=1)
-            segment_features = segment_features.reset_index()
-            model.fit(df=segment_features, regressors=ts.regressors)
-        return self
-
-    @staticmethod
-    def _forecast_one_segment(
-        model,
-        segment: Union[str, List[str]],
-        ts: TSDataset,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-    ) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(
-            df=segment_features, prediction_interval=prediction_interval, quantiles=quantiles
-        )
-        rename_dict = {
-            column: column.replace("yhat", "target") for column in segment_predict.columns if column.startswith("yhat")
-        }
-        segment_predict = segment_predict.rename(rename_dict, axis=1)
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
-
-    @log_decorator
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-
-        Returns
-        -------
-        TSDataset
-            Models result
-        """
-        if self._segments is None:
-            raise ValueError("The model is not fitted yet, use fit() to train it")
-
-        result_list = list()
-        for segment in self._segments:
-            model = self._models[segment]  # type: ignore
-
-            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, quantiles)
-            result_list.append(segment_predict)
-
-        # need real case to test
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
-        ts.inverse_transform()
-        return ts

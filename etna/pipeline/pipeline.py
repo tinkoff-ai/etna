@@ -1,4 +1,3 @@
-import inspect
 from copy import deepcopy
 from enum import Enum
 from typing import Any
@@ -22,6 +21,7 @@ from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.models.base import Model
+from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
@@ -153,7 +153,7 @@ class Pipeline(BasePipeline):
 
         future = self.ts.make_future(self.horizon)
         if prediction_interval:
-            if "prediction_interval" in inspect.signature(self.model.forecast).parameters:
+            if isinstance(self.model, PerSegmentPredictionIntervalModel):
                 predictions = self.model.forecast(
                     ts=future, prediction_interval=prediction_interval, quantiles=self.quantiles
                 )
