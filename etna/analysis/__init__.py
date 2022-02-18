@@ -22,4 +22,5 @@ from etna.analysis.plotters import plot_backtest_interactive
 from etna.analysis.plotters import plot_clusters
 from etna.analysis.plotters import plot_correlation_matrix
 from etna.analysis.plotters import plot_forecast
+from etna.analysis.plotters import plot_residuals
 from etna.analysis.plotters import plot_time_series_with_change_points
