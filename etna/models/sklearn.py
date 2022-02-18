@@ -11,12 +11,12 @@ from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
 
 
-class _SklearnModel:
+class _SklearnAdapter:
     def __init__(self, regressor: RegressorMixin):
         self.model = regressor
         self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SklearnModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SklearnAdapter":
         self.regressor_columns = regressors
         try:
             features = df[self.regressor_columns].apply(pd.to_numeric)
@@ -47,22 +47,7 @@ class SklearnPerSegmentModel(PerSegmentModel):
         regressor:
             sklearn model for regression
         """
-        super().__init__(base_model=_SklearnModel(regressor=regressor))
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "SklearnPerSegmentModel":
-        """Fit model."""
-        self._segments = ts.segments
-        self._build_models()
-
-        for segment in self._segments:
-            model = self._models[segment]  # type: ignore
-            segment_features = ts[:, segment, :]
-            segment_features = segment_features.dropna()
-            segment_features = segment_features.droplevel("segment", axis=1)
-            segment_features = segment_features.reset_index()
-            model.fit(df=segment_features, regressors=ts.regressors)
-        return self
+        super().__init__(base_model=_SklearnAdapter(regressor=regressor))
 
 
 class SklearnMultiSegmentModel(Model):
@@ -78,7 +63,7 @@ class SklearnMultiSegmentModel(Model):
             sklearn model for regression
         """
         super().__init__()
-        self._base_model = _SklearnModel(regressor=regressor)
+        self._base_model = _SklearnAdapter(regressor=regressor)
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "SklearnMultiSegmentModel":
