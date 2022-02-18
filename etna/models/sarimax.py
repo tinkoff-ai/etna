@@ -275,7 +275,7 @@ class _SARIMAXAdapter:
             )
             y_pred = pd.DataFrame(forecast.predicted_mean)
             y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
-        y_pred.reset_index(drop=True, inplace=False)
+        y_pred = y_pred.reset_index(drop=True, inplace=False)
         rename_dict = {
             column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
         }

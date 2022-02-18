@@ -222,7 +222,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
            dictionary where key is segment and value is internal model
         """
         if self._models is None:
-            raise ValueError("Can not get the dict with base models from not fitted model!")
+            raise ValueError("Can not get the dict with base models, the model is not fitted!")
         return self._models
 
     @staticmethod
@@ -299,7 +299,7 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
         """
         super().__init__(base_model=base_model)
 
-    @abstractmethod
+    @log_decorator
     def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
