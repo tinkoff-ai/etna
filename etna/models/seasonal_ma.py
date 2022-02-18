@@ -1,4 +1,5 @@
 import warnings
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -33,7 +34,7 @@ class _SeasonalMovingAverageModel:
         self.seasonality = seasonality
         self.shift = self.window * self.seasonality
 
-    def fit(self, df: pd.DataFrame) -> "_SeasonalMovingAverageModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SeasonalMovingAverageModel":
         """
         Fitting simple model on given series.
 
