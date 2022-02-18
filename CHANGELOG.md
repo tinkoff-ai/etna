@@ -18,19 +18,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
 - 
 - Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
-
+- 
+- Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
+- 
 ### Changed
 - Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))
 - Change the way `SARIMAXModel` works with regressors ([#380](https://github.com/tinkoff-ai/etna/pull/380)) 
 - Change the way `Sklearn` models works with regressors ([#440](https://github.com/tinkoff-ai/etna/pull/440))
 - Change the way `FeatureSelectionTransform` works with regressors, rename variables replacing the "regressor" to "feature" ([#522](https://github.com/tinkoff-ai/etna/pull/522))
--
--
+- 
+- 
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
--
+- 
 - Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
 - Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
-
+- 
+- Rename `_CatBoostModel`, `_HoltWintersModel`, `_SklearnModel` ([#543](https://github.com/tinkoff-ai/etna/pull/543))
+- 
 ### Fixed
 - Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
 - Fix `TSDataset.info`, `TSDataset.describe` methods ([#519](https://github.com/tinkoff-ai/etna/pull/519))
