@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FutureMixin` into some transforms ([#361](https://github.com/tinkoff-ai/etna/pull/361))
 - Regressors updating in TSDataset transform loops ([#374](https://github.com/tinkoff-ai/etna/pull/374))
 - Regressors handling in TSDataset `make_future` and `train_test_split` ([#447](https://github.com/tinkoff-ai/etna/pull/447))
-- 
+- Prediction intervals visualization in `plot_forecast` ([#538](https://github.com/tinkoff-ai/etna/pull/538))
 - 
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
 - 
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
 -
--
+- Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
 - Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
 
 ### Fixed
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- [BUG] nn models make forecast without inverse_transform ([#541](https://github.com/tinkoff-ai/etna/pull/541))
 
 ## [1.6.3] - 2022-02-14
 
