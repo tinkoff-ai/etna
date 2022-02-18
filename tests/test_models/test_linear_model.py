@@ -78,7 +78,6 @@ def linear_segments_ts_common(random_seed):
     return linear_segments_by_parameters(alpha_values, intercept_values)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("model", (LinearPerSegmentModel(), ElasticPerSegmentModel()))
 def test_not_fitted(model, linear_segments_ts_unique):
     """Check exception when trying to forecast with unfitted model."""
@@ -87,7 +86,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
     train.fit_transform([lags])
 
     to_forecast = train.make_future(3)
-    with pytest.raises(ValueError, match="model is not fitted"):
+    with pytest.raises(ValueError, match="not fitted model!"):
         model.forecast(to_forecast)
 
 

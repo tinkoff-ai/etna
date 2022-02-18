@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import numpy as np
@@ -11,7 +12,7 @@ from etna.models.base import PerSegmentModel
 from etna.models.base import log_decorator
 
 
-class _CatBoostModel:
+class _CatBoostAdapter:
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -34,7 +35,7 @@ class _CatBoostModel:
         )
         self._categorical = None
 
-    def fit(self, df: pd.DataFrame) -> "_CatBoostModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_CatBoostAdapter":
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
         self._categorical = features.select_dtypes(include=["category"]).columns.to_list()
@@ -150,7 +151,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         self.thread_count = thread_count
         self.kwargs = kwargs
         super(CatBoostModelPerSegment, self).__init__(
-            base_model=_CatBoostModel(
+            base_model=_CatBoostAdapter(
                 iterations=iterations,
                 depth=depth,
                 learning_rate=learning_rate,
@@ -263,7 +264,7 @@ class CatBoostModelMultiSegment(Model):
         self.thread_count = thread_count
         self.kwargs = kwargs
         super(CatBoostModelMultiSegment, self).__init__()
-        self._base_model = _CatBoostModel(
+        self._base_model = _CatBoostAdapter(
             iterations=iterations,
             depth=depth,
             learning_rate=learning_rate,
@@ -279,7 +280,7 @@ class CatBoostModelMultiSegment(Model):
         df = ts.to_pandas(flatten=True)
         df = df.dropna()
         df = df.drop(columns="segment")
-        self._base_model.fit(df=df)
+        self._base_model.fit(df=df, regressors=ts.regressors)
         return self
 
     @log_decorator

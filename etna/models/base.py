@@ -208,7 +208,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
             segment_features = segment_features.dropna()
             segment_features = segment_features.droplevel("segment", axis=1)
             segment_features = segment_features.reset_index()
-            model.fit(df=segment_features)
+            model.fit(df=segment_features, regressors=ts.regressors)
         return self
 
     def get_model(self) -> Dict[str, Any]:

@@ -1,6 +1,7 @@
 import warnings
 from datetime import datetime
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -13,7 +14,7 @@ from statsmodels.tsa.holtwinters import HoltWintersResults
 from etna.models.base import PerSegmentModel
 
 
-class _HoltWintersModel:
+class _HoltWintersAdapter:
     """
     Class for holding Holt-Winters' exponential smoothing model.
 
@@ -168,7 +169,7 @@ class _HoltWintersModel:
         self._model: Optional[ExponentialSmoothing] = None
         self._result: Optional[HoltWintersResults] = None
 
-    def fit(self, df: pd.DataFrame) -> "_HoltWintersModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
         """
         Fits a Holt-Winters' model.
 
@@ -179,7 +180,7 @@ class _HoltWintersModel:
 
         Returns
         -------
-        self: _HoltWintersModel
+        self: _HoltWintersAdapter
             fitted model
         """
         self._check_df(df)
@@ -396,7 +397,7 @@ class HoltWintersModel(PerSegmentModel):
         self.damping_trend = damping_trend
         self.fit_kwargs = fit_kwargs
         super().__init__(
-            base_model=_HoltWintersModel(
+            base_model=_HoltWintersAdapter(
                 trend=self.trend,
                 damped_trend=self.damped_trend,
                 seasonal=self.seasonal,
