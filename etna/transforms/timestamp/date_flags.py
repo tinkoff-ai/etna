@@ -36,7 +36,7 @@ class DateFlagsTransform(Transform, FutureMixin):
         day_number_in_month:
             if True, add column with day info to feature dataframe in transform
         day_number_in_year:
-            if True, add column with number of day in a year, leap year numeration, starts with 1
+            if True, add column with number of day in a year with leap year numeration (values from 1 to 366)
         week_number_in_month:
             if True, add column with week number (in month context) to feature dataframe in transform
         week_number_in_year:
@@ -241,7 +241,7 @@ class DateFlagsTransform(Transform, FutureMixin):
 
     @staticmethod
     def _get_day_number_in_year(timestamp_series: pd.Series) -> np.ndarray:
-        """Generate an array with the number of the day in a year, lear year numeration, starts with 1."""
+        """Generate an array with number of day in a year with leap year numeration (values from 1 to 366)."""
 
         def leap_year_number(dt: pd.Timestamp) -> int:
             """Return day number with leap year numeration."""
