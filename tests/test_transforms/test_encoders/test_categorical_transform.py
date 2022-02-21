@@ -160,19 +160,21 @@ def test_new_value_label_encoder(two_df_with_new_values, strategy, expected_valu
         np.testing.assert_array_almost_equal(values, expected_values[segment])
 
 
-def test_new_value_ohe_encoder(two_df_with_new_values):
+@pytest.mark.parametrize(
+    "expected_values",
+    [{"segment_0": [[1, 0, 0], [0, 1, 0], [0, 0, 1]], "segment_1": [[1, 0, 0], [0, 0, 0], [0, 0, 0]]}],
+)
+def test_new_value_ohe_encoder(two_df_with_new_values, expected_values):
     """Test OneHotEncoderTransform correct works with unknown values."""
-    expected_values = np.array(
-        [
-            [5.0, 1.0, 1.0, 0.0, 5.0, 4.0, 1.0, 0.0],
-            [8.0, 2.0, 0.0, 1.0, 0.0, 5.0, 0.0, 0.0],
-            [9.0, 3.0, 0.0, 0.0, 0.0, 6.0, 0.0, 0.0],
-        ]
-    )
     df1, df2 = two_df_with_new_values
+    segments = df1.columns.get_level_values("segment").unique().tolist()
+    out_columns = ["targets_0", "targets_1", "targets_2"]
     ohe = OneHotEncoderTransform(in_column="regressor_0", out_column="targets")
     ohe.fit(df1)
-    np.testing.assert_array_almost_equal(ohe.transform(df2).values, expected_values)
+    df2_transformed = ohe.transform(df2)
+    for segment in segments:
+        values = df2_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, out_columns]].values
+        np.testing.assert_array_almost_equal(values, expected_values[segment])
 
 
 def test_naming_ohe_encoder(two_df_with_new_values):
@@ -181,22 +183,20 @@ def test_naming_ohe_encoder(two_df_with_new_values):
     ohe = OneHotEncoderTransform(in_column="regressor_0", out_column="targets")
     ohe.fit(df1)
     segments = ["segment_0", "segment_1"]
-    target = ["target", "targets_0", "targets_1", "regressor_0"]
+    target = ["target", "targets_0", "targets_1", "targets_2", "regressor_0"]
     assert set([(i, j) for i in segments for j in target]) == set(ohe.transform(df2).columns.values)
 
 
 @pytest.mark.parametrize(
-    "in_column, prefix",
-    [("2", ""), ("regressor_1", "regressor_")],
+    "in_column",
+    [("2"), ("regressor_1")],
 )
-def test_naming_ohe_encoder_no_out_column(df_for_naming, in_column, prefix):
+def test_naming_ohe_encoder_no_out_column(df_for_naming, in_column):
     """Test OneHotEncoderTransform gives the correct columns with no out_column."""
     df = df_for_naming
     ohe = OneHotEncoderTransform(in_column=in_column)
     ohe.fit(df)
-    answer = set(
-        list(df["segment_0"].columns) + [prefix + str(ohe.__repr__()) + "_0", prefix + str(ohe.__repr__()) + "_1"]
-    )
+    answer = set(list(df["segment_0"].columns) + [str(ohe.__repr__()) + "_0", str(ohe.__repr__()) + "_1"])
     assert answer == set(ohe.transform(df)["segment_0"].columns.values)
 
 
