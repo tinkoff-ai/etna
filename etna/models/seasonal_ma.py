@@ -1,4 +1,5 @@
 import warnings
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -33,19 +34,21 @@ class _SeasonalMovingAverageModel:
         self.seasonality = seasonality
         self.shift = self.window * self.seasonality
 
-    def fit(self, df: pd.DataFrame) -> "_SeasonalMovingAverageModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SeasonalMovingAverageModel":
         """
-        Fitting simple model on given series.
+        Fit SeasonalMovingAverage model.
 
         Parameters
         ----------
         df: pd.DataFrame
             Ignored. Needed for compatibility with AutoRegressorForecaster.
+        regressors:
+            List of the columns with regressors(ignored in this model)
 
         Returns
         -------
-        self: SeasonalMovingAverageModel
-            fitted model
+        self:
+            Fitted model
         """
         if set(df.columns) != {"timestamp", "target"}:
             warnings.warn(
@@ -64,9 +67,9 @@ class _SeasonalMovingAverageModel:
             self.name = targets.name
         return self
 
-    def predict(self, df: pd.DataFrame) -> pd.Series:
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         """
-        Calculate forecast.
+        Compute predictions from a SeasonalMovingAverage model.
 
         Parameters
         ----------
@@ -76,13 +79,15 @@ class _SeasonalMovingAverageModel:
 
         Returns
         -------
-        pd.Series with forecast.
+        y_pred:
+            Array with predictions.
         """
         horizon = len(df)
         res = np.append(self.series, np.zeros(horizon))
         for i in range(self.shift, len(res)):
             res[i] = res[i - self.shift : i : self.seasonality].mean()
-        return pd.Series(data=res[-horizon:], name=self.name)
+        y_pred = res[-horizon:]
+        return y_pred
 
 
 class SeasonalMovingAverageModel(PerSegmentModel):

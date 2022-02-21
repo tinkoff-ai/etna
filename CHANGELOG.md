@@ -11,26 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FutureMixin` into some transforms ([#361](https://github.com/tinkoff-ai/etna/pull/361))
 - Regressors updating in TSDataset transform loops ([#374](https://github.com/tinkoff-ai/etna/pull/374))
 - Regressors handling in TSDataset `make_future` and `train_test_split` ([#447](https://github.com/tinkoff-ai/etna/pull/447))
-- 
+- Prediction intervals visualization in `plot_forecast` ([#538](https://github.com/tinkoff-ai/etna/pull/538))
 - 
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
 - 
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
 - 
+- Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
 - 
-
+- Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
+- 
 ### Changed
 - Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))
 - Change the way `SARIMAXModel` works with regressors ([#380](https://github.com/tinkoff-ai/etna/pull/380)) 
 - Change the way `Sklearn` models works with regressors ([#440](https://github.com/tinkoff-ai/etna/pull/440))
 - Change the way `FeatureSelectionTransform` works with regressors, rename variables replacing the "regressor" to "feature" ([#522](https://github.com/tinkoff-ai/etna/pull/522))
--
--
+- 
+- Add table option to ConsoleLogger ([#544](https://github.com/tinkoff-ai/etna/pull/544))
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
--
--
+- 
+- Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
 - Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
-
+- 
+- Rename `_CatBoostModel`, `_HoltWintersModel`, `_SklearnModel` ([#543](https://github.com/tinkoff-ai/etna/pull/543))
+- 
+- Rename `_SARIMAXModel` and `_ProphetModel`, make `SARIMAXModel` and `ProphetModel` inherit from `PerSegmentPredictionIntervalModel` ([#549](https://github.com/tinkoff-ai/etna/pull/549))
+- 
 ### Fixed
 - Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
 - Fix `TSDataset.info`, `TSDataset.describe` methods ([#519](https://github.com/tinkoff-ai/etna/pull/519))
@@ -40,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- [BUG] nn models make forecast without inverse_transform ([#541](https://github.com/tinkoff-ai/etna/pull/541))
 
 ## [1.6.3] - 2022-02-14
 
