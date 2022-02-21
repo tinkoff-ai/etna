@@ -156,7 +156,7 @@ def test_new_value_label_encoder(two_df_with_new_values, strategy, expected_valu
     le.fit(df1)
     df2_transformed = le.transform(df2)
     for segment in segments:
-        values = df2_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, "encoded_regressor_0"]].values
+        values = df2_transformed.loc[:, pd.IndexSlice[segment, "encoded_regressor_0"]].values
         np.testing.assert_array_almost_equal(values, expected_values[segment])
 
 
@@ -173,7 +173,7 @@ def test_new_value_ohe_encoder(two_df_with_new_values, expected_values):
     ohe.fit(df1)
     df2_transformed = ohe.transform(df2)
     for segment in segments:
-        values = df2_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, out_columns]].values
+        values = df2_transformed.loc[:, pd.IndexSlice[segment, out_columns]].values
         np.testing.assert_array_almost_equal(values, expected_values[segment])
 
 
