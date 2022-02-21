@@ -55,8 +55,8 @@ class DateFlagsTransform(Transform, FutureMixin):
             with flag that shows given date is a special day
         out_column:
             base for the name of created columns;
-            if set the final name is '{out_column}_{feature_name}', don't forget to add 'regressor_' prefix;
-            if don't set, name will be 'regressor_{transform.__repr__()}',
+            if set the final name is '{out_column}_{feature_name}';
+            if don't set, name will be `transform.__repr__()`,
             repr will be made for transform that creates exactly this column
 
         Notes
@@ -129,7 +129,7 @@ class DateFlagsTransform(Transform, FutureMixin):
             init_parameters = deepcopy(self._empty_parameters)
             init_parameters[feature_name] = self.__dict__[feature_name]
             temp_transform = DateFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
-            return f"regressor_{temp_transform.__repr__()}"
+            return temp_transform.__repr__()
         else:
             return f"{self.out_column}_{feature_name}"
 
