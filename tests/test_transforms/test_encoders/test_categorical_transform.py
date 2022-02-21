@@ -16,17 +16,15 @@ from etna.transforms.encoders.categorical import OneHotEncoderTransform
 @pytest.fixture
 def two_df_with_new_values():
     d = {
-        "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03"))
-        + list(pd.date_range(start="2021-01-01", end="2021-01-03")),
-        "segment": ["segment_0", "segment_0", "segment_0", "segment_1", "segment_1", "segment_1"],
+        "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03")) * 2,
+        "segment": ["segment_0"] * 3 + ["segment_1"] * 3,
         "regressor_0": [5, 8, 5, 9, 5, 9],
         "target": [1, 2, 3, 4, 5, 6],
     }
     df1 = TSDataset.to_dataset(pd.DataFrame(d))
     d = {
-        "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03"))
-        + list(pd.date_range(start="2021-01-01", end="2021-01-03")),
-        "segment": ["segment_0", "segment_0", "segment_0", "segment_1", "segment_1", "segment_1"],
+        "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03")) * 2,
+        "segment": ["segment_0"] * 3 + ["segment_1"] * 3,
         "regressor_0": [5, 8, 9, 5, 0, 0],
         "target": [1, 2, 3, 4, 5, 6],
     }
@@ -145,17 +143,21 @@ def test_value_error_label_encoder(df_for_label_encoding):
 @pytest.mark.parametrize(
     "strategy, expected_values",
     [
-        ("new_value", np.array([[5, 0, 1, 5, 0, 4], [8, 1, 2, 0, -1, 5], [9, -1, 3, 0, -1, 6]])),
-        ("none", np.array([[5, 0, 1, 5, 0, 4], [8, 1, 2, 0, np.nan, 5], [9, np.nan, 3, 0, np.nan, 6]])),
-        ("mean", np.array([[5, 0, 1, 5, 0, 4], [8, 1, 2, 0, 0, 5], [9, 0.5, 3, 0, 0, 6]])),
+        ("new_value", {"segment_0": [0, 1, 2], "segment_1": [0, -1, -1]}),
+        ("none", {"segment_0": [0, 1, 2], "segment_1": [0, np.nan, np.nan]}),
+        ("mean", {"segment_0": [0, 1, 2], "segment_1": [0, 3 / 4, 3 / 4]}),
     ],
 )
 def test_new_value_label_encoder(two_df_with_new_values, strategy, expected_values):
     """Test LabelEncoderTransform correct works with unknown values."""
     df1, df2 = two_df_with_new_values
-    le = LabelEncoderTransform(in_column="regressor_0", strategy=strategy)
+    segments = df1.columns.get_level_values("segment").unique().tolist()
+    le = LabelEncoderTransform(in_column="regressor_0", strategy=strategy, out_column="encoded_regressor_0")
     le.fit(df1)
-    np.testing.assert_array_almost_equal(le.transform(df2).values, expected_values)
+    df2_transformed = le.transform(df2)
+    for segment in segments:
+        values = df2_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, "encoded_regressor_0"]].values
+        np.testing.assert_array_almost_equal(values, expected_values[segment])
 
 
 def test_new_value_ohe_encoder(two_df_with_new_values):
@@ -199,15 +201,15 @@ def test_naming_ohe_encoder_no_out_column(df_for_naming, in_column, prefix):
 
 
 @pytest.mark.parametrize(
-    "in_column, prefix",
-    [("2", ""), ("regressor_1", "regressor_")],
+    "in_column",
+    [("2"), ("regressor_1")],
 )
-def test_naming_label_encoder_no_out_column(df_for_naming, in_column, prefix):
+def test_naming_label_encoder_no_out_column(df_for_naming, in_column):
     """Test LabelEncoderTransform gives the correct columns with no out_column."""
     df = df_for_naming
     le = LabelEncoderTransform(in_column=in_column)
     le.fit(df)
-    answer = set(list(df["segment_0"].columns) + [prefix + str(le.__repr__())])
+    answer = set(list(df["segment_0"].columns) + [str(le.__repr__())])
     assert answer == set(le.transform(df)["segment_0"].columns.values)
 
 
