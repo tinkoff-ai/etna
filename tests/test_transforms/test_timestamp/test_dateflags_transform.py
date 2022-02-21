@@ -17,6 +17,7 @@ SPECIAL_DAYS_PARAMS = {"special_days_in_week", "special_days_in_month"}
 INIT_PARAMS_TEMPLATE = {
     "day_number_in_week": False,
     "day_number_in_month": False,
+    "day_number_in_year": False,
     "week_number_in_year": False,
     "week_number_in_month": False,
     "month_number_in_year": False,
@@ -44,6 +45,9 @@ def dateflags_true_df() -> pd.DataFrame:
         df = dataframes[i]
         df[f"regressor_{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday
         df[f"regressor_{out_column}_day_number_in_month"] = df["timestamp"].dt.day
+        df[f"regressor_{out_column}_day_number_in_year"] = df["timestamp"].apply(
+            lambda dt: dt.dayofyear + 1 if not dt.is_leap_year and dt.month >= 3 else dt.dayofyear
+        )
         df[f"regressor_{out_column}_week_number_in_year"] = df["timestamp"].dt.week
         df[f"regressor_{out_column}_month_number_in_year"] = df["timestamp"].dt.month
         df[f"regressor_{out_column}_year_number"] = df["timestamp"].dt.year
@@ -93,6 +97,7 @@ def test_invalid_arguments_configuration():
         _ = DateFlagsTransform(
             day_number_in_month=False,
             day_number_in_week=False,
+            day_number_in_year=False,
             week_number_in_month=False,
             week_number_in_year=False,
             month_number_in_year=False,
@@ -109,6 +114,7 @@ def test_repr():
     transform = DateFlagsTransform(
         day_number_in_week=True,
         day_number_in_month=True,
+        day_number_in_year=False,
         week_number_in_month=False,
         week_number_in_year=False,
         month_number_in_year=True,
@@ -119,9 +125,9 @@ def test_repr():
     )
     transform_repr = transform.__repr__()
     true_repr = (
-        f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, week_number_in_month = False, "
-        f"week_number_in_year = False, month_number_in_year = True, year_number = True, is_weekend = True, special_days_in_week = (1, 2), "
-        f"special_days_in_month = (12,), out_column = None, )"
+        f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, day_number_in_year = False, "
+        f"week_number_in_month = False, week_number_in_year = False, month_number_in_year = True, year_number = True, "
+        f"is_weekend = True, special_days_in_week = (1, 2), special_days_in_month = (12,), out_column = None, )"
     )
     assert transform_repr == true_repr
 
@@ -131,6 +137,7 @@ def test_repr():
     (
         ["day_number_in_week"],
         ["day_number_in_month"],
+        ["day_number_in_year"],
         ["week_number_in_year"],
         ["week_number_in_month"],
         ["month_number_in_year"],
@@ -139,6 +146,7 @@ def test_repr():
         [
             "day_number_in_week",
             "day_number_in_month",
+            "day_number_in_year",
             "week_number_in_year",
             "week_number_in_month",
             "month_number_in_year",
@@ -173,6 +181,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
     (
         ["day_number_in_week"],
         ["day_number_in_month"],
+        ["day_number_in_year"],
         ["week_number_in_year"],
         ["week_number_in_month"],
         ["month_number_in_year"],
@@ -181,6 +190,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
         [
             "day_number_in_week",
             "day_number_in_month",
+            "day_number_in_year",
             "week_number_in_year",
             "week_number_in_month",
             "month_number_in_year",
@@ -230,6 +240,7 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
     (
         {"day_number_in_week": True},
         {"day_number_in_month": True},
+        {"day_number_in_year": True},
         {"week_number_in_year": True},
         {"week_number_in_month": True},
         {"month_number_in_year": True},
