@@ -288,6 +288,7 @@ class TSDataset:
 
         if self.transforms is not None:
             for transform in self.transforms:
+                tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
                 df = transform.transform(df)
 
         future_dataset = df.tail(future_steps).copy(deep=True)
