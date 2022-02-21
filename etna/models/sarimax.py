@@ -4,15 +4,12 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Union
 
 import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from etna.datasets import TSDataset
-from etna.models.base import PerSegmentModel
-from etna.models.base import log_decorator
+from etna.models.base import PerSegmentPredictionIntervalModel
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -22,7 +19,7 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXModel:
+class _SARIMAXAdapter:
     """
     Class for holding Sarimax model.
 
@@ -167,7 +164,7 @@ class _SARIMAXModel:
         self._result: Optional[SARIMAX] = None
         self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXAdapter":
         """
         Fits a SARIMAX model.
 
@@ -179,8 +176,8 @@ class _SARIMAXModel:
             List of the columns with regressors
         Returns
         -------
-        self: SARIMAX
-            fitted model
+        self:
+            Fitted model
         """
         self.regressor_columns = regressors
         categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
@@ -239,7 +236,7 @@ class _SARIMAXModel:
 
         Returns
         -------
-        y_pred: pd.DataFrame
+        y_pred:
             DataFrame with predictions
         """
         if self._result is None or self._model is None:
@@ -278,7 +275,12 @@ class _SARIMAXModel:
             )
             y_pred = pd.DataFrame(forecast.predicted_mean)
             y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
-        return y_pred.reset_index(drop=True, inplace=False)
+        y_pred = y_pred.reset_index(drop=True, inplace=False)
+        rename_dict = {
+            column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
+        }
+        y_pred = y_pred.rename(rename_dict, axis=1)
+        return y_pred
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
         if self.regressor_columns is None:
@@ -306,7 +308,7 @@ class _SARIMAXModel:
         return exog_future
 
 
-class SARIMAXModel(PerSegmentModel):
+class SARIMAXModel(PerSegmentPredictionIntervalModel):
     """
     Class for holding Sarimax model.
 
@@ -448,7 +450,7 @@ class SARIMAXModel(PerSegmentModel):
         self.validate_specification = validate_specification
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
-            base_model=_SARIMAXModel(
+            base_model=_SARIMAXAdapter(
                 order=self.order,
                 seasonal_order=self.seasonal_order,
                 trend=self.trend,
@@ -469,85 +471,3 @@ class SARIMAXModel(PerSegmentModel):
                 **self.kwargs,
             )
         )
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "SARIMAXModel":
-        """Fit model."""
-        self._segments = ts.segments
-        self._build_models()
-
-        for segment in self._segments:
-            model = self._models[segment]  # type: ignore
-            segment_features = ts[:, segment, :]
-            segment_features = segment_features.dropna()
-            segment_features = segment_features.droplevel("segment", axis=1)
-            segment_features = segment_features.reset_index()
-            model.fit(df=segment_features, regressors=ts.regressors)
-        return self
-
-    @staticmethod
-    def _forecast_one_segment(
-        model,
-        segment: Union[str, List[str]],
-        ts: TSDataset,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-    ) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(
-            df=segment_features, prediction_interval=prediction_interval, quantiles=quantiles
-        )
-        rename_dict = {
-            column: column.replace("mean", "target") for column in segment_predict.columns if column.startswith("mean")
-        }
-        segment_predict = segment_predict.rename(rename_dict, axis=1)
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
-
-    @log_decorator
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-
-        Returns
-        -------
-        pd.DataFrame
-            Models result
-        """
-        if self._segments is None:
-            raise ValueError("The model is not fitted yet, use fit() to train it")
-
-        result_list = list()
-        for segment in self._segments:
-            model = self._models[segment]  # type: ignore
-
-            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, quantiles)
-            result_list.append(segment_predict)
-
-        # need real case to test
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        # N.B. inplace forecast will not change target values, because `combine_first` only fill nan values
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
-        ts.inverse_transform()
-        return ts

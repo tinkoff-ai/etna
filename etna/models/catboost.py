@@ -36,6 +36,20 @@ class _CatBoostAdapter:
         self._categorical = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_CatBoostAdapter":
+        """
+        Fit Catboost model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        regressors:
+            List of the columns with regressors(ignored in this model)
+        Returns
+        -------
+        self:
+            Fitted model
+        """
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
         self._categorical = features.select_dtypes(include=["category"]).columns.to_list()
@@ -44,6 +58,19 @@ class _CatBoostAdapter:
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        """
+        Compute predictions from a Catboost model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+
+        Returns
+        -------
+        y_pred:
+            Array with predictions
+        """
         features = df.drop(columns=["timestamp", "target"])
         predict_pool = Pool(features, cat_features=self._categorical)
         pred = self.model.predict(predict_pool)

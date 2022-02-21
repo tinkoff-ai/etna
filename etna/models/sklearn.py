@@ -17,6 +17,20 @@ class _SklearnAdapter:
         self.regressor_columns: Optional[List[str]] = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SklearnAdapter":
+        """
+        Fit Sklearn model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        regressors:
+            List of the columns with regressors
+        Returns
+        -------
+        self:
+            Fitted model
+        """
         self.regressor_columns = regressors
         try:
             features = df[self.regressor_columns].apply(pd.to_numeric)
@@ -27,6 +41,19 @@ class _SklearnAdapter:
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        """
+        Compute predictions from a Sklearn model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+
+        Returns
+        -------
+        y_pred:
+            Array with predictions
+        """
         try:
             features = df[self.regressor_columns].apply(pd.to_numeric)
         except ValueError:
