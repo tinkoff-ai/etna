@@ -6,10 +6,8 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
 
-from etna.datasets.tsdataset import TSDataset
-from etna.models.base import Model
+from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
-from etna.models.base import log_decorator
 
 
 class _CatBoostAdapter:
@@ -190,7 +188,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         )
 
 
-class CatBoostModelMultiSegment(Model):
+class CatBoostModelMultiSegment(MultiSegmentModel):
     """Class for holding Catboost model for all segments.
 
     Examples
@@ -290,42 +288,14 @@ class CatBoostModelMultiSegment(Model):
         self.l2_leaf_reg = l2_leaf_reg
         self.thread_count = thread_count
         self.kwargs = kwargs
-        super(CatBoostModelMultiSegment, self).__init__()
-        self._base_model = _CatBoostAdapter(
-            iterations=iterations,
-            depth=depth,
-            learning_rate=learning_rate,
-            logging_level=logging_level,
-            thread_count=thread_count,
-            l2_leaf_reg=l2_leaf_reg,
-            **kwargs,
+        super().__init__(
+            base_model=_CatBoostAdapter(
+                iterations=iterations,
+                depth=depth,
+                learning_rate=learning_rate,
+                logging_level=logging_level,
+                thread_count=thread_count,
+                l2_leaf_reg=l2_leaf_reg,
+                **kwargs,
+            )
         )
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "CatBoostModelMultiSegment":
-        """Fit model."""
-        df = ts.to_pandas(flatten=True)
-        df = df.dropna()
-        df = df.drop(columns="segment")
-        self._base_model.fit(df=df, regressors=ts.regressors)
-        return self
-
-    @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        Returns
-        -------
-        DataFrame
-            Models result
-        """
-        horizon = len(ts.df)
-        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x).reshape(-1, horizon).T
-        ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
-        return ts
