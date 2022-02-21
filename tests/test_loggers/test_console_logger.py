@@ -119,6 +119,8 @@ def test_model_logging(example_tsds, model):
 
     with open(file.name, "r") as in_file:
         lines = in_file.readlines()
+        # filter out logs related to transforms
+        lines = [line for line in lines if lags.__class__.__name__ not in line]
         assert len(lines) == 2
         assert "fit" in lines[0]
         assert "forecast" in lines[1]
