@@ -6,7 +6,7 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
 
-from etna.models.base import MultisegmentModel
+from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
 
 
@@ -188,7 +188,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         )
 
 
-class CatBoostModelMultiSegment(MultisegmentModel):
+class CatBoostModelMultiSegment(MultiSegmentModel):
     """Class for holding Catboost model for all segments.
 
     Examples

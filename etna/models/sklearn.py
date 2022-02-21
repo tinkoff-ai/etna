@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
 
-from etna.models.base import MultisegmentModel
+from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
 
 
@@ -75,7 +75,7 @@ class SklearnPerSegmentModel(PerSegmentModel):
         super().__init__(base_model=_SklearnAdapter(regressor=regressor))
 
 
-class SklearnMultiSegmentModel(MultisegmentModel):
+class SklearnMultiSegmentModel(MultiSegmentModel):
     """Class for holding Sklearn model for all segments."""
 
     def __init__(self, regressor: RegressorMixin):
