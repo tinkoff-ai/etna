@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix regressors handling for `OneHotEncoderTransform` and `HolidayTransform` ([#518](https://github.com/tinkoff-ai/etna/pull/518))
 - 
 - 
-- 
+- Fix import Literal in plotters ([#558](https://github.com/tinkoff-ai/etna/pull/558))
 - 
 - 
 - 
