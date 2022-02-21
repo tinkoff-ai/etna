@@ -204,7 +204,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
 
         for segment, model in self._models.items():
             segment_features = ts[:, segment, :]
-            segment_features = segment_features.dropna()
+            segment_features = segment_features.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
             segment_features = segment_features.droplevel("segment", axis=1)
             segment_features = segment_features.reset_index()
             model.fit(df=segment_features, regressors=ts.regressors)
@@ -336,3 +336,72 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
         ts.df = df
         ts.inverse_transform()
         return ts
+
+
+class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
+    """Class for holding specific models for per-segment prediction."""
+
+    def __init__(self, base_model: Any):
+        """
+        Init MultiSegmentModel.
+
+        Parameters
+        ----------
+        base_model:
+            Internal model which will be used to forecast segments, expected to have fit/predict interface
+        """
+        self._base_model = base_model
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "MultiSegmentModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        self:
+            Model after fit
+        """
+        df = ts.to_pandas(flatten=True)
+        df = df.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
+        df = df.drop(columns="segment")
+        self._base_model.fit(df=df, regressors=ts.regressors)
+        return self
+
+    @log_decorator
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        forecast:
+            Dataset with predictions
+        """
+        horizon = len(ts.df)
+        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
+        y = self._base_model.predict(x).reshape(-1, horizon).T
+        ts.loc[:, pd.IndexSlice[:, "target"]] = y
+        ts.inverse_transform()
+        return ts
+
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
+        or `sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self._base_model
