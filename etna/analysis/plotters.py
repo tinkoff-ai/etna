@@ -19,6 +19,10 @@ import plotly
 import plotly.graph_objects as go
 import seaborn as sns
 
+from etna.transforms import ChangePointsTrendTransform
+from etna.transforms import LinearTrendTransform
+from etna.transforms import STLTransform
+from etna.transforms import TheilSenTrendTransform
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
@@ -729,3 +733,57 @@ def plot_residuals(
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].set_xlabel(feature)
+
+
+TrendTransformType = Union[ChangePointsTrendTransform, LinearTrendTransform, TheilSenTrendTransform, STLTransform]
+
+
+def plot_trend(
+    ts: "TSDataset",
+    trend_transform: Union["TrendTransformType", List["TrendTransformType"]],
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot series and trend from trend transform for this series.
+
+    Parameters
+    ----------
+    ts:
+        dataframe of timeseries that was used for trend plot
+    trend_transform:
+        trend transform or list of trend transforms to apply
+    segments:
+        segments to use
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = list(set(ts.columns.get_level_values("segment")))
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    df = ts.df
+    linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
+    if isinstance(trend_transform, list):
+        df_detrend = [transform.fit_transform(df.copy()) for transform in trend_transform]
+        labels = [transform.__repr__() for transform in trend_transform]
+        labels_short = [i[: i.find("(")] for i in labels]
+        if len(np.unique(labels_short)) == len(labels_short):
+            labels = labels_short
+    else:
+        df_detrend = [trend_transform.fit_transform(df.copy())]
+        labels = [trend_transform.__repr__()[: trend_transform.__repr__().find("(")]]
+        if isinstance(trend_transform, LinearTrendTransform) or isinstance(trend_transform, TheilSenTrendTransform):
+            for seg in segments:
+
+                linear_coeffs[seg] = ", k=" + str(trend_transform.segment_transforms[seg]._linear_model.coef_[0])
+
+    for i, segment in enumerate(segments):
+        ax[i].plot(df[segment]["target"], label="Initial series")
+        for label, df_now in zip(labels, df_detrend):
+            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment])
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
+        ax[i].legend()
