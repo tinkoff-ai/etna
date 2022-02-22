@@ -85,9 +85,18 @@ To set up a configuration for your project you should create a `.etna` file at t
 Here's some example code for a quick start.
 ```python
 import pandas as pd
+
 from etna.datasets.tsdataset import TSDataset
-from etna.models import ProphetModel
+from etna.metrics import SMAPE
+from etna.models import CatBoostModelMultiSegment
 from etna.pipeline import Pipeline
+from etna.transforms import DateFlagsTransform
+from etna.transforms import DensityOutliersTransform
+from etna.transforms import FourierTransform
+from etna.transforms import LagTransform
+from etna.transforms import LinearTrendTransform
+from etna.transforms import SegmentEncoderTransform
+from etna.transforms import TimeSeriesImputerTransform
 
 # Read the data
 df = pd.read_csv("examples/data/example_dataset.csv")
@@ -99,12 +108,36 @@ ts = TSDataset(df, freq="D")
 # Choose a horizon
 HORIZON = 8
 
+# Make train_test_split
+train_ts, test_ts = ts.train_test_split(test_size=HORIZON)
+
+# prepare transforms
+transforms = [
+    DensityOutliersTransform(in_column="target", distance_coef=1.0),
+    TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
+    LinearTrendTransform(in_column="target"),
+    LagTransform(in_column="target", lags=list(range(HORIZON, 21)), out_column="target_lag"),
+    DateFlagsTransform(
+        day_number_in_week=True,
+        day_number_in_month=True,
+        is_weekend=True,
+        week_number_in_month=True,
+        out_column="date_flag",
+    ),
+    FourierTransform(period=360.25, order=20, out_column="fourier"),
+    SegmentEncoderTransform(),
+]
+
 # Fit the pipeline
-pipeline = Pipeline(model=ProphetModel(), horizon=HORIZON)
-pipeline.fit(ts)
+pipeline = Pipeline(model=CatBoostModelMultiSegment(), transforms=transforms, horizon=HORIZON)
+pipeline.fit(train_ts)
 
 # Make the forecast
 forecast_ts = pipeline.forecast()
+
+metric = SMAPE(mode="macro")
+metric_value = metric(y_true=test_ts, y_pred=forecast_ts)
+print(f"SMAPE = {metric_value:.3f}")
 ```
 
 ## Tutorials
