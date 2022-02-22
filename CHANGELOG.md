@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
 - 
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
-- 
+- Add plot_trend ([#565](https://github.com/tinkoff-ai/etna/pull/565))
 - Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
 - 
 - Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))

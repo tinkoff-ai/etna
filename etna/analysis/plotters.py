@@ -19,14 +19,14 @@ import plotly
 import plotly.graph_objects as go
 import seaborn as sns
 
-from etna.transforms import ChangePointsTrendTransform
-from etna.transforms import LinearTrendTransform
-from etna.transforms import STLTransform
-from etna.transforms import TheilSenTrendTransform
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.transforms import ChangePointsTrendTransform
+    from etna.transforms import LinearTrendTransform
+    from etna.transforms import STLTransform
+    from etna.transforms import TheilSenTrendTransform
 
 
 def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]) -> Sequence[matplotlib.axes.Axes]:
@@ -735,7 +735,9 @@ def plot_residuals(
         ax[i].set_xlabel(feature)
 
 
-TrendTransformType = Union[ChangePointsTrendTransform, LinearTrendTransform, TheilSenTrendTransform, STLTransform]
+TrendTransformType = Union[
+    "ChangePointsTrendTransform", "LinearTrendTransform", "TheilSenTrendTransform", "STLTransform"
+]
 
 
 def plot_trend(
