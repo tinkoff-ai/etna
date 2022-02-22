@@ -81,7 +81,8 @@ ETNA supports configuration files. It means that library will check that all the
 
 To set up a configuration for your project you should create a `.etna` file at the project's root. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file. 
 
-## Get started 
+## Get started
+
 Here's some example code for a quick start.
 ```python
 import pandas as pd
@@ -141,6 +142,7 @@ print(f"SMAPE = {metric_value:.3f}")
 ```
 
 ## Tutorials
+
 We have also prepared a set of tutorials for an easy introduction:
 
 | Notebook     | Interactive launch  |
@@ -154,6 +156,7 @@ We have also prepared a set of tutorials for an easy introduction:
 | [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/ensembles.ipynb) |
 
 ## Documentation
+
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
 ## Resources
@@ -167,6 +170,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 ## Acknowledgments
 
 ### ETNA.Team
+
 [Andrey Alekseev](https://github.com/iKintosh),
 [Nikita Barinov](https://github.com/diadorer),
 [Dmitriy Bunin](https://github.com/Mr-Geekman),
@@ -181,6 +185,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 [Julia Shenshina](https://github.com/julia-shenshina)
 
 ### ETNA.Contributors
+
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen),
 [Carlosbogo](https://github.com/Carlosbogo)
