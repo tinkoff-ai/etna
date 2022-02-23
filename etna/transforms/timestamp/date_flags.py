@@ -21,6 +21,7 @@ class DateFlagsTransform(Transform, FutureMixin):
         week_number_in_month: Optional[bool] = False,
         week_number_in_year: Optional[bool] = False,
         month_number_in_year: Optional[bool] = False,
+        season_number: Optional[bool] = False,
         year_number: Optional[bool] = False,
         is_weekend: Optional[bool] = True,
         special_days_in_week: Sequence[int] = (),
@@ -43,6 +44,8 @@ class DateFlagsTransform(Transform, FutureMixin):
             if True, add column with week number (in year context) to feature dataframe in transform
         month_number_in_year:
             if True, add column with month info to feature dataframe in transform
+        season_number:
+            if True, add column with season info to feature dataframe in transform
         year_number:
             if True, add column with year info to feature dataframe in transform
         is_weekend:
@@ -83,6 +86,7 @@ class DateFlagsTransform(Transform, FutureMixin):
                 week_number_in_month,
                 week_number_in_year,
                 month_number_in_year,
+                season_number,
                 year_number,
                 is_weekend,
                 special_days_in_week,
@@ -92,7 +96,7 @@ class DateFlagsTransform(Transform, FutureMixin):
             raise ValueError(
                 f"{type(self).__name__} feature does nothing with given init args configuration, "
                 f"at least one of day_number_in_week, day_number_in_month, day_number_in_year, week_number_in_month, "
-                f"week_number_in_year, month_number_in_year, year_number, is_weekend should be True or any of "
+                f"week_number_in_year, month_number_in_year, season_number, year_number, is_weekend should be True or any of "
                 f"special_days_in_week, special_days_in_month should be not empty."
             )
 
@@ -102,6 +106,7 @@ class DateFlagsTransform(Transform, FutureMixin):
         self.week_number_in_month = week_number_in_month
         self.week_number_in_year = week_number_in_year
         self.month_number_in_year = month_number_in_year
+        self.season_number = season_number
         self.year_number = year_number
         self.is_weekend = is_weekend
 
@@ -118,6 +123,7 @@ class DateFlagsTransform(Transform, FutureMixin):
             week_number_in_month=False,
             week_number_in_year=False,
             month_number_in_year=False,
+            season_number=False,
             year_number=False,
             is_weekend=False,
             special_days_in_week=(),
@@ -182,6 +188,11 @@ class DateFlagsTransform(Transform, FutureMixin):
                 timestamp_series=timestamp_series
             )
 
+        if self.season_number:
+            features[self._get_column_name("season_number")] = self._get_season_number(
+                timestamp_series=timestamp_series
+            )
+
         if self.year_number:
             features[self._get_column_name("year_number")] = self._get_year(timestamp_series=timestamp_series)
 
@@ -238,6 +249,11 @@ class DateFlagsTransform(Transform, FutureMixin):
     def _get_day_number_in_month(timestamp_series: pd.Series) -> np.ndarray:
         """Generate an array with the number of the day in the month."""
         return timestamp_series.apply(lambda x: x.day).values
+
+    @staticmethod
+    def _get_season_number(timestamp_series: pd.Series) -> np.ndarray:
+        """Generate an array with the season number."""
+        return timestamp_series.apply(lambda x: x.month % 12 // 3 + 1).values
 
     @staticmethod
     def _get_day_number_in_year(timestamp_series: pd.Series) -> np.ndarray:
