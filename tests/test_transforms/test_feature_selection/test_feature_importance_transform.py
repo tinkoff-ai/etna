@@ -104,9 +104,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
 
     all_regressors = ts_with_regressors.regressors
     all_regressors.append("segment_code")
-    selected_regressors = set(
-        df_selected.columns.get_level_values("feature")
-    ).difference({"target"})
+    selected_regressors = set(df_selected.columns.get_level_values("feature")).difference({"target"})
 
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 

@@ -38,9 +38,7 @@ def dateflags_true_df() -> pd.DataFrame:
     for i in range(len(dataframes)):
         df = dataframes[i]
         df[f"{out_column}_minute_in_hour_number"] = df["timestamp"].dt.minute
-        df[f"{out_column}_fifteen_minutes_in_hour_number"] = (
-            df[f"{out_column}_minute_in_hour_number"] // 15
-        )
+        df[f"{out_column}_fifteen_minutes_in_hour_number"] = df[f"{out_column}_minute_in_hour_number"] // 15
         df[f"{out_column}_half_hour_number"] = df[f"{out_column}_minute_in_hour_number"] // 30
 
         df[f"{out_column}_hour_number"] = df["timestamp"].dt.hour

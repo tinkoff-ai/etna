@@ -47,9 +47,7 @@ class SegmentEncoderTransform(Transform, FutureMixin):
         encoded_matrix = encoded_matrix.reshape(len(self._le.classes_), -1).repeat(len(df), axis=1).T
         encoded_df = pd.DataFrame(
             encoded_matrix,
-            columns=pd.MultiIndex.from_product(
-                [self._le.classes_, ["segment_code"]], names=("segment", "feature")
-            ),
+            columns=pd.MultiIndex.from_product([self._le.classes_, ["segment_code"]], names=("segment", "feature")),
             index=df.index,
         )
         encoded_df = encoded_df.astype("category")
