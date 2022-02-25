@@ -16,11 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
 - 
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
-- Add option day_number_in_year to DateFlagsTransform ([#552](https://github.com/tinkoff-ai/etna/pull/552))
+- Add option `day_number_in_year` to DateFlagsTransform ([#552](https://github.com/tinkoff-ai/etna/pull/552))
 - Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
 - 
 - Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
-- Create `MultisegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
+- Create `MultiSegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
+- 
+- 
+- Add option `season_number` to DateFlagsTransform ([#567](https://github.com/tinkoff-ai/etna/pull/567))
+- 
+
 ### Changed
 - Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))
 - Change the way `SARIMAXModel` works with regressors ([#380](https://github.com/tinkoff-ai/etna/pull/380)) 
@@ -34,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
 - 
 - Rename `_CatBoostModel`, `_HoltWintersModel`, `_SklearnModel` ([#543](https://github.com/tinkoff-ai/etna/pull/543))
-- 
+- Add logging to TSDataset.make_future, log repr of transform instead of class name ([#555](https://github.com/tinkoff-ai/etna/pull/555))
 - Rename `_SARIMAXModel` and `_ProphetModel`, make `SARIMAXModel` and `ProphetModel` inherit from `PerSegmentPredictionIntervalModel` ([#549](https://github.com/tinkoff-ai/etna/pull/549))
 - 
 - Update get_started section in README ([#569](https://github.com/tinkoff-ai/etna/pull/569))
@@ -44,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
 - Fix `TSDataset.info`, `TSDataset.describe` methods ([#519](https://github.com/tinkoff-ai/etna/pull/519))
 - Fix regressors handling for `OneHotEncoderTransform` and `HolidayTransform` ([#518](https://github.com/tinkoff-ai/etna/pull/518))
+- Fix wandb summary issue with custom plots ([#535](https://github.com/tinkoff-ai/etna/pull/535))
 - 
 - 
 - Fix import Literal in plotters ([#558](https://github.com/tinkoff-ai/etna/pull/558))

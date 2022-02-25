@@ -21,6 +21,7 @@ INIT_PARAMS_TEMPLATE = {
     "week_number_in_year": False,
     "week_number_in_month": False,
     "month_number_in_year": False,
+    "season_number": False,
     "year_number": False,
     "is_weekend": False,
     "special_days_in_week": (),
@@ -50,6 +51,7 @@ def dateflags_true_df() -> pd.DataFrame:
         )
         df[f"{out_column}_week_number_in_year"] = df["timestamp"].dt.week
         df[f"{out_column}_month_number_in_year"] = df["timestamp"].dt.month
+        df[f"{out_column}_season_number"] = df["timestamp"].dt.month % 12 // 3 + 1
         df[f"{out_column}_year_number"] = df["timestamp"].dt.year
         df[f"{out_column}_week_number_in_month"] = df["timestamp"].apply(
             lambda x: int(x.weekday() < (x - timedelta(days=x.day - 1)).weekday()) + (x.day - 1) // 7 + 1
@@ -101,6 +103,7 @@ def test_invalid_arguments_configuration():
             week_number_in_month=False,
             week_number_in_year=False,
             month_number_in_year=False,
+            season_number=False,
             year_number=False,
             is_weekend=False,
             special_days_in_week=(),
@@ -118,6 +121,7 @@ def test_repr():
         week_number_in_month=False,
         week_number_in_year=False,
         month_number_in_year=True,
+        season_number=True,
         year_number=True,
         is_weekend=True,
         special_days_in_week=(1, 2),
@@ -126,7 +130,7 @@ def test_repr():
     transform_repr = transform.__repr__()
     true_repr = (
         f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, day_number_in_year = False, "
-        f"week_number_in_month = False, week_number_in_year = False, month_number_in_year = True, year_number = True, "
+        f"week_number_in_month = False, week_number_in_year = False, month_number_in_year = True, season_number = True, year_number = True, "
         f"is_weekend = True, special_days_in_week = (1, 2), special_days_in_month = (12,), out_column = None, )"
     )
     assert transform_repr == true_repr
@@ -141,6 +145,7 @@ def test_repr():
         ["week_number_in_year"],
         ["week_number_in_month"],
         ["month_number_in_year"],
+        ["season_number"],
         ["year_number"],
         ["is_weekend"],
         [
@@ -150,6 +155,7 @@ def test_repr():
             "week_number_in_year",
             "week_number_in_month",
             "month_number_in_year",
+            "season_number",
             "year_number",
             "is_weekend",
         ],
@@ -185,6 +191,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
         ["week_number_in_year"],
         ["week_number_in_month"],
         ["month_number_in_year"],
+        ["season_number"],
         ["year_number"],
         ["is_weekend"],
         [
@@ -194,6 +201,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
             "week_number_in_year",
             "week_number_in_month",
             "month_number_in_year",
+            "season_number",
             "year_number",
             "is_weekend",
         ],
@@ -244,6 +252,7 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
         {"week_number_in_year": True},
         {"week_number_in_month": True},
         {"month_number_in_year": True},
+        {"season_number": True},
         {"year_number": True},
         {"is_weekend": True},
         {"special_days_in_week": SPECIAL_DAYS},
