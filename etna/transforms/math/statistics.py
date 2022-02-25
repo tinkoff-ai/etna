@@ -134,7 +134,7 @@ class MeanTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.window = window
         self.in_column = in_column
@@ -213,7 +213,7 @@ class StdTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.in_column = in_column
         self.window = window
@@ -267,7 +267,7 @@ class QuantileTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.in_column = in_column
         self.quantile = quantile
@@ -319,7 +319,7 @@ class MinTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.in_column = in_column
         self.window = window
@@ -370,7 +370,7 @@ class MaxTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.in_column = in_column
         self.window = window
@@ -421,7 +421,7 @@ class MedianTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.in_column = in_column
         self.window = window
@@ -472,7 +472,7 @@ class MADTransform(WindowStatisticsTransform):
         fillna: float
             value to fill results NaNs with
         out_column: str, optional
-            result column name. If not given use __repr__()
+            result column name. If not given use `self.__repr__()`
         """
         self.in_column = in_column
         self.window = window

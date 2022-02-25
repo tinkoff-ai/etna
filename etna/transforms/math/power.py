@@ -36,7 +36,7 @@ class YeoJohnsonTransform(SklearnTransform):
             if True, apply transformation inplace to in_column,
             if False, add column to dataset.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.
@@ -84,7 +84,7 @@ class BoxCoxTransform(SklearnTransform):
             if True, apply transformation inplace to in_column,
             if False, add column to dataset.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.

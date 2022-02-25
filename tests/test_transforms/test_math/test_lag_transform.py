@@ -82,7 +82,7 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_df_two
     assert len(columns) == len(lags) if isinstance(lags, list) else 1
     for column in columns:
         # check that a transform can be created from column name and it generates the same results
-        transform_temp = eval(column[len("regressor_") :])
+        transform_temp = eval(column)
         df_temp = transform_temp.fit_transform(int_df_two_segments)
         columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1

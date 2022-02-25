@@ -64,8 +64,6 @@ class _OneSegmentSpecialDaysTransform(Transform):
         else:
             assert False, "nothing to do"
 
-        self.out_prefix = "regressor_"
-
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSpecialDaysTransform":
         """
         Fit _OneSegmentSpecialDaysTransform with data from df.
@@ -116,7 +114,6 @@ class _OneSegmentSpecialDaysTransform(Transform):
             to_add["anomaly_monthdays"] += self._marked_special_month_day(common_df, self.anomaly_month_days)
             to_add["anomaly_monthdays"] = to_add["anomaly_monthdays"].astype("category")
 
-        to_add = to_add.add_prefix(self.out_prefix)
         to_add.index = df.index
         to_return = df.copy()
         to_return = pd.concat([to_return, to_add], axis=1)
