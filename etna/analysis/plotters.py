@@ -20,13 +20,13 @@ import plotly.graph_objects as go
 import seaborn as sns
 
 from etna.transforms import Transform
-from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
-from etna.transforms.decomposition.detrend import LinearTrendTransform
-from etna.transforms.decomposition.detrend import TheilSenTrendTransform
-from etna.transforms.decomposition.stl import STLTransform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
+    from etna.transforms.decomposition.detrend import LinearTrendTransform
+    from etna.transforms.decomposition.detrend import TheilSenTrendTransform
+    from etna.transforms.decomposition.stl import STLTransform
 
 
 def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]) -> Sequence[matplotlib.axes.Axes]:
@@ -741,7 +741,10 @@ TrendTransformType = Union[
 
 
 def __get_labels_names(trend_transform, segments):
-    """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label"""
+    """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label."""
+    from etna.transforms.decomposition.detrend import LinearTrendTransform
+    from etna.transforms.decomposition.detrend import TheilSenTrendTransform
+
     labels = [transform.__repr__() for transform in trend_transform]
     labels_short = [i[: i.find("(")] for i in labels]
     if len(np.unique(labels_short)) == len(labels_short):
