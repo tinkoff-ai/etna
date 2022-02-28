@@ -1,9 +1,91 @@
 import warnings
 from abc import ABC
 from abc import abstractmethod
+from typing import Any
+from typing import Dict
+from typing import List
 from typing import Sequence
+from typing import Tuple
+
+import pandas as pd
 
 from etna.core import BaseMixin
+from etna.datasets import TSDataset
+from etna.metrics import Metric
+
+
+class AbstractPipeline(ABC):
+    """Interface for pipeline."""
+
+    @abstractmethod
+    def fit(self, ts: TSDataset) -> "AbstractPipeline":
+        """Fit the Pipeline.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with timeseries data
+
+        Returns
+        -------
+        self:
+            Fitted Pipeline instance
+        """
+        pass
+
+    @abstractmethod
+    def forecast(self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+
+        Returns
+        -------
+        forecast:
+            Dataset with predictions
+        """
+        pass
+
+    @abstractmethod
+    def backtest(
+        self,
+        ts: TSDataset,
+        metrics: List[Metric],
+        n_folds: int = 5,
+        mode: str = "expand",
+        aggregate_metrics: bool = False,
+        n_jobs: int = 1,
+        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """Run backtest with the pipeline.
+
+        Parameters
+        ----------
+        ts:
+            dataset to fit models in backtest
+        metrics:
+            list of metrics to compute for each fold
+        n_folds:
+            number of folds
+        mode:
+            one of 'expand', 'constant' -- train generation policy
+        aggregate_metrics:
+            if True aggregate metrics above folds, return raw metrics otherwise
+        n_jobs:
+            number of jobs to run in parallel
+        joblib_params:
+            additional parameters for joblib.Parallel
+
+        Returns
+        -------
+        metrics_df, forecast_df, fold_info_df:
+            metrics dataframe, forecast dataframe and dataframe with information about folds
+        """
 
 
 class BasePipeline(ABC, BaseMixin):
