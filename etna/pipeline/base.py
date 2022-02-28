@@ -67,24 +67,24 @@ class AbstractPipeline(ABC):
         Parameters
         ----------
         ts:
-            dataset to fit models in backtest
+            Dataset to fit models in backtest
         metrics:
-            list of metrics to compute for each fold
+            List of metrics to compute for each fold
         n_folds:
-            number of folds
+            Number of folds
         mode:
-            one of 'expand', 'constant' -- train generation policy
+            One of 'expand', 'constant' -- train generation policy
         aggregate_metrics:
-            if True aggregate metrics above folds, return raw metrics otherwise
+            If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
-            number of jobs to run in parallel
+            Number of jobs to run in parallel
         joblib_params:
-            additional parameters for joblib.Parallel
+            Additional parameters for joblib.Parallel
 
         Returns
         -------
         metrics_df, forecast_df, fold_info_df:
-            metrics dataframe, forecast dataframe and dataframe with information about folds
+            Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
 
 
