@@ -20,13 +20,13 @@ import plotly.graph_objects as go
 import seaborn as sns
 
 from etna.transforms import Transform
+from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
+from etna.transforms.decomposition.detrend import LinearTrendTransform
+from etna.transforms.decomposition.detrend import TheilSenTrendTransform
+from etna.transforms.decomposition.stl import STLTransform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.transforms import ChangePointsTrendTransform
-    from etna.transforms import LinearTrendTransform
-    from etna.transforms import STLTransform
-    from etna.transforms import TheilSenTrendTransform
 
 
 def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]) -> Sequence[matplotlib.axes.Axes]:
@@ -740,6 +740,19 @@ TrendTransformType = Union[
 ]
 
 
+def __get_labels_names(trend_transform, segments):
+    """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label"""
+    labels = [transform.__repr__() for transform in trend_transform]
+    labels_short = [i[: i.find("(")] for i in labels]
+    if len(np.unique(labels_short)) == len(labels_short):
+        labels = labels_short
+    linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
+    if len(trend_transform) == 1 and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform)):
+        for seg in segments:
+            linear_coeffs[seg] = ", k=" + str(trend_transform[0].segment_transforms[seg]._linear_model.coef_[0])
+    return labels, linear_coeffs
+
+
 def plot_trend(
     ts: "TSDataset",
     trend_transform: Union["TrendTransformType", List["TrendTransformType"]],
@@ -748,6 +761,8 @@ def plot_trend(
     figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot series and trend from trend transform for this series.
+
+    If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label
 
     Parameters
     ----------
@@ -767,20 +782,12 @@ def plot_trend(
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
     df = ts.df
-    linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
-    if isinstance(trend_transform, list):
-        df_detrend = [transform.fit_transform(df.copy()) for transform in trend_transform]
-        labels = [transform.__repr__() for transform in trend_transform]
-        labels_short = [i[: i.find("(")] for i in labels]
-        if len(np.unique(labels_short)) == len(labels_short):
-            labels = labels_short
-    else:
-        df_detrend = [trend_transform.fit_transform(df.copy())]
-        labels = [trend_transform.__repr__()[: trend_transform.__repr__().find("(")]]
-        if isinstance(trend_transform, LinearTrendTransform) or isinstance(trend_transform, TheilSenTrendTransform):
-            for seg in segments:
 
-                linear_coeffs[seg] = ", k=" + str(trend_transform.segment_transforms[seg]._linear_model.coef_[0])
+    if not isinstance(trend_transform, list):
+        trend_transform = [trend_transform]
+
+    df_detrend = [transform.fit_transform(df.copy()) for transform in trend_transform]
+    labels, linear_coeffs = __get_labels_names(trend_transform, segments)
 
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
