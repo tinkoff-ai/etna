@@ -16,14 +16,14 @@ class BaseMixin:
                 continue
             elif param.kind == param.VAR_KEYWORD:
                 for arg_, value in self.__dict__[arg].items():
-                    args_str_representation += f"{arg_} = {value.__repr__()}, "
+                    args_str_representation += f"{arg_} = {repr(value)}, "
             else:
                 try:
                     value = self.__dict__[arg]
                 except KeyError as e:
                     value = None
                     warnings.warn(f"You haven't set all parameters inside class __init__ method: {e}")
-                args_str_representation += f"{arg} = {value.__repr__()}, "
+                args_str_representation += f"{arg} = {repr(value)}, "
         return f"{self.__class__.__name__}({args_str_representation})"
 
 
