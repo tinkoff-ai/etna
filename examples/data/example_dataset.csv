@@ -363,7 +363,6 @@ timestamp,segment,target
 2019-12-28,segment_a,511
 2019-12-29,segment_a,464
 2019-12-30,segment_a,563
-2019-12-31,segment_a,372
 2019-01-01,segment_b,102
 2019-01-02,segment_b,123
 2019-01-03,segment_b,130
@@ -728,7 +727,6 @@ timestamp,segment,target
 2019-12-28,segment_b,249
 2019-12-29,segment_b,214
 2019-12-30,segment_b,277
-2019-12-31,segment_b,188
 2019-01-01,segment_c,92
 2019-01-02,segment_c,107
 2019-01-03,segment_c,103
@@ -1093,7 +1091,6 @@ timestamp,segment,target
 2019-12-28,segment_c,154
 2019-12-29,segment_c,155
 2019-12-30,segment_c,162
-2019-12-31,segment_c,127
 2019-01-01,segment_d,238
 2019-01-02,segment_d,358
 2019-01-03,segment_d,366
@@ -1458,4 +1455,3 @@ timestamp,segment,target
 2019-12-28,segment_d,889
 2019-12-29,segment_d,789
 2019-12-30,segment_d,1015
-2019-12-31,segment_d,687

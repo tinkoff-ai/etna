@@ -83,21 +83,10 @@ To set up a configuration for your project you should create a `.etna` file at t
 
 ## Get started
 
-Here's some example code for a quick start.
+Let's load and prepare the data.
 ```python
 import pandas as pd
-
-from etna.datasets.tsdataset import TSDataset
-from etna.metrics import SMAPE
-from etna.models import CatBoostModelMultiSegment
-from etna.pipeline import Pipeline
-from etna.transforms import DateFlagsTransform
-from etna.transforms import DensityOutliersTransform
-from etna.transforms import FourierTransform
-from etna.transforms import LagTransform
-from etna.transforms import LinearTrendTransform
-from etna.transforms import SegmentEncoderTransform
-from etna.transforms import TimeSeriesImputerTransform
+from etna.datasets import TSDataset
 
 # Read the data
 df = pd.read_csv("examples/data/example_dataset.csv")
@@ -107,17 +96,29 @@ df = TSDataset.to_dataset(df)
 ts = TSDataset(df, freq="D")
 
 # Choose a horizon
-HORIZON = 8
+HORIZON = 14
 
-# Make train_test_split
+# Make train/test split
 train_ts, test_ts = ts.train_test_split(test_size=HORIZON)
+```
 
-# prepare transforms
+Define transformations and model:
+```python
+from etna.models import CatBoostModelMultiSegment
+from etna.transforms import DateFlagsTransform
+from etna.transforms import DensityOutliersTransform
+from etna.transforms import FourierTransform
+from etna.transforms import LagTransform
+from etna.transforms import LinearTrendTransform
+from etna.transforms import SegmentEncoderTransform
+from etna.transforms import TimeSeriesImputerTransform
+
+# Prepare transforms
 transforms = [
-    DensityOutliersTransform(in_column="target", distance_coef=1.0),
+    DensityOutliersTransform(in_column="target", distance_coef=3.0),
     TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
     LinearTrendTransform(in_column="target"),
-    LagTransform(in_column="target", lags=list(range(HORIZON, 21)), out_column="target_lag"),
+    LagTransform(in_column="target", lags=list(range(HORIZON, 40)), out_column="target_lag"),
     DateFlagsTransform(
         day_number_in_week=True,
         day_number_in_month=True,
@@ -125,21 +126,45 @@ transforms = [
         week_number_in_month=True,
         out_column="date_flag",
     ),
-    FourierTransform(period=360.25, order=20, out_column="fourier"),
+    FourierTransform(period=360.25, order=10, out_column="fourier"),
     SegmentEncoderTransform(),
 ]
 
-# Fit the pipeline
-pipeline = Pipeline(model=CatBoostModelMultiSegment(), transforms=transforms, horizon=HORIZON)
+# Prepare model
+model = CatBoostModelMultiSegment()
+```
+
+Fit `Pipeline` and make a prediction:
+```python
+from etna.pipeline import Pipeline
+
+# Create and fit the pipeline
+pipeline = Pipeline(model=model, transforms=transforms, horizon=HORIZON)
 pipeline.fit(train_ts)
 
-# Make the forecast
+# Make a forecast
 forecast_ts = pipeline.forecast()
+```
+
+Let's plot the results:
+```python
+from etna.analysis import plot_forecast
+
+plot_forecast(forecast_ts=forecast_ts, test_ts=test_ts, train_ts=train_ts, n_train_samples=50)
+```
+
+![](examples/assets/readme/get_started.png)
+
+Print the metric value across the segments:
+```python
+from etna.metrics import SMAPE
 
 metric = SMAPE(mode="macro")
 metric_value = metric(y_true=test_ts, y_pred=forecast_ts)
-print(f"SMAPE = {metric_value:.3f}")
+>>> {'segment_c': 18.455484018755204, 'segment_d': 6.116330124415754, 'segment_a': 4.058916088137994, 'segment_b': 4.463429472539039}
 ```
+
+
 
 ## Tutorials
 
