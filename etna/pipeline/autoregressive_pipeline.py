@@ -49,9 +49,7 @@ class AutoRegressivePipeline(BasePipeline):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
-    def __init__(
-        self, model: BaseModel, horizon: int, transforms: Sequence[Transform] = (), step: int = 1, n_folds: int = 3
-    ):
+    def __init__(self, model: BaseModel, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
         """
         Create instance of AutoRegressivePipeline with given parameters.
 
@@ -65,8 +63,6 @@ class AutoRegressivePipeline(BasePipeline):
             Sequence of the transforms
         step:
             Size of prediction for one step of forecasting
-        n_folds:
-            Number of folds to use in the backtest for prediction interval estimation
         """
         self.model = model
         self.transforms = transforms
