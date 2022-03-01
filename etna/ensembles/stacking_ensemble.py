@@ -17,12 +17,13 @@ from sklearn.linear_model import LinearRegression
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
+from etna.ensembles import EnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 
 
-class StackingEnsemble(Pipeline):
+class StackingEnsemble(Pipeline, EnsembleMixin):
     """StackingEnsemble is a pipeline that forecast future using the metamodel to combine the forecasts of the base models.
 
     Examples
@@ -100,20 +101,6 @@ class StackingEnsemble(Pipeline):
         self.joblib_params = joblib_params
         self.ts: Optional[TSDataset] = None
 
-    @staticmethod
-    def _validate_pipeline_number(pipelines: List[Pipeline]):
-        """Check that given valid number of pipelines."""
-        if len(pipelines) < 2:
-            raise ValueError("At least two pipelines are expected.")
-
-    @staticmethod
-    def _get_horizon(pipelines: List[Pipeline]) -> int:
-        """Get ensemble's horizon."""
-        horizons = set([pipeline.horizon for pipeline in pipelines])
-        if len(horizons) > 1:
-            raise ValueError("All the pipelines should have the same horizon.")
-        return horizons.pop()
-
     def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:
         """Return all the features from `features_to_use` which can be obtained from base models' forecasts."""
         features_df = pd.concat([forecast.df for forecast in forecasts], axis=1)
@@ -139,14 +126,6 @@ class StackingEnsemble(Pipeline):
                 "Only the base models' forecasts will be used for the final forecast."
             )
             return None
-
-    @staticmethod
-    def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
-        """Fit given pipeline with ts."""
-        tslogger.log(msg=f"Start fitting {pipeline}.")
-        pipeline.fit(ts=ts)
-        tslogger.log(msg=f"Pipeline {pipeline} is fitted.")
-        return pipeline
 
     def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
         """Get forecasts from backtest for given pipeline."""
@@ -230,14 +209,6 @@ class StackingEnsemble(Pipeline):
             return x, y
         else:
             return x, None
-
-    @staticmethod
-    def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
-        """Make forecast with given pipeline."""
-        tslogger.log(msg=f"Start forecasting with {pipeline}.")
-        forecast = pipeline.forecast()
-        tslogger.log(msg=f"Forecast is done with {pipeline}.")
-        return forecast
 
     def forecast(self, prediction_interval: bool = False) -> TSDataset:
         """Forecast with ensemble: compute the combination of pipelines' forecasts using `final_model`.

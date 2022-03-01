@@ -24,7 +24,7 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         inplace:
             if True, apply resampling inplace to in_column, if False, add transformed column to dataset
         out_column:
-            name of added column. If not given, use `self.__repr__()` or `regressor_{self.__repr__()}` if it is a regressor
+            name of added column. If not given, use `self.__repr__()`
         """
         self.in_column = in_column
         self.distribution_column = distribution_column
