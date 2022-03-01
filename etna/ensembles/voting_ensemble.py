@@ -8,11 +8,11 @@ from joblib import Parallel
 from joblib import delayed
 
 from etna.datasets import TSDataset
-from etna.loggers import tslogger
+from etna.ensembles import EnsembleMixin
 from etna.pipeline import Pipeline
 
 
-class VotingEnsemble(Pipeline):
+class VotingEnsemble(Pipeline, EnsembleMixin):
     """VotingEnsemble is a pipeline that forecast future values with weighted averaging of it's pipelines forecasts.
 
     Examples
@@ -82,20 +82,6 @@ class VotingEnsemble(Pipeline):
         self.joblib_params = joblib_params
 
     @staticmethod
-    def _validate_pipeline_number(pipelines: List[Pipeline]):
-        """Check that given valid number of pipelines."""
-        if len(pipelines) < 2:
-            raise ValueError("At least two pipelines are expected.")
-
-    @staticmethod
-    def _get_horizon(pipelines: List[Pipeline]) -> int:
-        """Get ensemble's horizon."""
-        horizons = set([pipeline.horizon for pipeline in pipelines])
-        if len(horizons) > 1:
-            raise ValueError("All the pipelines should have the same horizon.")
-        return horizons.pop()
-
-    @staticmethod
     def _process_weights(weights: Optional[List[float]], pipelines_number: int) -> List[float]:
         """Process weights: if weights are not given, set them with default values, normalize weights."""
         if weights is None:
@@ -105,14 +91,6 @@ class VotingEnsemble(Pipeline):
         common_weight = sum(weights)
         weights = [w / common_weight for w in weights]
         return weights
-
-    @staticmethod
-    def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
-        """Fit given pipeline with ts."""
-        tslogger.log(msg=f"Start fitting {pipeline}.")
-        pipeline.fit(ts=ts)
-        tslogger.log(msg=f"Pipeline {pipeline} is fitted.")
-        return pipeline
 
     def fit(self, ts: TSDataset) -> "VotingEnsemble":
         """Fit pipelines in ensemble.
@@ -131,14 +109,6 @@ class VotingEnsemble(Pipeline):
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
         return self
-
-    @staticmethod
-    def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
-        """Make forecast with given pipeline."""
-        tslogger.log(msg=f"Start forecasting with {pipeline}.")
-        forecast = pipeline.forecast()
-        tslogger.log(msg=f"Forecast is done with {pipeline}.")
-        return forecast
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:
         """Get average forecast."""
