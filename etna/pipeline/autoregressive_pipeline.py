@@ -1,16 +1,15 @@
 import warnings
-from copy import deepcopy
 from typing import Sequence
 
 import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.models.base import Model
-from etna.pipeline.pipeline import Pipeline
+from etna.pipeline.base import BasePipeline
 from etna.transforms import Transform
 
 
-class AutoRegressivePipeline(Pipeline):
+class AutoRegressivePipeline(BasePipeline):
     """Pipeline that make regressive models autoregressive.
 
     Examples
@@ -50,8 +49,6 @@ class AutoRegressivePipeline(Pipeline):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
-    support_prediction_interval = False
-
     def __init__(self, model: Model, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
         """
         Create instance of AutoRegressivePipeline with given parameters.
@@ -67,11 +64,13 @@ class AutoRegressivePipeline(Pipeline):
         step:
             Size of prediction for one step of forecasting
         """
-        super().__init__(model=model, horizon=horizon, transforms=transforms)
+        self.model = model
+        self.transforms = transforms
         self.step = step
+        super().__init__(horizon=horizon)
 
-    def fit(self, ts: TSDataset) -> Pipeline:
-        """Fit the Pipeline.
+    def fit(self, ts: TSDataset) -> "AutoRegressivePipeline":
+        """Fit the AutoRegressivePipeline.
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
         Parameters
@@ -81,12 +80,13 @@ class AutoRegressivePipeline(Pipeline):
 
         Returns
         -------
-        Pipeline:
+        self:
             Fitted Pipeline instance
         """
-        self.ts = deepcopy(ts)
+        self.ts = ts
         ts.fit_transform(self.transforms)
         self.model.fit(ts)
+        self.ts.inverse_transform()
         return self
 
     def _create_predictions_template(self) -> pd.DataFrame:
@@ -103,25 +103,10 @@ class AutoRegressivePipeline(Pipeline):
         prediction_df.index.name = "timestamp"
         return prediction_df
 
-    def forecast(self, prediction_interval: bool = False) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        prediction_interval:
-            This parameter is ignored
-
-        Returns
-        -------
-        TSDataset:
-            TSDataset with forecast
-        """
+    def _forecast(self) -> TSDataset:
+        """Make predictions."""
         if self.ts is None:
-            raise ValueError(
-                "AutoRegressivePipeline is not fitted! Fit the AutoRegressivePipeline before calling forecast method."
-            )
-        self.check_support_prediction_interval(prediction_interval)
-
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         prediction_df = self._create_predictions_template()
 
         for idx_start in range(0, self.horizon, self.step):
