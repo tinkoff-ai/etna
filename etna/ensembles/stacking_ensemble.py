@@ -19,10 +19,10 @@ from typing_extensions import Literal
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import MAE
-from etna.pipeline import Pipeline
+from etna.pipeline import BasePipeline
 
 
-class StackingEnsemble(Pipeline):
+class StackingEnsemble(BasePipeline):
     """StackingEnsemble is a pipeline that forecast future using the metamodel to combine the forecasts of the base models.
 
     Examples
@@ -56,11 +56,9 @@ class StackingEnsemble(Pipeline):
     2021-09-15      0.36      1.56      0.30
     """
 
-    support_prediction_interval = False
-
     def __init__(
         self,
-        pipelines: List[Pipeline],
+        pipelines: List[BasePipeline],
         final_model: RegressorMixin = LinearRegression(),
         n_folds: int = 3,
         features_to_use: Union[None, Literal["all"], List[str]] = None,
@@ -91,23 +89,22 @@ class StackingEnsemble(Pipeline):
         """
         self._validate_pipeline_number(pipelines=pipelines)
         self.pipelines = pipelines
-        self.horizon = self._get_horizon(pipelines=pipelines)
         self.final_model = final_model
-        self.n_folds = self._validate_cv(n_folds)
+        self.n_folds = self._validate_backtest_n_folds(n_folds)
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
         self.joblib_params = joblib_params
-        self.ts: Optional[TSDataset] = None
+        super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     @staticmethod
-    def _validate_pipeline_number(pipelines: List[Pipeline]):
+    def _validate_pipeline_number(pipelines: List[BasePipeline]):
         """Check that given valid number of pipelines."""
         if len(pipelines) < 2:
             raise ValueError("At least two pipelines are expected.")
 
     @staticmethod
-    def _get_horizon(pipelines: List[Pipeline]) -> int:
+    def _get_horizon(pipelines: List[BasePipeline]) -> int:
         """Get ensemble's horizon."""
         horizons = set([pipeline.horizon for pipeline in pipelines])
         if len(horizons) > 1:
@@ -141,17 +138,17 @@ class StackingEnsemble(Pipeline):
             return None
 
     @staticmethod
-    def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
+    def _fit_pipeline(pipeline: BasePipeline, ts: TSDataset) -> BasePipeline:
         """Fit given pipeline with ts."""
         tslogger.log(msg=f"Start fitting {pipeline}.")
         pipeline.fit(ts=ts)
         tslogger.log(msg=f"Pipeline {pipeline} is fitted.")
         return pipeline
 
-    def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
         """Get forecasts from backtest for given pipeline."""
         with tslogger.disable():
-            _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
+            _, forecasts, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
@@ -232,24 +229,19 @@ class StackingEnsemble(Pipeline):
             return x, None
 
     @staticmethod
-    def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
+    def _forecast_pipeline(pipeline: BasePipeline) -> TSDataset:
         """Make forecast with given pipeline."""
         tslogger.log(msg=f"Start forecasting with {pipeline}.")
         forecast = pipeline.forecast()
         tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 
-    def forecast(self, prediction_interval: bool = False) -> TSDataset:
-        """Forecast with ensemble: compute the combination of pipelines' forecasts using `final_model`.
-
-        Returns
-        -------
-        TSDataset:
-            Dataset with forecasts.
+    def _forecast(self) -> TSDataset:
+        """Make predictions.
+        Compute the combination of pipelines' forecasts using `final_model`
         """
         if self.ts is None:
-            raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
-        self.check_support_prediction_interval(prediction_interval)
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
