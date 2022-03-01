@@ -9,10 +9,10 @@ from joblib import delayed
 
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
-from etna.pipeline import Pipeline
+from etna.pipeline import BasePipeline
 
 
-class VotingEnsemble(Pipeline):
+class VotingEnsemble(BasePipeline):
     """VotingEnsemble is a pipeline that forecast future values with weighted averaging of it's pipelines forecasts.
 
     Examples
@@ -47,11 +47,9 @@ class VotingEnsemble(Pipeline):
     2021-07-07	       -13.51	       -307.02	        215.73
     """
 
-    support_prediction_interval = False
-
     def __init__(
         self,
-        pipelines: List[Pipeline],
+        pipelines: List[BasePipeline],
         weights: Optional[List[float]] = None,
         n_jobs: int = 1,
         joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
@@ -61,13 +59,13 @@ class VotingEnsemble(Pipeline):
         Parameters
         ----------
         pipelines:
-            list of pipelines that should be used in ensemble
+            List of pipelines that should be used in ensemble
         weights:
-            list of pipelines' weights; weights will be normalized automatically.
+            List of pipelines' weights; weights will be normalized automatically.
         n_jobs:
-            number of jobs to run in parallel
+            Number of jobs to run in parallel
         joblib_params:
-            additional parameters for joblib.Parallel
+            Additional parameters for joblib.Parallel
 
         Raises
         ------
@@ -75,20 +73,20 @@ class VotingEnsemble(Pipeline):
             If the number of the pipelines is less than 2 or pipelines have different horizons.
         """
         self._validate_pipeline_number(pipelines=pipelines)
-        self.horizon = self._get_horizon(pipelines=pipelines)
         self.weights = self._process_weights(weights=weights, pipelines_number=len(pipelines))
         self.pipelines = pipelines
         self.n_jobs = n_jobs
         self.joblib_params = joblib_params
+        super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     @staticmethod
-    def _validate_pipeline_number(pipelines: List[Pipeline]):
+    def _validate_pipeline_number(pipelines: List[BasePipeline]):
         """Check that given valid number of pipelines."""
         if len(pipelines) < 2:
             raise ValueError("At least two pipelines are expected.")
 
     @staticmethod
-    def _get_horizon(pipelines: List[Pipeline]) -> int:
+    def _get_horizon(pipelines: List[BasePipeline]) -> int:
         """Get ensemble's horizon."""
         horizons = set([pipeline.horizon for pipeline in pipelines])
         if len(horizons) > 1:
@@ -107,7 +105,7 @@ class VotingEnsemble(Pipeline):
         return weights
 
     @staticmethod
-    def _fit_pipeline(pipeline: Pipeline, ts: TSDataset) -> Pipeline:
+    def _fit_pipeline(pipeline: BasePipeline, ts: TSDataset) -> BasePipeline:
         """Fit given pipeline with ts."""
         tslogger.log(msg=f"Start fitting {pipeline}.")
         pipeline.fit(ts=ts)
@@ -124,8 +122,8 @@ class VotingEnsemble(Pipeline):
 
         Returns
         -------
-        VotingEnsemble:
-            fitted ensemble
+        self:
+            Fitted ensemble
         """
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
@@ -133,7 +131,7 @@ class VotingEnsemble(Pipeline):
         return self
 
     @staticmethod
-    def _forecast_pipeline(pipeline: Pipeline) -> TSDataset:
+    def _forecast_pipeline(pipeline: BasePipeline) -> TSDataset:
         """Make forecast with given pipeline."""
         tslogger.log(msg=f"Start forecasting with {pipeline}.")
         forecast = pipeline.forecast()
@@ -146,20 +144,12 @@ class VotingEnsemble(Pipeline):
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
-    def forecast(self, prediction_interval: bool = False) -> TSDataset:
-        """Forecast with ensemble: compute weighted average of pipelines' forecasts.
-
-        Parameters
-        ----------
-        prediction_interval:
-            This parameter is ignored
-
-        Returns
-        -------
-        TSDataset:
-            dataset with forecasts
+    def _forecast(self) -> TSDataset:
+        """Make predictions.
+        Compute weighted average of pipelines' forecasts
         """
-        self.check_support_prediction_interval(prediction_interval)
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
