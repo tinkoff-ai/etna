@@ -126,7 +126,7 @@ class WandbLogger(BaseLogger):
         from etna.analysis import plot_backtest_interactive
         from etna.datasets import TSDataset
 
-        summary = dict()
+        summary: Dict[str, Any] = dict()
         if self.table:
             summary["metrics"] = wandb.Table(data=metrics_df)
             summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast_df))
@@ -158,7 +158,7 @@ class WandbLogger(BaseLogger):
         columns_name = list(metrics.columns)
         metrics = metrics.reset_index()
         metrics.columns = ["segment"] + columns_name
-        summary = dict()
+        summary: Dict[str, Any] = dict()
         if self.table:
             summary["metrics"] = wandb.Table(data=metrics)
             summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast))

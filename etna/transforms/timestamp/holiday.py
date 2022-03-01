@@ -10,7 +10,7 @@ from etna.transforms.base import Transform
 
 
 class HolidayTransform(Transform, FutureMixin):
-    """HolidayTransform generates series that indicates holidays in given dataframe. Creates column 'regressor_holidays'."""
+    """HolidayTransform generates series that indicates holidays in given dataframe."""
 
     def __init__(self, iso_code: str = "RUS", out_column: Optional[str] = None):
         """
@@ -20,12 +20,12 @@ class HolidayTransform(Transform, FutureMixin):
         iso_code:
             internationally recognised codes, designated to country for which we want to find the holidays
         out_column:
-            name of added column. Use self.__repr__() if not given.
+            name of added column. Use `self.__repr__()` if not given.
         """
         self.iso_code = iso_code
         self.holidays = holidays.CountryHoliday(iso_code)
         self.out_column = out_column
-        self.out_column = self.out_column if self.out_column is not None else f"regressor_{self.__repr__()}"
+        self.out_column = self.out_column if self.out_column is not None else self.__repr__()
 
     def fit(self, df: pd.DataFrame) -> "HolidayTransform":
         """
@@ -46,7 +46,7 @@ class HolidayTransform(Transform, FutureMixin):
             value series with index column in timestamp format
         Returns
         -------
-            pd.DataFrame with 'regressor_holidays' column
+            pd.DataFrame with added holidays
         """
         if (df.index[1] - df.index[0]) > datetime.timedelta(days=1):
             raise ValueError("Frequency of data should be no more than daily.")

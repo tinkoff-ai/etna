@@ -42,7 +42,7 @@ class StandardScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         with_mean:
             if True, center the data before scaling.
         with_std:
@@ -100,7 +100,7 @@ class RobustScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         with_centering:
             if True, center the data before scaling.
         with_scaling:
@@ -171,7 +171,7 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         feature_range:
             desired range of transformed data.
         clip:
@@ -224,7 +224,7 @@ class MaxAbsScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.

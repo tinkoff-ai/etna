@@ -90,7 +90,7 @@ def test_work_with_non_regressors(ts_with_exog, model):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
@@ -103,11 +103,8 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     df_selected = selector.fit_transform(df_encoded)
 
     all_regressors = ts_with_regressors.regressors
-    all_regressors.append("regressor_segment_code")
-    selected_regressors = set()
-    for column in df_selected.columns.get_level_values("feature"):
-        if column.startswith("regressor"):
-            selected_regressors.add(column)
+    all_regressors.append("segment_code")
+    selected_regressors = set(df_selected.columns.get_level_values("feature")).difference({"target"})
 
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
@@ -120,7 +117,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
@@ -147,7 +144,7 @@ def test_retain_values(model, top_k, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 def test_fails_negative_top_k(model):
@@ -184,7 +181,7 @@ def test_warns_no_regressors(model, example_tsds):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=700, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=700, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 def test_sanity_selected(model, ts_with_regressors):
@@ -208,7 +205,7 @@ def test_sanity_selected(model, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=500, silent=True, random_state=42, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=500, silent=True, random_state=42, cat_features=["segment_code"]),
     ],
 )
 def test_sanity_model(model, ts_with_regressors):
