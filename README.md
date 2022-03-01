@@ -70,23 +70,24 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
+from etna.transforms import LinearTrendTransform
+from etna.transforms import MeanTransform
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
+from etna.transforms import TrendTransform
 
 # Prepare transforms
 transforms = [
     DensityOutliersTransform(in_column="target", distance_coef=3.0),
     TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
-    LagTransform(in_column="target", lags=list(range(HORIZON, 70)), out_column="target_lag"),
-    DateFlagsTransform(
-        day_number_in_week=True,
-        day_number_in_month=True,
-        is_weekend=True,
-        week_number_in_month=True,
-        out_column="date_flag",
-    ),
+    LinearTrendTransform(in_column="target"),
+    TrendTransform(in_column="target", out_column="trend"),
+    LagTransform(in_column="target", lags=list(range(HORIZON, 122)), out_column="target_lag"),
+    DateFlagsTransform(week_number_in_month=True, out_column="date_flag"),
     FourierTransform(period=360.25, order=6, out_column="fourier"),
     SegmentEncoderTransform(),
+    MeanTransform(in_column=f"target_lag_{HORIZON}", window=12, seasonality=7),
+    MeanTransform(in_column=f"target_lag_{HORIZON}", window=7),
 ]
 
 # Prepare model
@@ -120,7 +121,7 @@ from etna.metrics import SMAPE
 
 metric = SMAPE(mode="macro")
 metric_value = metric(y_true=test_ts, y_pred=forecast_ts)
->>> {'segment_a': 5.6195292519181965, 'segment_d': 10.713111075338606, 'segment_c': 14.730680046590775, 'segment_b': 4.9502053739563605}
+>>> {'segment_b': 3.3017151519000967, 'segment_c': 5.270557433427279, 'segment_a': 5.272811627335398, 'segment_d': 4.689085450895735}
 ```
 
 ## Installation 
