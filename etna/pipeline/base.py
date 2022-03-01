@@ -45,7 +45,9 @@ class AbstractPipeline(ABC):
         pass
 
     @abstractmethod
-    def forecast(self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)) -> TSDataset:
+    def forecast(
+        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+    ) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -54,6 +56,8 @@ class AbstractPipeline(ABC):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+        n_folds:
+            Number of folds to use in the backtest for prediction interval estimation
 
         Returns
         -------
@@ -110,27 +114,36 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     """Base class for pipeline."""
 
     def __init__(self, horizon: int):
-        self.horizon: int = self._validate_horizon(horizon)
+        self._validate_horizon(horizon=horizon)
+        self.horizon = horizon
         self.ts: Optional[TSDataset] = None
 
     @staticmethod
-    def _validate_horizon(horizon: int) -> int:
+    def _validate_horizon(horizon: int):
         """Check that given number of folds is grater than 1."""
-        if horizon > 0:
-            return horizon
-        else:
+        if horizon <= 0:
             raise ValueError("At least one point in the future is expected.")
+
+    @staticmethod
+    def _validate_quantiles(quantiles: Sequence[float]) -> Sequence[float]:
+        """Check that given number of folds is grater than 1."""
+        for quantile in quantiles:
+            if not (0 < quantile < 1):
+                raise ValueError("Quantile should be a number from (0,1).")
+        return quantiles
 
     @abstractmethod
     def _forecast(self) -> TSDataset:
         """Make predictions."""
         pass
 
-    def _forecast_prediction_interval(self, predictions: TSDataset, quantiles: Sequence[float]) -> TSDataset:
+    def _forecast_prediction_interval(
+        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+    ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
         if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
-        _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=self.n_folds)
+        _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
@@ -149,15 +162,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         return predictions
 
-    @staticmethod
-    def _validate_quantiles(quantiles: Sequence[float]) -> Sequence[float]:
-        """Check that given number of folds is grater than 1."""
-        for quantile in quantiles:
-            if not (0 < quantile < 1):
-                raise ValueError("Quantile should be a number from (0,1).")
-        return quantiles
-
-    def forecast(self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)) -> TSDataset:
+    def forecast(
+        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+    ) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -166,6 +173,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+        n_folds:
+            Number of folds to use in the backtest for prediction interval estimation
 
         Returns
         -------
@@ -175,10 +184,13 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         self._validate_quantiles(quantiles=quantiles)
+        self._validate_backtest_n_folds(n_folds=n_folds)
 
         predictions = self._forecast()
         if prediction_interval:
-            predictions = self._forecast_prediction_interval(predictions=predictions, quantiles=quantiles)
+            predictions = self._forecast_prediction_interval(
+                predictions=predictions, quantiles=quantiles, n_folds=n_folds
+            )
         return predictions
 
     def _init_backtest(self):

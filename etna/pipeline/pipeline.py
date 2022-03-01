@@ -10,13 +10,7 @@ from etna.transforms.base import Transform
 class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(
-        self,
-        model: Model,
-        transforms: Sequence[Transform] = (),
-        horizon: int = 1,
-        n_folds: int = 3,
-    ):
+    def __init__(self, model: Model, transforms: Sequence[Transform] = (), horizon: int = 1):
         """
         Create instance of Pipeline with given parameters.
 
@@ -28,22 +22,10 @@ class Pipeline(BasePipeline):
             Sequence of the transforms
         horizon:
             Number of timestamps in the future for forecasting
-        n_folds:
-            Number of folds to use in the backtest for prediction interval estimation
-
         """
         self.model = model
         self.transforms = transforms
-        self.n_folds = self._validate_backtest_n_folds(n_folds)
         super().__init__(horizon=horizon)
-
-    @staticmethod
-    def _validate_horizon(horizon: int) -> int:
-        """Check that given number of folds is grater than 1."""
-        if horizon > 0:
-            return horizon
-        else:
-            raise ValueError("At least one point in the future is expected.")
 
     def fit(self, ts: TSDataset) -> "Pipeline":
         """Fit the Pipeline.
@@ -74,7 +56,9 @@ class Pipeline(BasePipeline):
         predictions = self.model.forecast(ts=future)
         return predictions
 
-    def forecast(self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)) -> TSDataset:
+    def forecast(
+        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+    ) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -83,6 +67,8 @@ class Pipeline(BasePipeline):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+        n_folds:
+            Number of folds to use in the backtest for prediction interval estimation
 
         Returns
         -------
@@ -92,10 +78,11 @@ class Pipeline(BasePipeline):
         if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         self._validate_quantiles(quantiles=quantiles)
+        self._validate_backtest_n_folds(n_folds=n_folds)
 
         if prediction_interval and isinstance(self.model, PerSegmentPredictionIntervalModel):
             future = self.ts.make_future(self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         else:
-            predictions = self.forecast(prediction_interval=prediction_interval, quantiles=quantiles)
+            predictions = self.forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
         return predictions
