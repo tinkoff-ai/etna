@@ -1,4 +1,3 @@
-import re
 from copy import deepcopy
 from datetime import datetime
 from typing import List
@@ -26,40 +25,21 @@ from tests.utils import DummyMetric
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
-@pytest.mark.parametrize("horizon,quantiles,prediction_interval_cv", ([(1, [0.025, 0.975], 2)]))
-def test_init_pass(horizon, quantiles, prediction_interval_cv):
+@pytest.mark.parametrize("horizon", ([1]))
+def test_init_pass(horizon):
     """Check that Pipeline initialization works correctly in case of valid parameters."""
-    pipeline = Pipeline(
-        model=LinearPerSegmentModel(),
-        transforms=[],
-        horizon=horizon,
-        quantiles=quantiles,
-        n_folds=prediction_interval_cv,
-    )
+    pipeline = Pipeline(model=LinearPerSegmentModel(), transforms=[], horizon=horizon)
     assert pipeline.horizon == horizon
-    assert pipeline.quantiles == quantiles
-    assert prediction_interval_cv == prediction_interval_cv
 
 
-@pytest.mark.parametrize(
-    "horizon,quantiles,prediction_interval_cv,error_msg",
-    (
-        [
-            (-1, [0.025, 0.975], 2, "At least one point in the future is expected"),
-            (2, [0.05, 1.5], 2, "Quantile should be a number from"),
-            (2, [0.025, 0.975], 1, "At least two folds for backtest are expected"),
-        ]
-    ),
-)
-def test_init_fail(horizon, quantiles, prediction_interval_cv, error_msg):
+@pytest.mark.parametrize("horizon", ([-1]))
+def test_init_fail(horizon):
     """Check that Pipeline initialization works correctly in case of invalid parameters."""
-    with pytest.raises(ValueError, match=error_msg):
+    with pytest.raises(ValueError, match="At least one point in the future is expected"):
         _ = Pipeline(
             model=LinearPerSegmentModel(),
             transforms=[],
             horizon=horizon,
-            quantiles=quantiles,
-            n_folds=prediction_interval_cv,
         )
 
 
@@ -93,6 +73,23 @@ def test_forecast(example_tsds):
     assert np.all(forecast_pipeline.df.values == forecast_manual.df.values)
 
 
+@pytest.mark.parametrize(
+    "quantiles,prediction_interval_cv,error_msg",
+    (
+        [
+            ([0.05, 1.5], 2, "Quantile should be a number from"),
+            ([0.025, 0.975], 0, "Folds number should be a positive number, 0 given"),
+        ]
+    ),
+)
+def test_forecast_prediction_interval_incorrect_parameters(
+    example_tsds, catboost_pipeline, quantiles, prediction_interval_cv, error_msg
+):
+    catboost_pipeline.fit(ts=deepcopy(example_tsds))
+    with pytest.raises(ValueError, match=error_msg):
+        _ = catboost_pipeline.forecast(quantiles=quantiles, n_folds=prediction_interval_cv)
+
+
 @pytest.mark.parametrize("model", (ProphetModel(), SARIMAXModel()))
 def test_forecast_prediction_interval_builtin(example_tsds, model):
     """Test that forecast method uses built-in prediction intervals for the listed models."""
@@ -112,26 +109,13 @@ def test_forecast_prediction_interval_builtin(example_tsds, model):
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_interface(example_tsds, model):
     """Test the forecast interface for the models without built-in prediction intervals."""
-    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5, quantiles=[0.025, 0.975])
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
-    forecast = pipeline.forecast(prediction_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
-
-
-@pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
-def test_forecast_no_warning_prediction_intervals(example_tsds, model):
-    """Test that forecast doesn't warn when called with prediction intervals."""
-    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
-    pipeline.fit(example_tsds)
-    with pytest.warns(None) as record:
-        _ = pipeline.forecast(prediction_interval=True)
-    # check absence of warnings about prediction intervals
-    assert (
-        len([warning for warning in record.list if re.match("doesn't support prediction intervals", str(warning))]) == 0
-    )
 
 
 def test_forecast_prediction_interval(splited_piecewise_constant_ts):
@@ -146,16 +130,16 @@ def test_forecast_prediction_interval(splited_piecewise_constant_ts):
 @pytest.mark.parametrize("quantiles_narrow,quantiles_wide", ([([0.2, 0.8], [0.025, 0.975])]))
 def test_forecast_prediction_interval_size(example_tsds, quantiles_narrow, quantiles_wide):
     """Test that narrow quantile levels gives more narrow interval than wide quantile levels."""
-    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, quantiles=quantiles_narrow)
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(example_tsds)
-    forecast = pipeline.forecast(prediction_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles_narrow)
     narrow_interval_length = (
         forecast[:, :, f"target_{quantiles_narrow[1]}"].values - forecast[:, :, f"target_{quantiles_narrow[0]}"].values
     )
 
-    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, quantiles=quantiles_wide)
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(example_tsds)
-    forecast = pipeline.forecast(prediction_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles_wide)
     wide_interval_length = (
         forecast[:, :, f"target_{quantiles_wide[1]}"].values - forecast[:, :, f"target_{quantiles_wide[0]}"].values
     )
@@ -165,9 +149,9 @@ def test_forecast_prediction_interval_size(example_tsds, quantiles_narrow, quant
 
 def test_forecast_prediction_interval_noise(constant_ts, constant_noisy_ts):
     """Test that prediction interval for noisy dataset is wider then for the dataset without noise."""
-    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5, quantiles=[0.025, 0.975])
+    pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(constant_ts)
-    forecast = pipeline.forecast(prediction_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
     constant_interval_length = forecast[:, :, "target_0.975"].values - forecast[:, :, "target_0.025"].values
 
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)

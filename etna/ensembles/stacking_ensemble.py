@@ -91,7 +91,8 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         self._validate_pipeline_number(pipelines=pipelines)
         self.pipelines = pipelines
         self.final_model = final_model
-        self.n_folds = self._validate_backtest_n_folds(n_folds)
+        self._validate_backtest_n_folds(n_folds)
+        self.n_folds = n_folds
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
@@ -212,7 +213,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         Compute the combination of pipelines' forecasts using `final_model`
         """
         if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+            raise ValueError("Something went wrong, ts is None inside the _forecast!")
 
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(

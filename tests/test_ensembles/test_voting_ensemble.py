@@ -22,8 +22,6 @@ def test_process_weights_pass(
     weights: Optional[List[float]],
     pipelines_number: int,
     expected: List[float],
-    catboost_pipeline: Pipeline,
-    prophet_pipeline: Pipeline,
 ):
     """Check that VotingEnsemble._process_weights processes weights correctly in case of valid args sets."""
     result = VotingEnsemble._process_weights(weights=weights, pipelines_number=pipelines_number)
@@ -64,14 +62,15 @@ def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: 
     np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
 
 
-def test_forecast_warning_prediction_intervals(
-    simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline
-):
-    """Check that VotingEnsemble warns when called with prediction intervals."""
+def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):
+    """Test the forecast interface with prediction intervals."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
-    ensemble.fit(ts=simple_df)
-    with pytest.warns(UserWarning, match="doesn't support prediction intervals"):
-        _ = ensemble.forecast(prediction_interval=True)
+    ensemble.fit(example_tsds)
+    forecast = ensemble.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
 @pytest.mark.long

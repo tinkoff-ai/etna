@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from etna.datasets import TSDataset
-from etna.models.base import Model
+from etna.models.base import BaseModel
 from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
@@ -10,7 +10,7 @@ from etna.transforms.base import Transform
 class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(self, model: Model, transforms: Sequence[Transform] = (), horizon: int = 1):
+    def __init__(self, model: BaseModel, transforms: Sequence[Transform] = (), horizon: int = 1):
         """
         Create instance of Pipeline with given parameters.
 
@@ -50,7 +50,7 @@ class Pipeline(BasePipeline):
     def _forecast(self) -> TSDataset:
         """Make predictions."""
         if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+            raise ValueError("Something went wrong, ts is None inside the _forecast!")
 
         future = self.ts.make_future(self.horizon)
         predictions = self.model.forecast(ts=future)
@@ -76,7 +76,9 @@ class Pipeline(BasePipeline):
             Dataset with predictions
         """
         if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+            raise ValueError(
+                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} before calling forecast method."
+            )
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
@@ -84,5 +86,7 @@ class Pipeline(BasePipeline):
             future = self.ts.make_future(self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         else:
-            predictions = self.forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
+            predictions = super().forecast(
+                prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
+            )
         return predictions

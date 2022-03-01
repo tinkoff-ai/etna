@@ -121,7 +121,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         Compute weighted average of pipelines' forecasts
         """
         if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+            raise ValueError("Something went wrong, ts is None inside the _forecast!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines

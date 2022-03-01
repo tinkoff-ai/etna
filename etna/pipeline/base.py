@@ -182,7 +182,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             Dataset with predictions
         """
         if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+            raise ValueError(
+                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} before calling forecast method."
+            )
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 

@@ -4,7 +4,7 @@ from typing import Sequence
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.models.base import Model
+from etna.models.base import BaseModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms import Transform
 
@@ -50,7 +50,7 @@ class AutoRegressivePipeline(BasePipeline):
     """
 
     def __init__(
-        self, model: Model, horizon: int, transforms: Sequence[Transform] = (), step: int = 1, n_folds: int = 3
+        self, model: BaseModel, horizon: int, transforms: Sequence[Transform] = (), step: int = 1, n_folds: int = 3
     ):
         """
         Create instance of AutoRegressivePipeline with given parameters.
@@ -99,7 +99,7 @@ class AutoRegressivePipeline(BasePipeline):
             raise ValueError(
                 "AutoRegressivePipeline is not fitted! Fit the AutoRegressivePipeline before calling forecast method."
             )
-        prediction_df = self.ts.to_pandas()
+        prediction_df = self.ts[:, :, "target"]
         future_dates = pd.date_range(
             start=prediction_df.index.max(), periods=self.horizon + 1, freq=self.ts.freq, closed="right"
         )
@@ -110,7 +110,7 @@ class AutoRegressivePipeline(BasePipeline):
     def _forecast(self) -> TSDataset:
         """Make predictions."""
         if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+            raise ValueError("Something went wrong, ts is None inside the _forecast!")
         prediction_df = self._create_predictions_template()
 
         for idx_start in range(0, self.horizon, self.step):
