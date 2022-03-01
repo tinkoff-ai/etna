@@ -44,7 +44,7 @@ class SklearnTransform(Transform):
         inplace:
             features are changed by transformed.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses `self.__repr__()` if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
             If "macro", transforms features globally, gluing the corresponding ones for all segments.
@@ -74,7 +74,7 @@ class SklearnTransform(Transform):
         if self.out_column is None:
             new_transform = deepcopy(self)
             new_transform.in_column = [in_column]
-            return f"{new_transform.__repr__()}"
+            return repr(new_transform)
         else:
             return f"{self.out_column}_{in_column}"
 

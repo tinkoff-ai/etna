@@ -82,7 +82,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
 
 
 class _TrendTransform(PerSegmentWrapper):
-    """_TrendTransform adds trend as a feature. Creates column 'regressor_<in_column>_trend'."""
+    """_TrendTransform adds trend as a feature. Creates column '<in_column>_trend'."""
 
     def __init__(
         self,
@@ -150,7 +150,7 @@ class TrendTransform(_TrendTransform, FutureMixin):
             name of column to apply transform to
         out_column:
             name of added column.
-            If not given, use '{self.__repr__()}'
+            If not given, use `self.__repr__()`
         detrend_model:
             model to get trend in data
         model:

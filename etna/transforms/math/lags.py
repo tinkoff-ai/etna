@@ -28,7 +28,7 @@ class _OneSegmentLagTransform(Transform):
     def _get_column_name(self, lag: int) -> str:
         if self.out_column is None:
             temp_transform = LagTransform(in_column=self.in_column, out_column=self.out_column, lags=[lag])
-            return f"regressor_{temp_transform.__repr__()}"
+            return repr(temp_transform)
         else:
             return f"{self.out_column}_{lag}"
 
@@ -56,8 +56,8 @@ class LagTransform(PerSegmentWrapper, FutureMixin):
             int value or list of values for lags computation; if int, generate range of lags from 1 to given value
         out_column:
             base for the name of created columns;
-            if set the final name is '{out_column}_{lag_number}', don't forget to add 'regressor_' prefix if necessary;
-            if don't set, name will be 'regressor_{transform.__repr__()}',
+            if set the final name is '{out_column}_{lag_number}';
+            if don't set, name will be 'transform.__repr__()',
             repr will be made for transform that creates exactly this column
 
         Raises
