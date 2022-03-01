@@ -141,7 +141,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
         Returns
         -------
-        StackingEnsemble:
+        self:
             Fitted ensemble.
         """
         self.ts = ts
@@ -206,7 +206,6 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
             return x, y
         else:
             return x, None
-
 
     def _forecast(self) -> TSDataset:
         """Make predictions.
