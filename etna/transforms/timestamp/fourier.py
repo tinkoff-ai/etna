@@ -33,9 +33,8 @@ class FourierTransform(Transform, FutureMixin):
             and sin and cos of the second order will be used,
             mods should be >= 1 and < period
         out_column:
-            if set, name of added column, the final name will be '{out_columnt}_{mod}',
-            don't forget to add 'regressor_' prefix;
-            if don't set, name will be 'regressor_{transform.repr}',
+            if set, name of added column, the final name will be '{out_columnt}_{mod}';
+            if don't set, name will be 'transform.__repr__()',
             repr will be made for transform that creates exactly this column
 
         Raises
