@@ -103,6 +103,8 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self:
             Fitted ensemble
         """
+        self.ts = ts
+
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
