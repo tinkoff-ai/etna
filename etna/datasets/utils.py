@@ -50,7 +50,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     ... )
     >>> timestamp = pd.date_range("2020-03-10", periods=100, freq="D")
     >>> is_friday_13 = (timestamp.weekday == 4) & (timestamp.day == 13)
-    >>> df_exog_raw = pd.DataFrame({"timestamp": timestamp, "regressor_is_friday_13": is_friday_13})
+    >>> df_exog_raw = pd.DataFrame({"timestamp": timestamp, "is_friday_13": is_friday_13})
     >>> df_exog = duplicate_data(df_exog_raw, segments=["segment_0", "segment_1"], format="wide")
     >>> df_ts_format = TSDataset.to_dataset(df)
     >>> ts = TSDataset(df=df_ts_format, df_exog=df_exog, freq="D")

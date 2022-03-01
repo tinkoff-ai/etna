@@ -168,7 +168,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
 class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
 
-    Creates columns 'regressor_anomaly_weekdays' and 'regressor_anomaly_monthdays'.
+    Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.
 
     Warning
     -------
