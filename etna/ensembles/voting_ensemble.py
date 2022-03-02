@@ -9,7 +9,7 @@ from joblib import delayed
 
 from etna.datasets import TSDataset
 from etna.ensembles import EnsembleMixin
-from etna.pipeline import BasePipeline
+from etna.pipeline.base import BasePipeline
 
 
 class VotingEnsemble(BasePipeline, EnsembleMixin):
@@ -121,7 +121,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         Compute weighted average of pipelines' forecasts
         """
         if self.ts is None:
-            raise ValueError("Something went wrong, ts is None inside the _forecast!")
+            raise ValueError("Something went wrong, ts is None!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines

@@ -2,7 +2,7 @@ from typing import List
 
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
-from etna.pipeline import BasePipeline
+from etna.pipeline.base import BasePipeline
 
 
 class EnsembleMixin:

@@ -20,7 +20,7 @@ from etna.datasets import TSDataset
 from etna.ensembles import EnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
-from etna.pipeline import BasePipeline
+from etna.pipeline.base import BasePipeline
 
 
 class StackingEnsemble(BasePipeline, EnsembleMixin):
@@ -213,7 +213,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         Compute the combination of pipelines' forecasts using `final_model`
         """
         if self.ts is None:
-            raise ValueError("Something went wrong, ts is None inside the _forecast!")
+            raise ValueError("Something went wrong, ts is None!")
 
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(

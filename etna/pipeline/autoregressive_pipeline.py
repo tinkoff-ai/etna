@@ -106,7 +106,7 @@ class AutoRegressivePipeline(BasePipeline):
     def _forecast(self) -> TSDataset:
         """Make predictions."""
         if self.ts is None:
-            raise ValueError("Something went wrong, ts is None inside the _forecast!")
+            raise ValueError("Something went wrong, ts is None!")
         prediction_df = self._create_predictions_template()
 
         for idx_start in range(0, self.horizon, self.step):

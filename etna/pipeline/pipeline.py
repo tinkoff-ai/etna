@@ -50,7 +50,7 @@ class Pipeline(BasePipeline):
     def _forecast(self) -> TSDataset:
         """Make predictions."""
         if self.ts is None:
-            raise ValueError("Something went wrong, ts is None inside the _forecast!")
+            raise ValueError("Something went wrong, ts is None!")
 
         future = self.ts.make_future(self.horizon)
         predictions = self.model.forecast(ts=future)
