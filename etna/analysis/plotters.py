@@ -19,6 +19,9 @@ import plotly.graph_objects as go
 import seaborn as sns
 from typing_extensions import Literal
 
+from etna.analysis import RelevanceTable
+from etna.analysis.feature_selection import AGGREGATION_FN
+from etna.analysis.feature_selection import AggregationMode
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
@@ -729,3 +732,64 @@ def plot_residuals(
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].set_xlabel(feature)
+
+
+def plot_feature_relevance(
+    ts: "TSDataset",
+    relevance_table: RelevanceTable,
+    normalized: bool = False,
+    relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
+    top_k: Optional[int] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """
+    Plot relevance of the features.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    relevance_table:
+        method to evaluate the feature relevance
+    normalized:
+        whether obtained relevances should be normalized to sum up to 1
+    relevance_aggregation_mode:
+        aggregation strategy for obtained feature relevance table
+    top_k:
+        number of best features to plot, if None plot all the features
+    segments:
+        segments to use
+    columns_num:
+        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    is_ascending = not relevance_table.greater_is_better
+    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts.df_exog).loc[segments]
+
+    if relevance_aggregation_mode == "per-segment":
+        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        for i, segment in enumerate(segments):
+            relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
+            relevance = relevance.dropna()[:top_k]
+            if normalized:
+                relevance = relevance / relevance.sum()
+            sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
+            ax[i].set_title(f"Feature relevance: {segment}")
+
+    else:
+        relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
+        relevance = relevance_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
+        relevance = relevance.sort_values(ascending=is_ascending)
+        # if top_k == None, all the values are selected
+        relevance = relevance.dropna()[:top_k]
+        if normalized:
+            relevance = relevance / relevance.sum()
+        _, ax = plt.subplots(figsize=figsize)
+        sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
+        ax.set_title("Feature relevance")  # type: ignore
