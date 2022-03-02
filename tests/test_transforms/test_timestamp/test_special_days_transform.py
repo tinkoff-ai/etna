@@ -69,9 +69,9 @@ def test_interface_week(constant_days_df: pd.DataFrame):
     """
     special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
     df = special_days_finder.fit_transform(constant_days_df)
-    assert "regressor_anomaly_weekdays" in df.columns
-    assert "regressor_anomaly_monthdays" not in df.columns
-    assert df["regressor_anomaly_weekdays"].dtype == "category"
+    assert "anomaly_weekdays" in df.columns
+    assert "anomaly_monthdays" not in df.columns
+    assert df["anomaly_weekdays"].dtype == "category"
 
 
 def test_interface_month(constant_days_df: pd.DataFrame):
@@ -81,9 +81,9 @@ def test_interface_month(constant_days_df: pd.DataFrame):
     """
     special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=False, find_special_month_day=True)
     df = special_days_finder.fit_transform(constant_days_df)
-    assert "regressor_anomaly_weekdays" not in df.columns
-    assert "regressor_anomaly_monthdays" in df.columns
-    assert df["regressor_anomaly_monthdays"].dtype == "category"
+    assert "anomaly_weekdays" not in df.columns
+    assert "anomaly_monthdays" in df.columns
+    assert df["anomaly_monthdays"].dtype == "category"
 
 
 def test_interface_week_month(constant_days_df: pd.DataFrame):
@@ -93,10 +93,10 @@ def test_interface_week_month(constant_days_df: pd.DataFrame):
     """
     special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
     df = special_days_finder.fit_transform(constant_days_df)
-    assert "regressor_anomaly_weekdays" in df.columns
-    assert "regressor_anomaly_monthdays" in df.columns
-    assert df["regressor_anomaly_weekdays"].dtype == "category"
-    assert df["regressor_anomaly_monthdays"].dtype == "category"
+    assert "anomaly_weekdays" in df.columns
+    assert "anomaly_monthdays" in df.columns
+    assert df["anomaly_weekdays"].dtype == "category"
+    assert df["anomaly_monthdays"].dtype == "category"
 
 
 def test_interface_noweek_nomonth():
@@ -113,9 +113,9 @@ def test_interface_two_segments_week(constant_days_two_segments_df: pd.DataFrame
     special_days_finder = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
     df = special_days_finder.fit_transform(constant_days_two_segments_df)
     for segment in df.columns.get_level_values("segment").unique():
-        assert "regressor_anomaly_weekdays" in df[segment].columns
-        assert "regressor_anomaly_monthdays" not in df[segment].columns
-        assert df[segment]["regressor_anomaly_weekdays"].dtype == "category"
+        assert "anomaly_weekdays" in df[segment].columns
+        assert "anomaly_monthdays" not in df[segment].columns
+        assert df[segment]["anomaly_weekdays"].dtype == "category"
 
 
 def test_interface_two_segments_month(constant_days_two_segments_df: pd.DataFrame):
@@ -126,9 +126,9 @@ def test_interface_two_segments_month(constant_days_two_segments_df: pd.DataFram
     special_days_finder = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=True)
     df = special_days_finder.fit_transform(constant_days_two_segments_df)
     for segment in df.columns.get_level_values("segment").unique():
-        assert "regressor_anomaly_weekdays" not in df[segment].columns
-        assert "regressor_anomaly_monthdays" in df[segment].columns
-        assert df[segment]["regressor_anomaly_monthdays"].dtype == "category"
+        assert "anomaly_weekdays" not in df[segment].columns
+        assert "anomaly_monthdays" in df[segment].columns
+        assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
 def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.DataFrame):
@@ -139,10 +139,10 @@ def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.Dat
     special_days_finder = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
     df = special_days_finder.fit_transform(constant_days_two_segments_df)
     for segment in df.columns.get_level_values("segment").unique():
-        assert "regressor_anomaly_weekdays" in df[segment].columns
-        assert "regressor_anomaly_monthdays" in df[segment].columns
-        assert df[segment]["regressor_anomaly_weekdays"].dtype == "category"
-        assert df[segment]["regressor_anomaly_monthdays"].dtype == "category"
+        assert "anomaly_weekdays" in df[segment].columns
+        assert "anomaly_monthdays" in df[segment].columns
+        assert df[segment]["anomaly_weekdays"].dtype == "category"
+        assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
 def test_interface_two_segments_noweek_nomonth(constant_days_two_segments_df: pd.DataFrame):
@@ -155,28 +155,28 @@ def test_week_feature(df_with_specials: pd.DataFrame):
     """This test checks that _OneSegmentSpecialDaysTransform computes weekday feature correctly."""
     special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
     df = special_days_finder.fit_transform(df_with_specials)
-    assert (df_with_specials["week_true"] == df["regressor_anomaly_weekdays"]).all()
+    assert (df_with_specials["week_true"] == df["anomaly_weekdays"]).all()
 
 
 def test_month_feature(df_with_specials: pd.DataFrame):
     """This test checks that _OneSegmentSpecialDaysTransform computes monthday feature correctly."""
     special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=False, find_special_month_day=True)
     df = special_days_finder.fit_transform(df_with_specials)
-    assert (df_with_specials["month_true"] == df["regressor_anomaly_monthdays"]).all()
+    assert (df_with_specials["month_true"] == df["anomaly_monthdays"]).all()
 
 
 def test_no_false_positive_week(constant_days_df: pd.DataFrame):
     """This test checks that there is no false-positive results in week mode."""
     special_days_finder = _OneSegmentSpecialDaysTransform()
     res = special_days_finder.fit_transform(constant_days_df)
-    assert res["regressor_anomaly_weekdays"].astype("bool").sum() == 0
+    assert res["anomaly_weekdays"].astype("bool").sum() == 0
 
 
 def test_no_false_positive_month(constant_days_df: pd.DataFrame):
     """This test checks that there is no false-positive results in month mode."""
     special_days_finder = _OneSegmentSpecialDaysTransform()
     res = special_days_finder.fit_transform(constant_days_df)
-    assert res["regressor_anomaly_monthdays"].astype("bool").sum() == 0
+    assert res["anomaly_monthdays"].astype("bool").sum() == 0
 
 
 def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
