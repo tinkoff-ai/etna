@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add logging to TSDataset.make_future, log repr of transform instead of class name ([#555](https://github.com/tinkoff-ai/etna/pull/555))
 - Rename `_SARIMAXModel` and `_ProphetModel`, make `SARIMAXModel` and `ProphetModel` inherit from `PerSegmentPredictionIntervalModel` ([#549](https://github.com/tinkoff-ai/etna/pull/549))
 - 
+- Update get_started section in README ([#569](https://github.com/tinkoff-ai/etna/pull/569))
 - Make detrending polynomial ([#566](https://github.com/tinkoff-ai/etna/pull/566))
 - Update documentation about transforms that generate regressors, update examples with them ([#572](https://github.com/tinkoff-ai/etna/pull/572))
 - 
