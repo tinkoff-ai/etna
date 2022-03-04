@@ -179,6 +179,11 @@ We have also prepared a set of tutorials for an easy introduction:
 
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
+## Community
+
+To ask the questions or discuss the library you can join our [telegram chat](t.me/etna_support). 
+[Discussions section](https://github.com/tinkoff-ai/etna/discussions) on github is also open for this purpose.
+
 ## Resources
 
 - [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
