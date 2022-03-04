@@ -22,12 +22,13 @@
   <a href="https://github.com/tinkoff-ai/etna/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/tinkoff-ai/etna?style=social" /></a>
 </p>
 
-[Homepage](https://etna.tinkoff.ru) |
-[Documentation](https://etna-docs.netlify.app/) |
-[Tutorials](https://github.com/tinkoff-ai/etna/tree/master/examples) | 
-[Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md) |
-[Release Notes](https://github.com/tinkoff-ai/etna/releases)
-
+<p align="center">
+  <a href="https://etna.tinkoff.ru">Homepage</a> | 
+  <a href="https://etna-docs.netlify.app/">Documentation</a> |
+  <a href="https://github.com/tinkoff-ai/etna/tree/master/examples">Tutorials</a> |
+  <a href="https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md">Contribution Guide</a> |
+  <a href="https://github.com/tinkoff-ai/etna/releases">Release Notes</a>
+</p>
   
 ETNA is an easy-to-use time series forecasting framework. 
 It includes built in toolkits for time series preprocessing, feature generation, 
