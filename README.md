@@ -42,7 +42,87 @@ The library started as an internal product in our company -
 we use it in over 10+ projects now, so we often release updates. 
 Contributions are welcome - check our [Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md).
 
+## Get started
 
+Let's load and prepare the data.
+```python
+import pandas as pd
+from etna.datasets import TSDataset
+
+# Read the data
+df = pd.read_csv("examples/data/example_dataset.csv")
+
+# Create a TSDataset
+df = TSDataset.to_dataset(df)
+ts = TSDataset(df, freq="D")
+
+# Choose a horizon
+HORIZON = 14
+
+# Make train/test split
+train_ts, test_ts = ts.train_test_split(test_size=HORIZON)
+```
+
+Define transformations and model:
+```python
+from etna.models import CatBoostModelMultiSegment
+from etna.transforms import DateFlagsTransform
+from etna.transforms import DensityOutliersTransform
+from etna.transforms import FourierTransform
+from etna.transforms import LagTransform
+from etna.transforms import LinearTrendTransform
+from etna.transforms import MeanTransform
+from etna.transforms import SegmentEncoderTransform
+from etna.transforms import TimeSeriesImputerTransform
+from etna.transforms import TrendTransform
+
+# Prepare transforms
+transforms = [
+    DensityOutliersTransform(in_column="target", distance_coef=3.0),
+    TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
+    LinearTrendTransform(in_column="target"),
+    TrendTransform(in_column="target", out_column="trend"),
+    LagTransform(in_column="target", lags=list(range(HORIZON, 122)), out_column="target_lag"),
+    DateFlagsTransform(week_number_in_month=True, out_column="date_flag"),
+    FourierTransform(period=360.25, order=6, out_column="fourier"),
+    SegmentEncoderTransform(),
+    MeanTransform(in_column=f"target_lag_{HORIZON}", window=12, seasonality=7),
+    MeanTransform(in_column=f"target_lag_{HORIZON}", window=7),
+]
+
+# Prepare model
+model = CatBoostModelMultiSegment()
+```
+
+Fit `Pipeline` and make a prediction:
+```python
+from etna.pipeline import Pipeline
+
+# Create and fit the pipeline
+pipeline = Pipeline(model=model, transforms=transforms, horizon=HORIZON)
+pipeline.fit(train_ts)
+
+# Make a forecast
+forecast_ts = pipeline.forecast()
+```
+
+Let's plot the results:
+```python
+from etna.analysis import plot_forecast
+
+plot_forecast(forecast_ts=forecast_ts, test_ts=test_ts, train_ts=train_ts, n_train_samples=50)
+```
+
+![](examples/assets/readme/get_started.png)
+
+Print the metric value across the segments:
+```python
+from etna.metrics import SMAPE
+
+metric = SMAPE(mode="macro")
+metric_value = metric(y_true=test_ts, y_pred=forecast_ts)
+>>> {'segment_b': 3.3017151519000967, 'segment_c': 5.270557433427279, 'segment_a': 5.272811627335398, 'segment_d': 4.689085450895735}
+```
 
 ## Installation 
 
@@ -79,35 +159,10 @@ For example, `etna.models.ProphetModel` needs `prophet` extension and can't be u
 
 ETNA supports configuration files. It means that library will check that all the specified packages are installed prior to script start and NOT during runtime. 
 
-To set up a configuration for your project you should create a `.etna` file at the project's root. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file. 
-
-## Get started 
-Here's some example code for a quick start.
-```python
-import pandas as pd
-from etna.datasets.tsdataset import TSDataset
-from etna.models import ProphetModel
-from etna.pipeline import Pipeline
-
-# Read the data
-df = pd.read_csv("examples/data/example_dataset.csv")
-
-# Create a TSDataset
-df = TSDataset.to_dataset(df)
-ts = TSDataset(df, freq="D")
-
-# Choose a horizon
-HORIZON = 8
-
-# Fit the pipeline
-pipeline = Pipeline(model=ProphetModel(), horizon=HORIZON)
-pipeline.fit(ts)
-
-# Make the forecast
-forecast_ts = pipeline.forecast()
-```
+To set up a configuration for your project you should create a `.etna` file at the project's root. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file.
 
 ## Tutorials
+
 We have also prepared a set of tutorials for an easy introduction:
 
 | Notebook     | Interactive launch  |
@@ -121,6 +176,7 @@ We have also prepared a set of tutorials for an easy introduction:
 | [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/ensembles.ipynb) |
 
 ## Documentation
+
 ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
 ## Resources
@@ -134,6 +190,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 ## Acknowledgments
 
 ### ETNA.Team
+
 [Andrey Alekseev](https://github.com/iKintosh),
 [Nikita Barinov](https://github.com/diadorer),
 [Dmitriy Bunin](https://github.com/Mr-Geekman),
@@ -148,6 +205,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 [Julia Shenshina](https://github.com/julia-shenshina)
 
 ### ETNA.Contributors
+
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen),
 [Carlosbogo](https://github.com/Carlosbogo)
