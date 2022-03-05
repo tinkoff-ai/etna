@@ -134,7 +134,7 @@ class TSDataset:
         self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
-            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
             columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.transform(self.df)
             columns_after = set(self.columns.get_level_values("feature"))
@@ -145,7 +145,7 @@ class TSDataset:
         self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
-            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
             columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.fit_transform(self.df)
             columns_after = set(self.columns.get_level_values("feature"))
@@ -288,6 +288,7 @@ class TSDataset:
 
         if self.transforms is not None:
             for transform in self.transforms:
+                tslogger.log(f"Transform {repr(transform)} is applied to dataset")
                 df = transform.transform(df)
 
         future_dataset = df.tail(future_steps).copy(deep=True)

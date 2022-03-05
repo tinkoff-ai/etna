@@ -126,18 +126,19 @@ class WandbLogger(BaseLogger):
         from etna.analysis import plot_backtest_interactive
         from etna.datasets import TSDataset
 
+        summary: Dict[str, Any] = dict()
         if self.table:
-            self.experiment.summary["metrics"] = wandb.Table(data=metrics_df)
-            self.experiment.summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast_df))
-            self.experiment.summary["fold_info"] = wandb.Table(data=fold_info_df)
+            summary["metrics"] = wandb.Table(data=metrics_df)
+            summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast_df))
+            summary["fold_info"] = wandb.Table(data=fold_info_df)
 
         if self.plot:
             fig = plot_backtest_interactive(forecast_df, ts, history_len=100)
-            self.experiment.log({"backtest": fig})
+            summary["backtest"] = fig
 
         metrics_dict = aggregate_metrics_df(metrics_df)
-        for metric_key, metric_value in metrics_dict.items():
-            self.experiment.summary[metric_key] = metric_value
+        summary.update(metrics_dict)
+        self.experiment.log(summary)
 
     def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
         """
@@ -157,14 +158,16 @@ class WandbLogger(BaseLogger):
         columns_name = list(metrics.columns)
         metrics = metrics.reset_index()
         metrics.columns = ["segment"] + columns_name
+        summary: Dict[str, Any] = dict()
         if self.table:
-            self.experiment.summary["metrics"] = wandb.Table(data=metrics)
-            self.experiment.summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast))
-            self.experiment.summary["test"] = wandb.Table(data=TSDataset.to_flatten(test))
+            summary["metrics"] = wandb.Table(data=metrics)
+            summary["forecast"] = wandb.Table(data=TSDataset.to_flatten(forecast))
+            summary["test"] = wandb.Table(data=TSDataset.to_flatten(test))
 
         metrics_dict = aggregate_metrics_df(metrics)
         for metric_key, metric_value in metrics_dict.items():
-            self.experiment.summary[metric_key] = metric_value
+            summary[metric_key] = metric_value
+        self.experiment.log(summary)
 
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment(logger post init or reinit next experiment with the same name).
