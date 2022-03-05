@@ -740,7 +740,7 @@ TrendTransformType = Union[
 ]
 
 
-def __get_labels_names(trend_transform, segments):
+def _get_labels_names(trend_transform, segments):
     """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label."""
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
@@ -790,7 +790,7 @@ def plot_trend(
         trend_transform = [trend_transform]
 
     df_detrend = [transform.fit_transform(df.copy()) for transform in trend_transform]
-    labels, linear_coeffs = __get_labels_names(trend_transform, segments)
+    labels, linear_coeffs = _get_labels_names(trend_transform, segments)
 
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
