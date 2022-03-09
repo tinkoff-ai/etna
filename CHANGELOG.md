@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prediction intervals visualization in `plot_forecast` ([#538](https://github.com/tinkoff-ai/etna/pull/538))
 - 
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
-- 
+- Add plot_trend ([#565](https://github.com/tinkoff-ai/etna/pull/565))
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
 - Add option `day_number_in_year` to DateFlagsTransform ([#552](https://github.com/tinkoff-ai/etna/pull/552))
 - Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
@@ -25,8 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Add option `season_number` to DateFlagsTransform ([#567](https://github.com/tinkoff-ai/etna/pull/567))
 - 
+- Create `BasePipeline`, add prediction intervals to all the pipelines, move parameter n_fold to forecast ([#578](https://github.com/tinkoff-ai/etna/pull/578))
 - Add stl_plot ([#575](https://github.com/tinkoff-ai/etna/pull/575))
 - Add plot_features_relevance ([#579](https://github.com/tinkoff-ai/etna/pull/579))
+- Add community section to README.md ([#580](https://github.com/tinkoff-ai/etna/pull/580))
 - Create `AbstaractPipeline` ([#573](https://github.com/tinkoff-ai/etna/pull/573))
 - 
 ### Changed
