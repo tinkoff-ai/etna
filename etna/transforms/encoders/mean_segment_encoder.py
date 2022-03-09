@@ -7,12 +7,12 @@ from etna.transforms.math.statistics import MeanTransform
 
 
 class MeanSegmentEncoderTransform(Transform, FutureMixin):
-    """Makes expanding mean target encoding of the segment. Creates column 'regressor_segment_mean'."""
+    """Makes expanding mean target encoding of the segment. Creates column 'segment_mean'."""
 
     idx = pd.IndexSlice
 
     def __init__(self):
-        self.mean_encoder = MeanTransform(in_column="target", window=-1, out_column="regressor_segment_mean")
+        self.mean_encoder = MeanTransform(in_column="target", window=-1, out_column="segment_mean")
         self.global_means: np.ndarray[float] = None
 
     def fit(self, df: pd.DataFrame) -> "MeanSegmentEncoderTransform":
@@ -48,5 +48,5 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
         df = self.mean_encoder.transform(df)
         segment = df.columns.get_level_values("segment").unique()[0]
         nan_timestamps = df[df.loc[:, self.idx[segment, "target"]].isna()].index
-        df.loc[nan_timestamps, self.idx[:, "regressor_segment_mean"]] = self.global_means
+        df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = self.global_means
         return df

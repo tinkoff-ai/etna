@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Literal
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
@@ -18,6 +17,7 @@ import pandas as pd
 import plotly
 import plotly.graph_objects as go
 import seaborn as sns
+from typing_extensions import Literal
 
 from etna.transforms import Transform
 

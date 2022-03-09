@@ -17,9 +17,11 @@ SPECIAL_DAYS_PARAMS = {"special_days_in_week", "special_days_in_month"}
 INIT_PARAMS_TEMPLATE = {
     "day_number_in_week": False,
     "day_number_in_month": False,
+    "day_number_in_year": False,
     "week_number_in_year": False,
     "week_number_in_month": False,
     "month_number_in_year": False,
+    "season_number": False,
     "year_number": False,
     "is_weekend": False,
     "special_days_in_week": (),
@@ -42,19 +44,23 @@ def dateflags_true_df() -> pd.DataFrame:
     out_column = "dateflag"
     for i in range(len(dataframes)):
         df = dataframes[i]
-        df[f"regressor_{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday
-        df[f"regressor_{out_column}_day_number_in_month"] = df["timestamp"].dt.day
-        df[f"regressor_{out_column}_week_number_in_year"] = df["timestamp"].dt.week
-        df[f"regressor_{out_column}_month_number_in_year"] = df["timestamp"].dt.month
-        df[f"regressor_{out_column}_year_number"] = df["timestamp"].dt.year
-        df[f"regressor_{out_column}_week_number_in_month"] = df["timestamp"].apply(
+        df[f"{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday
+        df[f"{out_column}_day_number_in_month"] = df["timestamp"].dt.day
+        df[f"{out_column}_day_number_in_year"] = df["timestamp"].apply(
+            lambda dt: dt.dayofyear + 1 if not dt.is_leap_year and dt.month >= 3 else dt.dayofyear
+        )
+        df[f"{out_column}_week_number_in_year"] = df["timestamp"].dt.week
+        df[f"{out_column}_month_number_in_year"] = df["timestamp"].dt.month
+        df[f"{out_column}_season_number"] = df["timestamp"].dt.month % 12 // 3 + 1
+        df[f"{out_column}_year_number"] = df["timestamp"].dt.year
+        df[f"{out_column}_week_number_in_month"] = df["timestamp"].apply(
             lambda x: int(x.weekday() < (x - timedelta(days=x.day - 1)).weekday()) + (x.day - 1) // 7 + 1
         )
-        df[f"regressor_{out_column}_is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
-        df[f"regressor_{out_column}_special_days_in_week"] = df[f"regressor_{out_column}_day_number_in_week"].apply(
+        df[f"{out_column}_is_weekend"] = df["timestamp"].apply(lambda x: x.weekday() in WEEKEND_DAYS)
+        df[f"{out_column}_special_days_in_week"] = df[f"{out_column}_day_number_in_week"].apply(
             lambda x: x in SPECIAL_DAYS
         )
-        df[f"regressor_{out_column}_special_days_in_month"] = df[f"regressor_{out_column}_day_number_in_month"].apply(
+        df[f"{out_column}_special_days_in_month"] = df[f"{out_column}_day_number_in_month"].apply(
             lambda x: x in SPECIAL_DAYS
         )
 
@@ -93,9 +99,11 @@ def test_invalid_arguments_configuration():
         _ = DateFlagsTransform(
             day_number_in_month=False,
             day_number_in_week=False,
+            day_number_in_year=False,
             week_number_in_month=False,
             week_number_in_year=False,
             month_number_in_year=False,
+            season_number=False,
             year_number=False,
             is_weekend=False,
             special_days_in_week=(),
@@ -109,9 +117,11 @@ def test_repr():
     transform = DateFlagsTransform(
         day_number_in_week=True,
         day_number_in_month=True,
+        day_number_in_year=False,
         week_number_in_month=False,
         week_number_in_year=False,
         month_number_in_year=True,
+        season_number=True,
         year_number=True,
         is_weekend=True,
         special_days_in_week=(1, 2),
@@ -119,9 +129,9 @@ def test_repr():
     )
     transform_repr = transform.__repr__()
     true_repr = (
-        f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, week_number_in_month = False, "
-        f"week_number_in_year = False, month_number_in_year = True, year_number = True, is_weekend = True, special_days_in_week = (1, 2), "
-        f"special_days_in_month = (12,), out_column = None, )"
+        f"{transform_class_repr}(day_number_in_week = True, day_number_in_month = True, day_number_in_year = False, "
+        f"week_number_in_month = False, week_number_in_year = False, month_number_in_year = True, season_number = True, year_number = True, "
+        f"is_weekend = True, special_days_in_week = (1, 2), special_days_in_month = (12,), out_column = None, )"
     )
     assert transform_repr == true_repr
 
@@ -131,17 +141,21 @@ def test_repr():
     (
         ["day_number_in_week"],
         ["day_number_in_month"],
+        ["day_number_in_year"],
         ["week_number_in_year"],
         ["week_number_in_month"],
         ["month_number_in_year"],
+        ["season_number"],
         ["year_number"],
         ["is_weekend"],
         [
             "day_number_in_week",
             "day_number_in_month",
+            "day_number_in_year",
             "week_number_in_year",
             "week_number_in_month",
             "month_number_in_year",
+            "season_number",
             "year_number",
             "is_weekend",
         ],
@@ -173,17 +187,21 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
     (
         ["day_number_in_week"],
         ["day_number_in_month"],
+        ["day_number_in_year"],
         ["week_number_in_year"],
         ["week_number_in_month"],
         ["month_number_in_year"],
+        ["season_number"],
         ["year_number"],
         ["is_weekend"],
         [
             "day_number_in_week",
             "day_number_in_month",
+            "day_number_in_year",
             "week_number_in_year",
             "week_number_in_month",
             "month_number_in_year",
+            "season_number",
             "year_number",
             "is_weekend",
         ],
@@ -214,7 +232,7 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
         assert np.all(result.loc[:, pd.IndexSlice[segments, column]].dtypes == "category")
 
         # check that a transform can be created from column name and it generates the same results
-        transform_temp = eval(column[len("regressor_") :])
+        transform_temp = eval(column)
         df_temp = transform_temp.fit_transform(df=train_df.copy())
         columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1
@@ -230,9 +248,11 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
     (
         {"day_number_in_week": True},
         {"day_number_in_month": True},
+        {"day_number_in_year": True},
         {"week_number_in_year": True},
         {"week_number_in_month": True},
         {"month_number_in_year": True},
+        {"season_number": True},
         {"year_number": True},
         {"is_weekend": True},
         {"special_days_in_week": SPECIAL_DAYS},
@@ -243,7 +263,7 @@ def test_feature_values(
     true_params: Dict[str, Union[bool, Tuple[int, int]]], train_df: pd.DataFrame, dateflags_true_df: pd.DataFrame
 ):
     """Test that transform generates correct values."""
-    out_column = "regressor_dateflag"
+    out_column = "dateflag"
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     init_params.update(true_params)
     transform = DateFlagsTransform(**init_params, out_column=out_column)

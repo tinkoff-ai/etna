@@ -67,7 +67,7 @@ def check_interface_transform_autogenerate_column_non_regressor(
     """Check that differencing transform generates non-regressor column in transform according to repr."""
     transformed_df = transform.fit_transform(df)
     new_columns = set(extract_new_features_columns(transformed_df, df))
-    assert new_columns == {transform.__repr__()}
+    assert new_columns == {repr(transform)}
 
 
 def check_interface_transform_autogenerate_column_regressor(
@@ -77,7 +77,7 @@ def check_interface_transform_autogenerate_column_regressor(
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     transformed_df = transform.fit_transform(ts.to_pandas())
     new_columns = set(extract_new_features_columns(transformed_df, ts.to_pandas()))
-    assert new_columns == {f"regressor_{transform.__repr__()}"}
+    assert new_columns == {repr(transform)}
 
 
 def check_transform(

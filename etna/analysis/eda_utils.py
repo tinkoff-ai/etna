@@ -2,16 +2,21 @@ import math
 import warnings
 from itertools import combinations
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import statsmodels.api as sm
 from matplotlib.ticker import MaxNLocator
 from statsmodels.graphics import utils
+from statsmodels.tsa.seasonal import STL
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -221,3 +226,73 @@ def distribution_plot(
         sns.boxplot(data=df_slice.sort_values(by="segment"), y="z", x="segment", ax=ax[i], fliersize=False)
         ax[i].set_title(f"{period}")
         i += 1
+
+
+def stl_plot(
+    ts: "TSDataset",
+    in_column: str = "target",
+    period: Optional[int] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 10),
+    plot_kwargs: Optional[Dict[str, Any]] = None,
+    stl_kwargs: Optional[Dict[str, Any]] = None,
+):
+    """Plot STL decomposition for segments.
+
+    Parameters
+    ----------
+    ts:
+        dataset with timeseries data
+    segments:
+        segments to plot
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    plot_kwargs:
+        dictionary with parameters for plotting, `matplotlib.axes.Axes.plot` is used
+    stl_kwargs:
+        dictionary with parameters for STL decomposition, `statsmodels.tsa.seasonal.STL` is used
+    """
+    if plot_kwargs is None:
+        plot_kwargs = {}
+    if stl_kwargs is None:
+        stl_kwargs = {}
+    if not segments:
+        segments = sorted(ts.segments)
+
+    segments_number = len(segments)
+    columns_num = min(columns_num, len(segments))
+    rows_num = math.ceil(segments_number / columns_num)
+
+    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+    fig = plt.figure(figsize=figsize, constrained_layout=True)
+    subfigs = fig.subfigures(rows_num, columns_num)
+
+    df = ts.to_pandas()
+    for i, segment in enumerate(segments):
+        segment_df = df.loc[:, pd.IndexSlice[segment, :]][segment]
+        segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+        decompose_result = STL(endog=segment_df[in_column], period=period, **stl_kwargs).fit()
+
+        # start plotting
+        subfigs.flat[i].suptitle(segment)
+        axs = subfigs.flat[i].subplots(4, 1, sharex=True)
+
+        # plot observed
+        axs.flat[0].plot(segment_df.index, decompose_result.observed, **plot_kwargs)
+        axs.flat[0].set_ylabel("Observed")
+
+        # plot trend
+        axs.flat[1].plot(segment_df.index, decompose_result.trend, **plot_kwargs)
+        axs.flat[1].set_ylabel("Trend")
+
+        # plot seasonal
+        axs.flat[2].plot(segment_df.index, decompose_result.seasonal, **plot_kwargs)
+        axs.flat[2].set_ylabel("Seasonal")
+
+        # plot residuals
+        axs.flat[3].plot(segment_df.index, decompose_result.resid, **plot_kwargs)
+        axs.flat[3].set_ylabel("Residual")
+        axs.flat[3].tick_params("x", rotation=45)

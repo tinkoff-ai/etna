@@ -39,9 +39,8 @@ class _SingleDifferencingTransform(Transform):
         inplace:
             if True, apply transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
-            if set, name of added column, the final name will be '{out_column}',
-            don't forget to add 'regressor_' prefix
-            if isn't set, name will be based on `self.__repr__`
+            if set, name of added column, the final name will be '{out_column}';
+            if isn't set, name will be based on `self.__repr__()`
 
         Raises
         ------
@@ -63,10 +62,7 @@ class _SingleDifferencingTransform(Transform):
 
     def _get_column_name(self) -> str:
         if self.out_column is None:
-            prefix = ""
-            if self.in_column.startswith("regressor_"):
-                prefix = "regressor_"
-            return f"{prefix}{self.__repr__()}"
+            return self.__repr__()
         else:
             return self.out_column
 
@@ -264,9 +260,8 @@ class DifferencingTransform(Transform):
         inplace:
             if True, apply transformation inplace to in_column, if False, add transformed column to dataset
         out_column:
-            if set, name of added column, the final name will be '{out_column}',
-            don't forget to add 'regressor_' prefix
-            if isn't set, name will be based on `self.__repr__`
+            if set, name of added column, the final name will be '{out_column}';
+            if isn't set, name will be based on `self.__repr__()`
 
         Raises
         ------
@@ -307,10 +302,7 @@ class DifferencingTransform(Transform):
         if self.inplace:
             return self.in_column
         if self.out_column is None:
-            prefix = ""
-            if self.in_column.startswith("regressor_"):
-                prefix = "regressor_"
-            return f"{prefix}{self.__repr__()}"
+            return self.__repr__()
         else:
             return self.out_column
 
