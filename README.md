@@ -222,3 +222,5 @@ Feel free to use our library in your commercial and private applications.
 
 ETNA is covered by [Apache 2.0](/LICENSE). 
 Read more about this license [here](https://choosealicense.com/licenses/apache-2.0/)
+
+> Please note that `etna[prophet]` is covered by [GPL 2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) due to pystan package.

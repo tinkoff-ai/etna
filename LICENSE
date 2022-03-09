@@ -192,3 +192,10 @@
    This repository includes four files originally copied from https://github.com/blue-yonder/tsfresh
    under etna/libs/tsfresh, defaults.py, distribution.py, relevance.py and significance_test.py. The
    original versions of the files are MIT licensed. See the file headers for details.
+
+   NOTE
+
+   Above license covers base etna package only.
+   Please note that `etna[prophet]` is covered by GPL 2.0 due to pystan package.
+
+   https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
