@@ -817,6 +817,8 @@ def plot_feature_relevance(
     """
     Plot relevance of the features.
 
+    The most important features are at the top, the least important are at the bottom.
+
     Parameters
     ----------
     ts:
@@ -840,7 +842,8 @@ def plot_feature_relevance(
         segments = sorted(ts.segments)
 
     is_ascending = not relevance_table.greater_is_better
-    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts.df_exog).loc[segments]
+    features = set(ts.columns.get_level_values("feature")) - {"target"}
+    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features]).loc[segments]
 
     if relevance_aggregation_mode == "per-segment":
         ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
