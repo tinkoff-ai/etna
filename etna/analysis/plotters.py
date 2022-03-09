@@ -752,7 +752,7 @@ def _get_labels_names(trend_transform, segments):
     linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
     if len(trend_transform) == 1 and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform)):
         for seg in segments:
-            linear_coeffs[seg] = ", k=" + f'{trend_transform[0].segment_transforms[seg]._linear_model.coef_[0]:g}'
+            linear_coeffs[seg] = ", k=" + f"{trend_transform[0].segment_transforms[seg]._linear_model.coef_[0]:g}"
     return labels, linear_coeffs
 
 
