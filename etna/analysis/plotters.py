@@ -2,6 +2,7 @@ import math
 import warnings
 from copy import deepcopy
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -809,6 +810,7 @@ def plot_feature_relevance(
     relevance_table: RelevanceTable,
     normalized: bool = False,
     relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
+    relevance_params: Optional[Dict[str, Any]] = None,
     top_k: Optional[int] = None,
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
@@ -829,6 +831,8 @@ def plot_feature_relevance(
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
         aggregation strategy for obtained feature relevance table
+    relevance_params:
+        additional keyword arguments for `__call__` method of `RelevanceTable` instances
     top_k:
         number of best features to plot, if None plot all the features
     segments:
@@ -838,12 +842,14 @@ def plot_feature_relevance(
     figsize:
         size of the figure per subplot with one segment in inches
     """
+    if relevance_params is None:
+        relevance_params = {}
     if not segments:
         segments = sorted(ts.segments)
 
     is_ascending = not relevance_table.greater_is_better
     features = set(ts.columns.get_level_values("feature")) - {"target"}
-    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features]).loc[segments]
+    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features], **relevance_params).loc[segments]
 
     if relevance_aggregation_mode == "per-segment":
         ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
