@@ -830,7 +830,8 @@ def plot_feature_relevance(
     normalized:
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
-        aggregation strategy for obtained feature relevance table
+        aggregation strategy for obtained feature relevance table;
+        all the strategies can be examined at `etna.analysis.feature_selection.AggregationMode`
     relevance_params:
         additional keyword arguments for `__call__` method of `RelevanceTable` instances
     top_k:
