@@ -20,10 +20,10 @@ from etna.datasets import TSDataset
 from etna.ensembles import EnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
-from etna.pipeline import Pipeline
+from etna.pipeline.base import BasePipeline
 
 
-class StackingEnsemble(Pipeline, EnsembleMixin):
+class StackingEnsemble(BasePipeline, EnsembleMixin):
     """StackingEnsemble is a pipeline that forecast future using the metamodel to combine the forecasts of the base models.
 
     Examples
@@ -57,11 +57,9 @@ class StackingEnsemble(Pipeline, EnsembleMixin):
     2021-09-15      0.36      1.56      0.30
     """
 
-    support_prediction_interval = False
-
     def __init__(
         self,
-        pipelines: List[Pipeline],
+        pipelines: List[BasePipeline],
         final_model: RegressorMixin = LinearRegression(),
         n_folds: int = 3,
         features_to_use: Union[None, Literal["all"], List[str]] = None,
@@ -92,14 +90,14 @@ class StackingEnsemble(Pipeline, EnsembleMixin):
         """
         self._validate_pipeline_number(pipelines=pipelines)
         self.pipelines = pipelines
-        self.horizon = self._get_horizon(pipelines=pipelines)
         self.final_model = final_model
-        self.n_folds = self._validate_cv(n_folds)
+        self._validate_backtest_n_folds(n_folds)
+        self.n_folds = n_folds
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
         self.joblib_params = joblib_params
-        self.ts: Optional[TSDataset] = None
+        super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:
         """Return all the features from `features_to_use` which can be obtained from base models' forecasts."""
@@ -127,10 +125,10 @@ class StackingEnsemble(Pipeline, EnsembleMixin):
             )
             return None
 
-    def _backtest_pipeline(self, pipeline: Pipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
         """Get forecasts from backtest for given pipeline."""
         with tslogger.disable():
-            _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
+            _, forecasts, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
@@ -144,7 +142,7 @@ class StackingEnsemble(Pipeline, EnsembleMixin):
 
         Returns
         -------
-        StackingEnsemble:
+        self:
             Fitted ensemble.
         """
         self.ts = ts
@@ -210,17 +208,12 @@ class StackingEnsemble(Pipeline, EnsembleMixin):
         else:
             return x, None
 
-    def forecast(self, prediction_interval: bool = False) -> TSDataset:
-        """Forecast with ensemble: compute the combination of pipelines' forecasts using `final_model`.
-
-        Returns
-        -------
-        TSDataset:
-            Dataset with forecasts.
+    def _forecast(self) -> TSDataset:
+        """Make predictions.
+        Compute the combination of pipelines' forecasts using `final_model`
         """
         if self.ts is None:
-            raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
-        self.check_support_prediction_interval(prediction_interval)
+            raise ValueError("Something went wrong, ts is None!")
 
         # Get forecast
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(

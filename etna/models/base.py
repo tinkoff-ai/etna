@@ -405,3 +405,6 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
            Internal model
         """
         return self._base_model
+
+
+BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]

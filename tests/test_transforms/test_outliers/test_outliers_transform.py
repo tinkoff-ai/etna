@@ -5,13 +5,11 @@ import pytest
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
-from etna.analysis import get_sequence_anomalies
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
-from etna.transforms import SAXOutliersTransform
 
 
 @pytest.fixture()
@@ -46,7 +44,6 @@ def outliers_solid_tsds():
     [
         (MedianOutliersTransform, {}),
         (DensityOutliersTransform, {}),
-        (SAXOutliersTransform, {}),
         (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
     ],
 )
@@ -64,7 +61,6 @@ def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsd
     [
         (MedianOutliersTransform, {}, get_anomalies_median, {}),
         (DensityOutliersTransform, {}, get_anomalies_density, {}),
-        (SAXOutliersTransform, {}, get_sequence_anomalies, {}),
         (
             PredictionIntervalOutliersTransform,
             dict(model=ProphetModel),
@@ -96,7 +92,6 @@ def test_outliers_detection(transform_constructor, constructor_kwargs, method, o
     [
         (MedianOutliersTransform, {}),
         (DensityOutliersTransform, {}),
-        (SAXOutliersTransform, {}),
         (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
     ],
 )
@@ -116,7 +111,6 @@ def test_inverse_transform_train(transform_constructor, constructor_kwargs, outl
     [
         (MedianOutliersTransform, {}),
         (DensityOutliersTransform, {}),
-        (SAXOutliersTransform, {}),
         (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
     ],
 )
@@ -136,7 +130,6 @@ def test_inverse_transform_future(transform_constructor, constructor_kwargs, out
     (
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
-        SAXOutliersTransform(in_column="target"),
         PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ),
 )
@@ -151,7 +144,6 @@ def test_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
     (
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
-        SAXOutliersTransform(in_column="target"),
         PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ),
 )
@@ -166,7 +158,6 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
     (
         MedianOutliersTransform(in_column="target"),
         DensityOutliersTransform(in_column="target"),
-        SAXOutliersTransform(in_column="target"),
         PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ),
 )
