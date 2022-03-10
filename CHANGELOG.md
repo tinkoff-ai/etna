@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `TSDataset.info`, `TSDataset.describe` methods ([#519](https://github.com/tinkoff-ai/etna/pull/519))
 - Fix regressors handling for `OneHotEncoderTransform` and `HolidayTransform` ([#518](https://github.com/tinkoff-ai/etna/pull/518))
 - Fix wandb summary issue with custom plots ([#535](https://github.com/tinkoff-ai/etna/pull/535))
-- Small notebook fixes
+- Small notebook fixes ([#595](https://github.com/tinkoff-ai/etna/pull/595))
 - 
 - 
 - Fix import Literal in plotters ([#558](https://github.com/tinkoff-ai/etna/pull/558))
