@@ -54,46 +54,24 @@ def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:
 
 
 def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optional[List[float]]) -> List[float]:
-    """Select quantiles from the forecast results."""
-    # restrict to use only two quantiles, in other case the plot will be messy
-    if len(forecast_results) > 1:
-        if quantiles is None:
-            unique_quantiles = set()
-            for forecast in forecast_results.values():
-                unique_quantiles.update(_get_existing_quantiles(forecast))
-            sorted_quantiles = sorted(list(unique_quantiles))
+    """Select quantiles from the forecast results.
 
-        else:
-            sorted_quantiles = sorted(list(set(quantiles)))
+    Selected quantiles exist in each forecast.
+    """
+    intersection_quantiles_set = set.intersection(
+        *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
+    )
+    intersection_quantiles = sorted(list(intersection_quantiles_set))
 
-        if len(sorted_quantiles) == 1:
-            selected_quantiles = []
-            warnings.warn("In multi-forecast mode the minimum number of quantiles is two.")
-        elif len(sorted_quantiles) > 2:
-            selected_quantiles = [sorted_quantiles[0], sorted_quantiles[-1]]
-            warnings.warn(f"In multi-forecast mode only two quantiles will be used: {quantiles}")
-        else:
-            selected_quantiles = sorted_quantiles
-
-        # check if selected quantiles present in every forecast
-        for forecast_name, forecast in forecast_results.items():
-            existing_quantiles = _get_existing_quantiles(forecast)
-            if not set(selected_quantiles).issubset(existing_quantiles):
-                raise ValueError(f"Chosen quantiles {quantiles} isn't present in forecast {forecast_name}")
-
-        return selected_quantiles
-
-    # in this case we have only one forecast
+    if quantiles is None:
+        selected_quantiles = intersection_quantiles
     else:
-        forecast = list(forecast_results.values())[0]
-        existing_quantiles = _get_existing_quantiles(forecast)
-        if quantiles is None:
-            return sorted(list(existing_quantiles))
-        else:
-            non_existent = set(quantiles) - existing_quantiles
-            if len(non_existent):
-                warnings.warn(f"Quantiles {non_existent} do not exist in forecast dataset. They will be dropped.")
-            return sorted(list(set(quantiles).intersection(existing_quantiles)))
+        selected_quantiles = sorted(list(set(quantiles) & intersection_quantiles_set))
+        non_existent = set(quantiles) - intersection_quantiles_set
+        if non_existent:
+            warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
+
+    return selected_quantiles
 
 
 def _prepare_forecast_results(
@@ -149,16 +127,12 @@ def plot_forecast(
         if True prediction intervals will be drawn
     quantiles:
         List of quantiles to draw, if isn't set then quantiles from a given dataset will be used.
-        * In a single-forecast mode intervals will be drawn in layers.
-        The remaining quantile (if present) will be drawn as a line.
-        * In a multi-forecast mode only the highest and the lowest pair of quantiles will be used.
+        In multi-forecast mode, only quantiles present in each forecast will be used.
 
     Raises
     ------
     ValueError:
         if the format of `forecast_ts` is unknown
-    ValueError:
-        if in multi-forecast mode given quantiles isn't present in each dataset
     """
     forecast_results = _prepare_forecast_results(forecast_ts)
     num_forecasts = len(forecast_results.keys())
@@ -203,62 +177,69 @@ def plot_forecast(
             ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
 
         # plot forecast plot for each of given forecasts
-        colors = plt.cm.Set2.colors
+        quantile_prefix = "target_"
         for j, (forecast_name, forecast) in enumerate(forecast_results.items()):
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
-            forecast_color = colors[j % len(colors)]
 
             segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
-            ax[i].plot(
+            line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
-                color=forecast_color,
                 linewidth=1,
                 label=f"{legend_prefix}forecast",
             )
+            forecast_color = line[0].get_color()
 
             # draw prediction intervals from outer layers to inner ones
             if prediction_intervals and quantiles is not None:
                 alpha = np.linspace(0, 1 / 2, len(quantiles) // 2 + 2)[1:-1]
-                for quantile in range(len(quantiles) // 2):
-                    values_low = segment_forecast_df["target_" + str(quantiles[quantile])].values
-                    values_high = segment_forecast_df["target_" + str(quantiles[-quantile - 1])].values
-                    if quantile == len(quantiles) // 2 - 1:
+                for quantile_idx in range(len(quantiles) // 2):
+                    # define upper and lower border for this iteration
+                    low_quantile = quantiles[quantile_idx]
+                    high_quantile = quantiles[-quantile_idx - 1]
+                    values_low = segment_forecast_df[f"{quantile_prefix}{low_quantile}"].values
+                    values_high = segment_forecast_df[f"{quantile_prefix}{high_quantile}"].values
+                    # if (low_quantile, high_quantile) is the smallest interval
+                    if quantile_idx == len(quantiles) // 2 - 1:
                         ax[i].fill_between(
                             segment_forecast_df.index.values,
                             values_low,
                             values_high,
                             facecolor=forecast_color,
-                            alpha=alpha[quantile],
-                            label=f"{legend_prefix}{quantiles[quantile]}-{quantiles[-quantile-1]} prediction interval",
+                            alpha=alpha[quantile_idx],
+                            label=f"{legend_prefix}{low_quantile}-{high_quantile} prediction interval",
                         )
+                    # if there is some interval inside (low_quantile, high_quantile) we should plot around it
                     else:
-                        values_next = segment_forecast_df["target_" + str(quantiles[quantile + 1])].values
+                        low_next_quantile = quantiles[quantile_idx + 1]
+                        high_prev_quantile = quantiles[-quantile_idx - 2]
+                        values_next = segment_forecast_df[f"{quantile_prefix}{low_next_quantile}"].values
                         ax[i].fill_between(
                             segment_forecast_df.index.values,
                             values_low,
                             values_next,
                             facecolor=forecast_color,
-                            alpha=alpha[quantile],
-                            label=f"{legend_prefix}{quantiles[quantile]}-{quantiles[-quantile-1]} prediction interval",
+                            alpha=alpha[quantile_idx],
+                            label=f"{legend_prefix}{low_quantile}-{high_quantile} prediction interval",
                         )
-                        values_prev = segment_forecast_df["target_" + str(quantiles[-quantile - 2])].values
+                        values_prev = segment_forecast_df[f"{quantile_prefix}{high_prev_quantile}"].values
                         ax[i].fill_between(
                             segment_forecast_df.index.values,
                             values_high,
                             values_prev,
                             facecolor=forecast_color,
-                            alpha=alpha[quantile],
+                            alpha=alpha[quantile_idx],
                         )
-                # this isn't a possible option for `num_forecasts > 1`
+                # when we can't find pair quantile, we plot it separately
                 if len(quantiles) % 2 != 0:
-                    values = segment_forecast_df["target_" + str(quantiles[len(quantiles) // 2])].values
+                    remaining_quantile = quantiles[len(quantiles) // 2]
+                    values = segment_forecast_df[f"{quantile_prefix}{remaining_quantile}"].values
                     ax[i].plot(
                         segment_forecast_df.index.values,
                         values,
                         "--",
-                        c="orange",
-                        label=f"{legend_prefix}{quantiles[len(quantiles)//2]} quantile",
+                        color=forecast_color,
+                        label=f"{legend_prefix}{remaining_quantile} quantile",
                     )
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
