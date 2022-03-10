@@ -86,16 +86,17 @@ def test_forecast_multi_step(example_tsds, horizon, step):
     assert forecast_pipeline.df.shape[0] == horizon
 
 
-def test_forecast_warning_prediction_intervals(example_tsds):
-    """Test that AutoRegressivePipeline warns when called with prediction intervals."""
-    horizon = 5
-    step = 1
-    model = LinearPerSegmentModel()
-    transforms = [LagTransform(in_column="target", lags=[step])]
-    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=step)
+def test_forecast_prediction_interval_interface(example_tsds):
+    """Test the forecast interface with prediction intervals."""
+    pipeline = AutoRegressivePipeline(
+        model=LinearPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=[1])], horizon=5, step=1
+    )
     pipeline.fit(example_tsds)
-    with pytest.warns(UserWarning, match="doesn't support prediction intervals"):
-        _ = pipeline.forecast(prediction_interval=True)
+    forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
 def test_forecast_with_fit_transforms(example_tsds):

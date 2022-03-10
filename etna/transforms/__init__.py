@@ -37,7 +37,6 @@ from etna.transforms.nn import PytorchForecastingTransform
 from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import PredictionIntervalOutliersTransform
-from etna.transforms.outliers import SAXOutliersTransform
 from etna.transforms.timestamp import DateFlagsTransform
 from etna.transforms.timestamp import FourierTransform
 from etna.transforms.timestamp import HolidayTransform

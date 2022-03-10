@@ -24,10 +24,10 @@ def test_cv_pass(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_c
     assert ensemble.n_folds == true_cv
 
 
-@pytest.mark.parametrize("input_cv", ([1]))
+@pytest.mark.parametrize("input_cv", ([0]))
 def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of wrong number for cv parameter."""
-    with pytest.raises(ValueError, match="At least two folds for backtest are expected."):
+    with pytest.raises(ValueError, match="Folds number should be a positive number, 0 given"):
         _ = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], n_folds=input_cv)
 
 
@@ -197,14 +197,14 @@ def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensem
     np.allclose(mae(test, forecast), 0)
 
 
-def test_forecast_warning_prediction_intervals(
-    weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble
-):
-    """Check that StackingEnsemble.forecast warns when called with prediction intervals"""
-    train, test = weekly_period_ts
-    ensemble = naive_ensemble.fit(train)
-    with pytest.warns(UserWarning, match="doesn't support prediction intervals"):
-        _ = ensemble.forecast(prediction_interval=True)
+def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: StackingEnsemble):
+    """Test the forecast interface with prediction intervals."""
+    naive_ensemble.fit(example_tsds)
+    forecast = naive_ensemble.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
 @pytest.mark.long

@@ -14,7 +14,7 @@ class AggregationMode(str, Enum):
     median = "median"
 
 
-aggregation_fn = {
+AGGREGATION_FN = {
     AggregationMode.mean: np.mean,
     AggregationMode.max: np.max,
     AggregationMode.min: np.min,
@@ -58,8 +58,8 @@ def mrmr(
     selected_features: List[str]
         list of `top_k` selected regressors, sorted by their importance
     """
-    relevance_aggregation_fn = aggregation_fn[AggregationMode(relevance_aggregation_mode)]
-    redundancy_aggregation_fn = aggregation_fn[AggregationMode(redundancy_aggregation_mode)]
+    relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
+    redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]
 
     relevance = relevance_table.apply(relevance_aggregation_fn).fillna(0)
 
