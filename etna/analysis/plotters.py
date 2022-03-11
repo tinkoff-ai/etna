@@ -659,6 +659,47 @@ def plot_time_series_with_change_points(
         ax[i].tick_params("x", rotation=45)
 
 
+# TODO: use in plot_residuals
+def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
+    """Get residuals for further analysis.
+
+    Parameters
+    ----------
+    forecast_df:
+        forecasted dataframe with timeseries data
+    ts:
+        dataset of timeseries that was used for backtest
+
+    Returns
+    -------
+    new_ts:
+        TSDataset with residuals in forecasts
+
+    Notes
+    -----
+    Be careful with transforms, they are taken from `ts`
+    """
+    from etna.datasets import TSDataset
+
+    # make flatten dataframes for vectorized operations
+    true_df = TSDataset.to_flatten(ts[forecast_df.index, :, :]).sort_values(by=["segment", "timestamp"])
+    forecast_df = TSDataset.to_flatten(forecast_df).sort_values(by=["segment", "timestamp"])
+
+    # calculate residuals inside true_df
+    if len(true_df) != len(forecast_df):
+        raise ValueError("Lengths of `forecast_df` and `ts` don't match")
+    true_df["target"] = true_df["target"] - forecast_df["target"]
+
+    # make TSDataset
+    new_df = TSDataset.to_dataset(true_df)
+    new_ts = TSDataset(df=new_df, freq=ts.freq)
+    new_ts.known_future = ts.known_future
+    new_ts._regressors = ts.regressors
+    new_ts.transforms = ts.transforms
+    new_ts.df_exog = ts.df_exog
+    return new_ts
+
+
 def plot_residuals(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
