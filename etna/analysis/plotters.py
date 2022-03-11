@@ -674,6 +674,13 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     new_ts:
         TSDataset with residuals in forecasts
 
+    Raises
+    ------
+    ValueError:
+        if `forecast_tf` and `ts` don't match
+    ValueError:
+        if segments of `forecast_df` and `ts` don't match
+
     Notes
     -----
     Transforms are taken as is from `ts`.
@@ -687,6 +694,8 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     # calculate residuals inside true_df
     if len(true_df) != len(forecast_df):
         raise ValueError("Lengths of `forecast_df` and `ts` don't match")
+    if not np.all(true_df["segment"] == forecast_df["segment"]):
+        raise ValueError("Segments of `forecast_df` and `ts` don't match")
     true_df["target"] = true_df["target"] - forecast_df["target"]
 
     # make TSDataset
