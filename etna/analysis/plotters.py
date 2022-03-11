@@ -915,20 +915,21 @@ def plot_imputation(
 
     ts_after = deepcopy(ts)
     ts_after.fit_transform(transforms=[imputer])
+    feature_name = imputer.in_column
 
     for i, segment in enumerate(segments):
-        segment_before_df = ts[:, segment, :][segment]
-        segment_after_df = ts_after[:, segment, :][segment]
-        feature_name = imputer.in_column
+        # we want to capture nans at the beginning, so don't use `ts[:, segment, :]`
+        segment_before_df = ts.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+        segment_after_df = ts_after.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
 
         # plot result after imputation
-        ax[i].plot(segment_after_df.index, segment_after_df[feature_name])
+        ax[i].plot(segment_after_df.index, segment_after_df)
 
         # highlight imputed points
-        imputed_index = ~segment_after_df[feature_name].isna() & segment_before_df[feature_name].isna()
+        imputed_index = ~segment_after_df.isna() & segment_before_df.isna()
         ax[i].scatter(
             segment_after_df.loc[imputed_index].index,
-            segment_after_df.loc[imputed_index][feature_name],
+            segment_after_df.loc[imputed_index],
             c="red",
             zorder=2,
         )
