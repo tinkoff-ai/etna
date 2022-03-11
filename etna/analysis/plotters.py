@@ -23,6 +23,7 @@ from typing_extensions import Literal
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
+from etna.transforms import TimeSeriesImputerTransform
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
@@ -883,3 +884,54 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+
+
+def plot_imputation(
+    ts: "TSDataset",
+    imputer: TimeSeriesImputerTransform,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot the result of imputation by a given imputer.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    imputer:
+        transform to make imputation of NaNs
+    segments:
+        segments to use
+    columns_num:
+        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    ts_after = deepcopy(ts)
+    ts_after.fit_transform(transforms=[imputer])
+
+    for i, segment in enumerate(segments):
+        segment_before_df = ts[:, segment, :][segment]
+        segment_after_df = ts_after[:, segment, :][segment]
+        feature_name = imputer.in_column
+
+        # plot result after imputation
+        ax[i].plot(segment_after_df.index, segment_after_df[feature_name])
+
+        # highlight imputed points
+        imputed_index = ~segment_after_df[feature_name].isna() & segment_before_df[feature_name].isna()
+        ax[i].scatter(
+            segment_after_df.loc[imputed_index].index,
+            segment_after_df.loc[imputed_index][feature_name],
+            c="red",
+            zorder=2,
+        )
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
