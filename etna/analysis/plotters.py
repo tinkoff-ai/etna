@@ -676,7 +676,7 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Notes
     -----
-    Be careful with transforms, they are taken from `ts`
+    Transforms are taken as is from `ts`.
     """
     from etna.datasets import TSDataset
 
