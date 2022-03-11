@@ -465,7 +465,9 @@ class TSDataset:
         """
         if not segments:
             segments = self.segments
-        k = min(n_segments, len(segments))
+            k = min(n_segments, len(segments))
+        else:
+            k = len(segments)
         columns_num = min(2, k)
         rows_num = math.ceil(k / columns_num)
         start = self.df.index.min() if start is None else pd.Timestamp(start)
