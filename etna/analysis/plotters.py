@@ -659,7 +659,6 @@ def plot_time_series_with_change_points(
         ax[i].tick_params("x", rotation=45)
 
 
-# TODO: use in plot_residuals
 def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     """Get residuals for further analysis.
 
@@ -745,7 +744,8 @@ def plot_residuals(
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
-    df = ts_copy.to_pandas()
+    ts_residuals = get_residuals(forecast_df=forecast_df, ts=ts_copy)
+    df = ts_residuals.to_pandas()
     # check if feature is present in dataset
     if feature != "timestamp":
         all_features = set(df.columns.get_level_values("feature").unique())
@@ -753,13 +753,10 @@ def plot_residuals(
             raise ValueError("Given feature isn't present in the dataset after applying transformations")
 
     for i, segment in enumerate(segments):
-        segment_df = df.loc[forecast_df.index, pd.IndexSlice[segment, :]][segment].reset_index()
         segment_forecast_df = forecast_df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
-        segment_df.rename(columns={"target": "y_true"}, inplace=True)
-        segment_df["y_pred"] = segment_forecast_df["target"].values
-
-        residuals = (segment_df["y_true"] - segment_df["y_pred"]).values
-        feature_values = segment_df[feature].values
+        segment_residuals_df = df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
+        residuals = segment_residuals_df["target"].values
+        feature_values = segment_residuals_df[feature].values
 
         # highlight different backtest folds
         if feature == "timestamp":
