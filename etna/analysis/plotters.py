@@ -23,11 +23,11 @@ from typing_extensions import Literal
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
-from etna.transforms import TimeSeriesImputerTransform
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.transforms import TimeSeriesImputerTransform
     from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
@@ -888,7 +888,7 @@ def plot_feature_relevance(
 
 def plot_imputation(
     ts: "TSDataset",
-    imputer: TimeSeriesImputerTransform,
+    imputer: "TimeSeriesImputerTransform",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
