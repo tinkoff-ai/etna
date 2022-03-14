@@ -207,7 +207,7 @@ def plot_forecast(
                             values_high,
                             facecolor=forecast_color,
                             alpha=alpha[quantile_idx],
-                            label=f"{legend_prefix}{low_quantile}-{high_quantile} prediction interval",
+                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
                         )
                     # if there is some interval inside (low_quantile, high_quantile) we should plot around it
                     else:
@@ -220,7 +220,7 @@ def plot_forecast(
                             values_next,
                             facecolor=forecast_color,
                             alpha=alpha[quantile_idx],
-                            label=f"{legend_prefix}{low_quantile}-{high_quantile} prediction interval",
+                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
                         )
                         values_prev = segment_forecast_df[f"{quantile_prefix}{high_prev_quantile}"].values
                         ax[i].fill_between(
@@ -239,7 +239,7 @@ def plot_forecast(
                         values,
                         "--",
                         color=forecast_color,
-                        label=f"{legend_prefix}{remaining_quantile} quantile",
+                        label=f"{legend_prefix}{remaining_quantile}",
                     )
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
