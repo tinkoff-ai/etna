@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix import Literal in plotters ([#558](https://github.com/tinkoff-ai/etna/pull/558))
 - 
 - Fix plot method bug when plot method does not plot all required segments ([#596](https://github.com/tinkoff-ai/etna/pull/596))
-- 
+- Fix dependencies for ARM ([#599](https://github.com/tinkoff-ai/etna/pull/599))
 - [BUG] nn models make forecast without inverse_transform ([#541](https://github.com/tinkoff-ai/etna/pull/541))
 
 ## [1.6.3] - 2022-02-14
