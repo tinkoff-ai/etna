@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Add table option to ConsoleLogger ([#544](https://github.com/tinkoff-ai/etna/pull/544))
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
-- 
+- Update plot_forecast for multi-forecast mode ([#584](https://github.com/tinkoff-ai/etna/pull/584))
 - Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
 - Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
 - 
