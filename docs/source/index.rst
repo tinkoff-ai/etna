@@ -7,6 +7,7 @@ Welcome to ETNA's documentation!
    :maxdepth: 2
 
    tutorials
+   arm
    models
    datasets
    metrics
