@@ -243,7 +243,7 @@ def plot_forecast(
                     )
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
-        ax[i].legend(bbox_to_anchor=(1.02, 1.0))
+        ax[i].legend(bbox_to_anchor=(1.02, 1.0), loc="upper left")
 
 
 def plot_backtest(
