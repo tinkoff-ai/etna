@@ -11,7 +11,7 @@ List of known problems:
 
 Possible workaround:
 
-- Initialize virtualenv.
+- Use python>=3.9 and initialize virtualenv.
 - Build CatBoost via instruction in the comment above: you will need llvm installed via brew and you should specify paths to llvm and python binaries in flags correctly to make successful build. 
 - Install builded CatBoost whl in virtualenv.
-- Install library: ``LLVM_CONFIG="/opt/homebrew/Cellar/llvm@11/11.1.0_3/bin/llvm-config" pip install etna==<version>``. (``LLVM_CONFIG`` could be different a little bit in version spec but you should have 11 or 12 major version)
+- Install library: ``LLVM_CONFIG="/opt/homebrew/Cellar/llvm@11/11.1.0_3/bin/llvm-config" pip install etna==<version>``. (``LLVM_CONFIG`` flag may be optional and it could be different a little bit in version spec but you should have 11 or 12 major version)
