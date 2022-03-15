@@ -35,7 +35,7 @@ class TSDataset:
     It maybe done through these interface: TSDataset[timestamp, segment, column]
     If at the start of the period dataset contains NaN those timestamps will be removed.
 
-    During creation "segment" is casted to string type.
+    During creation segment is casted to string type.
 
     Examples
     --------
@@ -614,7 +614,7 @@ class TSDataset:
 
         Notes
         -----
-        During conversion "segment" column is casted to string type.
+        During conversion segment is casted to string type.
 
         Examples
         --------
