@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
 - Add option `day_number_in_year` to DateFlagsTransform ([#552](https://github.com/tinkoff-ai/etna/pull/552))
 - Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
-- 
+- Add get_residuals ([#597](https://github.com/tinkoff-ai/etna/pull/597))
 - Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
 - Create `MultiSegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
 - 
