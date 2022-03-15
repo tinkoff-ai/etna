@@ -62,7 +62,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         df = df.dropna(subset=[self.in_column])
         x = self._get_x(df)
         self._x_median = np.median(x)
-        x -= self._x_median  # type: ignore
+        x -= self._x_median
         y = df[self.in_column].tolist()
         self._pipeline.fit(x, y)
         return self
@@ -83,7 +83,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         """
         result = df.copy()
         x = self._get_x(df)
-        x -= self._x_median  # type: ignore
+        x -= self._x_median
         y = df[self.in_column].values
         trend = self._pipeline.predict(x)
         no_trend_timeseries = y - trend
@@ -122,7 +122,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         """
         result = df.copy()
         x = self._get_x(df)
-        x -= self._x_median  # type: ignore
+        x -= self._x_median
         y = df[self.in_column].values
         trend = self._pipeline.predict(x)
         add_trend_timeseries = y + trend
