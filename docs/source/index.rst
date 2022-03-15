@@ -7,7 +7,6 @@ Welcome to ETNA's documentation!
    :maxdepth: 2
 
    tutorials
-   arm
    models
    datasets
    metrics
@@ -18,6 +17,7 @@ Welcome to ETNA's documentation!
    loggers
    commands
    settings
+   arm
    api
 
 Indices and tables
