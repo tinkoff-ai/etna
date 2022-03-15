@@ -392,9 +392,9 @@ def test_dataset_segment_conversion_during_init(df_segments_int):
     """Test that `TSDataset.__init__` makes casting of segment to string."""
     df = TSDataset.to_dataset(df_segments_int)
     # make conversion back to integers
-    df.columns = pd.MultiIndex.from_tuples(
-        [(int(pair[0]), pair[1]) for pair in df.columns.to_flat_index()], names=df.columns.names
-    )
+    columns_frame = df.columns.to_frame()
+    columns_frame["segment"] = columns_frame["segment"].astype(int)
+    df.columns = pd.MultiIndex.from_frame(columns_frame)
     ts = TSDataset(df=df, freq="D")
     assert np.all(ts.columns.get_level_values("segment") == ["1", "2"])
 

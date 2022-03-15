@@ -157,10 +157,9 @@ class TSDataset:
     def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
         # cast segment to str type
         df_copy = df.copy(deep=True)
-        columns = df.columns
-        columns_with_str_segment = [(str(pair[0]), pair[1]) for pair in columns.to_flat_index()]
-        multi_index_columns = pd.MultiIndex.from_tuples(columns_with_str_segment, names=columns.names)
-        df_copy.columns = multi_index_columns
+        columns_frame = df.columns.to_frame()
+        columns_frame["segment"] = columns_frame["segment"].astype(str)
+        df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
         return df_copy
 
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
