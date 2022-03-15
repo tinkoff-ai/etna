@@ -740,7 +740,7 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     forecast_df:
         forecasted dataframe with timeseries data
     ts:
-        dataset of timeseries that was used for backtest
+        dataset of timeseries that has answers to forecast
 
     Returns
     -------
@@ -749,10 +749,8 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Raises
     ------
-    ValueError:
-        if `forecast_tf` and `ts` don't match
-    ValueError:
-        if segments of `forecast_df` and `ts` don't match
+    KeyError:
+        if segments of `forecast_df` and `ts` aren't the same
 
     Notes
     -----
@@ -760,20 +758,14 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     """
     from etna.datasets import TSDataset
 
-    # make flatten dataframes for vectorized operations
-    true_df = TSDataset.to_flatten(ts[forecast_df.index, :, :]).sort_values(by=["segment", "timestamp"])
-    forecast_df = TSDataset.to_flatten(forecast_df).sort_values(by=["segment", "timestamp"])
-
-    # calculate residuals inside true_df
-    if len(true_df) != len(forecast_df):
-        raise ValueError("Lengths of `forecast_df` and `ts` don't match")
-    if not np.all(true_df["segment"] == forecast_df["segment"]):
-        raise ValueError("Segments of `forecast_df` and `ts` don't match")
-    true_df["target"] = true_df["target"] - forecast_df["target"]
+    # find the residuals
+    true_df = ts[forecast_df.index, :, :]
+    if set(ts.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
+        raise KeyError("Segments of `ts` and `forecast_df` should be the same")
+    true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[:, pd.IndexSlice[ts.segments, "target"]]
 
     # make TSDataset
-    new_df = TSDataset.to_dataset(true_df)
-    new_ts = TSDataset(df=new_df, freq=ts.freq)
+    new_ts = TSDataset(df=true_df, freq=ts.freq)
     new_ts.known_future = ts.known_future
     new_ts._regressors = ts.regressors
     new_ts.transforms = ts.transforms
