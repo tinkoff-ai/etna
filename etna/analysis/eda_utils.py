@@ -16,7 +16,10 @@ import seaborn as sns
 import statsmodels.api as sm
 from matplotlib.ticker import MaxNLocator
 from statsmodels.graphics import utils
+from statsmodels.graphics.gofplots import qqplot
 from statsmodels.tsa.seasonal import STL
+
+from etna.analysis.utils import prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -296,3 +299,41 @@ def stl_plot(
         axs.flat[3].plot(segment_df.index, decompose_result.resid, **plot_kwargs)
         axs.flat[3].set_ylabel("Residual")
         axs.flat[3].tick_params("x", rotation=45)
+
+
+def qq_plot(
+    residuals_ts: "TSDataset",
+    qq_plot_params: Optional[Dict[str, Any]] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot STL decomposition for segments.
+
+    Parameters
+    ----------
+    residuals_ts:
+        dataset with the time series, expected to be the residuals of the model
+    qq_plot_params:
+        dictionary with parameters for qq plot, `statsmodels.graphics.gofplots.qqplot` is used
+    segments:
+        segments to plot
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if qq_plot_params is None:
+        qq_plot_params = {}
+    if not segments:
+        segments = sorted(residuals_ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    residuals_df = residuals_ts.to_pandas()
+    for i, segment in enumerate(segments):
+        residuals_segment = residuals_df.loc[:, pd.IndexSlice[segment, "target"]]
+        residuals_segment = residuals_segment[
+            residuals_segment.first_valid_index() : residuals_segment.last_valid_index()
+        ]
+        qqplot(residuals_segment, ax=ax[i], **qq_plot_params)
