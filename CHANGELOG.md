@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regressors updating in TSDataset transform loops ([#374](https://github.com/tinkoff-ai/etna/pull/374))
 - Regressors handling in TSDataset `make_future` and `train_test_split` ([#447](https://github.com/tinkoff-ai/etna/pull/447))
 - Prediction intervals visualization in `plot_forecast` ([#538](https://github.com/tinkoff-ai/etna/pull/538))
-- 
+- Add plot_imputation ([#598](https://github.com/tinkoff-ai/etna/pull/598))
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
 - Add plot_trend ([#565](https://github.com/tinkoff-ai/etna/pull/565))
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Add table option to ConsoleLogger ([#544](https://github.com/tinkoff-ai/etna/pull/544))
 - Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
-- 
+- Update plot_forecast for multi-forecast mode ([#584](https://github.com/tinkoff-ai/etna/pull/584))
 - Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
 - Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
 - 
