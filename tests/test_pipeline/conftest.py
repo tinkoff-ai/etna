@@ -142,7 +142,7 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
     train_size = 20
     start_value = 10.0
     add_value = 5.0
-    segment = "segment_0"
+    segment = "segment_1"
     timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq="D")
     target = [start_value] * train_size
     for i in range(n_folds):
