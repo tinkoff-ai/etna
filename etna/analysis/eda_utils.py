@@ -333,8 +333,5 @@ def qq_plot(
     residuals_df = residuals_ts.to_pandas()
     for i, segment in enumerate(segments):
         residuals_segment = residuals_df.loc[:, pd.IndexSlice[segment, "target"]]
-        residuals_segment = residuals_segment[
-            residuals_segment.first_valid_index() : residuals_segment.last_valid_index()
-        ]
         qqplot(residuals_segment, ax=ax[i], **qq_plot_params)
         ax[i].set_title(segment)
