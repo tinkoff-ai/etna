@@ -106,6 +106,16 @@ def ts_future(example_reg_tsds):
     return future
 
 
+@pytest.fixture
+def df_segments_int():
+    """DataFrame with integer segments."""
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": 4, "segment": 2})
+    df = pd.concat([df1, df2], ignore_index=True)
+    return df
+
+
 def test_check_endings_error():
     """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -370,6 +380,23 @@ def test_dataset_datetime_conversion_during_init():
     exog.index = df.index.astype(str)
     ts = TSDataset(df, "D", exog)
     assert ts.df.index.dtype == "datetime64[ns]"
+
+
+def test_to_dataset_segment_conversion(df_segments_int):
+    """Test that `TSDataset.to_dataset` makes casting of segment to string."""
+    df = TSDataset.to_dataset(df_segments_int)
+    assert np.all(df.columns.get_level_values("segment") == ["1", "2"])
+
+
+def test_dataset_segment_conversion_during_init(df_segments_int):
+    """Test that `TSDataset.__init__` makes casting of segment to string."""
+    df = TSDataset.to_dataset(df_segments_int)
+    # make conversion back to integers
+    columns_frame = df.columns.to_frame()
+    columns_frame["segment"] = columns_frame["segment"].astype(int)
+    df.columns = pd.MultiIndex.from_frame(columns_frame)
+    ts = TSDataset(df=df, freq="D")
+    assert np.all(ts.columns.get_level_values("segment") == ["1", "2"])
 
 
 @pytest.mark.xfail

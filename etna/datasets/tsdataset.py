@@ -35,6 +35,8 @@ class TSDataset:
     It maybe done through these interface: TSDataset[timestamp, segment, column]
     If at the start of the period dataset contains NaN those timestamps will be removed.
 
+    During creation segment is casted to string type.
+
     Examples
     --------
     >>> from etna.datasets import generate_const_df
@@ -97,7 +99,7 @@ class TSDataset:
             columns in df_exog[known_future] that are regressors,
             if "all" value is given, all columns are meant to be regressors
         """
-        self.raw_df = df.copy(deep=True)
+        self.raw_df = self._prepare_df(df)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
         self.freq = freq
         self.df_exog = None
@@ -150,6 +152,15 @@ class TSDataset:
             self.df = transform.fit_transform(self.df)
             columns_after = set(self.columns.get_level_values("feature"))
             self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+
+    @staticmethod
+    def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
+        # cast segment to str type
+        df_copy = df.copy(deep=True)
+        columns_frame = df.columns.to_frame()
+        columns_frame["segment"] = columns_frame["segment"].astype(str)
+        df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
+        return df_copy
 
     def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
         from etna.transforms import OneHotEncoderTransform
@@ -593,10 +604,16 @@ class TSDataset:
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
         """Convert pandas dataframe to ETNA Dataset format.
 
+        Columns "timestamp" and "segment" are required.
+
         Parameters
         ----------
         df:
             DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+
+        Notes
+        -----
+        During conversion segment is casted to string type.
 
         Examples
         --------
@@ -639,6 +656,7 @@ class TSDataset:
         2021-01-05           4           9
         """
         df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df["segment"] = df["segment"].astype(str)
         feature_columns = df.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")

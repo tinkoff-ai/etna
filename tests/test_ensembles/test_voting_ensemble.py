@@ -1,10 +1,12 @@
 from copy import deepcopy
 from typing import List
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from typing_extensions import Literal
 
 from etna.datasets import TSDataset
 from etna.ensembles.voting_ensemble import VotingEnsemble
@@ -15,24 +17,64 @@ HORIZON = 7
 
 
 @pytest.mark.parametrize(
+    "weights",
+    (None, [0.2, 0.3, 0.5], "auto"),
+)
+def test_validate_weights_pass(
+    weights: Optional[Union[List[float], Literal["auto"]]],
+):
+    """Check that VotingEnsemble._validate_weights validate weights correctly in case of valid args sets."""
+    VotingEnsemble._validate_weights(weights=weights, pipelines_number=3)
+
+
+def test_validate_weights_fail():
+    """Check that VotingEnsemble._validate_weights validate weights correctly in case of invalid args sets."""
+    with pytest.raises(ValueError, match="Weights size should be equal to pipelines number."):
+        _ = VotingEnsemble._validate_weights(weights=[0.3, 0.4, 0.3], pipelines_number=2)
+
+
+@pytest.mark.parametrize(
     "weights,pipelines_number,expected",
     ((None, 5, [0.2, 0.2, 0.2, 0.2, 0.2]), ([0.2, 0.3, 0.5], 3, [0.2, 0.3, 0.5]), ([1, 1, 2], 3, [0.25, 0.25, 0.5])),
 )
-def test_process_weights_pass(
+def test_process_weights(
+    naive_pipeline_1: Pipeline,
     weights: Optional[List[float]],
     pipelines_number: int,
     expected: List[float],
 ):
-    """Check that VotingEnsemble._process_weights processes weights correctly in case of valid args sets."""
-    result = VotingEnsemble._process_weights(weights=weights, pipelines_number=pipelines_number)
+    """Check that _process_weights processes weights correctly."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1 for _ in range(pipelines_number)], weights=weights)
+    result = ensemble._process_weights()
     assert isinstance(result, list)
-    assert all([x == y for x, y in zip(result, expected)])
+    assert result == expected
 
 
-def test_process_weights_fail():
-    """Check that VotingEnsemble._process_weights processes weights correctly in case of invalid args sets."""
-    with pytest.raises(ValueError, match="Weights size should be equal to pipelines number."):
-        _ = VotingEnsemble._process_weights(weights=[0.3, 0.4, 0.3], pipelines_number=2)
+def test_process_weights_auto(example_tsdf: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    """Check that _process_weights processes weights correctly in "auto" mode."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights="auto")
+    ensemble.ts = example_tsdf
+    result = ensemble._process_weights()
+    assert isinstance(result, list)
+    assert result[0] > result[1]
+
+
+@pytest.mark.parametrize(
+    "weights",
+    ((None, [0.2, 0.3], "auto")),
+)
+def test_fit_interface(
+    example_tsdf: TSDataset,
+    weights: Optional[Union[List[float], Literal["auto"]]],
+    naive_pipeline_1: Pipeline,
+    naive_pipeline_2: Pipeline,
+):
+    """Check that fit saves processes weights."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=weights)
+    ensemble.fit(example_tsdf)
+    result = ensemble.processed_weights
+    assert isinstance(result, list)
+    assert len(result) == 2
 
 
 def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):

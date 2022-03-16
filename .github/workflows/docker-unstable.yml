@@ -24,7 +24,7 @@ jobs:
       - name: Build image
         run: |
           cd $( dirname ${{ matrix.dockerfile.path }})
-          sed -i 's#etna\[all\]#etna[all] @ git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#g' requirements.txt
+          sed -i 's#etna\[all\]#etna[all] @ git+https://github.com/${{ github.repository }}.git@${{ github.sha }}#g' requirements.txt
           cat requirements.txt
           docker build . --tag image
 
