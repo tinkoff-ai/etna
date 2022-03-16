@@ -315,7 +315,7 @@ def qq_plot(
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
 ):
-    """Plot STL decomposition for segments.
+    """Plot Q-Q plots for segments.
 
     Parameters
     ----------
