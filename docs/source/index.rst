@@ -17,6 +17,7 @@ Welcome to ETNA's documentation!
    loggers
    commands
    settings
+   arm
    api
 
 Indices and tables
