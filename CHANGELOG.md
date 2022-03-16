@@ -12,13 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regressors updating in TSDataset transform loops ([#374](https://github.com/tinkoff-ai/etna/pull/374))
 - Regressors handling in TSDataset `make_future` and `train_test_split` ([#447](https://github.com/tinkoff-ai/etna/pull/447))
 - Prediction intervals visualization in `plot_forecast` ([#538](https://github.com/tinkoff-ai/etna/pull/538))
-- 
+- Add plot_imputation ([#598](https://github.com/tinkoff-ai/etna/pull/598))
 - Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
 - Add plot_trend ([#565](https://github.com/tinkoff-ai/etna/pull/565))
 - Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
 - Add option `day_number_in_year` to DateFlagsTransform ([#552](https://github.com/tinkoff-ai/etna/pull/552))
 - Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
-- 
+- Add get_residuals ([#597](https://github.com/tinkoff-ai/etna/pull/597))
 - Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
 - Create `MultiSegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
 - 
@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add plot_features_relevance ([#579](https://github.com/tinkoff-ai/etna/pull/579))
 - Add community section to README.md ([#580](https://github.com/tinkoff-ai/etna/pull/580))
 - Create `AbstaractPipeline` ([#573](https://github.com/tinkoff-ai/etna/pull/573))
+- 
+- 
+- Option "auto" to `weights` parameter of `VotingEnsemble`, enables to use feature importance as weights of base estimators ([#587](https://github.com/tinkoff-ai/etna/pull/587)) 
 - 
 ### Changed
 - Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))

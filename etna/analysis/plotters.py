@@ -28,6 +28,7 @@ from etna.transforms import Transform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.transforms import TimeSeriesImputerTransform
     from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
@@ -731,6 +732,47 @@ def plot_time_series_with_change_points(
         ax[i].tick_params("x", rotation=45)
 
 
+def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
+    """Get residuals for further analysis.
+
+    Parameters
+    ----------
+    forecast_df:
+        forecasted dataframe with timeseries data
+    ts:
+        dataset of timeseries that has answers to forecast
+
+    Returns
+    -------
+    new_ts:
+        TSDataset with residuals in forecasts
+
+    Raises
+    ------
+    KeyError:
+        if segments of `forecast_df` and `ts` aren't the same
+
+    Notes
+    -----
+    Transforms are taken as is from `ts`.
+    """
+    from etna.datasets import TSDataset
+
+    # find the residuals
+    true_df = ts[forecast_df.index, :, :]
+    if set(ts.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
+        raise KeyError("Segments of `ts` and `forecast_df` should be the same")
+    true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[:, pd.IndexSlice[ts.segments, "target"]]
+
+    # make TSDataset
+    new_ts = TSDataset(df=true_df, freq=ts.freq)
+    new_ts.known_future = ts.known_future
+    new_ts._regressors = ts.regressors
+    new_ts.transforms = ts.transforms
+    new_ts.df_exog = ts.df_exog
+    return new_ts
+
+
 def plot_residuals(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
@@ -776,7 +818,8 @@ def plot_residuals(
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
-    df = ts_copy.to_pandas()
+    ts_residuals = get_residuals(forecast_df=forecast_df, ts=ts_copy)
+    df = ts_residuals.to_pandas()
     # check if feature is present in dataset
     if feature != "timestamp":
         all_features = set(df.columns.get_level_values("feature").unique())
@@ -784,13 +827,10 @@ def plot_residuals(
             raise ValueError("Given feature isn't present in the dataset after applying transformations")
 
     for i, segment in enumerate(segments):
-        segment_df = df.loc[forecast_df.index, pd.IndexSlice[segment, :]][segment].reset_index()
         segment_forecast_df = forecast_df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
-        segment_df.rename(columns={"target": "y_true"}, inplace=True)
-        segment_df["y_pred"] = segment_forecast_df["target"].values
-
-        residuals = (segment_df["y_true"] - segment_df["y_pred"]).values
-        feature_values = segment_df[feature].values
+        segment_residuals_df = df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
+        residuals = segment_residuals_df["target"].values
+        feature_values = segment_residuals_df[feature].values
 
         # highlight different backtest folds
         if feature == "timestamp":
@@ -955,3 +995,55 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+
+
+def plot_imputation(
+    ts: "TSDataset",
+    imputer: "TimeSeriesImputerTransform",
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot the result of imputation by a given imputer.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    imputer:
+        transform to make imputation of NaNs
+    segments:
+        segments to use
+    columns_num:
+        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    ts_after = deepcopy(ts)
+    ts_after.fit_transform(transforms=[imputer])
+    feature_name = imputer.in_column
+
+    for i, segment in enumerate(segments):
+        # we want to capture nans at the beginning, so don't use `ts[:, segment, :]`
+        segment_before_df = ts.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+        segment_after_df = ts_after.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+
+        # plot result after imputation
+        ax[i].plot(segment_after_df.index, segment_after_df)
+
+        # highlight imputed points
+        imputed_index = ~segment_after_df.isna() & segment_before_df.isna()
+        ax[i].scatter(
+            segment_after_df.loc[imputed_index].index,
+            segment_after_df.loc[imputed_index],
+            c="red",
+            zorder=2,
+        )
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
