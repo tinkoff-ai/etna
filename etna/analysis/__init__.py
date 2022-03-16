@@ -15,13 +15,16 @@ from etna.analysis.outliers.hist_outliers import get_anomalies_hist
 from etna.analysis.outliers.median_outliers import get_anomalies_median
 from etna.analysis.outliers.prediction_interval_outliers import get_anomalies_prediction_interval
 from etna.analysis.plotters import get_correlation_matrix
+from etna.analysis.plotters import get_residuals
 from etna.analysis.plotters import plot_anomalies
 from etna.analysis.plotters import plot_anomalies_interactive
 from etna.analysis.plotters import plot_backtest
 from etna.analysis.plotters import plot_backtest_interactive
 from etna.analysis.plotters import plot_clusters
 from etna.analysis.plotters import plot_correlation_matrix
+from etna.analysis.plotters import plot_feature_relevance
 from etna.analysis.plotters import plot_forecast
+from etna.analysis.plotters import plot_imputation
 from etna.analysis.plotters import plot_residuals
 from etna.analysis.plotters import plot_time_series_with_change_points
 from etna.analysis.plotters import plot_trend
