@@ -6,7 +6,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -29,7 +28,7 @@ def cross_corr_plot(
     ts: "TSDataset",
     n_segments: int = 10,
     maxlags: int = 21,
-    segments: Optional[Sequence] = None,
+    segments: Optional[List[str]] = None,
     figsize: Tuple[int, int] = (10, 5),
 ):
     """
@@ -83,7 +82,11 @@ def cross_corr_plot(
 
 
 def sample_acf_plot(
-    ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None, figsize: Tuple[int, int] = (10, 5)
+    ts: "TSDataset",
+    n_segments: int = 10,
+    lags: int = 21,
+    segments: Optional[List[str]] = None,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """
     Autocorrelation plot for multiple timeseries.
@@ -123,7 +126,11 @@ def sample_acf_plot(
 
 
 def sample_pacf_plot(
-    ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None, figsize: Tuple[int, int] = (10, 5)
+    ts: "TSDataset",
+    n_segments: int = 10,
+    lags: int = 21,
+    segments: Optional[List[str]] = None,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """
     Partial autocorrelation plot for multiple timeseries.
@@ -165,7 +172,7 @@ def sample_pacf_plot(
 def distribution_plot(
     ts: "TSDataset",
     n_segments: int = 10,
-    segments: Sequence = None,
+    segments: Optional[List[str]] = None,
     shift: int = 30,
     window: int = 30,
     freq: str = "1M",

@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update get_started section in README ([#569](https://github.com/tinkoff-ai/etna/pull/569))
 - Make detrending polynomial ([#566](https://github.com/tinkoff-ai/etna/pull/566))
 - Update documentation about transforms that generate regressors, update examples with them ([#572](https://github.com/tinkoff-ai/etna/pull/572))
-- 
+- Fix that segment is string ([#602](https://github.com/tinkoff-ai/etna/pull/602))
 - Make `LabelEncoderTransform` and `OneHotEncoderTransform` multi-segment ([#554](https://github.com/tinkoff-ai/etna/pull/554))
 ### Fixed
 - Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
