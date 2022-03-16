@@ -12,7 +12,6 @@ from typing import Set
 from typing import Tuple
 from typing import Union
 
-import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -24,6 +23,7 @@ from typing_extensions import Literal
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
+from etna.analysis.utils import prepare_axes
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
@@ -33,18 +33,6 @@ if TYPE_CHECKING:
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
     from etna.transforms.decomposition.stl import STLTransform
-
-
-def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]) -> Sequence[matplotlib.axes.Axes]:
-    """Prepare axes according to segments, figure size and number of columns."""
-    segments_number = len(segments)
-    columns_num = min(columns_num, len(segments))
-    rows_num = math.ceil(segments_number / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
-    ax = np.array([ax]).ravel()
-    return ax
 
 
 def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:

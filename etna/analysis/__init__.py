@@ -1,6 +1,7 @@
 from etna.analysis.change_points_trend import find_change_points
 from etna.analysis.eda_utils import cross_corr_plot
 from etna.analysis.eda_utils import distribution_plot
+from etna.analysis.eda_utils import qq_plot
 from etna.analysis.eda_utils import sample_acf_plot
 from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.eda_utils import stl_plot

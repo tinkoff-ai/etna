@@ -6,7 +6,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 
 import matplotlib.pyplot as plt
@@ -16,7 +15,10 @@ import seaborn as sns
 import statsmodels.api as sm
 from matplotlib.ticker import MaxNLocator
 from statsmodels.graphics import utils
+from statsmodels.graphics.gofplots import qqplot
 from statsmodels.tsa.seasonal import STL
+
+from etna.analysis.utils import prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -29,7 +31,7 @@ def cross_corr_plot(
     ts: "TSDataset",
     n_segments: int = 10,
     maxlags: int = 21,
-    segments: Optional[Sequence] = None,
+    segments: Optional[List[str]] = None,
     figsize: Tuple[int, int] = (10, 5),
 ):
     """
@@ -83,7 +85,11 @@ def cross_corr_plot(
 
 
 def sample_acf_plot(
-    ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None, figsize: Tuple[int, int] = (10, 5)
+    ts: "TSDataset",
+    n_segments: int = 10,
+    lags: int = 21,
+    segments: Optional[List[str]] = None,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """
     Autocorrelation plot for multiple timeseries.
@@ -123,7 +129,11 @@ def sample_acf_plot(
 
 
 def sample_pacf_plot(
-    ts: "TSDataset", n_segments: int = 10, lags: int = 21, segments: Sequence = None, figsize: Tuple[int, int] = (10, 5)
+    ts: "TSDataset",
+    n_segments: int = 10,
+    lags: int = 21,
+    segments: Optional[List[str]] = None,
+    figsize: Tuple[int, int] = (10, 5),
 ):
     """
     Partial autocorrelation plot for multiple timeseries.
@@ -165,7 +175,7 @@ def sample_pacf_plot(
 def distribution_plot(
     ts: "TSDataset",
     n_segments: int = 10,
-    segments: Sequence = None,
+    segments: Optional[List[str]] = None,
     shift: int = 30,
     window: int = 30,
     freq: str = "1M",
@@ -296,3 +306,39 @@ def stl_plot(
         axs.flat[3].plot(segment_df.index, decompose_result.resid, **plot_kwargs)
         axs.flat[3].set_ylabel("Residual")
         axs.flat[3].tick_params("x", rotation=45)
+
+
+def qq_plot(
+    residuals_ts: "TSDataset",
+    qq_plot_params: Optional[Dict[str, Any]] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot Q-Q plots for segments.
+
+    Parameters
+    ----------
+    residuals_ts:
+        dataset with the time series, expected to be the residuals of the model
+    qq_plot_params:
+        dictionary with parameters for qq plot, `statsmodels.graphics.gofplots.qqplot` is used
+    segments:
+        segments to plot
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if qq_plot_params is None:
+        qq_plot_params = {}
+    if not segments:
+        segments = sorted(residuals_ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    residuals_df = residuals_ts.to_pandas()
+    for i, segment in enumerate(segments):
+        residuals_segment = residuals_df.loc[:, pd.IndexSlice[segment, "target"]]
+        qqplot(residuals_segment, ax=ax[i], **qq_plot_params)
+        ax[i].set_title(segment)
