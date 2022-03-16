@@ -3,12 +3,19 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
+import pandas as pd
 from joblib import Parallel
 from joblib import delayed
+from sklearn.ensemble import RandomForestRegressor
+from typing_extensions import Literal
 
+from etna.analysis.feature_relevance.relevance_table import TreeBasedRegressor
 from etna.datasets import TSDataset
 from etna.ensembles import EnsembleMixin
+from etna.loggers import tslogger
+from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
@@ -50,7 +57,9 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
     def __init__(
         self,
         pipelines: List[BasePipeline],
-        weights: Optional[List[float]] = None,
+        weights: Optional[Union[List[float], Literal["auto"]]] = None,
+        regressor: TreeBasedRegressor = RandomForestRegressor(n_estimators=5),
+        n_folds: int = 3,
         n_jobs: int = 1,
         joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
     ):
@@ -61,7 +70,17 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         pipelines:
             List of pipelines that should be used in ensemble
         weights:
-            List of pipelines' weights; weights will be normalized automatically.
+            List of pipelines' weights.
+            If None, use uniform weights
+            If List[float], use this weights for the base estimators, weights will be normalized automatically
+            If "auto", use importances of the base estimators forecasts as weights of base estimators
+        regressor:
+            Regression model with fit/predict interface which will be used to evaluate weights of the base estimators.
+            It should have feature_importances_ property(e.g. all tree-based regressors in sklearn)
+        n_folds:
+            Number of folds to use in the backtest.
+            Backtest is used to obtain the forecasts from the base estimators;
+            forecasts will be use to evaluate the estimator's weights
         n_jobs:
             Number of jobs to run in parallel
         joblib_params:
@@ -73,19 +92,68 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
             If the number of the pipelines is less than 2 or pipelines have different horizons.
         """
         self._validate_pipeline_number(pipelines=pipelines)
-        self.weights = self._process_weights(weights=weights, pipelines_number=len(pipelines))
+        self._validate_weights(weights=weights, pipelines_number=len(pipelines))
+        self._validate_backtest_n_folds(n_folds)
+        self.weights = weights
+        self.processed_weights: Optional[List[float]] = None
+        self.regressor = regressor
+        self.n_folds = n_folds
         self.pipelines = pipelines
         self.n_jobs = n_jobs
         self.joblib_params = joblib_params
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     @staticmethod
-    def _process_weights(weights: Optional[List[float]], pipelines_number: int) -> List[float]:
-        """Process weights: if weights are not given, set them with default values, normalize weights."""
-        if weights is None:
-            weights = [1 / pipelines_number for _ in range(pipelines_number)]
-        elif len(weights) != pipelines_number:
-            raise ValueError("Weights size should be equal to pipelines number.")
+    def _validate_weights(weights: Optional[Union[List[float], Literal["auto"]]], pipelines_number: int):
+        """Validate the format of weights parameter."""
+        if weights is None or weights == "auto":
+            pass
+        elif isinstance(weights, list):
+            if len(weights) != pipelines_number:
+                raise ValueError("Weights size should be equal to pipelines number.")
+        else:
+            raise ValueError("Invalid format of weights is passed!")
+
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
+        """Get forecasts from backtest for given pipeline."""
+        with tslogger.disable():
+            _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
+        forecasts = TSDataset(df=forecasts, freq=ts.freq)
+        return forecasts
+
+    def _process_weights(self) -> List[float]:
+        """Get the weights of base estimators depending on the weights mode."""
+        if self.weights is None:
+            weights = [1.0 for _ in range(len(self.pipelines))]
+        elif self.weights == "auto":
+            if self.ts is None:
+                raise ValueError("Something went wrong, ts is None!")
+
+            forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(self.ts)) for pipeline in self.pipelines
+            )
+
+            x = pd.concat(
+                [
+                    forecast[:, :, "target"].rename({"target": f"target_{i}"}, axis=1)
+                    for i, forecast in enumerate(forecasts)
+                ],
+                axis=1,
+            )
+            x = pd.concat([x.loc[:, segment] for segment in self.ts.segments], axis=0)
+
+            y = pd.concat(
+                [
+                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
+                    for segment in self.ts.segments
+                ],
+                axis=0,
+            )
+
+            self.regressor.fit(x, y)
+            weights = self.regressor.feature_importances_
+        else:
+            weights = self.weights
         common_weight = sum(weights)
         weights = [w / common_weight for w in weights]
         return weights
@@ -104,15 +172,20 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
             Fitted ensemble
         """
         self.ts = ts
-
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
+        self.processed_weights = self._process_weights()
         return self
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:
         """Get average forecast."""
-        forecast_df = sum([forecast[:, :, "target"] * weight for forecast, weight in zip(forecasts, self.weights)])
+        if self.processed_weights is None:
+            raise ValueError("Ensemble is not fitted! Fit the ensemble before calling the forecast!")
+
+        forecast_df = sum(
+            [forecast[:, :, "target"] * weight for forecast, weight in zip(forecasts, self.processed_weights)]
+        )
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
