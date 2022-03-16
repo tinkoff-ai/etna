@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add get_residuals ([#597](https://github.com/tinkoff-ai/etna/pull/597))
 - Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
 - Create `MultiSegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
+- Add qq_plot ([#604](https://github.com/tinkoff-ai/etna/pull/604))
 - Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
 - Add regressors example notebook ([#577](https://github.com/tinkoff-ai/etna/pull/577))
 - Create `EnsembleMixin` ([#574](https://github.com/tinkoff-ai/etna/pull/574))
@@ -32,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add plot_features_relevance ([#579](https://github.com/tinkoff-ai/etna/pull/579))
 - Add community section to README.md ([#580](https://github.com/tinkoff-ai/etna/pull/580))
 - Create `AbstaractPipeline` ([#573](https://github.com/tinkoff-ai/etna/pull/573))
+- 
+- 
+- Option "auto" to `weights` parameter of `VotingEnsemble`, enables to use feature importance as weights of base estimators ([#587](https://github.com/tinkoff-ai/etna/pull/587)) 
 - 
 ### Changed
 - Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))
@@ -52,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update get_started section in README ([#569](https://github.com/tinkoff-ai/etna/pull/569))
 - Make detrending polynomial ([#566](https://github.com/tinkoff-ai/etna/pull/566))
 - Update documentation about transforms that generate regressors, update examples with them ([#572](https://github.com/tinkoff-ai/etna/pull/572))
-- 
+- Fix that segment is string ([#602](https://github.com/tinkoff-ai/etna/pull/602))
 - Make `LabelEncoderTransform` and `OneHotEncoderTransform` multi-segment ([#554](https://github.com/tinkoff-ai/etna/pull/554))
 ### Fixed
 - Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
