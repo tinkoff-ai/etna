@@ -845,8 +845,7 @@ TrendTransformType = Union[
 
 
 def _get_labels_names(trend_transform, segments):
-    """If only unique transform classes are used then show their short names (without parameters). Otherwise show
-    their full repr as label. """
+    """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label."""
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
 
