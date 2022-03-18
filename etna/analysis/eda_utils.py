@@ -14,6 +14,8 @@ import pandas as pd
 import seaborn as sns
 import statsmodels.api as sm
 from matplotlib.ticker import MaxNLocator
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
 from statsmodels.graphics import utils
 from statsmodels.graphics.gofplots import qqplot
 from statsmodels.tsa.seasonal import STL
@@ -342,3 +344,70 @@ def qq_plot(
         residuals_segment = residuals_df.loc[:, pd.IndexSlice[segment, "target"]]
         qqplot(residuals_segment, ax=ax[i], **qq_plot_params)
         ax[i].set_title(segment)
+
+
+def prediction_actual_scatter_plot(
+    forecast_df: pd.DataFrame,
+    ts: "TSDataset",
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot scatter plot with forecasted/actual values for segments.
+
+    Parameters
+    ----------
+    forecast_df:
+        forecasted dataframe with timeseries data
+    ts:
+        dataframe of timeseries that was used for backtest
+    segments:
+        segments to plot
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    df = ts.to_pandas()
+    for i, segment in enumerate(segments):
+        forecast_segment_df = forecast_df.loc[:, pd.IndexSlice[segment, "target"]]
+        segment_df = df.loc[forecast_segment_df.index, pd.IndexSlice[segment, "target"]]
+
+        # fit a linear model
+        x = forecast_segment_df.values
+        y = segment_df
+        model = LinearRegression()
+        model.fit(X=x[:, np.newaxis], y=y)
+        r2 = r2_score(y_true=y, y_pred=model.predict(x[:, np.newaxis]))
+
+        # prepare the limits of the plot, for the identity to be from corner to corner
+        x_min = min(x.min(), y.min())
+        x_max = max(x.max(), y.max())
+        # add some space at the borders of the plot
+        x_min -= 0.05 * (x_max - x_min)
+        x_max += 0.05 * (x_max - x_min)
+        xlim = (x_min, x_max)
+        ylim = xlim
+
+        # make plots
+        ax[i].scatter(x, y, label=f"R2: {r2:.3f}")
+        x_grid = np.linspace(*xlim, 100)
+        ax[i].plot(x_grid, x_grid, label="identity", linestyle="dotted", color="grey")
+        ax[i].plot(
+            x_grid,
+            model.predict(x_grid[:, np.newaxis]),
+            label=f"best fit: {model.coef_[0]:.3f} x + {model.intercept_:.3f}",
+            linestyle="dashed",
+            color="black",
+        )
+        ax[i].set_title(segment)
+        ax[i].set_xlabel("$\\widehat{y}$")
+        ax[i].set_ylabel("$y$")
+        ax[i].set_xlim(*xlim)
+        ax[i].set_ylim(*ylim)
+        ax[i].legend()
