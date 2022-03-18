@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
--
+- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
 -
 -
 -
@@ -47,7 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
 - Create `MultiSegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
 - Add qq_plot ([#604](https://github.com/tinkoff-ai/etna/pull/604))
-- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
 - Add regressors example notebook ([#577](https://github.com/tinkoff-ai/etna/pull/577))
 - Create `EnsembleMixin` ([#574](https://github.com/tinkoff-ai/etna/pull/574))
 - Add option `season_number` to DateFlagsTransform ([#567](https://github.com/tinkoff-ai/etna/pull/567))
