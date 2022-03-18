@@ -1047,14 +1047,17 @@ def plot_periodogram(
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
 ):
-    """Plot the periodogram to determine the optimal order parameter for `etna.transforms.FourierTransform`.
+    """Plot the periodogram using `scipy.signal.periodogram`.
+
+     It is useful to determine the optimal order parameter for `etna.transforms.FourierTransform`.
 
     Parameters
     ----------
     ts:
         TSDataset with timeseries data
     period:
-        the period of the seasonality to capture in frequency units of time series, it should be >= 2
+        the period of the seasonality to capture in frequency units of time series, it should be >= 2;
+        it is translated to the `fs` parameter of `scipy.signal.periodogram`
     amplitude_aggregation_mode:
         aggregation strategy for obtained per segment periodograms;
         all the strategies can be examined at `etna.analysis.feature_selection.AggregationMode`
@@ -1098,6 +1101,8 @@ def plot_periodogram(
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
             ax[i].step(frequencies, spectrum)
             ax[i].set_xscale("log")
+            ax[i].set_xlabel("Frequency")
+            ax[i].set_ylabel("Power spectral density")
             ax[i].set_title(f"Periodogram: {segment}")
     else:
         # find length of each segment
@@ -1126,4 +1131,6 @@ def plot_periodogram(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         ax.step(frequencies, spectrum)  # type: ignore
         ax.set_xscale("log")  # type: ignore
+        ax.set_xlabel("Frequency")  # type: ignore
+        ax.set_ylabel("Power spectral density")  # type: ignore
         ax.set_title("Periodogram")  # type: ignore
