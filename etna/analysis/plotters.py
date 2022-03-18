@@ -126,7 +126,7 @@ def plot_forecast(
     forecast_results = _prepare_forecast_results(forecast_ts)
     num_forecasts = len(forecast_results.keys())
 
-    if not segments:
+    if segments is None:
         unique_segments = set()
         for forecast in forecast_results.values():
             unique_segments.update(forecast.segments)
@@ -263,7 +263,7 @@ def plot_backtest(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
     df = ts.df
 
@@ -333,7 +333,7 @@ def plot_backtest_interactive(
     go.Figure:
         result of plotting
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
     df = ts.df
 
@@ -461,7 +461,7 @@ def plot_anomalies(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -691,7 +691,7 @@ def plot_time_series_with_change_points(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -799,7 +799,7 @@ def plot_residuals(
     Parameter `transforms` is necessary because some pipelines doesn't save features in their forecasts,
     e.g. `etna.ensembles` pipelines.
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -845,7 +845,8 @@ TrendTransformType = Union[
 
 
 def _get_labels_names(trend_transform, segments):
-    """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label."""
+    """If only unique transform classes are used then show their short names (without parameters). Otherwise show
+    their full repr as label. """
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
 
@@ -884,7 +885,7 @@ def plot_trend(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = list(set(ts.columns.get_level_values("segment")))
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -945,7 +946,7 @@ def plot_feature_relevance(
     """
     if relevance_params is None:
         relevance_params = {}
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     is_ascending = not relevance_table.greater_is_better
@@ -1007,7 +1008,7 @@ def plot_imputation(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
