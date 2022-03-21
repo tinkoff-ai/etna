@@ -170,3 +170,36 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
     )
 
     return ts, metrics_df, forecast_df
+
+
+@pytest.fixture
+def simple_ts() -> TSDataset:
+    timerange = pd.date_range(start="2020-01-01", periods=10).to_list()
+    df = pd.DataFrame({"timestamp": timerange + timerange})
+    df["segment"] = ["segment_0"] * 10 + ["segment_1"] * 10
+    df["target"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def masked_ts() -> TSDataset:
+    timerange = pd.date_range(start="2020-01-01", periods=11).to_list()
+    df = pd.DataFrame({"timestamp": timerange + timerange})
+    df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
+    df["target"] = [0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1] + [0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0]
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_run_fold() -> TSDataset:
+    timerange = pd.date_range(start="2020-01-01", periods=11).to_list()
+    df = pd.DataFrame({"timestamp": timerange + timerange})
+    df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
+    df["target"] = [1, 2, 3, 4, 100, 6, 7, 100, 100, 100, 100] + [1, 2, 3, 4, 5, 6, 7, 8, 9, -6, 11]
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
