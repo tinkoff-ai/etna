@@ -8,10 +8,10 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Union
 
-import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -23,30 +23,64 @@ from typing_extensions import Literal
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
+from etna.analysis.utils import prepare_axes
 from etna.transforms import Transform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.transforms import TimeSeriesImputerTransform
     from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
     from etna.transforms.decomposition.stl import STLTransform
 
 
-def prepare_axes(segments: List[str], columns_num: int, figsize: Tuple[int, int]) -> Sequence[matplotlib.axes.Axes]:
-    """Prepare axes according to segments, figure size and number of columns."""
-    segments_number = len(segments)
-    columns_num = min(columns_num, len(segments))
-    rows_num = math.ceil(segments_number / columns_num)
+def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:
+    """Get quantiles that are present inside the TSDataset."""
+    cols = [col for col in ts.columns.get_level_values("feature").unique().tolist() if col.startswith("target_0.")]
+    existing_quantiles = {float(col[len("target_") :]) for col in cols}
+    return existing_quantiles
 
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True)
-    ax = np.array([ax]).ravel()
-    return ax
+
+def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optional[List[float]]) -> List[float]:
+    """Select quantiles from the forecast results.
+
+    Selected quantiles exist in each forecast.
+    """
+    intersection_quantiles_set = set.intersection(
+        *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
+    )
+    intersection_quantiles = sorted(list(intersection_quantiles_set))
+
+    if quantiles is None:
+        selected_quantiles = intersection_quantiles
+    else:
+        selected_quantiles = sorted(list(set(quantiles) & intersection_quantiles_set))
+        non_existent = set(quantiles) - intersection_quantiles_set
+        if non_existent:
+            warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
+
+    return selected_quantiles
+
+
+def _prepare_forecast_results(
+    forecast_ts: Union["TSDataset", List["TSDataset"], Dict[str, "TSDataset"]]
+) -> Dict[str, "TSDataset"]:
+    """Prepare dictionary with forecasts results."""
+    from etna.datasets import TSDataset
+
+    if isinstance(forecast_ts, TSDataset):
+        return {"1": forecast_ts}
+    elif isinstance(forecast_ts, list) and len(forecast_ts) > 0:
+        return {str(i + 1): forecast for i, forecast in enumerate(forecast_ts)}
+    elif isinstance(forecast_ts, dict) and len(forecast_ts) > 0:
+        return forecast_ts
+    else:
+        raise ValueError("Unknown type of `forecast_ts`")
 
 
 def plot_forecast(
-    forecast_ts: "TSDataset",
+    forecast_ts: Union["TSDataset", List["TSDataset"], Dict[str, "TSDataset"]],
     test_ts: Optional["TSDataset"] = None,
     train_ts: Optional["TSDataset"] = None,
     segments: Optional[List[str]] = None,
@@ -54,7 +88,7 @@ def plot_forecast(
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
     prediction_intervals: bool = False,
-    quantiles: Optional[Sequence[float]] = None,
+    quantiles: Optional[List[float]] = None,
 ):
     """
     Plot of prediction for forecast pipeline.
@@ -62,7 +96,10 @@ def plot_forecast(
     Parameters
     ----------
     forecast_ts:
-        forecasted TSDataset with timeseries data
+        there are several options:
+        1. Forecasted TSDataset with timeseries data, single-forecast mode
+        2. List of forecasted TSDatasets, multi-forecast mode
+        3. Dictionary with forecasted TSDatasets, multi-forecast mode
     test_ts:
         TSDataset with timeseries data
     train_ts:
@@ -78,33 +115,32 @@ def plot_forecast(
     prediction_intervals:
         if True prediction intervals will be drawn
     quantiles:
-        list of quantiles to draw
+        List of quantiles to draw, if isn't set then quantiles from a given dataset will be used.
+        In multi-forecast mode, only quantiles present in each forecast will be used.
+
+    Raises
+    ------
+    ValueError:
+        if the format of `forecast_ts` is unknown
     """
+    forecast_results = _prepare_forecast_results(forecast_ts)
+    num_forecasts = len(forecast_results.keys())
+
     if not segments:
-        segments = list(set(forecast_ts.columns.get_level_values("segment")))
+        unique_segments = set()
+        for forecast in forecast_results.values():
+            unique_segments.update(forecast.segments)
+        segments = list(unique_segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
 
     if prediction_intervals:
-        cols = [
-            col
-            for col in forecast_ts.columns.get_level_values("feature").unique().tolist()
-            if col.startswith("target_0.")
-        ]
-        existing_quantiles = [float(col[7:]) for col in cols]
-        if quantiles is None:
-            quantiles = sorted(existing_quantiles)
-        else:
-            non_existent = set(quantiles) - set(existing_quantiles)
-            if len(non_existent):
-                warnings.warn(f"Quantiles {non_existent} do not exist in forecast dataset. They will be dropped.")
-            quantiles = sorted(list(set(quantiles).intersection(set(existing_quantiles))))
+        quantiles = _select_quantiles(forecast_results, quantiles)
 
     if train_ts is not None:
         train_ts.df.sort_values(by="timestamp", inplace=True)
     if test_ts is not None:
         test_ts.df.sort_values(by="timestamp", inplace=True)
-    forecast_ts.df.sort_values(by="timestamp", inplace=True)
 
     for i, segment in enumerate(segments):
         if train_ts is not None:
@@ -124,54 +160,79 @@ def plot_forecast(
         else:
             plot_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
-        segment_forecast_df = forecast_ts[:, segment, :][segment]
-
         if (train_ts is not None) and (n_train_samples != 0):
             ax[i].plot(plot_df.index.values, plot_df.target.values, label="train")
         if test_ts is not None:
             ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
-        ax[i].plot(segment_forecast_df.index.values, segment_forecast_df.target.values, color="r", label="forecast")
 
-        if prediction_intervals and quantiles is not None:
-            alpha = np.linspace(0, 1, len(quantiles) // 2 + 2)[1:-1]
-            for quantile in range(len(quantiles) // 2):
-                values_low = segment_forecast_df["target_" + str(quantiles[quantile])].values
-                values_high = segment_forecast_df["target_" + str(quantiles[-quantile - 1])].values
-                if quantile == len(quantiles) // 2 - 1:
-                    ax[i].fill_between(
+        # plot forecast plot for each of given forecasts
+        quantile_prefix = "target_"
+        for j, (forecast_name, forecast) in enumerate(forecast_results.items()):
+            legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
+
+            segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
+            line = ax[i].plot(
+                segment_forecast_df.index.values,
+                segment_forecast_df.target.values,
+                linewidth=1,
+                label=f"{legend_prefix}forecast",
+            )
+            forecast_color = line[0].get_color()
+
+            # draw prediction intervals from outer layers to inner ones
+            if prediction_intervals and quantiles is not None:
+                alpha = np.linspace(0, 1 / 2, len(quantiles) // 2 + 2)[1:-1]
+                for quantile_idx in range(len(quantiles) // 2):
+                    # define upper and lower border for this iteration
+                    low_quantile = quantiles[quantile_idx]
+                    high_quantile = quantiles[-quantile_idx - 1]
+                    values_low = segment_forecast_df[f"{quantile_prefix}{low_quantile}"].values
+                    values_high = segment_forecast_df[f"{quantile_prefix}{high_quantile}"].values
+                    # if (low_quantile, high_quantile) is the smallest interval
+                    if quantile_idx == len(quantiles) // 2 - 1:
+                        ax[i].fill_between(
+                            segment_forecast_df.index.values,
+                            values_low,
+                            values_high,
+                            facecolor=forecast_color,
+                            alpha=alpha[quantile_idx],
+                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
+                        )
+                    # if there is some interval inside (low_quantile, high_quantile) we should plot around it
+                    else:
+                        low_next_quantile = quantiles[quantile_idx + 1]
+                        high_prev_quantile = quantiles[-quantile_idx - 2]
+                        values_next = segment_forecast_df[f"{quantile_prefix}{low_next_quantile}"].values
+                        ax[i].fill_between(
+                            segment_forecast_df.index.values,
+                            values_low,
+                            values_next,
+                            facecolor=forecast_color,
+                            alpha=alpha[quantile_idx],
+                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
+                        )
+                        values_prev = segment_forecast_df[f"{quantile_prefix}{high_prev_quantile}"].values
+                        ax[i].fill_between(
+                            segment_forecast_df.index.values,
+                            values_high,
+                            values_prev,
+                            facecolor=forecast_color,
+                            alpha=alpha[quantile_idx],
+                        )
+                # when we can't find pair quantile, we plot it separately
+                if len(quantiles) % 2 != 0:
+                    remaining_quantile = quantiles[len(quantiles) // 2]
+                    values = segment_forecast_df[f"{quantile_prefix}{remaining_quantile}"].values
+                    ax[i].plot(
                         segment_forecast_df.index.values,
-                        values_low,
-                        values_high,
-                        facecolor="g",
-                        alpha=alpha[quantile],
-                        label=f"{quantiles[quantile]}-{quantiles[-quantile-1]} prediction interval",
+                        values,
+                        "--",
+                        color=forecast_color,
+                        label=f"{legend_prefix}{remaining_quantile}",
                     )
-                else:
-                    values_next = segment_forecast_df["target_" + str(quantiles[quantile + 1])].values
-                    ax[i].fill_between(
-                        segment_forecast_df.index.values,
-                        values_low,
-                        values_next,
-                        facecolor="g",
-                        alpha=alpha[quantile],
-                        label=f"{quantiles[quantile]}-{quantiles[-quantile-1]} prediction interval",
-                    )
-                    values_prev = segment_forecast_df["target_" + str(quantiles[-quantile - 2])].values
-                    ax[i].fill_between(
-                        segment_forecast_df.index.values, values_high, values_prev, facecolor="g", alpha=alpha[quantile]
-                    )
-            if len(quantiles) % 2 != 0:
-                values = segment_forecast_df["target_" + str(quantiles[len(quantiles) // 2])].values
-                ax[i].plot(
-                    segment_forecast_df.index.values,
-                    values,
-                    "--",
-                    c="orange",
-                    label=f"{quantiles[len(quantiles)//2]} quantile",
-                )
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
-        ax[i].legend()
+        ax[i].legend(loc="upper left")
 
 
 def plot_backtest(
@@ -659,6 +720,47 @@ def plot_time_series_with_change_points(
         ax[i].tick_params("x", rotation=45)
 
 
+def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
+    """Get residuals for further analysis.
+
+    Parameters
+    ----------
+    forecast_df:
+        forecasted dataframe with timeseries data
+    ts:
+        dataset of timeseries that has answers to forecast
+
+    Returns
+    -------
+    new_ts:
+        TSDataset with residuals in forecasts
+
+    Raises
+    ------
+    KeyError:
+        if segments of `forecast_df` and `ts` aren't the same
+
+    Notes
+    -----
+    Transforms are taken as is from `ts`.
+    """
+    from etna.datasets import TSDataset
+
+    # find the residuals
+    true_df = ts[forecast_df.index, :, :]
+    if set(ts.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
+        raise KeyError("Segments of `ts` and `forecast_df` should be the same")
+    true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[:, pd.IndexSlice[ts.segments, "target"]]
+
+    # make TSDataset
+    new_ts = TSDataset(df=true_df, freq=ts.freq)
+    new_ts.known_future = ts.known_future
+    new_ts._regressors = ts.regressors
+    new_ts.transforms = ts.transforms
+    new_ts.df_exog = ts.df_exog
+    return new_ts
+
+
 def plot_residuals(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
@@ -704,7 +806,8 @@ def plot_residuals(
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
-    df = ts_copy.to_pandas()
+    ts_residuals = get_residuals(forecast_df=forecast_df, ts=ts_copy)
+    df = ts_residuals.to_pandas()
     # check if feature is present in dataset
     if feature != "timestamp":
         all_features = set(df.columns.get_level_values("feature").unique())
@@ -712,13 +815,10 @@ def plot_residuals(
             raise ValueError("Given feature isn't present in the dataset after applying transformations")
 
     for i, segment in enumerate(segments):
-        segment_df = df.loc[forecast_df.index, pd.IndexSlice[segment, :]][segment].reset_index()
         segment_forecast_df = forecast_df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
-        segment_df.rename(columns={"target": "y_true"}, inplace=True)
-        segment_df["y_pred"] = segment_forecast_df["target"].values
-
-        residuals = (segment_df["y_true"] - segment_df["y_pred"]).values
-        feature_values = segment_df[feature].values
+        segment_residuals_df = df.loc[:, pd.IndexSlice[segment, :]][segment].reset_index()
+        residuals = segment_residuals_df["target"].values
+        feature_values = segment_residuals_df[feature].values
 
         # highlight different backtest folds
         if feature == "timestamp":
@@ -883,3 +983,55 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+
+
+def plot_imputation(
+    ts: "TSDataset",
+    imputer: "TimeSeriesImputerTransform",
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot the result of imputation by a given imputer.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    imputer:
+        transform to make imputation of NaNs
+    segments:
+        segments to use
+    columns_num:
+        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if not segments:
+        segments = sorted(ts.segments)
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    ts_after = deepcopy(ts)
+    ts_after.fit_transform(transforms=[imputer])
+    feature_name = imputer.in_column
+
+    for i, segment in enumerate(segments):
+        # we want to capture nans at the beginning, so don't use `ts[:, segment, :]`
+        segment_before_df = ts.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+        segment_after_df = ts_after.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+
+        # plot result after imputation
+        ax[i].plot(segment_after_df.index, segment_after_df)
+
+        # highlight imputed points
+        imputed_index = ~segment_after_df.isna() & segment_before_df.isna()
+        ax[i].scatter(
+            segment_after_df.loc[imputed_index].index,
+            segment_after_df.loc[imputed_index],
+            c="red",
+            zorder=2,
+        )
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)

@@ -143,6 +143,11 @@ class HierarchicalClustering(Clustering):
             centroids.append(centroid)
         self.centroids_df = pd.concat(centroids, ignore_index=True)
         self.centroids_df = TSDataset.to_dataset(self.centroids_df)
+
+        # modify dataframe columns
+        columns_frame = self.centroids_df.columns.to_frame()
+        columns_frame["segment"] = columns_frame["segment"].astype(int)
+        self.centroids_df.columns = pd.MultiIndex.from_frame(columns_frame)
         self.centroids_df.columns.set_names("cluster", level=0, inplace=True)
         return self.centroids_df
 

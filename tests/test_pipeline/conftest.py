@@ -142,13 +142,13 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
     train_size = 20
     start_value = 10.0
     add_value = 5.0
-    segment = 0
+    segment = "segment_1"
     timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq="D")
     target = [start_value] * train_size
     for i in range(n_folds):
         target += [target[-1] + add_value] * horizon
 
-    df = pd.DataFrame({"timestamp": timestamp, "target": target, "segment": 0})
+    df = pd.DataFrame({"timestamp": timestamp, "target": target, "segment": segment})
     ts = TSDataset(TSDataset.to_dataset(df), freq="D")
 
     metrics_df = pd.DataFrame(
