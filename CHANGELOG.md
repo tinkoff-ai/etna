@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
+- Fixed unsafe comparison in plots ([#611](https://github.com/tinkoff-ai/etna/pull/611))
+-
 -
 -
 -
