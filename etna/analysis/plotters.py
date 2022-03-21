@@ -18,6 +18,7 @@ import pandas as pd
 import plotly
 import plotly.graph_objects as go
 import seaborn as sns
+from scipy.signal import periodogram
 from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
@@ -1035,3 +1036,101 @@ def plot_imputation(
 
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
+
+
+def plot_periodogram(
+    ts: "TSDataset",
+    period: float,
+    amplitude_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
+    periodogram_params: Optional[Dict[str, Any]] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot the periodogram using `scipy.signal.periodogram`.
+
+     It is useful to determine the optimal order parameter for `etna.transforms.FourierTransform`.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    period:
+        the period of the seasonality to capture in frequency units of time series, it should be >= 2;
+        it is translated to the `fs` parameter of `scipy.signal.periodogram`
+    amplitude_aggregation_mode:
+        aggregation strategy for obtained per segment periodograms;
+        all the strategies can be examined at `etna.analysis.feature_selection.AggregationMode`
+    periodogram_params:
+        additional keyword arguments for periodogram, `scipy.signal.periodogram` is used
+    segments:
+        segments to use
+    columns_num:
+        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Notes
+    -----
+    In non per-segment mode all segments are cut to be the same length, the last values are taken.
+
+    Raises
+    ------
+    ValueError:
+        if period < 2
+    ValueError:
+        if periodogram can't be calculated on segment because of the NaNs inside it
+    """
+    if period < 2:
+        raise ValueError("Period should be at least 2")
+    if periodogram_params is None:
+        periodogram_params = {}
+    if not segments:
+        segments = sorted(ts.segments)
+
+    df = ts.to_pandas()
+
+    # plot periodograms
+    if amplitude_aggregation_mode == "per-segment":
+        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        for i, segment in enumerate(segments):
+            segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            if segment_df.isna().any():
+                raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
+            frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
+            ax[i].step(frequencies, spectrum)
+            ax[i].set_xscale("log")
+            ax[i].set_xlabel("Frequency")
+            ax[i].set_ylabel("Power spectral density")
+            ax[i].set_title(f"Periodogram: {segment}")
+    else:
+        # find length of each segment
+        lengths_segments = []
+        for segment in segments:
+            segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            if segment_df.isna().any():
+                raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
+            lengths_segments.append(len(segment_df))
+        cut_length = min(lengths_segments)
+
+        # cut each segment to `cut_length` last elements and find periodogram for each segment
+        frequencies_segments = []
+        spectrums_segments = []
+        for segment in segments:
+            segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
+            frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
+            frequencies_segments.append(frequencies)
+            spectrums_segments.append(spectrum)
+
+        frequencies = frequencies_segments[0]
+        amplitude_aggregation_fn = AGGREGATION_FN[AggregationMode(amplitude_aggregation_mode)]
+        spectrum = amplitude_aggregation_fn(spectrums_segments, axis=0)  # type: ignore
+        _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+        ax.step(frequencies, spectrum)  # type: ignore
+        ax.set_xscale("log")  # type: ignore
+        ax.set_xlabel("Frequency")  # type: ignore
+        ax.set_ylabel("Power spectral density")  # type: ignore
+        ax.set_title("Periodogram")  # type: ignore
