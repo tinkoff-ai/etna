@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
--
+- Add in_column to plot_anomalies, plot_anomalies_interactive ([#618](https://github.com/tinkoff-ai/etna/pull/618))
 -
 
 ### Fixed
