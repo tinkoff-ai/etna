@@ -855,10 +855,15 @@ def _get_labels_names(trend_transform, segments):
     if len(np.unique(labels_short)) == len(labels_short):
         labels = labels_short
     linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
-    if len(trend_transform) == 1 and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform))\
-            and trend_transform[0].poly_degree == 1:
+    if (
+        len(trend_transform) == 1
+        and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform))
+        and trend_transform[0].poly_degree == 1
+    ):
         for seg in segments:
-            linear_coeffs[seg] = ", k=" + f"{trend_transform[0].segment_transforms[seg]._pipeline.steps[1][1].coef_[0]:g}"
+            linear_coeffs[seg] = (
+                ", k=" + f"{trend_transform[0].segment_transforms[seg]._pipeline.steps[1][1].coef_[0]:g}"
+            )
     return labels, linear_coeffs
 
 
