@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
-from sklearn.linear_model import TweedieRegressor
 
 from etna.analysis import get_residuals
 from etna.analysis import plot_residuals
