@@ -52,7 +52,7 @@ def cross_corr_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         exist_segments = list(ts.segments)
         chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
         segments = list(chosen_segments)
@@ -112,7 +112,7 @@ def sample_acf_plot(
     -----
     https://en.wikipedia.org/wiki/Autocorrelation
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     k = min(n_segments, len(segments))
@@ -156,7 +156,7 @@ def sample_pacf_plot(
     -----
     https://en.wikipedia.org/wiki/Partial_autocorrelation_function
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     k = min(n_segments, len(segments))
@@ -210,7 +210,7 @@ def distribution_plot(
     """
     df_pd = ts.to_pandas(flatten=True)
 
-    if not segments:
+    if segments is None:
         exist_segments = df_pd.segment.unique()
         chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
         segments = list(chosen_segments)
@@ -271,7 +271,7 @@ def stl_plot(
         plot_kwargs = {}
     if stl_kwargs is None:
         stl_kwargs = {}
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     segments_number = len(segments)
@@ -334,7 +334,7 @@ def qq_plot(
     """
     if qq_plot_params is None:
         qq_plot_params = {}
-    if not segments:
+    if segments is None:
         segments = sorted(residuals_ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)

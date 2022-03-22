@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
--
+- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
 -
 -
 - Add prediction_actual_scatter_plot ([#610](https://github.com/tinkoff-ai/etna/pull/610))
@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 -
+-
+- Fixed unsafe comparison in plots ([#611](https://github.com/tinkoff-ai/etna/pull/611))
 -
 -
 -
