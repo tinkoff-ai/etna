@@ -368,7 +368,7 @@ def prediction_actual_scatter_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
