@@ -1,5 +1,7 @@
 from copy import deepcopy
+from typing import TypedDict
 
+import torch
 
 class _DeepCopyMixin:
     """Mixin for ``__deepcopy__`` behaviour overriding."""
@@ -15,3 +17,14 @@ class _DeepCopyMixin:
             setattr(obj, k, deepcopy(v, memo))
             pass
         return obj
+
+
+class TrainBatch(TypedDict):
+    encoder_real: torch.Tensor
+    decoder_real: torch.Tensor
+    target: torch.Tensor
+
+
+class InferenceBatch(TypedDict):
+    encoder_real: torch.Tensor
+    decoder_real: torch.Tensor
