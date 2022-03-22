@@ -474,7 +474,7 @@ class TSDataset:
         figsize:
             size of the figure per subplot with one segment in inches
         """
-        if not segments:
+        if segments is None:
             segments = self.segments
             k = min(n_segments, len(segments))
         else:
