@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
+- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
+-
+-
+-
+-
+
 
 ### Changed
 -
