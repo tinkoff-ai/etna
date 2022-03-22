@@ -468,7 +468,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+        joblib_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -497,6 +497,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self._init_backtest()
         self._validate_backtest_metrics(metrics=metrics)
         masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode)
+        if joblib_params is None:
+            joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
 
         folds = Parallel(n_jobs=n_jobs, **joblib_params)(
             delayed(self._run_fold)(
