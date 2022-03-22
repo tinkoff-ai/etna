@@ -37,6 +37,7 @@ class CrossValidationMode(Enum):
 
 class FoldMask(BaseMixin):
     """Container to hold the description of the fold mask.
+
     Fold masks are expected to be used for backtest strategy customization.
     """
 

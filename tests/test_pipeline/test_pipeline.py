@@ -458,7 +458,7 @@ def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, Li
 @pytest.mark.parametrize(
     "lag,expected", ((5, {"segment_0": 76.923077, "segment_1": 90.909091}), (6, {"segment_0": 100, "segment_1": 120}))
 )
-def test_backtest(simple_ts: TSDataset, lag: int, expected: Dict[str, List[float]]):
+def test_backtest_one_point(simple_ts: TSDataset, lag: int, expected: Dict[str, List[float]]):
     mask = FoldMask(
         simple_ts.index.min(),
         simple_ts.index.min() + np.timedelta64(6, "D"),
@@ -475,7 +475,7 @@ def test_backtest(simple_ts: TSDataset, lag: int, expected: Dict[str, List[float
 @pytest.mark.parametrize(
     "lag,expected", ((4, {"segment_0": 0, "segment_1": 0}), (7, {"segment_0": 0, "segment_1": 0.5}))
 )
-def test_backtest_right_timestamps(masked_ts: TSDataset, lag: int, expected: Dict[str, List[float]]):
+def test_backtest_two_points(masked_ts: TSDataset, lag: int, expected: Dict[str, List[float]]):
     mask = FoldMask(
         masked_ts.index.min(),
         masked_ts.index.min() + np.timedelta64(6, "D"),
