@@ -79,17 +79,20 @@ def test_plot_residuals_fails_unkown_feature(example_tsdf):
         plot_residuals(forecast_df=forecast_df, ts=example_tsdf, feature="unkown_feature")
 
 
-@pytest.mark.parametrize("poly_degree", (1, 2))
-def test_plot_trend_linear_trend(poly_degree, example_tsdf):
-    plot_trend(ts=example_tsdf, trend_transform=LinearTrendTransform(in_column="target", poly_degree=poly_degree))
+@pytest.mark.parametrize(
+    "poly_degree, trend_transform_class",
+    (
+        [1, LinearTrendTransform],
+        [2, LinearTrendTransform],
+        [1, TheilSenTrendTransform],
+        [2, TheilSenTrendTransform],
+    ),
+)
+def test_plot_trend(poly_degree, example_tsdf, trend_transform_class):
+    plot_trend(ts=example_tsdf, trend_transform=trend_transform_class(in_column="target", poly_degree=poly_degree))
 
 
-@pytest.mark.parametrize("poly_degree", (1, 2))
-def test_plot_trend_theilsen(poly_degree, example_tsdf):
-    plot_trend(ts=example_tsdf, trend_transform=TheilSenTrendTransform(in_column="target", poly_degree=poly_degree))
-
-
-@pytest.mark.parametrize("detrend_model", (TheilSenRegressor(), LinearRegression(), TweedieRegressor()))
+@pytest.mark.parametrize("detrend_model", (TheilSenRegressor(), LinearRegression()))
 def test_plot_bin_seg(example_tsdf, detrend_model):
     plot_trend(ts=example_tsdf, trend_transform=BinsegTrendTransform(in_column="target", detrend_model=detrend_model))
 
