@@ -406,9 +406,7 @@ def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, mode, exp
     for mask, expected_mask in zip(masks, expected_masks):
         assert mask.first_train_timestamp == expected_mask.first_train_timestamp
         assert mask.last_train_timestamp == expected_mask.last_train_timestamp
-        assert [timestamp for timestamp in mask.target_timestamps] == [
-            timestamp for timestamp in expected_mask.target_timestamps
-        ]
+        assert mask.target_timestamps == expected_mask.target_timestamps
 
 
 @pytest.mark.parametrize(
@@ -437,6 +435,24 @@ def test_generate_folds_datasets_without_first_date(simple_ts: TSDataset, mask):
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
     assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
     assert test.index.max() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(4, "D")
+
+
+@pytest.mark.parametrize(
+    "mask,expected",
+    (
+        (FoldMask("2020-01-01", "2020-01-07", ["2020-01-10"]), {"segment_0": 0, "segment_1": 11}),
+        (FoldMask("2020-01-01", "2020-01-07", ["2020-01-08", "2020-01-11"]), {"segment_0": 95.5, "segment_1": 5}),
+    ),
+)
+def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, List[float]]):
+    train, test = ts_run_fold.train_test_split(
+        train_start=mask.first_train_timestamp, train_end=mask.last_train_timestamp
+    )
+
+    pipeline = Pipeline(model=NaiveModel(lag=5), transforms=[], horizon=4)
+    fold = pipeline._run_fold(train, test, 1, mask, [MAE()])
+    for seg in fold["metrics"]["MAE"].keys():
+        assert fold["metrics"]["MAE"][seg] == expected[seg]
 
 
 @pytest.mark.parametrize(
@@ -471,21 +487,3 @@ def test_backtest_right_timestamps(masked_ts: TSDataset, lag: int, expected: Dic
     for segment in expected.keys():
         assert segment in metrics.keys()
         np.testing.assert_array_almost_equal(expected[segment], metrics[segment])
-
-
-@pytest.mark.parametrize(
-    "mask,expected",
-    (
-        (FoldMask("2020-01-01", "2020-01-07", ["2020-01-10"]), {"segment_0": 0, "segment_1": 11}),
-        (FoldMask("2020-01-01", "2020-01-07", ["2020-01-08", "2020-01-11"]), {"segment_0": 95.5, "segment_1": 5}),
-    ),
-)
-def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, List[float]]):
-    train, test = ts_run_fold.train_test_split(
-        train_start=mask.first_train_timestamp, train_end=mask.last_train_timestamp
-    )
-
-    pipeline = Pipeline(model=NaiveModel(lag=5), transforms=[], horizon=4)
-    fold = pipeline._run_fold(train, test, 1, mask, [MAE()])
-    for seg in fold["metrics"]["MAE"].keys():
-        assert fold["metrics"]["MAE"][seg] == expected[seg]

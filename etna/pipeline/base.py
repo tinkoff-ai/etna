@@ -36,7 +36,9 @@ class CrossValidationMode(Enum):
 
 
 class FoldMask(BaseMixin):
-    """FoldMask class for masks."""
+    """Container to hold the description of the fold mask.
+    Fold masks are expected to be used for backtest strategy customization.
+    """
 
     def __init__(
         self,
@@ -65,12 +67,12 @@ class FoldMask(BaseMixin):
     def _validate_last_train_timestamp(self):
         """Check that last train timestamp is later then first train timestamp."""
         if self.first_train_timestamp and self.last_train_timestamp < self.first_train_timestamp:
-            raise ValueError("Last train timestamp should be strictly later than first train timestamp!")
+            raise ValueError("Last train timestamp should be not sooner than first train timestamp!")
 
     def _validate_target_timestamps(self):
         """Check that all target timestamps are later then last train timestamp."""
         first_target_timestamp = self.target_timestamps[0]
-        if first_target_timestamp < self.last_train_timestamp:
+        if first_target_timestamp <= self.last_train_timestamp:
             raise ValueError("Target timestamps should be strictly later then last train timestamp!")
 
     def validate_on_dataset(self, ts: TSDataset, horizon: int):
@@ -92,19 +94,19 @@ class FoldMask(BaseMixin):
 
         last_timestamp = dataset_description["end_timestamp"].min()
         if self.last_train_timestamp > last_timestamp:
-            raise ValueError(f"Last train timestamp should be sooner than {last_timestamp}!")
+            raise ValueError(f"Last train timestamp should be not later than {last_timestamp}!")
 
         dataset_first_target_timestamp = dataset_timestamps[dataset_timestamps.index(self.last_train_timestamp) + 1]
         mask_first_target_timestamp = self.target_timestamps[0]
         if mask_first_target_timestamp < dataset_first_target_timestamp:
-            raise ValueError(f"First target timestamp should be later than {dataset_first_target_timestamp}!")
+            raise ValueError(f"First target timestamp should be not sooner than {dataset_first_target_timestamp}!")
 
         dataset_last_target_timestamp = dataset_timestamps[
             dataset_timestamps.index(self.last_train_timestamp) + horizon
         ]
         mask_last_target_timestamp = self.target_timestamps[-1]
         if dataset_last_target_timestamp < mask_last_target_timestamp:
-            raise ValueError(f"Last target timestamp should be sooner than {dataset_last_target_timestamp}!")
+            raise ValueError(f"Last target timestamp should be not later than {dataset_last_target_timestamp}!")
 
 
 class AbstractPipeline(ABC):
