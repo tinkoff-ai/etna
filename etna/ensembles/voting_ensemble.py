@@ -58,7 +58,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self,
         pipelines: List[BasePipeline],
         weights: Optional[Union[List[float], Literal["auto"]]] = None,
-        regressor: TreeBasedRegressor = RandomForestRegressor(n_estimators=5),
+        regressor: TreeBasedRegressor = RandomForestRegressor(n_estimators=5),  # noqa: M511
         n_folds: int = 3,
         n_jobs: int = 1,
         joblib_params: Optional[Dict[str, Any]] = None,

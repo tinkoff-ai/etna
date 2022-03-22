@@ -60,7 +60,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
     def __init__(
         self,
         pipelines: List[BasePipeline],
-        final_model: RegressorMixin = LinearRegression(),
+        final_model: RegressorMixin = LinearRegression(),  # noqa: M511
         n_folds: int = 3,
         features_to_use: Union[None, Literal["all"], List[str]] = None,
         n_jobs: int = 1,
