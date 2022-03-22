@@ -235,7 +235,7 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int) -> "TSDataset":
+    def make_future(self, future_steps: int, tail_steps: Optional[int] = None) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
@@ -302,7 +302,11 @@ class TSDataset:
                 tslogger.log(f"Transform {repr(transform)} is applied to dataset")
                 df = transform.transform(df)
 
-        future_dataset = df.tail(future_steps).copy(deep=True)
+        if tail_steps is not None:
+            future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
+        else:
+            future_dataset = df.tail(future_steps).copy(deep=True)
+
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
@@ -1099,3 +1103,76 @@ class TSDataset:
         # print the results
         result_string = "\n".join(lines)
         print(result_string)
+
+    def to_train_dataloader(self, encoder_length, decoder_length, columns_to_add, batch_size: int = 1):
+        from torch.utils.data import DataLoader
+
+        df = self.to_pandas(flatten=True)
+
+        ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
+        ts_samples = [
+            i
+            for dict_segment in ts_segments
+            for i in make_samples(dict_segment, encoder_length, decoder_length, columns_to_add)
+            if not i["encoder_real"].isnan().any()
+        ]
+
+        return DataLoader(ts_samples, batch_size=batch_size)
+
+    def to_test_dataloader(self, encoder_length, decoder_length, columns_to_add, batch_size: int = 1):
+        from torch.utils.data import DataLoader
+
+        df = self.make_future(decoder_length, encoder_length + 1).to_pandas(flatten=True)
+
+        ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
+        ts_samples = [
+            i
+            for dict_segment in ts_segments
+            for i in make_samples(dict_segment, encoder_length, decoder_length, columns_to_add)
+            if not i["encoder_real"].isnan().any()
+        ]
+
+        return DataLoader(ts_samples, batch_size=batch_size)
+
+
+def make_samples(x: dict, encoder_length, decoder_length, columns_to_add):
+    import torch
+
+    def _make(x, start_idx, encoder_length, decoder_length, columns_to_add) -> Optional[dict]:
+        x_dict = {"target": list(), "encoder_real": list(), "decoder_real": list(), "segment": None}
+        total_length = len(x["target"])
+        total_sample_length = encoder_length + decoder_length
+
+        if total_sample_length + start_idx > total_length:
+            return
+
+        x_dict["decoder_real"] = x[["target"] + columns_to_add].values[
+            start_idx + encoder_length : start_idx + decoder_length + encoder_length
+        ]
+        x_dict["decoder_real"][:, 0] = (
+            x["target"].shift(1).values[start_idx + encoder_length : start_idx + decoder_length + encoder_length]
+        )
+        x_dict["encoder_real"] = x[["target"] + columns_to_add].values[start_idx : start_idx + encoder_length]
+        x_dict["encoder_real"][:, 0] = x["target"].shift(1).values[start_idx : start_idx + encoder_length]
+        x_dict["target"] = x["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
+
+        x_dict["target"] = torch.from_numpy(x_dict["target"]).double()
+        x_dict["decoder_real"] = torch.from_numpy(x_dict["decoder_real"]).double()
+        x_dict["encoder_real"] = torch.from_numpy(x_dict["encoder_real"]).double()
+        x_dict["segment"] = x["segment"].values[0]
+
+        return x_dict
+
+    start_idx = 0
+    while True:
+        batch = _make(
+            x=x,
+            start_idx=start_idx,
+            encoder_length=encoder_length,
+            decoder_length=decoder_length,
+            columns_to_add=columns_to_add,
+        )
+        if batch is None:
+            break
+        yield batch
+        start_idx += 1
