@@ -1,14 +1,17 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.linear_model import LinearRegression, TheilSenRegressor, TweedieRegressor
 
-from etna.analysis import get_residuals
+from etna.analysis import get_residuals, plot_trend
 from etna.analysis import plot_residuals
+from etna.analysis.plotters import _get_labels_names
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
-from etna.transforms import LagTransform
+from etna.transforms import LagTransform, LinearTrendTransform, TheilSenTrendTransform, ChangePointsTrendTransform, \
+    BinsegTrendTransform, STLTransform
 
 
 @pytest.fixture
@@ -68,3 +71,36 @@ def test_plot_residuals_fails_unkown_feature(example_tsdf):
     metrics, forecast_df, info = pipeline.backtest(ts=example_tsdf, metrics=[MAE()], n_folds=3)
     with pytest.raises(ValueError, match="Given feature isn't present in the dataset"):
         plot_residuals(forecast_df=forecast_df, ts=example_tsdf, feature="unkown_feature")
+
+@pytest.mark.parametrize("poly_degree", (1, 2))
+def test_plot_trend_linear_trend(poly_degree, example_tsdf):
+    plot_trend(ts=example_tsdf, trend_transform=LinearTrendTransform(in_column="target", poly_degree=poly_degree))
+
+@pytest.mark.parametrize("poly_degree", (1, 2))
+def test_plot_trend_theilsen(poly_degree, example_tsdf):
+    plot_trend(ts=example_tsdf, trend_transform=TheilSenTrendTransform(in_column="target", poly_degree=poly_degree))
+
+@pytest.mark.parametrize("detrend_model", (TheilSenRegressor(), LinearRegression(), TweedieRegressor()))
+def test_plot_bin_seg(example_tsdf, detrend_model):
+    plot_trend(ts=example_tsdf, trend_transform=BinsegTrendTransform(in_column="target", detrend_model=detrend_model))
+
+@pytest.mark.parametrize("period", (7, 30))
+def test_plot_stl(example_tsdf, period):
+    plot_trend(ts=example_tsdf, trend_transform=STLTransform(in_column="target", period=period))
+
+
+@pytest.mark.parametrize("poly_degree, expect_values, trend_class", (
+        [1, True, LinearTrendTransform],
+        [2, False, LinearTrendTransform],
+        [1, True, TheilSenTrendTransform],
+        [2, False, TheilSenTrendTransform],))
+def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values, trend_class):
+    ln_tr = trend_class(in_column="target", poly_degree=poly_degree)
+    example_tsdf.fit_transform([ln_tr])
+    segments = example_tsdf.segments
+    _, linear_coeffs = _get_labels_names([ln_tr], segments)
+    if expect_values:
+        assert list(linear_coeffs.values()) != ["", ""]
+    else:
+        assert list(linear_coeffs.values()) == ["", ""]
+
