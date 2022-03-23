@@ -9,13 +9,14 @@ from typing import Union
 import pandas as pd
 
 from etna import SETTINGS
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
 
 
-class _ProphetAdapter:
+class _ProphetAdapter(BaseAdapter):
     """Class for holding Prophet model."""
 
     def __init__(

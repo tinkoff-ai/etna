@@ -1,12 +1,15 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.linear_model import ElasticNet
+from sklearn.linear_model import LinearRegression
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
 from etna.models.linear import LinearPerSegmentModel
+from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 from etna.transforms.timestamp import DateFlagsTransform
 
@@ -218,3 +221,41 @@ def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
 
     with pytest.raises(ValueError, match="Only convertible to numeric features are accepted!"):
         _ = model.fit(ts_with_categoricals)
+
+
+@pytest.mark.parametrize(
+    "etna_class,expected_model_class",
+    (
+        (ElasticMultiSegmentModel, ElasticNet),
+        (LinearMultiSegmentModel, LinearRegression),
+    ),
+)
+def test_get_model_multi(etna_class, expected_model_class):
+    """Check that get_model method returns objects of sklearn regressor."""
+    etna_model = etna_class()
+    model = etna_model.get_model()
+    assert isinstance(model, expected_model_class)
+
+
+def test_get_model_per_segment_before_training():
+    """Check that get_model methid throws an error if per-segment model is not fitted yet."""
+    etna_model = LinearPerSegmentModel()
+    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
+        _ = etna_model.get_model()
+
+
+@pytest.mark.parametrize(
+    "etna_class,expected_model_class",
+    (
+        (ElasticPerSegmentModel, ElasticNet),
+        (LinearPerSegmentModel, LinearRegression),
+    ),
+)
+def test_get_model_per_segment_after_training(example_tsds, etna_class, expected_model_class):
+    """Check that get_model method returns dict of objects of sklearn regressor class."""
+    pipeline = Pipeline(model=etna_class(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
+    pipeline.fit(ts=example_tsds)
+    models_dict = pipeline.model.get_model()
+    assert isinstance(models_dict, dict)
+    for segment in example_tsds.segments:
+        assert isinstance(models_dict[segment], expected_model_class)

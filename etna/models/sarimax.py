@@ -9,6 +9,7 @@ import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 
 warnings.filterwarnings(
@@ -19,7 +20,7 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXAdapter:
+class _SARIMAXAdapter(BaseAdapter):
     """
     Class for holding Sarimax model.
 
@@ -160,7 +161,7 @@ class _SARIMAXAdapter:
         self.missing = missing
         self.validate_specification = validate_specification
         self.kwargs = kwargs
-        self._model: Optional[SARIMAX] = None
+        self.model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
         self.regressor_columns: Optional[List[str]] = None
 
@@ -196,7 +197,7 @@ class _SARIMAXAdapter:
 
         exog_train = self._select_regressors(df)
 
-        self._model = SARIMAX(
+        self.model = SARIMAX(
             endog=targets,
             exog=exog_train,
             order=self.order,
@@ -218,7 +219,7 @@ class _SARIMAXAdapter:
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        self._result = self._model.fit()
+        self._result = self.model.fit()
         return self
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
@@ -239,7 +240,7 @@ class _SARIMAXAdapter:
         y_pred:
             DataFrame with predictions
         """
-        if self._result is None or self._model is None:
+        if self._result is None or self.model is None:
             raise ValueError("SARIMAX model is not fitted! Fit the model before calling predict method!")
         horizon = len(df)
         self._check_df(df, horizon)

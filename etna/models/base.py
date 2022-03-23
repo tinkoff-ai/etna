@@ -5,6 +5,7 @@ from abc import abstractmethod
 from copy import deepcopy
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -210,6 +211,18 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
             model.fit(df=segment_features, regressors=ts.regressors)
         return self
 
+    def _get_model(self) -> Dict[str, Any]:
+        """Get internal models that are used inside etna class.
+
+        Returns
+        -------
+        result:
+           dictionary where key is segment and value is internal model
+        """
+        if self._models is None:
+            raise ValueError("Can not get the dict with base models, the model is not fitted!")
+        return self._models
+
     def get_model(self) -> Dict[str, Any]:
         """Get internal models that are used inside etna class.
 
@@ -223,7 +236,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         """
         if self._models is None:
             raise ValueError("Can not get the dict with base models, the model is not fitted!")
-        return self._models
+        return {segment: base_model.get_model() for segment, base_model in self._get_model().items()}
 
     @staticmethod
     def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
@@ -269,7 +282,7 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
             Dataset with predictions
         """
         result_list = list()
-        for segment, model in self.get_model().items():
+        for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
             result_list.append(segment_predict)
 
@@ -320,7 +333,7 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
             Dataset with predictions
         """
         result_list = list()
-        for segment, model in self.get_model().items():
+        for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(
                 model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
             )
@@ -404,7 +417,20 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         result:
            Internal model
         """
-        return self._base_model
+        return self._base_model.get_model()
+
+
+class BaseAdapter(ABC):
+    @abstractmethod
+    def fit(self, df: pd.DataFrame, regressors: Iterable[str] = ()) -> "BaseAdapter":
+        pass
+
+    @abstractmethod
+    def predict(self, df: pd.DataFrame, **kwargs):
+        pass
+
+    def get_model(self) -> Any:
+        return self.model
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]

@@ -12,10 +12,11 @@ import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters import HoltWintersResults
 
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
 
 
-class _HoltWintersAdapter:
+class _HoltWintersAdapter(BaseAdapter):
     """
     Class for holding Holt-Winters' exponential smoothing model.
 
@@ -167,7 +168,7 @@ class _HoltWintersAdapter:
         self.damping_trend = damping_trend
         self.fit_kwargs = fit_kwargs
 
-        self._model: Optional[ExponentialSmoothing] = None
+        self.model: Optional[ExponentialSmoothing] = None
         self._result: Optional[HoltWintersResults] = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
@@ -190,7 +191,7 @@ class _HoltWintersAdapter:
         targets = df["target"]
         targets.index = df["timestamp"]
 
-        self._model = ExponentialSmoothing(
+        self.model = ExponentialSmoothing(
             endog=targets,
             trend=self.trend,
             damped_trend=self.damped_trend,
@@ -206,7 +207,7 @@ class _HoltWintersAdapter:
             freq=self.freq,
             missing=self.missing,
         )
-        self._result = self._model.fit(
+        self._result = self.model.fit(
             smoothing_level=self.smoothing_level,
             smoothing_trend=self.smoothing_trend,
             smoothing_seasonal=self.smoothing_seasonal,
@@ -229,7 +230,7 @@ class _HoltWintersAdapter:
         y_pred:
             Array with predictions
         """
-        if self._result is None or self._model is None:
+        if self._result is None or self.model is None:
             raise ValueError("This model is not fitted! Fit the model before calling predict method!")
         self._check_df(df)
 
