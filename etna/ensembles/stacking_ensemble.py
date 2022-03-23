@@ -64,7 +64,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         n_folds: int = 3,
         features_to_use: Union[None, Literal["all"], List[str]] = None,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+        joblib_params: Optional[Dict[str, Any]] = None,
     ):
         """Init StackingEnsemble.
 
@@ -96,7 +96,10 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         self.features_to_use = features_to_use
         self.filtered_features_for_final_model: Union[None, Set[str]] = None
         self.n_jobs = n_jobs
-        self.joblib_params = joblib_params
+        if joblib_params is None:
+            self.joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
+        else:
+            self.joblib_params = joblib_params
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:

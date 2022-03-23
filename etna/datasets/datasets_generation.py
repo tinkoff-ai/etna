@@ -1,4 +1,5 @@
 from typing import List
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ from statsmodels.tsa.arima_process import arma_generate_sample
 def generate_ar_df(
     periods: int,
     start_time: str,
-    ar_coef: list = [1],
+    ar_coef: Optional[list] = None,
     sigma: float = 1,
     n_segments: int = 1,
     freq: str = "1D",
@@ -35,6 +36,8 @@ def generate_ar_df(
     random_seed:
         random seed
     """
+    if ar_coef is None:
+        ar_coef = [1]
     random_sampler = RandomState(seed=random_seed).normal
     ar_coef = np.r_[1, -np.array(ar_coef)]
     ar_samples = arma_generate_sample(
