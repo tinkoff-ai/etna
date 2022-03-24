@@ -178,8 +178,44 @@ def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: i
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (3, 3, -17, np.array([-17, -17, 1, 1, 1, 1, 1, 1, 1, 1])),
-        (3, 1, -17, np.array([-17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1, 1])),
+        (
+            3,
+            3,
+            -17,
+            np.array(
+                [
+                    -17,
+                    -17,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                ]
+            ),
+        ),
+        (
+            3,
+            1,
+            -17,
+            np.array(
+                [
+                    0,
+                    (1 / 4) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                    (2 / 3) ** 0.5,
+                ]
+            ),
+        ),
     ),
 )
 def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):

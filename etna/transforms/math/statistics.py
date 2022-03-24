@@ -1,8 +1,8 @@
 from abc import ABC
 from abc import abstractmethod
-from typing import List
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 from etna.transforms.base import Transform
@@ -46,19 +46,13 @@ class WindowStatisticsTransform(Transform, ABC):
         self.min_periods = min_periods
         self.fillna = fillna
         self.kwargs = kwargs
-        self.min_required_len = max(self.min_periods - 1, 0) * self.seasonality + 1
-        self.history = self.window * self.seasonality
 
     def fit(self, *args) -> "WindowStatisticsTransform":
         """Fits transform."""
         return self
 
-    def _get_required_lags(self, series: pd.Series) -> pd.Series:
-        """Get lags according to given seasonality."""
-        return pd.Series(series.values[::-1][:: self.seasonality])
-
     @abstractmethod
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Aggregate targets from given series."""
         pass
 
@@ -75,27 +69,26 @@ class WindowStatisticsTransform(Transform, ABC):
         result: pd.DataFrame
             dataframe with results
         """
-        features = (
-            df.xs(self.in_column, level=1, axis=1)
-            .rolling(
-                window=self.seasonality * self.window if self.window != -1 else len(df),
-                min_periods=self.min_required_len,
-            )
-            .aggregate(self._aggregate_window)
+        history = self.seasonality * self.window if self.window != -1 else len(df)
+        segments = sorted(df.columns.get_level_values("segment").unique())
+
+        x = df.loc[pd.IndexSlice[:], pd.IndexSlice[segments, self.in_column]].values[::-1]
+        x = np.append(x, np.empty((history - 1, x.shape[1])) * np.nan, axis=0)
+        x = np.lib.stride_tricks.sliding_window_view(x, window_shape=(history, 1))[:, :, :: self.seasonality]
+        x = np.squeeze(x, axis=-1)
+
+        window = self.window if self.window != -1 else len(df)
+        nan_per_window_counts = np.sum(np.isnan(x), axis=2)
+        non_nan_per_window_counts = window - nan_per_window_counts
+
+        y = self._aggregate(series=x)
+        y[non_nan_per_window_counts < self.min_periods] = np.nan
+        y = np.nan_to_num(y, copy=False, nan=self.fillna)[::-1]
+
+        result = df.join(
+            pd.DataFrame(y, columns=pd.MultiIndex.from_product([segments, [self.out_column_name]]), index=df.index)
         )
-        features.fillna(value=self.fillna, inplace=True)
-
-        dataframes = []
-        for seg in df.columns.get_level_values(0).unique():
-            feature = features[seg].rename(self.out_column_name)
-            tmp = df[seg].join(feature)
-            _idx = tmp.columns.to_frame()
-            _idx.insert(0, "segment", seg)
-            tmp.columns = pd.MultiIndex.from_frame(_idx)
-            dataframes.append(tmp)
-
-        result = pd.concat(dataframes, axis=1).sort_index(axis=1)
-        result.columns.names = ["segment", "feature"]
+        result = result.sort_index(axis=1)
         return result
 
 
@@ -141,7 +134,7 @@ class MeanTransform(WindowStatisticsTransform):
         self.seasonality = seasonality
         self.alpha = alpha
         self.min_periods = min_periods
-        self._alpha_range: Optional[List[float]] = None
+        self._alpha_range: Optional[np.ndarray] = None
         self.fillna = fillna
         self.out_column = out_column
         super().__init__(
@@ -167,17 +160,16 @@ class MeanTransform(WindowStatisticsTransform):
             dataframe with results
         """
         size = self.window if self.window != -1 else len(df)
-        self._alpha_range = [self.alpha ** i for i in range(0, size)]
+        self._alpha_range = np.array([self.alpha ** i for i in range(0, size)])
         return super().transform(df=df)
 
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute weighted average for window series."""
         if self._alpha_range is None:
             raise ValueError("Something went wrong generating the alphas!")
-        tmp_series = self._get_required_lags(series)
-        size = len(tmp_series)
-        tmp = tmp_series * self._alpha_range[:size]
-        return tmp.mean(**self.kwargs)
+        series = self._alpha_range[np.newaxis, np.newaxis, :] * series
+        series = np.nanmean(series, axis=2)
+        return series
 
 
 class StdTransform(WindowStatisticsTransform):
@@ -230,10 +222,10 @@ class StdTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute std over the series."""
-        tmp_series = self._get_required_lags(series)
-        return tmp_series.std(**self.kwargs)
+        series = np.nanstd(series, axis=2)
+        return series
 
 
 class QuantileTransform(WindowStatisticsTransform):
@@ -285,10 +277,10 @@ class QuantileTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute quantile over the series."""
-        tmp_series = self._get_required_lags(series)
-        return tmp_series.quantile(q=self.quantile, **self.kwargs)
+        series = np.nanquantile(series, self.quantile, axis=2)
+        return series
 
 
 class MinTransform(WindowStatisticsTransform):
@@ -336,10 +328,10 @@ class MinTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute min over the series."""
-        tmp_series = self._get_required_lags(series)
-        return tmp_series.min(**self.kwargs)
+        series = np.nanmin(series, axis=2)
+        return series
 
 
 class MaxTransform(WindowStatisticsTransform):
@@ -387,10 +379,10 @@ class MaxTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute max over the series."""
-        tmp_series = self._get_required_lags(series)
-        return tmp_series.max(**self.kwargs)
+        series = np.nanmax(series, axis=2)
+        return series
 
 
 class MedianTransform(WindowStatisticsTransform):
@@ -438,10 +430,10 @@ class MedianTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def _aggregate_window(self, series: pd.Series) -> float:
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute median over the series."""
-        tmp_series = self._get_required_lags(series)
-        return tmp_series.median(**self.kwargs)
+        series = np.nanmedian(series, axis=2)
+        return series
 
 
 class MADTransform(WindowStatisticsTransform):
@@ -489,11 +481,11 @@ class MADTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def _aggregate_window(self, series: pd.Series) -> float:
-        tmp_series = self._get_required_lags(series)
-        mean = tmp_series.mean(**self.kwargs)
-        ad = (tmp_series - mean).abs()
-        mad = ad.mean()
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
+        """Compute median over the series."""
+        mean = np.nanmean(series, axis=2)
+        ad = np.abs(series - mean[:, :, np.newaxis])
+        mad = np.nanmean(ad, axis=2)
         return mad
 
 
