@@ -61,7 +61,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         regressor: TreeBasedRegressor = RandomForestRegressor(n_estimators=5),
         n_folds: int = 3,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+        joblib_params: Optional[Dict[str, Any]] = None,
     ):
         """Init VotingEnsemble.
 
@@ -100,7 +100,10 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self.n_folds = n_folds
         self.pipelines = pipelines
         self.n_jobs = n_jobs
-        self.joblib_params = joblib_params
+        if joblib_params is None:
+            self.joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
+        else:
+            self.joblib_params = joblib_params
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     @staticmethod

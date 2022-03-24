@@ -160,7 +160,7 @@ class AbstractPipeline(ABC):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+        joblib_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -261,7 +261,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """
         if self.ts is None:
             raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} before calling forecast method."
+                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
+                f"before calling forecast method."
             )
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
@@ -469,7 +470,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+        joblib_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -495,6 +496,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         metrics_df, forecast_df, fold_info_df:
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
+        if joblib_params is None:
+            joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
+
         self._init_backtest()
         self._validate_backtest_metrics(metrics=metrics)
         masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode)
