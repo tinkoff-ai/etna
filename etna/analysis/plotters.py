@@ -446,7 +446,8 @@ def plot_backtest_interactive(
 
 def plot_anomalies(
     ts: "TSDataset",
-    anomaly_dict: Dict[str, List[np.datetime64]],
+    anomaly_dict: Dict[str, List[pd.Timestamp]],
+    in_column: str = "target",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
@@ -459,6 +460,8 @@ def plot_anomalies(
         TSDataset of timeseries that was used for detect anomalies
     anomaly_dict:
         dictionary derived from anomaly detection function
+    in_column:
+        column to plot
     segments:
         segments to plot
     columns_num:
@@ -476,10 +479,10 @@ def plot_anomalies(
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
+        ax[i].plot(segment_df.index.values, segment_df[in_column].values, c="b")
 
         anomaly = sorted(anomaly)  # type: ignore
-        ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)]["target"].values, c="r")
+        ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
 
@@ -557,6 +560,7 @@ def plot_anomalies_interactive(
     segment: str,
     method: Callable[..., Dict[str, List[pd.Timestamp]]],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
+    in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
 ):
     """Plot a time series with indicated anomalies.
@@ -573,6 +577,8 @@ def plot_anomalies_interactive(
         Method for outliers detection
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
+    in_column:
+        column to plot
     figsize:
         size of the figure in inches
 
@@ -598,7 +604,7 @@ def plot_anomalies_interactive(
 
     from etna.datasets import TSDataset
 
-    df = ts[:, segment, "target"]
+    df = ts[:, segment, in_column]
     ts = TSDataset(ts[:, segment, :], ts.freq)
     x, y = df.index.values, df.values
     cache = {}
