@@ -5,7 +5,6 @@ from abc import abstractmethod
 from copy import deepcopy
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -212,7 +211,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         return self
 
     def _get_model(self) -> Dict[str, Any]:
-        """Get internal models that are used inside etna class.
+        """Get internal etna base models that are used inside etna class.
 
         Returns
         -------
@@ -234,9 +233,11 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         result:
            dictionary where key is segment and value is internal model
         """
-        if self._models is None:
-            raise ValueError("Can not get the dict with base models, the model is not fitted!")
-        return {segment: base_model.get_model() for segment, base_model in self._get_model().items()}
+        internal_models = {
+            segment: base_model.get_model() if hasattr(base_model, "get_model") else base_model
+            for segment, base_model in self._get_model().items()
+        }
+        return internal_models
 
     @staticmethod
     def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
@@ -417,19 +418,35 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         result:
            Internal model
         """
-        return self._base_model.get_model()
+        if hasattr(self._base_model, "get_model"):
+            return self._base_model.get_model()
+        return self._base_model
 
 
 class BaseAdapter(ABC):
-    @abstractmethod
-    def fit(self, df: pd.DataFrame, regressors: Iterable[str] = ()) -> "BaseAdapter":
-        pass
+    """Base class for models adapter."""
 
-    @abstractmethod
-    def predict(self, df: pd.DataFrame, **kwargs):
-        pass
+    def __init__(self, model: Any):
+        """Init BaseAdapter.
+
+        Parameters
+        ----------
+        model:
+            Internal model that will be used for forecasting.
+        """
+        self.model = model
 
     def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
+        or `sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
         return self.model
 
 
