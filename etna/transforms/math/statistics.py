@@ -167,7 +167,7 @@ class MeanTransform(WindowStatisticsTransform):
         """Compute weighted average for window series."""
         if self._alpha_range is None:
             raise ValueError("Something went wrong generating the alphas!")
-        series = self._alpha_range[np.newaxis, np.newaxis, :] * series
+        #series = self._alpha_range[np.newaxis, np.newaxis, : series.shape[-1]] * series
         series = np.nanmean(series, axis=2)
         return series
 
@@ -188,6 +188,7 @@ class StdTransform(WindowStatisticsTransform):
         min_periods: int = 1,
         fillna: float = 0,
         out_column: Optional[str] = None,
+        ddof: int = 1,
     ):
         """Init StdTransform.
 
@@ -206,6 +207,8 @@ class StdTransform(WindowStatisticsTransform):
             value to fill results NaNs with
         out_column: str, optional
             result column name. If not given use `self.__repr__()`
+        ddof:
+            delta degrees of freedom; the divisor used in calculations is N - ddof, where N is the number of elements
         """
         self.in_column = in_column
         self.window = window
@@ -213,6 +216,7 @@ class StdTransform(WindowStatisticsTransform):
         self.min_periods = min_periods
         self.fillna = fillna
         self.out_column = out_column
+        self.ddof = ddof
         super().__init__(
             window=window,
             in_column=in_column,
@@ -224,7 +228,7 @@ class StdTransform(WindowStatisticsTransform):
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute std over the series."""
-        series = np.nanstd(series, axis=2)
+        series = np.nanstd(series, axis=2, ddof=self.ddof)
         return series
 
 
