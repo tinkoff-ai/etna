@@ -60,6 +60,16 @@ class _SklearnAdapter(BaseAdapter):
         pred = self.model.predict(features)
         return pred
 
+    def get_model(self) -> RegressorMixin:
+        """Get internal sklearn model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self.model
+
 
 class SklearnPerSegmentModel(PerSegmentModel):
     """Class for holding per segment Sklearn model."""

@@ -168,7 +168,7 @@ class _HoltWintersAdapter(BaseAdapter):
         self.damping_trend = damping_trend
         self.fit_kwargs = fit_kwargs
 
-        self.model: Optional[ExponentialSmoothing] = None
+        self._model: Optional[ExponentialSmoothing] = None
         self._result: Optional[HoltWintersResults] = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
@@ -191,7 +191,7 @@ class _HoltWintersAdapter(BaseAdapter):
         targets = df["target"]
         targets.index = df["timestamp"]
 
-        self.model = ExponentialSmoothing(
+        self._model = ExponentialSmoothing(
             endog=targets,
             trend=self.trend,
             damped_trend=self.damped_trend,
@@ -207,7 +207,7 @@ class _HoltWintersAdapter(BaseAdapter):
             freq=self.freq,
             missing=self.missing,
         )
-        self._result = self.model.fit(
+        self._result = self._model.fit(
             smoothing_level=self.smoothing_level,
             smoothing_trend=self.smoothing_trend,
             smoothing_seasonal=self.smoothing_seasonal,
@@ -230,7 +230,7 @@ class _HoltWintersAdapter(BaseAdapter):
         y_pred:
             Array with predictions
         """
-        if self._result is None or self.model is None:
+        if self._result is None or self._model is None:
             raise ValueError("This model is not fitted! Fit the model before calling predict method!")
         self._check_df(df)
 
@@ -246,6 +246,16 @@ class _HoltWintersAdapter(BaseAdapter):
                 message=f"This model does not work with exogenous features and regressors.\n "
                 f"{columns_not_used} will be dropped"
             )
+
+    def get_model(self) -> ExponentialSmoothing:
+        """Get internal statsmodels.tsa.holtwinters.ExponentialSmoothing model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self._model
 
 
 class HoltWintersModel(PerSegmentModel):

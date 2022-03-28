@@ -1,4 +1,5 @@
 import warnings
+from typing import Dict
 from typing import List
 
 import numpy as np
@@ -116,6 +117,16 @@ class SeasonalMovingAverageModel(PerSegmentModel):
         super(SeasonalMovingAverageModel, self).__init__(
             base_model=_SeasonalMovingAverageModel(window=window, seasonality=seasonality)
         )
+
+    def get_model(self) -> Dict[str, "SeasonalMovingAverageModel"]:
+        """Get internal model.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self._get_model()
 
 
 __all__ = ["SeasonalMovingAverageModel"]

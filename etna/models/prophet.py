@@ -139,6 +139,16 @@ class _ProphetAdapter(BaseAdapter):
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
 
+    def get_model(self) -> Prophet:
+        """Get internal prophet.Prophet model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self.model
+
 
 class ProphetModel(PerSegmentPredictionIntervalModel):
     """Class for holding Prophet model.

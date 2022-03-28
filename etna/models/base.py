@@ -233,10 +233,13 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         result:
            dictionary where key is segment and value is internal model
         """
-        internal_models = {
-            segment: base_model.get_model() if hasattr(base_model, "get_model") else base_model
-            for segment, base_model in self._get_model().items()
-        }
+        internal_models = {}
+        for segment, base_model in self._get_model().items():
+            if not hasattr(base_model, "get_model"):
+                raise NotImplementedError(
+                    f"get_model method is not implemented for {self._base_model.__class__.__name__}"
+                )
+            internal_models[segment] = base_model.get_model()
         return internal_models
 
     @staticmethod
@@ -418,24 +421,15 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         result:
            Internal model
         """
-        if hasattr(self._base_model, "get_model"):
-            return self._base_model.get_model()
-        return self._base_model
+        if not hasattr(self._base_model, "get_model"):
+            raise NotImplementedError(f"get_model method is not implemented for {self._base_model.__class__.__name__}")
+        return self._base_model.get_model()
 
 
 class BaseAdapter(ABC):
     """Base class for models adapter."""
 
-    def __init__(self, model: Any):
-        """Init BaseAdapter.
-
-        Parameters
-        ----------
-        model:
-            Internal model that will be used for forecasting.
-        """
-        self.model = model
-
+    @abstractmethod
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.
 
@@ -447,7 +441,7 @@ class BaseAdapter(ABC):
         result:
            Internal model
         """
-        return self.model
+        pass
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]

@@ -75,6 +75,16 @@ class _CatBoostAdapter(BaseAdapter):
         pred = self.model.predict(predict_pool)
         return pred
 
+    def get_model(self) -> CatBoostRegressor:
+        """Get internal catboost.CatBoostRegressor model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self.model
+
 
 class CatBoostModelPerSegment(PerSegmentModel):
     """Class for holding per segment Catboost model.

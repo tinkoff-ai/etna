@@ -238,7 +238,7 @@ def test_get_model_multi(etna_class, expected_model_class):
 
 
 def test_get_model_per_segment_before_training():
-    """Check that get_model methid throws an error if per-segment model is not fitted yet."""
+    """Check that get_model method throws an error if per-segment model is not fitted yet."""
     etna_model = LinearPerSegmentModel()
     with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
         _ = etna_model.get_model()
