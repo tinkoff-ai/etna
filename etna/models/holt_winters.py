@@ -12,10 +12,11 @@ import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters import HoltWintersResults
 
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
 
 
-class _HoltWintersAdapter:
+class _HoltWintersAdapter(BaseAdapter):
     """
     Class for holding Holt-Winters' exponential smoothing model.
 
@@ -245,6 +246,16 @@ class _HoltWintersAdapter:
                 message=f"This model does not work with exogenous features and regressors.\n "
                 f"{columns_not_used} will be dropped"
             )
+
+    def get_model(self) -> ExponentialSmoothing:
+        """Get internal statsmodels.tsa.holtwinters.ExponentialSmoothing model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self._model
 
 
 class HoltWintersModel(PerSegmentModel):
