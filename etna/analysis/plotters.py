@@ -1175,6 +1175,12 @@ def plot_holidays(
 ):
     """Plot holidays for segments.
 
+    Sequence of timestamps with one holiday is drawn as a colored region.
+    Individual holiday is drawn like a colored point.
+
+    It is not possible to distinguish points plotted at one timestamp, but this case is considered rare.
+    This the problem isn't relevant for region drawing because they are partially transparent.
+
     Parameters
     ----------
     ts:
@@ -1184,10 +1190,9 @@ def plot_holidays(
 
         * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
 
-        * if DataFrame, then dataframe with holidays is expected in
-        `Prophet format <https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html>`_.
+        * if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
+        In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
 
-        It is expected that there is only one holiday on each timestamp.
     segments:
         segments to use
     columns_num:
