@@ -26,6 +26,7 @@ from etna.analysis.plotters import plot_clusters
 from etna.analysis.plotters import plot_correlation_matrix
 from etna.analysis.plotters import plot_feature_relevance
 from etna.analysis.plotters import plot_forecast
+from etna.analysis.plotters import plot_holidays
 from etna.analysis.plotters import plot_imputation
 from etna.analysis.plotters import plot_periodogram
 from etna.analysis.plotters import plot_residuals
