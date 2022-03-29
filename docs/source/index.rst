@@ -1,5 +1,5 @@
-Welcome to ETNA's documentation!
-=====================================
+Welcome to ETNA's documentation
+===============================
 
 
 .. toctree::
