@@ -6,8 +6,6 @@ on:
       - master
       
 jobs:
-  publish:
-
   build-docs:
     runs-on: ubuntu-latest
     steps:
