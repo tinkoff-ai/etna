@@ -1,0 +1,46 @@
+name: Build docs from truck
+
+on:
+  push:
+    branches:
+      - master
+      
+jobs:
+  publish:
+
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          sudo apt install pandoc
+          pip install poetry
+          poetry --version
+          poetry config virtualenvs.in-project true
+          poetry install -vv
+          poetry install -E docs
+          poetry install -E all
+      - name: Build docs
+        run: |
+          cd docs
+          cp ../examples/*.ipynb source/tutorials
+          poetry run make clean ; poetry run make html
+          mv build/html/ ../site
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v1.2
+        with:
+          publish-dir: './site'
+          production-branch: master
+          alias: 'unstable'
+          production-deploy: false
+          deploy-message: "Deploy from GitHub Actions"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
