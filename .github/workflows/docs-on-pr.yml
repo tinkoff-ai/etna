@@ -1,3 +1,5 @@
+name: Build docs on PR
+
 on:
   pull_request:
     types: [opened, synchronize]
