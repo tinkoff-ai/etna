@@ -1,7 +1,10 @@
 import pandas as pd
+import pytest
+from prophet import Prophet
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
+from etna.pipeline import Pipeline
 
 
 def test_run(new_format_df):
@@ -66,3 +69,20 @@ def test_prophet_save_regressors_on_fit(example_reg_tsds):
     model.fit(ts=example_reg_tsds)
     for segment_model in model._models.values():
         assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
+
+
+def test_get_model_before_training():
+    """Check that get_model method throws an error if per-segment model is not fitted yet."""
+    etna_model = ProphetModel()
+    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
+        _ = etna_model.get_model()
+
+
+def test_get_model_after_training(example_tsds):
+    """Check that get_model method returns dict of objects of Prophet class."""
+    pipeline = Pipeline(model=ProphetModel())
+    pipeline.fit(ts=example_tsds)
+    models_dict = pipeline.model.get_model()
+    assert isinstance(models_dict, dict)
+    for segment in example_tsds.segments:
+        assert isinstance(models_dict[segment], Prophet)

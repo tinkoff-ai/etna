@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 - Add prediction_actual_scatter_plot ([#610](https://github.com/tinkoff-ai/etna/pull/610))
--
+- Add plot_holidays ([#624](https://github.com/tinkoff-ai/etna/pull/624))
 
 
 ### Changed
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 - 
-- 
+- Fixed bug in models `get_model` method ([#623](https://github.com/tinkoff-ai/etna/pull/623))
 - Fixed unsafe comparison in plots ([#611](https://github.com/tinkoff-ai/etna/pull/611))
 - Fixed plot_trend does not work with Linear and TheilSen transforms ([#617](https://github.com/tinkoff-ai/etna/pull/617))
 - 
