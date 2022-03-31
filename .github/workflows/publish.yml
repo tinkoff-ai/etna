@@ -70,6 +70,9 @@ jobs:
           cp ../examples/*.ipynb source/tutorials
           poetry run make clean ; poetry run make html
           mv build/html/ ../site
+        env:
+          CI_COMMIT_SHORT_SHA: ${{ github.sha }}
+          CI_COMMIT_BRANCH: ${{ github.ref_name }}
       - name: Deploy to Netlify
         if: steps.check-tag.outputs.IS_LATEST == 'true'
         uses: nwtgck/actions-netlify@v1.2

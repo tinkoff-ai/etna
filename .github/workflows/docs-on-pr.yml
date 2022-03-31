@@ -29,7 +29,7 @@ jobs:
          if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
          run: |
            poetry install -E all -vv
-       - name: Install docs deps
+       - name: Install docs dependencies
          run: |
            sudo apt install pandoc
            poetry install -E docs
