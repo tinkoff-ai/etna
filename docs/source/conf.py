@@ -23,7 +23,7 @@ SOURCE_PATH = Path(os.path.dirname(__file__))  # noqa # docs source
 PROJECT_PATH = SOURCE_PATH.joinpath("../..")  # noqa # project root
 
 COMMIT_SHORT_SHA = os.environ["CI_COMMIT_SHORT_SHA"]
-CI_COMMIT_BRANCH = os.environ["CI_COMMIT_BRANCH"]
+WORKFLOW_NAME = os.environ["WORKFLOW_NAME"]
 
 sys.path.insert(0, str(PROJECT_PATH))  # noqa
 
@@ -40,7 +40,10 @@ with open(PROJECT_PATH / "pyproject.toml", "r") as f:
     pyproject_toml = toml.load(f)
 
 
-release = f"{COMMIT_SHORT_SHA}"
+if WORKFLOW_NAME == "Publish":
+    release = pyproject_toml["tool"]["poetry"]["version"]
+else:
+    release = f"{COMMIT_SHORT_SHA}"
 
 
 # -- General configuration ---------------------------------------------------

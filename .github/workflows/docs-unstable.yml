@@ -41,7 +41,7 @@ jobs:
           mv build/html/ ../site
         env:
           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
-          CI_COMMIT_BRANCH: ${{ github.ref_name }}
+          WORKFLOW_NAME: ${{ github.workflow }}
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v1.2
         with:
