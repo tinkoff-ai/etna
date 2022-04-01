@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Masked backtest ([#613](https://github.com/tinkoff-ai/etna/pull/613))
 - 
-- 
+- Add seasonal_plot ([#628](https://github.com/tinkoff-ai/etna/pull/628))
 - 
 - Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
 -
