@@ -495,7 +495,7 @@ def _get_seasonal_cycle_name(
 ) -> pd.Series:
     """Get unique name for each cycle in a series with timestamps."""
     if isinstance(cycle, int):
-        row_numbers = pd.Series(np.arange(len(timestamp.sort_values())))
+        row_numbers = pd.Series(np.arange(len(timestamp)))
         return (row_numbers // cycle + 1).astype(str)
     elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.hour:
         return timestamp.dt.strftime("%Y-%m-%d %H")
