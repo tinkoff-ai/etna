@@ -4,6 +4,7 @@ import pytest
 
 from etna.analysis.eda_utils import _resample
 from etna.analysis.eda_utils import _seasonal_split
+from etna.analysis.eda_utils import seasonal_plot
 from etna.datasets import TSDataset
 
 
@@ -99,3 +100,19 @@ def test_resample(timestamp, values, resample_freq, aggregation, expected_timest
         .reset_index(drop=True)
         .equals(pd.Series(expected_values))
     )
+
+
+@pytest.mark.parametrize(
+    "freq, cycle, additional_params",
+    [
+        ("D", 5, dict(alignment="first")),
+        ("D", 5, dict(alignment="last")),
+        ("D", "week", {}),
+        ("D", "month", {}),
+        ("D", "year", {}),
+        ("M", "year", dict(aggregation="sum")),
+        ("M", "year", dict(aggregation="mean")),
+    ],
+)
+def test_dummy_seasonal_plot(freq, cycle, additional_params, ts_with_different_series_length):
+    seasonal_plot(ts=ts_with_different_series_length, freq=freq, cycle=cycle, **additional_params)
