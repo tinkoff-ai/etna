@@ -4,6 +4,7 @@ from enum import Enum
 from itertools import combinations
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -494,21 +495,20 @@ def _get_seasonal_cycle_name(
     ],
 ) -> pd.Series:
     """Get unique name for each cycle in a series with timestamps."""
+    cycle_functions: Dict[SeasonalPlotCycle, Callable[[pd.Series], pd.Series]] = {
+        SeasonalPlotCycle.hour: lambda x: x.dt.strftime("%Y-%m-%d %H"),
+        SeasonalPlotCycle.day: lambda x: x.dt.strftime("%Y-%m-%d"),
+        SeasonalPlotCycle.week: lambda x: x.dt.strftime("%Y-%W"),
+        SeasonalPlotCycle.month: lambda x: x.dt.strftime("%Y-%b"),
+        SeasonalPlotCycle.quarter: lambda x: x.apply(lambda x: f"{x.year}-{x.quarter}"),
+        SeasonalPlotCycle.year: lambda x: x.dt.strftime("%Y"),
+    }
+
     if isinstance(cycle, int):
         row_numbers = pd.Series(np.arange(len(timestamp)))
         return (row_numbers // cycle + 1).astype(str)
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.hour:
-        return timestamp.dt.strftime("%Y-%m-%d %H")
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.day:
-        return timestamp.dt.strftime("%Y-%m-%d")
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.week:
-        return timestamp.dt.strftime("%Y-%W")
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.month:
-        return timestamp.dt.strftime("%Y-%b")
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.quarter:
-        return timestamp.apply(lambda x: f"{x.year}-{x.quarter}")
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.year:
-        return timestamp.dt.strftime("%Y")
+    else:
+        return cycle_functions[SeasonalPlotCycle(cycle)](timestamp)
 
 
 def _get_seasonal_in_cycle_num(
@@ -520,30 +520,25 @@ def _get_seasonal_in_cycle_num(
     freq: str,
 ) -> pd.Series:
     """Get number for each point within cycle in a series of timestamps."""
+    cycle_functions: Dict[Tuple[SeasonalPlotCycle, str], Callable[[pd.Series], pd.Series]] = {
+        (SeasonalPlotCycle.hour, "T"): lambda x: x.dt.minute,
+        (SeasonalPlotCycle.day, "H"): lambda x: x.dt.hour,
+        (SeasonalPlotCycle.week, "D"): lambda x: x.dt.weekday,
+        (SeasonalPlotCycle.month, "D"): lambda x: x.dt.day,
+        (SeasonalPlotCycle.quarter, "D"): lambda x: (x - pd.PeriodIndex(timestamp, freq="Q").start_time).dt.days,
+        (SeasonalPlotCycle.year, "D"): lambda x: x.dt.dayofyear,
+        (SeasonalPlotCycle.year, "Q"): lambda x: x.dt.quarter,
+        (SeasonalPlotCycle.year, "QS"): lambda x: x.dt.quarter,
+        (SeasonalPlotCycle.year, "M"): lambda x: x.dt.month,
+        (SeasonalPlotCycle.year, "MS"): lambda x: x.dt.month,
+    }
+
     if isinstance(cycle, int):
         pass
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.hour:
-        if freq == "T":
-            return timestamp.dt.minute
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.day:
-        if freq == "H":
-            return timestamp.dt.hour
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.week:
-        if freq == "D":
-            return timestamp.dt.weekday
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.month:
-        if freq == "D":
-            return timestamp.dt.day
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.quarter:
-        if freq == "D":
-            return (timestamp - pd.PeriodIndex(timestamp, freq="Q").start_time).dt.days
-    elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.year:
-        if freq == "D":
-            return timestamp.dt.dayofyear
-        if freq == "Q" or freq == "QS":
-            return timestamp.dt.quarter
-        if freq == "M" or freq == "MS":
-            return timestamp.dt.month
+    else:
+        key = (SeasonalPlotCycle(cycle), freq)
+        if key in cycle_functions:
+            return cycle_functions[key](timestamp)
 
     # in all other cases we can use numbers within each group
     cycle_df = pd.DataFrame({"timestamp": timestamp.tolist(), "cycle_name": cycle_name.tolist()})
