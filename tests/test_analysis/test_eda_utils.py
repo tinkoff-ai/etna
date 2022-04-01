@@ -63,7 +63,7 @@ from etna.datasets import TSDataset
     ],
 )
 def test_seasonal_split(timestamp, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names):
-    cycle_df = _seasonal_split(timestamp=timestamp.to_series(), freq=timestamp.freq, cycle=cycle)
+    cycle_df = _seasonal_split(timestamp=timestamp.to_series(), freq=timestamp.freq.freqstr, cycle=cycle)
     assert cycle_df["cycle_name"].tolist() == expected_cycle_names
     assert cycle_df["in_cycle_num"].tolist() == expected_in_cycle_nums
     assert cycle_df["in_cycle_name"].tolist() == expected_in_cycle_names

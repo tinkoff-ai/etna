@@ -525,7 +525,7 @@ def _get_seasonal_in_cycle_num(
         (SeasonalPlotCycle.day, "H"): lambda x: x.dt.hour,
         (SeasonalPlotCycle.week, "D"): lambda x: x.dt.weekday,
         (SeasonalPlotCycle.month, "D"): lambda x: x.dt.day,
-        (SeasonalPlotCycle.quarter, "D"): lambda x: (x - pd.PeriodIndex(timestamp, freq="Q").start_time).dt.days,
+        (SeasonalPlotCycle.quarter, "D"): lambda x: (x - pd.PeriodIndex(x, freq="Q").start_time).dt.days,
         (SeasonalPlotCycle.year, "D"): lambda x: x.dt.dayofyear,
         (SeasonalPlotCycle.year, "Q"): lambda x: x.dt.quarter,
         (SeasonalPlotCycle.year, "QS"): lambda x: x.dt.quarter,
