@@ -1,3 +1,4 @@
+import itertools
 import math
 import warnings
 from copy import deepcopy
@@ -10,14 +11,17 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Tuple
+from typing import Type
 from typing import Union
 
+import holidays as holidays_lib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly
 import plotly.graph_objects as go
 import seaborn as sns
+from matplotlib.lines import Line2D
 from scipy.signal import periodogram
 from typing_extensions import Literal
 
@@ -1016,7 +1020,7 @@ def plot_imputation(
     segments:
         segments to use
     columns_num:
-        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+        number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
     """
@@ -1078,7 +1082,7 @@ def plot_periodogram(
     segments:
         segments to use
     columns_num:
-        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+        if `amplitude_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
     figsize:
         size of the figure per subplot with one segment in inches
 
@@ -1146,3 +1150,114 @@ def plot_periodogram(
         ax.set_xlabel("Frequency")  # type: ignore
         ax.set_ylabel("Power spectral density")  # type: ignore
         ax.set_title("Periodogram")  # type: ignore
+
+
+def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
+    holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
+    holiday_names = holiday_names.difference({None})
+
+    holidays_dict = {}
+    for holiday_name in holiday_names:
+        cur_holiday_index = pd.Series(timestamp).apply(lambda x: country_holidays.get(x, "") == holiday_name)
+        holidays_dict[holiday_name] = cur_holiday_index
+
+    holidays_df = pd.DataFrame(holidays_dict)
+    holidays_df.index = timestamp
+    return holidays_df
+
+
+def plot_holidays(
+    ts: "TSDataset",
+    holidays: Union[str, pd.DataFrame],
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot holidays for segments.
+
+    Sequence of timestamps with one holiday is drawn as a colored region.
+    Individual holiday is drawn like a colored point.
+
+    It is not possible to distinguish points plotted at one timestamp, but this case is considered rare.
+    This the problem isn't relevant for region drawing because they are partially transparent.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    holidays:
+        there are several options:
+
+        * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
+
+        * if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
+        In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+
+    segments:
+        segments to use
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if segments is None:
+        segments = sorted(ts.segments)
+
+    if isinstance(holidays, str):
+        holidays_df = _create_holidays_df(
+            country_holidays=holidays_lib.CountryHoliday(country=holidays), timestamp=ts.index.tolist()
+        )
+    elif isinstance(holidays, pd.DataFrame):
+        holidays_df = holidays
+    else:
+        raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    df = ts.to_pandas()
+
+    for i, segment in enumerate(segments):
+        segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+        segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+
+        # plot target on segment
+        target_plot = ax[i].plot(segment_df.index, segment_df)
+        target_color = target_plot[0].get_color()
+
+        # plot holidays on segment
+        # remember color of each holiday to reuse it
+        default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        default_colors.remove(target_color)
+        color_cycle = itertools.cycle(default_colors)
+        holidays_colors = {holiday_name: next(color_cycle) for holiday_name in holidays_df.columns}
+
+        for holiday_name in holidays_df.columns:
+            holiday_df = holidays_df.loc[segment_df.index, holiday_name]
+            for _, holiday_group in itertools.groupby(enumerate(holiday_df.tolist()), key=lambda x: x[1]):
+                holiday_group_cached = list(holiday_group)
+                indices = [x[0] for x in holiday_group_cached]
+                values = [x[1] for x in holiday_group_cached]
+
+                # if we have group with zero value, then it is not a holidays, skip it
+                if values[0] == 0:
+                    continue
+
+                color = holidays_colors[holiday_name]
+                if len(indices) == 1:
+                    # plot individual holiday point
+                    ax[i].scatter(segment_df.index[indices[0]], segment_df.iloc[indices[0]], color=color, zorder=2)
+                else:
+                    # plot span with holiday borders
+                    x_min = segment_df.index[indices[0]]
+                    x_max = segment_df.index[indices[-1]]
+                    ax[i].axvline(x_min, color=color, linestyle="dashed")
+                    ax[i].axvline(x_max, color=color, linestyle="dashed")
+                    ax[i].axvspan(xmin=x_min, xmax=x_max, alpha=1 / 4, color=color)
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
+
+        legend_handles = [
+            Line2D([0], [0], marker="o", color=color, label=label) for label, color in holidays_colors.items()
+        ]
+        ax[i].legend(handles=legend_handles)

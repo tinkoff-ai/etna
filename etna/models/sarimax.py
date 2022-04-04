@@ -9,6 +9,7 @@ import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 
 warnings.filterwarnings(
@@ -19,7 +20,7 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXAdapter:
+class _SARIMAXAdapter(BaseAdapter):
     """
     Class for holding Sarimax model.
 
@@ -306,6 +307,16 @@ class _SARIMAXAdapter:
         else:
             exog_future = None
         return exog_future
+
+    def get_model(self) -> SARIMAX:
+        """Get internal statsmodels.tsa.statespace.sarimax.SARIMAX model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self._model
 
 
 class SARIMAXModel(PerSegmentPredictionIntervalModel):

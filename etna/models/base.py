@@ -210,6 +210,18 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
             model.fit(df=segment_features, regressors=ts.regressors)
         return self
 
+    def _get_model(self) -> Dict[str, Any]:
+        """Get internal etna base models that are used inside etna class.
+
+        Returns
+        -------
+        result:
+           dictionary where key is segment and value is internal model
+        """
+        if self._models is None:
+            raise ValueError("Can not get the dict with base models, the model is not fitted!")
+        return self._models
+
     def get_model(self) -> Dict[str, Any]:
         """Get internal models that are used inside etna class.
 
@@ -221,9 +233,14 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         result:
            dictionary where key is segment and value is internal model
         """
-        if self._models is None:
-            raise ValueError("Can not get the dict with base models, the model is not fitted!")
-        return self._models
+        internal_models = {}
+        for segment, base_model in self._get_model().items():
+            if not hasattr(base_model, "get_model"):
+                raise NotImplementedError(
+                    f"get_model method is not implemented for {self._base_model.__class__.__name__}"
+                )
+            internal_models[segment] = base_model.get_model()
+        return internal_models
 
     @staticmethod
     def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
@@ -269,7 +286,7 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
             Dataset with predictions
         """
         result_list = list()
-        for segment, model in self.get_model().items():
+        for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
             result_list.append(segment_predict)
 
@@ -320,7 +337,7 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
             Dataset with predictions
         """
         result_list = list()
-        for segment, model in self.get_model().items():
+        for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(
                 model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
             )
@@ -404,7 +421,27 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         result:
            Internal model
         """
-        return self._base_model
+        if not hasattr(self._base_model, "get_model"):
+            raise NotImplementedError(f"get_model method is not implemented for {self._base_model.__class__.__name__}")
+        return self._base_model.get_model()
+
+
+class BaseAdapter(ABC):
+    """Base class for models adapter."""
+
+    @abstractmethod
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
+        or `sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        pass
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]

@@ -6,11 +6,12 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
 
+from etna.models.base import BaseAdapter
 from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
 
 
-class _CatBoostAdapter:
+class _CatBoostAdapter(BaseAdapter):
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -73,6 +74,16 @@ class _CatBoostAdapter:
         predict_pool = Pool(features, cat_features=self._categorical)
         pred = self.model.predict(predict_pool)
         return pred
+
+    def get_model(self) -> CatBoostRegressor:
+        """Get internal catboost.CatBoostRegressor model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self.model
 
 
 class CatBoostModelPerSegment(PerSegmentModel):
