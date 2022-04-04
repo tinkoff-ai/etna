@@ -2,6 +2,7 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Optional
 
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 
@@ -73,15 +74,18 @@ class WindowStatisticsTransform(Transform, ABC):
         segments = sorted(df.columns.get_level_values("segment").unique())
 
         x = df.loc[pd.IndexSlice[:], pd.IndexSlice[segments, self.in_column]].values[::-1]
+
+        # Addend NaNs to obtain a window of length "history" for each point
         x = np.append(x, np.empty((history - 1, x.shape[1])) * np.nan, axis=0)
+        isnan = np.isnan(x)
+
+        isnan = np.lib.stride_tricks.sliding_window_view(isnan, window_shape=(history, 1))[:, :, :: self.seasonality]
+        isnan = np.squeeze(isnan, axis=-1)  # (len(df), n_segments, window)
+        non_nan_per_window_counts = bn.nansum(~isnan, axis=2)  # (len(df), n_segments)
+
         x = np.lib.stride_tricks.sliding_window_view(x, window_shape=(history, 1))[:, :, :: self.seasonality]
-        x = np.squeeze(x, axis=-1)
-
-        window = self.window if self.window != -1 else len(df)
-        nan_per_window_counts = np.sum(np.isnan(x), axis=2)
-        non_nan_per_window_counts = window - nan_per_window_counts
-
-        y = self._aggregate(series=x)
+        x = np.squeeze(x, axis=-1)  # (len(df), n_segments, window)
+        y = self._aggregate(series=x)  # (len(df), n_segments)
         y[non_nan_per_window_counts < self.min_periods] = np.nan
         y = np.nan_to_num(y, copy=False, nan=self.fillna)[::-1]
 
@@ -134,9 +138,9 @@ class MeanTransform(WindowStatisticsTransform):
         self.seasonality = seasonality
         self.alpha = alpha
         self.min_periods = min_periods
-        self._alpha_range: Optional[np.ndarray] = None
         self.fillna = fillna
         self.out_column = out_column
+        self._alpha_range: Optional[np.ndarray] = None
         super().__init__(
             in_column=in_column,
             window=window,
@@ -159,17 +163,18 @@ class MeanTransform(WindowStatisticsTransform):
         result: pd.DataFrame
             dataframe with results
         """
-        size = self.window if self.window != -1 else len(df)
-        self._alpha_range = np.array([self.alpha ** i for i in range(0, size)])
-        return super().transform(df=df)
+        window = self.window if self.window != -1 else len(df)
+        self._alpha_range = np.array([self.alpha ** i for i in range(window)])
+        self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
+        return super().transform(df)
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute weighted average for window series."""
-        if self._alpha_range is None:
-            raise ValueError("Something went wrong generating the alphas!")
-        #series = self._alpha_range[np.newaxis, np.newaxis, : series.shape[-1]] * series
-        series = np.nanmean(series, axis=2)
-        return series
+        mean = np.zeros((series.shape[0], series.shape[1]))
+        for segment in range(mean.shape[1]):
+            # Loop prevents from memory overflow, 3d tensor is materialized after multiplication
+            mean[:, segment] = bn.nanmean(series[:, segment] * self._alpha_range, axis=1)
+        return mean
 
 
 class StdTransform(WindowStatisticsTransform):
@@ -228,7 +233,7 @@ class StdTransform(WindowStatisticsTransform):
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute std over the series."""
-        series = np.nanstd(series, axis=2, ddof=self.ddof)
+        series = bn.nanstd(series, axis=2, ddof=self.ddof)
         return series
 
 
@@ -283,7 +288,8 @@ class QuantileTransform(WindowStatisticsTransform):
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute quantile over the series."""
-        series = np.nanquantile(series, self.quantile, axis=2)
+        # There is no "nanquantile" in bottleneck, "apply_along_axis" can't be replace with "axis=2"
+        series = np.apply_along_axis(np.nanquantile, axis=2, arr=series, q=self.quantile)
         return series
 
 
@@ -334,7 +340,7 @@ class MinTransform(WindowStatisticsTransform):
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute min over the series."""
-        series = np.nanmin(series, axis=2)
+        series = bn.nanmin(series, axis=2)
         return series
 
 
@@ -385,7 +391,7 @@ class MaxTransform(WindowStatisticsTransform):
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute max over the series."""
-        series = np.nanmax(series, axis=2)
+        series = bn.nanmax(series, axis=2)
         return series
 
 
@@ -436,7 +442,7 @@ class MedianTransform(WindowStatisticsTransform):
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute median over the series."""
-        series = np.nanmedian(series, axis=2)
+        series = bn.nanmedian(series, axis=2)
         return series
 
 
@@ -486,10 +492,14 @@ class MADTransform(WindowStatisticsTransform):
         )
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
-        """Compute median over the series."""
-        mean = np.nanmean(series, axis=2)
-        ad = np.abs(series - mean[:, :, np.newaxis])
-        mad = np.nanmean(ad, axis=2)
+        """Compute MAD over the series."""
+        mean = bn.nanmean(series, axis=2)
+        mean = np.expand_dims(mean, axis=-1)  # (len(df), n_segments, 1)
+        mad = np.zeros((series.shape[0], series.shape[1]))
+        for segment in range(mad.shape[1]):
+            # Loop prevents from memory overflow, 3d tensor is materialized after multiplication
+            ad = np.abs(series[:, segment] - mean[:, segment])
+            mad[:, segment] = bn.nanmean(ad, axis=1)
         return mad
 
 
