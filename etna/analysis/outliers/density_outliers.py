@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def absolute_difference_distance(x: float, y: float) -> float:
-    """Calculate distance for `get_anomalies_density` function by taking absolute value of difference.
+    """Calculate distance for :py:func:`get_anomalies_density` function by taking absolute value of difference.
 
     Parameters
     ----------
@@ -52,7 +52,8 @@ def get_segment_density_outliers_indices(
 
     Returns
     -------
-    list of outliers' indices
+    List[int]
+        list of outliers' indices
     """
 
     def is_close(item1: float, item2: float) -> int:
@@ -93,9 +94,9 @@ def get_anomalies_density(
 ) -> Dict[str, List[pd.Timestamp]]:
     """Compute outliers according to density rule.
 
-    For each element in the series build all the windows of size window_size containing this point.
-    If any of the windows contains at least n_neighbors that are closer than distance_coef * std(series)
-    to target point according to distance_func target point is not an outlier.
+    For each element in the series build all the windows of size ``window_size`` containing this point.
+    If any of the windows contains at least ``n_neighbors`` that are closer than ``distance_coef * std(series)``
+    to target point according to ``distance_func`` target point is not an outlier.
 
     Parameters
     ----------
@@ -114,7 +115,7 @@ def get_anomalies_density(
 
     Returns
     -------
-    dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
+    Dict[str, List[pd.Timestamp]]
         dict of outliers in format {segment: [outliers_timestamps]}
 
     Notes

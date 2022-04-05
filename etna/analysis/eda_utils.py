@@ -100,6 +100,8 @@ def sample_acf_plot(
     """
     Autocorrelation plot for multiple timeseries.
 
+    `Definition <https://en.wikipedia.org/wiki/Autocorrelation>`_.
+
     Parameters
     ----------
     ts:
@@ -112,9 +114,6 @@ def sample_acf_plot(
         segments to plot
     figsize:
         size of the figure per subplot with one segment in inches
-    Notes
-    -----
-    https://en.wikipedia.org/wiki/Autocorrelation
     """
     if segments is None:
         segments = sorted(ts.segments)
@@ -144,6 +143,8 @@ def sample_pacf_plot(
     """
     Partial autocorrelation plot for multiple timeseries.
 
+    `Definition <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
+
     Parameters
     ----------
     ts:
@@ -156,9 +157,6 @@ def sample_pacf_plot(
         segments to plot
     figsize:
         size of the figure per subplot with one segment in inches
-    Notes
-    -----
-    https://en.wikipedia.org/wiki/Partial_autocorrelation_function
     """
     if segments is None:
         segments = sorted(ts.segments)
@@ -190,8 +188,12 @@ def distribution_plot(
 ):
     """Distribution of z-values grouped by segments and time frequency.
 
-    ... math:
+    Mean is calculated by the windows:
+
+    .. math::
         mean_{i} = \\sum_{j=i-\\text{shift}}^{i-\\text{shift}+\\text{window}} \\frac{x_{j}}{\\text{window}}
+
+    The same is applied to standard deviation.
 
     Parameters
     ----------
@@ -206,7 +208,7 @@ def distribution_plot(
     window:
         number of points for statistics calc
     freq:
-        group for z_{i}
+        group for z-values
     n_rows:
         maximum number of rows to plot
     figsize:
@@ -267,9 +269,9 @@ def stl_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     plot_kwargs:
-        dictionary with parameters for plotting, `matplotlib.axes.Axes.plot` is used
+        dictionary with parameters for plotting, :py:meth:`matplotlib.axes.Axes.plot` is used
     stl_kwargs:
-        dictionary with parameters for STL decomposition, `statsmodels.tsa.seasonal.STL` is used
+        dictionary with parameters for STL decomposition, :py:class:`statsmodels.tsa.seasonal.STL` is used
     """
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -328,7 +330,7 @@ def qq_plot(
     residuals_ts:
         dataset with the time series, expected to be the residuals of the model
     qq_plot_params:
-        dictionary with parameters for qq plot, `statsmodels.graphics.gofplots.qqplot` is used
+        dictionary with parameters for qq plot, :py:func:`statsmodels.graphics.gofplots.qqplot` is used
     segments:
         segments to plot
     columns_num:
@@ -420,8 +422,8 @@ def prediction_actual_scatter_plot(
 class SeasonalPlotAlignment(str, Enum):
     """Enum for types of alignment in a seasonal plot.
 
-    Class Attributes
-    ----------------
+    Attributes
+    ----------
     first:
         make first period full, allow last period to have NaNs in the ending
     last:
@@ -583,11 +585,11 @@ def _seasonal_split(
     freq:
         frequency of dataframe
     cycle:
-        period of seasonality to capture (see :class:`~etna.analysis.SeasonalPlotCycle`)
+        period of seasonality to capture (see :py:class:`~etna.analysis.eda_utils.SeasonalPlotCycle`)
 
     Returns
     -------
-    result:
+    result: pd.DataFrame
         dataframe with timestamps and corresponding cycle names and in cycle names
     """
     cycles_df = pd.DataFrame({"timestamp": timestamp.tolist()})
@@ -682,21 +684,21 @@ def seasonal_plot(
         * if isn't set, the frequency of ``ts`` will be used;
 
         * if set, resampling will be made using ``aggregation`` parameter.
-        If given frequency is too low, then the frequency of ``ts`` will be used.
+          If given frequency is too low, then the frequency of ``ts`` will be used.
 
     cycle:
         period of seasonality to capture (see :class:`~etna.analysis.eda_utils.SeasonalPlotCycle`)
     alignment:
-        how to align dataframe in case of integer cycle (see :class:`~etna.analysis.eda_utils.SeasonalPlotAlignment`)
+        how to align dataframe in case of integer cycle (see :py:class:`~etna.analysis.eda_utils.SeasonalPlotAlignment`)
     aggregation:
-        how to aggregate values during resampling (see :class:`~etna.analysis.eda_utils.SeasonalPlotAggregation`)
+        how to aggregate values during resampling (see :py:class:`~etna.analysis.eda_utils.SeasonalPlotAggregation`)
     in_column:
         column to use
     cmap:
         name of colormap for plotting different cycles
         (see `Choosing Colormaps in Matplotlib <https://matplotlib.org/3.5.1/tutorials/colors/colormaps.html>`_)
     plot_params:
-        dictionary with parameters for plotting, :meth:`matplotlib.axes.Axes.plot` is used
+        dictionary with parameters for plotting, :py:meth:`matplotlib.axes.Axes.plot` is used
     segments:
         segments to use
     columns_num:

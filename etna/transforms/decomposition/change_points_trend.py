@@ -10,7 +10,7 @@ import pandas as pd
 from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
-from etna.analysis.change_points_trend.find_change_points import _find_change_points_segment
+from etna.analysis.change_points_trend.search import _find_change_points_segment
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles

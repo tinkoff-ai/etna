@@ -46,6 +46,7 @@ def get_anomalies_prediction_interval(
 ) -> Dict[str, List[pd.Timestamp]]:
     """
     Get point outliers in time series using prediction intervals (estimation model-based method).
+
     Outliers are all points out of the prediction interval predicted with the model.
 
     Parameters
@@ -57,13 +58,15 @@ def get_anomalies_prediction_interval(
     interval_width:
         the significance level for the prediction interval. By default a 95% prediction interval is taken.
     in_column:
-        column to analyzes
-        If it is set to "target", then all data will be used for prediction.
-        Otherwise, only column data will be used.
+        column to analyze
+
+        * If it is set to "target", then all data will be used for prediction.
+
+        * Otherwise, only column data will be used.
 
     Returns
     -------
-    dict of outliers: Dict[str, List[pd.Timestamp]]
+    Dict[str, List[pd.Timestamp]]
         dict of outliers in format {segment: [outliers_timestamps]}.
 
     Notes
