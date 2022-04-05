@@ -24,11 +24,14 @@ class Distance(ABC, BaseMixin):
         Parameters
         ----------
         trim_series:
-            if True, get common (according to timestamp index) part of series and compute distance with it; if False,
-            compute distance with given series without any modifications.
+
+            * if True, get common (according to timestamp index) part of series and compute distance with it;
+
+            * if False, compute distance with given series without any modifications.
+
         inf_value:
             if two empty series given or series' indices interception is empty,
-            return inf_value as a distance between the series
+            return ``inf_value`` as a distance between the series
         """
         self.trim_series = trim_series
         self.inf_value = inf_value
