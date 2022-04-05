@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,6 +8,21 @@ from etna.datasets import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.missing_values import TimeSeriesImputerTransform
 from etna.transforms.missing_values.imputation import _OneSegmentTimeSeriesImputerTransform
+
+
+@pytest.fixture
+def ts_nans_beginning(example_reg_tsds):
+    """Example dataset with NaNs at the beginning."""
+    ts = deepcopy(example_reg_tsds)
+
+    # nans at the beginning (shouldn't be filled)
+    ts.loc[ts.index[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
+
+    # nans in the middle (should be filled)
+    ts.loc[ts.index[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    ts.loc[ts.index[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    ts.loc[ts.index[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    return ts
 
 
 def test_wrong_init_one_segment():
@@ -39,25 +56,11 @@ def test_all_dates_present_impute_two_segments(all_date_present_df_two_segments:
         np.testing.assert_array_equal(all_date_present_df_two_segments[segment]["target"], result[segment]["target"])
 
 
-def test_all_missing_impute_zero(df_all_missing: pd.DataFrame):
-    """Check that imputer fills zero value if all values are nans and strategy is zero."""
-    imputer = _OneSegmentTimeSeriesImputerTransform(strategy="zero")
-    result = imputer.fit_transform(df_all_missing)
-    assert np.all(result == 0)
-
-
-def test_all_missing_impute_zero_two_segments(df_all_missing_two_segments: pd.DataFrame):
-    """Check that imputer fills zero value if all values are nans and strategy is zero."""
-    imputer = TimeSeriesImputerTransform(strategy="zero")
-    result = imputer.fit_transform(df_all_missing_two_segments)
-    assert np.all(result == 0)
-
-
-@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill"])
+@pytest.mark.parametrize("fill_strategy", ["zero", "mean", "running_mean", "forward_fill"])
 def test_all_missing_impute_fail(df_all_missing: pd.DataFrame, fill_strategy: str):
     """Check that imputer can't fill nans if all values are nans."""
     imputer = _OneSegmentTimeSeriesImputerTransform(strategy=fill_strategy)
-    with pytest.raises(ValueError, match="It isn't possible to make imputation"):
+    with pytest.raises(ValueError, match="Series hasn't non NaN values which means it is empty and can't be filled"):
         _ = imputer.fit_transform(df_all_missing)
 
 
@@ -65,7 +68,7 @@ def test_all_missing_impute_fail(df_all_missing: pd.DataFrame, fill_strategy: st
 def test_all_missing_impute_fail_two_segments(df_all_missing_two_segments: pd.DataFrame, fill_strategy: str):
     """Check that imputer can't fill nans if all values are nans."""
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
-    with pytest.raises(ValueError, match="It isn't possible to make imputation"):
+    with pytest.raises(ValueError, match="Series hasn't non NaN values which means it is empty and can't be filled"):
         _ = imputer.fit_transform(df_all_missing_two_segments)
 
 
@@ -209,7 +212,22 @@ def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segment
 
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
-def test_fit_transform_with_nans(fill_strategy, ts_diff_endings):
+def test_fit_transform_nans_at_the_beginning(fill_strategy, ts_nans_beginning):
+    """Check that transform doesn't fill NaNs at the beginning."""
+    imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
+    df_init = ts_nans_beginning.to_pandas()
+    ts_nans_beginning.fit_transform([imputer])
+    df_filled = ts_nans_beginning.to_pandas()
+    for segment in ts_nans_beginning.segments:
+        df_segment_init = df_init.loc[:, pd.IndexSlice[segment, "target"]]
+        df_segment_filled = df_filled.loc[:, pd.IndexSlice[segment, "target"]]
+        first_valid_index = df_segment_init.first_valid_index()
+        assert df_segment_init[:first_valid_index].equals(df_segment_filled[:first_valid_index])
+        assert not df_segment_filled[first_valid_index:].isna().any()
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "zero", "running_mean", "forward_fill"])
+def test_fit_transform_nans_at_the_end(fill_strategy, ts_diff_endings):
     """Check that transform correctly works with NaNs at the end."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
     ts_diff_endings.fit_transform([imputer])
