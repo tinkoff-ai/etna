@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed unsafe comparison in plots ([#611](https://github.com/tinkoff-ai/etna/pull/611))
 - Fixed plot_trend does not work with Linear and TheilSen transforms ([#617](https://github.com/tinkoff-ai/etna/pull/617))
 - 
-- 
+- Don't fill first timestamps in TimeSeriesImputerTransform ([#634](https://github.com/tinkoff-ai/etna/pull/634))
 - 
 
 ## [1.7.0] - 2022-03-16
