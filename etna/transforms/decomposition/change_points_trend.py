@@ -40,7 +40,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         detrend_model:
             model to get trend in data
         change_point_model_predict_params:
-            params for change_point_model predict method
+            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.out_columns = in_column
@@ -101,7 +101,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         return trend_series
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
-        """Fit OneSegmentChangePointsTransform: find trend change points in df, fit detrend models with data from intervals of stable trend.
+        """Fit OneSegmentChangePointsTransform: find trend change points in ``df``, fit detrend models with data from intervals of stable trend.
 
         Parameters
         ----------
@@ -110,7 +110,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
 
         Returns
         -------
-        self
+        :
         """
         series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
         if series.isnull().values.any():
@@ -193,7 +193,7 @@ class ChangePointsTrendTransform(PerSegmentWrapper):
         detrend_model:
             model to get trend in data
         change_point_model_predict_params:
-            params for change_point_model predict method
+            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.change_point_model = change_point_model

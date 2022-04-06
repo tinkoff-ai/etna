@@ -23,7 +23,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         in_column:
             name of processed column
         regressor:
-            instance of sklearn RegressorMixin to predict trend
+            instance of sklearn :py:class`sklearn.base.RegressorMixin` to predict trend
         poly_degree:
             degree of polynomial to fit trend on
         """
@@ -135,7 +135,8 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
 
 
 class LinearTrendTransform(PerSegmentWrapper):
-    """Transform that uses sklearn.linear_model.LinearRegression to find linear or polynomial trend in data.
+    """
+    Transform that uses :py:class:`sklearn.linear_model.LinearRegression` to find linear or polynomial trend in data.
 
     Warning
     -------
@@ -153,7 +154,7 @@ class LinearTrendTransform(PerSegmentWrapper):
         poly_degree:
             degree of polynomial to fit trend on
         regression_params:
-            params that should be used to init LinearRegression
+            params that should be used to init :py:class:`sklearn.linear_model.LinearRegression`
         """
         self.in_column = in_column
         self.poly_degree = poly_degree
@@ -168,12 +169,18 @@ class LinearTrendTransform(PerSegmentWrapper):
 
 
 class TheilSenTrendTransform(PerSegmentWrapper):
-    """Transform that uses sklearn.linear_model.TheilSenRegressor to find linear or polynomial trend in data.
+    """
+    Transform that uses :py:class:`sklearn.linear_model.TheilSenRegressor` to find linear or polynomial trend in data.
 
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
     it uses information from the whole train part.
+
+    Notes
+    -----
+    Setting parameter ``n_subsamples`` manually might cause the error. It should be at least the number
+    of features (plus 1 if ``fit_intercept=True``) and the number of samples in the shortest segment as a maximum.
     """
 
     def __init__(self, in_column: str, poly_degree: int = 1, **regression_params):
@@ -186,12 +193,7 @@ class TheilSenTrendTransform(PerSegmentWrapper):
         poly_degree:
             degree of polynomial to fit trend on
         regression_params:
-            params that should be used to init TheilSenRegressor
-
-        Notes
-        -----
-        Setting parameter n_subsamples manually might cause the error. It should be at least the number
-        of features (plus 1 if fit_intercept=True) and the number of samples in the shortest segment as a maximum.
+            params that should be used to init :py:class:`sklearn.linear_model.TheilSenRegressor`
         """
         self.in_column = in_column
         self.poly_degree = poly_degree
