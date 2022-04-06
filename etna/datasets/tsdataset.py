@@ -32,7 +32,7 @@ class TSDataset:
     Notes
     -----
     TSDataset supports custom indexing and slicing method.
-    It maybe done through these interface: TSDataset[timestamp, segment, column]
+    It maybe done through these interface: ``TSDataset[timestamp, segment, column]``
     If at the start of the period dataset contains NaN those timestamps will be removed.
 
     During creation segment is casted to string type.
@@ -94,9 +94,8 @@ class TSDataset:
             frequency of timestamp in df
         df_exog:
             dataframe with exogenous data;
-            if the series is known in the future features' names should start with prefix 'regressor_`.
         known_future:
-            columns in df_exog[known_future] that are regressors,
+            columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
         """
         self.raw_df = self._prepare_df(df)
@@ -506,8 +505,8 @@ class TSDataset:
 
         Returns
         -------
-        pd.DataFrame
-            with TSDataset data
+        pd.DataFrame:
+            dataframe with TSDataset data
 
         Examples
         --------
@@ -555,13 +554,14 @@ class TSDataset:
         Parameters
         ----------
         flatten:
-            If False return pd.DataFrame with multiindex
-            if True with flatten index
+            * If False, return pd.DataFrame with multiindex
+
+            * if True, return with flatten index
 
         Returns
         -------
         pd.DataFrame
-            with TSDataset data
+            dataframe with TSDataset data
 
         Examples
         --------
@@ -744,16 +744,17 @@ class TSDataset:
         test_size: Optional[int] = None,
     ) -> Tuple["TSDataset", "TSDataset"]:
         """Split given df with train-test timestamp indices or size of test set.
-        In case of inconsistencies between test_size and (test_start, test_end), test_size is ignored
+
+        In case of inconsistencies between ``test_size`` and (``test_start``, ``test_end``), ``test_size`` is ignored
 
         Parameters
         ----------
         train_start:
             start timestamp of new train dataset, if None first timestamp is used
         train_end:
-            end timestamp of new train dataset, if None previous to test_start timestamp is used
+            end timestamp of new train dataset, if None previous to ``test_start`` timestamp is used
         test_start:
-            start timestamp of new test dataset, if None next to train_end timestamp is used
+            start timestamp of new test dataset, if None next to ``train_end`` timestamp is used
         test_end:
             end timestamp of new test dataset, if None last timestamp is used
         test_size:
@@ -830,7 +831,7 @@ class TSDataset:
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
-        """Return columns of self.df.
+        """Return columns of ``self.df``.
 
         Returns
         -------
@@ -851,7 +852,7 @@ class TSDataset:
         return self.df.loc
 
     def isnull(self) -> pd.DataFrame:
-        """Return dataframe with flag that means if the correspondent object in self.df is null.
+        """Return dataframe with flag that means if the correspondent object in ``self.df`` is null.
 
         Returns
         -------
@@ -861,15 +862,16 @@ class TSDataset:
         return self.df.isnull()
 
     def head(self, n_rows: int = 5) -> pd.DataFrame:
-        """Return the first `n` rows.
+        """Return the first ``n_rows`` rows.
 
         Mimics pandas method.
 
-        This function returns the first `n` rows for the object based
+        This function returns the first ``n_rows`` rows for the object based
         on position. It is useful for quickly testing if your object
         has the right type of data in it.
-        For negative values of `n`, this function returns all rows except
-        the last `n` rows, equivalent to ``df[:-n]``.
+
+        For negative values of ``n_rows``, this function returns all rows except
+        the last ``n_rows`` rows, equivalent to ``df[:-n_rows]``.
 
         Parameters
         ----------
@@ -879,20 +881,21 @@ class TSDataset:
         Returns
         -------
         pd.DataFrame
-            the first `n` rows or 5 by default.
+            the first ``n_rows`` rows or 5 by default.
         """
         return self.df.head(n_rows)
 
     def tail(self, n_rows: int = 5) -> pd.DataFrame:
-        """Return the last `n` rows.
+        """Return the last ``n_rows`` rows.
 
         Mimics pandas method.
 
-        This function returns last `n` rows from the object based on
+        This function returns last ``n_rows`` rows from the object based on
         position. It is useful for quickly verifying data, for example,
         after sorting or appending rows.
-        For negative values of `n`, this function returns all rows except
-        the first `n` rows, equivalent to ``df[n:]``.
+
+        For negative values of ``n_rows``, this function returns all rows except
+        the first `n` rows, equivalent to ``df[n_rows:]``.
 
         Parameters
         ----------
@@ -902,7 +905,7 @@ class TSDataset:
         Returns
         -------
         pd.DataFrame
-            the last `n` rows or 5 by default.
+            the last ``n_rows`` rows or 5 by default.
 
         """
         return self.df.tail(n_rows)
@@ -945,14 +948,23 @@ class TSDataset:
         """Overview of the dataset that returns a DataFrame.
 
         Method describes dataset in segment-wise fashion. Description columns:
+
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+
         * end_timestamp: ending of the segment, missing values in the ending are ignored
-        * length: length according to start_timestamp and end_timestamp
-        * num_missing: number of missing variables between start_timestamp and end_timestamp
+
+        * length: length according to ``start_timestamp`` and ``end_timestamp``
+
+        * num_missing: number of missing variables between ``start_timestamp`` and ``end_timestamp``
+
         * num_segments: total number of segments, common for all segments
+
         * num_exogs: number of exogenous features, common for all segments
+
         * num_regressors: number of exogenous factors, that are regressors, common for all segments
+
         * num_known_future: number of regressors, that are known since creation, common for all segments
+
         * freq: frequency of the series, common for all segments
 
         Parameters
@@ -1028,17 +1040,26 @@ class TSDataset:
         Method describes dataset in segment-wise fashion.
 
         Information about dataset in general:
+
         * num_segments: total number of segments
+
         * num_exogs: number of exogenous features
+
         * num_regressors: number of exogenous factors, that are regressors
+
         * num_known_future: number of regressors, that are known since creation
+
         * freq: frequency of the dataset
 
         Information about individual segments:
+
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+
         * end_timestamp: ending of the segment, missing values in the ending are ignored
-        * length: length according to start_timestamp and end_timestamp
-        * num_missing: number of missing variables between start_timestamp and end_timestamp
+
+        * length: length according to ``start_timestamp`` and ``end_timestamp``
+
+        * num_missing: number of missing variables between ``start_timestamp`` and ``end_timestamp``
 
         Parameters
         ----------
