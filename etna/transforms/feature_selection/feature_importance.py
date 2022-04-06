@@ -31,7 +31,13 @@ TreeBasedRegressor = Union[
 
 
 class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """Transform that selects features according to tree-based models feature importance."""
+    """Transform that selects features according to tree-based models feature importance.
+
+    Notes
+    -----
+    Transform works with any type of features, however most of the models works only with regressors.
+    Therefore, it is recommended to pass the regressors into the feature selection transforms.
+    """
 
     def __init__(
         self, model: TreeBasedRegressor, top_k: int, features_to_use: Union[List[str], Literal["all"]] = "all"
@@ -42,17 +48,12 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         Parameters
         ----------
         model:
-            model to make selection, it should have feature_importances_ property
+            model to make selection, it should have ``feature_importances_`` property
             (e.g. all tree-based regressors in sklearn)
         top_k:
             num of features to select; if there are not enough features, then all will be selected
         features_to_use:
             columns of the dataset to select from; if "all" value is given, all columns are used
-
-        Notes
-        -----
-        Transform works with any type of features, however most of the models works only with regressors.
-        Therefore, it is recommended to pass the regressors into the feature selection transforms.
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
@@ -107,7 +108,13 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
 
 class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """Transform that selects features according to MRMR variable selection method adapted to the timeseries case."""
+    """Transform that selects features according to MRMR variable selection method adapted to the timeseries case.
+
+    Notes
+    -----
+    Transform works with any type of features, however most of the models works only with regressors.
+    Therefore, it is recommended to pass the regressors into the feature selection transforms.
+    """
 
     def __init__(
         self,
@@ -137,11 +144,6 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             the method for redundancy values per-segment aggregation
         atol:
             the absolute tolerance to compare the float values
-
-        Notes
-        -----
-        Transform works with any type of features, however most of the models works only with regressors.
-        Therefore, it is recommended to pass the regressors into the feature selection transforms.
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
