@@ -29,6 +29,7 @@ class Pipeline(BasePipeline):
 
     def fit(self, ts: TSDataset) -> "Pipeline":
         """Fit the Pipeline.
+
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
         Parameters
@@ -38,7 +39,7 @@ class Pipeline(BasePipeline):
 
         Returns
         -------
-        self:
+        :
             Fitted Pipeline instance
         """
         self.ts = ts
@@ -72,7 +73,7 @@ class Pipeline(BasePipeline):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         if self.ts is None:
