@@ -71,20 +71,24 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
             List of pipelines that should be used in ensemble
         weights:
             List of pipelines' weights.
-            If None, use uniform weights
-            If List[float], use this weights for the base estimators, weights will be normalized automatically
-            If "auto", use importances of the base estimators forecasts as weights of base estimators
+
+            * If None, use uniform weights
+
+            * If List[float], use this weights for the base estimators, weights will be normalized automatically
+
+            * If "auto", use importances of the base estimators forecasts as weights of base estimators
+
         regressor:
             Regression model with fit/predict interface which will be used to evaluate weights of the base estimators.
-            It should have feature_importances_ property(e.g. all tree-based regressors in sklearn)
+            It should have ``feature_importances_`` property (e.g. all tree-based regressors in sklearn)
         n_folds:
             Number of folds to use in the backtest.
             Backtest is used to obtain the forecasts from the base estimators;
-            forecasts will be use to evaluate the estimator's weights
+            forecasts will be used to evaluate the estimator's weights.
         n_jobs:
             Number of jobs to run in parallel
         joblib_params:
-            Additional parameters for joblib.Parallel
+            Additional parameters for :py:class:`joblib.Parallel`
 
         Raises
         ------
@@ -194,6 +198,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
 
     def _forecast(self) -> TSDataset:
         """Make predictions.
+
         Compute weighted average of pipelines' forecasts
         """
         if self.ts is None:
