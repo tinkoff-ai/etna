@@ -13,15 +13,17 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     ----------
     y_true:
         array-like of shape (n_samples,) or (n_samples, n_outputs)
+
         Ground truth (correct) target values.
 
     y_pred:
         array-like of shape (n_samples,) or (n_samples, n_outputs)
+
         Estimated target values.
 
     eps: float=1e-15
-        MAPE is undefined for y_true[i]==0 for any i, so all zeros y_true[i] are
-        clipped to max(eps, abs(y_true)).
+        MAPE is undefined for ``y_true[i]==0`` for any ``i``, so all zeros ``y_true[i]`` are
+        clipped to ``max(eps, abs(y_true))``.
 
     Returns
     -------
@@ -54,15 +56,17 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     ----------
     y_true:
         array-like of shape (n_samples,) or (n_samples, n_outputs)
+
         Ground truth (correct) target values.
 
     y_pred:
         array-like of shape (n_samples,) or (n_samples, n_outputs)
+
         Estimated target values.
 
     eps: float=1e-15
-        MAPE is undefined for y_true[i]==0 for any i, so all zeros y_true[i] are
-        clipped to max(eps, abs(y_true)).
+        SMAPE is undefined for ``y_true[i] + y_pred[i] == 0`` for any ``i``, so all zeros ``y_true[i] + y_pred[i]`` are
+        clipped to ``max(eps, abs(y_true) + abs(y_pred))``.
 
     Returns
     -------
