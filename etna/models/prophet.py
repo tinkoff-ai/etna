@@ -109,7 +109,7 @@ class _ProphetAdapter(BaseAdapter):
 
         Parameters
         ----------
-        df :
+        df:
             Features dataframe
         prediction_interval:
             If True returns prediction interval for forecast
@@ -118,7 +118,7 @@ class _ProphetAdapter(BaseAdapter):
 
         Returns
         -------
-        y_pred:
+        :
             DataFrame with predictions
         """
         df = df.reset_index()
@@ -152,6 +152,11 @@ class _ProphetAdapter(BaseAdapter):
 
 class ProphetModel(PerSegmentPredictionIntervalModel):
     """Class for holding Prophet model.
+
+    Notes
+    -----
+    Original Prophet can use features 'cap' and 'floor',
+    they should be added to the known_future list on dataset initialization.
 
     Examples
     --------
@@ -225,29 +230,29 @@ class ProphetModel(PerSegmentPredictionIntervalModel):
             not specified, potential changepoints are selected automatically.
         n_changepoints:
             Number of potential changepoints to include. Not used
-            if input `changepoints` is supplied. If `changepoints` is not supplied,
-            then n_changepoints potential changepoints are selected uniformly from
-            the first `changepoint_range` proportion of the history.
+            if input ``changepoints`` is supplied. If ``changepoints`` is not supplied,
+            then ``n_changepoints`` potential changepoints are selected uniformly from
+            the first ``changepoint_range`` proportion of the history.
         changepoint_range:
             Proportion of history in which trend changepoints will
             be estimated. Defaults to 0.8 for the first 80%. Not used if
-            `changepoints` is specified.
+            ``changepoints`` is specified.
         yearly_seasonality:
             By default (‘auto’) this will turn yearly seasonality on if there is
             a year of data, and off otherwise. Options are [‘auto’, True, False].
             If there is more than a year of data, rather than trying to turn this
             off during HPO, it will likely be more effective to leave it on and
-            turn down seasonal effects by tuning seasonality_prior_scale.
+            turn down seasonal effects by tuning ``seasonality_prior_scale``.
         weekly_seasonality:
-            Same as for yearly_seasonality.
+            Same as for ``yearly_seasonality``.
         daily_seasonality:
-            Same as for yearly_seasonality.
+            Same as for ``yearly_seasonality``.
         holidays:
-            pd.DataFrame with columns holiday (string) and ds (date type)
+            ``pd.DataFrame`` with columns holiday (string) and ds (date type)
             and optionally columns lower_window and upper_window which specify a
             range of days around the date to be included as holidays.
-            lower_window=-2 will include 2 days prior to the date as holidays. Also
-            optionally can have a column prior_scale specifying the prior scale for
+            ``lower_window=-2`` will include 2 days prior to the date as holidays. Also
+            optionally can have a column ``prior_scale`` specifying the prior scale for
             that holiday.
         seasonality_mode:
             'additive' (default) or 'multiplicative'.
@@ -255,7 +260,7 @@ class ProphetModel(PerSegmentPredictionIntervalModel):
             Parameter modulating the strength of the
             seasonality model. Larger values allow the model to fit larger seasonal
             fluctuations, smaller values dampen the seasonality. Can be specified
-            for individual seasonalities using add_seasonality.
+            for individual seasonalities using ``add_seasonality``.
         holidays_prior_scale:
             Parameter modulating the strength of the holiday components model, unless overridden
             in the holidays input.
@@ -269,9 +274,9 @@ class ProphetModel(PerSegmentPredictionIntervalModel):
             estimation.
         interval_width:
             Float, width of the uncertainty intervals provided
-            for the forecast. If mcmc_samples=0, this will be only the uncertainty
+            for the forecast. If ``mcmc_samples=0``, this will be only the uncertainty
             in the trend using the MAP estimate of the extrapolated generative
-            model. If mcmc.samples>0, this will be integrated over all model
+            model. If ``mcmc.samples>0``, this will be integrated over all model
             parameters, which will include uncertainty in seasonality.
         uncertainty_samples:
             Number of simulated draws used to estimate
@@ -283,12 +288,7 @@ class ProphetModel(PerSegmentPredictionIntervalModel):
         additional_seasonality_params: Iterable[Dict[str, Union[int, float, str]]]
             parameters that describe additional (not 'daily', 'weekly', 'yearly') seasonality that should be
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
-            'mode', 'condition_name' will be used for prophet.Prophet().add_seasonality method call.
-
-        Notes
-        -----
-        Original Prophet can use features 'cap' and 'floor',
-        they should be added to the known_future list on dataset initialization.
+            'mode', 'condition_name' will be used for :py:meth:`prophet.Prophet.add_seasonality` method call.
         """
         self.growth = growth
         self.n_changepoints = n_changepoints

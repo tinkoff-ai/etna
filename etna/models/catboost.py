@@ -44,9 +44,10 @@ class _CatBoostAdapter(BaseAdapter):
             Features dataframe
         regressors:
             List of the columns with regressors(ignored in this model)
+
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         features = df.drop(columns=["timestamp", "target"])
@@ -67,7 +68,7 @@ class _CatBoostAdapter(BaseAdapter):
 
         Returns
         -------
-        y_pred:
+        :
             Array with predictions
         """
         features = df.drop(columns=["timestamp", "target"])
@@ -151,33 +152,42 @@ class CatBoostModelPerSegment(PerSegmentModel):
         depth:
             Depth of the tree. The range of supported values depends
             on the processing unit type and the type of the selected loss function:
-            CPU — Any integer up to  16.
-            GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
-            QueryCrossEntropy) and up to   16 for all other loss functions.
+
+            * CPU — Any integer up to 16.
+
+            * GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
+              QueryCrossEntropy) and up to 16 for all other loss functions.
         learning_rate:
             The learning rate. Used for reducing the gradient step.
             If None the value is defined automatically depending on the number of iterations.
         logging_level:
             The logging level to output to stdout.
             Possible values:
-            Silent — Do not output any logging information to stdout.
-            Verbose — Output the following data to stdout:
-                optimized metric
-                elapsed time of training
-                remaining time of training
-            Info — Output additional information and the number of trees.
-            Debug — Output debugging information.
+
+            * Silent — Do not output any logging information to stdout.
+
+            * Verbose — Output the following data to stdout:
+
+                * optimized metric
+
+                * elapsed time of training
+
+                * remaining time of training
+
+            * Info — Output additional information and the number of trees.
+
+            * Debug — Output debugging information.
+
         l2_leaf_reg:
             Coefficient at the L2 regularization term of the cost function.
             Any positive value is allowed.
         thread_count:
             The number of threads to use during the training.
-            For CPU
-            Optimizes the speed of execution. This parameter doesn't affect results.
-            For GPU
-            The given value is used for reading the data from the hard drive and does
-            not affect the training.
-            During the training one main thread and one thread for each GPU are used.
+
+            * For CPU. Optimizes the speed of execution. This parameter doesn't affect results.
+            * For GPU. The given value is used for reading the data from the hard drive and does
+              not affect the training.
+              During the training one main thread and one thread for each GPU are used.
         """
         self.iterations = iterations
         self.depth = depth
@@ -264,33 +274,42 @@ class CatBoostModelMultiSegment(MultiSegmentModel):
         depth:
             Depth of the tree. The range of supported values depends
             on the processing unit type and the type of the selected loss function:
-            CPU — Any integer up to  16.
-            GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
-            QueryCrossEntropy) and up to   16 for all other loss functions.
+
+            * CPU — Any integer up to 16.
+
+            * GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
+              QueryCrossEntropy) and up to 16 for all other loss functions.
         learning_rate:
             The learning rate. Used for reducing the gradient step.
             If None the value is defined automatically depending on the number of iterations.
         logging_level:
             The logging level to output to stdout.
             Possible values:
-            Silent — Do not output any logging information to stdout.
-            Verbose — Output the following data to stdout:
-                optimized metric
-                elapsed time of training
-                remaining time of training
-            Info — Output additional information and the number of trees.
-            Debug — Output debugging information.
+
+            * Silent — Do not output any logging information to stdout.
+
+            * Verbose — Output the following data to stdout:
+
+                * optimized metric
+
+                * elapsed time of training
+
+                * remaining time of training
+
+            * Info — Output additional information and the number of trees.
+
+            * Debug — Output debugging information.
+
         l2_leaf_reg:
             Coefficient at the L2 regularization term of the cost function.
             Any positive value is allowed.
         thread_count:
             The number of threads to use during the training.
-            For CPU
-            Optimizes the speed of execution. This parameter doesn't affect results.
-            For GPU
-            The given value is used for reading the data from the hard drive and does
-            not affect the training.
-            During the training one main thread and one thread for each GPU are used.
+
+            * For CPU. Optimizes the speed of execution. This parameter doesn't affect results.
+            * For GPU. The given value is used for reading the data from the hard drive and does
+              not affect the training.
+              During the training one main thread and one thread for each GPU are used.
         """
         self.iterations = iterations
         self.depth = depth

@@ -175,9 +175,10 @@ class _SARIMAXAdapter(BaseAdapter):
             Features dataframe
         regressors:
             List of the columns with regressors
+
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         self.regressor_columns = regressors
@@ -237,7 +238,7 @@ class _SARIMAXAdapter(BaseAdapter):
 
         Returns
         -------
-        y_pred:
+        :
             DataFrame with predictions
         """
         if self._result is None or self._model is None:
@@ -313,7 +314,7 @@ class _SARIMAXAdapter(BaseAdapter):
 
         Returns
         -------
-        result:
+        :
            Internal model
         """
         return self._model
