@@ -28,7 +28,12 @@ NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 
 
 class PytorchForecastingTransform(Transform):
-    """Transform for models from PytorchForecasting library."""
+    """Transform for models from PytorchForecasting library.
+
+    Notes
+    -----
+    This transform should be added at the very end of ``transforms`` parameter.
+    """
 
     def __init__(
         self,
@@ -54,15 +59,13 @@ class PytorchForecastingTransform(Transform):
         categorical_encoders: Optional[Dict[str, NaNLabelEncoder]] = None,
         scalers: Optional[Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]]] = None,
     ):
-        """Parameters for TimeSeriesDataSet object.
+        """Init transform.
+
+        Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.TimeSeriesDataSet` object.
 
         Notes
         -----
-        This transform should be added at the very end of `transforms` parameter.
-
-        Reference
-        ---------
-        https://github.com/jdb78/pytorch-forecasting/blob/v0.9.2/pytorch_forecasting/data/timeseries.py#L117
+        `Sources of TimeSeriesDataSet <https://github.com/jdb78/pytorch-forecasting/blob/v0.9.2/pytorch_forecasting/data/timeseries.py#L117>`_
         """
         super().__init__()
         self.max_encoder_length = max_encoder_length
