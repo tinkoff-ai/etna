@@ -1,5 +1,4 @@
 import pytest
-from matplotlib.ft2font import HORIZONTAL
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.models import SARIMAXModel
