@@ -1,4 +1,5 @@
 import pytest
+from matplotlib.ft2font import HORIZONTAL
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.models import SARIMAXModel
@@ -126,8 +127,11 @@ def test_get_model_after_training(example_tsds):
 
 def test_sarimax_forecast_1_point(example_tsds):
     """Check that SARIMAX work with 1 point forecast."""
+    HORIZON = 1
     model = SARIMAXModel()
     model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=1)
-    _ = model.forecast(future_ts)
-    _ = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
+    future_ts = example_tsds.make_future(future_steps=HORIZON)
+    pred = model.forecast(future_ts)
+    assert len(pred.df) == HORIZON
+    pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
+    assert len(pred_quantiles.df) == HORIZON
