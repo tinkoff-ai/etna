@@ -122,3 +122,15 @@ def test_get_model_after_training(example_tsds):
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], SARIMAX)
+
+
+def test_sarimax_forecast_1_point(example_tsds):
+    """Check that SARIMAX work with 1 point forecast."""
+    horizon = 1
+    model = SARIMAXModel()
+    model.fit(example_tsds)
+    future_ts = example_tsds.make_future(future_steps=horizon)
+    pred = model.forecast(future_ts)
+    assert len(pred.df) == horizon
+    pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
+    assert len(pred_quantiles.df) == horizon
