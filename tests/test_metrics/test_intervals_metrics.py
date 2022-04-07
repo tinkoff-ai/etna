@@ -25,10 +25,10 @@ def tsdataset_with_differnt_width_and_shifted_quantiles(example_df):
     example_df["target_0.025"] = example_df["target"]
     example_df["target_0.975"] = example_df["target"]
 
-    seggment_one_index = example_df[lambda x: x.segment == "segment_1"].index
+    segment_one_index = example_df[lambda x: x.segment == "segment_1"].index
 
-    example_df.loc[seggment_one_index, "target_0.025"] = example_df.loc[seggment_one_index, "target_0.025"] + 1
-    example_df.loc[seggment_one_index, "target_0.975"] = example_df.loc[seggment_one_index, "target_0.975"] + 2
+    example_df.loc[segment_one_index, "target_0.025"] = example_df.loc[segment_one_index, "target_0.025"] + 1
+    example_df.loc[segment_one_index, "target_0.975"] = example_df.loc[segment_one_index, "target_0.975"] + 2
 
     ts_test = TSDataset.to_dataset(example_df)
     ts_test = TSDataset(ts_test, freq="H")
