@@ -86,7 +86,7 @@ class Width(Metric):
         Create instance of Mean width of prediction intervals.
 
         .. math::
-            Width(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile}] \\mid}{n}
+            Width(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile} \\mid}{n}
 
 
         Notes
