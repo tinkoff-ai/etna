@@ -161,6 +161,7 @@ class AbstractPipeline(ABC):
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
         joblib_params: Optional[Dict[str, Any]] = None,
+        forecast_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -373,14 +374,14 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return metrics_values
 
     def _run_fold(
-        self, train: TSDataset, test: TSDataset, fold_number: int, mask: FoldMask, metrics: List[Metric]
+        self, train: TSDataset, test: TSDataset, fold_number: int, mask: FoldMask, metrics: List[Metric], forecast_params: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
 
         pipeline = deepcopy(self)
         pipeline.fit(ts=train)
-        forecast = pipeline.forecast()
+        forecast = pipeline.forecast(**forecast_params)
         fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
@@ -471,6 +472,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
         joblib_params: Optional[Dict[str, Any]] = None,
+        forecast_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
@@ -498,6 +500,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """
         if joblib_params is None:
             joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
+        
+        if forecast_params is None:
+            forecast_params = dict()
 
         self._init_backtest()
         self._validate_backtest_metrics(metrics=metrics)
@@ -505,7 +510,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         folds = Parallel(n_jobs=n_jobs, **joblib_params)(
             delayed(self._run_fold)(
-                train=train, test=test, fold_number=fold_number, mask=masks[fold_number], metrics=metrics
+                train=train, test=test, fold_number=fold_number, mask=masks[fold_number], metrics=metrics, forecast_params=forecast_params
             )
             for fold_number, (train, test) in enumerate(
                 self._generate_folds_datasets(ts=ts, masks=masks, horizon=self.horizon)
