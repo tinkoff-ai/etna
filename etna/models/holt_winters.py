@@ -22,10 +22,7 @@ class _HoltWintersAdapter(BaseAdapter):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     """
 
     def __init__(
@@ -285,10 +282,7 @@ class HoltWintersModel(PerSegmentModel):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     """
 
     def __init__(
@@ -483,11 +477,9 @@ class HoltModel(HoltWintersModel):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-    They implement Holt model as a restricted version of ExponentialSmoothing model.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+    They implement :py:class:`statsmodels.tsa.holtwinters.Holt` model
+    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
 
     def __init__(
@@ -582,11 +574,9 @@ class SimpleExpSmoothingModel(HoltWintersModel):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-    They implement SimpleExpSmoothing model as a restricted version of ExponentialSmoothing model.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+    They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
+    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
 
     def __init__(
