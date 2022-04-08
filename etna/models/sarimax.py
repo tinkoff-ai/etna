@@ -260,8 +260,9 @@ class _SARIMAXAdapter(BaseAdapter):
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
-            y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
+            y_pred = forecast.predicted_mean
+            y_pred.name = "mean"
+            y_pred = pd.DataFrame(y_pred)
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
@@ -275,8 +276,9 @@ class _SARIMAXAdapter(BaseAdapter):
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
             )
-            y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
+            y_pred = forecast.predicted_mean
+            y_pred.name = "mean"
+            y_pred = pd.DataFrame(y_pred)
         y_pred = y_pred.reset_index(drop=True, inplace=False)
         rename_dict = {
             column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
