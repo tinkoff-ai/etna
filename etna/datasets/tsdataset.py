@@ -316,7 +316,7 @@ class TSDataset:
     def _check_known_future(
         known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]
     ) -> List[str]:
-        """Check that `known_future` corresponds to `df_exog` and returns initial list of regressors."""
+        """Check that ``known_future`` corresponds to ``df_exog`` and returns initial list of regressors."""
         if df_exog is None:
             exog_columns = set()
         else:
@@ -339,7 +339,7 @@ class TSDataset:
 
     @staticmethod
     def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
-        """Check that regressors begin not later than in df and end later than in df."""
+        """Check that regressors begin not later than in ``df`` and end later than in ``df``."""
         if df_regressors.shape[1] == 0:
             return
         # TODO: check performance
@@ -391,6 +391,7 @@ class TSDataset:
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
+
         Applied in reversed order.
         """
         if self.transforms is not None:
