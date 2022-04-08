@@ -9,6 +9,9 @@ ArrayLike = List[Union[float, List[float]]]
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     """Mean absolute percentage error.
 
+    `Wikipedia entry on the Mean absolute percentage error
+    <https://en.wikipedia.org/wiki/Mean_absolute_percentage_error>`_
+
     Parameters
     ----------
     y_true:
@@ -29,12 +32,6 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     -------
     float
         A non-negative floating point value (the best value is 0.0).
-
-    References
-    ----------
-    `Wikipedia entry on the Mean absolute percentage error
-    <https://en.wikipedia.org/wiki/Mean_absolute_percentage_error>`_
-
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -48,6 +45,9 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     """Symmetric mean absolute percentage error.
+
+    `Wikipedia entry on the Symmetric mean absolute percentage error
+    <https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error>`_
 
     .. math::
         SMAPE = \dfrac{100}{n}\sum_{t=1}^{n}\dfrac{|ytrue_{t}-ypred_{t}|}{(|ypred_{t}|+|ytrue_{t}|) / 2}
@@ -72,12 +72,6 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     -------
     float
         A non-negative floating point value (the best value is 0.0).
-
-    References
-    ----------
-    `Wikipedia entry on the Symmetric mean absolute percentage error
-    <https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error>`_
-
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
