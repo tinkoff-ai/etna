@@ -74,7 +74,7 @@ class Metric(BaseMixin):
     @staticmethod
     def _validate_segment_columns(y_true: TSDataset, y_pred: TSDataset):
         """
-        Check if all the segments from y_true are in y_pred and vice versa.
+        Check if all the segments from ``y_true`` are in ``y_pred`` and vice versa.
 
         Parameters
         ----------
@@ -149,7 +149,7 @@ class Metric(BaseMixin):
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
         """
-        Compute metric's value with y_true and y_pred.
+        Compute metric's value with ``y_true`` and ``y_pred``.
 
         Notes
         -----
