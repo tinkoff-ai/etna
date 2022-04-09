@@ -63,3 +63,10 @@ def test_coverage_metric_with_differnt_width_and_shifted_quantiles(tsdataset_wit
 
     for segment in coverage_metric:
         assert coverage_metric[segment] == expected_metric[segment]
+
+
+@pytest.mark.parametrize("metric", [Coverage(quantiles=(0.1, 0.3)), Width(quantiles=(0.1, 0.3))])
+def test_using_not_presented_quantiles(metric, tsdataset_with_zero_width_quantiles):
+    ts_train, ts_test = tsdataset_with_zero_width_quantiles
+    with pytest.raises(AssertionError, match="Quantile .* is not presented in tsdataset."):
+        _ = metric(ts_train, ts_test)

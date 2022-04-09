@@ -1,4 +1,5 @@
 from typing import Dict
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -13,7 +14,15 @@ def dummy():
     return np.nan
 
 
-class Coverage(Metric):
+class _QuantileMetricMixin:
+    def _validate_tsdataset_quantiles(self, ts: TSDataset, quantiles: Sequence[float]) -> None:
+        """Check if quantiles presented in y_pred."""
+        features = set(ts.df.columns.get_level_values("feature"))
+        for quantile in quantiles:
+            assert f"target_{quantile:.4g}" in features, f"Quantile {quantile} is not presented in tsdataset."
+
+
+class Coverage(Metric, _QuantileMetricMixin):
     """Coverage metric for prediction intervals."""
 
     def __init__(
@@ -60,6 +69,7 @@ class Coverage(Metric):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
@@ -76,7 +86,7 @@ class Coverage(Metric):
         return metrics
 
 
-class Width(Metric):
+class Width(Metric, _QuantileMetricMixin):
     """Mean width of prediction intervals."""
 
     def __init__(
@@ -123,6 +133,7 @@ class Width(Metric):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
