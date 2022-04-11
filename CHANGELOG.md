@@ -14,11 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add seasonal_plot ([#628](https://github.com/tinkoff-ai/etna/pull/628))
 - 
 - Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
--
+- 
 - Fixed bug in SARIMAX model with `horizon`=1 ([#637](https://github.com/tinkoff-ai/etna/pull/637))
 - Add prediction_actual_scatter_plot ([#610](https://github.com/tinkoff-ai/etna/pull/610))
 - Add plot_holidays ([#624](https://github.com/tinkoff-ai/etna/pull/624))
-
+- 
+- 
+- 
+- Seasonal strategy in TimeSeriesImputerTransform ([#639](https://github.com/tinkoff-ai/etna/pull/639))
+-
 
 ### Changed
 -
