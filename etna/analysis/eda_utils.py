@@ -100,7 +100,10 @@ def sample_acf_plot(
     """
     Autocorrelation plot for multiple timeseries.
 
-    `Definition <https://en.wikipedia.org/wiki/Autocorrelation>`_.
+
+    Notes
+    -----
+    `Definition of autocorrelation <https://en.wikipedia.org/wiki/Autocorrelation>`_.
 
     Parameters
     ----------
@@ -143,7 +146,9 @@ def sample_pacf_plot(
     """
     Partial autocorrelation plot for multiple timeseries.
 
-    `Definition <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
+    Notes
+    -----
+    `Definition of partial autocorrelation <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
 
     Parameters
     ----------
