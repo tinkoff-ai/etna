@@ -198,7 +198,6 @@ def test_range_missing_running_mean(df_with_missing_range_x_index: pd.DataFrame,
 
 @pytest.fixture
 def sample_ts():
-    """Example of TSDataset."""
     timestamp = pd.date_range(start="2020-01-01", end="2020-01-11", freq="D")
     df1 = pd.DataFrame()
     df1["timestamp"] = timestamp
