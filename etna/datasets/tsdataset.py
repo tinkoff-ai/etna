@@ -557,7 +557,7 @@ class TSDataset:
         flatten:
             * If False, return pd.DataFrame with multiindex
 
-            * if True, return with flatten index
+            * If True, return with flatten index
 
         Returns
         -------

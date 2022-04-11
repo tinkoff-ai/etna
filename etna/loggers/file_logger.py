@@ -217,8 +217,10 @@ class LocalFileLogger(BaseFileLogger):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
 
         As a result, within ``self.experiment_folder`` subfolder ``job_type/group`` is created.
-        If ``job_type`` or ``group`` isn't set then only one-level subfolder is created.
-        If none of ``job_type`` and ``group`` is set then experiment logs files into ``self.experiment_folder``.
+
+        * If ``job_type`` or ``group`` isn't set then only one-level subfolder is created.
+
+        * If none of ``job_type`` and ``group`` is set then experiment logs files into ``self.experiment_folder``.
 
         Parameters
         ----------
@@ -360,8 +362,10 @@ class S3FileLogger(BaseFileLogger):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
 
         As a result, ``self.experiment_folder`` key is extended with ``job_type/group``.
-        If ``job_type`` or ``group`` isn't set then key is extended with one value.
-        If none of ``job_type`` and ``group`` is set then ``self.experiment_folder`` is not extended.
+
+        * If ``job_type`` or ``group`` isn't set then key is extended with one value.
+
+        * If none of ``job_type`` and ``group`` is set then ``self.experiment_folder`` is not extended.
 
         Parameters
         ----------
