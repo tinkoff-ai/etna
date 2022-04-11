@@ -33,7 +33,7 @@ class OutliersTransform(Transform, ABC):
 
         Parameters
         ----------
-        ts: TSDataset
+        ts:
             original TSDataset
         """
         if self.outliers_timestamps is None:
