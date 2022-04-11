@@ -61,11 +61,7 @@ class PytorchForecastingTransform(Transform):
     ):
         """Init transform.
 
-        Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.TimeSeriesDataSet` object.
-
-        Notes
-        -----
-        `Sources of TimeSeriesDataSet <https://github.com/jdb78/pytorch-forecasting/blob/v0.9.2/pytorch_forecasting/data/timeseries.py#L117>`_
+        Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` object.
         """
         super().__init__()
         self.max_encoder_length = max_encoder_length
