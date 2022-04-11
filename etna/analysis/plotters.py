@@ -103,11 +103,11 @@ def plot_forecast(
     forecast_ts:
         there are several options:
 
-        1. Forecasted TSDataset with timeseries data, single-forecast mode
+        #. Forecasted TSDataset with timeseries data, single-forecast mode
 
-        2. List of forecasted TSDatasets, multi-forecast mode
+        #. List of forecasted TSDatasets, multi-forecast mode
 
-        3. Dictionary with forecasted TSDatasets, multi-forecast mode
+        #. Dictionary with forecasted TSDatasets, multi-forecast mode
 
     test_ts:
         TSDataset with timeseries data
