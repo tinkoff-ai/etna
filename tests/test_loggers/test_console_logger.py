@@ -72,7 +72,7 @@ def test_tsdataset_inverse_transform_logging(example_tsds: TSDataset):
     example_tsds.fit_transform(transforms=transforms)
     idx = tslogger.add(ConsoleLogger())
     example_tsds.inverse_transform()
-    check_logged_transforms(log_file=file.name, transforms=transforms)
+    check_logged_transforms(log_file=file.name, transforms=transforms[::-1])
     tslogger.remove(idx)
 
 
