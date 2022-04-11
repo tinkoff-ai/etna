@@ -45,7 +45,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             - If "forward_fill" then replace missing dates using last existing value
             - If "seasonal" then replace missing dates using seasonal moving average
         window:
-            In case of moving average.
+            In case of moving average and seasonality.
             If window=-1 all previous dates are taken in account
             Otherwise only window previous dates
         seasonality:
@@ -209,7 +209,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
             - If "forward_fill" then replace missing dates using last existing value
             - If "seasonal" then replace missing dates using seasonal moving average
         window:
-            In case of moving average.
+            In case of moving average and seasonality.
             If window=-1 all previous dates are taken in account
             Otherwise only window previous dates
         seasonality:

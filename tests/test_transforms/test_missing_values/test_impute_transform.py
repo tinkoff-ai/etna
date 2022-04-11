@@ -198,13 +198,15 @@ def test_range_missing_running_mean(df_with_missing_range_x_index: pd.DataFrame,
 
 @pytest.fixture
 def sample_ts():
+    """Example of TSDataset."""
+    timestamp = pd.date_range(start="2020-01-01", end="2020-01-11", freq="D")
     df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-01-11", freq="D")
+    df1["timestamp"] = timestamp
     df1["segment"] = "segment_1"
     df1["target"] = np.arange(-1, 10)
 
     df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-01-11", freq="D")
+    df2["timestamp"] = timestamp
     df2["segment"] = "segment_2"
     df2["target"] = np.arange(0, 110, 10)
 
@@ -214,7 +216,8 @@ def sample_ts():
 
 
 @pytest.fixture
-def sample_ts_with_nans(sample_ts):
+def ts_to_fill(sample_ts):
+    """TSDataset with nans to fill with imputer."""
     ts = deepcopy(sample_ts)
     ts.df.loc[["2020-01-01", "2020-01-03", "2020-01-08", "2020-01-09"], pd.IndexSlice[:, "target"]] = np.NaN
     return ts
@@ -253,8 +256,8 @@ def sample_ts_with_nans(sample_ts):
         ),
     ],
 )
-def test_missing_values_seasonal(sample_ts_with_nans: TSDataset, window: int, seasonality: int, expected: np.ndarray):
-    ts = deepcopy(sample_ts_with_nans)
+def test_missing_values_seasonal(ts_to_fill, window: int, seasonality: int, expected: np.ndarray):
+    ts = deepcopy(ts_to_fill)
     imputer = TimeSeriesImputerTransform(
         in_column="target", strategy="seasonal", window=window, seasonality=seasonality, default_value=None
     )
@@ -275,10 +278,8 @@ def test_missing_values_seasonal(sample_ts_with_nans: TSDataset, window: int, se
         ),
     ],
 )
-def test_default_value(
-    sample_ts_with_nans: TSDataset, window: int, seasonality: int, default_value: float, expected: np.ndarray
-):
-    ts = deepcopy(sample_ts_with_nans)
+def test_default_value(ts_to_fill, window: int, seasonality: int, default_value: float, expected: np.ndarray):
+    ts = deepcopy(ts_to_fill)
     imputer = TimeSeriesImputerTransform(
         in_column="target", strategy="seasonal", window=window, seasonality=seasonality, default_value=default_value
     )
