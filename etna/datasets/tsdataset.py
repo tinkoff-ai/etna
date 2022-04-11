@@ -396,6 +396,7 @@ class TSDataset:
         """
         if self.transforms is not None:
             for transform in reversed(self.transforms):
+                tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
                 self.df = transform.inverse_transform(self.df)
 
     @property
