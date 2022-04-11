@@ -10,9 +10,11 @@ from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
+from etna.metrics import Metric
 from etna.models import CatBoostModelMultiSegment
 from etna.models import LinearMultiSegmentModel
 from etna.models import LinearPerSegmentModel
+from etna.models import ProphetModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
@@ -61,6 +63,27 @@ def test_tsdataset_make_future_logging(example_tsds: TSDataset):
     idx = tslogger.add(ConsoleLogger())
     _ = example_tsds.make_future(5)
     check_logged_transforms(log_file=file.name, transforms=transforms)
+    tslogger.remove(idx)
+
+
+@pytest.mark.parametrize("metric", [MAE(), MSE(), MAE(mode="macro")])
+def test_metric_logging(example_tsds: TSDataset, metric: Metric):
+    """Check working of logging inside `Metric.__call__`."""
+    file = NamedTemporaryFile()
+    _logger.add(file.name)
+
+    horizon = 10
+    ts_train, ts_test = example_tsds.train_test_split(test_size=horizon)
+    pipeline = Pipeline(model=ProphetModel(), horizon=horizon)
+    pipeline.fit(ts_train)
+    ts_forecast = pipeline.forecast()
+    idx = tslogger.add(ConsoleLogger())
+    _ = metric(y_true=ts_test, y_pred=ts_forecast)
+
+    with open(file.name, "r") as in_file:
+        lines = in_file.readlines()
+        assert len(lines) == 1
+        assert repr(metric) in lines[0]
     tslogger.remove(idx)
 
 
