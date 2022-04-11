@@ -61,10 +61,12 @@ class _OneSegmentSTLTransform(Transform):
         if isinstance(model, str):
             if model == "arima":
                 self.model = ARIMA
-                model_kwargs = {"order": (1, 1, 0)}
+                if len(model_kwargs) == 0:
+                    model_kwargs = {"order": (1, 1, 0)}
             elif model == "holt":
                 self.model = ETSModel
-                model_kwargs = {"trend": "add"}
+                if len(model_kwargs) == 0:
+                    model_kwargs = {"trend": "add"}
             else:
                 raise ValueError(f"Not a valid option for model: {model}")
         elif isinstance(model, TimeSeriesModel):
