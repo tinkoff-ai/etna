@@ -18,7 +18,8 @@ class _SingleDifferencingTransform(Transform):
 
     Notes
     -----
-    To understand how transform works we recommend: https://otexts.com/fpp2/stationarity.html
+    To understand how transform works we recommend:
+    `Stationarity and Differencing <https://otexts.com/fpp2/stationarity.html>`_
     """
 
     def __init__(
@@ -37,10 +38,16 @@ class _SingleDifferencingTransform(Transform):
         period:
             number of steps back to calculate the difference with, it should be >= 1
         inplace:
-            if True, apply transformation inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            if set, name of added column, the final name will be '{out_column}';
-            if isn't set, name will be based on `self.__repr__()`
+
+            * if set, name of added column, the final name will be '{out_column}';
+
+            * if isn't set, name will be based on ``self.__repr__()``
 
         Raises
         ------
@@ -143,7 +150,7 @@ class _SingleDifferencingTransform(Transform):
         return to_transform
 
     def _reconstruct_train(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
-        """Reconstruct the train in inverse_transform."""
+        """Reconstruct the train in ``inverse_transform``."""
         segments = sorted(set(df.columns.get_level_values("segment")))
         result_df = df.copy()
 
@@ -158,7 +165,7 @@ class _SingleDifferencingTransform(Transform):
         return result_df
 
     def _reconstruct_test(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
-        """Reconstruct the test in inverse_transform."""
+        """Reconstruct the test in ``inverse_transform``."""
         segments = sorted(set(df.columns.get_level_values("segment")))
         result_df = df.copy()
 
@@ -236,7 +243,8 @@ class DifferencingTransform(Transform):
 
     Notes
     -----
-    To understand how transform works we recommend: https://otexts.com/fpp2/stationarity.html
+    To understand how transform works we recommend:
+    `Stationarity and Differencing <https://otexts.com/fpp2/stationarity.html>`_
     """
 
     def __init__(
@@ -258,10 +266,16 @@ class DifferencingTransform(Transform):
         order:
             number of differences to make, it should be >= 1
         inplace:
-            if True, apply transformation inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            if set, name of added column, the final name will be '{out_column}';
-            if isn't set, name will be based on `self.__repr__()`
+
+            * if set, name of added column, the final name will be '{out_column}';
+
+            * if isn't set, name will be based on ``self.__repr__()``
 
         Raises
         ------

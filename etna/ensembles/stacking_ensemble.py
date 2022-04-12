@@ -77,11 +77,11 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         n_folds:
             Number of folds to use in the backtest. Backtest is not used for model evaluation but for prediction.
         features_to_use:
-            Features except the forecasts of the base models to use in the `final_model`.
+            Features except the forecasts of the base models to use in the ``final_model``.
         n_jobs:
             Number of jobs to run in parallel.
         joblib_params:
-            Additional parameters for joblib.Parallel.
+            Additional parameters for :py:class:`joblib.Parallel`.
 
         Raises
         ------
@@ -103,7 +103,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:
-        """Return all the features from `features_to_use` which can be obtained from base models' forecasts."""
+        """Return all the features from ``features_to_use`` which can be obtained from base models' forecasts."""
         features_df = pd.concat([forecast.df for forecast in forecasts], axis=1)
         available_features = set(features_df.columns.get_level_values("feature")) - {"fold_number"}
         features_to_use = self.features_to_use
@@ -169,7 +169,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
     def _make_features(
         self, forecasts: List[TSDataset], train: bool = False
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
-        """Prepare features for the `final_model`."""
+        """Prepare features for the ``final_model``."""
         if self.ts is None:
             raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
 
@@ -213,7 +213,8 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
     def _forecast(self) -> TSDataset:
         """Make predictions.
-        Compute the combination of pipelines' forecasts using `final_model`
+
+        Compute the combination of pipelines' forecasts using ``final_model``
         """
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")

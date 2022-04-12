@@ -27,6 +27,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
     - This transform can't fill NaNs in the future, only on train data.
 
     - This transform can't fill NaNs if all values are NaNs. In this case exception is raised.
+
     """
 
     def __init__(self, in_column: str, strategy: str, window: int, seasonality: int, default_value: Optional[float]):
@@ -39,15 +40,24 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             name of processed column
         strategy:
             filling value in missing timestamps:
+
             - If "zero", then replace missing dates with zeros
+
             - If "mean", then replace missing dates using the mean in fit stage.
+
             - If "running_mean" then replace missing dates using mean of subset of data
+
             - If "forward_fill" then replace missing dates using last existing value
+
             - If "seasonal" then replace missing dates using seasonal moving average
+
         window:
             In case of moving average and seasonality.
-            If window=-1 all previous dates are taken in account
-            Otherwise only window previous dates
+
+            * If ``window=-1`` all previous dates are taken in account
+
+            * Otherwise only window previous dates
+
         seasonality:
             the length of the seasonality
         default_value:
@@ -98,7 +108,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         Parameters
         ----------
         df: pd.Dataframe
-            transform in_column series of given dataframe
+            transform ``in_column`` series of given dataframe
 
         Returns
         -------
@@ -123,7 +133,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         Parameters
         ----------
         df: pd.Dataframe
-            inverse transform in_column series of given dataframe
+            inverse transform ``in_column`` series of given dataframe
 
         Returns
         -------
@@ -139,7 +149,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         """
         Create new Series taking all previous dates and adding missing dates.
 
-        Fills missed values for new dates according to filling_type
+        Fills missed values for new dates according to ``self.strategy``
 
         Parameters
         ----------
@@ -203,15 +213,24 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
             name of processed column
         strategy:
             filling value in missing timestamps:
+
             - If "zero", then replace missing dates with zeros
+
             - If "mean", then replace missing dates using the mean in fit stage.
+
             - If "running_mean" then replace missing dates using mean of subset of data
+
             - If "forward_fill" then replace missing dates using last existing value
+
             - If "seasonal" then replace missing dates using seasonal moving average
+
         window:
             In case of moving average and seasonality.
-            If window=-1 all previous dates are taken in account
-            Otherwise only window previous dates
+
+            * If ``window=-1`` all previous dates are taken in account
+
+            * Otherwise only window previous dates
+
         seasonality:
             the length of the seasonality
         default_value:

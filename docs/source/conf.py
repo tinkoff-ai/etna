@@ -65,6 +65,14 @@ extensions = [
     "sphinx.ext.githubpages",
 ]
 
+intersphinx_mapping = {
+    "statsmodels": ("https://www.statsmodels.org/stable/", None),
+    "sklearn": ("http://scikit-learn.org/stable", None),
+    "pytorch_forecasting": ("https://pytorch-forecasting.readthedocs.io/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/3.5.0/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+}
+
 autodoc_typehints = "both"
 autodoc_typehints_description_target = "all"
 add_module_names = False

@@ -14,6 +14,7 @@ Welcome to ETNA's documentation
    ensembles
    pipeline
    analysis
+   clustering
    loggers
    commands
    settings

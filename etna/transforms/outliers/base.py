@@ -71,7 +71,7 @@ class OutliersTransform(Transform, ABC):
         Parameters
         ----------
         df:
-            transform in_column series of given dataframe
+            transform ``in_column`` series of given dataframe
 
         Returns
         -------
@@ -118,7 +118,7 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        dict of outliers:
+        :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         pass

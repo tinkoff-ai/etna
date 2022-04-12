@@ -71,6 +71,7 @@ class AutoRegressivePipeline(BasePipeline):
 
     def fit(self, ts: TSDataset) -> "AutoRegressivePipeline":
         """Fit the AutoRegressivePipeline.
+
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
         Parameters
@@ -80,7 +81,7 @@ class AutoRegressivePipeline(BasePipeline):
 
         Returns
         -------
-        self:
+        :
             Fitted Pipeline instance
         """
         self.ts = ts

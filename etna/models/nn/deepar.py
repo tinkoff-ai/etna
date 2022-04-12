@@ -21,11 +21,11 @@ if SETTINGS.torch_required:
 
 
 class DeepARModel(Model):
-    """Wrapper for DeepAR from Pytorch Forecasting library.
+    """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes
     -----
-    We save TimeSeriesDataSet in instance to use it in the model.
+    We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
 

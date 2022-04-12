@@ -25,9 +25,10 @@ class _SklearnAdapter(BaseAdapter):
             Features dataframe
         regressors:
             List of the columns with regressors
+
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         self.regressor_columns = regressors
@@ -50,7 +51,7 @@ class _SklearnAdapter(BaseAdapter):
 
         Returns
         -------
-        y_pred:
+        :
             Array with predictions
         """
         try:
@@ -65,7 +66,7 @@ class _SklearnAdapter(BaseAdapter):
 
         Returns
         -------
-        result:
+        :
            Internal model
         """
         return self.model

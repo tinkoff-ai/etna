@@ -38,11 +38,11 @@ def mrmr(
     between this regressor and other ones. The correlation between the two regressors is an aggregated pairwise
     correlation for the regressors values in each segment.
 
-    Parameters:
+    Parameters
     ----------
     relevance_table:
-        dataframe of shape n_segment x n_exog_series with relevance table, where relevance_table[i][j] contains relevance
-        of j-th df_exog series to i-th df series
+        dataframe of shape n_segment x n_exog_series with relevance table, where ``relevance_table[i][j]``
+        contains relevance of j-th ``df_exog`` series to i-th df series
     regressors:
         dataframe with regressors in etna format
     top_k:
@@ -53,10 +53,11 @@ def mrmr(
         the method for redundancy values per-segment aggregation
     atol:
         the absolute tolerance to compare the float values
-    Returns:
+
+    Returns
     -------
     selected_features: List[str]
-        list of `top_k` selected regressors, sorted by their importance
+        list of ``top_k`` selected regressors, sorted by their importance
     """
     relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
     redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]

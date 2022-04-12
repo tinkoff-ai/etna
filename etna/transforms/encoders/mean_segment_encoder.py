@@ -26,7 +26,8 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
 
         Returns
         -------
-        self
+        :
+            Fitted transform
         """
         self.mean_encoder.fit(df)
         self.global_means = df.loc[:, self.idx[:, "target"]].mean().values
@@ -43,7 +44,8 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
 
         Returns
         -------
-        result dataframe
+        :
+            result dataframe
         """
         df = self.mean_encoder.transform(df)
         segment = df.columns.get_level_values("segment").unique()[0]

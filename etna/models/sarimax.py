@@ -175,9 +175,10 @@ class _SARIMAXAdapter(BaseAdapter):
             Features dataframe
         regressors:
             List of the columns with regressors
+
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         self.regressor_columns = regressors
@@ -237,7 +238,7 @@ class _SARIMAXAdapter(BaseAdapter):
 
         Returns
         -------
-        y_pred:
+        :
             DataFrame with predictions
         """
         if self._result is None or self._model is None:
@@ -315,7 +316,7 @@ class _SARIMAXAdapter(BaseAdapter):
 
         Returns
         -------
-        result:
+        :
            Internal model
         """
         return self._model
@@ -327,13 +328,10 @@ class SARIMAXModel(PerSegmentPredictionIntervalModel):
 
     Notes
     -----
-    We use SARIMAX [1] model from statsmodels package. Statsmodels package uses `exog` attribute for
+    We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
-
-    .. `SARIMAX: <https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html>_`
-
     """
 
     def __init__(

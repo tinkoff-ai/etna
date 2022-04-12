@@ -8,6 +8,7 @@ import pandas as pd
 
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import tslogger
 
 
 class MetricAggregationMode(str, Enum):
@@ -31,7 +32,7 @@ class Metric(BaseMixin):
     """
     Base class for all the multi-segment metrics.
 
-    How it works: Metric computes metric_fn value for each segment in given forecast
+    How it works: Metric computes ``metric_fn`` value for each segment in given forecast
     dataset and aggregates it according to mode.
     """
 
@@ -44,9 +45,12 @@ class Metric(BaseMixin):
         metric_fn:
             functional metric
         mode:
-            "macro" or "per-segment", way to aggregate metric values over segments
-            if "macro" computes average value
-            if "per-segment" -- does not aggregate metrics
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
         kwargs:
             functional metric's params
 
@@ -71,7 +75,7 @@ class Metric(BaseMixin):
     @staticmethod
     def _validate_segment_columns(y_true: TSDataset, y_pred: TSDataset):
         """
-        Check if all the segments from y_true are in y_pred and vice versa.
+        Check if all the segments from ``y_true`` are in ``y_pred`` and vice versa.
 
         Parameters
         ----------
@@ -84,6 +88,7 @@ class Metric(BaseMixin):
         ------
         ValueError:
             if there are mismatches in y_true and y_pred segments,
+        ValueError:
             if one of segments in y_true or y_pred doesn't contain 'target' column.
         """
         segments_true = set(y_true.df.columns.get_level_values("segment"))
@@ -111,7 +116,7 @@ class Metric(BaseMixin):
     @staticmethod
     def _validate_timestamp_columns(timestamp_true: pd.Series, timestamp_pred: pd.Series):
         """
-        Check that y_true and y_pred have the same timestamp.
+        Check that ``y_true`` and ``y_pred`` have the same timestamp.
 
         Parameters
         ----------
@@ -123,7 +128,7 @@ class Metric(BaseMixin):
         Raises
         ------
         ValueError:
-            If there are mismatches in y_true and y_pred timestamps
+            If there are mismatches in ``y_true`` and ``y_pred`` timestamps
         """
         if set(timestamp_pred) != set(timestamp_true):
             raise ValueError("y_true and y_pred have different timestamps")
@@ -143,13 +148,17 @@ class Metric(BaseMixin):
         """
         return np.mean(list(metrics_per_segments.values())).item()
 
+    def _log_start(self):
+        """Log metric computation."""
+        tslogger.log(f"Metric {self.__repr__()} is calculated on dataset")
+
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
         """
-        Compute metric's value with y_true and y_pred.
+        Compute metric's value with ``y_true`` and ``y_pred``.
 
         Notes
         -----
-        Note that if y_true and y_pred are not sorted Metric will sort it anyway
+        Note that if ``y_true`` and ``y_pred`` are not sorted Metric will sort it anyway
 
         Parameters
         ----------
@@ -160,8 +169,10 @@ class Metric(BaseMixin):
 
         Returns
         -------
+        :
             metric's value aggregated over segments or not (depends on mode)
         """
+        self._log_start()
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
 
         segments = set(y_true.df.columns.get_level_values("segment"))

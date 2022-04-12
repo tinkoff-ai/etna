@@ -34,7 +34,7 @@ class BaseLogger(ABC, BaseMixin):
         msg:
             Message or dict to log
         kwargs:
-            Parameters for changing additional info in log message
+            Additional parameters for particular implementation
         """
         pass
 
@@ -50,8 +50,8 @@ class BaseLogger(ABC, BaseMixin):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with TimeSeriesCrossValidation.get_metrics(aggregate_metrics=False)
-        forecast_df
+            Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
+        forecast_df:
             Forecast from backtest
         fold_info_df:
             Fold information from backtest
@@ -59,7 +59,10 @@ class BaseLogger(ABC, BaseMixin):
         pass
 
     def start_experiment(self, *args, **kwargs):
-        """Start experiment(logger post init or reinit next experiment with the same name)."""
+        """Start experiment.
+
+        Complete logger initialization or reinitialize it before the next experiment with the same name.
+        """
         pass
 
     def finish_experiment(self, *args, **kwargs):
@@ -134,7 +137,7 @@ class _Logger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics()
+            Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
         forecast_df:
             Forecast from backtest
         fold_info_df:
@@ -160,7 +163,10 @@ class _Logger(BaseLogger):
             logger.log_backtest_run(metrics, forecast, test)
 
     def start_experiment(self, *args, **kwargs):
-        """Start experiment(logger post init or reinit next experiment with the same name)."""
+        """Start experiment.
+
+        Complete logger initialization or reinitialize it before the next experiment with the same name.
+        """
         for logger in self.loggers:
             logger.start_experiment(*args, **kwargs)
 
@@ -194,12 +200,12 @@ def percentile(n: int):
 
 
 def aggregate_metrics_df(metrics_df: pd.DataFrame) -> Dict[str, float]:
-    """Aggregate metrics in `log_backtest_metrics` method.
+    """Aggregate metrics in :py:meth:`log_backtest_metrics` method.
 
     Parameters
     ----------
     metrics_df:
-        Dataframe produced with Pipeline._get_backtest_metrics()
+        Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
     """
     # case for aggregate_metrics=False
     if "fold_number" in metrics_df.columns:
