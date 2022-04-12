@@ -8,6 +8,7 @@ import pandas as pd
 
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.loggers import tslogger
 
 
 class MetricAggregationMode(str, Enum):
@@ -147,6 +148,10 @@ class Metric(BaseMixin):
         """
         return np.mean(list(metrics_per_segments.values())).item()
 
+    def _log_start(self):
+        """Log metric computation."""
+        tslogger.log(f"Metric {self.__repr__()} is calculated on dataset")
+
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
         """
         Compute metric's value with ``y_true`` and ``y_pred``.
@@ -167,6 +172,7 @@ class Metric(BaseMixin):
         :
             metric's value aggregated over segments or not (depends on mode)
         """
+        self._log_start()
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
 
         segments = set(y_true.df.columns.get_level_values("segment"))
