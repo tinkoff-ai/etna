@@ -64,6 +64,18 @@ def test_tsdataset_make_future_logging(example_tsds: TSDataset):
     tslogger.remove(idx)
 
 
+def test_tsdataset_inverse_transform_logging(example_tsds: TSDataset):
+    """Check working of logging inside `TSDataset.inverse_transform`."""
+    transforms = [LagTransform(lags=5, in_column="target"), AddConstTransform(value=5, in_column="target")]
+    file = NamedTemporaryFile()
+    _logger.add(file.name)
+    example_tsds.fit_transform(transforms=transforms)
+    idx = tslogger.add(ConsoleLogger())
+    example_tsds.inverse_transform()
+    check_logged_transforms(log_file=file.name, transforms=transforms[::-1])
+    tslogger.remove(idx)
+
+
 def test_backtest_logging(example_tsds: TSDataset):
     """Check working of logging inside backtest."""
     file = NamedTemporaryFile()
