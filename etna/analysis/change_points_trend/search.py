@@ -44,11 +44,11 @@ def find_change_points(
     change_point_model:
         ruptures model to get trend change points
     model_predict_params:
-        params for change_point_model predict method
+        params for ``change_point_model`` predict method
 
     Returns
     -------
-    result:
+    Dict[str, List[pd.Timestamp]]
         dictionary with list of trend change points for each segment
     """
     result: Dict[str, List[pd.Timestamp]] = {}

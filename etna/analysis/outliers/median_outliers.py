@@ -13,7 +13,9 @@ def get_anomalies_median(
 ) -> typing.Dict[str, typing.List[pd.Timestamp]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
-    Outliers are all points deviating from the median by more than alpha * std, where std is the sample variance in the window.
+
+    Outliers are all points deviating from the median by more than alpha * std,
+    where std is the sample variance in the window.
 
     Parameters
     ----------

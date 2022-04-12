@@ -124,7 +124,7 @@ class AbstractPipeline(ABC):
 
         Returns
         -------
-        self:
+        :
             Fitted Pipeline instance
         """
         pass
@@ -146,7 +146,7 @@ class AbstractPipeline(ABC):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         pass
@@ -179,11 +179,11 @@ class AbstractPipeline(ABC):
         n_jobs:
             Number of jobs to run in parallel
         joblib_params:
-            Additional parameters for joblib.Parallel
+            Additional parameters for :py:class:`joblib.Parallel`
 
         Returns
         -------
-        metrics_df, forecast_df, fold_info_df:
+        metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
 
@@ -256,7 +256,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         if self.ts is None:
@@ -489,11 +489,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         n_jobs:
             Number of jobs to run in parallel
         joblib_params:
-            Additional parameters for joblib.Parallel
+            Additional parameters for :py:class:`joblib.Parallel`
 
         Returns
         -------
-        metrics_df, forecast_df, fold_info_df:
+        metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
         if joblib_params is None:

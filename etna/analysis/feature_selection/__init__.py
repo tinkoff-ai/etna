@@ -1,3 +1,3 @@
-from etna.analysis.feature_selection.mrmr import AGGREGATION_FN
-from etna.analysis.feature_selection.mrmr import AggregationMode
-from etna.analysis.feature_selection.mrmr import mrmr
+from etna.analysis.feature_selection.mrmr_selection import AGGREGATION_FN
+from etna.analysis.feature_selection.mrmr_selection import AggregationMode
+from etna.analysis.feature_selection.mrmr_selection import mrmr

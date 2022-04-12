@@ -61,7 +61,7 @@ class HierarchicalClustering(Clustering):
         linkage: Union[str, ClusteringLinkageMode] = ClusteringLinkageMode.average,
         **clustering_algo_params,
     ):
-        """Build clustering algo (sklearn.cluster.AgglomerativeClustering) with given params.
+        """Build clustering algo (see :py:class:`sklearn.cluster.AgglomerativeClustering`) with given params.
 
         Parameters
         ----------

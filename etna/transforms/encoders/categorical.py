@@ -52,12 +52,16 @@ class LabelEncoderTransform(Transform):
         in_column:
             Name of column to be transformed
         out_column:
-            Name of added column. If not given, use `self.__repr__()`
+            Name of added column. If not given, use ``self.__repr__()``
         strategy:
             Filling encoding in not fitted values:
+
             - If "new_value", then replace missing values with '-1'
+
             - If "mean", then replace missing values using the mean in encoded column
+
             - If "none", then replace missing values with None
+
         """
         self.in_column = in_column
         self.out_column = out_column
@@ -74,7 +78,7 @@ class LabelEncoderTransform(Transform):
             Dataframe with data to fit the transform
         Returns
         -------
-        self:
+        :
             Fitted transform
         """
         y = TSDataset.to_flatten(df)[self.in_column]
@@ -83,15 +87,16 @@ class LabelEncoderTransform(Transform):
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Encode the `in_column` by fitted Label encoder.
+        Encode the ``in_column`` by fitted Label encoder.
 
         Parameters
         ----------
         df
             Dataframe with data to transform
+
         Returns
         -------
-        result:
+        :
             Dataframe with column with encoded values
         """
         out_column = self._get_column_name()
@@ -102,7 +107,7 @@ class LabelEncoderTransform(Transform):
         return result_df
 
     def _get_column_name(self) -> str:
-        """Get the `out_column` depending on the transform's parameters."""
+        """Get the ``out_column`` depending on the transform's parameters."""
         if self.out_column:
             return self.out_column
         return self.__repr__()
@@ -113,7 +118,6 @@ class OneHotEncoderTransform(Transform):
 
     If unknown category is encountered during transform, the resulting one-hot
     encoded columns for this feature will be all zeros.
-
     """
 
     def __init__(self, in_column: str, out_column: Optional[str] = None):
@@ -125,7 +129,7 @@ class OneHotEncoderTransform(Transform):
         in_column:
             Name of column to be encoded
         out_column:
-            Prefix of names of added columns. If not given, use `self.__repr__()`
+            Prefix of names of added columns. If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
         self.out_column = out_column
@@ -141,7 +145,7 @@ class OneHotEncoderTransform(Transform):
             Dataframe with data to fit the transform
         Returns
         -------
-        self:
+        :
             Fitted transform
         """
         x = TSDataset.to_flatten(df)[self.in_column].values.reshape(-1, 1)
@@ -156,9 +160,10 @@ class OneHotEncoderTransform(Transform):
         ----------
         df
             Dataframe with data to transform
+
         Returns
         -------
-        result:
+        :
             Dataframe with column with encoded values
         """
         out_column = self._get_column_name()
@@ -171,7 +176,7 @@ class OneHotEncoderTransform(Transform):
         return result_df
 
     def _get_column_name(self) -> str:
-        """Get the `out_column` depending on the transform's parameters."""
+        """Get the ``out_column`` depending on the transform's parameters."""
         if self.out_column:
             return self.out_column
         return self.__repr__()

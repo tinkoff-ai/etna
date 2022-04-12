@@ -39,7 +39,7 @@ class BaseFileLogger(BaseLogger):
         msg:
             Message or dict to log
         kwargs:
-            Parameters for changing additional info in log message
+            Additional parameters for particular implementation
         """
         pass
 
@@ -147,7 +147,7 @@ class BaseFileLogger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics()
+            Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
         forecast_df:
             Forecast from backtest
         fold_info_df:
@@ -177,10 +177,11 @@ class BaseFileLogger(BaseLogger):
 class LocalFileLogger(BaseFileLogger):
     """Logger for logging files into local folder.
 
-    It writes its result into folder like `experiments_folder`/`2021-12-12T12-12-12`, where the second part
+    It writes its result into folder like ``experiments_folder/2021-12-12T12-12-12``, where the second part
     is related to datetime of starting the experiment.
-    After every `start_experiment` it creates a new subfolder `job_type`/`group`.
-    If some of these two values are None then behaviour is little different and described in `start_experiment` method.
+
+    After every ``start_experiment`` it creates a new subfolder ``job_type/group``.
+    If some of these two values are None then behaviour is little different and described in ``start_experiment`` method.
     """
 
     def __init__(self, experiments_folder: str, config: Optional[Dict[str, Any]] = None, gzip: bool = False):
@@ -215,9 +216,11 @@ class LocalFileLogger(BaseFileLogger):
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
 
-        As a result, within `self.experiment_folder` subfolder `job_type`/`group` is created.
-        If `job_type` or `group` isn't set then only one-level subfolder is created.
-        If none of `job_type` and `group` is set then experiment logs files into `self.experiment_folder`.
+        As a result, within ``self.experiment_folder`` subfolder ``job_type/group`` is created.
+
+        * If ``job_type`` or ``group`` isn't set then only one-level subfolder is created.
+
+        * If none of ``job_type`` and ``group`` is set then experiment logs files into ``self.experiment_folder``.
 
         Parameters
         ----------
@@ -303,11 +306,11 @@ class S3FileLogger(BaseFileLogger):
         Raises
         ------
         ValueError:
-            if environment variable 'endpoint_url' isn't set
+            if environment variable ``endpoint_url`` isn't set
         ValueError:
-            if environment variable 'aws_access_key_id' isn't set
+            if environment variable ``aws_access_key_id`` isn't set
         ValueError:
-            if environment variable 'aws_secret_access_key' isn't set
+            if environment variable ``aws_secret_access_key`` isn't set
         ValueError:
             if bucket doesn't exist
         """
@@ -358,9 +361,11 @@ class S3FileLogger(BaseFileLogger):
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start experiment within current experiment, it is used for separate different folds during backtest.
 
-        As a result, `self.experiment_folder` key is extended with `job_type`/`group`.
-        If `job_type` or `group` isn't set then key is extended with one value.
-        If none of `job_type` and `group` is set then `self.experiment_folder` is not extended.
+        As a result, ``self.experiment_folder`` key is extended with ``job_type/group``.
+
+        * If ``job_type`` or ``group`` isn't set then key is extended with one value.
+
+        * If none of ``job_type`` and ``group`` is set then ``self.experiment_folder`` is not extended.
 
         Parameters
         ----------

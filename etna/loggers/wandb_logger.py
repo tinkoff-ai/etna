@@ -117,7 +117,7 @@ class WandbLogger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics()
+            Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
         forecast_df:
             Forecast from backtest
         fold_info_df:
@@ -170,7 +170,9 @@ class WandbLogger(BaseLogger):
         self.experiment.log(summary)
 
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
-        """Start experiment(logger post init or reinit next experiment with the same name).
+        """Start experiment.
+
+        Complete logger initialization or reinitialize it before the next experiment with the same name.
 
         Parameters
         ----------
