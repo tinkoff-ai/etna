@@ -113,7 +113,12 @@ class AutoRegressivePipeline(BasePipeline):
         for idx_start in range(0, self.horizon, self.step):
             current_step = min(self.step, self.horizon - idx_start)
             current_idx_border = self.ts.index.shape[0] + idx_start
-            current_ts = TSDataset(prediction_df.iloc[:current_idx_border], freq=self.ts.freq)
+            current_ts = TSDataset(
+                df=prediction_df.iloc[:current_idx_border],
+                freq=self.ts.freq,
+                df_exog=self.ts.df_exog,
+                known_future=self.ts.known_future,
+            )
             # manually set transforms in current_ts, otherwise make_future won't know about them
             current_ts.transforms = self.transforms
             with warnings.catch_warnings():
@@ -129,8 +134,13 @@ class AutoRegressivePipeline(BasePipeline):
             current_ts_future = self.model.forecast(current_ts_forecast)
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
-        prediction_ts = TSDataset(prediction_df.tail(self.horizon), freq=self.ts.freq)
-        # add all other features to forecast by making transform + inverse_transform
+        # construct dataset and add all features
+        prediction_ts = TSDataset(
+            df=prediction_df, freq=self.ts.freq, df_exog=self.ts.df_exog, known_future=self.ts.known_future
+        )
         prediction_ts.transform(self.transforms)
         prediction_ts.inverse_transform()
+        # cut only last timestamps from result dataset
+        prediction_ts.df = prediction_ts.df.tail(self.horizon)
+        prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
         return prediction_ts
