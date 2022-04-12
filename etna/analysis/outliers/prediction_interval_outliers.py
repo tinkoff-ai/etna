@@ -66,7 +66,7 @@ def get_anomalies_prediction_interval(
 
     Returns
     -------
-    Dict[str, List[pd.Timestamp]]
+    :
         dict of outliers in format {segment: [outliers_timestamps]}.
 
     Notes

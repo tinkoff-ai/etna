@@ -52,7 +52,7 @@ def get_segment_density_outliers_indices(
 
     Returns
     -------
-    List[int]
+    :
         list of outliers' indices
     """
 
@@ -115,7 +115,7 @@ def get_anomalies_density(
 
     Returns
     -------
-    Dict[str, List[pd.Timestamp]]
+    :
         dict of outliers in format {segment: [outliers_timestamps]}
 
     Notes

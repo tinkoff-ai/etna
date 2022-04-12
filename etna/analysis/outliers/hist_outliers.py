@@ -318,7 +318,7 @@ def get_anomalies_hist(
 
     Returns
     -------
-    Dict[str, List[pd.Timestamp]]
+    :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
     outliers_per_segment = {}
