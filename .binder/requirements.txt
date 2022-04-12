@@ -1,1 +1,1 @@
-etna[all] @ git+git://github.com/tinkoff-ai/etna@master
+etna[all]
