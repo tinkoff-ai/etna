@@ -46,6 +46,11 @@ def test_forecast_columns(example_reg_tsds):
     # make sure that all values are filled
     assert forecast_pipeline.to_pandas().isna().sum().sum() == 0
 
+    # check regressor values
+    assert forecast_pipeline[:, :, "regressor_exog_weekend"].equals(
+        original_ts.df_exog.loc[forecast_pipeline.index, pd.IndexSlice[:, "regressor_exog_weekend"]]
+    )
+
 
 def test_forecast_one_step(example_tsds):
     """Test that AutoRegressivePipeline gets predictions one by one if step is equal to 1."""
