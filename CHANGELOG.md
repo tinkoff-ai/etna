@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
--
+- `Width` and `Coverage` metrics for prediction intervals ([#638](https://github.com/tinkoff-ai/etna/pull/638))
 - 
 - Masked backtest ([#613](https://github.com/tinkoff-ai/etna/pull/613))
 - 
