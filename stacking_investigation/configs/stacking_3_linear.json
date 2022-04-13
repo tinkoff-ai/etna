@@ -1,0 +1,5 @@
+{
+  "ensemble": "stacking",
+  "n_folds": 3,
+  "final_model": "linear"
+}

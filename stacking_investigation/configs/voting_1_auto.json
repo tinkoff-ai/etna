@@ -1,0 +1,5 @@
+{
+  "ensemble": "voting",
+  "n_folds": 1,
+  "weights": "auto"
+}

@@ -1,0 +1,5 @@
+{
+  "ensemble": "stacking",
+  "n_folds": 5,
+  "final_model": "ridge_positive"
+}
