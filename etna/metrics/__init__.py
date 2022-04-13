@@ -8,6 +8,8 @@ from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import smape
+from etna.metrics.intervals_metrics import Coverage
+from etna.metrics.intervals_metrics import Width
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE
 from etna.metrics.metrics import MSE
