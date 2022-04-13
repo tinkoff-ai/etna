@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug with exog features in AutoRegressivePipeline ([#647](https://github.com/tinkoff-ai/etna/pull/647))
 - 
 - 
-- 
+- Fix custom_transform_and_model notebook ([#651](https://github.com/tinkoff-ai/etna/pull/651))
 - Fix MyBinder bug with dependencies ([#650](https://github.com/tinkoff-ai/etna/pull/650))
 
 ## [1.7.0] - 2022-03-16
