@@ -23,9 +23,9 @@ def optimal_sse(left: int, right: int, p: np.ndarray, pp: np.ndarray) -> float:
     right:
         right border
     p:
-        array of sums of elements, p[i] - sum from first to i elements
+        array of sums of elements, ``p[i]`` - sum from first to i elements
     pp:
-        array of sums of squares of elements, p[i] - sum of squares from first to i elements
+        array of sums of squares of elements, ``pp[i]`` - sum of squares from first to i elements
 
     Returns
     -------
@@ -87,7 +87,8 @@ def adjust_estimation(i: int, k: int, sse: np.ndarray, sse_one_bin: np.ndarray) 
 def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.ndarray) -> np.ndarray:
     """
     Count an approximation error of a series with [1, bins_number] bins.
-    http://www.vldb.org/conf/1998/p275.pdf
+
+    `Reference <http://www.vldb.org/conf/1998/p275.pdf>`_.
 
     Parameters
     ----------
@@ -123,7 +124,8 @@ def v_optimal_hist(series: np.ndarray, bins_number: int, p: np.ndarray, pp: np.n
 def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> typing.Tuple[np.ndarray, list]:
     """
     Compute F. F[a][b][k] - minimum approximation error on series[a:b+1] with k outliers.
-    http://www.vldb.org/conf/1999/P9.pdf
+
+    `Reference <http://www.vldb.org/conf/1999/P9.pdf>`_.
 
     Parameters
     ----------
@@ -132,9 +134,9 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> typi
     k:
         number of outliers
     p:
-        array of sums of elements, p[i] - sum from 0th to i elements
+        array of sums of elements, ``p[i]`` - sum from 0th to i elements
     pp:
-        array of sums of squares of elements, p[i] - sum of squares from 0th to i elements
+        array of sums of squares of elements, ``pp[i]`` - sum of squares from 0th to i elements
 
     Returns
     -------
@@ -229,7 +231,8 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> typi
 def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
     """
     Compute outliers indices according to hist rule.
-    http://www.vldb.org/conf/1999/P9.pdf
+
+    `Reference <http://www.vldb.org/conf/1999/P9.pdf>`_.
 
     Parameters
     ----------
@@ -300,6 +303,7 @@ def get_anomalies_hist(
 ) -> typing.Dict[str, List[pd.Timestamp]]:
     """
     Get point outliers in time series using histogram model.
+
     Outliers are all points that, when removed, result in a histogram with a lower approximation error,
     even with the number of bins less than the number of outliers.
 
@@ -314,7 +318,7 @@ def get_anomalies_hist(
 
     Returns
     -------
-    dict of outliers: typing.Dict[str, typing.List[pd.Timestamp]]
+    :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
     outliers_per_segment = {}

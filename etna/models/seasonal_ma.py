@@ -12,15 +12,17 @@ class _SeasonalMovingAverageModel:
     """
     Seasonal moving average.
 
-    Forecast for point y_t is calculated as mean of y_{t - s}, y_{t - 2 * s}, ...,
-    y_{t - n * s} where s is seasonality, n is window size (how many history values are taken for forecast).
+    .. math::
+        y_{t} = \\frac{\\sum_{i=1}^{n} y_{t-is} }{n},
+
+    where :math:`s` is seasonality, :math:`n` is window size (how many history values are taken for forecast).
     """
 
     def __init__(self, window: int = 5, seasonality: int = 7):
         """
         Initialize seasonal moving average model.
 
-        Length of remembered tail of series is window * seasonality.
+        Length of remembered tail of series is ``window * seasonality``.
 
         Parameters
         ----------
@@ -42,13 +44,13 @@ class _SeasonalMovingAverageModel:
         Parameters
         ----------
         df: pd.DataFrame
-            Ignored. Needed for compatibility with AutoRegressorForecaster.
+            Data to fit on
         regressors:
             List of the columns with regressors(ignored in this model)
 
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         if set(df.columns) != {"timestamp", "target"}:
@@ -75,12 +77,11 @@ class _SeasonalMovingAverageModel:
         Parameters
         ----------
         df: pd.DataFrame
-            Used only for getting the horizon of forecast. Needed for compatibility with AutoRegressorForecaster.
-            len(features) = horizon.
+            Used only for getting the horizon of forecast
 
         Returns
         -------
-        y_pred:
+        :
             Array with predictions.
         """
         horizon = len(df)
@@ -95,15 +96,17 @@ class SeasonalMovingAverageModel(PerSegmentModel):
     """
     Seasonal moving average.
 
-    Forecast for point y_t is calculated as mean of y_{t - s}, y_{t - 2 * s}, ...,
-    y_{t - n * s} where s is seasonality, n is window size (how many history values are taken for forecast).
+    .. math::
+        y_{t} = \\frac{\\sum_{i=1}^{n} y_{t-is} }{n},
+
+    where :math:`s` is seasonality, :math:`n` is window size (how many history values are taken for forecast).
     """
 
     def __init__(self, window: int = 5, seasonality: int = 7):
         """
         Initialize seasonal moving average model.
 
-        Length of remembered tail of series is window * seasonality.
+        Length of remembered tail of series is ``window * seasonality``.
 
         Parameters
         ----------
@@ -123,7 +126,7 @@ class SeasonalMovingAverageModel(PerSegmentModel):
 
         Returns
         -------
-        result:
+        :
            Internal model
         """
         return self._get_model()

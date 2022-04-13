@@ -61,7 +61,7 @@ def get_model_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame, model: Tr
     df_exog:
         dataframe with exogenous data
     model:
-        model to obtain feature importance, should have feature_importances_ property
+        model to obtain feature importance, should have ``feature_importances_`` property
 
     Returns
     -------

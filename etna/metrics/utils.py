@@ -22,7 +22,8 @@ def compute_metrics(
         dataset of time series forecast
     Returns
     -------
-    dict of metrics in format {"metric_name": metric_value}
+    :
+        dict of metrics in format {"metric_name": metric_value}
     """
     metrics_values = {}
     for metric in metrics:

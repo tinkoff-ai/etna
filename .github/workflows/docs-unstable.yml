@@ -4,31 +4,31 @@ on:
   push:
     branches:
       - master
-      
+
 jobs:
-   build-docs:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v2
-       - name: Set up Python
-         uses: actions/setup-python@v2
-         with:
-           python-version: "3.8"
-       - name: Install Poetry
-         uses: snok/install-poetry@v1
-         with:
-           virtualenvs-create: true
-           virtualenvs-in-project: true
-       - name: Load cached venv
-         id: cached-poetry-dependencies
-         uses: actions/cache@v2
-         with:
-           path: .venv
-           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-       - name: Install dependencies
-         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-         run: |
-           poetry install -E all -vv
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install -E all -vv
       - name: Install docs dependencies
         run: |
           sudo apt install pandoc
@@ -45,9 +45,9 @@ jobs:
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v1.2
         with:
-          publish-dir: './site'
+          publish-dir: "./site"
           production-branch: master
-          alias: 'unstable'
+          alias: "unstable"
           production-deploy: false
           deploy-message: "Deploy from GitHub Actions"
           github-token: ${{ secrets.GITHUB_TOKEN }}

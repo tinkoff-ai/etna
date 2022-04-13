@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 from typing import Optional
 
 import numpy as np
@@ -15,6 +16,7 @@ class ImputerMode(str, Enum):
     mean = "mean"
     running_mean = "running_mean"
     forward_fill = "forward_fill"
+    seasonal = "seasonal"
 
 
 class _OneSegmentTimeSeriesImputerTransform(Transform):
@@ -25,9 +27,10 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
     - This transform can't fill NaNs in the future, only on train data.
 
     - This transform can't fill NaNs if all values are NaNs. In this case exception is raised.
+
     """
 
-    def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
+    def __init__(self, in_column: str, strategy: str, window: int, seasonality: int, default_value: Optional[float]):
         """
         Create instance of _OneSegmentTimeSeriesImputerTransform.
 
@@ -37,14 +40,28 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             name of processed column
         strategy:
             filling value in missing timestamps:
+
             - If "zero", then replace missing dates with zeros
+
             - If "mean", then replace missing dates using the mean in fit stage.
+
             - If "running_mean" then replace missing dates using mean of subset of data
+
             - If "forward_fill" then replace missing dates using last existing value
+
+            - If "seasonal" then replace missing dates using seasonal moving average
+
         window:
-            In case of moving average.
-            If window=-1 all previous dates are taken in account
-            Otherwise only window previous dates
+            In case of moving average and seasonality.
+
+            * If ``window=-1`` all previous dates are taken in account
+
+            * Otherwise only window previous dates
+
+        seasonality:
+            the length of the seasonality
+        default_value:
+            value which will be used to impute the NaNs left after applying the imputer with the chosen strategy
 
         Raises
         ------
@@ -54,8 +71,10 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.in_column = in_column
         self.strategy = ImputerMode(strategy)
         self.window = window
+        self.seasonality = seasonality
+        self.default_value = default_value
         self.fill_value: Optional[int] = None
-        self.nan_timestamps = None
+        self.nan_timestamps: Optional[List[pd.Timestamp]] = None
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
         """
@@ -89,7 +108,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         Parameters
         ----------
         df: pd.Dataframe
-            transform in_column series of given dataframe
+            transform ``in_column`` series of given dataframe
 
         Returns
         -------
@@ -114,7 +133,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         Parameters
         ----------
         df: pd.Dataframe
-            inverse transform in_column series of given dataframe
+            inverse transform ``in_column`` series of given dataframe
 
         Returns
         -------
@@ -130,7 +149,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         """
         Create new Series taking all previous dates and adding missing dates.
 
-        Fills missed values for new dates according to filling_type
+        Fills missed values for new dates according to ``self.strategy``
 
         Parameters
         ----------
@@ -141,15 +160,24 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         -------
         result: pd.Series
         """
-        if self.fill_value is not None:
+        if self.nan_timestamps is None:
+            raise ValueError("Trying to apply the unfitted transform! First fit the transform.")
+
+        if self.strategy == ImputerMode.zero or self.strategy == ImputerMode.mean:
             df = df.fillna(value=self.fill_value)
         elif self.strategy == ImputerMode.forward_fill:
             df = df.fillna(method="ffill")
-        elif self.strategy == ImputerMode.running_mean:
-            for i, val in enumerate(df):
-                if pd.isnull(val):
-                    left_bound = max(i - self.window, 0) if self.window != -1 else 0
-                    df.iloc[i] = df.iloc[left_bound:i].mean()
+        elif self.strategy == ImputerMode.running_mean or self.strategy == ImputerMode.seasonal:
+            history = self.seasonality * self.window if self.window != -1 else len(df)
+            timestamps = list(df.index)
+            for timestamp in self.nan_timestamps:
+                i = timestamps.index(timestamp)
+                indexes = np.arange(i - self.seasonality, i - self.seasonality - history, -self.seasonality)
+                indexes = indexes[indexes >= 0]
+                df.iloc[i] = np.nanmean(df.iloc[indexes])
+
+        if self.default_value:
+            df = df.fillna(value=self.default_value)
         return df
 
 
@@ -168,7 +196,14 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
     it uses information from the whole train part.
     """
 
-    def __init__(self, in_column: str = "target", strategy: str = ImputerMode.zero, window: int = -1):
+    def __init__(
+        self,
+        in_column: str = "target",
+        strategy: str = ImputerMode.zero,
+        window: int = -1,
+        seasonality: int = 1,
+        default_value: Optional[float] = None,
+    ):
         """
         Create instance of TimeSeriesImputerTransform.
 
@@ -178,14 +213,28 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
             name of processed column
         strategy:
             filling value in missing timestamps:
+
             - If "zero", then replace missing dates with zeros
+
             - If "mean", then replace missing dates using the mean in fit stage.
+
             - If "running_mean" then replace missing dates using mean of subset of data
+
             - If "forward_fill" then replace missing dates using last existing value
+
+            - If "seasonal" then replace missing dates using seasonal moving average
+
         window:
-            In case of moving average.
-            If window=-1 all previous dates are taken in account
-            Otherwise only window previous dates
+            In case of moving average and seasonality.
+
+            * If ``window=-1`` all previous dates are taken in account
+
+            * Otherwise only window previous dates
+
+        seasonality:
+            the length of the seasonality
+        default_value:
+            value which will be used to impute the NaNs left after applying the imputer with the chosen strategy
 
         Raises
         ------
@@ -195,7 +244,17 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
         self.in_column = in_column
         self.strategy = strategy
         self.window = window
-        super().__init__(transform=_OneSegmentTimeSeriesImputerTransform(self.in_column, self.strategy, self.window))
+        self.seasonality = seasonality
+        self.default_value = default_value
+        super().__init__(
+            transform=_OneSegmentTimeSeriesImputerTransform(
+                in_column=self.in_column,
+                strategy=self.strategy,
+                window=self.window,
+                seasonality=self.seasonality,
+                default_value=self.default_value,
+            )
+        )
 
 
 __all__ = ["TimeSeriesImputerTransform"]

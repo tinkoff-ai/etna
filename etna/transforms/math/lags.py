@@ -56,9 +56,11 @@ class LagTransform(PerSegmentWrapper, FutureMixin):
             int value or list of values for lags computation; if int, generate range of lags from 1 to given value
         out_column:
             base for the name of created columns;
-            if set the final name is '{out_column}_{lag_number}';
-            if don't set, name will be 'transform.__repr__()',
-            repr will be made for transform that creates exactly this column
+
+            * if set the final name is '{out_column}_{lag_number}';
+
+            * if don't set, name will be ``transform.__repr__()``,
+              repr will be made for transform that creates exactly this column
 
         Raises
         ------

@@ -32,7 +32,8 @@ class RelevanceTable(ABC, BaseMixin):
     @abstractmethod
     def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool = False, **kwargs) -> pd.DataFrame:
         """Compute relevance table.
-        For each series in df compute relevance of corresponding series in df_exog.
+
+        For each series in ``df`` compute relevance of corresponding series in ``df_exog``.
 
         Parameters
         ----------
@@ -45,8 +46,9 @@ class RelevanceTable(ABC, BaseMixin):
 
         Returns
         -------
-        relevance table: pd.DataFrame
-            dataframe of shape n_segment x n_exog_series, relevance_table[i][j] contains relevance of j-th df_exog series to i-th df series
+        relevance table:
+            dataframe of shape n_segment x n_exog_series,
+            ``relevance_table[i][j]`` contains relevance of j-th df_exog series to i-th df series
         """
         pass
 
@@ -58,7 +60,7 @@ class StatisticsRelevanceTable(RelevanceTable):
         super().__init__(greater_is_better=False)
 
     def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool = False, **kwargs) -> pd.DataFrame:
-        """Compute feature relevance table with etna.analysis.get_statistics_relevance_table method."""
+        """Compute feature relevance table with :py:func:`~etna.analysis.get_statistics_relevance_table` method."""
         table = get_statistics_relevance_table(df=df, df_exog=df_exog)
         if return_ranks:
             return self._get_ranks(table)
@@ -72,7 +74,7 @@ class ModelRelevanceTable(RelevanceTable):
         super().__init__(greater_is_better=True)
 
     def __call__(self, df: pd.DataFrame, df_exog: pd.DataFrame, return_ranks: bool = False, **kwargs) -> pd.DataFrame:
-        """Compute feature relevance table with etna.analysis.get_model_relevance_table method."""
+        """Compute feature relevance table with :py:func:`~etna.analysis.get_model_relevance_table` method."""
         table = get_model_relevance_table(df=df, df_exog=df_exog, **kwargs)
         if return_ranks:
             return self._get_ranks(table)

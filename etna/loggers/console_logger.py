@@ -59,7 +59,7 @@ class ConsoleLogger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics()
+            Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
         forecast_df:
             Forecast from backtest
         fold_info_df:
@@ -67,7 +67,8 @@ class ConsoleLogger(BaseLogger):
 
         Notes
         -----
-        The result of logging will be different for aggregate_metrics=True and aggregate_metrics=False
+        The result of logging will be different for ``aggregate_metrics=True`` and ``aggregate_metrics=False``
+        options in :py:meth:`~etna.pipeline.Pipeline.backtest`.
         """
         if self.table:
             for _, row in metrics_df.iterrows():

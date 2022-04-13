@@ -26,7 +26,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        self
+        :
         """
         pass
 
@@ -42,7 +42,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        DataFrame
+        :
         """
         pass
 
@@ -56,7 +56,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        DataFrame
+        :
         """
         return self.fit(df).transform(df)
 
@@ -69,7 +69,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        DataFrame
+        :
         """
         return df
 
@@ -82,7 +82,7 @@ class PerSegmentWrapper(Transform):
         self.segment_transforms = {}
         self.segments = None
 
-    def fit(self, df: pd.DataFrame):
+    def fit(self, df: pd.DataFrame) -> "PerSegmentWrapper":
         """Fit transform on each segment."""
         self.segments = df.columns.get_level_values(0).unique()
         for segment in self.segments:

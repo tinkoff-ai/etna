@@ -36,7 +36,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         detrend_model:
             model to get trend from data
         change_point_model_predict_params:
-            params for change_point_model predict method
+            params for ``change_point_model.predict`` method
         """
         self.out_column = out_column
         super().__init__(
@@ -105,7 +105,7 @@ class _TrendTransform(PerSegmentWrapper):
         detrend_model:
             model to get trend in data
         change_point_model_predict_params:
-            params for change_point_model predict method
+            params for ``change_point_model.predict`` method
         """
         super().__init__(
             transform=_OneSegmentTrendTransform(
@@ -121,7 +121,8 @@ class _TrendTransform(PerSegmentWrapper):
 class TrendTransform(_TrendTransform, FutureMixin):
     """TrendTransform adds trend as a feature.
 
-    TrendTransform uses Binseg model as a change point detection model in _TrendTransform.
+    TrendTransform uses uses :py:class:`ruptures.detection.Binseg` model as a change point detection model
+    in _TrendTransform.
 
     Warning
     -------
@@ -150,7 +151,7 @@ class TrendTransform(_TrendTransform, FutureMixin):
             name of column to apply transform to
         out_column:
             name of added column.
-            If not given, use `self.__repr__()`
+            If not given, use ``self.__repr__()``
         detrend_model:
             model to get trend in data
         model:
@@ -160,7 +161,8 @@ class TrendTransform(_TrendTransform, FutureMixin):
         min_size:
             minimum segment length necessary to decide it is a stable trend segment
         jump:
-            jump value can speed up computations: if jump==k, the algo will use every k-th value for change points search.
+            jump value can speed up computations: if ``jump==k``,
+            the algo will use every k-th value for change points search.
         n_bkps:
             number of change points to find
         pen:

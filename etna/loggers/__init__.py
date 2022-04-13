@@ -1,4 +1,6 @@
-"""Implementation of global logger `tslogger` inspired with loguru.
+"""Module with loggers.
+
+Implementation of global logger ``tslogger`` is inspired by loguru.
 
 Examples
 --------

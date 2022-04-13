@@ -102,15 +102,19 @@ def plot_forecast(
     ----------
     forecast_ts:
         there are several options:
-        1. Forecasted TSDataset with timeseries data, single-forecast mode
-        2. List of forecasted TSDatasets, multi-forecast mode
-        3. Dictionary with forecasted TSDatasets, multi-forecast mode
+
+        #. Forecasted TSDataset with timeseries data, single-forecast mode
+
+        #. List of forecasted TSDatasets, multi-forecast mode
+
+        #. Dictionary with forecasted TSDatasets, multi-forecast mode
+
     test_ts:
         TSDataset with timeseries data
     train_ts:
         TSDataset with timeseries data
     segments:
-        segments to plot; if not given plot all the segments from forecast_df
+        segments to plot; if not given plot all the segments from ``forecast_df``
     n_train_samples:
         length of history of train to plot
     columns_num:
@@ -126,7 +130,7 @@ def plot_forecast(
     Raises
     ------
     ValueError:
-        if the format of `forecast_ts` is unknown
+        if the format of ``forecast_ts`` is unknown
     """
     forecast_results = _prepare_forecast_results(forecast_ts)
     num_forecasts = len(forecast_results.keys())
@@ -333,6 +337,7 @@ def plot_backtest_interactive(
         length of pre-backtest history to plot
     figsize:
         size of the figure in pixels
+
     Returns
     -------
     go.Figure:
@@ -459,7 +464,8 @@ def plot_anomalies(
     ts:
         TSDataset of timeseries that was used for detect anomalies
     anomaly_dict:
-        dictionary derived from anomaly detection function
+        dictionary derived from anomaly detection function,
+        e.g. :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density`
     in_column:
         column to plot
     segments:
@@ -500,13 +506,17 @@ def get_correlation_matrix(
         Segments to use
     method:
         Method of correlation:
-        pearson : standard correlation coefficient
-        kendall : Kendall Tau correlation coefficient
-        spearman : Spearman rank correlation
+
+        * pearson: standard correlation coefficient
+
+        * kendall: Kendall Tau correlation coefficient
+
+        * spearman: Spearman rank correlation
 
     Returns
     -------
-    Correlation matrix
+    np.ndarray
+        Correlation matrix
     """
     if method not in ["pearson", "kendall", "spearman"]:
         raise ValueError(f"'{method}' is not a valid method of correlation.")
@@ -533,9 +543,13 @@ def plot_correlation_matrix(
         Segments to use
     method:
         Method of correlation:
-        pearson : standard correlation coefficient
-        kendall : Kendall Tau correlation coefficient
-        spearman : Spearman rank correlation
+
+        * pearson: standard correlation coefficient
+
+        * kendall: Kendall Tau correlation coefficient
+
+        * spearman: Spearman rank correlation
+
     figsize:
         size of the figure in inches
     """
@@ -564,6 +578,7 @@ def plot_anomalies_interactive(
     figsize: Tuple[int, int] = (20, 10),
 ):
     """Plot a time series with indicated anomalies.
+
     Anomalies are obtained using the specified method. The method parameters values
     can be changed using the corresponding sliders.
 
@@ -574,7 +589,7 @@ def plot_anomalies_interactive(
     segment:
         Segment to plot
     method:
-        Method for outliers detection
+        Method for outliers detection, e.g. :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density`
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
     in_column:
@@ -584,7 +599,8 @@ def plot_anomalies_interactive(
 
     Notes
     -----
-    Jupyter notebook might display the results incorrectly, in this case try to use '!jupyter nbextension enable --py widgetsnbextension'
+    Jupyter notebook might display the results incorrectly,
+    in this case try to use ``!jupyter nbextension enable --py widgetsnbextension``.
 
     Examples
     --------
@@ -694,7 +710,8 @@ def plot_time_series_with_change_points(
     ts:
         TSDataset with timeseries
     change_points:
-        dictionary with trend change points for each segment, can be derived from `etna.analysis.find_change_points`
+        dictionary with trend change points for each segment,
+        can be obtained from :py:func:`~etna.analysis.change_points_trend.search.find_change_points`
     segments:
         segments to use
     columns_num:
@@ -743,17 +760,17 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Returns
     -------
-    new_ts:
+    new_ts: TSDataset
         TSDataset with residuals in forecasts
 
     Raises
     ------
     KeyError:
-        if segments of `forecast_df` and `ts` aren't the same
+        if segments of ``forecast_df`` and ``ts`` aren't the same
 
     Notes
     -----
-    Transforms are taken as is from `ts`.
+    Transforms are taken as is from ``ts``.
     """
     from etna.datasets import TSDataset
 
@@ -807,8 +824,8 @@ def plot_residuals(
 
     Notes
     -----
-    Parameter `transforms` is necessary because some pipelines doesn't save features in their forecasts,
-    e.g. `etna.ensembles` pipelines.
+    Parameter ``transforms`` is necessary because some pipelines doesn't save features in their forecasts,
+    e.g. :py:mod:`etna.ensembles` pipelines.
     """
     if segments is None:
         segments = sorted(ts.segments)
@@ -886,7 +903,8 @@ def plot_trend(
 ):
     """Plot series and trend from trend transform for this series.
 
-    If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label
+    If only unique transform classes are used then show their short names (without parameters).
+    Otherwise show their full repr as label
 
     Parameters
     ----------
@@ -948,15 +966,17 @@ def plot_feature_relevance(
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
         aggregation strategy for obtained feature relevance table;
-        all the strategies can be examined at `etna.analysis.feature_selection.AggregationMode`
+        all the strategies can be examined
+        at :py:class:`~etna.analysis.feature_selection.mrmr_selection.AggregationMode`
     relevance_params:
-        additional keyword arguments for `__call__` method of `RelevanceTable` instances
+        additional keyword arguments for the ``__call__`` method of
+        :py:class:`~etna.analysis.feature_relevance.relevance.RelevanceTable`
     top_k:
         number of best features to plot, if None plot all the features
     segments:
         segments to use
     columns_num:
-        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+        if ``relevance_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
     figsize:
         size of the figure per subplot with one segment in inches
     """
@@ -1063,9 +1083,10 @@ def plot_periodogram(
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
 ):
-    """Plot the periodogram using `scipy.signal.periodogram`.
+    """Plot the periodogram using :py:func:`scipy.signal.periodogram`.
 
-     It is useful to determine the optimal order parameter for `etna.transforms.FourierTransform`.
+    It is useful to determine the optimal ``order`` parameter
+    for :py:class:`~etna.transforms.timestamp.fourier.FourierTransform`.
 
     Parameters
     ----------
@@ -1073,22 +1094,19 @@ def plot_periodogram(
         TSDataset with timeseries data
     period:
         the period of the seasonality to capture in frequency units of time series, it should be >= 2;
-        it is translated to the `fs` parameter of `scipy.signal.periodogram`
+        it is translated to the ``fs`` parameter of :py:func:`scipy.signal.periodogram`
     amplitude_aggregation_mode:
         aggregation strategy for obtained per segment periodograms;
-        all the strategies can be examined at `etna.analysis.feature_selection.AggregationMode`
+        all the strategies can be examined
+        at :py:class:`~etna.analysis.feature_selection.mrmr_selection.AggregationMode`
     periodogram_params:
-        additional keyword arguments for periodogram, `scipy.signal.periodogram` is used
+        additional keyword arguments for periodogram, :py:func:`scipy.signal.periodogram` is used
     segments:
         segments to use
     columns_num:
-        if `amplitude_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+        if ``amplitude_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
     figsize:
         size of the figure per subplot with one segment in inches
-
-    Notes
-    -----
-    In non per-segment mode all segments are cut to be the same length, the last values are taken.
 
     Raises
     ------
@@ -1096,6 +1114,10 @@ def plot_periodogram(
         if period < 2
     ValueError:
         if periodogram can't be calculated on segment because of the NaNs inside it
+
+    Notes
+    -----
+    In non per-segment mode all segments are cut to be the same length, the last values are taken.
     """
     if period < 2:
         raise ValueError("Period should be at least 2")
@@ -1190,8 +1212,8 @@ def plot_holidays(
 
         * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
 
-        * if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
-        In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+        * | if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
+          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
 
     segments:
         segments to use

@@ -24,7 +24,7 @@ class EnsembleMixin:
 
     @staticmethod
     def _fit_pipeline(pipeline: BasePipeline, ts: TSDataset) -> BasePipeline:
-        """Fit given pipeline with ts."""
+        """Fit given pipeline with ``ts``."""
         tslogger.log(msg=f"Start fitting {pipeline}.")
         pipeline.fit(ts=ts)
         tslogger.log(msg=f"Pipeline {pipeline} is fitted.")

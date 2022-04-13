@@ -181,8 +181,8 @@ class GaleShapleyMatcher(BaseMixin):
         Notes
         -----
         Success code is necessary because in ETNA usage we can not guarantee that number of features will be
-        big enough to build matches with all the segments. In case n_features < n_segments some segments always stay
-        available that can cause infinite while loop in __call__.
+        big enough to build matches with all the segments. In case ``n_features < n_segments`` some segments always stay
+        available that can cause infinite while loop in ``__call__``.
         """
         success = False
         for segment in available_segments:
@@ -221,7 +221,14 @@ class GaleShapleyMatcher(BaseMixin):
 
 
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table."""
+    """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table.
+
+
+    Notes
+    -----
+    Transform works with any type of features, however most of the models works only with regressors.
+    Therefore, it is recommended to pass the regressors into the feature selection transforms.
+    """
 
     def __init__(
         self,
@@ -244,11 +251,6 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             if "all" value is given, all columns are used
         use_rank:
             if True, use rank in relevance table computation
-
-        Notes
-        -----
-        Transform works with any type of features, however most of the models works only with regressors.
-        Therefore, it is recommended to pass the regressors into the feature selection transforms.
         """
         super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
@@ -340,7 +342,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         return selected_features
 
     def fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
-        """Fit Gale-Shapley algo and find a pool of top_k features.
+        """Fit Gale-Shapley algo and find a pool of ``top_k`` features.
 
         Parameters
         ----------

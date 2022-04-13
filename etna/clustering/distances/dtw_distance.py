@@ -47,7 +47,7 @@ class DTWDistance(Distance):
 
         Notes
         -----
-        Specifying manual points_distance might slow down the clustering algorithm
+        Specifying manual ``points_distance`` might slow down the clustering algorithm.
         """
         super().__init__(trim_series=trim_series)
         self.points_distance = points_distance
