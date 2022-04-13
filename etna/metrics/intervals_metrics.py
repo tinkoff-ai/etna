@@ -23,21 +23,20 @@ class _QuantileMetricMixin:
 
 
 class Coverage(Metric, _QuantileMetricMixin):
-    """Coverage metric for prediction intervals."""
+    """Coverage metric for prediction intervals - precenteage of samples in the interval [lower quantile, upper quantile].
+
+    .. math::
+        Coverage(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{[ y\_true_i \\ge y\_pred_i^{lower\_quantile}] * [y\_true_i \\le y\_pred_i^{upper\_quantile}] }}{n}
+
+    Notes
+    -----
+    Works just if quantiles presented in y_pred
+    """
 
     def __init__(
         self, quantiles: Tuple[float, float] = (0.025, 0.975), mode: str = MetricAggregationMode.per_segment, **kwargs
     ):
-        """
-        Precenteage of samples in the interval [lower quantile, upper quantile].
-
-        .. math::
-            Coverage(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{[ y\_true_i \\ge y\_pred_i^{lower\_quantile}] * [y\_true_i \\le y\_pred_i^{upper\_quantile}] }}{n}
-
-
-        Notes
-        -----
-        Works just if quantiles presented in y_pred
+        """Init metric.
 
         Parameters
         ----------
@@ -87,21 +86,20 @@ class Coverage(Metric, _QuantileMetricMixin):
 
 
 class Width(Metric, _QuantileMetricMixin):
-    """Mean width of prediction intervals."""
+    """Mean width of prediction intervals.
+
+    .. math::
+    Width(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile} \\mid}{n}
+
+    Notes
+    -----
+    Works just if quantiles presented in y_pred
+    """
 
     def __init__(
         self, quantiles: Tuple[float, float] = (0.025, 0.975), mode: str = MetricAggregationMode.per_segment, **kwargs
     ):
-        """
-        Create instance of Mean width of prediction intervals.
-
-        .. math::
-            Width(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile} \\mid}{n}
-
-
-        Notes
-        -----
-        Works just if quantiles presented in y_pred
+        """Init metric.
 
         Parameters
         ----------
