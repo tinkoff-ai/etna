@@ -26,22 +26,30 @@ def test_fit(example_tsds):
     pipeline.fit(example_tsds)
 
 
-def test_forecast_columns(example_tsds):
+def test_forecast_columns(example_reg_tsds):
     """Test that AutoRegressivePipeline generates all the columns."""
-    original_ts = deepcopy(example_tsds)
+    original_ts = deepcopy(example_reg_tsds)
     horizon = 5
 
     # make predictions in AutoRegressivePipeline
     model = LinearPerSegmentModel()
     transforms = [LagTransform(in_column="target", lags=[1]), DateFlagsTransform(is_weekend=True)]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
-    pipeline.fit(example_tsds)
+    pipeline.fit(example_reg_tsds)
     forecast_pipeline = pipeline.forecast()
 
     # generate all columns
     original_ts.fit_transform(transforms)
 
     assert set(forecast_pipeline.columns) == set(original_ts.columns)
+
+    # make sure that all values are filled
+    assert forecast_pipeline.to_pandas().isna().sum().sum() == 0
+
+    # check regressor values
+    assert forecast_pipeline[:, :, "regressor_exog_weekend"].equals(
+        original_ts.df_exog.loc[forecast_pipeline.index, pd.IndexSlice[:, "regressor_exog_weekend"]]
+    )
 
 
 def test_forecast_one_step(example_tsds):
