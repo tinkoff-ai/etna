@@ -78,7 +78,8 @@ If any of checks fails, the CI will fail and your Pull Request won't be merged.
 
 ### Documentation
 
-ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings.
+ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings. 
+The documentation is written in ReST.
 Length of a line inside docstrings block must be limited to 100 characters to fit into Jupyter documentation popups.
 
 You could check the docs with:
@@ -110,3 +111,21 @@ brew install pandoc
 #Windows
 choco install pandoc
 ```
+
+During creation of Pull Request make sure that your documentation looks good, check:
+1. `Parameters` and `Returns` sections have correct names and types;
+2. Sections should be
+   1. divided correctly without artefacts,
+   2. consistent by meaning with [Numpydoc Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html);
+3. Lists are rendered correctly;
+4. Listings of code, e.g. variable names, are typed with monospaced font;
+5. Mathematical formulas are rendered correctly;
+6. Links to external sources are active;
+7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/tinkoff-ai/etna/blob/master/docs/source/conf.py#L68)
+
+Useful links:
+1. [ReST Quickref](https://docutils.sourceforge.io/docs/user/rst/quickref.html)
+2. [ReST Roles](https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html)
+3. [ReST Cross-referencing Python objects](https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#cross-referencing-python-objects)
+4. [Matplotlib Cheetsheet](https://matplotlib.org/sampledoc/cheatsheet.html)
+5. [Sklearn example](https://github.com/scikit-learn/scikit-learn/blob/37ac6788c/sklearn/linear_model/_ridge.py#L321)
