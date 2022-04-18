@@ -13,6 +13,7 @@ from etna.metrics import MSE
 from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
+from etna.metrics import Width
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
@@ -487,3 +488,17 @@ def test_backtest_two_points(masked_ts: TSDataset, lag: int, expected: Dict[str,
     for segment in expected.keys():
         assert segment in metrics.keys()
         np.testing.assert_array_almost_equal(expected[segment], metrics[segment])
+
+
+def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
+    train_ts, _ = weekly_period_ts
+    quantiles = (0.01, 0.99)
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    _, forecast_df, _ = pipeline.backtest(
+        ts=train_ts,
+        metrics=[MAE(), Width(quantiles=quantiles)],
+        forecast_params={"quantiles": quantiles, "prediction_interval": True},
+    )
+    features = forecast_df.columns.get_level_values(1)
+    assert f"target_{quantiles[0]}" in features
+    assert f"target_{quantiles[1]}" in features

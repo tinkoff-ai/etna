@@ -498,6 +498,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             Number of jobs to run in parallel
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
+        forecast_params:
+            Additional parameters for :py:method:`BasePipeline.forecast`
 
         Returns
         -------
