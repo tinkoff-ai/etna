@@ -451,7 +451,7 @@ def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, Li
     )
 
     pipeline = Pipeline(model=NaiveModel(lag=5), transforms=[], horizon=4)
-    fold = pipeline._run_fold(train, test, 1, mask, [MAE()])
+    fold = pipeline._run_fold(train, test, 1, mask, [MAE()], forecast_params=dict())
     for seg in fold["metrics"]["MAE"].keys():
         assert fold["metrics"]["MAE"][seg] == expected[seg]
 
