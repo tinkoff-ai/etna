@@ -374,7 +374,13 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return metrics_values
 
     def _run_fold(
-        self, train: TSDataset, test: TSDataset, fold_number: int, mask: FoldMask, metrics: List[Metric], forecast_params: Dict[str, Any]
+        self,
+        train: TSDataset,
+        test: TSDataset,
+        fold_number: int,
+        mask: FoldMask,
+        metrics: List[Metric],
+        forecast_params: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Run fit-forecast pipeline of model for one fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
@@ -500,7 +506,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """
         if joblib_params is None:
             joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
-        
+
         if forecast_params is None:
             forecast_params = dict()
 
@@ -510,7 +516,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         folds = Parallel(n_jobs=n_jobs, **joblib_params)(
             delayed(self._run_fold)(
-                train=train, test=test, fold_number=fold_number, mask=masks[fold_number], metrics=metrics, forecast_params=forecast_params
+                train=train,
+                test=test,
+                fold_number=fold_number,
+                mask=masks[fold_number],
+                metrics=metrics,
+                forecast_params=forecast_params,
             )
             for fold_number, (train, test) in enumerate(
                 self._generate_folds_datasets(ts=ts, masks=masks, horizon=self.horizon)
