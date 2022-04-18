@@ -499,7 +499,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
         forecast_params:
-            Additional parameters for :py:method:`BasePipeline.forecast`
+            Additional parameters for :py:func:`~etna.pipeline.base.BasePipeline.forecast`
 
         Returns
         -------
