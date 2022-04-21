@@ -1,4 +1,4 @@
-lint: isort-check black-check flake8-check mypy-check spell-check
+lint: isort-check black-check flake8-check mypy-check spell-check imported-deps-check
 
 isort-check:
 	isort --skip etna/libs --sl -c etna/
@@ -18,6 +18,9 @@ mypy-check:
 spell-check:
 	codespell etna/ *.md tests/ -L mape,hist
 	python -m scripts.notebook_codespell
+
+imported-deps-check:
+	python -m scripts.check_imported_dependencies
 
 format:
 	isort --skip etna/libs --sl etna/
