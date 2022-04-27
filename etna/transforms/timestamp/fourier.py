@@ -71,6 +71,7 @@ class FourierTransform(Transform, FutureMixin):
         if period < 2:
             raise ValueError("Period should be at least 2")
         self.period = period
+        self.order = order
         self.mods: Sequence[int]
 
         if order is not None and mods is None:
