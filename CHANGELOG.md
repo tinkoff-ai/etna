@@ -5,36 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## Unreleased
 ### Added
-- `Width` and `Coverage` metrics for prediction intervals ([#638](https://github.com/tinkoff-ai/etna/pull/638))
-- 
-- Masked backtest ([#613](https://github.com/tinkoff-ai/etna/pull/613))
-- 
-- Add seasonal_plot ([#628](https://github.com/tinkoff-ai/etna/pull/628))
-- 
-- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
-- Add support of quantiles in backtest ([#652](https://github.com/tinkoff-ai/etna/pull/652))
-- Fixed bug in SARIMAX model with `horizon`=1 ([#637](https://github.com/tinkoff-ai/etna/pull/637))
-- Add prediction_actual_scatter_plot ([#610](https://github.com/tinkoff-ai/etna/pull/610))
-- Add plot_holidays ([#624](https://github.com/tinkoff-ai/etna/pull/624))
-- 
-- 
-- Add instruction about documentation formatting to contribution guide ([#648](https://github.com/tinkoff-ai/etna/pull/648))
-- Seasonal strategy in TimeSeriesImputerTransform ([#639](https://github.com/tinkoff-ai/etna/pull/639))
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
 -
 
 ### Changed
 -
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+### Fixed
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+## [1.8.0] - 2022-04-28
+### Added
+- `Width` and `Coverage` metrics for prediction intervals ([#638](https://github.com/tinkoff-ai/etna/pull/638))
+- Masked backtest ([#613](https://github.com/tinkoff-ai/etna/pull/613))
+- Add seasonal_plot ([#628](https://github.com/tinkoff-ai/etna/pull/628))
+- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
+- Add support of quantiles in backtest ([#652](https://github.com/tinkoff-ai/etna/pull/652))
+- Add prediction_actual_scatter_plot ([#610](https://github.com/tinkoff-ai/etna/pull/610))
+- Add plot_holidays ([#624](https://github.com/tinkoff-ai/etna/pull/624))
+- Add instruction about documentation formatting to contribution guide ([#648](https://github.com/tinkoff-ai/etna/pull/648))
+- Seasonal strategy in TimeSeriesImputerTransform ([#639](https://github.com/tinkoff-ai/etna/pull/639))
+
+### Changed
 - Add logging to `Metric.__call__` ([#643](https://github.com/tinkoff-ai/etna/pull/643))
--
--
 - Add in_column to plot_anomalies, plot_anomalies_interactive ([#618](https://github.com/tinkoff-ai/etna/pull/618))
 - Add logging to TSDataset.inverse_transform ([#642](https://github.com/tinkoff-ai/etna/pull/642))
 
 ### Fixed
 - Passing non default params for default models STLTransform ([#641](https://github.com/tinkoff-ai/etna/pull/641))
-- 
+- Fixed bug in SARIMAX model with `horizon`=1 ([#637](https://github.com/tinkoff-ai/etna/pull/637))
 - Fixed bug in models `get_model` method ([#623](https://github.com/tinkoff-ai/etna/pull/623))
 - Fixed unsafe comparison in plots ([#611](https://github.com/tinkoff-ai/etna/pull/611))
 - Fixed plot_trend does not work with Linear and TheilSen transforms ([#617](https://github.com/tinkoff-ai/etna/pull/617))
@@ -43,7 +86,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix documentation formatting ([#636](https://github.com/tinkoff-ai/etna/pull/636))
 - Fix bug with exog features in AutoRegressivePipeline ([#647](https://github.com/tinkoff-ai/etna/pull/647))
 - Fix missed dependencies ([#656](https://github.com/tinkoff-ai/etna/pull/656))
-- 
 - Fix custom_transform_and_model notebook ([#651](https://github.com/tinkoff-ai/etna/pull/651))
 - Fix MyBinder bug with dependencies ([#650](https://github.com/tinkoff-ai/etna/pull/650))
 
