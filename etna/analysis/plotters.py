@@ -2,6 +2,7 @@ import itertools
 import math
 import warnings
 from copy import deepcopy
+from enum import Enum
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -1283,3 +1284,93 @@ def plot_holidays(
             Line2D([0], [0], marker="o", color=color, label=label) for label, color in holidays_colors.items()
         ]
         ax[i].legend(handles=legend_handles)
+
+
+class PerFoldAggregation(str, Enum):
+    """Enum for types of aggregation in a metric per-segment plot."""
+
+    mean = "mean"
+    sum = "median"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregations are allowed"
+        )
+
+    def get_function(self):
+        """Get aggregation function."""
+        if self.value == "mean":
+            return np.nanmean
+        elif self.value == "median":
+            return np.nanmedian
+
+
+def plot_metric_per_segment(
+    metrics_df: pd.DataFrame,
+    metric_name: str,
+    ascending: bool = False,
+    per_fold_aggregation_mode: str = PerFoldAggregation.mean,
+    top_k: Optional[int] = None,
+    barplot_params: Optional[Dict[str, Any]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot barplot with per-segment metrics.
+
+    Parameters
+    ----------
+    metrics_df:
+        dataframe with metrics calculated on the backtest
+    metric_name:
+        name of the metric to visualize
+    ascending:
+
+        * If True, small values at the top;
+
+        * If False, big values at the top.
+
+    per_fold_aggregation_mode:
+        how to aggregate metrics over the folds if they aren't already aggregated
+        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+    top_k:
+        number segments to show after ordering according to ``ascending``
+    barplot_params:
+        dictionary with parameters for plotting, :py:func:`seaborn.barplot` is used
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``metric_name`` isn't present in ``metrics_df``
+    NotImplementedError:
+        unknown ``per_fold_aggregation_mode`` is given
+    """
+    if barplot_params is None:
+        barplot_params = {}
+
+    aggregation_mode = PerFoldAggregation(per_fold_aggregation_mode)
+
+    plt.figure(figsize=figsize)
+
+    if metric_name not in metrics_df.columns:
+        raise ValueError("Given metric_name isn't present in metrics_df")
+
+    if "fold_number" in metrics_df.columns:
+        metrics_dict = (
+            metrics_df.groupby("segment").agg({metric_name: aggregation_mode.get_function()}).to_dict()[metric_name]
+        )
+    else:
+        metrics_dict = metrics_df["segment", metric_name].to_dict()[metric_name]
+
+    segments = np.array(list(metrics_dict.keys()))
+    values = np.array(list(metrics_dict.values()))
+    sort_idx = np.argsort(values)
+    if not ascending:
+        sort_idx = sort_idx[::-1]
+    segments = segments[sort_idx][:top_k]
+    values = values[sort_idx][:top_k]
+    sns.barplot(x=values, y=segments, orient="h", **barplot_params)
+    plt.title("Metric per-segment plot")
+    plt.xlabel("Segment")
+    plt.ylabel(metric_name)
