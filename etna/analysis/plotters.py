@@ -1303,7 +1303,7 @@ class PerFoldAggregation(str, Enum):
         if self.value == "mean":
             return np.nanmean
         elif self.value == "median":
-            return self.nanmedian
+            return np.nanmedian
 
 
 class MetricPlotType(str, Enum):
