@@ -1376,26 +1376,6 @@ def plot_metric_per_segment(
     plt.ylabel(metric_name)
 
 
-class PerFoldAggregation(str, Enum):
-    """Enum for types of aggregation in a metric per-segment plot."""
-
-    mean = "mean"
-    sum = "median"
-
-    @classmethod
-    def _missing_(cls, value):
-        raise NotImplementedError(
-            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregations are allowed"
-        )
-
-    def get_function(self):
-        """Get aggregation function."""
-        if self.value == "mean":
-            return np.nanmean
-        elif self.value == "median":
-            return np.nanmedian
-
-
 class MetricPlotType(str, Enum):
     """Enum for types of plot in :py:func:`~etna.analysis.plotters.metric_per_segment_distribution_plot`.
 
