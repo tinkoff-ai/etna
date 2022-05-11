@@ -20,17 +20,13 @@ class LinearPerSegmentModel(SklearnPerSegmentModel):
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
-        super().__init__(
-            regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs)
-        )
+        super().__init__(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
 
 
 class ElasticPerSegmentModel(SklearnPerSegmentModel):
     """Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`."""
 
-    def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs
-    ):
+    def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """
         Create instance of ElasticNet with given parameters.
 
@@ -83,17 +79,13 @@ class LinearMultiSegmentModel(SklearnMultiSegmentModel):
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
-        super().__init__(
-            regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs)
-        )
+        super().__init__(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
 
 
 class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
     """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments."""
 
-    def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs
-    ):
+    def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """
         Create instance of ElasticNet with given parameters.
 

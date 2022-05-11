@@ -117,9 +117,7 @@ def test_repr_elastic(model_class, model_class_repr):
     kwargs_repr = "copy_X = True, positive = True"
     model = model_class(alpha=1.0, l1_ratio=0.5, fit_intercept=True, **kwargs)
     model_repr = model.__repr__()
-    true_repr = (
-        f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, {kwargs_repr}, )"
-    )
+    true_repr = f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, {kwargs_repr}, )"
     assert model_repr == true_repr
 
 
