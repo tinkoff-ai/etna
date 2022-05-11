@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 import hydra_slayer
@@ -16,6 +18,7 @@ def forecast(
     freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
+    forecast_config_path: Optional[Path] = typer.Argument(None, help="path to yaml config with forecast params"),
     raw_output: bool = typer.Argument(False, help="by default we return only forecast without features"),
 ):
     """Command to make forecast with etna without coding.
@@ -51,6 +54,11 @@ def forecast(
     =============  ===========  ===============  ===============
     """
     pipeline_configs = OmegaConf.to_object(OmegaConf.load(config_path))
+    if forecast_config_path:
+        forecast_params_config = OmegaConf.to_object(OmegaConf.load(forecast_config_path))
+    else:
+        forecast_params_config = {}
+    forecast_params: Dict[str, Any] = hydra_slayer.get_from_params(**forecast_params_config)
 
     df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
 
@@ -65,12 +73,14 @@ def forecast(
 
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     pipeline.fit(tsdataset)
-    forecast = pipeline.forecast()
+    forecast = pipeline.forecast(**forecast_params)
 
+    flatten = forecast.to_pandas(flatten=True)
     if raw_output:
-        (forecast.to_pandas(True).to_csv(output_path, index=False))
+        (flatten.to_csv(output_path, index=False))
     else:
-        (forecast.to_pandas(True)[["timestamp", "segment", "target"]].to_csv(output_path, index=False))
+        quantile_columns = [column for column in flatten.columns if column.startswith("target_0.")]
+        (flatten[["timestamp", "segment", "target"] + quantile_columns].to_csv(output_path, index=False))
 
 
 if __name__ == "__main__":
