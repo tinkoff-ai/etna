@@ -8,7 +8,7 @@ from etna.models.sklearn import SklearnPerSegmentModel
 class LinearPerSegmentModel(SklearnPerSegmentModel):
     """Class holding per segment :py:class:`sklearn.linear_model.LinearRegression`."""
 
-    def __init__(self, fit_intercept: bool = True, normalize: bool = False, **kwargs):
+    def __init__(self, fit_intercept: bool = True, **kwargs):
         """
         Create instance of LinearModel with given parameters.
 
@@ -17,16 +17,11 @@ class LinearPerSegmentModel(SklearnPerSegmentModel):
         fit_intercept:
             Whether to calculate the intercept for this model. If set to False, no intercept will be used in
             calculations (i.e. data is expected to be centered).
-        normalize:
-            This parameter is ignored when ``fit_intercept`` is set to False.
-            If True, the regressors X will be normalized before regression
-            by subtracting the mean and dividing by the l2-norm.
         """
         self.fit_intercept = fit_intercept
-        self.normalize = normalize
         self.kwargs = kwargs
         super().__init__(
-            regressor=LinearRegression(fit_intercept=self.fit_intercept, normalize=self.normalize, **self.kwargs)
+            regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs)
         )
 
 
@@ -34,7 +29,7 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
     """Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`."""
 
     def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs
+        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs
     ):
         """
         Create instance of ElasticNet with given parameters.
@@ -58,21 +53,16 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
         fit_intercept:
             Whether to calculate the intercept for this model. If set to False, no intercept will be used in
             calculations (i.e. data is expected to be centered).
-        normalize:
-            This parameter is ignored when fit_intercept is set to False. If True, the regressors X will be normalized
-            before regression by subtracting the mean and dividing by the l2-norm.
         """
         self.alpha = alpha
         self.l1_ratio = l1_ratio
         self.fit_intercept = fit_intercept
-        self.normalize = normalize
         self.kwargs = kwargs
         super().__init__(
             regressor=ElasticNet(
                 alpha=self.alpha,
                 l1_ratio=self.l1_ratio,
                 fit_intercept=self.fit_intercept,
-                normalize=self.normalize,
                 **self.kwargs,
             )
         )
@@ -81,7 +71,7 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
 class LinearMultiSegmentModel(SklearnMultiSegmentModel):
     """Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments."""
 
-    def __init__(self, fit_intercept: bool = True, normalize: bool = False, **kwargs):
+    def __init__(self, fit_intercept: bool = True, **kwargs):
         """
         Create instance of LinearModel with given parameters.
 
@@ -90,16 +80,11 @@ class LinearMultiSegmentModel(SklearnMultiSegmentModel):
         fit_intercept:
             Whether to calculate the intercept for this model. If set to False, no intercept will be used in
             calculations (i.e. data is expected to be centered).
-        normalize:
-            This parameter is ignored when ``fit_intercept`` is set to False.
-            If True, the regressors X will be normalized before regression
-            by subtracting the mean and dividing by the l2-norm.
         """
         self.fit_intercept = fit_intercept
-        self.normalize = normalize
         self.kwargs = kwargs
         super().__init__(
-            regressor=LinearRegression(fit_intercept=self.fit_intercept, normalize=self.normalize, **self.kwargs)
+            regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs)
         )
 
 
@@ -107,7 +92,7 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
     """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments."""
 
     def __init__(
-        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, normalize: bool = False, **kwargs
+        self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs
     ):
         """
         Create instance of ElasticNet with given parameters.
@@ -131,21 +116,16 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
         fit_intercept:
             Whether to calculate the intercept for this model. If set to False, no intercept will be used in
             calculations (i.e. data is expected to be centered).
-        normalize:
-            This parameter is ignored when fit_intercept is set to False. If True, the regressors X will be normalized
-            before regression by subtracting the mean and dividing by the l2-norm.
         """
         self.alpha = alpha
         self.l1_ratio = l1_ratio
         self.fit_intercept = fit_intercept
-        self.normalize = normalize
         self.kwargs = kwargs
         super().__init__(
             regressor=ElasticNet(
                 alpha=self.alpha,
                 l1_ratio=self.l1_ratio,
                 fit_intercept=self.fit_intercept,
-                normalize=self.normalize,
                 **self.kwargs,
             )
         )
