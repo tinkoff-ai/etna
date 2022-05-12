@@ -92,10 +92,14 @@ def get_model_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame, model: Tr
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique())
     result = np.empty((len(segments), len(regressors)))
+    none_warning_raised = False
     for k, seg in enumerate(segments):
         df_exog_seg = df_exog.loc[:, seg].dropna()[regressors]
         df_seg = df.loc[:, seg].dropna()["target"]
         common_index = df_seg.index.intersection(df_exog_seg.index)
+        if len(common_index) != len(df.loc[:, seg]) and not none_warning_raised:
+            none_warning_raised = True
+            warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
         model.fit(df_exog_seg.loc[common_index], df_seg.loc[common_index])
         result[k] = model.feature_importances_
     relevance_table = pd.DataFrame(result)

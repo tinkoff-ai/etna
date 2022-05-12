@@ -103,3 +103,21 @@ def test_target_none_statistic_table(exog_and_target_dfs):
     exog = exog[[i for i in exog.columns if i[1][:-1] == "exog"]]
     with pytest.warns(UserWarning, match="Exogenous or target data contains None"):
         get_statistics_relevance_table(df=df, df_exog=exog)
+
+
+def test_target_none_model_table(exog_and_target_dfs):
+    df, exog = exog_and_target_dfs
+    tmp = np.arange(len(df["a", "target"]), dtype=float)
+    tmp[5] = np.nan
+    df["a", "target"] = tmp
+
+    exog = exog[[i for i in exog.columns if i[1][:-1] == "exog"]]
+    with pytest.warns(UserWarning, match="Exogenous or target data contains None"):
+        get_model_relevance_table(df=df, df_exog=exog, model=DecisionTreeRegressor())
+
+
+def test_exog_none_model_table(exog_and_target_dfs):
+    df, exog = exog_and_target_dfs
+    exog = exog[[i for i in exog.columns if i[1] in ["exog1", "exog2", "exog3", "none"]]]
+    with pytest.warns(UserWarning, match="Exogenous or target data contains None"):
+        get_model_relevance_table(df=df, df_exog=exog, model=DecisionTreeRegressor())
