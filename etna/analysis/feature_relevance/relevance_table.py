@@ -40,8 +40,8 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique())
     result = np.empty((len(segments), len(regressors)))
-    none_warning = False
-    category_warning = False
+    none_warning_raised = False
+    category_warning_raised = False
     for k, seg in enumerate(segments):
         first_valid_idx = df.loc[:, seg].first_valid_index()
         df_now = df.loc[first_valid_idx:, seg]["target"]
@@ -52,15 +52,15 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
                 df_exog_now[cat_col] = df_exog_now[cat_col].astype(float)
             except ValueError:
                 raise ValueError(f"{cat_col} column cannot be cast to float type! Please, use encoders.")
-        if len(cat_cols) > 0 and not category_warning:
-            category_warning = True
+        if len(cat_cols) > 0 and not category_warning_raised:
+            category_warning_raised = True
             warnings.warn(
                 "Exogenous data contains columns with category type! It will be converted to float. If this is not desired behavior, use encoders."
             )
         df_exog_now["target"] = df_now
         df_exog_now = df_exog_now.dropna()
-        if len(df_exog_now) != len(df_now) and not none_warning:
-            none_warning = True
+        if len(df_exog_now) != len(df_now) and not none_warning_raised:
+            none_warning_raised = True
             warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
         relevance = calculate_relevance_table(df_exog_now.drop(columns=["target"]), df_exog_now["target"])[
             ["feature", "p_value"]
