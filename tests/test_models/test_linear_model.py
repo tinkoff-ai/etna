@@ -101,9 +101,9 @@ def test_repr_linear(model_class, model_class_repr):
     """Check __repr__ method of LinearPerSegmentModel and LinearMultiSegmentModel."""
     kwargs = {"copy_X": True, "positive": True}
     kwargs_repr = "copy_X = True, positive = True"
-    model = model_class(fit_intercept=True, normalize=False, **kwargs)
+    model = model_class(fit_intercept=True, **kwargs)
     model_repr = model.__repr__()
-    true_repr = f"{model_class_repr}(fit_intercept = True, normalize = False, {kwargs_repr}, )"
+    true_repr = f"{model_class_repr}(fit_intercept = True, {kwargs_repr}, )"
     assert model_repr == true_repr
 
 
@@ -115,11 +115,9 @@ def test_repr_elastic(model_class, model_class_repr):
     """Check __repr__ method of ElasticPerSegmentModel and ElasticMultiSegmentModel."""
     kwargs = {"copy_X": True, "positive": True}
     kwargs_repr = "copy_X = True, positive = True"
-    model = model_class(alpha=1.0, l1_ratio=0.5, fit_intercept=True, normalize=False, **kwargs)
+    model = model_class(alpha=1.0, l1_ratio=0.5, fit_intercept=True, **kwargs)
     model_repr = model.__repr__()
-    true_repr = (
-        f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, normalize = False, {kwargs_repr}, )"
-    )
+    true_repr = f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, {kwargs_repr}, )"
     assert model_repr == true_repr
 
 
