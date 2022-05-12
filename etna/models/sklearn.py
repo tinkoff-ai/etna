@@ -5,11 +5,12 @@ import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
 
+from etna.models.base import BaseAdapter
 from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
 
 
-class _SklearnAdapter:
+class _SklearnAdapter(BaseAdapter):
     def __init__(self, regressor: RegressorMixin):
         self.model = regressor
         self.regressor_columns: Optional[List[str]] = None
@@ -24,9 +25,10 @@ class _SklearnAdapter:
             Features dataframe
         regressors:
             List of the columns with regressors
+
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         self.regressor_columns = regressors
@@ -49,7 +51,7 @@ class _SklearnAdapter:
 
         Returns
         -------
-        y_pred:
+        :
             Array with predictions
         """
         try:
@@ -58,6 +60,16 @@ class _SklearnAdapter:
             raise ValueError("Only convertible to numeric features are accepted!")
         pred = self.model.predict(features)
         return pred
+
+    def get_model(self) -> RegressorMixin:
+        """Get internal sklearn model that is used inside etna class.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self.model
 
 
 class SklearnPerSegmentModel(PerSegmentModel):

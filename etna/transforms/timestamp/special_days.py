@@ -24,7 +24,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
     Notes
     -----
     You can read more about other anomalies detection methods in:
-    https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46
+    `Time Series of Price Anomaly Detection <https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46>`_
     """
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
@@ -94,6 +94,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
         Returns
         -------
+        :
             pd.DataFrame with 'anomaly_weekday', 'anomaly_monthday' or both of them columns no-timestamp indexed that
             contains 1 at i-th position if i-th day is a special day
         """

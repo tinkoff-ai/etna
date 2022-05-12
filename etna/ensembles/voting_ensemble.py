@@ -61,7 +61,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         regressor: TreeBasedRegressor = RandomForestRegressor(n_estimators=5),
         n_folds: int = 3,
         n_jobs: int = 1,
-        joblib_params: Dict[str, Any] = dict(verbose=11, backend="multiprocessing", mmap_mode="c"),
+        joblib_params: Optional[Dict[str, Any]] = None,
     ):
         """Init VotingEnsemble.
 
@@ -71,20 +71,24 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
             List of pipelines that should be used in ensemble
         weights:
             List of pipelines' weights.
-            If None, use uniform weights
-            If List[float], use this weights for the base estimators, weights will be normalized automatically
-            If "auto", use importances of the base estimators forecasts as weights of base estimators
+
+            * If None, use uniform weights
+
+            * If List[float], use this weights for the base estimators, weights will be normalized automatically
+
+            * If "auto", use importances of the base estimators forecasts as weights of base estimators
+
         regressor:
             Regression model with fit/predict interface which will be used to evaluate weights of the base estimators.
-            It should have feature_importances_ property(e.g. all tree-based regressors in sklearn)
+            It should have ``feature_importances_`` property (e.g. all tree-based regressors in sklearn)
         n_folds:
             Number of folds to use in the backtest.
             Backtest is used to obtain the forecasts from the base estimators;
-            forecasts will be use to evaluate the estimator's weights
+            forecasts will be used to evaluate the estimator's weights.
         n_jobs:
             Number of jobs to run in parallel
         joblib_params:
-            Additional parameters for joblib.Parallel
+            Additional parameters for :py:class:`joblib.Parallel`
 
         Raises
         ------
@@ -100,7 +104,10 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self.n_folds = n_folds
         self.pipelines = pipelines
         self.n_jobs = n_jobs
-        self.joblib_params = joblib_params
+        if joblib_params is None:
+            self.joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
+        else:
+            self.joblib_params = joblib_params
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
     @staticmethod
@@ -191,6 +198,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
 
     def _forecast(self) -> TSDataset:
         """Make predictions.
+
         Compute weighted average of pipelines' forecasts
         """
         if self.ts is None:

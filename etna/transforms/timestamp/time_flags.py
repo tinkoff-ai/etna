@@ -43,9 +43,11 @@ class TimeFlagsTransform(Transform, FutureMixin):
             to feature dataframe in transform
         out_column:
             base for the name of created columns;
-            if set the final name is '{out_column}_{feature_name}';
-            if don't set, name will be 'transform.__repr__()',
-            repr will be made for transform that creates exactly this column
+
+            * if set the final name is '{out_column}_{feature_name}';
+
+            * if don't set, name will be ``transform.__repr__()``,
+              repr will be made for transform that creates exactly this column
 
         Raises
         ------

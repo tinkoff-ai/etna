@@ -9,6 +9,7 @@ import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 
 warnings.filterwarnings(
@@ -19,7 +20,7 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXAdapter:
+class _SARIMAXAdapter(BaseAdapter):
     """
     Class for holding Sarimax model.
 
@@ -174,9 +175,10 @@ class _SARIMAXAdapter:
             Features dataframe
         regressors:
             List of the columns with regressors
+
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         self.regressor_columns = regressors
@@ -236,7 +238,7 @@ class _SARIMAXAdapter:
 
         Returns
         -------
-        y_pred:
+        :
             DataFrame with predictions
         """
         if self._result is None or self._model is None:
@@ -258,8 +260,9 @@ class _SARIMAXAdapter:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
-            y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
+            y_pred = forecast.predicted_mean
+            y_pred.name = "mean"
+            y_pred = pd.DataFrame(y_pred)
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
@@ -273,8 +276,9 @@ class _SARIMAXAdapter:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
             )
-            y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
+            y_pred = forecast.predicted_mean
+            y_pred.name = "mean"
+            y_pred = pd.DataFrame(y_pred)
         y_pred = y_pred.reset_index(drop=True, inplace=False)
         rename_dict = {
             column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
@@ -307,6 +311,16 @@ class _SARIMAXAdapter:
             exog_future = None
         return exog_future
 
+    def get_model(self) -> SARIMAX:
+        """Get internal statsmodels.tsa.statespace.sarimax.SARIMAX model that is used inside etna class.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self._model
+
 
 class SARIMAXModel(PerSegmentPredictionIntervalModel):
     """
@@ -314,13 +328,10 @@ class SARIMAXModel(PerSegmentPredictionIntervalModel):
 
     Notes
     -----
-    We use SARIMAX [1] model from statsmodels package. Statsmodels package uses `exog` attribute for
+    We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
-
-    .. `SARIMAX: <https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html>_`
-
     """
 
     def __init__(

@@ -11,7 +11,24 @@ from etna.transforms.base import Transform
 
 
 class DateFlagsTransform(Transform, FutureMixin):
-    """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column."""
+    """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
+
+    Notes
+    -----
+    Small example of ``week_number_in_month`` and ``week_number_in_year`` features
+
+    =============  ======================  ========================  ========================
+      timestamp      day_number_in_week      week_number_in_month      week_number_in_year
+    =============  ======================  ========================  ========================
+    2020-01-01     4                       1                         53
+    2020-01-02     5                       1                         53
+    2020-01-03     6                       1                         53
+    2020-01-04     0                       2                         1
+    ...
+    2020-01-10     6                       2                         1
+    2020-01-11     0                       3                         2
+    =============  ======================  ========================  ========================
+    """
 
     def __init__(
         self,
@@ -58,25 +75,12 @@ class DateFlagsTransform(Transform, FutureMixin):
             with flag that shows given date is a special day
         out_column:
             base for the name of created columns;
-            if set the final name is '{out_column}_{feature_name}';
-            if don't set, name will be `transform.__repr__()`,
-            repr will be made for transform that creates exactly this column
 
-        Notes
-        -----
-        Small example of week_number_in_month and week_number_in_year features
+            * if set the final name is '{out_column}_{feature_name}';
 
-        =============  ======================  ========================  ========================
-          timestamp      day_number_in_week      week_number_in_month      week_number_in_year
-        =============  ======================  ========================  ========================
-        2020-01-01     4                       1                         53
-        2020-01-02     5                       1                         53
-        2020-01-03     6                       1                         53
-        2020-01-04     0                       2                         1
-        ...
-        2020-01-10     6                       2                         1
-        2020-01-11     0                       3                         2
-        =============  ======================  ========================  ========================
+            * if don't set, name will be ``transform.__repr__()``,
+              repr will be made for transform that creates exactly this column
+
         """
         if not any(
             [
@@ -153,7 +157,8 @@ class DateFlagsTransform(Transform, FutureMixin):
 
         Returns
         -------
-        dataframe with extracted features
+        :
+            dataframe with extracted features
         """
         features = pd.DataFrame(index=df.index)
         timestamp_series = pd.Series(df.index)

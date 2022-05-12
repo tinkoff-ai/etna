@@ -12,19 +12,17 @@ import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters import HoltWintersResults
 
+from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
 
 
-class _HoltWintersAdapter:
+class _HoltWintersAdapter(BaseAdapter):
     """
     Class for holding Holt-Winters' exponential smoothing model.
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     """
 
     def __init__(
@@ -55,20 +53,32 @@ class _HoltWintersAdapter:
         ----------
         trend:
             Type of trend component. One of:
+
             * 'add'
+
             * 'mul'
+
             * 'additive'
+
             * 'multiplicative'
+
             * None
+
         damped_trend:
             Should the trend component be damped.
         seasonal:
             Type of seasonal component. One of:
+
             * 'add'
+
             * 'mul'
+
             * 'additive'
+
             * 'multiplicative'
+
             * None
+
         seasonal_periods:
             The number of periods in a complete seasonal cycle, e.g., 4 for
             quarterly data or 7 for daily data with a weekly cycle.
@@ -76,16 +86,20 @@ class _HoltWintersAdapter:
             Method for initialize the recursions. One of:
 
             * None
+
             * 'estimated'
+
             * 'heuristic'
+
             * 'legacy-heuristic'
+
             * 'known'
 
             None defaults to the pre-0.12 behavior where initial values
             are passed as part of ``fit``. If any of the other values are
             passed, then the initial values must also be set when constructing
-            the model. If 'known' initialization is used, then `initial_level`
-            must be passed, as well as `initial_trend` and `initial_seasonal` if
+            the model. If 'known' initialization is used, then ``initial_level``
+            must be passed, as well as ``initial_trend`` and ``initial_seasonal`` if
             applicable. Default is 'estimated'. "legacy-heuristic" uses the same
             values that were used in statsmodels 0.11 and earlier.
         initial_level:
@@ -102,7 +116,7 @@ class _HoltWintersAdapter:
             parameters.
         initial_seasonal:
             The initial seasonal component. An array of length `seasonal`
-            or length `seasonal - 1` (in which case the last initial value
+            or length ``seasonal - 1`` (in which case the last initial value
             is computed to make the average effect zero). Only used if
             initialization is 'known'. Required if estimation method is "known".
             If set using either "estimated" or "heuristic" this value is used.
@@ -111,10 +125,15 @@ class _HoltWintersAdapter:
             parameters.
         use_boxcox: {True, False, 'log', float}, optional
             Should the Box-Cox transform be applied to the data first? One of:
+
             * True
+
             * False
+
             * 'log': apply log
+
             * float: lambda value
+
         bounds:
             An dictionary containing bounds for the parameters in the model,
             excluding the initial values if estimated. The keys of the dictionary
@@ -146,7 +165,7 @@ class _HoltWintersAdapter:
             The phi value of the damped method, if the value is
             set then this value will be used as the value.
         fit_kwargs:
-            Additional parameters for calling ExponentialSmoothing.fit
+            Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
         self.trend = trend
         self.damped_trend = damped_trend
@@ -182,7 +201,7 @@ class _HoltWintersAdapter:
             List of the columns with regressors(ignored in this model)
         Returns
         -------
-        self:
+        :
             Fitted model
         """
         self._check_df(df)
@@ -226,7 +245,7 @@ class _HoltWintersAdapter:
 
         Returns
         -------
-        y_pred:
+        :
             Array with predictions
         """
         if self._result is None or self._model is None:
@@ -246,6 +265,16 @@ class _HoltWintersAdapter:
                 f"{columns_not_used} will be dropped"
             )
 
+    def get_model(self) -> ExponentialSmoothing:
+        """Get internal :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model that is used inside etna class.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self._model
+
 
 class HoltWintersModel(PerSegmentModel):
     """
@@ -253,10 +282,7 @@ class HoltWintersModel(PerSegmentModel):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     """
 
     def __init__(
@@ -287,20 +313,32 @@ class HoltWintersModel(PerSegmentModel):
         ----------
         trend:
             Type of trend component. One of:
+
             * 'add'
+
             * 'mul'
+
             * 'additive'
+
             * 'multiplicative'
+
             * None
+
         damped_trend:
             Should the trend component be damped.
         seasonal:
             Type of seasonal component. One of:
+
             * 'add'
+
             * 'mul'
+
             * 'additive'
+
             * 'multiplicative'
+
             * None
+
         seasonal_periods:
             The number of periods in a complete seasonal cycle, e.g., 4 for
             quarterly data or 7 for daily data with a weekly cycle.
@@ -308,16 +346,20 @@ class HoltWintersModel(PerSegmentModel):
             Method for initialize the recursions. One of:
 
             * None
+
             * 'estimated'
+
             * 'heuristic'
+
             * 'legacy-heuristic'
+
             * 'known'
 
             None defaults to the pre-0.12 behavior where initial values
             are passed as part of ``fit``. If any of the other values are
             passed, then the initial values must also be set when constructing
-            the model. If 'known' initialization is used, then `initial_level`
-            must be passed, as well as `initial_trend` and `initial_seasonal` if
+            the model. If 'known' initialization is used, then ``initial_level``
+            must be passed, as well as ``initial_trend`` and ``initial_seasonal`` if
             applicable. Default is 'estimated'. "legacy-heuristic" uses the same
             values that were used in statsmodels 0.11 and earlier.
         initial_level:
@@ -334,7 +376,7 @@ class HoltWintersModel(PerSegmentModel):
             parameters.
         initial_seasonal:
             The initial seasonal component. An array of length `seasonal`
-            or length `seasonal - 1` (in which case the last initial value
+            or length ``seasonal - 1`` (in which case the last initial value
             is computed to make the average effect zero). Only used if
             initialization is 'known'. Required if estimation method is "known".
             If set using either "estimated" or "heuristic" this value is used.
@@ -343,10 +385,15 @@ class HoltWintersModel(PerSegmentModel):
             parameters.
         use_boxcox: {True, False, 'log', float}, optional
             Should the Box-Cox transform be applied to the data first? One of:
+
             * True
+
             * False
+
             * 'log': apply log
+
             * float: lambda value
+
         bounds:
             An dictionary containing bounds for the parameters in the model,
             excluding the initial values if estimated. The keys of the dictionary
@@ -378,7 +425,7 @@ class HoltWintersModel(PerSegmentModel):
             The phi value of the damped method, if the value is
             set then this value will be used as the value.
         fit_kwargs:
-            Additional parameters for calling ExponentialSmoothing.fit
+            Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
         self.trend = trend
         self.damped_trend = damped_trend
@@ -430,11 +477,9 @@ class HoltModel(HoltWintersModel):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-    They implement Holt model as a restricted version of ExponentialSmoothing model.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+    They implement :py:class:`statsmodels.tsa.holtwinters.Holt` model
+    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
 
     def __init__(
@@ -450,30 +495,37 @@ class HoltModel(HoltWintersModel):
         **fit_kwargs,
     ):
         """
-        Init Holt-Winters' model with given params.
+        Init Holt model with given params.
 
         Parameters
         ----------
         exponential:
             Type of trend component. One of:
+
             * False: additive trend
+
             * True: multiplicative trend
+
         damped_trend:
             Should the trend component be damped.
         initialization_method:
             Method for initialize the recursions. One of:
 
             * None
+
             * 'estimated'
+
             * 'heuristic'
+
             * 'legacy-heuristic'
+
             * 'known'
 
             None defaults to the pre-0.12 behavior where initial values
             are passed as part of ``fit``. If any of the other values are
             passed, then the initial values must also be set when constructing
-            the model. If 'known' initialization is used, then `initial_level`
-            must be passed, as well as `initial_trend` and `initial_seasonal` if
+            the model. If 'known' initialization is used, then ``initial_level``
+            must be passed, as well as ``initial_trend`` and ``initial_seasonal`` if
             applicable. Default is 'estimated'. "legacy-heuristic" uses the same
             values that were used in statsmodels 0.11 and earlier.
         initial_level:
@@ -498,7 +550,7 @@ class HoltModel(HoltWintersModel):
             The phi value of the damped method, if the value is
             set then this value will be used as the value.
         fit_kwargs:
-            Additional parameters for calling ExponentialSmoothing.fit
+            Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
         trend = "mul" if exponential else "add"
         super().__init__(
@@ -522,11 +574,9 @@ class SimpleExpSmoothingModel(HoltWintersModel):
 
     Notes
     -----
-    We use Holt-Winters' [1] model from statsmodels package.
-    They implement SimpleExpSmoothing model as a restricted version of ExponentialSmoothing model.
-
-    .. `ExponentialSmoothing: <https://www.statsmodels.org/dev/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html>_`
-
+    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+    They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
+    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
 
     def __init__(
@@ -537,7 +587,7 @@ class SimpleExpSmoothingModel(HoltWintersModel):
         **fit_kwargs,
     ):
         """
-        Init Holt-Winters' model with given params.
+        Init Exponential smoothing model with given params.
 
         Parameters
         ----------
@@ -545,16 +595,20 @@ class SimpleExpSmoothingModel(HoltWintersModel):
             Method for initialize the recursions. One of:
 
             * None
+
             * 'estimated'
+
             * 'heuristic'
+
             * 'legacy-heuristic'
+
             * 'known'
 
             None defaults to the pre-0.12 behavior where initial values
             are passed as part of ``fit``. If any of the other values are
             passed, then the initial values must also be set when constructing
-            the model. If 'known' initialization is used, then `initial_level`
-            must be passed, as well as `initial_trend` and `initial_seasonal` if
+            the model. If 'known' initialization is used, then ``initial_level``
+            must be passed, as well as ``initial_trend`` and ``initial_seasonal`` if
             applicable. Default is 'estimated'. "legacy-heuristic" uses the same
             values that were used in statsmodels 0.11 and earlier.
         initial_level:
@@ -567,7 +621,7 @@ class SimpleExpSmoothingModel(HoltWintersModel):
             The alpha value of the simple exponential smoothing, if the value
             is set then this value will be used as the value.
         fit_kwargs:
-            Additional parameters for calling ExponentialSmoothing.fit
+            Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
         super().__init__(
             initialization_method=initialization_method,

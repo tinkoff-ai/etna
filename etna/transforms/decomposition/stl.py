@@ -36,16 +36,19 @@ class _OneSegmentSTLTransform(Transform):
             size of seasonality
         model:
             model to predict trend, default options are:
-            1. "arima": `ARIMA(data, 1, 1, 0)` (default)
-            2. "holt": `ETSModel(data, trend='add')`
-            Custom model should be a subclass of statsmodels.tsa.base.tsa_model.TimeSeriesModel
-            and have method `get_prediction` (not just `predict`)
+
+            1. "arima": ``ARIMA(data, 1, 1, 0)`` (default)
+
+            2. "holt": ``ETSModel(data, trend='add')``
+
+            Custom model should be a subclass of :py:class:`statsmodels.tsa.base.tsa_model.TimeSeriesModel`
+            and have method ``get_prediction`` (not just ``predict``)
         robust:
             flag indicating whether to use robust version of STL
         model_kwargs:
-            parameters for the model like in statsmodels.tsa.seasonal.STLForecast
+            parameters for the model like in :py:class:`statsmodels.tsa.seasonal.STLForecast`
         stl_kwargs:
-            additional parameters for statsmodels.tsa.seasonal.STLForecast
+            additional parameters for :py:class:`statsmodels.tsa.seasonal.STLForecast`
         """
         if model_kwargs is None:
             model_kwargs = {}
@@ -58,10 +61,12 @@ class _OneSegmentSTLTransform(Transform):
         if isinstance(model, str):
             if model == "arima":
                 self.model = ARIMA
-                model_kwargs = {"order": (1, 1, 0)}
+                if len(model_kwargs) == 0:
+                    model_kwargs = {"order": (1, 1, 0)}
             elif model == "holt":
                 self.model = ETSModel
-                model_kwargs = {"trend": "add"}
+                if len(model_kwargs) == 0:
+                    model_kwargs = {"trend": "add"}
             else:
                 raise ValueError(f"Not a valid option for model: {model}")
         elif isinstance(model, TimeSeriesModel):
@@ -153,7 +158,7 @@ class _OneSegmentSTLTransform(Transform):
 
 
 class STLTransform(PerSegmentWrapper):
-    """Transform that uses statsmodels.tsa.seasonal.STL to subtract season and trend from the data.
+    """Transform that uses :py:class:`statsmodels.tsa.seasonal.STL` to subtract season and trend from the data.
 
     Warning
     -------
@@ -180,15 +185,20 @@ class STLTransform(PerSegmentWrapper):
         period:
             size of seasonality
         model:
-            model to predict trend, custom model or one of:
-            1. "arima": `ARIMA(data, 1, 0, 0)` (default)
-            2. "holt": `ETSModel(data, trend='add')`
+            model to predict trend, default options are:
+
+            1. "arima": ``ARIMA(data, 1, 1, 0)`` (default)
+
+            2. "holt": ``ETSModel(data, trend='add')``
+
+            Custom model should be a subclass of :py:class:`statsmodels.tsa.base.tsa_model.TimeSeriesModel`
+            and have method ``get_prediction`` (not just ``predict``)
         robust:
             flag indicating whether to use robust version of STL
         model_kwargs:
-            parameters for the model like in statsmodels.tsa.seasonal.STLForecast
+            parameters for the model like in :py:class:`statsmodels.tsa.seasonal.STLForecast`
         stl_kwargs:
-            additional parameters for statsmodels.tsa.seasonal.STLForecast
+            additional parameters for :py:class:`statsmodels.tsa.seasonal.STLForecast`
         """
         self.in_column = in_column
         self.period = period

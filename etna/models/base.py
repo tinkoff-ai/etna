@@ -46,8 +46,11 @@ class Model(ABC, BaseMixin):
         ----------
         ts:
             Dataframe with features
+
         Returns
         -------
+        :
+            Model after fit
         """
         pass
 
@@ -101,7 +104,7 @@ class FitAbstractModel(ABC):
 
         Returns
         -------
-        self:
+        :
             Model after fit
         """
         pass
@@ -110,15 +113,18 @@ class FitAbstractModel(ABC):
     def get_model(self) -> Union[Any, Dict[str, Any]]:
         """Get internal model/models that are used inside etna class.
 
-        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
-        or `sklearn.linear_model.Ridge`.
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
 
         Returns
         -------
-        result:
+        :
             The result can be of two types:
+
             * if model is multi-segment, then the result is internal model
+
             * if model is per-segment, then the result is dictionary where key is segment and value is internal model
+
         """
         pass
 
@@ -137,7 +143,7 @@ class ForecastAbstractModel(ABC):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         pass
@@ -163,7 +169,7 @@ class PredictIntervalAbstractModel(ABC):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         pass
@@ -195,7 +201,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
 
         Returns
         -------
-        self:
+        :
             Model after fit
         """
         self._models = {}
@@ -210,20 +216,37 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
             model.fit(df=segment_features, regressors=ts.regressors)
         return self
 
-    def get_model(self) -> Dict[str, Any]:
-        """Get internal models that are used inside etna class.
-
-        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
-        or `sklearn.linear_model.Ridge`.
+    def _get_model(self) -> Dict[str, Any]:
+        """Get internal etna base models that are used inside etna class.
 
         Returns
         -------
-        result:
+        :
            dictionary where key is segment and value is internal model
         """
         if self._models is None:
             raise ValueError("Can not get the dict with base models, the model is not fitted!")
         return self._models
+
+    def get_model(self) -> Dict[str, Any]:
+        """Get internal models that are used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           dictionary where key is segment and value is internal model
+        """
+        internal_models = {}
+        for segment, base_model in self._get_model().items():
+            if not hasattr(base_model, "get_model"):
+                raise NotImplementedError(
+                    f"get_model method is not implemented for {self._base_model.__class__.__name__}"
+                )
+            internal_models[segment] = base_model.get_model()
+        return internal_models
 
     @staticmethod
     def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
@@ -265,11 +288,11 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
             Dataframe with features
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         result_list = list()
-        for segment, model in self.get_model().items():
+        for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
             result_list.append(segment_predict)
 
@@ -316,11 +339,11 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         result_list = list()
-        for segment, model in self.get_model().items():
+        for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(
                 model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
             )
@@ -363,7 +386,7 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
 
         Returns
         -------
-        self:
+        :
             Model after fit
         """
         df = ts.to_pandas(flatten=True)
@@ -383,7 +406,7 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         horizon = len(ts.df)
@@ -396,15 +419,35 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.
 
-        Internal model is a model that is used inside etna to forecast segments, e.g. `catboost.CatBoostRegressor`
-        or `sklearn.linear_model.Ridge`.
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
 
         Returns
         -------
-        result:
+        :
            Internal model
         """
-        return self._base_model
+        if not hasattr(self._base_model, "get_model"):
+            raise NotImplementedError(f"get_model method is not implemented for {self._base_model.__class__.__name__}")
+        return self._base_model.get_model()
+
+
+class BaseAdapter(ABC):
+    """Base class for models adapter."""
+
+    @abstractmethod
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        pass
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]

@@ -29,6 +29,7 @@ class Pipeline(BasePipeline):
 
     def fit(self, ts: TSDataset) -> "Pipeline":
         """Fit the Pipeline.
+
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
         Parameters
@@ -38,7 +39,7 @@ class Pipeline(BasePipeline):
 
         Returns
         -------
-        self:
+        :
             Fitted Pipeline instance
         """
         self.ts = ts
@@ -72,12 +73,13 @@ class Pipeline(BasePipeline):
 
         Returns
         -------
-        forecast:
+        :
             Dataset with predictions
         """
         if self.ts is None:
             raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} before calling forecast method."
+                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
+                f"before calling forecast method."
             )
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)

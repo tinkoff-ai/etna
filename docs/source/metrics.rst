@@ -18,3 +18,4 @@ See the API documentation for further details on available metrics:
    :recursive:
 
    etna.metrics.metrics
+   etna.metrics.intervals_metrics

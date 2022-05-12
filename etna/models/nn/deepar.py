@@ -21,11 +21,11 @@ if SETTINGS.torch_required:
 
 
 class DeepARModel(Model):
-    """Wrapper for DeepAR from Pytorch Forecasting library.
+    """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes
     -----
-    We save TimeSeriesDataSet in instance to use it in the model.
+    We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
 
@@ -36,12 +36,12 @@ class DeepARModel(Model):
         max_epochs: int = 10,
         gpus: Union[int, List[int]] = 0,
         gradient_clip_val: float = 0.1,
-        learning_rate: List[float] = [0.001],
+        learning_rate: Optional[List[float]] = None,
         cell_type: str = "LSTM",
         hidden_size: int = 10,
         rnn_layers: int = 2,
         dropout: float = 0.1,
-        trainer_kwargs: Dict[str, Any] = dict(),
+        trainer_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize DeepAR wrapper.
@@ -74,14 +74,14 @@ class DeepARModel(Model):
         self.max_epochs = max_epochs
         self.gpus = gpus
         self.gradient_clip_val = gradient_clip_val
-        self.learning_rate = learning_rate
+        self.learning_rate = learning_rate if learning_rate is not None else [0.001]
         self.batch_size = batch_size
         self.context_length = context_length
         self.cell_type = cell_type
         self.hidden_size = hidden_size
         self.rnn_layers = rnn_layers
         self.dropout = dropout
-        self.trainer_kwargs = trainer_kwargs
+        self.trainer_kwargs = trainer_kwargs if trainer_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, DeepAR]] = None
         self.trainer: Optional[pl.Trainer] = None
 

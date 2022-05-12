@@ -1,6 +1,8 @@
+import itertools
 import math
 import warnings
 from copy import deepcopy
+from enum import Enum
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -10,14 +12,18 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Tuple
+from typing import Type
 from typing import Union
 
+import holidays as holidays_lib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly
 import plotly.graph_objects as go
 import seaborn as sns
+from matplotlib.lines import Line2D
+from scipy.signal import periodogram
 from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
@@ -97,15 +103,19 @@ def plot_forecast(
     ----------
     forecast_ts:
         there are several options:
-        1. Forecasted TSDataset with timeseries data, single-forecast mode
-        2. List of forecasted TSDatasets, multi-forecast mode
-        3. Dictionary with forecasted TSDatasets, multi-forecast mode
+
+        #. Forecasted TSDataset with timeseries data, single-forecast mode
+
+        #. List of forecasted TSDatasets, multi-forecast mode
+
+        #. Dictionary with forecasted TSDatasets, multi-forecast mode
+
     test_ts:
         TSDataset with timeseries data
     train_ts:
         TSDataset with timeseries data
     segments:
-        segments to plot; if not given plot all the segments from forecast_df
+        segments to plot; if not given plot all the segments from ``forecast_df``
     n_train_samples:
         length of history of train to plot
     columns_num:
@@ -121,12 +131,12 @@ def plot_forecast(
     Raises
     ------
     ValueError:
-        if the format of `forecast_ts` is unknown
+        if the format of ``forecast_ts`` is unknown
     """
     forecast_results = _prepare_forecast_results(forecast_ts)
     num_forecasts = len(forecast_results.keys())
 
-    if not segments:
+    if segments is None:
         unique_segments = set()
         for forecast in forecast_results.values():
             unique_segments.update(forecast.segments)
@@ -263,7 +273,7 @@ def plot_backtest(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
     df = ts.df
 
@@ -328,12 +338,13 @@ def plot_backtest_interactive(
         length of pre-backtest history to plot
     figsize:
         size of the figure in pixels
+
     Returns
     -------
     go.Figure:
         result of plotting
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
     df = ts.df
 
@@ -441,7 +452,8 @@ def plot_backtest_interactive(
 
 def plot_anomalies(
     ts: "TSDataset",
-    anomaly_dict: Dict[str, List[np.datetime64]],
+    anomaly_dict: Dict[str, List[pd.Timestamp]],
+    in_column: str = "target",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
@@ -453,7 +465,10 @@ def plot_anomalies(
     ts:
         TSDataset of timeseries that was used for detect anomalies
     anomaly_dict:
-        dictionary derived from anomaly detection function
+        dictionary derived from anomaly detection function,
+        e.g. :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density`
+    in_column:
+        column to plot
     segments:
         segments to plot
     columns_num:
@@ -461,7 +476,7 @@ def plot_anomalies(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -471,10 +486,10 @@ def plot_anomalies(
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df["target"].values, c="b")
+        ax[i].plot(segment_df.index.values, segment_df[in_column].values, c="b")
 
         anomaly = sorted(anomaly)  # type: ignore
-        ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)]["target"].values, c="r")
+        ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
 
@@ -492,13 +507,17 @@ def get_correlation_matrix(
         Segments to use
     method:
         Method of correlation:
-        pearson : standard correlation coefficient
-        kendall : Kendall Tau correlation coefficient
-        spearman : Spearman rank correlation
+
+        * pearson: standard correlation coefficient
+
+        * kendall: Kendall Tau correlation coefficient
+
+        * spearman: Spearman rank correlation
 
     Returns
     -------
-    Correlation matrix
+    np.ndarray
+        Correlation matrix
     """
     if method not in ["pearson", "kendall", "spearman"]:
         raise ValueError(f"'{method}' is not a valid method of correlation.")
@@ -525,9 +544,13 @@ def plot_correlation_matrix(
         Segments to use
     method:
         Method of correlation:
-        pearson : standard correlation coefficient
-        kendall : Kendall Tau correlation coefficient
-        spearman : Spearman rank correlation
+
+        * pearson: standard correlation coefficient
+
+        * kendall: Kendall Tau correlation coefficient
+
+        * spearman: Spearman rank correlation
+
     figsize:
         size of the figure in inches
     """
@@ -552,9 +575,11 @@ def plot_anomalies_interactive(
     segment: str,
     method: Callable[..., Dict[str, List[pd.Timestamp]]],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
+    in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
 ):
     """Plot a time series with indicated anomalies.
+
     Anomalies are obtained using the specified method. The method parameters values
     can be changed using the corresponding sliders.
 
@@ -565,15 +590,18 @@ def plot_anomalies_interactive(
     segment:
         Segment to plot
     method:
-        Method for outliers detection
+        Method for outliers detection, e.g. :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density`
     params_bounds:
         Parameters ranges of the outliers detection method. Bounds for the parameter are (min,max,step)
+    in_column:
+        column to plot
     figsize:
         size of the figure in inches
 
     Notes
     -----
-    Jupyter notebook might display the results incorrectly, in this case try to use '!jupyter nbextension enable --py widgetsnbextension'
+    Jupyter notebook might display the results incorrectly,
+    in this case try to use ``!jupyter nbextension enable --py widgetsnbextension``.
 
     Examples
     --------
@@ -593,7 +621,7 @@ def plot_anomalies_interactive(
 
     from etna.datasets import TSDataset
 
-    df = ts[:, segment, "target"]
+    df = ts[:, segment, in_column]
     ts = TSDataset(ts[:, segment, :], ts.freq)
     x, y = df.index.values, df.values
     cache = {}
@@ -683,7 +711,8 @@ def plot_time_series_with_change_points(
     ts:
         TSDataset with timeseries
     change_points:
-        dictionary with trend change points for each segment, can be derived from `etna.analysis.find_change_points`
+        dictionary with trend change points for each segment,
+        can be obtained from :py:func:`~etna.analysis.change_points_trend.search.find_change_points`
     segments:
         segments to use
     columns_num:
@@ -691,7 +720,7 @@ def plot_time_series_with_change_points(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -732,17 +761,17 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Returns
     -------
-    new_ts:
+    new_ts: TSDataset
         TSDataset with residuals in forecasts
 
     Raises
     ------
     KeyError:
-        if segments of `forecast_df` and `ts` aren't the same
+        if segments of ``forecast_df`` and ``ts`` aren't the same
 
     Notes
     -----
-    Transforms are taken as is from `ts`.
+    Transforms are taken as is from ``ts``.
     """
     from etna.datasets import TSDataset
 
@@ -796,10 +825,10 @@ def plot_residuals(
 
     Notes
     -----
-    Parameter `transforms` is necessary because some pipelines doesn't save features in their forecasts,
-    e.g. `etna.ensembles` pipelines.
+    Parameter ``transforms`` is necessary because some pipelines doesn't save features in their forecasts,
+    e.g. :py:mod:`etna.ensembles` pipelines.
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -854,9 +883,15 @@ def _get_labels_names(trend_transform, segments):
     if len(np.unique(labels_short)) == len(labels_short):
         labels = labels_short
     linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
-    if len(trend_transform) == 1 and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform)):
+    if (
+        len(trend_transform) == 1
+        and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform))
+        and trend_transform[0].poly_degree == 1
+    ):
         for seg in segments:
-            linear_coeffs[seg] = ", k=" + f"{trend_transform[0].segment_transforms[seg]._linear_model.coef_[0]:g}"
+            linear_coeffs[seg] = (
+                ", k=" + f"{trend_transform[0].segment_transforms[seg]._pipeline.steps[1][1].coef_[0]:g}"
+            )
     return labels, linear_coeffs
 
 
@@ -869,7 +904,8 @@ def plot_trend(
 ):
     """Plot series and trend from trend transform for this series.
 
-    If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label
+    If only unique transform classes are used then show their short names (without parameters).
+    Otherwise show their full repr as label
 
     Parameters
     ----------
@@ -884,8 +920,8 @@ def plot_trend(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
-        segments = list(set(ts.columns.get_level_values("segment")))
+    if segments is None:
+        segments = ts.segments
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
     df = ts.df
@@ -931,21 +967,23 @@ def plot_feature_relevance(
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
         aggregation strategy for obtained feature relevance table;
-        all the strategies can be examined at `etna.analysis.feature_selection.AggregationMode`
+        all the strategies can be examined
+        at :py:class:`~etna.analysis.feature_selection.mrmr_selection.AggregationMode`
     relevance_params:
-        additional keyword arguments for `__call__` method of `RelevanceTable` instances
+        additional keyword arguments for the ``__call__`` method of
+        :py:class:`~etna.analysis.feature_relevance.relevance.RelevanceTable`
     top_k:
         number of best features to plot, if None plot all the features
     segments:
         segments to use
     columns_num:
-        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+        if ``relevance_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
     figsize:
         size of the figure per subplot with one segment in inches
     """
     if relevance_params is None:
         relevance_params = {}
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     is_ascending = not relevance_table.greater_is_better
@@ -1003,11 +1041,11 @@ def plot_imputation(
     segments:
         segments to use
     columns_num:
-        if `relevance_aggregation_mode="per-segment"` number of columns in subplots, otherwise the value is ignored
+        number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if not segments:
+    if segments is None:
         segments = sorted(ts.segments)
 
     ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
@@ -1035,3 +1073,408 @@ def plot_imputation(
 
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
+
+
+def plot_periodogram(
+    ts: "TSDataset",
+    period: float,
+    amplitude_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
+    periodogram_params: Optional[Dict[str, Any]] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot the periodogram using :py:func:`scipy.signal.periodogram`.
+
+    It is useful to determine the optimal ``order`` parameter
+    for :py:class:`~etna.transforms.timestamp.fourier.FourierTransform`.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    period:
+        the period of the seasonality to capture in frequency units of time series, it should be >= 2;
+        it is translated to the ``fs`` parameter of :py:func:`scipy.signal.periodogram`
+    amplitude_aggregation_mode:
+        aggregation strategy for obtained per segment periodograms;
+        all the strategies can be examined
+        at :py:class:`~etna.analysis.feature_selection.mrmr_selection.AggregationMode`
+    periodogram_params:
+        additional keyword arguments for periodogram, :py:func:`scipy.signal.periodogram` is used
+    segments:
+        segments to use
+    columns_num:
+        if ``amplitude_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if period < 2
+    ValueError:
+        if periodogram can't be calculated on segment because of the NaNs inside it
+
+    Notes
+    -----
+    In non per-segment mode all segments are cut to be the same length, the last values are taken.
+    """
+    if period < 2:
+        raise ValueError("Period should be at least 2")
+    if periodogram_params is None:
+        periodogram_params = {}
+    if not segments:
+        segments = sorted(ts.segments)
+
+    df = ts.to_pandas()
+
+    # plot periodograms
+    if amplitude_aggregation_mode == "per-segment":
+        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        for i, segment in enumerate(segments):
+            segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            if segment_df.isna().any():
+                raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
+            frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
+            ax[i].step(frequencies, spectrum)
+            ax[i].set_xscale("log")
+            ax[i].set_xlabel("Frequency")
+            ax[i].set_ylabel("Power spectral density")
+            ax[i].set_title(f"Periodogram: {segment}")
+    else:
+        # find length of each segment
+        lengths_segments = []
+        for segment in segments:
+            segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            if segment_df.isna().any():
+                raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
+            lengths_segments.append(len(segment_df))
+        cut_length = min(lengths_segments)
+
+        # cut each segment to `cut_length` last elements and find periodogram for each segment
+        frequencies_segments = []
+        spectrums_segments = []
+        for segment in segments:
+            segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
+            frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
+            frequencies_segments.append(frequencies)
+            spectrums_segments.append(spectrum)
+
+        frequencies = frequencies_segments[0]
+        amplitude_aggregation_fn = AGGREGATION_FN[AggregationMode(amplitude_aggregation_mode)]
+        spectrum = amplitude_aggregation_fn(spectrums_segments, axis=0)  # type: ignore
+        _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+        ax.step(frequencies, spectrum)  # type: ignore
+        ax.set_xscale("log")  # type: ignore
+        ax.set_xlabel("Frequency")  # type: ignore
+        ax.set_ylabel("Power spectral density")  # type: ignore
+        ax.set_title("Periodogram")  # type: ignore
+
+
+def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
+    holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
+    holiday_names = holiday_names.difference({None})
+
+    holidays_dict = {}
+    for holiday_name in holiday_names:
+        cur_holiday_index = pd.Series(timestamp).apply(lambda x: country_holidays.get(x, "") == holiday_name)
+        holidays_dict[holiday_name] = cur_holiday_index
+
+    holidays_df = pd.DataFrame(holidays_dict)
+    holidays_df.index = timestamp
+    return holidays_df
+
+
+def plot_holidays(
+    ts: "TSDataset",
+    holidays: Union[str, pd.DataFrame],
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot holidays for segments.
+
+    Sequence of timestamps with one holiday is drawn as a colored region.
+    Individual holiday is drawn like a colored point.
+
+    It is not possible to distinguish points plotted at one timestamp, but this case is considered rare.
+    This the problem isn't relevant for region drawing because they are partially transparent.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    holidays:
+        there are several options:
+
+        * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
+
+        * | if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
+          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+
+    segments:
+        segments to use
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if segments is None:
+        segments = sorted(ts.segments)
+
+    if isinstance(holidays, str):
+        holidays_df = _create_holidays_df(
+            country_holidays=holidays_lib.CountryHoliday(country=holidays), timestamp=ts.index.tolist()
+        )
+    elif isinstance(holidays, pd.DataFrame):
+        holidays_df = holidays
+    else:
+        raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+
+    df = ts.to_pandas()
+
+    for i, segment in enumerate(segments):
+        segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+        segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+
+        # plot target on segment
+        target_plot = ax[i].plot(segment_df.index, segment_df)
+        target_color = target_plot[0].get_color()
+
+        # plot holidays on segment
+        # remember color of each holiday to reuse it
+        default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        default_colors.remove(target_color)
+        color_cycle = itertools.cycle(default_colors)
+        holidays_colors = {holiday_name: next(color_cycle) for holiday_name in holidays_df.columns}
+
+        for holiday_name in holidays_df.columns:
+            holiday_df = holidays_df.loc[segment_df.index, holiday_name]
+            for _, holiday_group in itertools.groupby(enumerate(holiday_df.tolist()), key=lambda x: x[1]):
+                holiday_group_cached = list(holiday_group)
+                indices = [x[0] for x in holiday_group_cached]
+                values = [x[1] for x in holiday_group_cached]
+
+                # if we have group with zero value, then it is not a holidays, skip it
+                if values[0] == 0:
+                    continue
+
+                color = holidays_colors[holiday_name]
+                if len(indices) == 1:
+                    # plot individual holiday point
+                    ax[i].scatter(segment_df.index[indices[0]], segment_df.iloc[indices[0]], color=color, zorder=2)
+                else:
+                    # plot span with holiday borders
+                    x_min = segment_df.index[indices[0]]
+                    x_max = segment_df.index[indices[-1]]
+                    ax[i].axvline(x_min, color=color, linestyle="dashed")
+                    ax[i].axvline(x_max, color=color, linestyle="dashed")
+                    ax[i].axvspan(xmin=x_min, xmax=x_max, alpha=1 / 4, color=color)
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
+
+        legend_handles = [
+            Line2D([0], [0], marker="o", color=color, label=label) for label, color in holidays_colors.items()
+        ]
+        ax[i].legend(handles=legend_handles)
+
+
+class PerFoldAggregation(str, Enum):
+    """Enum for types of aggregation in a metric per-segment plot."""
+
+    mean = "mean"
+    sum = "median"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregations are allowed"
+        )
+
+    def get_function(self):
+        """Get aggregation function."""
+        if self.value == "mean":
+            return np.nanmean
+        elif self.value == "median":
+            return np.nanmedian
+
+
+def plot_metric_per_segment(
+    metrics_df: pd.DataFrame,
+    metric_name: str,
+    ascending: bool = False,
+    per_fold_aggregation_mode: str = PerFoldAggregation.mean,
+    top_k: Optional[int] = None,
+    barplot_params: Optional[Dict[str, Any]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot barplot with per-segment metrics.
+
+    Parameters
+    ----------
+    metrics_df:
+        dataframe with metrics calculated on the backtest
+    metric_name:
+        name of the metric to visualize
+    ascending:
+
+        * If True, small values at the top;
+
+        * If False, big values at the top.
+
+    per_fold_aggregation_mode:
+        how to aggregate metrics over the folds if they aren't already aggregated
+        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+    top_k:
+        number segments to show after ordering according to ``ascending``
+    barplot_params:
+        dictionary with parameters for plotting, :py:func:`seaborn.barplot` is used
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``metric_name`` isn't present in ``metrics_df``
+    NotImplementedError:
+        unknown ``per_fold_aggregation_mode`` is given
+    """
+    if barplot_params is None:
+        barplot_params = {}
+
+    aggregation_mode = PerFoldAggregation(per_fold_aggregation_mode)
+
+    plt.figure(figsize=figsize)
+
+    if metric_name not in metrics_df.columns:
+        raise ValueError("Given metric_name isn't present in metrics_df")
+
+    if "fold_number" in metrics_df.columns:
+        metrics_dict = (
+            metrics_df.groupby("segment").agg({metric_name: aggregation_mode.get_function()}).to_dict()[metric_name]
+        )
+    else:
+        metrics_dict = metrics_df["segment", metric_name].to_dict()[metric_name]
+
+    segments = np.array(list(metrics_dict.keys()))
+    values = np.array(list(metrics_dict.values()))
+    sort_idx = np.argsort(values)
+    if not ascending:
+        sort_idx = sort_idx[::-1]
+    segments = segments[sort_idx][:top_k]
+    values = values[sort_idx][:top_k]
+    sns.barplot(x=values, y=segments, orient="h", **barplot_params)
+    plt.title("Metric per-segment plot")
+    plt.xlabel("Segment")
+    plt.ylabel(metric_name)
+
+
+class MetricPlotType(str, Enum):
+    """Enum for types of plot in :py:func:`~etna.analysis.plotters.metric_per_segment_distribution_plot`.
+
+    Attributes
+    ----------
+    hist:
+        Histogram plot, :py:func:`seaborn.histplot` is used
+    box:
+        Boxplot, :py:func:`seaborn.boxplot` is used
+    violin:
+        Violin plot, :py:func:`seaborn.violinplot` is used
+    """
+
+    hist = "hist"
+    box = "box"
+    violin = "violin"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} plots are allowed"
+        )
+
+    def get_function(self):
+        """Get aggregation function."""
+        if self.value == "hist":
+            return sns.histplot
+        elif self.value == "box":
+            return sns.boxplot
+        elif self.value == "violin":
+            return sns.violinplot
+
+
+def metric_per_segment_distribution_plot(
+    metrics_df: pd.DataFrame,
+    metric_name: str,
+    per_fold_aggregation_mode: Optional[str] = None,
+    plot_type: Union[Literal["hist"], Literal["box"], Literal["violin"]] = "hist",
+    seaborn_params: Optional[Dict[str, Any]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot per-segment metrics distribution.
+
+    Parameters
+    ----------
+    metrics_df:
+        dataframe with metrics calculated on the backtest
+    metric_name:
+        name of the metric to visualize
+    per_fold_aggregation_mode:
+
+        * If None, separate distributions for each fold will be drawn
+
+        * If str, determines how to aggregate metrics over the folds if they aren't already aggregated
+        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+
+    plot_type:
+        type of plot (see :py:class:`~etna.analysis.plotters.MetricPlotType`)
+    seaborn_params:
+        dictionary with parameters for plotting
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``metric_name`` isn't present in ``metrics_df``
+    NotImplementedError:
+        unknown ``per_fold_aggregation_mode`` is given
+    """
+    if seaborn_params is None:
+        seaborn_params = {}
+
+    metrics_df = metrics_df.reset_index(drop=True)
+    plot_type_enum = MetricPlotType(plot_type)
+    plot_function = plot_type_enum.get_function()
+
+    plt.figure(figsize=figsize)
+
+    if metric_name not in metrics_df.columns:
+        raise ValueError("Given metric_name isn't present in metrics_df")
+
+    # draw plot for each fold
+    if per_fold_aggregation_mode is None and "fold_number" in metrics_df.columns:
+        if plot_type_enum == MetricPlotType.hist:
+            plot_function(data=metrics_df, x=metric_name, hue="fold_number", **seaborn_params)
+        else:
+            plot_function(data=metrics_df, x="fold_number", y=metric_name, **seaborn_params)
+            plt.xlabel("Fold")
+
+    # draw one plot of aggregated data
+    else:
+        if "fold_number" in metrics_df.columns:
+            agg_func = PerFoldAggregation(per_fold_aggregation_mode).get_function()
+            metrics_df = metrics_df.groupby("segment").agg({metric_name: agg_func})
+
+        if plot_type_enum == MetricPlotType.hist:
+            plot_function(data=metrics_df, x=metric_name, **seaborn_params)
+        else:
+            plot_function(data=metrics_df, y=metric_name, **seaborn_params)
+
+    plt.title("Metric per-segment distribution plot")

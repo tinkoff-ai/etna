@@ -9,7 +9,7 @@ from etna.transforms.decomposition.change_points_trend import TDetrendModel
 
 
 class BinsegTrendTransform(ChangePointsTrendTransform):
-    """BinsegTrendTransform uses Binseg model as a change point detection model in ChangePointsTrendTransform transform.
+    """BinsegTrendTransform uses :py:class:`ruptures.detection.Binseg` model as a change point detection model.
 
     Warning
     -------
@@ -44,7 +44,8 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
         min_size:
             minimum segment length necessary to decide it is a stable trend segment
         jump:
-            jump value can speed up computations: if jump==k, the algo will use every k-th value for change points search.
+            jump value can speed up computations: if ``jump==k``,
+            the algo will use every k-th value for change points search.
         n_bkps:
             number of change points to find
         pen:

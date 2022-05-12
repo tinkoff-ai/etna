@@ -94,17 +94,25 @@ class Settings:
     @staticmethod
     def parse() -> "Settings":
         """Parse and return the settings.
-        Returns:
-            Settings: Dictionary of the parsed and merged Settings.
+
+        Returns
+        -------
+        Settings:
+            Dictionary of the parsed and merged Settings.
         """
         kwargs = MergedConfigParser(ConfigFileFinder("etna")).parse()
         return Settings(**kwargs)
 
     def type_hint(self, key: str):
         """Return type hint for the specified ``key``.
-        Args:
-            key: key of interest
-        Returns:
+
+        Parameters
+        ----------
+        key:
+            key of interest
+
+        Returns
+        -------
             type hint for the specified key
         """
         # return get_type_hints(self).get(key, None)
@@ -116,14 +124,19 @@ DEFAULT_SETTINGS = Settings()
 
 class ConfigFileFinder:
     """Encapsulate the logic for finding and reading config files.
+
     Adapted from:
+
     - https://github.com/catalyst-team/catalyst (Apache-2.0 License)
     """
 
     def __init__(self, program_name: str) -> None:
         """Initialize object to find config files.
-        Args:
-            program_name: Name of the current program (e.g., catalyst).
+
+        Parameters
+        ----------
+        program_name:
+            Name of the current program (e.g., catalyst).
         """
         # user configuration file
         self.program_name = program_name
@@ -162,8 +175,11 @@ class ConfigFileFinder:
 
     def generate_possible_local_files(self):
         """Find and generate all local config files.
-        Yields:
-            str: Path to config file.
+
+        Yields
+        ------
+        str:
+            Path to config file.
         """
         parent = tail = os.getcwd()
         found_config_files = False
@@ -179,8 +195,11 @@ class ConfigFileFinder:
     def local_config_files(self) -> List[str]:  # noqa: D202
         """
         Find all local config files which actually exist.
-        Returns:
-            List[str]: List of files that exist that are
+
+        Returns
+        -------
+        List[str]:
+            List of files that exist that are
             local project config  files with extra config files
             appended to that list (which also exist).
         """
@@ -203,10 +222,13 @@ class ConfigFileFinder:
 
 class MergedConfigParser:
     """Encapsulate merging different types of configuration files.
+
     This parses out the options registered that were specified in the
     configuration files, handles extra configuration files, and returns
     dictionaries with the parsed values.
+
     Adapted from:
+
     - https://github.com/catalyst-team/catalyst (Apache-2.0 License)
     """
 
@@ -216,8 +238,11 @@ class MergedConfigParser:
 
     def __init__(self, config_finder: ConfigFileFinder):
         """Initialize the MergedConfigParser instance.
-        Args:
-            config_finder: Initialized ConfigFileFinder.
+
+        Parameters
+        ----------
+        config_finder:
+            Initialized ConfigFileFinder.
         """
         self.program_name = config_finder.program_name
         self.config_finder = config_finder
@@ -241,11 +266,15 @@ class MergedConfigParser:
 
     def parse(self) -> dict:
         """Parse and return the local and user config files.
+
         First this copies over the parsed local configuration and then
         iterates over the options in the user configuration and sets them if
         they were not set by the local configuration file.
-        Returns:
-            dict: Dictionary of the parsed and merged configuration options.
+
+        Returns
+        -------
+        dict:
+            Dictionary of the parsed and merged configuration options.
         """
         user_config = self._parse_config(self.config_finder.user_config())
         config = self._parse_config(self.config_finder.local_configs())

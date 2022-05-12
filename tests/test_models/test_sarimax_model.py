@@ -1,6 +1,8 @@
 import pytest
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.models import SARIMAXModel
+from etna.pipeline import Pipeline
 
 
 def test_sarimax_forecaster_run(example_tsds):
@@ -103,3 +105,32 @@ def test_forecast_raise_error_if_not_fitted(example_tsds):
     model = SARIMAXModel()
     with pytest.raises(ValueError, match="model is not fitted!"):
         _ = model.forecast(ts=example_tsds)
+
+
+def test_get_model_before_training():
+    """Check that get_model method throws an error if per-segment model is not fitted yet."""
+    etna_model = SARIMAXModel()
+    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
+        _ = etna_model.get_model()
+
+
+def test_get_model_after_training(example_tsds):
+    """Check that get_model method returns dict of objects of SARIMAX class."""
+    pipeline = Pipeline(model=SARIMAXModel())
+    pipeline.fit(ts=example_tsds)
+    models_dict = pipeline.model.get_model()
+    assert isinstance(models_dict, dict)
+    for segment in example_tsds.segments:
+        assert isinstance(models_dict[segment], SARIMAX)
+
+
+def test_sarimax_forecast_1_point(example_tsds):
+    """Check that SARIMAX work with 1 point forecast."""
+    horizon = 1
+    model = SARIMAXModel()
+    model.fit(example_tsds)
+    future_ts = example_tsds.make_future(future_steps=horizon)
+    pred = model.forecast(future_ts)
+    assert len(pred.df) == horizon
+    pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
+    assert len(pred_quantiles.df) == horizon

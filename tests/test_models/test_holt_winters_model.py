@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_const_df
@@ -79,3 +80,36 @@ def test_sanity_const_df(model, const_ts):
     mae = MAE(mode="macro")
     mae_value = mae(y_true=test_ts, y_pred=future_ts)
     assert mae_value < 0.05
+
+
+@pytest.mark.parametrize(
+    "etna_model_class",
+    (
+        HoltModel,
+        HoltWintersModel,
+        SimpleExpSmoothingModel,
+    ),
+)
+def test_get_model_before_training(etna_model_class):
+    """Check that get_model method throws an error if per-segment model is not fitted yet."""
+    etna_model = etna_model_class()
+    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
+        _ = etna_model.get_model()
+
+
+@pytest.mark.parametrize(
+    "etna_model_class,expected_class",
+    (
+        (HoltModel, ExponentialSmoothing),
+        (HoltWintersModel, ExponentialSmoothing),
+        (SimpleExpSmoothingModel, ExponentialSmoothing),
+    ),
+)
+def test_get_model_after_training(example_tsds, etna_model_class, expected_class):
+    """Check that get_model method returns dict of objects of SARIMAX class."""
+    pipeline = Pipeline(model=etna_model_class())
+    pipeline.fit(ts=example_tsds)
+    models_dict = pipeline.model.get_model()
+    assert isinstance(models_dict, dict)
+    for segment in example_tsds.segments:
+        assert isinstance(models_dict[segment], expected_class)

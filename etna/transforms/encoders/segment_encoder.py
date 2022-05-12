@@ -24,7 +24,8 @@ class SegmentEncoderTransform(Transform, FutureMixin):
 
         Returns
         -------
-        self
+        :
+            Fitted transform
         """
         segment_columns = df.columns.get_level_values("segment")
         self._le.fit(segment_columns)
@@ -41,7 +42,8 @@ class SegmentEncoderTransform(Transform, FutureMixin):
 
         Returns
         -------
-        result dataframe
+        :
+            result dataframe
         """
         encoded_matrix = self._le.transform(self._le.classes_)
         encoded_matrix = encoded_matrix.reshape(len(self._le.classes_), -1).repeat(len(df), axis=1).T
