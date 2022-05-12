@@ -22,8 +22,8 @@ from sphinx.ext.autosummary import Autosummary
 SOURCE_PATH = Path(os.path.dirname(__file__))  # noqa # docs source
 PROJECT_PATH = SOURCE_PATH.joinpath("../..")  # noqa # project root
 
-COMMIT_SHORT_SHA = os.environ["CI_COMMIT_SHORT_SHA"]
-WORKFLOW_NAME = os.environ["WORKFLOW_NAME"]
+COMMIT_SHORT_SHA = os.environ.get("CI_COMMIT_SHORT_SHA", None)
+WORKFLOW_NAME = os.environ.get("WORKFLOW_NAME", None)
 
 sys.path.insert(0, str(PROJECT_PATH))  # noqa
 
