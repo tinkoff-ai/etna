@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
+from etna.transforms.math import MADTransform
 from etna.transforms.math import MaxTransform
 from etna.transforms.math import MeanTransform
 from etna.transforms.math import MedianTransform
@@ -18,11 +20,27 @@ def simple_df_for_agg() -> pd.DataFrame:
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
     df["target"] = list(range(n))
     df["segment"] = "segment_1"
+    df = TSDataset.to_dataset(df)
+    return df
 
-    df = df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
+
+@pytest.fixture
+def df_for_agg() -> pd.DataFrame:
+    n = 10
+    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
+    df["target"] = [-1, 1, 3, 2, 4, 9, 8, 5, 6, 0]
+    df["segment"] = "segment_1"
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def df_for_agg_with_nan() -> pd.DataFrame:
+    n = 10
+    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
+    df["target"] = [-1, 1, 3, None, 4, 9, 8, 5, 6, 0]
+    df["segment"] = "segment_1"
+    df = TSDataset.to_dataset(df)
     return df
 
 
@@ -39,6 +57,8 @@ def simple_df_for_agg() -> pd.DataFrame:
         (MeanTransform, "test_mean"),
         (StdTransform, None),
         (StdTransform, "test_std"),
+        (MADTransform, None),
+        (MADTransform, "test_mad"),
     ),
 )
 def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_column: str):
@@ -59,12 +79,19 @@ def test_interface_quantile(simple_df_for_agg: pd.DataFrame, out_column: str):
 @pytest.mark.parametrize(
     "window,seasonality,alpha,periods,fill_na,expected",
     (
-        (10, 1, 1, 1, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
-        (-1, 1, 1, 1, 0, np.array([0, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
-        (3, 1, 1, 1, -17, np.array([-17, 0, 0.5, 1, 2, 3, 4, 5, 6, 7])),
-        (3, 1, 0.5, 1, -17, np.array([-17, 0, 0.5, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
-        (3, 1, 0.5, 3, -12, np.array([-12, -12, -12, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3])),
-        (3, 2, 1, 1, -17, np.array([-17, 0, 1, 1, 2, 2, 3, 4, 5, 6])),
+        (10, 1, 1, 1, 0, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
+        (-1, 1, 1, 1, 0, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
+        (3, 1, 1, 1, -17, np.array([0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (3, 1, 0.5, 1, -17, np.array([0, 0.5, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3, 14.75 / 3])),
+        (
+            3,
+            1,
+            0.5,
+            3,
+            -12,
+            np.array([-12, -12, 2.5 / 3, 4.25 / 3, 2, 7.75 / 3, 9.5 / 3, 11.25 / 3, 13 / 3, 14.75 / 3]),
+        ),
+        (3, 2, 1, 1, -17, np.array([0, 1, 1, 2, 2, 3, 4, 5, 6, 7])),
     ),
 )
 def test_mean_feature(
@@ -95,8 +122,8 @@ def test_mean_feature(
     (
         (10, 1, 1, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
         (-1, 1, 1, 0, np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
-        (3, 1, 1, -17, np.array([-17, 0, 0, 0, 1, 2, 3, 4, 5, 6])),
-        (3, 2, 1, -17, np.array([-17, 0, 1, 0, 1, 0, 1, 2, 3, 4])),
+        (3, 1, 1, -17, np.array([0, 0, 0, 1, 2, 3, 4, 5, 6, 7])),
+        (3, 2, 1, -17, np.array([0, 1, 0, 1, 0, 1, 2, 3, 4, 5])),
     ),
 )
 def test_min_feature(
@@ -118,9 +145,9 @@ def test_min_feature(
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (10, 1, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (-1, 1, 0, np.array([0, 0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (3, 2, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (10, 1, 0, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+        (-1, 1, 0, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+        (3, 2, -17, np.array([-17, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
     ),
 )
 def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
@@ -135,8 +162,8 @@ def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (3, 3, -17, np.array([-17, -17, -17, 1, 2, 3, 4, 5, 6, 7])),
-        (-1, 1, -17, np.array([-17, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])),
+        (3, 3, -17, np.array([-17, -17, 1, 2, 3, 4, 5, 6, 7, 8])),
+        (-1, 1, -17, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
     ),
 )
 def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
@@ -151,8 +178,44 @@ def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: i
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
-        (3, 3, -17, np.array([-17, -17, -17, 1, 1, 1, 1, 1, 1, 1])),
-        (3, 1, -17, np.array([-17, -17, np.sqrt(0.5 ** 2 * 2), 1, 1, 1, 1, 1, 1, 1])),
+        (
+            3,
+            3,
+            -17,
+            np.array(
+                [
+                    -17,
+                    -17,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                ]
+            ),
+        ),
+        (
+            3,
+            1,
+            -17,
+            np.array(
+                [
+                    -17,
+                    (1 / 2) ** 0.5,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                ]
+            ),
+        ),
     ),
 )
 def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
@@ -165,18 +228,44 @@ def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
 
 
 @pytest.mark.parametrize(
+    "window,periods,fill_na,expected",
+    (
+        (3, 3, -17, [-17, -17, 4 / 3, 2 / 3, 2 / 3, 8 / 3, 2, 14 / 9, 10 / 9, 22 / 9]),
+        (4, 1, -17, [0, 1, 4 / 3, 1.25, 1, 2.25, 2.75, 2, 1.5, 9.5 / 4]),
+        (-1, 1, 0, [0, 1, 4 / 3, 1.25, 1.44, 7 / 3, 138 / 49, 2.625, 208 / 81, 27 / 10]),
+    ),
+)
+def test_mad_transform(df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray):
+    transform = MADTransform(
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
+    )
+    res = transform.fit_transform(df_for_agg)
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+
+
+@pytest.mark.parametrize(
+    "window,periods,fill_na,expected",
+    ((3, 3, -17, [-17, -17, 4 / 3, -17, -17, -17, 2, 14 / 9, 10 / 9, 22 / 9]),),
+)
+def test_mad_transform_with_nans(
+    df_for_agg_with_nan: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray
+):
+    transform = MADTransform(
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
+    )
+    res = transform.fit_transform(df_for_agg_with_nan)
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+
+
+@pytest.mark.parametrize(
     "transform",
     (
         MaxTransform(in_column="target", window=5),
-        MaxTransform(in_column="target", window=5),
-        MinTransform(in_column="target", window=5),
         MinTransform(in_column="target", window=5),
         MedianTransform(in_column="target", window=5),
-        MedianTransform(in_column="target", window=5),
-        MeanTransform(in_column="target", window=5),
         MeanTransform(in_column="target", window=5),
         StdTransform(in_column="target", window=5),
-        StdTransform(in_column="target", window=5),
+        MADTransform(in_column="target", window=5),
     ),
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):

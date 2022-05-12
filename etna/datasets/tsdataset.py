@@ -1,17 +1,20 @@
 import math
 import warnings
+from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Union
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from typing_extensions import Literal
 
 from etna.loggers import tslogger
 
@@ -29,8 +32,10 @@ class TSDataset:
     Notes
     -----
     TSDataset supports custom indexing and slicing method.
-    It maybe done through these interface: TSDataset[timestamp, segment, column]
+    It maybe done through these interface: ``TSDataset[timestamp, segment, column]``
     If at the start of the period dataset contains NaN those timestamps will be removed.
+
+    During creation segment is casted to string type.
 
     Examples
     --------
@@ -58,7 +63,7 @@ class TSDataset:
     >>> df_regressors["segment"] = "segment_0"
     >>> df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     >>> df_regressors = TSDataset.to_dataset(df_regressors)
-    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
+    >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
     >>> tsdataset.df.head(5)
     segment      segment_0
     feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
@@ -72,7 +77,13 @@ class TSDataset:
 
     idx = pd.IndexSlice
 
-    def __init__(self, df: pd.DataFrame, freq: str, df_exog: Optional[pd.DataFrame] = None):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        freq: str,
+        df_exog: Optional[pd.DataFrame] = None,
+        known_future: Union[Literal["all"], Sequence] = (),
+    ):
         """Init TSDataset.
 
         Parameters
@@ -83,9 +94,11 @@ class TSDataset:
             frequency of timestamp in df
         df_exog:
             dataframe with exogenous data;
-            if the series is known in the future features' names should start with prefix 'regressor_`.
+        known_future:
+            columns in ``df_exog[known_future]`` that are regressors,
+            if "all" value is given, all columns are meant to be regressors
         """
-        self.raw_df = df.copy(deep=True)
+        self.raw_df = self._prepare_df(df)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
         self.freq = freq
         self.df_exog = None
@@ -107,31 +120,100 @@ class TSDataset:
 
         self.df = self.raw_df.copy(deep=True)
 
+        self.known_future = self._check_known_future(known_future, df_exog)
+        self._regressors = copy(self.known_future)
+
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.df = self._merge_exog(self.df)
 
         self.transforms: Optional[Sequence["Transform"]] = None
-        self._update_regressors()
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
-            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
+            columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.transform(self.df)
-        self._update_regressors()
+            columns_after = set(self.columns.get_level_values("feature"))
+            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings(warning=True)
         self.transforms = transforms
         for transform in self.transforms:
-            tslogger.log(f"Transform {transform.__class__.__name__} is applied to dataset")
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
+            columns_before = set(self.columns.get_level_values("feature"))
             self.df = transform.fit_transform(self.df)
-        self._update_regressors()
+            columns_after = set(self.columns.get_level_values("feature"))
+            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+
+    @staticmethod
+    def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
+        # cast segment to str type
+        df_copy = df.copy(deep=True)
+        columns_frame = df.columns.to_frame()
+        columns_frame["segment"] = columns_frame["segment"].astype(str)
+        df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
+        return df_copy
+
+    def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
+        from etna.transforms import OneHotEncoderTransform
+        from etna.transforms.base import FutureMixin
+
+        # intersect list of regressors with columns after the transform
+        self._regressors = list(set(self._regressors).intersection(columns_after))
+
+        unseen_columns = list(columns_after - columns_before)
+
+        if len(unseen_columns) == 0:
+            return
+
+        new_regressors = []
+
+        if isinstance(transform, FutureMixin):
+            # Every column from FutureMixin is regressor
+            out_columns = list(columns_after - columns_before)
+            new_regressors = out_columns
+        elif isinstance(transform, OneHotEncoderTransform):
+            # Only the columns created with OneHotEncoderTransform from regressor are regressors
+            in_column = transform.in_column
+            out_columns = list(columns_after - columns_before)
+            if in_column in self.regressors:
+                new_regressors = out_columns
+        elif hasattr(transform, "in_column"):
+            # Only the columns created with the other transforms from regressors are regressors
+            in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
+            if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
+                # User defined out_columns in sklearn
+                # TODO: remove this case after fixing the out_column attribute in SklearnTransform
+                out_columns = transform.out_columns  # type: ignore
+                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
+                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
+            elif hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
+                # User defined out_columns
+                out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
+                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
+                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
+            else:
+                # Default out_columns
+                out_columns = list(columns_after - columns_before)
+                regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
+                new_regressors = [
+                    out_column
+                    for out_column in out_columns
+                    if np.any([regressor in out_column for regressor in regressors_in_column])
+                ]
+
+        else:
+            raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
+
+        new_regressors = [regressor for regressor in new_regressors if regressor not in self.regressors]
+        self._regressors.extend(new_regressors)
 
     def __repr__(self):
         return self.df.__repr__()
@@ -179,17 +261,19 @@ class TSDataset:
         ... })
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
-        >>> ts = TSDataset(df_ts_format, "D", df_exog=df_regressors_ts_format)
+        >>> ts = TSDataset(
+        ...     df_ts_format, "D", df_exog=df_regressors_ts_format, known_future="all"
+        ... )
         >>> ts.make_future(4)
         segment      segment_0                      segment_1
         feature    regressor_1 regressor_2 target regressor_1 regressor_2 target
         timestamp
-        2021-07-01          30          35    nan          70          75    nan
-        2021-07-02          31          36    nan          71          76    nan
-        2021-07-03          32          37    nan          72          77    nan
-        2021-07-04          33          38    nan          73          78    nan
+        2021-07-01          30          35    NaN          70          75    NaN
+        2021-07-02          31          36    NaN          71          76    NaN
+        2021-07-03          32          37    NaN          72          77    NaN
+        2021-07-04          33          38    NaN          73          78    NaN
         """
-        self._check_endings()
+        self._check_endings(warning=True)
         max_date_in_dataset = self.df.index.max()
         future_dates = pd.date_range(
             start=max_date_in_dataset, periods=future_steps + 1, freq=self.freq, closed="right"
@@ -214,30 +298,61 @@ class TSDataset:
 
         if self.transforms is not None:
             for transform in self.transforms:
+                tslogger.log(f"Transform {repr(transform)} is applied to dataset")
                 df = transform.transform(df)
 
         future_dataset = df.tail(future_steps).copy(deep=True)
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
-        future_ts = TSDataset(future_dataset, freq=self.freq)
+        future_ts = TSDataset(df=future_dataset, freq=self.freq)
+
+        # can't put known_future into constructor, _check_known_future fails with df_exog=None
+        future_ts.known_future = self.known_future
+        future_ts._regressors = self.regressors
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
 
     @staticmethod
-    def _check_regressors(df: pd.DataFrame, df_exog: pd.DataFrame):
-        """Check that regressors in df_exog begin not later than in df and end later than in df."""
+    def _check_known_future(
+        known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]
+    ) -> List[str]:
+        """Check that ``known_future`` corresponds to ``df_exog`` and returns initial list of regressors."""
+        if df_exog is None:
+            exog_columns = set()
+        else:
+            exog_columns = set(df_exog.columns.get_level_values("feature"))
+
+        if isinstance(known_future, str):
+            if known_future == "all":
+                return sorted(list(exog_columns))
+            else:
+                raise ValueError("The only possible literal is 'all'")
+        else:
+            known_future_unique = set(known_future)
+            if not known_future_unique.issubset(exog_columns):
+                raise ValueError(
+                    f"Some features in known_future are not present in df_exog: "
+                    f"{known_future_unique.difference(exog_columns)}"
+                )
+            else:
+                return sorted(list(known_future_unique))
+
+    @staticmethod
+    def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
+        """Check that regressors begin not later than in ``df`` and end later than in ``df``."""
+        if df_regressors.shape[1] == 0:
+            return
+        # TODO: check performance
         df_segments = df.columns.get_level_values("segment")
         for segment in df_segments:
             target_min = df[segment]["target"].first_valid_index()
             target_min = pd.NaT if target_min is None else target_min
             target_max = df[segment]["target"].last_valid_index()
             target_max = pd.NaT if target_max is None else target_max
-            exog_regressor_columns = [x for x in set(df_exog[segment].columns) if x.startswith("regressor")]
-            if len(exog_regressor_columns) == 0:
-                continue
-            exog_series_min = df_exog[segment][exog_regressor_columns].first_valid_index()
+
+            exog_series_min = df_regressors[segment].first_valid_index()
             exog_series_min = pd.NaT if exog_series_min is None else exog_series_min
-            exog_series_max = df_exog[segment][exog_regressor_columns].last_valid_index()
+            exog_series_max = df_regressors[segment].last_valid_index()
             exog_series_max = pd.NaT if exog_series_max is None else exog_series_max
             if target_min < exog_series_min:
                 raise ValueError(
@@ -253,7 +368,11 @@ class TSDataset:
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
-        self._check_regressors(df=df, df_exog=self.df_exog)
+        if self.df_exog is None:
+            raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
+        segments = sorted(set(df.columns.get_level_values("segment")))
+        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
+        self._check_regressors(df=df, df_regressors=df_regressors)
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
 
@@ -265,17 +384,19 @@ class TSDataset:
                 warnings.warn(
                     "Segments contains NaNs in the last timestamps."
                     "Some of the transforms might work incorrectly or even fail."
-                    "Make sure that you use the impurer before making the forecast."
+                    "Make sure that you use the imputer before making the forecast."
                 )
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
     def inverse_transform(self):
         """Apply inverse transform method of transforms to the data.
+
         Applied in reversed order.
         """
         if self.transforms is not None:
             for transform in reversed(self.transforms):
+                tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
                 self.df = transform.inverse_transform(self.df)
 
     @property
@@ -295,13 +416,6 @@ class TSDataset:
         ['segment_0', 'segment_1']
         """
         return self.df.columns.get_level_values("segment").unique().tolist()
-
-    def _update_regressors(self):
-        result = set()
-        for column in self.columns.get_level_values("feature"):
-            if column.startswith("regressor"):
-                result.add(column)
-        self._regressors = list(result)
 
     @property
     def regressors(self) -> List[str]:
@@ -324,14 +438,23 @@ class TSDataset:
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts = TSDataset(
+        ...     df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all"
+        ... )
         >>> ts.regressors
         ['regressor_1']
         """
         return self._regressors
 
     def plot(
-        self, n_segments: int = 10, column: str = "target", segments: Optional[Sequence[str]] = None, seed: int = 1
+        self,
+        n_segments: int = 10,
+        column: str = "target",
+        segments: Optional[Sequence[str]] = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        seed: int = 1,
+        figsize: Tuple[int, int] = (10, 5),
     ):
         """Plot of random or chosen segments.
 
@@ -345,17 +468,29 @@ class TSDataset:
             segments to plot
         seed:
             seed for local random state
+        start:
+            start plot from this timestamp
+        end:
+            end plot at this timestamp
+        figsize:
+            size of the figure per subplot with one segment in inches
         """
-        if not segments:
+        if segments is None:
             segments = self.segments
-        k = min(n_segments, len(segments))
+            k = min(n_segments, len(segments))
+        else:
+            k = len(segments)
         columns_num = min(2, k)
         rows_num = math.ceil(k / columns_num)
-        _, ax = plt.subplots(rows_num, columns_num, figsize=(20, 5 * rows_num), squeeze=False)
+        start = self.df.index.min() if start is None else pd.Timestamp(start)
+        end = self.df.index.max() if end is None else pd.Timestamp(end)
+
+        figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
+        _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, squeeze=False)
         ax = ax.ravel()
         rnd_state = np.random.RandomState(seed)
         for i, segment in enumerate(sorted(rnd_state.choice(segments, size=k, replace=False))):
-            df_slice = self[:, segment, column]
+            df_slice = self[start:end, segment, column]  # type: ignore
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
 
@@ -372,8 +507,8 @@ class TSDataset:
 
         Returns
         -------
-        pd.DataFrame
-            with TSDataset data
+        pd.DataFrame:
+            dataframe with TSDataset data
 
         Examples
         --------
@@ -398,20 +533,22 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
+        # flatten dataframe
         aggregator_list = []
-        category = []
         segments = df.columns.get_level_values("segment").unique().tolist()
         for segment in segments:
-            if df[segment].select_dtypes(include=["category"]).columns.to_list():
-                category.extend(df[segment].select_dtypes(include=["category"]).columns.to_list())
             aggregator_list.append(df[segment].copy())
             aggregator_list[-1]["segment"] = segment
-        df = pd.concat(aggregator_list)
-        df = df.reset_index()
-        category = list(set(category))
-        df[category] = df[category].astype("category")
-        df.columns.name = None
-        return df
+        df_flat = pd.concat(aggregator_list)
+        df_flat = df_flat.reset_index()
+        df_flat.columns.name = None
+
+        # mark category as category
+        dtypes = df.dtypes
+        category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
+        df_flat[category_columns] = df_flat[category_columns].astype("category")
+
+        return df_flat
 
     def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
         """Return pandas DataFrame.
@@ -419,13 +556,14 @@ class TSDataset:
         Parameters
         ----------
         flatten:
-            If False return pd.DataFrame with multiindex
-            if True with flatten index
+            * If False, return pd.DataFrame with multiindex
+
+            * If True, return with flatten index
 
         Returns
         -------
         pd.DataFrame
-            with TSDataset data
+            dataframe with TSDataset data
 
         Examples
         --------
@@ -468,10 +606,16 @@ class TSDataset:
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
         """Convert pandas dataframe to ETNA Dataset format.
 
+        Columns "timestamp" and "segment" are required.
+
         Parameters
         ----------
         df:
             DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+
+        Notes
+        -----
+        During conversion segment is casted to string type.
 
         Examples
         --------
@@ -514,6 +658,7 @@ class TSDataset:
         2021-01-05           4           9
         """
         df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df["segment"] = df["segment"].astype(str)
         feature_columns = df.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")
@@ -601,16 +746,17 @@ class TSDataset:
         test_size: Optional[int] = None,
     ) -> Tuple["TSDataset", "TSDataset"]:
         """Split given df with train-test timestamp indices or size of test set.
-        In case of inconsistencies between test_size and (test_start, test_end), test_size is ignored
+
+        In case of inconsistencies between ``test_size`` and (``test_start``, ``test_end``), ``test_size`` is ignored
 
         Parameters
         ----------
         train_start:
             start timestamp of new train dataset, if None first timestamp is used
         train_end:
-            end timestamp of new train dataset, if None previous to test_start timestamp is used
+            end timestamp of new train dataset, if None previous to ``test_start`` timestamp is used
         test_start:
-            start timestamp of new test dataset, if None next to train_end timestamp is used
+            start timestamp of new test dataset, if None next to ``train_end`` timestamp is used
         test_end:
             end timestamp of new test dataset, if None last timestamp is used
         test_size:
@@ -662,13 +808,15 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq)
+        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
         train.raw_df = train_raw_df
+        train._regressors = self.regressors
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq)
+        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
         test.raw_df = test_raw_df
+        test._regressors = self.regressors
 
         return train, test
 
@@ -685,7 +833,7 @@ class TSDataset:
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
-        """Return columns of self.df.
+        """Return columns of ``self.df``.
 
         Returns
         -------
@@ -706,7 +854,7 @@ class TSDataset:
         return self.df.loc
 
     def isnull(self) -> pd.DataFrame:
-        """Return dataframe with flag that means if the correspondent object in self.df is null.
+        """Return dataframe with flag that means if the correspondent object in ``self.df`` is null.
 
         Returns
         -------
@@ -716,15 +864,16 @@ class TSDataset:
         return self.df.isnull()
 
     def head(self, n_rows: int = 5) -> pd.DataFrame:
-        """Return the first `n` rows.
+        """Return the first ``n_rows`` rows.
 
         Mimics pandas method.
 
-        This function returns the first `n` rows for the object based
+        This function returns the first ``n_rows`` rows for the object based
         on position. It is useful for quickly testing if your object
         has the right type of data in it.
-        For negative values of `n`, this function returns all rows except
-        the last `n` rows, equivalent to ``df[:-n]``.
+
+        For negative values of ``n_rows``, this function returns all rows except
+        the last ``n_rows`` rows, equivalent to ``df[:-n_rows]``.
 
         Parameters
         ----------
@@ -734,20 +883,21 @@ class TSDataset:
         Returns
         -------
         pd.DataFrame
-            the first `n` rows or 5 by default.
+            the first ``n_rows`` rows or 5 by default.
         """
         return self.df.head(n_rows)
 
     def tail(self, n_rows: int = 5) -> pd.DataFrame:
-        """Return the last `n` rows.
+        """Return the last ``n_rows`` rows.
 
         Mimics pandas method.
 
-        This function returns last `n` rows from the object based on
+        This function returns last ``n_rows`` rows from the object based on
         position. It is useful for quickly verifying data, for example,
         after sorting or appending rows.
-        For negative values of `n`, this function returns all rows except
-        the first `n` rows, equivalent to ``df[n:]``.
+
+        For negative values of ``n_rows``, this function returns all rows except
+        the first `n` rows, equivalent to ``df[n_rows:]``.
 
         Parameters
         ----------
@@ -757,7 +907,7 @@ class TSDataset:
         Returns
         -------
         pd.DataFrame
-            the last `n` rows or 5 by default.
+            the last ``n_rows`` rows or 5 by default.
 
         """
         return self.df.tail(n_rows)
@@ -768,6 +918,7 @@ class TSDataset:
             "num_segments": len(self.segments),
             "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
             "num_regressors": len(self.regressors),
+            "num_known_future": len(self.known_future),
             "freq": self.freq,
         }
 
@@ -799,13 +950,23 @@ class TSDataset:
         """Overview of the dataset that returns a DataFrame.
 
         Method describes dataset in segment-wise fashion. Description columns:
+
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+
         * end_timestamp: ending of the segment, missing values in the ending are ignored
-        * length: length according to start_timestamp and end_timestamp
-        * num_missing: number of missing variables between start_timestamp and end_timestamp
+
+        * length: length according to ``start_timestamp`` and ``end_timestamp``
+
+        * num_missing: number of missing variables between ``start_timestamp`` and ``end_timestamp``
+
         * num_segments: total number of segments, common for all segments
+
         * num_exogs: number of exogenous features, common for all segments
+
         * num_regressors: number of exogenous factors, that are regressors, common for all segments
+
+        * num_known_future: number of regressors, that are known since creation, common for all segments
+
         * freq: frequency of the series, common for all segments
 
         Parameters
@@ -836,12 +997,12 @@ class TSDataset:
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all")
         >>> ts.describe()
-                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors freq
+                  start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors  num_known_future freq
         segments
-        segment_0      2021-06-01    2021-06-30      30            0             2          1               1    D
-        segment_1      2021-06-01    2021-06-30      30            0             2          1               1    D
+        segment_0      2021-06-01    2021-06-30      30            0             2          1               1                 1    D
+        segment_1      2021-06-01    2021-06-30      30            0             2          1               1                 1    D
         """
         if segments is None:
             segments = self.segments
@@ -856,6 +1017,7 @@ class TSDataset:
         segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
         segments_dict["num_exogs"] = [common_dict["num_exogs"]] * len(segments)
         segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
+        segments_dict["num_known_future"] = [common_dict["num_known_future"]] * len(segments)
         segments_dict["freq"] = [common_dict["freq"]] * len(segments)
 
         result_df = pd.DataFrame(segments_dict, index=segments)
@@ -867,6 +1029,7 @@ class TSDataset:
             "num_segments",
             "num_exogs",
             "num_regressors",
+            "num_known_future",
             "freq",
         ]
         result_df = result_df[columns_order]
@@ -879,17 +1042,26 @@ class TSDataset:
         Method describes dataset in segment-wise fashion.
 
         Information about dataset in general:
+
         * num_segments: total number of segments
+
         * num_exogs: number of exogenous features
+
         * num_regressors: number of exogenous factors, that are regressors
+
+        * num_known_future: number of regressors, that are known since creation
+
         * freq: frequency of the dataset
 
         Information about individual segments:
-        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
-        * end_timestamp: ending of the segment, missing values in the ending are ignored
-        * length: length according to start_timestamp and end_timestamp
-        * num_missing: number of missing variables between start_timestamp and end_timestamp
 
+        * start_timestamp: beginning of the segment, missing values in the beginning are ignored
+
+        * end_timestamp: ending of the segment, missing values in the ending are ignored
+
+        * length: length according to ``start_timestamp`` and ``end_timestamp``
+
+        * num_missing: number of missing variables between ``start_timestamp`` and ``end_timestamp``
 
         Parameters
         ----------
@@ -913,12 +1085,13 @@ class TSDataset:
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
         >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D")
+        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all")
         >>> ts.info()
         <class 'etna.datasets.TSDataset'>
         num_segments: 2
         num_exogs: 1
         num_regressors: 1
+        num_known_future: 1
         freq: D
                   start_timestamp end_timestamp  length  num_missing
         segments

@@ -1,16 +1,16 @@
 [tool.poetry]
 name = "etna"
-version = "1.5.0"
+version = "1.8.0"
 repository = "https://github.com/tinkoff-ai/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
-license = "Apache 2.0"
+license = "Apache-2.0"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Intended Audience :: Science/Research",
@@ -37,28 +37,37 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.7.0, <3.10.0"
-scikit-learn = "^0.24.1"
+python = ">=3.7.1, <3.10.0"
+scikit-learn = ">=0.24, <2"
 pandas = "^1"
 catboost = ">=0.21"
 ruptures = "1.1.5"
-numba = "^0.53.1"
+numba = ">=0.53.1,<0.56.0"
 seaborn = "^0.11.1"
-statsmodels = "^0.12.2"
+statsmodels = ">=0.12,<0.14"
 dill = "^0.3.4"
 toml = "^0.10.2"
 loguru = "^0.5.3"
-saxpy = "^1.0.1-dev167"
 hydra-slayer = "^0.2.0"
 typer = "^0.4.0"
 omegaconf = "^2.1.1"
 holidays = "^0.11.3"
 boto3 = "^1.5"
+botocore = "*"
+scipy = "<1.8.0"
+Bottleneck = "^1.3.4"
+numpy = "*"
+joblib = "*"
+plotly = "*"
+hydra_slayer = "*"
+matplotlib = "*"
+typing_extensions = "*"
 
 prophet = {version = "^1.0", optional = true}
 
-torch = {version = "1.8.*", optional = true}
-pytorch-forecasting = {version = "0.8.5", optional = true}
+torch = {version = ">=1.8.0,<1.12.0", optional = true}
+pytorch-forecasting = {version = "^0.9.0", optional = true}
+pytorch-lightning = {version = "*", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
@@ -83,7 +92,7 @@ mypy = {version = "^0.910", optional = true}
 types-PyYAML = {version = "^6.0.0", optional = true}
 codespell = {version = "^2.0.0", optional = true}
 
-click = {version = "^8.0.1", optional = true}
+click = {version = ">=8.0.1, <8.1", optional = true}
 semver = {version = "^2.13.0", optional = true}
 ipywidgets = {version = "^7.6.5", optional = true}
 
@@ -93,7 +102,7 @@ nbconvert = {version = "*", optional = true}
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
-torch = ["torch", "pytorch-forecasting"]
+torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
 wandb = ["wandb"]
 # dev deps
 release = ["click", "semver"]

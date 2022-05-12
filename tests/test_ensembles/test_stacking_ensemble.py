@@ -17,24 +17,6 @@ from etna.pipeline import Pipeline
 HORIZON = 7
 
 
-def test_invalid_pipelines_number(catboost_pipeline: Pipeline):
-    """Test StackingEnsemble behavior in case of invalid pipelines number."""
-    with pytest.raises(ValueError, match="At least two pipelines are expected."):
-        _ = StackingEnsemble(pipelines=[catboost_pipeline])
-
-
-def test_get_horizon_pass(catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
-    """Check that StackingEnsemble._get horizon works correctly in case of valid pipelines list."""
-    horizon = StackingEnsemble._get_horizon(pipelines=[catboost_pipeline, prophet_pipeline])
-    assert horizon == HORIZON
-
-
-def test_get_horizon_fail(catboost_pipeline: Pipeline, naive_pipeline: Pipeline):
-    """Check that StackingEnsemble._get horizon works correctly in case of invalid pipelines list."""
-    with pytest.raises(ValueError, match="All the pipelines should have the same horizon."):
-        _ = StackingEnsemble._get_horizon(pipelines=[catboost_pipeline, naive_pipeline])
-
-
 @pytest.mark.parametrize("input_cv,true_cv", ([(2, 2)]))
 def test_cv_pass(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv, true_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of valid cv parameter."""
@@ -42,10 +24,10 @@ def test_cv_pass(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_c
     assert ensemble.n_folds == true_cv
 
 
-@pytest.mark.parametrize("input_cv", ([1]))
+@pytest.mark.parametrize("input_cv", ([0]))
 def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of wrong number for cv parameter."""
-    with pytest.raises(ValueError, match="At least two folds for backtest are expected."):
+    with pytest.raises(ValueError, match="Folds number should be a positive number, 0 given"):
         _ = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], n_folds=input_cv)
 
 
@@ -215,14 +197,14 @@ def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensem
     np.allclose(mae(test, forecast), 0)
 
 
-def test_forecast_warning_prediction_intervals(
-    weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble
-):
-    """Check that StackingEnsemble.forecast warns when called with prediction intervals"""
-    train, test = weekly_period_ts
-    ensemble = naive_ensemble.fit(train)
-    with pytest.warns(UserWarning, match="doesn't support prediction intervals"):
-        _ = ensemble.forecast(prediction_interval=True)
+def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: StackingEnsemble):
+    """Test the forecast interface with prediction intervals."""
+    naive_ensemble.fit(example_tsds)
+    forecast = naive_ensemble.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
 @pytest.mark.long

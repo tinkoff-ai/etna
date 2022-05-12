@@ -15,7 +15,12 @@ from etna.transforms.math.sklearn import TransformMode
 class StandardScalerTransform(SklearnTransform):
     """Standardize features by removing the mean and scaling to unit variance.
 
-    Uses sklearn.preprocessing.StandardScaler inside.
+    Uses :py:class:`sklearn.preprocessing.StandardScaler` inside.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(
@@ -37,15 +42,17 @@ class StandardScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses ``self.__repr__()`` if not given.
         with_mean:
             if True, center the data before scaling.
         with_std:
             if True, scale the data to unit standard deviation.
         mode:
             "macro" or "per-segment", way to transform features over segments.
-            If "macro", transforms features globally, gluing the corresponding ones for all segments.
-            If "per-segment", transforms features for each segment separately.
+
+            * If "macro", transforms features globally, gluing the corresponding ones for all segments.
+
+            * If "per-segment", transforms features for each segment separately.
 
         Raises
         ------
@@ -64,9 +71,14 @@ class StandardScalerTransform(SklearnTransform):
 
 
 class RobustScalerTransform(SklearnTransform):
-    """
-    Scale features using statistics that are robust to outliers.
-    Uses sklearn.preprocessing.RobustScaler inside.
+    """Scale features using statistics that are robust to outliers.
+
+    Uses :py:class:`sklearn.preprocessing.RobustScaler` inside.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(
@@ -90,7 +102,7 @@ class RobustScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses ``self.__repr__()`` if not given.
         with_centering:
             if True, center the data before scaling.
         with_scaling:
@@ -99,13 +111,16 @@ class RobustScalerTransform(SklearnTransform):
             quantile range.
         unit_variance:
             If True, scale data so that normally distributed features have a variance of 1.
+
             In general, if the difference between the x-values of q_max and q_min for a standard normal
             distribution is greater than 1, the dataset will be scaled down. If less than 1,
             the dataset will be scaled up.
         mode:
             "macro" or "per-segment", way to transform features over segments.
-            If "macro", transforms features globally, gluing the corresponding ones for all segments.
-            If "per-segment", transforms features for each segment separately.
+
+            * If "macro", transforms features globally, gluing the corresponding ones for all segments.
+
+            * If "per-segment", transforms features for each segment separately.
 
         Raises
         ------
@@ -132,9 +147,14 @@ class RobustScalerTransform(SklearnTransform):
 
 
 class MinMaxScalerTransform(SklearnTransform):
-    """
-    Transform features by scaling each feature to a given range.
-    Uses sklearn.preprocessing.MinMaxScaler inside.
+    """Transform features by scaling each feature to a given range.
+
+    Uses :py:class:`sklearn.preprocessing.MinMaxScaler` inside.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(
@@ -156,15 +176,17 @@ class MinMaxScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses ``self.__repr__()`` if not given.
         feature_range:
             desired range of transformed data.
         clip:
             set to True to clip transformed values of held-out data to provided feature range.
         mode:
             "macro" or "per-segment", way to transform features over segments.
-            If "macro", transforms features globally, gluing the corresponding ones for all segments.
-            If "per-segment", transforms features for each segment separately.
+
+            * If "macro", transforms features globally, gluing the corresponding ones for all segments.
+
+            * If "per-segment", transforms features for each segment separately.
 
         Raises
         ------
@@ -183,9 +205,14 @@ class MinMaxScalerTransform(SklearnTransform):
 
 
 class MaxAbsScalerTransform(SklearnTransform):
-    """
-    Scale each feature by its maximum absolute value.
-    Uses sklearn.preprocessing.MaxAbsScaler inside.
+    """Scale each feature by its maximum absolute value.
+
+    Uses :py:class:`sklearn.preprocessing.MaxAbsScaler` inside.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(
@@ -204,11 +231,13 @@ class MaxAbsScalerTransform(SklearnTransform):
         inplace:
             features are changed by scaled.
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses ``self.__repr__()`` if not given.
         mode:
             "macro" or "per-segment", way to transform features over segments.
-            If "macro", transforms features globally, gluing the corresponding ones for all segments.
-            If "per-segment", transforms features for each segment separately.
+
+            * If "macro", transforms features globally, gluing the corresponding ones for all segments.
+
+            * If "per-segment", transforms features for each segment separately.
 
         Raises
         ------

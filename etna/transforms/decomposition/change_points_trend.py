@@ -8,9 +8,9 @@ from typing import Type
 import numpy as np
 import pandas as pd
 from ruptures.base import BaseEstimator
-from ruptures.costs import CostLinear
 from sklearn.base import RegressorMixin
 
+from etna.analysis.change_points_trend.search import _find_change_points_segment
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
@@ -40,7 +40,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         detrend_model:
             model to get trend in data
         change_point_model_predict_params:
-            params for change_point_model predict method
+            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.out_columns = in_column
@@ -49,23 +49,6 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         self.per_interval_models: Optional[Dict[TTimestampInterval, TDetrendModel]] = None
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model_predict_params = change_point_model_predict_params
-
-    def _prepare_signal(self, series: pd.Series) -> np.ndarray:
-        """Prepare series for change point model."""
-        signal = series.to_numpy()
-        if isinstance(self.change_point_model.cost, CostLinear):
-            signal = signal.reshape((-1, 1))
-        return signal
-
-    def _get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
-        """Fit change point model with series data and predict trends change points."""
-        signal = self._prepare_signal(series=series)
-        timestamp = series.index
-        self.change_point_model.fit(signal=signal)
-        # last point in change points is the first index after the series
-        change_points_indices = self.change_point_model.predict(**self.change_point_model_predict_params)[:-1]
-        change_points = [timestamp[idx] for idx in change_points_indices]
-        return change_points
 
     @staticmethod
     def _build_trend_intervals(change_points: List[pd.Timestamp]) -> List[TTimestampInterval]:
@@ -118,7 +101,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         return trend_series
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
-        """Fit OneSegmentChangePointsTransform: find trend change points in df, fit detrend models with data from intervals of stable trend.
+        """Fit OneSegmentChangePointsTransform: find trend change points in ``df``, fit detrend models with data from intervals of stable trend.
 
         Parameters
         ----------
@@ -127,10 +110,14 @@ class _OneSegmentChangePointsTrendTransform(Transform):
 
         Returns
         -------
-        self
+        :
         """
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
-        change_points = self._get_change_points(series=series)
+        series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
+        if series.isnull().values.any():
+            raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
+        change_points = _find_change_points_segment(
+            series=series, change_point_model=self.change_point_model, **self.change_point_model_predict_params
+        )
         self.intervals = self._build_trend_intervals(change_points=change_points)
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
         self._fit_per_interval_model(series=series)
@@ -150,7 +137,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             df with detrended in_column series
         """
         df._is_copy = False
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
+        series = df[self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df.loc[:, self.in_column] -= trend_series
         return df
@@ -169,7 +156,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             df with restored trend in in_column
         """
         df._is_copy = False
-        series = df.loc[df[self.in_column].first_valid_index() :, self.in_column]
+        series = df[self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
         df.loc[:, self.in_column] += trend_series
         if self.in_column == "target":
@@ -180,7 +167,13 @@ class _OneSegmentChangePointsTrendTransform(Transform):
 
 
 class ChangePointsTrendTransform(PerSegmentWrapper):
-    """ChangePointsTrendTransform subtracts multiple linear trend from series."""
+    """ChangePointsTrendTransform subtracts multiple linear trend from series.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
@@ -200,7 +193,7 @@ class ChangePointsTrendTransform(PerSegmentWrapper):
         detrend_model:
             model to get trend in data
         change_point_model_predict_params:
-            params for change_point_model predict method
+            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.change_point_model = change_point_model

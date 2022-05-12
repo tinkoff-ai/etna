@@ -22,15 +22,8 @@ from sphinx.ext.autosummary import Autosummary
 SOURCE_PATH = Path(os.path.dirname(__file__))  # noqa # docs source
 PROJECT_PATH = SOURCE_PATH.joinpath("../..")  # noqa # project root
 
-"""try:
-    import git
-    repo = git.Repo(PROJECT_PATH)
-    COMMIT_SHORT_SHA = str(repo.active_branch.commit)[:8]
-    CI_COMMIT_BRANCH = str(repo.active_branch)
-
-except:
-    COMMIT_SHORT_SHA = os.environ["CI_COMMIT_SHORT_SHA"]
-    CI_COMMIT_BRANCH = os.environ["CI_COMMIT_BRANCH"]"""
+COMMIT_SHORT_SHA = os.environ.get("CI_COMMIT_SHORT_SHA", None)
+WORKFLOW_NAME = os.environ.get("WORKFLOW_NAME", None)
 
 sys.path.insert(0, str(PROJECT_PATH))  # noqa
 
@@ -46,11 +39,11 @@ author = 'etna-tech@tinkoff.ru'
 with open(PROJECT_PATH / "pyproject.toml", "r") as f:
     pyproject_toml = toml.load(f)
 
-"""if CI_COMMIT_BRANCH == "master":
-    release = f"ID {COMMIT_SHORT_SHA}"
+
+if WORKFLOW_NAME == "Publish":
+    release = pyproject_toml["tool"]["poetry"]["version"]
 else:
-    release = pyproject_toml["tool"]["poetry"]["version"]"""
-release = pyproject_toml["tool"]["poetry"]["version"]
+    release = f"{COMMIT_SHORT_SHA}"
 
 
 # -- General configuration ---------------------------------------------------
@@ -71,6 +64,14 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
 ]
+
+intersphinx_mapping = {
+    "statsmodels": ("https://www.statsmodels.org/stable/", None),
+    "sklearn": ("http://scikit-learn.org/stable", None),
+    "pytorch_forecasting": ("https://pytorch-forecasting.readthedocs.io/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/3.5.0/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+}
 
 autodoc_typehints = "both"
 autodoc_typehints_description_target = "all"

@@ -5,11 +5,25 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class FourierTransform(Transform):
-    """Adds fourier features to the dataset."""
+class FourierTransform(Transform, FutureMixin):
+    """Adds fourier features to the dataset.
+
+    Notes
+    -----
+    To understand how transform works we recommend:
+    `Fourier series <https://otexts.com/fpp2/useful-predictors.html#fourier-series>`_.
+
+    * Parameter ``period`` is responsible for the seasonality we want to capture.
+    * Parameters ``order`` and ``mods`` define which harmonics will be used.
+
+    Parameter ``order`` is a more user-friendly version of ``mods``.
+    For example, ``order=2`` can be represented as ``mods=[1, 2, 3, 4]`` if ``period`` > 4 and
+    as ``mods=[1, 2, 3]`` if 3 <= ``period`` <= 4.
+    """
 
     def __init__(
         self,
@@ -23,19 +37,25 @@ class FourierTransform(Transform):
         Parameters
         ----------
         period:
-            the period of the seasonality to capture in frequency units of time series, it should be >= 2
+            the period of the seasonality to capture in frequency units of time series;
+
+            ``period`` should be >= 2
         order:
-            upper order of Fourier components to include, it should be >= 1 and <= ceil(period/2))
+            upper order of Fourier components to include;
+
+            ``order`` should be >= 1 and <= ceil(period/2))
         mods:
             alternative and precise way of defining which harmonics will be used,
-            for example `mods=[1, 3, 4]` means that sin of the first order
-            and sin and cos of the second order will be used,
-            mods should be >= 1 and < period
+            for example ``mods=[1, 3, 4]`` means that sin of the first order
+            and sin and cos of the second order will be used;
+
+            ``mods`` should be >= 1 and < period
         out_column:
-            if set, name of added column, the final name will be '{out_columnt}_{mod}',
-            don't forget to add 'regressor_' prefix;
-            if don't set, name will be 'regressor_{transform.repr}',
-            repr will be made for transform that creates exactly this column
+
+            * if set, name of added column, the final name will be '{out_columnt}_{mod}';
+
+            * if don't set, name will be ``transform.__repr__()``,
+              repr will be made for transform that creates exactly this column
 
         Raises
         ------
@@ -47,17 +67,6 @@ class FourierTransform(Transform):
             if order is < 1 or > ceil(period/2)
         ValueError:
             if at least one mod is < 1 or >= period
-
-        Notes
-        -----
-        To understand how transform works we recommend: https://otexts.com/fpp2/useful-predictors.html#fourier-series
-
-        * Parameter `period` is responsible for the seasonality we want to capture.
-        * Parameters `order` and `mods` define which harmonics will be used.
-
-        Parameter `order` is a more user-friendly version of `mods`.
-        For example, `order=2` can be represented as `mods=[1, 2, 3, 4]` if `period` > 4 and
-        as `mods=[1, 2, 3]` if 3 <= `period` <= 4.
         """
         if period < 2:
             raise ValueError("Period should be at least 2")
@@ -93,7 +102,7 @@ class FourierTransform(Transform):
 
     def _get_column_name(self, mod: int) -> str:
         if self.out_column is None:
-            return f"regressor_{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
+            return f"{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
         else:
             return f"{self.out_column}_{mod}"
 

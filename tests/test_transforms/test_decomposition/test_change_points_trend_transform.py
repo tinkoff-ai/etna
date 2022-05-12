@@ -5,7 +5,7 @@ from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
-from etna.transforms.decomposition import ChangePointsTrendTransform
+from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
 
 
@@ -29,17 +29,13 @@ def pre_multitrend_df() -> pd.DataFrame:
     return df
 
 
-@pytest.mark.parametrize("n_bkps", (5, 10, 12, 27))
-def test_get_change_points(multitrend_df: pd.DataFrame, n_bkps: int):
-    """Check that _get_change_points method return correct number of points in correct format."""
-    bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=n_bkps
-    )
-    change_points = bs._get_change_points(multitrend_df["segment_1"]["target"])
-    assert isinstance(change_points, list)
-    assert len(change_points) == n_bkps
-    for point in change_points:
-        assert isinstance(point, pd.Timestamp)
+@pytest.fixture
+def multitrend_df_with_nans_in_tails(multitrend_df):
+    multitrend_df.loc[
+        [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],
+        pd.IndexSlice["segment_1", "target"],
+    ] = None
+    return multitrend_df
 
 
 def test_build_trend_intervals():
@@ -183,9 +179,19 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
         _ = transform.transform(df=multitrend_df["segment_1"])
 
 
-@pytest.mark.xfail
-def test_fit_transform_with_nans(ts_diff_endings):
+def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
     transform = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    ts_diff_endings.fit_transform([transform])
+    transformed = transform.fit_transform(df=multitrend_df_with_nans_in_tails)
+    for segment in transformed.columns.get_level_values("segment").unique():
+        segment_slice = transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
+        assert abs(segment_slice["target"].mean()) < 0.1
+
+
+def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+    bs = ChangePointsTrendTransform(
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+    )
+    with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
+        _ = bs.fit_transform(df=df_with_nans)

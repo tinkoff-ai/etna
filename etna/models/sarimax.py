@@ -4,15 +4,13 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Union
 
 import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from etna.datasets import TSDataset
-from etna.models.base import PerSegmentModel
-from etna.models.base import log_decorator
+from etna.models.base import BaseAdapter
+from etna.models.base import PerSegmentPredictionIntervalModel
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -22,7 +20,7 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXModel:
+class _SARIMAXAdapter(BaseAdapter):
     """
     Class for holding Sarimax model.
 
@@ -165,8 +163,9 @@ class _SARIMAXModel:
         self.kwargs = kwargs
         self._model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
+        self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame) -> "_SARIMAXModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXAdapter":
         """
         Fits a SARIMAX model.
 
@@ -174,12 +173,15 @@ class _SARIMAXModel:
         ----------
         df:
             Features dataframe
+        regressors:
+            List of the columns with regressors
 
         Returns
         -------
-        self: SARIMAX
-            fitted model
+        :
+            Fitted model
         """
+        self.regressor_columns = regressors
         categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
         try:
             df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
@@ -195,14 +197,6 @@ class _SARIMAXModel:
         targets.index = df["timestamp"]
 
         exog_train = self._select_regressors(df)
-        regressor_columns = None
-        if exog_train is not None:
-            regressor_columns = exog_train.columns.values
-
-        if regressor_columns:
-            addition_to_params = len(regressor_columns) * [0]
-        else:
-            addition_to_params = []
 
         self._model = SARIMAX(
             endog=targets,
@@ -226,9 +220,7 @@ class _SARIMAXModel:
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        # expect every params but last to be near 0
-        start_params = [0, 0, 0, 0] + addition_to_params + [1]
-        self._result = self._model.fit(start_params=start_params, disp=False)
+        self._result = self._model.fit()
         return self
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
@@ -246,7 +238,7 @@ class _SARIMAXModel:
 
         Returns
         -------
-        y_pred: pd.DataFrame
+        :
             DataFrame with predictions
         """
         if self._result is None or self._model is None:
@@ -268,8 +260,9 @@ class _SARIMAXModel:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
             )
-            y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
+            y_pred = forecast.predicted_mean
+            y_pred.name = "mean"
+            y_pred = pd.DataFrame(y_pred)
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
@@ -283,22 +276,27 @@ class _SARIMAXModel:
             forecast = self._result.get_prediction(
                 start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
             )
-            y_pred = pd.DataFrame(forecast.predicted_mean)
-            y_pred.rename({"predicted_mean": "mean"}, axis=1, inplace=True)
-        return y_pred.reset_index(drop=True, inplace=False)
+            y_pred = forecast.predicted_mean
+            y_pred.name = "mean"
+            y_pred = pd.DataFrame(y_pred)
+        y_pred = y_pred.reset_index(drop=True, inplace=False)
+        rename_dict = {
+            column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
+        }
+        y_pred = y_pred.rename(rename_dict, axis=1)
+        return y_pred
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
-        column_to_drop = [
-            col for col in df.columns if not col.startswith("regressor") and col not in ["target", "timestamp"]
-        ]
-        regressor_columns = [col for col in df.columns if col.startswith("regressor")]
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
         if column_to_drop:
             warnings.warn(
                 message=f"SARIMAX model does not work with exogenous features (features unknown in future).\n "
                 f"{column_to_drop} will be dropped"
             )
         if horizon:
-            short_regressors = [regressor for regressor in regressor_columns if df[regressor].count() < horizon]
+            short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
             if short_regressors:
                 raise ValueError(
                     f"Regressors {short_regressors} are too short for chosen horizon value.\n "
@@ -306,28 +304,34 @@ class _SARIMAXModel:
                 )
 
     def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
-        regressor_columns = [col for col in df.columns if col.startswith("regressor")]
-        if regressor_columns:
-            exog_future = df[regressor_columns]
+        if self.regressor_columns:
+            exog_future = df[self.regressor_columns]
             exog_future.index = df["timestamp"]
         else:
             exog_future = None
         return exog_future
 
+    def get_model(self) -> SARIMAX:
+        """Get internal statsmodels.tsa.statespace.sarimax.SARIMAX model that is used inside etna class.
 
-class SARIMAXModel(PerSegmentModel):
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self._model
+
+
+class SARIMAXModel(PerSegmentPredictionIntervalModel):
     """
     Class for holding Sarimax model.
 
     Notes
     -----
-    We use SARIMAX [1] model from statsmodels package. Statsmodels package uses `exog` attribute for
+    We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
-
-    .. `SARIMAX: <https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html>_`
-
     """
 
     def __init__(
@@ -457,7 +461,7 @@ class SARIMAXModel(PerSegmentModel):
         self.validate_specification = validate_specification
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
-            base_model=_SARIMAXModel(
+            base_model=_SARIMAXAdapter(
                 order=self.order,
                 seasonal_order=self.seasonal_order,
                 trend=self.trend,
@@ -478,70 +482,3 @@ class SARIMAXModel(PerSegmentModel):
                 **self.kwargs,
             )
         )
-
-    @staticmethod
-    def _forecast_one_segment(
-        model,
-        segment: Union[str, List[str]],
-        ts: TSDataset,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-    ) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(
-            df=segment_features, prediction_interval=prediction_interval, quantiles=quantiles
-        )
-        rename_dict = {
-            column: column.replace("mean", "target") for column in segment_predict.columns if column.startswith("mean")
-        }
-        segment_predict = segment_predict.rename(rename_dict, axis=1)
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
-
-    @log_decorator
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-
-        Returns
-        -------
-        pd.DataFrame
-            Models result
-        """
-        if self._segments is None:
-            raise ValueError("The model is not fitted yet, use fit() to train it")
-
-        result_list = list()
-        for segment in self._segments:
-            model = self._models[segment]
-
-            segment_predict = self._forecast_one_segment(model, segment, ts, prediction_interval, quantiles)
-            result_list.append(segment_predict)
-
-        # need real case to test
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        # N.B. inplace forecast will not change target values, because `combine_first` only fill nan values
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
-        ts.inverse_transform()
-        return ts

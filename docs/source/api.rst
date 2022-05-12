@@ -15,6 +15,7 @@ API
    ensembles
    pipeline
    analysis
+   clustering
    loggers
    commands
    settings

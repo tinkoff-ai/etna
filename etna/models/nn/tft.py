@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -19,11 +21,11 @@ if SETTINGS.torch_required:
 
 
 class TFTModel(Model):
-    """Wrapper for TemporalFusionTransformer from Pytorch Forecasting library.
+    """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
     Notes
     -----
-    We save TimeSeriesDataSet in instance to use it in the model.
+    We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
 
@@ -32,7 +34,7 @@ class TFTModel(Model):
         max_epochs: int = 10,
         gpus: Union[int, List[int]] = 0,
         gradient_clip_val: float = 0.1,
-        learning_rate: List[float] = [0.001],
+        learning_rate: Optional[List[float]] = None,
         batch_size: int = 64,
         context_length: Optional[int] = None,
         hidden_size: int = 16,
@@ -40,6 +42,7 @@ class TFTModel(Model):
         attention_head_size: int = 4,
         dropout: float = 0.1,
         hidden_continuous_size: int = 8,
+        trainer_kwargs: Optional[Dict[str, Any]] = None,
         *args,
         **kwargs,
     ):
@@ -70,11 +73,13 @@ class TFTModel(Model):
             Dropout rate.
         hidden_continuous_size:
             Hidden size for processing continuous variables.
+        trainer_kwargs:
+            Additional arguments for pytorch_lightning Trainer.
         """
         self.max_epochs = max_epochs
         self.gpus = gpus
         self.gradient_clip_val = gradient_clip_val
-        self.learning_rate = learning_rate
+        self.learning_rate = learning_rate if learning_rate is not None else [0.001]
         self.horizon = None
         self.batch_size = batch_size
         self.context_length = context_length
@@ -83,7 +88,7 @@ class TFTModel(Model):
         self.attention_head_size = attention_head_size
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
-
+        self.trainer_kwargs = trainer_kwargs if trainer_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
         self.trainer: Optional[pl.Trainer] = None
 
@@ -132,13 +137,16 @@ class TFTModel(Model):
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)
 
-        self.trainer = pl.Trainer(
+        trainer_kwargs = dict(
             logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
             checkpoint_callback=False,
             gradient_clip_val=self.gradient_clip_val,
         )
+        trainer_kwargs.update(self.trainer_kwargs)
+
+        self.trainer = pl.Trainer(**trainer_kwargs)
 
         train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 
@@ -174,4 +182,5 @@ class TFTModel(Model):
         # shape (segments, encoder_length)
 
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
+        ts.inverse_transform()
         return ts

@@ -1,10 +1,12 @@
 from copy import deepcopy
 from typing import List
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from typing_extensions import Literal
 
 from etna.datasets import TSDataset
 from etna.ensembles.voting_ensemble import VotingEnsemble
@@ -14,45 +16,65 @@ from etna.pipeline import Pipeline
 HORIZON = 7
 
 
-def test_invalid_pipelines_number(catboost_pipeline: Pipeline):
-    """Test VotingEnsemble behavior in case of invalid pipelines number."""
-    with pytest.raises(ValueError, match="At least two pipelines are expected."):
-        _ = VotingEnsemble(pipelines=[catboost_pipeline])
+@pytest.mark.parametrize(
+    "weights",
+    (None, [0.2, 0.3, 0.5], "auto"),
+)
+def test_validate_weights_pass(
+    weights: Optional[Union[List[float], Literal["auto"]]],
+):
+    """Check that VotingEnsemble._validate_weights validate weights correctly in case of valid args sets."""
+    VotingEnsemble._validate_weights(weights=weights, pipelines_number=3)
 
 
-def test_get_horizon_pass(catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
-    """Check that VotingEnsemble._get horizon works correctly in case of valid pipelines list."""
-    horizon = VotingEnsemble._get_horizon(pipelines=[catboost_pipeline, prophet_pipeline])
-    assert horizon == HORIZON
-
-
-def test_get_horizon_fail(catboost_pipeline: Pipeline, naive_pipeline: Pipeline):
-    """Check that VotingEnsemble._get horizon works correctly in case of invalid pipelines list."""
-    with pytest.raises(ValueError, match="All the pipelines should have the same horizon."):
-        _ = VotingEnsemble._get_horizon(pipelines=[catboost_pipeline, naive_pipeline])
+def test_validate_weights_fail():
+    """Check that VotingEnsemble._validate_weights validate weights correctly in case of invalid args sets."""
+    with pytest.raises(ValueError, match="Weights size should be equal to pipelines number."):
+        _ = VotingEnsemble._validate_weights(weights=[0.3, 0.4, 0.3], pipelines_number=2)
 
 
 @pytest.mark.parametrize(
     "weights,pipelines_number,expected",
     ((None, 5, [0.2, 0.2, 0.2, 0.2, 0.2]), ([0.2, 0.3, 0.5], 3, [0.2, 0.3, 0.5]), ([1, 1, 2], 3, [0.25, 0.25, 0.5])),
 )
-def test_process_weights_pass(
+def test_process_weights(
+    naive_pipeline_1: Pipeline,
     weights: Optional[List[float]],
     pipelines_number: int,
     expected: List[float],
-    catboost_pipeline: Pipeline,
-    prophet_pipeline: Pipeline,
 ):
-    """Check that VotingEnsemble._process_weights processes weights correctly in case of valid args sets."""
-    result = VotingEnsemble._process_weights(weights=weights, pipelines_number=pipelines_number)
+    """Check that _process_weights processes weights correctly."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1 for _ in range(pipelines_number)], weights=weights)
+    result = ensemble._process_weights()
     assert isinstance(result, list)
-    assert all([x == y for x, y in zip(result, expected)])
+    assert result == expected
 
 
-def test_process_weights_fail():
-    """Check that VotingEnsemble._process_weights processes weights correctly in case of invalid args sets."""
-    with pytest.raises(ValueError, match="Weights size should be equal to pipelines number."):
-        _ = VotingEnsemble._process_weights(weights=[0.3, 0.4, 0.3], pipelines_number=2)
+def test_process_weights_auto(example_tsdf: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    """Check that _process_weights processes weights correctly in "auto" mode."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights="auto")
+    ensemble.ts = example_tsdf
+    result = ensemble._process_weights()
+    assert isinstance(result, list)
+    assert result[0] > result[1]
+
+
+@pytest.mark.parametrize(
+    "weights",
+    ((None, [0.2, 0.3], "auto")),
+)
+def test_fit_interface(
+    example_tsdf: TSDataset,
+    weights: Optional[Union[List[float], Literal["auto"]]],
+    naive_pipeline_1: Pipeline,
+    naive_pipeline_2: Pipeline,
+):
+    """Check that fit saves processes weights."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=weights)
+    ensemble.fit(example_tsdf)
+    result = ensemble.processed_weights
+    assert isinstance(result, list)
+    assert len(result) == 2
 
 
 def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
@@ -82,14 +104,15 @@ def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: 
     np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
 
 
-def test_forecast_warning_prediction_intervals(
-    simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline
-):
-    """Check that VotingEnsemble warns when called with prediction intervals."""
+def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):
+    """Test the forecast interface with prediction intervals."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
-    ensemble.fit(ts=simple_df)
-    with pytest.warns(UserWarning, match="doesn't support prediction intervals"):
-        _ = ensemble.forecast(prediction_interval=True)
+    ensemble.fit(example_tsds)
+    forecast = ensemble.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
 @pytest.mark.long

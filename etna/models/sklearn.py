@@ -1,20 +1,39 @@
+from typing import List
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
 
-from etna.datasets.tsdataset import TSDataset
-from etna.models.base import Model
+from etna.models.base import BaseAdapter
+from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
-from etna.models.base import log_decorator
 
 
-class _SklearnModel:
+class _SklearnAdapter(BaseAdapter):
     def __init__(self, regressor: RegressorMixin):
         self.model = regressor
+        self.regressor_columns: Optional[List[str]] = None
 
-    def fit(self, df: pd.DataFrame) -> "_SklearnModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SklearnAdapter":
+        """
+        Fit Sklearn model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        regressors:
+            List of the columns with regressors
+
+        Returns
+        -------
+        :
+            Fitted model
+        """
+        self.regressor_columns = regressors
         try:
-            features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
+            features = df[self.regressor_columns].apply(pd.to_numeric)
         except ValueError:
             raise ValueError("Only convertible to numeric features are accepted!")
         target = df["target"]
@@ -22,12 +41,35 @@ class _SklearnModel:
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        """
+        Compute predictions from a Sklearn model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+
+        Returns
+        -------
+        :
+            Array with predictions
+        """
         try:
-            features = df.drop(columns=["timestamp", "target"]).apply(pd.to_numeric)
+            features = df[self.regressor_columns].apply(pd.to_numeric)
         except ValueError:
             raise ValueError("Only convertible to numeric features are accepted!")
         pred = self.model.predict(features)
         return pred
+
+    def get_model(self) -> RegressorMixin:
+        """Get internal sklearn model that is used inside etna class.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self.model
 
 
 class SklearnPerSegmentModel(PerSegmentModel):
@@ -42,10 +84,10 @@ class SklearnPerSegmentModel(PerSegmentModel):
         regressor:
             sklearn model for regression
         """
-        super().__init__(base_model=_SklearnModel(regressor=regressor))
+        super().__init__(base_model=_SklearnAdapter(regressor=regressor))
 
 
-class SklearnMultiSegmentModel(Model):
+class SklearnMultiSegmentModel(MultiSegmentModel):
     """Class for holding Sklearn model for all segments."""
 
     def __init__(self, regressor: RegressorMixin):
@@ -55,36 +97,6 @@ class SklearnMultiSegmentModel(Model):
         Parameters
         ----------
         regressor:
-            sklearn model for regression
+            Sklearn model for regression
         """
-        super().__init__()
-        self._base_model = _SklearnModel(regressor=regressor)
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "SklearnMultiSegmentModel":
-        """Fit model."""
-        df = ts.to_pandas(flatten=True)
-        df = df.dropna()
-        df = df.drop(columns="segment")
-        self._base_model.fit(df=df)
-        return self
-
-    @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        Returns
-        -------
-        DataFrame
-            Models result
-        """
-        horizon = len(ts.df)
-        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x).reshape(-1, horizon).T
-        ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
-        return ts
+        super().__init__(base_model=_SklearnAdapter(regressor=regressor))

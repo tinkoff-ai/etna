@@ -9,7 +9,13 @@ from etna.transforms.math.sklearn import TransformMode
 
 
 class YeoJohnsonTransform(SklearnTransform):
-    """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame."""
+    """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
@@ -27,10 +33,13 @@ class YeoJohnsonTransform(SklearnTransform):
         in_column:
             columns to be transformed, if None - all columns will be transformed.
         inplace:
-            if True, apply transformation inplace to in_column,
-            if False, add column to dataset.
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add column to dataset.
+
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses ``self.__repr__()`` if not given.
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.
@@ -51,7 +60,13 @@ class YeoJohnsonTransform(SklearnTransform):
 
 
 class BoxCoxTransform(SklearnTransform):
-    """BoxCoxTransform applies Box-Cox transformation to DataFrame."""
+    """BoxCoxTransform applies Box-Cox transformation to DataFrame.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
@@ -69,10 +84,13 @@ class BoxCoxTransform(SklearnTransform):
         in_column:
             columns to be transformed, if None - all columns will be transformed.
         inplace:
-            if True, apply transformation inplace to in_column,
-            if False, add column to dataset.
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add column to dataset.
+
         out_column:
-            base for the names of generated columns, uses self.__repr__() if not given.
+            base for the names of generated columns, uses ``self.__repr__()`` if not given.
         standardize:
             Set to True to apply zero-mean, unit-variance normalization to the
             transformed output.

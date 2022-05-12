@@ -209,7 +209,7 @@ def example_reg_tsds(random_seed) -> TSDataset:
     df = TSDataset.to_dataset(df)
     exog = TSDataset.to_dataset(exog)
 
-    tsds = TSDataset(df, freq="D", df_exog=exog)
+    tsds = TSDataset(df, freq="D", df_exog=exog, known_future="all")
 
     return tsds
 
@@ -237,7 +237,7 @@ def outliers_tsds():
     df.columns.names = ["segment", "feature"]
 
     exog = df.copy()
-    exog.columns = pd.MultiIndex.from_arrays([["1", "2"], ["exog", "exog"]])
+    exog.columns.set_levels(["exog"], level="feature", inplace=True)
 
     tsds = TSDataset(df, "1d", exog)
 
@@ -417,8 +417,23 @@ def const_ts_anomal() -> TSDataset:
 @pytest.fixture
 def ts_diff_endings(example_reg_tsds):
     ts = deepcopy(example_reg_tsds)
-    ts.loc[example_reg_tsds.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    ts.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
     return ts
+
+
+@pytest.fixture
+def df_with_nans_in_tails(example_df):
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[-3:, pd.IndexSlice["segment_1", "target"]] = None
+    return df
+
+
+@pytest.fixture
+def df_with_nans(df_with_nans_in_tails):
+    df = df_with_nans_in_tails
+    df.loc[[df.index[5], df.index[8]], pd.IndexSlice["segment_1", "target"]] = None
+    return df
 
 
 @pytest.fixture

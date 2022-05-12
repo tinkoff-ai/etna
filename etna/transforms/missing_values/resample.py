@@ -22,9 +22,13 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         distribution_column:
             name of column to obtain the distribution from
         inplace:
-            if True, apply resampling inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply resampling inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            name of added column. If not given, use `self.__repr__()` or `regressor_{self.__repr__()}` if it is a regressor
+            name of added column. If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
         self.distribution_column = distribution_column
@@ -36,7 +40,7 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         """
         Generate fold number for each timestamp of the dataframe.
 
-        Here the in_column frequency gap is divided into the folds with the size of dataset frequency gap.
+        Here the ``in_column`` frequency gap is divided into the folds with the size of dataset frequency gap.
         """
         in_column_index = df[self.in_column].dropna().index
         if len(in_column_index) <= 1 or (len(in_column_index) >= 3 and not pd.infer_freq(in_column_index)):
@@ -58,7 +62,7 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentResampleWithDistributionTransform":
         """
-        Obtain the resampling frequency and distribution from `distribution_column`.
+        Obtain the resampling frequency and distribution from ``distribution_column``.
 
         Parameters
         ----------
@@ -67,7 +71,7 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
         Returns
         -------
-        self
+        :
         """
         df = df[[self.in_column, self.distribution_column]]
         df["fold"] = self._get_folds(df=df)
@@ -88,7 +92,8 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
         Returns
         -------
-        result dataframe
+        :
+            result dataframe
         """
         df["fold"] = self._get_folds(df)
         df = df.reset_index().merge(self.distribution, on="fold").set_index("timestamp").sort_index()
@@ -98,7 +103,13 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
 
 
 class ResampleWithDistributionTransform(PerSegmentWrapper):
-    """ResampleWithDistributionTransform resamples the given column using the distribution of the other column."""
+    """ResampleWithDistributionTransform resamples the given column using the distribution of the other column.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self, in_column: str, distribution_column: str, inplace: bool = True, out_column: Optional[str] = None
@@ -113,9 +124,13 @@ class ResampleWithDistributionTransform(PerSegmentWrapper):
         distribution_column:
             name of column to obtain the distribution from
         inplace:
-            if True, apply resampling inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply resampling inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            name of added column. If not given, use `self.__repr__()` or `regressor_{self.__repr__()}` if it is a regressor
+            name of added column. If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
         self.distribution_column = distribution_column
@@ -138,6 +153,4 @@ class ResampleWithDistributionTransform(PerSegmentWrapper):
             return self.in_column
         if out_column:
             return out_column
-        if self.in_column.startswith("regressor"):
-            return "regressor_" + self.__repr__()
         return self.__repr__()

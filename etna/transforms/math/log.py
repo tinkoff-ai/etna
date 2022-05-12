@@ -24,9 +24,13 @@ class _OneSegmentLogTransform(Transform):
         base:
             base of logarithm to apply to series.
         inplace:
-            if True, apply logarithm transformation inplace to in_column, if False, add transformed column to dataset.
+
+            * if True, apply logarithm transformation inplace to in_column,
+
+            * if False, add transformed column to dataset.
+
         out_column:
-            name of added column. If not given, use self.__repr__()
+            name of added column. If not given, use ``self.__repr__()``
         """
         self.base = base
         self.in_column = in_column
@@ -38,7 +42,7 @@ class _OneSegmentLogTransform(Transform):
 
         Returns
         -------
-        self
+        :
         """
         return self
 
@@ -52,7 +56,8 @@ class _OneSegmentLogTransform(Transform):
 
         Returns
         -------
-        transformed series
+        :
+            transformed series
 
         Raises
         ------
@@ -75,7 +80,8 @@ class _OneSegmentLogTransform(Transform):
 
         Returns
         -------
-        transformed series
+        :
+            transformed series
         """
         result_df = df.copy()
         if self.inplace:
@@ -100,10 +106,13 @@ class LogTransform(PerSegmentWrapper):
         base:
             base of logarithm to apply to series
         inplace:
-            if True, apply logarithm transformation inplace to in_column,
-            if False, add column add transformed column to dataset
+
+            * if True, apply logarithm transformation inplace to in_column,
+
+            * if False, add column add transformed column to dataset
+
         out_column:
-            name of added column. If not given, use self.__repr__()
+            name of added column. If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
         self.base = base

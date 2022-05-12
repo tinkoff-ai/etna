@@ -5,20 +5,205 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## Unreleased
 ### Added
+-
+-
+-
+-
+- Add plot_metric_per_segment ([#658](https://github.com/tinkoff-ai/etna/pull/658))
+-
+-
+-
+- Add metric_per_segment_distribution_plot ([#666](https://github.com/tinkoff-ai/etna/pull/666))
+-
+-
+-
+-
+-
+-
+
+### Changed
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+- Remove parameter normalize in linear models ([#686](https://github.com/tinkoff-ai/etna/pull/686))
+-
+-
+
+### Fixed
+- Add missed `forecast_params` in forecast CLI method ([#671](https://github.com/tinkoff-ai/etna/pull/671))
+- Add `_per_segment_average` method to the Metric class ([#684](https://github.com/tinkoff-ai/etna/pull/684))
+-
+-
+-
+-
+- Fix bugs and documentation for stl_plot ([#685](https://github.com/tinkoff-ai/etna/pull/685))
+-
+-
+-
+-
+-
+-
+-
+-
+
+## [1.8.0] - 2022-04-28
+### Added
+- `Width` and `Coverage` metrics for prediction intervals ([#638](https://github.com/tinkoff-ai/etna/pull/638))
+- Masked backtest ([#613](https://github.com/tinkoff-ai/etna/pull/613))
+- Add seasonal_plot ([#628](https://github.com/tinkoff-ai/etna/pull/628))
+- Add plot_periodogram ([#606](https://github.com/tinkoff-ai/etna/pull/606))
+- Add support of quantiles in backtest ([#652](https://github.com/tinkoff-ai/etna/pull/652))
+- Add prediction_actual_scatter_plot ([#610](https://github.com/tinkoff-ai/etna/pull/610))
+- Add plot_holidays ([#624](https://github.com/tinkoff-ai/etna/pull/624))
+- Add instruction about documentation formatting to contribution guide ([#648](https://github.com/tinkoff-ai/etna/pull/648))
+- Seasonal strategy in TimeSeriesImputerTransform ([#639](https://github.com/tinkoff-ai/etna/pull/639))
+
+### Changed
+- Add logging to `Metric.__call__` ([#643](https://github.com/tinkoff-ai/etna/pull/643))
+- Add in_column to plot_anomalies, plot_anomalies_interactive ([#618](https://github.com/tinkoff-ai/etna/pull/618))
+- Add logging to TSDataset.inverse_transform ([#642](https://github.com/tinkoff-ai/etna/pull/642))
+
+### Fixed
+- Passing non default params for default models STLTransform ([#641](https://github.com/tinkoff-ai/etna/pull/641))
+- Fixed bug in SARIMAX model with `horizon`=1 ([#637](https://github.com/tinkoff-ai/etna/pull/637))
+- Fixed bug in models `get_model` method ([#623](https://github.com/tinkoff-ai/etna/pull/623))
+- Fixed unsafe comparison in plots ([#611](https://github.com/tinkoff-ai/etna/pull/611))
+- Fixed plot_trend does not work with Linear and TheilSen transforms ([#617](https://github.com/tinkoff-ai/etna/pull/617))
+- Improve computation time for rolling window statistics ([#625](https://github.com/tinkoff-ai/etna/pull/625))
+- Don't fill first timestamps in TimeSeriesImputerTransform ([#634](https://github.com/tinkoff-ai/etna/pull/634))
+- Fix documentation formatting ([#636](https://github.com/tinkoff-ai/etna/pull/636))
+- Fix bug with exog features in AutoRegressivePipeline ([#647](https://github.com/tinkoff-ai/etna/pull/647))
+- Fix missed dependencies ([#656](https://github.com/tinkoff-ai/etna/pull/656))
+- Fix custom_transform_and_model notebook ([#651](https://github.com/tinkoff-ai/etna/pull/651))
+- Fix MyBinder bug with dependencies ([#650](https://github.com/tinkoff-ai/etna/pull/650))
+
+## [1.7.0] - 2022-03-16
+### Added
+- Regressors logic to TSDatasets init ([#357](https://github.com/tinkoff-ai/etna/pull/357))
+- `FutureMixin` into some transforms ([#361](https://github.com/tinkoff-ai/etna/pull/361))
+- Regressors updating in TSDataset transform loops ([#374](https://github.com/tinkoff-ai/etna/pull/374))
+- Regressors handling in TSDataset `make_future` and `train_test_split` ([#447](https://github.com/tinkoff-ai/etna/pull/447))
+- Prediction intervals visualization in `plot_forecast` ([#538](https://github.com/tinkoff-ai/etna/pull/538))
+- Add plot_imputation ([#598](https://github.com/tinkoff-ai/etna/pull/598))
+- Add plot_time_series_with_change_points function ([#534](https://github.com/tinkoff-ai/etna/pull/534))
+- Add plot_trend ([#565](https://github.com/tinkoff-ai/etna/pull/565))
+- Add find_change_points function ([#521](https://github.com/tinkoff-ai/etna/pull/521))
+- Add option `day_number_in_year` to DateFlagsTransform ([#552](https://github.com/tinkoff-ai/etna/pull/552))
+- Add plot_residuals ([#539](https://github.com/tinkoff-ai/etna/pull/539))
+- Add get_residuals ([#597](https://github.com/tinkoff-ai/etna/pull/597))
+- Create `PerSegmentBaseModel`, `PerSegmentPredictionIntervalModel` ([#537](https://github.com/tinkoff-ai/etna/pull/537))
+- Create `MultiSegmentModel` ([#551](https://github.com/tinkoff-ai/etna/pull/551))
+- Add qq_plot ([#604](https://github.com/tinkoff-ai/etna/pull/604))
+- Add regressors example notebook ([#577](https://github.com/tinkoff-ai/etna/pull/577))
+- Create `EnsembleMixin` ([#574](https://github.com/tinkoff-ai/etna/pull/574))
+- Add option `season_number` to DateFlagsTransform ([#567](https://github.com/tinkoff-ai/etna/pull/567))
+- Create `BasePipeline`, add prediction intervals to all the pipelines, move parameter n_fold to forecast ([#578](https://github.com/tinkoff-ai/etna/pull/578))
+- Add stl_plot ([#575](https://github.com/tinkoff-ai/etna/pull/575))
+- Add plot_features_relevance ([#579](https://github.com/tinkoff-ai/etna/pull/579))
+- Add community section to README.md ([#580](https://github.com/tinkoff-ai/etna/pull/580))
+- Create `AbstaractPipeline` ([#573](https://github.com/tinkoff-ai/etna/pull/573))
+- Option "auto" to `weights` parameter of `VotingEnsemble`, enables to use feature importance as weights of base estimators ([#587](https://github.com/tinkoff-ai/etna/pull/587)) 
+
+### Changed
+- Change the way `ProphetModel` works with regressors ([#383](https://github.com/tinkoff-ai/etna/pull/383))
+- Change the way `SARIMAXModel` works with regressors ([#380](https://github.com/tinkoff-ai/etna/pull/380)) 
+- Change the way `Sklearn` models works with regressors ([#440](https://github.com/tinkoff-ai/etna/pull/440))
+- Change the way `FeatureSelectionTransform` works with regressors, rename variables replacing the "regressor" to "feature" ([#522](https://github.com/tinkoff-ai/etna/pull/522))
+- Add table option to ConsoleLogger ([#544](https://github.com/tinkoff-ai/etna/pull/544))
+- Installation instruction ([#526](https://github.com/tinkoff-ai/etna/pull/526))
+- Update plot_forecast for multi-forecast mode ([#584](https://github.com/tinkoff-ai/etna/pull/584))
+- Trainer kwargs for deep models ([#540](https://github.com/tinkoff-ai/etna/pull/540))
+- Update CONTRIBUTING.md ([#536](https://github.com/tinkoff-ai/etna/pull/536))
+- Rename `_CatBoostModel`, `_HoltWintersModel`, `_SklearnModel` ([#543](https://github.com/tinkoff-ai/etna/pull/543))
+- Add logging to TSDataset.make_future, log repr of transform instead of class name ([#555](https://github.com/tinkoff-ai/etna/pull/555))
+- Rename `_SARIMAXModel` and `_ProphetModel`, make `SARIMAXModel` and `ProphetModel` inherit from `PerSegmentPredictionIntervalModel` ([#549](https://github.com/tinkoff-ai/etna/pull/549))
+- Update get_started section in README ([#569](https://github.com/tinkoff-ai/etna/pull/569))
+- Make detrending polynomial ([#566](https://github.com/tinkoff-ai/etna/pull/566))
+- Update documentation about transforms that generate regressors, update examples with them ([#572](https://github.com/tinkoff-ai/etna/pull/572))
+- Fix that segment is string ([#602](https://github.com/tinkoff-ai/etna/pull/602))
+- Make `LabelEncoderTransform` and `OneHotEncoderTransform` multi-segment ([#554](https://github.com/tinkoff-ai/etna/pull/554))
+
+### Fixed
+- Fix `TSDataset._update_regressors` logic removing the regressors ([#489](https://github.com/tinkoff-ai/etna/pull/489)) 
+- Fix `TSDataset.info`, `TSDataset.describe` methods ([#519](https://github.com/tinkoff-ai/etna/pull/519))
+- Fix regressors handling for `OneHotEncoderTransform` and `HolidayTransform` ([#518](https://github.com/tinkoff-ai/etna/pull/518))
+- Fix wandb summary issue with custom plots ([#535](https://github.com/tinkoff-ai/etna/pull/535))
+- Small notebook fixes ([#595](https://github.com/tinkoff-ai/etna/pull/595))
+- Fix import Literal in plotters ([#558](https://github.com/tinkoff-ai/etna/pull/558))
+- Fix plot method bug when plot method does not plot all required segments ([#596](https://github.com/tinkoff-ai/etna/pull/596))
+- Fix dependencies for ARM ([#599](https://github.com/tinkoff-ai/etna/pull/599))
+- [BUG] nn models make forecast without inverse_transform ([#541](https://github.com/tinkoff-ai/etna/pull/541))
+
+## [1.6.3] - 2022-02-14
+
+### Fixed
+
+- Fixed adding unnecessary lag=1 in statistics ([#523](https://github.com/tinkoff-ai/etna/pull/523))
+- Fixed wrong MeanTransform behaviour when using alpha parameter ([#523](https://github.com/tinkoff-ai/etna/pull/523))
+- Fix processing add_noise=True parameter in datasets generation ([#520](https://github.com/tinkoff-ai/etna/pull/520))
+- Fix scipy version ([#525](https://github.com/tinkoff-ai/etna/pull/525))
+
+## [1.6.2] - 2022-02-09
+### Added
+- Holt-Winters', Holt and exponential smoothing models ([#502](https://github.com/tinkoff-ai/etna/pull/502))
+
+### Fixed
+- Bug with exog features in DifferencingTransform.inverse_transform ([#503](https://github.com/tinkoff-ai/etna/pull/503))
+
+## [1.6.1] - 2022-02-03
+### Added
+- Allow choosing start and end in `TSDataset.plot` method ([488](https://github.com/tinkoff-ai/etna/pull/488))
+
+### Changed
+- Make TSDataset.to_flatten faster ([#475](https://github.com/tinkoff-ai/etna/pull/475))
+- Allow logger percentile metric aggregation to work with NaNs ([#483](https://github.com/tinkoff-ai/etna/pull/483))
+
+### Fixed
+- Can't make forecasting with pipelines, data with nans, and Imputers ([#473](https://github.com/tinkoff-ai/etna/pull/473))
+
+
+## [1.6.0] - 2022-01-28
+
+### Added
+
 - Method TSDataset.info ([#409](https://github.com/tinkoff-ai/etna/pull/409))
 - DifferencingTransform ([#414](https://github.com/tinkoff-ai/etna/pull/414))
+- OneHotEncoderTransform and LabelEncoderTransform ([#431](https://github.com/tinkoff-ai/etna/pull/431))
+- MADTransform ([#441](https://github.com/tinkoff-ai/etna/pull/441))
+- `MRMRFeatureSelectionTransform` ([#439](https://github.com/tinkoff-ai/etna/pull/439))
+- Possibility to change metric representation in backtest using Metric.name ([#454](https://github.com/tinkoff-ai/etna/pull/454))
+- Warning section in documentation about look-ahead bias ([#464](https://github.com/tinkoff-ai/etna/pull/464))
+- Parameter `figsize` to all the plotters [#465](https://github.com/tinkoff-ai/etna/pull/465)
 
-## Changed
+### Changed
+
 - Change method TSDataset.describe ([#409](https://github.com/tinkoff-ai/etna/pull/409))
 - Group Transforms according to their impact ([#420](https://github.com/tinkoff-ai/etna/pull/420))
 - Change the way `LagTransform`, `DateFlagsTransform` and `TimeFlagsTransform` generate column names ([#421](https://github.com/tinkoff-ai/etna/pull/421))
 - Clarify the behaviour of TimeSeriesImputerTransform in case of all NaN values ([#427](https://github.com/tinkoff-ai/etna/pull/427))
 - Fixed bug in title in `sample_acf_plot` method ([#432](https://github.com/tinkoff-ai/etna/pull/432))
+- Pytorch-forecasting and sklearn version update + some pytroch transform API changing ([#445](https://github.com/tinkoff-ai/etna/pull/445))
 
 ### Fixed
+
 - Add relevance_params in GaleShapleyFeatureSelectionTransform ([#410](https://github.com/tinkoff-ai/etna/pull/410))
+- Docs for statistics transforms ([#441](https://github.com/tinkoff-ai/etna/pull/441))
+- Handling NaNs in trend transforms ([#456](https://github.com/tinkoff-ai/etna/pull/456))
+- Logger fails with StackingEnsemble ([#460](https://github.com/tinkoff-ai/etna/pull/460))
+- SARIMAX parameters fix ([#459](https://github.com/tinkoff-ai/etna/pull/459))
+- [BUG] Check pytorch-forecasting models with freq > "1D" ([#463](https://github.com/tinkoff-ai/etna/pull/463))
 
 ## [1.5.0] - 2021-12-24
 ### Added

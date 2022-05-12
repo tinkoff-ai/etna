@@ -7,6 +7,10 @@ import pandas as pd
 from etna.core import BaseMixin
 
 
+class FutureMixin:
+    """Mixin for transforms that can convert non-regressor column to a regressor one."""
+
+
 class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
@@ -22,7 +26,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        self
+        :
         """
         pass
 
@@ -38,11 +42,11 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        DataFrame
+        :
         """
         pass
 
-    def fit_transform(self, df: pd.DataFrame):
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         May be reimplemented. But it is not recommended.
 
@@ -52,7 +56,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        DataFrame
+        :
         """
         return self.fit(df).transform(df)
 
@@ -65,7 +69,7 @@ class Transform(ABC, BaseMixin):
 
         Returns
         -------
-        DataFrame
+        :
         """
         return df
 
@@ -78,7 +82,7 @@ class PerSegmentWrapper(Transform):
         self.segment_transforms = {}
         self.segments = None
 
-    def fit(self, df: pd.DataFrame):
+    def fit(self, df: pd.DataFrame) -> "PerSegmentWrapper":
         """Fit transform on each segment."""
         self.segments = df.columns.get_level_values(0).unique()
         for segment in self.segments:

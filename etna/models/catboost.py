@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import numpy as np
@@ -5,13 +6,12 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
 
-from etna.datasets.tsdataset import TSDataset
-from etna.models.base import Model
+from etna.models.base import BaseAdapter
+from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
-from etna.models.base import log_decorator
 
 
-class _CatBoostModel:
+class _CatBoostAdapter(BaseAdapter):
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -34,7 +34,22 @@ class _CatBoostModel:
         )
         self._categorical = None
 
-    def fit(self, df: pd.DataFrame) -> "_CatBoostModel":
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_CatBoostAdapter":
+        """
+        Fit Catboost model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        regressors:
+            List of the columns with regressors(ignored in this model)
+
+        Returns
+        -------
+        :
+            Fitted model
+        """
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
         self._categorical = features.select_dtypes(include=["category"]).columns.to_list()
@@ -43,10 +58,33 @@ class _CatBoostModel:
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
+        """
+        Compute predictions from a Catboost model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+
+        Returns
+        -------
+        :
+            Array with predictions
+        """
         features = df.drop(columns=["timestamp", "target"])
         predict_pool = Pool(features, cat_features=self._categorical)
         pred = self.model.predict(predict_pool)
         return pred
+
+    def get_model(self) -> CatBoostRegressor:
+        """Get internal catboost.CatBoostRegressor model that is used inside etna class.
+
+        Returns
+        -------
+        result:
+           Internal model
+        """
+        return self.model
 
 
 class CatBoostModelPerSegment(PerSegmentModel):
@@ -114,33 +152,42 @@ class CatBoostModelPerSegment(PerSegmentModel):
         depth:
             Depth of the tree. The range of supported values depends
             on the processing unit type and the type of the selected loss function:
-            CPU — Any integer up to  16.
-            GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
-            QueryCrossEntropy) and up to   16 for all other loss functions.
+
+            * CPU — Any integer up to 16.
+
+            * GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
+              QueryCrossEntropy) and up to 16 for all other loss functions.
         learning_rate:
             The learning rate. Used for reducing the gradient step.
             If None the value is defined automatically depending on the number of iterations.
         logging_level:
             The logging level to output to stdout.
             Possible values:
-            Silent — Do not output any logging information to stdout.
-            Verbose — Output the following data to stdout:
-                optimized metric
-                elapsed time of training
-                remaining time of training
-            Info — Output additional information and the number of trees.
-            Debug — Output debugging information.
+
+            * Silent — Do not output any logging information to stdout.
+
+            * Verbose — Output the following data to stdout:
+
+                * optimized metric
+
+                * elapsed time of training
+
+                * remaining time of training
+
+            * Info — Output additional information and the number of trees.
+
+            * Debug — Output debugging information.
+
         l2_leaf_reg:
             Coefficient at the L2 regularization term of the cost function.
             Any positive value is allowed.
         thread_count:
             The number of threads to use during the training.
-            For CPU
-            Optimizes the speed of execution. This parameter doesn't affect results.
-            For GPU
-            The given value is used for reading the data from the hard drive and does
-            not affect the training.
-            During the training one main thread and one thread for each GPU are used.
+
+            * For CPU. Optimizes the speed of execution. This parameter doesn't affect results.
+            * For GPU. The given value is used for reading the data from the hard drive and does
+              not affect the training.
+              During the training one main thread and one thread for each GPU are used.
         """
         self.iterations = iterations
         self.depth = depth
@@ -150,7 +197,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         self.thread_count = thread_count
         self.kwargs = kwargs
         super(CatBoostModelPerSegment, self).__init__(
-            base_model=_CatBoostModel(
+            base_model=_CatBoostAdapter(
                 iterations=iterations,
                 depth=depth,
                 learning_rate=learning_rate,
@@ -162,7 +209,7 @@ class CatBoostModelPerSegment(PerSegmentModel):
         )
 
 
-class CatBoostModelMultiSegment(Model):
+class CatBoostModelMultiSegment(MultiSegmentModel):
     """Class for holding Catboost model for all segments.
 
     Examples
@@ -227,33 +274,42 @@ class CatBoostModelMultiSegment(Model):
         depth:
             Depth of the tree. The range of supported values depends
             on the processing unit type and the type of the selected loss function:
-            CPU — Any integer up to  16.
-            GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
-            QueryCrossEntropy) and up to   16 for all other loss functions.
+
+            * CPU — Any integer up to 16.
+
+            * GPU — Any integer up to 8 pairwise modes (YetiRank, PairLogitPairwise and
+              QueryCrossEntropy) and up to 16 for all other loss functions.
         learning_rate:
             The learning rate. Used for reducing the gradient step.
             If None the value is defined automatically depending on the number of iterations.
         logging_level:
             The logging level to output to stdout.
             Possible values:
-            Silent — Do not output any logging information to stdout.
-            Verbose — Output the following data to stdout:
-                optimized metric
-                elapsed time of training
-                remaining time of training
-            Info — Output additional information and the number of trees.
-            Debug — Output debugging information.
+
+            * Silent — Do not output any logging information to stdout.
+
+            * Verbose — Output the following data to stdout:
+
+                * optimized metric
+
+                * elapsed time of training
+
+                * remaining time of training
+
+            * Info — Output additional information and the number of trees.
+
+            * Debug — Output debugging information.
+
         l2_leaf_reg:
             Coefficient at the L2 regularization term of the cost function.
             Any positive value is allowed.
         thread_count:
             The number of threads to use during the training.
-            For CPU
-            Optimizes the speed of execution. This parameter doesn't affect results.
-            For GPU
-            The given value is used for reading the data from the hard drive and does
-            not affect the training.
-            During the training one main thread and one thread for each GPU are used.
+
+            * For CPU. Optimizes the speed of execution. This parameter doesn't affect results.
+            * For GPU. The given value is used for reading the data from the hard drive and does
+              not affect the training.
+              During the training one main thread and one thread for each GPU are used.
         """
         self.iterations = iterations
         self.depth = depth
@@ -262,42 +318,14 @@ class CatBoostModelMultiSegment(Model):
         self.l2_leaf_reg = l2_leaf_reg
         self.thread_count = thread_count
         self.kwargs = kwargs
-        super(CatBoostModelMultiSegment, self).__init__()
-        self._base_model = _CatBoostModel(
-            iterations=iterations,
-            depth=depth,
-            learning_rate=learning_rate,
-            logging_level=logging_level,
-            thread_count=thread_count,
-            l2_leaf_reg=l2_leaf_reg,
-            **kwargs,
+        super().__init__(
+            base_model=_CatBoostAdapter(
+                iterations=iterations,
+                depth=depth,
+                learning_rate=learning_rate,
+                logging_level=logging_level,
+                thread_count=thread_count,
+                l2_leaf_reg=l2_leaf_reg,
+                **kwargs,
+            )
         )
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "CatBoostModelMultiSegment":
-        """Fit model."""
-        df = ts.to_pandas(flatten=True)
-        df = df.dropna()
-        df = df.drop(columns="segment")
-        self._base_model.fit(df=df)
-        return self
-
-    @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        Returns
-        -------
-        DataFrame
-            Models result
-        """
-        horizon = len(ts.df)
-        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x).reshape(-1, horizon).T
-        ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
-        return ts

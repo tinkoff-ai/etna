@@ -22,7 +22,11 @@ class _OneSegmentAddConstTransform(Transform):
         value:
             value that should be added to the series
         inplace:
-            if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply add constant transformation inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         """
         self.in_column = in_column
         self.value = value
@@ -35,7 +39,7 @@ class _OneSegmentAddConstTransform(Transform):
 
         Returns
         -------
-        self
+        :
         """
         return self
 
@@ -50,7 +54,8 @@ class _OneSegmentAddConstTransform(Transform):
 
         Returns
         -------
-        transformed series
+        :
+            transformed series
         """
         result_df = df.copy()
         result_df[self.out_column] = result_df[self.in_column] + self.value
@@ -67,7 +72,8 @@ class _OneSegmentAddConstTransform(Transform):
 
         Returns
         -------
-        transformed series
+        :
+            transformed series
         """
         result_df = df.copy()
         if self.inplace:
@@ -93,9 +99,13 @@ class AddConstTransform(PerSegmentWrapper):
         value:
             value that should be added to the series
         inplace:
-            if True, apply add constant transformation inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply add constant transformation inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            name of added column.Don't forget to add regressor prefix if necessary. If not given, use self.__repr__()
+            name of added column. If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
         self.value = value

@@ -28,7 +28,12 @@ NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 
 
 class PytorchForecastingTransform(Transform):
-    """Transform for models from PytorchForecasting library."""
+    """Transform for models from PytorchForecasting library.
+
+    Notes
+    -----
+    This transform should be added at the very end of ``transforms`` parameter.
+    """
 
     def __init__(
         self,
@@ -44,9 +49,8 @@ class PytorchForecastingTransform(Transform):
         time_varying_unknown_categoricals: Optional[List[str]] = None,
         time_varying_unknown_reals: Optional[List[str]] = None,
         variable_groups: Optional[Dict[str, List[int]]] = None,
-        dropout_categoricals: Optional[List[str]] = None,
         constant_fill_strategy: Optional[Dict[str, Union[str, float, int, bool]]] = None,
-        allow_missings: bool = True,
+        allow_missing_timesteps: bool = True,
         lags: Optional[Dict[str, List[int]]] = None,
         add_relative_time_idx: bool = True,
         add_target_scales: bool = True,
@@ -55,15 +59,9 @@ class PytorchForecastingTransform(Transform):
         categorical_encoders: Optional[Dict[str, NaNLabelEncoder]] = None,
         scalers: Optional[Dict[str, Union[StandardScaler, RobustScaler, TorchNormalizer, EncoderNormalizer]]] = None,
     ):
-        """Parameters for TimeSeriesDataSet object.
+        """Init transform.
 
-        Notes
-        -----
-        This transform should be added at the very end of `transforms` parameter.
-
-        Reference
-        ---------
-        https://github.com/jdb78/pytorch-forecasting/blob/v0.8.5/pytorch_forecasting/data/timeseries.py#L117
+        Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` object.
         """
         super().__init__()
         self.max_encoder_length = max_encoder_length
@@ -85,22 +83,13 @@ class PytorchForecastingTransform(Transform):
         self.add_relative_time_idx = add_relative_time_idx
         self.add_target_scales = add_target_scales
         self.add_encoder_length = add_encoder_length
-        self.allow_missings = allow_missings
+        self.allow_missing_timesteps = allow_missing_timesteps
         self.target_normalizer = target_normalizer
         self.categorical_encoders = categorical_encoders if categorical_encoders else {}
-        self.dropout_categoricals = dropout_categoricals if dropout_categoricals else []
         self.constant_fill_strategy = constant_fill_strategy if constant_fill_strategy else []
         self.lags = lags if lags else {}
         self.scalers = scalers if scalers else {}
         self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
-
-    @staticmethod
-    def _calculate_freq_unit(freq: str) -> pd.Timedelta:
-        """Calculate frequency unit by its string representation."""
-        if freq[0].isdigit():
-            return pd.Timedelta(freq)
-        else:
-            return pd.Timedelta(1, unit=freq)
 
     def fit(self, df: pd.DataFrame) -> "PytorchForecastingTransform":
         """
@@ -125,9 +114,12 @@ class PytorchForecastingTransform(Transform):
             for feature_name in self.time_varying_known_categoricals:
                 df_flat[feature_name] = df_flat[feature_name].astype(str)
 
-        freq_unit = self._calculate_freq_unit(self.freq)
-        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
-        df_flat["time_idx"] = df_flat["time_idx"].astype(int)
+        # making time_idx feature.
+        # it's needed for pytorch-forecasting for proper train-test split.
+        # it should be incremented by 1 for every new timestamp.
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
+        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
+        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
 
         pf_dataset = TimeSeriesDataSet(
             df_flat,
@@ -144,14 +136,14 @@ class PytorchForecastingTransform(Transform):
             add_relative_time_idx=self.add_relative_time_idx,
             add_target_scales=self.add_target_scales,
             add_encoder_length=self.add_encoder_length,
-            allow_missings=self.allow_missings,
+            allow_missing_timesteps=self.allow_missing_timesteps,
             target_normalizer=self.target_normalizer,
             static_categoricals=self.static_categoricals,
             min_prediction_idx=self.min_prediction_idx,
             variable_groups=self.variable_groups,
-            dropout_categoricals=self.dropout_categoricals,
             constant_fill_strategy=self.constant_fill_strategy,
             lags=self.lags,
+            categorical_encoders=self.categorical_encoders,
             scalers=self.scalers,
         )
 
@@ -182,9 +174,9 @@ class PytorchForecastingTransform(Transform):
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
         df_flat["target"] = df_flat["target"].fillna(0)
 
-        freq_unit = self._calculate_freq_unit(self.freq)
-        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) / freq_unit
-        df_flat["time_idx"] = df_flat["time_idx"].astype(int)
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
+        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
+        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
@@ -199,3 +191,9 @@ class PytorchForecastingTransform(Transform):
             pf_dataset_train = TimeSeriesDataSet.from_parameters(self.pf_dataset_params, df_flat)
             self.pf_dataset_train = pf_dataset_train
         return df
+
+    def _time_encoder(self, values: List[int]) -> Dict[int, int]:
+        encoded_unix_times = dict()
+        for idx, value in enumerate(sorted(values)):
+            encoded_unix_times[value] = idx
+        return encoded_unix_times

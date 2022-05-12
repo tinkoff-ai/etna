@@ -9,12 +9,15 @@ from sklearn.metrics import r2_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 
+from etna.analysis import ModelRelevanceTable
+from etna.analysis import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms.feature_selection import TreeFeatureSelectionTransform
+from etna.transforms.feature_selection.feature_importance import MRMRFeatureSelectionTransform
 
 
 @pytest.fixture
@@ -55,7 +58,12 @@ def ts_with_regressors():
 
     # construct TSDataset
     df = df[df["timestamp"] <= timestamp[200]]
-    return TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq="D")
+    return TSDataset(
+        df=TSDataset.to_dataset(df),
+        df_exog=TSDataset.to_dataset(df_exog_all_segments),
+        freq="D",
+        known_future="all",
+    )
 
 
 @pytest.mark.parametrize(
@@ -66,7 +74,23 @@ def ts_with_regressors():
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True),
+    ],
+)
+def test_work_with_non_regressors(ts_with_exog, model):
+    selector = TreeFeatureSelectionTransform(model=model, top_k=3, features_to_use="all")
+    ts_with_exog.fit_transform([selector])
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        DecisionTreeRegressor(random_state=42),
+        ExtraTreeRegressor(random_state=42),
+        RandomForestRegressor(n_estimators=10, random_state=42),
+        ExtraTreesRegressor(n_estimators=10, random_state=42),
+        GradientBoostingRegressor(n_estimators=10, random_state=42),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
@@ -79,11 +103,8 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     df_selected = selector.fit_transform(df_encoded)
 
     all_regressors = ts_with_regressors.regressors
-    all_regressors.append("regressor_segment_code")
-    selected_regressors = set()
-    for column in df_selected.columns.get_level_values("feature"):
-        if column.startswith("regressor"):
-            selected_regressors.add(column)
+    all_regressors.append("segment_code")
+    selected_regressors = set(df_selected.columns.get_level_values("feature")).difference({"target"})
 
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
@@ -96,7 +117,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
@@ -123,13 +144,13 @@ def test_retain_values(model, top_k, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=10, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
-def test_fails_negative_top_k(model, ts_with_regressors):
+def test_fails_negative_top_k(model):
     """Check that transform doesn't allow you to set top_k to negative values."""
     with pytest.raises(ValueError, match="positive integer"):
-        TreeFeatureSelectionTransform(model=model, top_k=-1)
+        _ = TreeFeatureSelectionTransform(model=model, top_k=-1)
 
 
 @pytest.mark.parametrize(
@@ -147,7 +168,7 @@ def test_warns_no_regressors(model, example_tsds):
     """Check that transform allows you to fit on dataset with no regressors but warns about it."""
     df = example_tsds.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=3)
-    with pytest.warns(UserWarning, match="not possible to select regressors"):
+    with pytest.warns(UserWarning, match="not possible to select features"):
         df_selected = selector.fit_transform(df)
         assert (df == df_selected).all().all()
 
@@ -160,7 +181,7 @@ def test_warns_no_regressors(model, example_tsds):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=700, random_state=42, silent=True, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=700, random_state=42, silent=True, cat_features=["segment_code"]),
     ],
 )
 def test_sanity_selected(model, ts_with_regressors):
@@ -184,7 +205,7 @@ def test_sanity_selected(model, ts_with_regressors):
         RandomForestRegressor(n_estimators=10, random_state=42),
         ExtraTreesRegressor(n_estimators=10, random_state=42),
         GradientBoostingRegressor(n_estimators=10, random_state=42),
-        CatBoostRegressor(iterations=500, silent=True, random_state=42, cat_features=["regressor_segment_code"]),
+        CatBoostRegressor(iterations=500, silent=True, random_state=42, cat_features=["segment_code"]),
     ],
 )
 def test_sanity_model(model, ts_with_regressors):
@@ -219,3 +240,32 @@ def test_sanity_model(model, ts_with_regressors):
 def test_fit_transform_with_nans(model, ts_diff_endings):
     selector = TreeFeatureSelectionTransform(model=model, top_k=10)
     ts_diff_endings.fit_transform([selector])
+
+
+@pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
+@pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
+def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
+    """Check that transform selects exactly top_k regressors."""
+    df = ts_with_regressors.to_pandas()
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
+    df_selected = mrmr.fit_transform(df)
+    all_regressors = ts_with_regressors.regressors
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert len(selected_regressors) == min(len(all_regressors), top_k)
+
+
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
+    """Check that transform selects right top_k regressors."""
+    df = ts_with_regressors.to_pandas()
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=3, model=RandomForestRegressor())
+    df_selected = mrmr.fit_transform(df)
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+    assert set(selected_regressors) == set(["regressor_useful_0", "regressor_useful_1", "regressor_useful_2"])

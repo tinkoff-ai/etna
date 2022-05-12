@@ -20,7 +20,13 @@ if SETTINGS.prophet_required:
 
 
 class MedianOutliersTransform(OutliersTransform):
-    """Transform that uses get_anomalies_median to find anomalies in data."""
+    """Transform that uses :py:func:`~etna.analysis.outliers.median_outliers.get_anomalies_median` to find anomalies in data.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(self, in_column: str, window_size: int = 10, alpha: float = 3):
         """Create instance of MedianOutliersTransform.
@@ -39,7 +45,7 @@ class MedianOutliersTransform(OutliersTransform):
         super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
-        """Call `get_anomalies_median` function with self parameters.
+        """Call :py:func:`~etna.analysis.outliers.median_outliers.get_anomalies_median` function with self parameters.
 
         Parameters
         ----------
@@ -48,14 +54,20 @@ class MedianOutliersTransform(OutliersTransform):
 
         Returns
         -------
-        dict of outliers:
+        :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
 
 
 class DensityOutliersTransform(OutliersTransform):
-    """Transform that uses get_anomalies_density to find anomalies in data."""
+    """Transform that uses :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density` to find anomalies in data.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
 
     def __init__(
         self,
@@ -87,7 +99,7 @@ class DensityOutliersTransform(OutliersTransform):
         super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
-        """Call `get_anomalies_density` function with self parameters.
+        """Call :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density` function with self parameters.
 
         Parameters
         ----------
@@ -96,7 +108,7 @@ class DensityOutliersTransform(OutliersTransform):
 
         Returns
         -------
-        dict of outliers:
+        :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_density(
@@ -110,7 +122,7 @@ class DensityOutliersTransform(OutliersTransform):
 
 
 class PredictionIntervalOutliersTransform(OutliersTransform):
-    """Transform that uses get_anomalies_prediction_interval to find anomalies in data."""
+    """Transform that uses :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` to find anomalies in data."""
 
     def __init__(
         self,
@@ -140,7 +152,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
         super().__init__(in_column=in_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
-        """Call `get_anomalies_prediction_interval` function with self parameters.
+        """Call :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` function with self parameters.
 
         Parameters
         ----------
@@ -149,7 +161,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
 
         Returns
         -------
-        dict of outliers:
+        :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_prediction_interval(

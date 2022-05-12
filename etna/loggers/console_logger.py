@@ -16,11 +16,20 @@ if TYPE_CHECKING:
 class ConsoleLogger(BaseLogger):
     """Log any events and metrics to stderr output. Uses loguru."""
 
-    def __init__(self):
-        """Create instance of ConsoleLogger."""
+    def __init__(self, table: bool = True):
+        """Create instance of ConsoleLogger.
+
+        Parameters
+        ----------
+        table:
+            Indicator for writing tables to the console
+        """
         super().__init__()
-        if 0 in _logger._core.handlers:
+        self.table = table
+        try:
             _logger.remove(0)
+        except ValueError:
+            pass
         _logger.add(sink=sys.stderr)
         self.logger = _logger.opt(depth=2, lazy=True, colors=True)
 
@@ -37,7 +46,7 @@ class ConsoleLogger(BaseLogger):
         kwargs:
             Parameters for changing additional info in log message
         """
-        self.logger.patch(lambda r: r.update(**kwargs)).info(msg)
+        self.logger.patch(lambda r: r.update(**kwargs)).info(msg)  # type: ignore
 
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
@@ -50,7 +59,7 @@ class ConsoleLogger(BaseLogger):
         ts:
             TSDataset to with backtest data
         metrics_df:
-            Dataframe produced with Pipeline._get_backtest_metrics()
+            Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
         forecast_df:
             Forecast from backtest
         fold_info_df:
@@ -58,17 +67,19 @@ class ConsoleLogger(BaseLogger):
 
         Notes
         -----
-        The result of logging will be different for aggregate_metrics=True and aggregate_metrics=False
+        The result of logging will be different for ``aggregate_metrics=True`` and ``aggregate_metrics=False``
+        options in :py:meth:`~etna.pipeline.Pipeline.backtest`.
         """
-        for _, row in metrics_df.iterrows():
-            for metric in metrics_df.columns[1:-1]:
-                # case for aggregate_metrics=False
-                if "fold_number" in row:
-                    msg = f'Fold {row["fold_number"]}:{row["segment"]}:{metric} = {row[metric]}'
-                # case for aggregate_metrics=True
-                else:
-                    msg = f'Segment {row["segment"]}:{metric} = {row[metric]}'
-                self.logger.info(msg)
+        if self.table:
+            for _, row in metrics_df.iterrows():
+                for metric in metrics_df.columns[1:-1]:
+                    # case for aggregate_metrics=False
+                    if "fold_number" in row:
+                        msg = f'Fold {row["fold_number"]}:{row["segment"]}:{metric} = {row[metric]}'
+                    # case for aggregate_metrics=True
+                    else:
+                        msg = f'Segment {row["segment"]}:{metric} = {row[metric]}'
+                    self.logger.info(msg)
 
     @property
     def pl_logger(self):

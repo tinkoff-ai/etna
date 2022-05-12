@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
+from catboost import CatBoostRegressor
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models import CatBoostModelMultiSegment
 from etna.models import CatBoostModelPerSegment
+from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 
 
@@ -31,11 +33,9 @@ def test_run(catboostmodel, new_format_df):
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
     exog = new_format_exog
-    exog.columns = pd.MultiIndex.from_arrays(
-        [exog.columns.get_level_values("segment").unique().tolist(), ["regressor_exog", "regressor_exog"]]
-    )
+    exog.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
 
-    ts = TSDataset(df, "1d", df_exog=exog)
+    ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
     lags_exog = LagTransform(lags=[3, 4, 5, 6], in_column="regressor_exog")
@@ -83,3 +83,24 @@ def test_catboost_multi_segment_forecast(constant_ts):
 
     for segment in forecast.segments:
         assert np.allclose(test[:, segment, "target"], forecast[:, segment, "target"])
+
+
+def test_get_model_multi():
+    etna_model = CatBoostModelMultiSegment()
+    model = etna_model.get_model()
+    assert isinstance(model, CatBoostRegressor)
+
+
+def test_get_model_per_segment_before_training():
+    etna_model = CatBoostModelPerSegment()
+    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
+        _ = etna_model.get_model()
+
+
+def test_get_model_per_segment_after_training(example_tsds):
+    pipeline = Pipeline(model=CatBoostModelPerSegment(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
+    pipeline.fit(ts=example_tsds)
+    models_dict = pipeline.model.get_model()
+    assert isinstance(models_dict, dict)
+    for segment in example_tsds.segments:
+        assert isinstance(models_dict[segment], CatBoostRegressor)

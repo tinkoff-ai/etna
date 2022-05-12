@@ -18,7 +18,8 @@ class _SingleDifferencingTransform(Transform):
 
     Notes
     -----
-    To understand how transform works we recommend: https://otexts.com/fpp2/stationarity.html
+    To understand how transform works we recommend:
+    `Stationarity and Differencing <https://otexts.com/fpp2/stationarity.html>`_
     """
 
     def __init__(
@@ -37,11 +38,16 @@ class _SingleDifferencingTransform(Transform):
         period:
             number of steps back to calculate the difference with, it should be >= 1
         inplace:
-            if True, apply transformation inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            if set, name of added column, the final name will be '{out_column}',
-            don't forget to add 'regressor_' prefix
-            if isn't set, name will be based on `self.__repr__`
+
+            * if set, name of added column, the final name will be '{out_column}';
+
+            * if isn't set, name will be based on ``self.__repr__()``
 
         Raises
         ------
@@ -63,10 +69,7 @@ class _SingleDifferencingTransform(Transform):
 
     def _get_column_name(self) -> str:
         if self.out_column is None:
-            prefix = ""
-            if self.in_column.startswith("regressor_"):
-                prefix = "regressor_"
-            return f"{prefix}{self.__repr__()}"
+            return self.__repr__()
         else:
             return self.out_column
 
@@ -96,6 +99,8 @@ class _SingleDifferencingTransform(Transform):
 
             self._train_init_dict[current_segment] = cur_series[: self.period]
         self._test_init_df = fit_df.iloc[-self.period :, :]
+        # make multiindex levels consistent
+        self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -145,7 +150,7 @@ class _SingleDifferencingTransform(Transform):
         return to_transform
 
     def _reconstruct_train(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
-        """Reconstruct the train in inverse_transform."""
+        """Reconstruct the train in ``inverse_transform``."""
         segments = sorted(set(df.columns.get_level_values("segment")))
         result_df = df.copy()
 
@@ -160,7 +165,7 @@ class _SingleDifferencingTransform(Transform):
         return result_df
 
     def _reconstruct_test(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
-        """Reconstruct the test in inverse_transform."""
+        """Reconstruct the test in ``inverse_transform``."""
         segments = sorted(set(df.columns.get_level_values("segment")))
         result_df = df.copy()
 
@@ -238,7 +243,8 @@ class DifferencingTransform(Transform):
 
     Notes
     -----
-    To understand how transform works we recommend: https://otexts.com/fpp2/stationarity.html
+    To understand how transform works we recommend:
+    `Stationarity and Differencing <https://otexts.com/fpp2/stationarity.html>`_
     """
 
     def __init__(
@@ -260,11 +266,16 @@ class DifferencingTransform(Transform):
         order:
             number of differences to make, it should be >= 1
         inplace:
-            if True, apply transformation inplace to in_column, if False, add transformed column to dataset
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add transformed column to dataset
+
         out_column:
-            if set, name of added column, the final name will be '{out_column}',
-            don't forget to add 'regressor_' prefix
-            if isn't set, name will be based on `self.__repr__`
+
+            * if set, name of added column, the final name will be '{out_column}';
+
+            * if isn't set, name will be based on ``self.__repr__()``
 
         Raises
         ------
@@ -305,10 +316,7 @@ class DifferencingTransform(Transform):
         if self.inplace:
             return self.in_column
         if self.out_column is None:
-            prefix = ""
-            if self.in_column.startswith("regressor_"):
-                prefix = "regressor_"
-            return f"{prefix}{self.__repr__()}"
+            return self.__repr__()
         else:
             return self.out_column
 

@@ -7,9 +7,10 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.metrics import R2
+from etna.models import LinearPerSegmentModel
 from etna.models import ProphetModel
-from etna.models import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
+from etna.transforms import LagTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
 
@@ -24,14 +25,6 @@ def extract_new_features_columns(transformed_df: pd.DataFrame, initial_df: pd.Da
         .unique()
         .tolist()
     )
-
-
-def equals_with_nans(first_df: pd.DataFrame, second_df: pd.DataFrame) -> bool:
-    """Compare two dataframes with consideration NaN == NaN is true."""
-    if first_df.shape != second_df.shape:
-        return False
-    compare_result = (first_df.isna() & second_df.isna()) | (first_df == second_df)
-    return np.all(compare_result)
 
 
 @pytest.fixture
@@ -74,7 +67,7 @@ def check_interface_transform_autogenerate_column_non_regressor(
     """Check that differencing transform generates non-regressor column in transform according to repr."""
     transformed_df = transform.fit_transform(df)
     new_columns = set(extract_new_features_columns(transformed_df, df))
-    assert new_columns == {transform.__repr__()}
+    assert new_columns == {repr(transform)}
 
 
 def check_interface_transform_autogenerate_column_regressor(
@@ -84,7 +77,7 @@ def check_interface_transform_autogenerate_column_regressor(
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     transformed_df = transform.fit_transform(ts.to_pandas())
     new_columns = set(extract_new_features_columns(transformed_df, ts.to_pandas()))
-    assert new_columns == {f"regressor_{transform.__repr__()}"}
+    assert new_columns == {repr(transform)}
 
 
 def check_transform(
@@ -112,14 +105,14 @@ def check_inverse_transform_not_inplace(transform: GeneralDifferencingTransform,
     """Check that differencing transform does nothing during inverse_transform in non-inplace mode."""
     transformed_df = transform.fit_transform(df)
     inverse_transformed_df = transform.inverse_transform(transformed_df)
-    assert equals_with_nans(transformed_df, inverse_transformed_df)
+    assert transformed_df.equals(inverse_transformed_df)
 
 
 def check_inverse_transform_inplace_train(transform: GeneralDifferencingTransform, df: pd.DataFrame):
     """Check that differencing transform correctly makes inverse_transform on train data in inplace mode."""
     transformed_df = transform.fit_transform(df)
     inverse_transformed_df = transform.inverse_transform(transformed_df)
-    assert equals_with_nans(inverse_transformed_df, df)
+    assert inverse_transformed_df.equals(df)
 
 
 def check_inverse_transform_inplace_test(
@@ -164,12 +157,14 @@ def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencin
         assert np.all(predict_ts[:, segment, "target"] <= predict_ts[:, segment, "target_0.975"])
 
 
-def check_single_backtest_sanity(transform: GeneralDifferencingTransform, period: int, df: pd.DataFrame):
+def check_backtest_sanity(transform: GeneralDifferencingTransform, df: pd.DataFrame):
     """Check that differencing transform correctly works in backtest."""
-    # create pipeline with naive model
+    # create pipeline with linear model
     ts = TSDataset(df, freq="D")
-    model = SeasonalMovingAverageModel(window=5, seasonality=period)
-    pipeline = Pipeline(model=model, transforms=[transform], horizon=7)
+    model = LinearPerSegmentModel()
+    pipeline = Pipeline(
+        model=model, transforms=[LagTransform(in_column="target", lags=[7, 8, 9]), transform], horizon=7
+    )
 
     # run backtest
     metrics_df, _, _ = pipeline.backtest(ts, n_folds=3, aggregate_metrics=True, metrics=[R2()])
@@ -266,7 +261,7 @@ def test_general_transform_not_inplace(transform, df_nans):
     transformed_df = transform.fit_transform(df_nans)
 
     transformed_df_compare = transformed_df[df_nans.columns]
-    assert equals_with_nans(df_nans, transformed_df_compare)
+    assert df_nans.equals(transformed_df_compare)
 
 
 @pytest.mark.parametrize(
@@ -452,7 +447,7 @@ def test_full_inverse_transform_inplace_test_quantiles(period, order, df_nans_wi
 def test_single_backtest_sanity(period, df_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly works in backtest."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_single_backtest_sanity(transform, period, df_nans_with_noise)
+    check_backtest_sanity(transform, df_nans_with_noise)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -460,4 +455,4 @@ def test_single_backtest_sanity(period, df_nans_with_noise):
 def test_full_backtest_sanity(period, order, df_nans_with_noise):
     """Test that DifferencingTransform correctly works in backtest."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
-    check_single_backtest_sanity(transform, period, df_nans_with_noise)
+    check_backtest_sanity(transform, df_nans_with_noise)

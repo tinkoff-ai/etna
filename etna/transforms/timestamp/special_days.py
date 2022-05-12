@@ -4,6 +4,7 @@ from typing import Tuple
 
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 
@@ -20,9 +21,10 @@ class _OneSegmentSpecialDaysTransform(Transform):
     """
     Search for anomalies in values, marked this days as 1 (and return new column with 1 in corresponding places).
 
-    Notes:
-        You can read more about other anomalies detection methods in:
-        https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46
+    Notes
+    -----
+    You can read more about other anomalies detection methods in:
+    `Time Series of Price Anomaly Detection <https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46>`_
     """
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
@@ -62,8 +64,6 @@ class _OneSegmentSpecialDaysTransform(Transform):
         else:
             assert False, "nothing to do"
 
-        self.out_prefix = "regressor_"
-
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSpecialDaysTransform":
         """
         Fit _OneSegmentSpecialDaysTransform with data from df.
@@ -94,6 +94,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
         Returns
         -------
+        :
             pd.DataFrame with 'anomaly_weekday', 'anomaly_monthday' or both of them columns no-timestamp indexed that
             contains 1 at i-th position if i-th day is a special day
         """
@@ -114,7 +115,6 @@ class _OneSegmentSpecialDaysTransform(Transform):
             to_add["anomaly_monthdays"] += self._marked_special_month_day(common_df, self.anomaly_month_days)
             to_add["anomaly_monthdays"] = to_add["anomaly_monthdays"].astype("category")
 
-        to_add = to_add.add_prefix(self.out_prefix)
         to_add.index = df.index
         to_return = df.copy()
         to_return = pd.concat([to_return, to_add], axis=1)
@@ -166,9 +166,15 @@ class _OneSegmentSpecialDaysTransform(Transform):
         return df.loc[:, ["datetime"]].apply(check, axis=1).rename("anomaly_monthdays")
 
 
-class SpecialDaysTransform(PerSegmentWrapper):
+class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
-    Creates columns 'regressor_anomaly_weekdays' and 'regressor_anomaly_monthdays'.
+
+    Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
     """
 
     def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):

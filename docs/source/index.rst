@@ -1,5 +1,5 @@
-Welcome to ETNA's documentation!
-=====================================
+Welcome to ETNA's documentation
+===============================
 
 
 .. toctree::
@@ -14,9 +14,11 @@ Welcome to ETNA's documentation!
    ensembles
    pipeline
    analysis
+   clustering
    loggers
    commands
    settings
+   arm
    api
 
 Indices and tables

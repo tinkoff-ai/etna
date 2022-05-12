@@ -3,8 +3,10 @@ from math import ceil
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
 from etna.core import BaseMixin
@@ -61,29 +63,29 @@ class SegmentGaleShapley(BaseGaleShapley):
         name:
             name of segment
         ranked_candidates:
-            list of regressors sorted descending by importance
+            list of features sorted descending by importance
         """
         super().__init__(name=name, ranked_candidates=ranked_candidates)
         self.last_candidate: Optional[int] = None
 
     def update_tmp_match(self, name: str):
-        """Create match with given regressor.
+        """Create match with given feature.
 
         Parameters
         ----------
         name:
-            name of regressor to match
+            name of feature to match
         """
         super().update_tmp_match(name=name)
         self.last_candidate = self.tmp_match_rank
 
     def get_next_candidate(self) -> Optional[str]:
-        """Get name of the next regressor to try.
+        """Get name of the next feature to try.
 
         Returns
         -------
         name: str
-            name of regressor
+            name of feature
         """
         if self.last_candidate is None:
             self.last_candidate = 0
@@ -95,8 +97,8 @@ class SegmentGaleShapley(BaseGaleShapley):
         return self.ranked_candidate[self.last_candidate]
 
 
-class RegressorGaleShapley(BaseGaleShapley):
-    """Class for regressor member of Gale-Shapley matching."""
+class FeatureGaleShapley(BaseGaleShapley):
+    """Class for feature member of Gale-Shapley matching."""
 
     def check_segment(self, segment: str) -> bool:
         """Check if given segment is better than current match according to preference list.
@@ -119,48 +121,48 @@ class RegressorGaleShapley(BaseGaleShapley):
 class GaleShapleyMatcher(BaseMixin):
     """Class for handling Gale-Shapley matching algo."""
 
-    def __init__(self, segments: List[SegmentGaleShapley], regressors: List[RegressorGaleShapley]):
+    def __init__(self, segments: List[SegmentGaleShapley], features: List[FeatureGaleShapley]):
         """Init GaleShapleyMatcher.
 
         Parameters
         ----------
         segments:
             list of segments to build matches
-        regressors:
-            list of regressors to build matches
+        features:
+            list of features to build matches
         """
         self.segments = segments
-        self.regressors = regressors
+        self.features = features
         self.segment_by_name = {segment.name: segment for segment in self.segments}
-        self.regressor_by_name = {regressor.name: regressor for regressor in self.regressors}
+        self.feature_by_name = {feature.name: feature for feature in self.features}
 
     @staticmethod
-    def match(segment: SegmentGaleShapley, regressor: RegressorGaleShapley):
-        """Build match between segment and regressor.
+    def match(segment: SegmentGaleShapley, feature: FeatureGaleShapley):
+        """Build match between segment and feature.
 
         Parameters
         ----------
         segment:
             segment to match
-        regressor:
-            regressor to match
+        feature:
+            feature to match
         """
-        segment.update_tmp_match(name=regressor.name)
-        regressor.update_tmp_match(name=segment.name)
+        segment.update_tmp_match(name=feature.name)
+        feature.update_tmp_match(name=segment.name)
 
     @staticmethod
-    def break_match(segment: SegmentGaleShapley, regressor: RegressorGaleShapley):
-        """Break match between segment and regressor.
+    def break_match(segment: SegmentGaleShapley, feature: FeatureGaleShapley):
+        """Break match between segment and feature.
 
         Parameters
         ----------
         segment:
             segment to break match
-        regressor:
-            regressor to break match
+        feature:
+            feature to break match
         """
         segment.reset_tmp_match()
-        regressor.reset_tmp_match()
+        feature.reset_tmp_match()
 
     def _gale_shapley_iteration(self, available_segments: List[SegmentGaleShapley]) -> bool:
         """
@@ -178,24 +180,24 @@ class GaleShapleyMatcher(BaseMixin):
 
         Notes
         -----
-        Success code is necessary because in ETNA usage we can not guarantee that number of regressors will be
-        big enough to build matches with all the segments. In case n_regressors < n_segments some segments always stay
-        available that can cause infinite while loop in __call__.
+        Success code is necessary because in ETNA usage we can not guarantee that number of features will be
+        big enough to build matches with all the segments. In case ``n_features < n_segments`` some segments always stay
+        available that can cause infinite while loop in ``__call__``.
         """
         success = False
         for segment in available_segments:
-            next_regressor_candidate_name = segment.get_next_candidate()
-            if next_regressor_candidate_name is None:
+            next_feature_candidate_name = segment.get_next_candidate()
+            if next_feature_candidate_name is None:
                 continue
-            next_regressor_candidate = self.regressor_by_name[next_regressor_candidate_name]
+            next_feature_candidate = self.feature_by_name[next_feature_candidate_name]
             success = True
-            if next_regressor_candidate.check_segment(segment=segment.name):
-                if not next_regressor_candidate.is_available:  # is_available = tmp_match is not None
+            if next_feature_candidate.check_segment(segment=segment.name):
+                if not next_feature_candidate.is_available:  # is_available = tmp_match is not None
                     self.break_match(
-                        segment=self.segment_by_name[next_regressor_candidate.tmp_match],  # type: ignore
-                        regressor=next_regressor_candidate,
+                        segment=self.segment_by_name[next_feature_candidate.tmp_match],  # type: ignore
+                        feature=next_feature_candidate,
                     )
-                self.match(segment=segment, regressor=next_regressor_candidate)
+                self.match(segment=segment, feature=next_feature_candidate)
         return success
 
     def _get_available_segments(self) -> List[SegmentGaleShapley]:
@@ -208,7 +210,7 @@ class GaleShapleyMatcher(BaseMixin):
         Returns
         -------
         matching: Dict[str, str]
-            matching dict of segment x regressor
+            matching dict of segment x feature
         """
         success_run = True
         available_segments = self._get_available_segments()
@@ -219,9 +221,23 @@ class GaleShapleyMatcher(BaseMixin):
 
 
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table."""
+    """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table.
 
-    def __init__(self, relevance_table: RelevanceTable, top_k: int, use_rank: bool = False, **relevance_params):
+
+    Notes
+    -----
+    Transform works with any type of features, however most of the models works only with regressors.
+    Therefore, it is recommended to pass the regressors into the feature selection transforms.
+    """
+
+    def __init__(
+        self,
+        relevance_table: RelevanceTable,
+        top_k: int,
+        features_to_use: Union[List[str], Literal["all"]] = "all",
+        use_rank: bool = False,
+        **relevance_params,
+    ):
         """Init GaleShapleyFeatureSelectionTransform.
 
         Parameters
@@ -229,39 +245,41 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         relevance_table:
             class to build relevance table
         top_k:
-            number of regressors that should be selected from all the given ones
+            number of features that should be selected from all the given ones
+        features_to_use:
+            columns of the dataset to select from
+            if "all" value is given, all columns are used
         use_rank:
             if True, use rank in relevance table computation
         """
-        super().__init__()
+        super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.use_rank = use_rank
         self.greater_is_better = False if use_rank else relevance_table.greater_is_better
         self.relevance_params = relevance_params
 
-    def _compute_relevance_table(self, df: pd.DataFrame, regressors: List[str]) -> pd.DataFrame:
+    def _compute_relevance_table(self, df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
         """Compute relevance table with given data."""
         targets_df = df.loc[:, pd.IndexSlice[:, "target"]]
-        regressors_df = df.loc[:, pd.IndexSlice[:, regressors]]
+        features_df = df.loc[:, pd.IndexSlice[:, features]]
         table = self.relevance_table(
-            df=targets_df, df_exog=regressors_df, return_ranks=self.use_rank, **self.relevance_params
+            df=targets_df, df_exog=features_df, return_ranks=self.use_rank, **self.relevance_params
         )
         return table
 
     @staticmethod
     def _get_ranked_list(table: pd.DataFrame, ascending: bool) -> Dict[str, List[str]]:
         """Get ranked lists of candidates from table of relevance."""
-        ranked_regressors = {key: list(table.loc[key].sort_values(ascending=ascending).index) for key in table.index}
-        return ranked_regressors
+        ranked_features = {key: list(table.loc[key].sort_values(ascending=ascending).index) for key in table.index}
+        return ranked_features
 
     @staticmethod
-    def _compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_regressors: int) -> int:
+    def _compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_features: int) -> int:
         """Get number of necessary Gale-Shapley algo iterations."""
-        if n_regressors < top_k:
+        if n_features < top_k:
             warnings.warn(
-                f"Given top_k={top_k} is bigger than n_regressors={n_regressors}. "
-                f"Transform will not filter regressors."
+                f"Given top_k={top_k} is bigger than n_features={n_features}. " f"Transform will not filter features."
             )
             return 1
         if top_k < n_segments:
@@ -273,96 +291,94 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
     @staticmethod
     def _gale_shapley_iteration(
-        segment_regressors_ranking: Dict[str, List[str]],
-        regressor_segments_ranking: Dict[str, List[str]],
+        segment_features_ranking: Dict[str, List[str]],
+        feature_segments_ranking: Dict[str, List[str]],
     ) -> Dict[str, str]:
         """Build matching for all the segments.
 
         Parameters
         ----------
-        segment_regressors_ranking:
-            dict of relevance segment x sorted regressors
+        segment_features_ranking:
+            dict of relevance segment x sorted features
 
         Returns
         -------
         matching dict: Dict[str, str]
-            dict of segment x regressor
+            dict of segment x feature
         """
         gssegments = [
             SegmentGaleShapley(
                 name=name,
                 ranked_candidates=ranked_candidates,
             )
-            for name, ranked_candidates in segment_regressors_ranking.items()
+            for name, ranked_candidates in segment_features_ranking.items()
         ]
-        gsregressors = [
-            RegressorGaleShapley(name=name, ranked_candidates=ranked_candidates)
-            for name, ranked_candidates in regressor_segments_ranking.items()
+        gsfeatures = [
+            FeatureGaleShapley(name=name, ranked_candidates=ranked_candidates)
+            for name, ranked_candidates in feature_segments_ranking.items()
         ]
-        matcher = GaleShapleyMatcher(segments=gssegments, regressors=gsregressors)
+        matcher = GaleShapleyMatcher(segments=gssegments, features=gsfeatures)
         new_matches = matcher()
         return new_matches
 
     @staticmethod
     def _update_ranking_list(
-        segment_regressors_ranking: Dict[str, List[str]], regressors_to_drop: List[str]
+        segment_features_ranking: Dict[str, List[str]], features_to_drop: List[str]
     ) -> Dict[str, List[str]]:
-        """Delete chosen regressors from candidates ranked lists."""
-        for segment in segment_regressors_ranking:
-            for regressor in regressors_to_drop:
-                segment_regressors_ranking[segment].remove(regressor)
-        return segment_regressors_ranking
+        """Delete chosen features from candidates ranked lists."""
+        for segment in segment_features_ranking:
+            for feature in features_to_drop:
+                segment_features_ranking[segment].remove(feature)
+        return segment_features_ranking
 
     @staticmethod
     def _process_last_step(
         matches: Dict[str, str], relevance_table: pd.DataFrame, n: int, greater_is_better: bool
     ) -> List[str]:
-        """Choose n regressors from given ones according to relevance_matrix."""
-        regressors_relevance = {
-            regressor: relevance_table[regressor][segment] for segment, regressor in matches.items()
-        }
-        sorted_regressors = sorted(regressors_relevance.items(), key=lambda item: item[1], reverse=greater_is_better)
-        selected_regressors = [regressor[0] for regressor in sorted_regressors][:n]
-        return selected_regressors
+        """Choose n features from given ones according to relevance_matrix."""
+        features_relevance = {feature: relevance_table[feature][segment] for segment, feature in matches.items()}
+        sorted_features = sorted(features_relevance.items(), key=lambda item: item[1], reverse=greater_is_better)
+        selected_features = [feature[0] for feature in sorted_features][:n]
+        return selected_features
 
     def fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
-        """Fit Gale-Shapley algo and find a pool of top_k regressors.
+        """Fit Gale-Shapley algo and find a pool of ``top_k`` features.
 
         Parameters
         ----------
         df:
             dataframe to fit algo
         """
-        regressors = self._get_regressors(df=df)
-        relevance_table = self._compute_relevance_table(df=df, regressors=regressors)
-        segment_regressors_ranking = self._get_ranked_list(
+        features = self._get_features_to_use(df=df)
+        relevance_table = self._compute_relevance_table(df=df, features=features)
+        segment_features_ranking = self._get_ranked_list(
             table=relevance_table, ascending=not self.relevance_table.greater_is_better
         )
-        regressor_segments_ranking = self._get_ranked_list(
+        feature_segments_ranking = self._get_ranked_list(
             table=relevance_table.T, ascending=not self.relevance_table.greater_is_better
         )
         gale_shapley_steps_number = self._compute_gale_shapley_steps_number(
             top_k=self.top_k,
-            n_segments=len(segment_regressors_ranking),
-            n_regressors=len(regressor_segments_ranking),
+            n_segments=len(segment_features_ranking),
+            n_features=len(feature_segments_ranking),
         )
-        last_step_regressors_number = self.top_k % len(segment_regressors_ranking)
+        last_step_features_number = self.top_k % len(segment_features_ranking)
         for step in range(gale_shapley_steps_number):
             matches = self._gale_shapley_iteration(
-                segment_regressors_ranking=segment_regressors_ranking,
-                regressor_segments_ranking=regressor_segments_ranking,
+                segment_features_ranking=segment_features_ranking,
+                feature_segments_ranking=feature_segments_ranking,
             )
             if step == gale_shapley_steps_number - 1:
-                selected_regressors = self._process_last_step(
+                selected_features = self._process_last_step(
                     matches=matches,
                     relevance_table=relevance_table,
-                    n=last_step_regressors_number,
+                    n=last_step_features_number,
                     greater_is_better=self.greater_is_better,
                 )
             else:
-                selected_regressors = list(matches.values())
-            self.selected_regressors.extend(selected_regressors)
-            segment_regressors_ranking = self._update_ranking_list(
-                segment_regressors_ranking=segment_regressors_ranking, regressors_to_drop=selected_regressors
+                selected_features = list(matches.values())
+            self.selected_features.extend(selected_features)
+            segment_features_ranking = self._update_ranking_list(
+                segment_features_ranking=segment_features_ranking, features_to_drop=selected_features
             )
         return self

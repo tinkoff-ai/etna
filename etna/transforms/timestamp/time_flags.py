@@ -4,10 +4,11 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class TimeFlagsTransform(Transform):
+class TimeFlagsTransform(Transform, FutureMixin):
     """TimeFlagsTransform is a class that implements extraction of the main time-based features from datetime column."""
 
     def __init__(
@@ -42,9 +43,11 @@ class TimeFlagsTransform(Transform):
             to feature dataframe in transform
         out_column:
             base for the name of created columns;
-            if set the final name is '{out_column}_{feature_name}', don't forget to add 'regressor_' prefix;
-            if don't set, name will be 'regressor_{transform.__repr__()}',
-            repr will be made for transform that creates exactly this column
+
+            * if set the final name is '{out_column}_{feature_name}';
+
+            * if don't set, name will be ``transform.__repr__()``,
+              repr will be made for transform that creates exactly this column
 
         Raises
         ------
@@ -91,7 +94,7 @@ class TimeFlagsTransform(Transform):
             init_parameters = deepcopy(self._empty_parameters)
             init_parameters[feature_name] = self.__dict__[feature_name]
             temp_transform = TimeFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
-            return f"regressor_{temp_transform.__repr__()}"
+            return repr(temp_transform)
         else:
             return f"{self.out_column}_{feature_name}"
 

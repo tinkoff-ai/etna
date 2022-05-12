@@ -3,10 +3,14 @@ import inspect
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Any
+from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 from etna.core.mixins import BaseMixin
@@ -42,8 +46,11 @@ class Model(ABC, BaseMixin):
         ----------
         ts:
             Dataframe with features
+
         Returns
         -------
+        :
+            Model after fit
         """
         pass
 
@@ -83,28 +90,193 @@ class Model(ABC, BaseMixin):
         return segment_predict
 
 
-class PerSegmentModel(Model):
-    """Class for holding specific models for per-segment prediction."""
+class FitAbstractModel(ABC):
+    """Interface for model with fit method."""
 
-    def __init__(self, base_model):
-        super(PerSegmentModel, self).__init__()
+    @abstractmethod
+    def fit(self, ts: TSDataset) -> "FitAbstractModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        pass
+
+    @abstractmethod
+    def get_model(self) -> Union[Any, Dict[str, Any]]:
+        """Get internal model/models that are used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+            The result can be of two types:
+
+            * if model is multi-segment, then the result is internal model
+
+            * if model is per-segment, then the result is dictionary where key is segment and value is internal model
+
+        """
+        pass
+
+
+class ForecastAbstractModel(ABC):
+    """Interface for model with forecast method."""
+
+    @abstractmethod
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class PredictIntervalAbstractModel(ABC):
+    """Interface for model with forecast method that creates prediction interval."""
+
+    @abstractmethod
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
+    """Base class for holding specific models for per-segment prediction."""
+
+    def __init__(self, base_model: Any):
+        """
+        Init PerSegmentBaseModel.
+
+        Parameters
+        ----------
+        base_model:
+            Internal model which will be used to forecast segments, expected to have fit/predict interface
+        """
         self._base_model = base_model
-        self._segments = None
+        self._models: Optional[Dict[str, Any]] = None
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "PerSegmentModel":
-        """Fit model."""
-        self._segments = ts.segments
-        self._build_models()
+    def fit(self, ts: TSDataset) -> "PerSegmentBaseModel":
+        """Fit model.
 
-        for segment in self._segments:
-            model = self._models[segment]
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        self._models = {}
+        for segment in ts.segments:
+            self._models[segment] = deepcopy(self._base_model)
+
+        for segment, model in self._models.items():
             segment_features = ts[:, segment, :]
-            segment_features = segment_features.dropna()
+            segment_features = segment_features.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
             segment_features = segment_features.droplevel("segment", axis=1)
             segment_features = segment_features.reset_index()
-            model.fit(df=segment_features)
+            model.fit(df=segment_features, regressors=ts.regressors)
         return self
+
+    def _get_model(self) -> Dict[str, Any]:
+        """Get internal etna base models that are used inside etna class.
+
+        Returns
+        -------
+        :
+           dictionary where key is segment and value is internal model
+        """
+        if self._models is None:
+            raise ValueError("Can not get the dict with base models, the model is not fitted!")
+        return self._models
+
+    def get_model(self) -> Dict[str, Any]:
+        """Get internal models that are used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           dictionary where key is segment and value is internal model
+        """
+        internal_models = {}
+        for segment, base_model in self._get_model().items():
+            if not hasattr(base_model, "get_model"):
+                raise NotImplementedError(
+                    f"get_model method is not implemented for {self._base_model.__class__.__name__}"
+                )
+            internal_models[segment] = base_model.get_model()
+        return internal_models
+
+    @staticmethod
+    def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
+        """Make predictions for one segment."""
+        segment_features = ts[:, segment, :]
+        segment_features = segment_features.droplevel("segment", axis=1)
+        segment_features = segment_features.reset_index()
+        dates = segment_features["timestamp"]
+        dates.reset_index(drop=True, inplace=True)
+        segment_predict = model.predict(df=segment_features, *args, **kwargs)
+        if isinstance(segment_predict, np.ndarray):
+            segment_predict = pd.DataFrame({"target": segment_predict})
+        segment_predict["segment"] = segment
+        segment_predict["timestamp"] = dates
+        return segment_predict
+
+
+class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
+    """Class for holding specific models for per-segment prediction."""
+
+    def __init__(self, base_model: Any):
+        """
+        Init PerSegmentBaseModel.
+
+        Parameters
+        ----------
+        base_model:
+            Internal model which will be used to forecast segments, expected to have fit/predict interface
+        """
+        super().__init__(base_model=base_model)
 
     @log_decorator
     def forecast(self, ts: TSDataset) -> TSDataset:
@@ -116,20 +288,14 @@ class PerSegmentModel(Model):
             Dataframe with features
         Returns
         -------
-        DataFrame
-            Models result
+        :
+            Dataset with predictions
         """
-        if self._segments is None:
-            raise ValueError("The model is not fitted yet, use fit() to train it")
-
         result_list = list()
-        for segment in self._segments:
-            model = self._models[segment]
-
-            segment_predict = self._forecast_segment(model, segment, ts)
+        for segment, model in self._get_model().items():
+            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
             result_list.append(segment_predict)
 
-        # need real case to test
         result_df = pd.concat(result_list, ignore_index=True)
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
@@ -141,8 +307,147 @@ class PerSegmentModel(Model):
         ts.inverse_transform()
         return ts
 
-    def _build_models(self):
-        """Create a dict with models for each segment (if required)."""
-        self._models = {}
-        for segment in self._segments:
-            self._models[segment] = deepcopy(self._base_model)
+
+class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbstractModel):
+    """Class for holding specific models for per-segment prediction which are able to build prediction intervals."""
+
+    def __init__(self, base_model: Any):
+        """
+        Init PerSegmentPredictionIntervalModel.
+
+        Parameters
+        ----------
+        base_model:
+            Internal model which will be used to forecast segments, expected to have fit/predict interface
+        """
+        super().__init__(base_model=base_model)
+
+    @log_decorator
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        result_list = list()
+        for segment, model in self._get_model().items():
+            segment_predict = self._forecast_segment(
+                model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
+            )
+            result_list.append(segment_predict)
+
+        result_df = pd.concat(result_list, ignore_index=True)
+        result_df = result_df.set_index(["timestamp", "segment"])
+        df = ts.to_pandas(flatten=True)
+        df = df.set_index(["timestamp", "segment"])
+        df = df.combine_first(result_df).reset_index()
+
+        df = TSDataset.to_dataset(df)
+        ts.df = df
+        ts.inverse_transform()
+        return ts
+
+
+class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
+    """Class for holding specific models for per-segment prediction."""
+
+    def __init__(self, base_model: Any):
+        """
+        Init MultiSegmentModel.
+
+        Parameters
+        ----------
+        base_model:
+            Internal model which will be used to forecast segments, expected to have fit/predict interface
+        """
+        self._base_model = base_model
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "MultiSegmentModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        df = ts.to_pandas(flatten=True)
+        df = df.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
+        df = df.drop(columns="segment")
+        self._base_model.fit(df=df, regressors=ts.regressors)
+        return self
+
+    @log_decorator
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        horizon = len(ts.df)
+        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
+        y = self._base_model.predict(x).reshape(-1, horizon).T
+        ts.loc[:, pd.IndexSlice[:, "target"]] = y
+        ts.inverse_transform()
+        return ts
+
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        if not hasattr(self._base_model, "get_model"):
+            raise NotImplementedError(f"get_model method is not implemented for {self._base_model.__class__.__name__}")
+        return self._base_model.get_model()
+
+
+class BaseAdapter(ABC):
+    """Base class for models adapter."""
+
+    @abstractmethod
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        pass
+
+
+BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]

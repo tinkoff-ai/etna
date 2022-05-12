@@ -1,12 +1,15 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.linear_model import ElasticNet
+from sklearn.linear_model import LinearRegression
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
 from etna.models.linear import LinearPerSegmentModel
+from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 from etna.transforms.timestamp import DateFlagsTransform
 
@@ -17,16 +20,23 @@ def ts_with_categoricals(random_seed) -> TSDataset:
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = "segment_1"
     df1["target"] = np.random.uniform(10, 20, size=periods)
-    df1["cat_feature"] = "x"
 
     df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df2["segment"] = "segment_2"
     df2["target"] = np.random.uniform(-15, 5, size=periods)
-    df1["cat_feature"] = "y"
+
+    df_exog1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods * 2)})
+    df_exog1["segment"] = "segment_1"
+    df_exog1["cat_feature"] = "x"
+
+    df_exog2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods * 2)})
+    df_exog2["segment"] = "segment_2"
+    df_exog2["cat_feature"] = "y"
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
-    df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    df_exog = pd.concat([df_exog1, df_exog2]).reset_index(drop=True)
+
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
 
     return ts
 
@@ -79,7 +89,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
     train.fit_transform([lags])
 
     to_forecast = train.make_future(3)
-    with pytest.raises(ValueError, match="model is not fitted"):
+    with pytest.raises(ValueError, match="model is not fitted!"):
         model.forecast(to_forecast)
 
 
@@ -91,9 +101,9 @@ def test_repr_linear(model_class, model_class_repr):
     """Check __repr__ method of LinearPerSegmentModel and LinearMultiSegmentModel."""
     kwargs = {"copy_X": True, "positive": True}
     kwargs_repr = "copy_X = True, positive = True"
-    model = model_class(fit_intercept=True, normalize=False, **kwargs)
+    model = model_class(fit_intercept=True, **kwargs)
     model_repr = model.__repr__()
-    true_repr = f"{model_class_repr}(fit_intercept = True, normalize = False, {kwargs_repr}, )"
+    true_repr = f"{model_class_repr}(fit_intercept = True, {kwargs_repr}, )"
     assert model_repr == true_repr
 
 
@@ -105,11 +115,9 @@ def test_repr_elastic(model_class, model_class_repr):
     """Check __repr__ method of ElasticPerSegmentModel and ElasticMultiSegmentModel."""
     kwargs = {"copy_X": True, "positive": True}
     kwargs_repr = "copy_X = True, positive = True"
-    model = model_class(alpha=1.0, l1_ratio=0.5, fit_intercept=True, normalize=False, **kwargs)
+    model = model_class(alpha=1.0, l1_ratio=0.5, fit_intercept=True, **kwargs)
     model_repr = model.__repr__()
-    true_repr = (
-        f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, normalize = False, {kwargs_repr}, )"
-    )
+    true_repr = f"{model_class_repr}(alpha = 1.0, l1_ratio = 0.5, " f"fit_intercept = True, {kwargs_repr}, )"
     assert model_repr == true_repr
 
 
@@ -211,3 +219,41 @@ def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
 
     with pytest.raises(ValueError, match="Only convertible to numeric features are accepted!"):
         _ = model.fit(ts_with_categoricals)
+
+
+@pytest.mark.parametrize(
+    "etna_class,expected_model_class",
+    (
+        (ElasticMultiSegmentModel, ElasticNet),
+        (LinearMultiSegmentModel, LinearRegression),
+    ),
+)
+def test_get_model_multi(etna_class, expected_model_class):
+    """Check that get_model method returns objects of sklearn regressor."""
+    etna_model = etna_class()
+    model = etna_model.get_model()
+    assert isinstance(model, expected_model_class)
+
+
+def test_get_model_per_segment_before_training():
+    """Check that get_model method throws an error if per-segment model is not fitted yet."""
+    etna_model = LinearPerSegmentModel()
+    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
+        _ = etna_model.get_model()
+
+
+@pytest.mark.parametrize(
+    "etna_class,expected_model_class",
+    (
+        (ElasticPerSegmentModel, ElasticNet),
+        (LinearPerSegmentModel, LinearRegression),
+    ),
+)
+def test_get_model_per_segment_after_training(example_tsds, etna_class, expected_model_class):
+    """Check that get_model method returns dict of objects of sklearn regressor class."""
+    pipeline = Pipeline(model=etna_class(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
+    pipeline.fit(ts=example_tsds)
+    models_dict = pipeline.model.get_model()
+    assert isinstance(models_dict, dict)
+    for segment in example_tsds.segments:
+        assert isinstance(models_dict[segment], expected_model_class)

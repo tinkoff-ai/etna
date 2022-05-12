@@ -1,4 +1,5 @@
 from typing import List
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ from statsmodels.tsa.arima_process import arma_generate_sample
 def generate_ar_df(
     periods: int,
     start_time: str,
-    ar_coef: list = [1],
+    ar_coef: Optional[list] = None,
     sigma: float = 1,
     n_segments: int = 1,
     freq: str = "1D",
@@ -31,10 +32,12 @@ def generate_ar_df(
     n_segments:
         number of segments
     freq:
-        pandas frequency string for date_range
+        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
     random_seed:
         random seed
     """
+    if ar_coef is None:
+        ar_coef = [1]
     random_sampler = RandomState(seed=random_seed).normal
     ar_coef = np.r_[1, -np.array(ar_coef)]
     ar_samples = arma_generate_sample(
@@ -73,7 +76,7 @@ def generate_periodic_df(
     n_segments:
         number of segments
     freq:
-        pandas frequency string for date_range
+        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -121,7 +124,7 @@ def generate_const_df(
     n_segments:
         number of segments
     freq:
-        pandas frequency string for date_range
+        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -163,7 +166,7 @@ def generate_from_patterns_df(
     patterns:
         list of lists with patterns to be repeated
     freq:
-        pandas frequency string for date_range
+        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -178,7 +181,7 @@ def generate_from_patterns_df(
         noise = np.zeros(shape=(n_segments, periods))
     samples = noise
     for idx, pattern in enumerate(patterns):
-        samples[idx, :] = np.array(pattern * (periods // len(pattern) + 1))[:periods]
+        samples[idx, :] += np.array(pattern * (periods // len(pattern) + 1))[:periods]
     df = pd.DataFrame(data=samples.T, columns=[f"segment_{i}" for i in range(n_segments)])
     df["timestamp"] = pd.date_range(start=start_time, freq=freq, periods=periods)
     df = df.melt(id_vars=["timestamp"], value_name="target", var_name="segment")

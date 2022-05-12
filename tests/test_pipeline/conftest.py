@@ -128,3 +128,78 @@ def constant_noisy_ts(size=40, use_noise=True) -> TSDataset:
         df.loc[:, "target"] += noise
     ts = TSDataset(TSDataset.to_dataset(df), "D")
     return ts
+
+
+@pytest.fixture
+def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
+    """Create TSDataset for backtest with expected metrics_df and forecast_df.
+
+    This dataset has a constant values at train, fold_1, fold_2, fold_3,
+    but in the next fragment value is increased by `add_value`.
+    """
+    horizon = 5
+    n_folds = 3
+    train_size = 20
+    start_value = 10.0
+    add_value = 5.0
+    segment = "segment_1"
+    timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq="D")
+    target = [start_value] * train_size
+    for i in range(n_folds):
+        target += [target[-1] + add_value] * horizon
+
+    df = pd.DataFrame({"timestamp": timestamp, "target": target, "segment": segment})
+    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+
+    metrics_df = pd.DataFrame(
+        {"segment": [segment, segment, segment], "MAE": [add_value, add_value, add_value], "fold_number": [0, 1, 2]}
+    )
+
+    timestamp_forecast = timestamp[train_size:]
+    target_forecast = []
+    fold_number_forecast = []
+    for i in range(n_folds):
+        target_forecast += [start_value + i * add_value] * horizon
+        fold_number_forecast += [i] * horizon
+    forecast_df = pd.DataFrame(
+        {"target": target_forecast, "fold_number": fold_number_forecast},
+        index=timestamp_forecast,
+    )
+    forecast_df.columns = pd.MultiIndex.from_product(
+        [[segment], ["target", "fold_number"]], names=("segment", "feature")
+    )
+
+    return ts, metrics_df, forecast_df
+
+
+@pytest.fixture
+def simple_ts() -> TSDataset:
+    timerange = pd.date_range(start="2020-01-01", periods=10).to_list()
+    df = pd.DataFrame({"timestamp": timerange + timerange})
+    df["segment"] = ["segment_0"] * 10 + ["segment_1"] * 10
+    df["target"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def masked_ts() -> TSDataset:
+    timerange = pd.date_range(start="2020-01-01", periods=11).to_list()
+    df = pd.DataFrame({"timestamp": timerange + timerange})
+    df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
+    df["target"] = [0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1] + [0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0]
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_run_fold() -> TSDataset:
+    timerange = pd.date_range(start="2020-01-01", periods=11).to_list()
+    df = pd.DataFrame({"timestamp": timerange + timerange})
+    df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
+    df["target"] = [1, 2, 3, 4, 100, 6, 7, 100, 100, 100, 100] + [1, 2, 3, 4, 5, 6, 7, 8, 9, -6, 11]
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
