@@ -58,7 +58,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self,
         pipelines: List[BasePipeline],
         weights: Optional[Union[List[float], Literal["auto"]]] = None,
-        regressor: TreeBasedRegressor = RandomForestRegressor(n_estimators=5),  # noqa: M511
+        regressor: Optional[TreeBasedRegressor] = None,
         n_folds: int = 3,
         n_jobs: int = 1,
         joblib_params: Optional[Dict[str, Any]] = None,
@@ -100,7 +100,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self._validate_backtest_n_folds(n_folds)
         self.weights = weights
         self.processed_weights: Optional[List[float]] = None
-        self.regressor = regressor
+        self.regressor = RandomForestRegressor(n_estimators=5) if regressor is None else regressor
         self.n_folds = n_folds
         self.pipelines = pipelines
         self.n_jobs = n_jobs

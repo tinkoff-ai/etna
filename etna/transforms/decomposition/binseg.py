@@ -20,7 +20,7 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
     def __init__(
         self,
         in_column: str,
-        detrend_model: TDetrendModel = LinearRegression(),  # noqa: M511
+        detrend_model: Optional[TDetrendModel] = None,
         model: str = "ar",
         custom_cost: Optional[BaseCost] = None,
         min_size: int = 2,
@@ -60,6 +60,7 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
         self.n_bkps = n_bkps
         self.pen = pen
         self.epsilon = epsilon
+        detrend_model = LinearRegression() if detrend_model is None else detrend_model
         super().__init__(
             in_column=in_column,
             change_point_model=Binseg(
