@@ -17,7 +17,7 @@ class EnsembleMixin:
     @staticmethod
     def _get_horizon(pipelines: List[BasePipeline]) -> int:
         """Get ensemble's horizon."""
-        horizons = set([pipeline.horizon for pipeline in pipelines])
+        horizons = {pipeline.horizon for pipeline in pipelines}
         if len(horizons) > 1:
             raise ValueError("All the pipelines should have the same horizon.")
         return horizons.pop()

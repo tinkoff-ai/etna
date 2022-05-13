@@ -56,12 +56,12 @@ def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optio
     intersection_quantiles_set = set.intersection(
         *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
     )
-    intersection_quantiles = sorted(list(intersection_quantiles_set))
+    intersection_quantiles = sorted(intersection_quantiles_set)
 
     if quantiles is None:
         selected_quantiles = intersection_quantiles
     else:
-        selected_quantiles = sorted(list(set(quantiles) & intersection_quantiles_set))
+        selected_quantiles = sorted(set(quantiles) & intersection_quantiles_set)
         non_existent = set(quantiles) - intersection_quantiles_set
         if non_existent:
             warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
