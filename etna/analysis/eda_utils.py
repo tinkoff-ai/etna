@@ -329,8 +329,7 @@ def distribution_plot(
 
 def stl_plot(
     ts: "TSDataset",
-    in_column: str = "target",
-    period: Optional[int] = None,
+    period: int,
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 10),
@@ -343,6 +342,8 @@ def stl_plot(
     ----------
     ts:
         dataset with timeseries data
+    period:
+        length of seasonality
     segments:
         segments to plot
     columns_num:
@@ -361,13 +362,15 @@ def stl_plot(
     if segments is None:
         segments = sorted(ts.segments)
 
+    in_column = "target"
+
     segments_number = len(segments)
     columns_num = min(columns_num, len(segments))
     rows_num = math.ceil(segments_number / columns_num)
 
     figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
     fig = plt.figure(figsize=figsize, constrained_layout=True)
-    subfigs = fig.subfigures(rows_num, columns_num)
+    subfigs = fig.subfigures(rows_num, columns_num, squeeze=False)
 
     df = ts.to_pandas()
     for i, segment in enumerate(segments):
