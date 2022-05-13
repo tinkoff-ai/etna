@@ -19,7 +19,6 @@ import statsmodels.api as sm
 from matplotlib.ticker import MaxNLocator
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-from statsmodels.graphics import utils
 from statsmodels.graphics.gofplots import qqplot
 from statsmodels.tsa.seasonal import STL
 from typing_extensions import Literal
@@ -33,11 +32,83 @@ plot_acf = sm.graphics.tsa.plot_acf
 plot_pacf = sm.graphics.tsa.plot_pacf
 
 
+def _cross_correlation(
+    a: np.ndarray, b: np.ndarray, maxlags: Optional[int] = None, normed: bool = True
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Calculate cross correlation between arrays.
+
+    This implementation is slow: O(n^2), but can properly ignore NaNs.
+
+    Parameters
+    ----------
+    a:
+        first array, should be equal length with b
+    b:
+        second array, should be equal length with a
+    maxlags:
+        number of lags to compare, should be >=1 and < len(a)
+    normed:
+        should correlations be normed or not
+
+    Returns
+    -------
+    lags, result:
+
+        * lags: array of size ``maxlags * 2 + 1`` represents for which lags correlations are calculated in ``result``
+
+        * result: array of size ``maxlags * 2 + 1`` represents found correlations
+
+    Raises
+    ------
+    ValueError:
+        lengths of ``a`` and ``b`` are not the same
+    ValueError:
+        parameter ``maxlags`` doesn't satisfy constraints
+    """
+    if len(a) != len(b):
+        raise ValueError("Lengths of arrays should be equal")
+
+    length = len(a)
+
+    if maxlags is None:
+        maxlags = length - 1
+
+    if maxlags < 1 or maxlags >= length:
+        raise ValueError("Parameter maxlags should be >= 1 and < len(a)")
+
+    result = []
+    lags = np.arange(-maxlags, maxlags + 1)
+    for lag in lags:
+        if lag < 0:
+            cur_a = a[:lag]
+            cur_b = b[-lag:]
+        elif lag == 0:
+            cur_a = a
+            cur_b = b
+        else:
+            cur_a = a[lag:]
+            cur_b = b[:-lag]
+        dot_product = np.nansum(cur_a * cur_b)
+        if normed:
+            nan_mask_a = np.isnan(cur_a)
+            nan_mask_b = np.isnan(cur_b)
+            nan_mask = nan_mask_a | nan_mask_b
+            normed_dot_product = dot_product / np.sqrt(
+                np.sum(cur_a[~nan_mask] * cur_a[~nan_mask]) * np.sum(cur_b[~nan_mask] * cur_b[~nan_mask])
+            )
+            normed_dot_product = np.nan_to_num(normed_dot_product)
+            result.append(normed_dot_product)
+        else:
+            result.append(dot_product)
+    return lags, np.array(result)
+
+
 def cross_corr_plot(
     ts: "TSDataset",
     n_segments: int = 10,
     maxlags: int = 21,
     segments: Optional[List[str]] = None,
+    columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
 ):
     """
@@ -48,34 +119,39 @@ def cross_corr_plot(
     ts:
         TSDataset with timeseries data
     n_segments:
-        number of random segments to plot
+        number of random segments to plot, ignored if parameter ``segments`` is set
     maxlags:
-        number of timeseries shifts for cross-correlation
+        number of timeseries shifts for cross-correlation, should be >=1 and <= len(timeseries)
     segments:
         segments to plot
+    columns_num:
+        number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        parameter ``maxlags`` doesn't satisfy constraints
     """
     if segments is None:
         exist_segments = list(ts.segments)
         chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
         segments = list(chosen_segments)
+
     segment_pairs = list(combinations(segments, r=2))
     if len(segment_pairs) == 0:
         raise ValueError("There are no pairs to plot! Try set n_segments > 1.")
-    columns_num = min(2, len(segment_pairs))
-    rows_num = math.ceil(len(segment_pairs) / columns_num)
 
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
-    ax = ax.ravel()
+    fig, ax = prepare_axes(num_plots=len(segment_pairs), columns_num=columns_num, figsize=figsize)
     fig.suptitle("Cross-correlation", fontsize=16)
+
+    df = ts.to_pandas()
+
     for i, (segment_1, segment_2) in enumerate(segment_pairs):
-        df_segment_1 = ts[:, segment_1, :][segment_1]
-        df_segment_2 = ts[:, segment_2, :][segment_2]
-        fig, axx = utils.create_mpl_ax(ax[i])
-        target_1 = df_segment_1.target
-        target_2 = df_segment_2.target
+        target_1 = df.loc[:, pd.IndexSlice[segment_1, "target"]]
+        target_2 = df.loc[:, pd.IndexSlice[segment_2, "target"]]
+
         if target_1.dtype == int or target_2.dtype == int:
             warnings.warn(
                 "At least one target column has integer dtype, "
@@ -83,11 +159,11 @@ def cross_corr_plot(
             )
             target_1 = target_1.astype(float)
             target_2 = target_2.astype(float)
-        lags, level, _, _ = axx.xcorr(x=target_1, y=target_2, maxlags=maxlags)
-        ax[i].plot(lags, level, "o", markersize=5)
+
+        lags, correlations = _cross_correlation(a=target_1.values, b=target_2.values, maxlags=maxlags, normed=True)
+        ax[i].plot(lags, correlations, "-o", markersize=5)
         ax[i].set_title(f"{segment_1} vs {segment_2}")
         ax[i].xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.show()
 
 
 def sample_acf_plot(
@@ -348,7 +424,7 @@ def qq_plot(
     if segments is None:
         segments = sorted(residuals_ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     residuals_df = residuals_ts.to_pandas()
     for i, segment in enumerate(segments):
@@ -382,7 +458,7 @@ def prediction_actual_scatter_plot(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     df = ts.to_pandas()
     for i, segment in enumerate(segments):
@@ -730,7 +806,7 @@ def seasonal_plot(
     seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)
 
     colors = plt.get_cmap(cmap)
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     for i, segment in enumerate(segments):
         segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
         cycle_names = seasonal_df["cycle_name"].unique()
