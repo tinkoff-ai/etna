@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "1.7.0"
+version = "1.8.0"
 repository = "https://github.com/tinkoff-ai/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -33,7 +33,8 @@ authors = [
     "Alexey Podkidyshev <podkidyshev.as@phystech.edu>",
     "Nikita Barinov <n.barinov@tinkoff.ru>",
     "Dmitry Bunin <d.a.bunin@tinkoff.ru>",
-    "Alexander Chikov <a.p.chikov@tinkoff.ru>"
+    "Alexander Chikov <a.p.chikov@tinkoff.ru>",
+    "Artem Makhin <a.makhin@tinkoff.ru>"
 ]
 
 [tool.poetry.dependencies]

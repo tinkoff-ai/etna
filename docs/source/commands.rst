@@ -7,17 +7,18 @@ Basic ``forecast`` usage:
 .. code-block:: console
 
         Usage: etna forecast [OPTIONS] CONFIG_PATH TARGET_PATH FREQ OUTPUT_PATH [EXOG_PATH]
-                    [RAW_OUTPUT]
+                             [FORECAST_CONFIG_PATH] [RAW_OUTPUT]
 
         Command to make forecast with etna without coding.
 
         Arguments:
-            CONFIG_PATH   path to yaml config with desired pipeline  [required]
-            TARGET_PATH   path to csv with data to forecast  [required]
-            FREQ          frequency of timestamp in files in pandas format  [required]
-            OUTPUT_PATH   where to save forecast  [required]
-            [EXOG_PATH]   path to csv with exog data
-            [RAW_OUTPUT]  by default we return only forecast without features  [default: False]
+            CONFIG_PATH             path to yaml config with desired pipeline  [required]
+            TARGET_PATH             path to csv with data to forecast  [required]
+            FREQ                    frequency of timestamp in files in pandas format  [required]
+            OUTPUT_PATH             where to save forecast  [required]
+            [EXOG_PATH]             path to csv with exog data
+            [FORECAST_CONFIG_PATH]  path to yaml config with forecast params
+            [RAW_OUTPUT]            by default we return only forecast without features [default: False]
 
 **How to create config?**
 
@@ -33,6 +34,14 @@ Example of pipeline's config:
       - _target_: etna.transforms.LinearTrendTransform
         in_column: target
       - _target_: etna.transforms.SegmentEncoderTransform
+
+Example of forecast params config:
+
+.. code-block:: yaml
+
+    prediction_interval: true
+    quantiles: [0.025, 0.975]
+    n_folds: 3
 
 **How to prepare data?**
 

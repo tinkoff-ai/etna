@@ -199,6 +199,8 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 
 - [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
 
+- ETNA Tutorial [Part 1 (Rus)](https://youtu.be/4iFVRfB2j30), [Part 2 (Rus)](https://youtu.be/Ct9dyUdHlmc),  [Part 3 (Rus)](https://youtu.be/Qof38dtigtE) on YouTube thanks to [RC Gewissta](https://github.com/Gewissta)
+
 ## Acknowledgments
 
 ### ETNA.Team
