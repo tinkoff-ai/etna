@@ -1,11 +1,16 @@
 ARG BASE_IMAGE=nvidia/cuda:10.2-cudnn7-runtime-ubuntu18.04
+ARG DISTRO_ARCH=ubuntu1804/x86_64
 ARG CUDA_VERSION_FOR_TORCH=cu102
 
 FROM ${BASE_IMAGE}
 
 ARG CUDA_VERSION_FOR_TORCH
+ARG DISTRO_ARCH
 
-RUN apt-get -y update \
+RUN apt-key del 7fa2af80 \
+    && wget https://developer.download.nvidia.com/compute/cuda/repos/$DISTRO_ARCH/cuda-keyring_1.0-1_all.deb \
+    && dpkg -i cuda-keyring_1.0-1_all. \
+    && apt-get -y update \
     && apt-get install --no-install-recommends  -y software-properties-common curl git openssh-client \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get -y update \
