@@ -1,5 +1,5 @@
 <div align="center">
-<img src="etna_logo.png" width="40%"/>
+<img src="etna-logo.png" width="40%"/>
 </div>
 
 <h1 align="center">ETNA Time Series Library</h1>
