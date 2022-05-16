@@ -1,3 +1,7 @@
+<div align="center">
+<img src="etna_logo.png" width="40%"/>
+</div>
+
 <h1 align="center">ETNA Time Series Library</h1>
 <h3 align="center">Predict your time series the easiest way</h3>
 
