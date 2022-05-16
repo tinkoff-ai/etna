@@ -44,8 +44,15 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
     category_warning_raised = False
     for k, seg in enumerate(segments):
         first_valid_idx = df.loc[:, seg].first_valid_index()
-        df_now = df.loc[first_valid_idx:, seg]["target"]
-        df_exog_now = df_exog.loc[first_valid_idx:, seg][: len(df_now)]
+        df_seg = df.loc[first_valid_idx:, seg]["target"].dropna()
+        df_exog_now = df_exog.loc[first_valid_idx:, seg][: len(df_seg)].dropna()
+        common_index = df_seg.index.intersection(df_exog_now.index)
+
+        df_exog_now = df_exog_now.dropna()
+        if len(common_index) != len(df.loc[first_valid_idx:, seg]) and not none_warning_raised:
+            none_warning_raised = True
+            warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
+
         cat_cols = df_exog_now.dtypes[df_exog_now.dtypes == "category"].index
         for cat_col in cat_cols:
             try:
@@ -57,12 +64,8 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
             warnings.warn(
                 "Exogenous data contains columns with category type! It will be converted to float. If this is not desired behavior, use encoders."
             )
-        df_exog_now["target"] = df_now
-        df_exog_now = df_exog_now.dropna()
-        if len(df_exog_now) != len(df_now) and not none_warning_raised:
-            none_warning_raised = True
-            warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
-        relevance = calculate_relevance_table(df_exog_now.drop(columns=["target"]), df_exog_now["target"])[
+
+        relevance = calculate_relevance_table(df_exog_now.loc[common_index], df_seg.loc[common_index])[
             ["feature", "p_value"]
         ].values
         result[k] = np.array(sorted(relevance, key=lambda x: x[0]))[:, 1]

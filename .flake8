@@ -3,6 +3,8 @@ ignore = F, E203, W605, E501, W503, D100, D104
 max-line-length = 121
 max-complexity = 18
 docstring-convention=numpy
-select = E, W, C, F401, N, D101, D102, D103, D200, D201, D202, D206, D207, D208, D209, D300, D400, D401, D402, D403, D404, D405, D414, D413, D417, D409
+select = E, W, C, F401, N, D101, D102, D103, D200, D201, D202, D206, D207, D208, D209, D300, D400, D401, D402, D403, D404, D405, D414, D413, D417, D409, M511
 per-file-ignores=
     __init__.py:F401
+    backtest_command.py:M511
+    forecast_command.py:M511
