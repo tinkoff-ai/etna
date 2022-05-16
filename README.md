@@ -1,5 +1,5 @@
 <div align="center">
-<img src="etna_logo.png" width="40%"/>
+<img src="etna_logo.png" width="80%"/>
 </div>
 
 <h3 align="center">Predict your time series the easiest way</h3>
