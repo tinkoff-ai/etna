@@ -12,12 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Add plot_metric_per_segment ([#658](https://github.com/tinkoff-ai/etna/pull/658))
--
--
--
-- Add metric_per_segment_distribution_plot ([#666](https://github.com/tinkoff-ai/etna/pull/666))
--
 -
 -
 -
@@ -37,26 +31,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Remove parameter normalize in linear models ([#686](https://github.com/tinkoff-ai/etna/pull/686))
--
 -
 
 ### Fixed
+-
+-
+-
+-
+-
+-
+-
+-
+
+## [1.8.1] - 2022-05-17
+### Added
+- Add plot_metric_per_segment ([#658](https://github.com/tinkoff-ai/etna/pull/658))
+- Add metric_per_segment_distribution_plot ([#666](https://github.com/tinkoff-ai/etna/pull/666))
+### Changed
+- Remove parameter normalize in linear models ([#686](https://github.com/tinkoff-ai/etna/pull/686))
+### Fixed
 - Add missed `forecast_params` in forecast CLI method ([#671](https://github.com/tinkoff-ai/etna/pull/671))
 - Add `_per_segment_average` method to the Metric class ([#684](https://github.com/tinkoff-ai/etna/pull/684))
--
--
--
--
 - Fix bugs and documentation for stl_plot ([#685](https://github.com/tinkoff-ai/etna/pull/685))
--
--
--
--
--
 - Fix cuda docker images ([#694](https://github.com/tinkoff-ai/etna/pull/694)])
--
--
+
 
 ## [1.8.0] - 2022-04-28
 ### Added
