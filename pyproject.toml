@@ -33,7 +33,8 @@ authors = [
     "Alexey Podkidyshev <podkidyshev.as@phystech.edu>",
     "Nikita Barinov <n.barinov@tinkoff.ru>",
     "Dmitry Bunin <d.a.bunin@tinkoff.ru>",
-    "Alexander Chikov <a.p.chikov@tinkoff.ru>"
+    "Alexander Chikov <a.p.chikov@tinkoff.ru>",
+    "Artem Makhin <a.makhin@tinkoff.ru>"
 ]
 
 [tool.poetry.dependencies]
