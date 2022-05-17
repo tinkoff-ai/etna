@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Add missed `forecast_params` in forecast CLI method ([#671](https://github.com/tinkoff-ai/etna/pull/671))
 - Add `_per_segment_average` method to the Metric class ([#684](https://github.com/tinkoff-ai/etna/pull/684))
--
+- Fix `get_statistics_relevance_table` working with NaNs and categoricals ([#672](https://github.com/tinkoff-ai/etna/pull/672))
 -
 -
 -
