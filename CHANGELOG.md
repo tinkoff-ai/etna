@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 
-## [1.8.1] - 2022-05-17
+## [1.9.0] - 2022-05-17
 ### Added
 - Add plot_metric_per_segment ([#658](https://github.com/tinkoff-ai/etna/pull/658))
 - Add metric_per_segment_distribution_plot ([#666](https://github.com/tinkoff-ai/etna/pull/666))
