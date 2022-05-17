@@ -142,7 +142,7 @@ def plot_forecast(
             unique_segments.update(forecast.segments)
         segments = list(unique_segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     if prediction_intervals:
         quantiles = _select_quantiles(forecast_results, quantiles)
@@ -277,7 +277,7 @@ def plot_backtest(
         segments = sorted(ts.segments)
     df = ts.df
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     if not folds:
         folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
@@ -479,7 +479,7 @@ def plot_anomalies(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
@@ -723,7 +723,7 @@ def plot_time_series_with_change_points(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
@@ -831,7 +831,7 @@ def plot_residuals(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
@@ -923,7 +923,7 @@ def plot_trend(
     if segments is None:
         segments = ts.segments
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     df = ts.df
 
     if not isinstance(trend_transform, list):
@@ -991,7 +991,7 @@ def plot_feature_relevance(
     relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features], **relevance_params).loc[segments]
 
     if relevance_aggregation_mode == "per-segment":
-        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
             # warning about NaNs
@@ -1048,7 +1048,7 @@ def plot_imputation(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_after = deepcopy(ts)
     ts_after.fit_transform(transforms=[imputer])
@@ -1131,7 +1131,7 @@ def plot_periodogram(
 
     # plot periodograms
     if amplitude_aggregation_mode == "per-segment":
-        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
             segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
@@ -1235,7 +1235,7 @@ def plot_holidays(
     else:
         raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     df = ts.to_pandas()
 
