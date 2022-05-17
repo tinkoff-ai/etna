@@ -245,16 +245,40 @@ def plot_forecast(
         ax[i].legend(loc="upper left")
 
 
+def _validate_intersecting_segments(fold_numbers: pd.Series):
+    """Validate if segments aren't intersecting."""
+    fold_info = []
+    for fold_number in fold_numbers.unique():
+        fold_start = fold_numbers[fold_numbers == fold_number].index.min()
+        fold_end = fold_numbers[fold_numbers == fold_number].index.max()
+        fold_info.append({"fold_start": fold_start, "fold_end": fold_end})
+
+    for i, fold_info_1 in enumerate(fold_info):
+        for j, fold_info_2 in enumerate(fold_info[i + 1 :]):
+            if (
+                fold_info_1["fold_start"] <= fold_info_2["fold_start"]
+                and fold_info_1["fold_end"] >= fold_info_2["fold_start"]
+            ):
+                raise ValueError("Folds are intersecting")
+
+            if (
+                fold_info_2["fold_start"] <= fold_info_1["fold_start"]
+                and fold_info_2["fold_end"] >= fold_info_1["fold_start"]
+            ):
+                raise ValueError("Folds are intersecting")
+
+
 def plot_backtest(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
-    folds: Optional[List[int]] = None,
     columns_num: int = 2,
-    history_len: int = 0,
+    history_len: Union[int, Literal["all"]] = 0,
     figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot targets and forecast for backtest pipeline.
+
+    This function doesn't support intersecting folds.
 
     Parameters
     ----------
@@ -264,56 +288,103 @@ def plot_backtest(
         dataframe of timeseries that was used for backtest
     segments:
         segments to plot
-    folds:
-        folds to plot
     columns_num:
         number of subplots columns
     history_len:
-        length of pre-backtest history to plot
+        length of pre-backtest history to plot, if value is "all" then plot all the history
     figsize:
         size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``history_len`` is negative
+    ValueError:
+        if folds are intersecting
     """
+    if history_len != "all" and history_len < 0:
+        raise ValueError("Parameter history_len should be non-negative or 'all'")
+
     if segments is None:
         segments = sorted(ts.segments)
+
+    fold_numbers = forecast_df[segments[0]]["fold_number"]
+    _validate_intersecting_segments(fold_numbers)
+    folds = sorted(set(fold_numbers))
+
+    # prepare dataframes
     df = ts.df
-
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
-
-    if not folds:
-        folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
-
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
+    freq_timedelta = df.index[1] - df.index[0]
+
+    # prepare colors
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color_cycle = itertools.cycle(default_colors)
+    lines_colors = {line_name: next(color_cycle) for line_name in ["history", "test", "forecast"]}
+
+    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
     for i, segment in enumerate(segments):
         segment_backtest_df = backtest_df[segment]
         segment_history_df = history_df[segment]
+        segment_forecast_df = forecast_df[segment]
+        is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
 
-        if history_len:
-            plot_df = segment_history_df.tail(history_len)
+        # plot history
+        if history_len == "all":
+            plot_df = segment_history_df.append(segment_backtest_df)
+        elif history_len > 0:
+            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
         else:
             plot_df = segment_backtest_df
+        ax[i].plot(plot_df.index, plot_df.target, color=lines_colors["history"])
 
-        ax[i].plot(plot_df.index, plot_df.target, label="history")
-        ax[i].plot(segment_backtest_df.index, segment_backtest_df.target, label="test")
-
-        segment_forecast_df = forecast_df[segment]
         for fold_number in folds:
-            forecast_df_slice_fold = segment_forecast_df[segment_forecast_df.fold_number == fold_number]
+            start_fold = fold_numbers[fold_numbers == fold_number].index.min()
+            end_fold = fold_numbers[fold_numbers == fold_number].index.max()
+            end_fold_exclusive = end_fold + freq_timedelta
+
+            # draw test
+            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            ax[i].plot(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
+
+            if is_full_folds:
+                # draw forecast
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                ax[i].plot(forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"])
+            else:
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
+
+                # draw points on test
+                ax[i].scatter(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
+
+                # draw forecast
+                ax[i].scatter(
+                    forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"]
+                )
+
+            # draw borders of current fold
+            opacity = 0.15 * ((fold_number + 1) % 2)
             ax[i].axvspan(
-                forecast_df_slice_fold.index.min(),
-                forecast_df_slice_fold.index.max(),
-                alpha=0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2),
+                start_fold,
+                end_fold_exclusive,
+                alpha=opacity,
                 color="skyblue",
             )
 
-        ax[i].plot(segment_forecast_df.index, segment_forecast_df.target, label="forecast")
+        # plot legend
+        legend_handles = [
+            Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
+        ]
+        ax[i].legend(handles=legend_handles)
 
         ax[i].set_title(segment)
-        ax[i].legend()
         ax[i].tick_params("x", rotation=45)
 
 
+# TODO: fix analogous to plot earlier
 def plot_backtest_interactive(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",

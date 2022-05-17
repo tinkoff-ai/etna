@@ -8,6 +8,7 @@ from etna.analysis import get_residuals
 from etna.analysis import plot_residuals
 from etna.analysis import plot_trend
 from etna.analysis.plotters import _get_labels_names
+from etna.analysis.plotters import _validate_intersecting_segments
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
@@ -119,3 +120,80 @@ def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values
         assert list(linear_coeffs.values()) != ["", ""]
     else:
         assert list(linear_coeffs.values()) == ["", ""]
+
+
+@pytest.mark.parametrize(
+    "fold_numbers",
+    [
+        pd.Series([0, 0, 1, 1, 2, 2], index=pd.date_range("2020-01-01", periods=6, freq="D")),
+        pd.Series([0, 0, 1, 1, 2, 2], index=pd.date_range("2020-01-01", periods=6, freq="2D")),
+        pd.Series([2, 2, 0, 0, 1, 1], index=pd.date_range("2020-01-01", periods=6, freq="D")),
+        pd.Series(
+            [0, 0, 1, 1],
+            index=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-02"),
+                pd.Timestamp("2020-01-05"),
+                pd.Timestamp("2020-01-06"),
+            ],
+        ),
+    ],
+)
+def test_validate_intersecting_segments_ok(fold_numbers):
+    _validate_intersecting_segments(fold_numbers)
+
+
+@pytest.mark.parametrize(
+    "fold_numbers",
+    [
+        pd.Series(
+            [0, 0, 1, 1],
+            index=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-02"),
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-02"),
+            ],
+        ),
+        pd.Series([0, 0, 1, 1, 0, 0], index=pd.date_range("2020-01-01", periods=6, freq="D")),
+        pd.Series(
+            [0, 0, 1, 1],
+            index=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-02"),
+                pd.Timestamp("2020-01-02"),
+                pd.Timestamp("2020-01-03"),
+            ],
+        ),
+        pd.Series(
+            [1, 1, 0, 0],
+            index=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-02"),
+                pd.Timestamp("2020-01-02"),
+                pd.Timestamp("2020-01-03"),
+            ],
+        ),
+        pd.Series(
+            [0, 0, 1, 1],
+            index=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-05"),
+                pd.Timestamp("2020-01-03"),
+                pd.Timestamp("2020-01-08"),
+            ],
+        ),
+        pd.Series(
+            [1, 1, 0, 0],
+            index=[
+                pd.Timestamp("2020-01-01"),
+                pd.Timestamp("2020-01-05"),
+                pd.Timestamp("2020-01-03"),
+                pd.Timestamp("2020-01-08"),
+            ],
+        ),
+    ],
+)
+def test_validate_intersecting_segments_fail(fold_numbers):
+    with pytest.raises(ValueError):
+        _validate_intersecting_segments(fold_numbers)
