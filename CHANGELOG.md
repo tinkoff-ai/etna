@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
--
+- Fix cuda docker images ([#694](https://github.com/tinkoff-ai/etna/pull/694)])
 -
 -
 
