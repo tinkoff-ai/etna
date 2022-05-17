@@ -1,4 +1,5 @@
 import warnings
+from typing import List
 from typing import Union
 
 import numpy as np
@@ -22,6 +23,17 @@ TreeBasedRegressor = Union[
 ]
 
 
+def _prepare_df(df: pd.DataFrame, df_exog: pd.DataFrame, segment: str, regressors: List[str]):
+    """Drop nan values from dataframes for the segment."""
+    first_valid_idx = df.loc[:, segment].first_valid_index()
+    df_exog_seg = df_exog.loc[first_valid_idx:, segment].dropna()[regressors]
+    df_seg = df.loc[first_valid_idx:, segment].dropna()["target"]
+    common_index = df_seg.index.intersection(df_exog_seg.index)
+    if len(common_index) < len(df.loc[first_valid_idx:, segment]):
+        warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
+    return df_seg.loc[common_index], df_exog_seg.loc[common_index]
+
+
 def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> pd.DataFrame:
     """Calculate relevance table with p-values from tsfresh.
 
@@ -40,34 +52,19 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique())
     result = np.empty((len(segments), len(regressors)))
-    none_warning_raised = False
-    category_warning_raised = False
     for k, seg in enumerate(segments):
-        first_valid_idx = df.loc[:, seg].first_valid_index()
-        df_seg = df.loc[first_valid_idx:, seg]["target"].dropna()
-        df_exog_now = df_exog.loc[first_valid_idx:, seg][: len(df_seg)].dropna()
-        common_index = df_seg.index.intersection(df_exog_now.index)
-
-        df_exog_now = df_exog_now.dropna()
-        if len(common_index) != len(df.loc[first_valid_idx:, seg]) and not none_warning_raised:
-            none_warning_raised = True
-            warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
-
-        cat_cols = df_exog_now.dtypes[df_exog_now.dtypes == "category"].index
+        df_seg, df_exog_seg = _prepare_df(df=df, df_exog=df_exog, segment=seg, regressors=regressors)
+        cat_cols = df_exog_seg.dtypes[df_exog_seg.dtypes == "category"].index
         for cat_col in cat_cols:
             try:
-                df_exog_now[cat_col] = df_exog_now[cat_col].astype(float)
+                df_exog_seg[cat_col] = df_exog_seg[cat_col].astype(float)
             except ValueError:
                 raise ValueError(f"{cat_col} column cannot be cast to float type! Please, use encoders.")
-        if len(cat_cols) > 0 and not category_warning_raised:
-            category_warning_raised = True
             warnings.warn(
                 "Exogenous data contains columns with category type! It will be converted to float. If this is not desired behavior, use encoders."
             )
 
-        relevance = calculate_relevance_table(df_exog_now.loc[common_index], df_seg.loc[common_index])[
-            ["feature", "p_value"]
-        ].values
+        relevance = calculate_relevance_table(X=df_exog_seg, y=df_seg)[["feature", "p_value"]].values
         result[k] = np.array(sorted(relevance, key=lambda x: x[0]))[:, 1]
     relevance_table = pd.DataFrame(result)
     relevance_table.index = segments
@@ -95,15 +92,9 @@ def get_model_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame, model: Tr
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique())
     result = np.empty((len(segments), len(regressors)))
-    none_warning_raised = False
     for k, seg in enumerate(segments):
-        df_exog_seg = df_exog.loc[:, seg].dropna()[regressors]
-        df_seg = df.loc[:, seg].dropna()["target"]
-        common_index = df_seg.index.intersection(df_exog_seg.index)
-        if len(common_index) != len(df.loc[:, seg]) and not none_warning_raised:
-            none_warning_raised = True
-            warnings.warn("Exogenous or target data contains None! It will be dropped for calculating relevance.")
-        model.fit(df_exog_seg.loc[common_index], df_seg.loc[common_index])
+        df_seg, df_exog_seg = _prepare_df(df=df, df_exog=df_exog, segment=seg, regressors=regressors)
+        model.fit(X=df_exog_seg, y=df_seg)
         result[k] = model.feature_importances_
     relevance_table = pd.DataFrame(result)
     relevance_table.index = segments

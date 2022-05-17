@@ -47,7 +47,7 @@ def exog_and_target_dfs():
     df = pd.DataFrame({"segment": seg, "timestamp": timestamps, "target": target})
     ts = TSDataset.to_dataset(df)
 
-    cast = ["1.1"] * 10 + ["2"] * 10 + ["56.1"] * 10
+    cast = ["1.1"] * 10 + ["2"] * 9 + [None] + ["56.1"] * 10
     no_cast = ["1.1"] * 10 + ["two"] * 10 + ["56.1"] * 10
     none = [1] * 10 + [2] * 10 + [56.1] * 10
     none[10] = None
