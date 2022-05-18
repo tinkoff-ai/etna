@@ -358,7 +358,7 @@ def plot_backtest(
                 )
 
             # draw borders of current fold
-            opacity = 0.15 * ((fold_number + 1) % 2)
+            opacity = 0.075 * ((fold_number + 1) % 2) + 0.075
             ax[i].axvspan(
                 start_fold,
                 end_fold_exclusive,
@@ -523,7 +523,7 @@ def plot_backtest_interactive(
                 )
 
             if i == 0:
-                opacity = 0.15 * ((fold_number + 1) % 2)
+                opacity = 0.075 * ((fold_number + 1) % 2) + 0.075
                 fig.add_vrect(
                     x0=start_fold,
                     x1=end_fold_exclusive,
