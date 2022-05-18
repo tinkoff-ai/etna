@@ -253,19 +253,11 @@ def _validate_intersecting_segments(fold_numbers: pd.Series):
         fold_end = fold_numbers[fold_numbers == fold_number].index.max()
         fold_info.append({"fold_start": fold_start, "fold_end": fold_end})
 
-    for i, fold_info_1 in enumerate(fold_info):
-        for j, fold_info_2 in enumerate(fold_info[i + 1 :]):
-            if (
-                fold_info_1["fold_start"] <= fold_info_2["fold_start"]
-                and fold_info_1["fold_end"] >= fold_info_2["fold_start"]
-            ):
-                raise ValueError("Folds are intersecting")
+    fold_info.sort(key=lambda x: x["fold_start"])
 
-            if (
-                fold_info_2["fold_start"] <= fold_info_1["fold_start"]
-                and fold_info_2["fold_end"] >= fold_info_1["fold_start"]
-            ):
-                raise ValueError("Folds are intersecting")
+    for fold_info_1, fold_info_2 in zip(fold_info[:-1], fold_info[1:]):
+        if fold_info_2["fold_start"] <= fold_info_1["fold_end"]:
+            raise ValueError("Folds are intersecting")
 
 
 def plot_backtest(
