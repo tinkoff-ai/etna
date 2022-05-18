@@ -324,7 +324,7 @@ def plot_backtest(
     color_cycle = itertools.cycle(default_colors)
     lines_colors = {line_name: next(color_cycle) for line_name in ["history", "test", "forecast"]}
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     for i, segment in enumerate(segments):
         segment_backtest_df = backtest_df[segment]
         segment_history_df = history_df[segment]
@@ -384,7 +384,6 @@ def plot_backtest(
         ax[i].tick_params("x", rotation=45)
 
 
-# TODO: fix analogous to plot earlier
 def plot_backtest_interactive(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
