@@ -89,6 +89,7 @@ isort = {version = "^5.8.0", optional = true}
 flake8 = {version = "^3.9.2", optional = true}
 pep8-naming = {version = "^0.12.1", optional = true}
 flake8-bugbear = {version = "^22.4.25", optional = true}
+flake8-comprehensions = {version = "^3.9.0", optional = true}
 flake8-docstrings = {version = "^1.6.0", optional = true}
 mypy = {version = "^0.910", optional = true}
 types-PyYAML = {version = "^6.0.0", optional = true}
@@ -113,7 +114,7 @@ release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
 jupyter = ["jupyter", "nbconvert"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions"]
 
 all = [
     "prophet",
@@ -128,7 +129,7 @@ all-dev = [
     "click", "semver",
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
-    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear",
+    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions",
     "click", "semver",
     "jupyter", "nbconvert"
 ]

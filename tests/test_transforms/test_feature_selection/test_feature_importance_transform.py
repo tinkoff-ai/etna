@@ -268,4 +268,4 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
     for column in df_selected.columns.get_level_values("feature"):
         if column.startswith("regressor"):
             selected_regressors.add(column)
-    assert set(selected_regressors) == set(["regressor_useful_0", "regressor_useful_1", "regressor_useful_2"])
+    assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}

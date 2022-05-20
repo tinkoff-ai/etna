@@ -10,7 +10,7 @@ black-check:
 
 flake8-check:
 	flake8 --exclude etna/libs etna/
-	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N --ignore C400,C401,C402,C403,C404,C405,C406,C408,C409,C410,C411,C412,C413,C414,C415,C416,F,E203,W605,E501,W503,D100,D104
+	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
 
 mypy-check:
 	mypy
@@ -28,7 +28,7 @@ format:
 	black etna/
 	black tests/
 	flake8 --exclude etna/libs etna/
-	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N --ignore C400,C401,C402,C403,C404,C405,C406,C408,C409,C410,C411,C412,C413,C414,C415,C416,F,E203,W605,E501,W503,D100,D104
+	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
 	mypy
 
 .PHONY: deps/release

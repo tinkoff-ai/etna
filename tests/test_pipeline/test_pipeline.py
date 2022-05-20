@@ -317,14 +317,14 @@ def test_get_fold_info_interface_daily(catboost_pipeline: Pipeline, big_daily_ex
     """Check that Pipeline.backtest returns info dataframe in correct format."""
     _, _, info_df = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
-    assert expected_columns == list(sorted(info_df.columns))
+    assert expected_columns == sorted(info_df.columns)
 
 
 def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe in correct format with non-daily seasonality."""
     _, _, info_df = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
-    assert expected_columns == list(sorted(info_df.columns))
+    assert expected_columns == sorted(info_df.columns)
 
 
 @pytest.mark.long

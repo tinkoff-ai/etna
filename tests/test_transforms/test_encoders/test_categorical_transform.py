@@ -184,7 +184,7 @@ def test_naming_ohe_encoder(two_df_with_new_values):
     ohe.fit(df1)
     segments = ["segment_0", "segment_1"]
     target = ["target", "targets_0", "targets_1", "targets_2", "regressor_0"]
-    assert set([(i, j) for i in segments for j in target]) == set(ohe.transform(df2).columns.values)
+    assert {(i, j) for i in segments for j in target} == set(ohe.transform(df2).columns.values)
 
 
 @pytest.mark.parametrize(
