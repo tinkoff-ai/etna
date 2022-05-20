@@ -1,4 +1,5 @@
 from etna import SETTINGS
+from etna.models.autoarima import AutoARIMAModel
 from etna.models.base import BaseAdapter
 from etna.models.base import BaseModel
 from etna.models.base import Model
