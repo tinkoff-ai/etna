@@ -25,7 +25,7 @@ class _AutoARIMAAdapter(BaseAdapter):
     Class for holding auto arima model.
     Notes
     -----
-    We use auto arima [1] model from pmdarima package.
+    We use auto ARIMA [1] model from pmdarima package.
     .. `auto ARIMA: <https://alkaline-ml.com/pmdarima/>_`
     """
 
@@ -173,12 +173,12 @@ class AutoARIMAModel(PerSegmentPredictionIntervalModel):
     ):
         """
         Init auto ARIMA model with given params.
+
         Parameters
         ----------
         **kwargs:
             Training parameters for auto_arima from pmdarima package.
         """
-
         self.kwargs = kwargs
         super(AutoARIMAModel, self).__init__(
             base_model=_AutoARIMAAdapter(
