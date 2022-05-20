@@ -29,6 +29,7 @@ class _AutoARIMAAdapter(BaseAdapter):
     We use auto ARIMA [1] model from pmdarima package.
 
     .. `auto ARIMA: <https://alkaline-ml.com/pmdarima/>_`
+
     """
 
     def __init__(
@@ -50,7 +51,7 @@ class _AutoARIMAAdapter(BaseAdapter):
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_AutoARIMAAdapter":
         """
         Fits auto ARIMA model.
-        
+
         Parameters
         ----------
         df:
@@ -95,7 +96,7 @@ class _AutoARIMAAdapter(BaseAdapter):
              If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution
-        
+
         Returns
         -------
         :
