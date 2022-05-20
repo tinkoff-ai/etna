@@ -23,9 +23,11 @@ warnings.filterwarnings(
 class _AutoARIMAAdapter(BaseAdapter):
     """
     Class for holding auto arima model.
+
     Notes
     -----
     We use auto ARIMA [1] model from pmdarima package.
+
     .. `auto ARIMA: <https://alkaline-ml.com/pmdarima/>_`
     """
 
@@ -35,6 +37,7 @@ class _AutoARIMAAdapter(BaseAdapter):
     ):
         """
         Init auto ARIMA model with given params.
+
         Parameters
         ----------
         **kwargs:
@@ -47,12 +50,14 @@ class _AutoARIMAAdapter(BaseAdapter):
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_AutoARIMAAdapter":
         """
         Fits auto ARIMA model.
+        
         Parameters
         ----------
         df:
             Features dataframe
         regressors:
             List of the columns with regressors
+
         Returns
         -------
         :
@@ -81,6 +86,7 @@ class _AutoARIMAAdapter(BaseAdapter):
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
         """
         Compute predictions from auto ARIMA model.
+
         Parameters
         ----------
         df:
@@ -89,6 +95,7 @@ class _AutoARIMAAdapter(BaseAdapter):
              If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution
+        
         Returns
         -------
         :
@@ -150,6 +157,7 @@ class _AutoARIMAAdapter(BaseAdapter):
 
     def get_model(self) -> ARIMA:
         """Get internal pmdarima.arima.arima.ARIMA model that is used inside etna class.
+
         Returns
         -------
         :
@@ -161,10 +169,10 @@ class _AutoARIMAAdapter(BaseAdapter):
 class AutoARIMAModel(PerSegmentPredictionIntervalModel):
     """
     Class for holding auto arima model.
+
     Notes
     -----
     We use :py:class:`pmdarima.arima.arima.ARIMA`.
-    .. `auto ARIMA: <https://alkaline-ml.com/pmdarima/>_`
     """
 
     def __init__(
