@@ -62,7 +62,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
         elif self.find_special_month_day:
             self.res_type = {"df_sample": 0, "columns": ["anomaly_monthdays"]}
         else:
-            assert False, "nothing to do"
+            raise AssertionError("nothing to do")
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSpecialDaysTransform":
         """
