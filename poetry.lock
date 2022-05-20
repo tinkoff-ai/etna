@@ -493,7 +493,7 @@ name = "cython"
 version = "0.29.28"
 description = "The Cython compiler for writing C extensions for the Python language."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
@@ -657,7 +657,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "fsspec"
-version = "2022.3.0"
+version = "2022.5.0"
 description = "File-system specification"
 category = "main"
 optional = true
@@ -1734,6 +1734,24 @@ importlib-metadata = {version = ">=0.12", markers = "python_version < \"3.8\""}
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
+
+[[package]]
+name = "pmdarima"
+version = "1.8.5"
+description = "Python's forecast::auto.arima equivalent"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+Cython = ">=0.29,<0.29.18 || >0.29.18"
+joblib = ">=0.11"
+numpy = ">=1.19.3"
+pandas = ">=0.19"
+scikit-learn = ">=0.22"
+scipy = ">=1.3.2"
+statsmodels = ">=0.11,<0.12.0 || >0.12.0"
+urllib3 = "*"
 
 [[package]]
 name = "prettytable"
@@ -2959,7 +2977,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <3.10.0"
-content-hash = "8236c0bc9cceaa02c27438b96c57feb40fd152782f262f3593b82a98a475a8c7"
+content-hash = "11aadbe787614f1b41b09b9a753e7df3a663005718ebfb82fc00dd5362a1a2f4"
 
 [metadata.files]
 absl-py = [
@@ -3553,8 +3571,8 @@ frozenlist = [
     {file = "frozenlist-1.3.0.tar.gz", hash = "sha256:ce6f2ba0edb7b0c1d8976565298ad2deba6f8064d2bebb6ffce2ca896eb35b0b"},
 ]
 fsspec = [
-    {file = "fsspec-2022.3.0-py3-none-any.whl", hash = "sha256:a53491b003210fce6911dd8f2d37e20c41a27ce52a655eef11b885d1578ed4cf"},
-    {file = "fsspec-2022.3.0.tar.gz", hash = "sha256:fd582cc4aa0db5968bad9317cae513450eddd08b2193c4428d9349265a995523"},
+    {file = "fsspec-2022.5.0-py3-none-any.whl", hash = "sha256:2c198c50eb541a80bbd03540b07602c4a957366f3fb416a1f270d34bd4ff0926"},
+    {file = "fsspec-2022.5.0.tar.gz", hash = "sha256:7a5459c75c44e760fbe6a3ccb1f37e81e023cde7da8ba20401258d877ec483b4"},
 ]
 gitdb = [
     {file = "gitdb-4.0.9-py3-none-any.whl", hash = "sha256:8033ad4e853066ba6ca92050b9df2f89301b8fc8bf7e9324d412a63f8bf1a8fd"},
@@ -4283,6 +4301,24 @@ plotly = [
 pluggy = [
     {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
+]
+pmdarima = [
+    {file = "pmdarima-1.8.5-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:cffaeb8c7fa51f8e6ddcf417a5ce6eceae5d9fe88d9bf093a2272c9120562346"},
+    {file = "pmdarima-1.8.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:9a2a332796bc5932332908c3fa9b20378cba182002a7232efec5bdf179e1009e"},
+    {file = "pmdarima-1.8.5-cp310-cp310-win_amd64.whl", hash = "sha256:b5eff0d65282d7b76ada8aa12cfb60140b6bbd9a6977a8c3b8fae81224dda684"},
+    {file = "pmdarima-1.8.5-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:eeb93bdb18ed054de34ec27a50207727c76f9ca6805c040316e3c2f6434d5148"},
+    {file = "pmdarima-1.8.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:067b08bd515118ad61a16bec03d94ebb83f2704733bd928c051cab71d78abb6d"},
+    {file = "pmdarima-1.8.5-cp37-cp37m-win32.whl", hash = "sha256:b3406734f132b343c737b4cf24de9305276414dbc64b84729e6be60decdcea92"},
+    {file = "pmdarima-1.8.5-cp37-cp37m-win_amd64.whl", hash = "sha256:fb26531ac291b59d6b8d8a396839686f5d2673775febb41995781114bec45123"},
+    {file = "pmdarima-1.8.5-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:069648fc214aeb17f04ef2e2ecb731625a935f781649b38f7bed65e88bd15995"},
+    {file = "pmdarima-1.8.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:04a491d0a712a715beceb20c8576ad339446cbe4b022896935970fbe7326bf4d"},
+    {file = "pmdarima-1.8.5-cp38-cp38-win32.whl", hash = "sha256:e2d0e99fb6608df1c62720baf3703f9fb151adcf3617356e3bf9d91634ddde51"},
+    {file = "pmdarima-1.8.5-cp38-cp38-win_amd64.whl", hash = "sha256:9b0eceb8b71c2972d7c64f77ee0765f15802f9a97f78b1af3f50d91f79872871"},
+    {file = "pmdarima-1.8.5-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:2ad0aefbff88a49592b70e70ac9283775dc65484e7a07e95db4e93504d5139fd"},
+    {file = "pmdarima-1.8.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:af449c9076e942ad00c348ee291c23935ff3ae2871f812146be7b57ee25fa2ec"},
+    {file = "pmdarima-1.8.5-cp39-cp39-win32.whl", hash = "sha256:8cafb3760bde70753452ad22996b5e84e40129e0c18557b40376045612d2207a"},
+    {file = "pmdarima-1.8.5-cp39-cp39-win_amd64.whl", hash = "sha256:645b692b927965b0fb562ab5a8f1dffdd6cfbca84b3ca797796ada245738109d"},
+    {file = "pmdarima-1.8.5.tar.gz", hash = "sha256:090a7e195e849059e6b7f9908d80539f63c0771d8f9c5da44472960f17fcc9fa"},
 ]
 prettytable = [
     {file = "prettytable-3.3.0-py3-none-any.whl", hash = "sha256:d1c34d72ea2c0ffd6ce5958e71c428eb21a3d40bf3133afe319b24aeed5af407"},
