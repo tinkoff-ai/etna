@@ -598,7 +598,7 @@ def plot_anomalies(
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df[in_column].values, c="b")
+        ax[i].plot(segment_df.index.values, segment_df[in_column].values)
 
         anomaly = sorted(anomaly)  # type: ignore
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
@@ -791,6 +791,9 @@ def plot_clusters(
     rows_num = math.ceil(len(unique_clusters) / columns_num)
     figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
     fig, axs = plt.subplots(rows_num, columns_num, constrained_layout=True, figsize=figsize)
+
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    segment_color = default_colors[0]
     for i, cluster in enumerate(unique_clusters):
         segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
         h, w = i // columns_num, i % columns_num
@@ -800,7 +803,7 @@ def plot_clusters(
                 segment_slice.index.values,
                 segment_slice.values,
                 alpha=1 / math.sqrt(len(segments)),
-                c="blue",
+                c=segment_color,
             )
         axs[h][w].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
         if centroids_df is not None:
