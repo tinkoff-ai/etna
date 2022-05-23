@@ -209,6 +209,7 @@ def sample_acf_plot(
         df_slice = ts[:, name, :][name]
         plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)
         ax[i].set_title(name)
+        ax[i].grid()
     plt.show()
 
 
@@ -254,6 +255,7 @@ def sample_pacf_plot(
         df_slice = ts[:, name, :][name]
         plot_pacf(x=df_slice["target"].values, ax=ax[i], lags=lags)
         ax[i].set_title(name)
+        ax[i].grid()
     plt.show()
 
 
@@ -324,6 +326,7 @@ def distribution_plot(
             continue
         sns.boxplot(data=df_slice.sort_values(by="segment"), y="z", x="segment", ax=ax[i], fliersize=False)
         ax[i].set_title(f"{period}")
+        ax[i].grid()
         i += 1
 
 
@@ -385,19 +388,23 @@ def stl_plot(
         # plot observed
         axs.flat[0].plot(segment_df.index, decompose_result.observed, **plot_kwargs)
         axs.flat[0].set_ylabel("Observed")
+        axs.flat[0].grid()
 
         # plot trend
         axs.flat[1].plot(segment_df.index, decompose_result.trend, **plot_kwargs)
         axs.flat[1].set_ylabel("Trend")
+        axs.flat[1].grid()
 
         # plot seasonal
         axs.flat[2].plot(segment_df.index, decompose_result.seasonal, **plot_kwargs)
         axs.flat[2].set_ylabel("Seasonal")
+        axs.flat[2].grid()
 
         # plot residuals
         axs.flat[3].plot(segment_df.index, decompose_result.resid, **plot_kwargs)
         axs.flat[3].set_ylabel("Residual")
         axs.flat[3].tick_params("x", rotation=45)
+        axs.flat[3].grid()
 
 
 def qq_plot(

@@ -493,6 +493,7 @@ class TSDataset:
             df_slice = self[start:end, segment, column]  # type: ignore
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
+            ax[i].grid()
 
         plt.show()
 

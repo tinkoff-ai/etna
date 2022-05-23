@@ -760,6 +760,7 @@ def plot_anomalies_interactive(
         plt.plot(x, y)
         plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
         plt.xticks(rotation=45)
+        plt.grid()
         plt.show()
 
     interact(update, **sliders)
@@ -810,6 +811,7 @@ def plot_clusters(
             centroid = centroids_df[cluster, "target"]
             axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
         axs[h][w].legend()
+        axs[h][w].grid()
 
 
 def plot_time_series_with_change_points(
@@ -1136,6 +1138,7 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def plot_imputation(
@@ -1288,6 +1291,7 @@ def plot_periodogram(
         ax.set_xlabel("Frequency")  # type: ignore
         ax.set_ylabel("Power spectral density")  # type: ignore
         ax.set_title("Periodogram")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
@@ -1489,6 +1493,7 @@ def plot_metric_per_segment(
     plt.title("Metric per-segment plot")
     plt.xlabel("Segment")
     plt.ylabel(metric_name)
+    plt.grid()
 
 
 class MetricPlotType(str, Enum):
@@ -1593,3 +1598,4 @@ def metric_per_segment_distribution_plot(
             plot_function(data=metrics_df, y=metric_name, **seaborn_params)
 
     plt.title("Metric per-segment distribution plot")
+    plt.grid()
