@@ -1050,7 +1050,7 @@ def plot_trend(
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
         for label, df_now in zip(labels, df_detrend):
-            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment], lw=2)
+            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment], lw=3)
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend()
