@@ -1418,7 +1418,39 @@ def plot_holidays(
             country_holidays=holidays_lib.CountryHoliday(country=holidays), timestamp=ts.index.tolist()
         )
     elif isinstance(holidays, pd.DataFrame):
-        holidays_df = holidays
+        holidays_df = pd.DataFrame(index=ts.index, columns=holidays["holiday"].unique(), data=0)
+        for name in holidays["holiday"].unique():
+            ds = holidays[holidays["holiday"] == name]["ds"]
+            dt = [ds]
+            if "upper_window" in holidays.columns:
+                ds_upper_bound = ds + pd.to_timedelta(holidays[holidays["holiday"] == name]["upper_window"],
+                                                      unit=ts.freq)
+                i = 0
+                while True:
+                    ds_add = ds + pd.to_timedelta(holidays[holidays["holiday"] == name]["upper_window"] - i,
+                                                  unit=ts.freq)
+                    case_up = ds_add <= ds_upper_bound
+                    case_down = ds < ds_add
+                    if not all(case_up & case_down):
+                        break
+                    dt.append(ds_add)
+                    i += 1
+            if "lower_window" in holidays.columns:
+                ds_lower_bound = ds - pd.to_timedelta(holidays[holidays["holiday"] == name]["lower_window"],
+                                                      unit=ts.freq)
+                i = 0
+                while True:
+                    ds_add = ds - pd.to_timedelta(holidays[holidays["holiday"] == name]["lower_window"] - i,
+                                                  unit=ts.freq)
+                    case_down = ds_lower_bound <= ds_add
+                    case_up = ds_add < ds
+                    if not all(case_up & case_down):
+                        break
+                    dt.append(ds_add)
+                    i += 1
+            dt = pd.concat(dt)
+            dt = holidays_df.index.intersection(dt)
+            holidays_df.loc[dt, name] = 1
     else:
         raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
 
