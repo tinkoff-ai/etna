@@ -177,7 +177,7 @@ def plot_forecast(
 
         # plot forecast plot for each of given forecasts
         quantile_prefix = "target_"
-        for _j, (forecast_name, forecast) in enumerate(forecast_results.items()):
+        for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
             segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
