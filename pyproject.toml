@@ -46,6 +46,7 @@ ruptures = "1.1.5"
 numba = ">=0.53.1,<0.56.0"
 seaborn = "^0.11.1"
 statsmodels = ">=0.12,<0.14"
+pmdarima = ">=1.8.0"
 dill = "^0.3.4"
 toml = "^0.10.2"
 loguru = "^0.5.3"
@@ -101,7 +102,6 @@ ipywidgets = {version = "^7.6.5", optional = true}
 
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
-pmdarima = ">=1.8.0"
 
 
 [tool.poetry.extras]
