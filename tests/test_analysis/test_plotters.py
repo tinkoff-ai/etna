@@ -268,3 +268,21 @@ def test_create_holidays_df_non_day_freq():
     holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
     df = _create_holidays_df(holidays, ts.index, as_is=False)
     assert df.sum().sum() == 4
+
+
+def test_create_holidays_df_15T_freq():
+    classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="15T")
+    ts = TSDataset.to_dataset(classic_df)
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
+    df = _create_holidays_df(holidays, ts.index, as_is=False)
+    assert df.sum().sum() == 4
+
+
+def test_create_holidays_df_several_holidays(simple_df):
+    christmas = pd.DataFrame(
+        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": 3}
+    )
+    new_year = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 2})
+    holidays = pd.concat((christmas, new_year))
+    df = _create_holidays_df(holidays, simple_df.index, as_is=False)
+    assert df.sum().sum() == 7

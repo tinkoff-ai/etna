@@ -1389,33 +1389,23 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
         holidays_df.loc[dt, :] = holidays.loc[dt, :]
         return holidays_df
 
+    holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)
     for name in holidays["holiday"].unique():
         freq = pd.infer_freq(index)
-        holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)
         ds = holidays[holidays["holiday"] == name]["ds"]
         dt = [ds]
         if "upper_window" in holidays.columns:
-            ds_upper_bound = ds + pd.to_timedelta(holidays[holidays["holiday"] == name]["upper_window"], unit=freq)
-            i = 0
-            while True:
-                ds_add = ds + pd.to_timedelta(holidays[holidays["holiday"] == name]["upper_window"] - i, unit=freq)
-                case_up = ds_add <= ds_upper_bound
-                case_down = ds < ds_add
-                if not all(case_up & case_down):
-                    break
+            periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0] + 1
+            ds_upper_bound = pd.timedelta_range(start=0, periods=periods, freq=freq)
+            for bound in ds_upper_bound:
+                ds_add = ds + bound
                 dt.append(ds_add)
-                i += 1
         if "lower_window" in holidays.columns:
-            ds_lower_bound = ds - pd.to_timedelta(holidays[holidays["holiday"] == name]["lower_window"], unit=freq)
-            i = 0
-            while True:
-                ds_add = ds - pd.to_timedelta(holidays[holidays["holiday"] == name]["lower_window"] - i, unit=freq)
-                case_down = ds_lower_bound <= ds_add
-                case_up = ds_add < ds
-                if not all(case_up & case_down):
-                    break
+            periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0] + 1
+            ds_lower_bound = pd.timedelta_range(start=0, periods=periods, freq=freq)
+            for bound in ds_lower_bound:
+                ds_add = ds - bound
                 dt.append(ds_add)
-                i += 1
         dt = pd.concat(dt)
         dt = holidays_df.index.intersection(dt)
         holidays_df.loc[dt, name] = True
