@@ -7,9 +7,10 @@ from sklearn.linear_model import TheilSenRegressor
 from etna.analysis import get_residuals
 from etna.analysis import plot_residuals
 from etna.analysis import plot_trend
+from etna.analysis.plotters import _create_holidays_df
 from etna.analysis.plotters import _get_labels_names
 from etna.analysis.plotters import _validate_intersecting_segments
-from etna.datasets import TSDataset
+from etna.datasets import TSDataset, generate_ar_df
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
@@ -18,7 +19,6 @@ from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import STLTransform
 from etna.transforms import TheilSenTrendTransform
-from etna.analysis.plotters import _create_holidays_df
 
 
 @pytest.fixture
@@ -83,10 +83,10 @@ def test_plot_residuals_fails_unkown_feature(example_tsdf):
 @pytest.mark.parametrize(
     "poly_degree, trend_transform_class",
     (
-            [1, LinearTrendTransform],
-            [2, LinearTrendTransform],
-            [1, TheilSenTrendTransform],
-            [2, TheilSenTrendTransform],
+        [1, LinearTrendTransform],
+        [2, LinearTrendTransform],
+        [1, TheilSenTrendTransform],
+        [2, TheilSenTrendTransform],
     ),
 )
 def test_plot_trend(poly_degree, example_tsdf, trend_transform_class):
@@ -106,10 +106,10 @@ def test_plot_stl(example_tsdf, period):
 @pytest.mark.parametrize(
     "poly_degree, expect_values, trend_class",
     (
-            [1, True, LinearTrendTransform],
-            [2, False, LinearTrendTransform],
-            [1, True, TheilSenTrendTransform],
-            [2, False, TheilSenTrendTransform],
+        [1, True, LinearTrendTransform],
+        [2, False, LinearTrendTransform],
+        [1, True, TheilSenTrendTransform],
+        [2, False, TheilSenTrendTransform],
     ),
 )
 def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values, trend_class):
@@ -222,52 +222,35 @@ def test_create_holidays_df_empty_fail(simple_df):
 
 
 def test_create_holidays_df_intersect_none(simple_df):
-    holidays = pd.DataFrame({
-        'holiday': "New Year",
-        'ds': pd.to_datetime(['1900-01-01', '1901-01-01'])
-    })
+    holidays = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["1900-01-01", "1901-01-01"])})
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert not df.all(axis=None)
 
 
 def test_create_holidays_df_one_day(simple_df):
-    holidays = pd.DataFrame({
-        'holiday': "New Year",
-        'ds': pd.to_datetime(['2020-01-01'])
-    })
+    holidays = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01"])})
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 1
     assert "New Year" in df.columns
 
 
 def test_create_holidays_df_upper_window(simple_df):
-    holidays = pd.DataFrame({
-        'holiday': "New Year",
-        'ds': pd.to_datetime(['2020-01-01']),
-        'upper_window': 2
-    })
+    holidays = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 2})
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 3
 
 
 def test_create_holidays_df_upper_window_only(simple_df):
     """Test if upper_window bounds are used even in case where holiday and TSDataset do not intersect."""
-    holidays = pd.DataFrame({
-        'holiday': "Christmas",
-        'ds': pd.to_datetime(['2019-12-25']),
-        'upper_window': 10
-    })
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2019-12-25"]), "upper_window": 10})
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 4
 
 
 def test_create_holidays_df_lower_upper_windows(simple_df):
-    holidays = pd.DataFrame({
-        'holiday': "Christmas",
-        'ds': pd.to_datetime(['2020-01-07']),
-        'upper_window': 3,
-        'lower_window': 3
-    })
+    holidays = pd.DataFrame(
+        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "upper_window": 3, "lower_window": 3}
+    )
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 7
 
@@ -276,3 +259,13 @@ def test_create_holidays_df_as_is(simple_df):
     holidays = pd.DataFrame(index=pd.date_range(start="2020-01-07", end="2020-01-10"), columns=["Christmas"], data=1)
     df = _create_holidays_df(holidays, simple_df.index, as_is=True)
     assert df.sum().sum() == 4
+
+
+def test_create_holidays_df_non_day_freq():
+    classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="H")
+    ts = TSDataset.to_dataset(classic_df)
+    holidays = pd.DataFrame(
+        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3}
+    )
+    df = _create_holidays_df(holidays, ts.index, as_is=False)
+    assert df.sum().sum() == 3
