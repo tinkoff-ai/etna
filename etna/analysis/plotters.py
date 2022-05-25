@@ -14,6 +14,7 @@ from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
+from functools import singledispatch
 
 import holidays as holidays_lib
 import matplotlib.pyplot as plt
@@ -1354,7 +1355,17 @@ def plot_periodogram(
         ax.grid()  # type: ignore
 
 
-def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
+@singledispatch
+def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex, as_is: bool):
+    raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+
+
+@_create_holidays_df.register
+def _(holidays: str, index, as_is):
+    if as_is:
+        raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
+    timestamp = index.tolist()
+    country_holidays = holidays_lib.CountryHoliday(country=holidays)
     holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
     holiday_names = holiday_names.difference({None})
 
@@ -1365,6 +1376,54 @@ def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], time
 
     holidays_df = pd.DataFrame(holidays_dict)
     holidays_df.index = timestamp
+    return holidays_df
+
+
+@_create_holidays_df.register
+def _(holidays: pd.DataFrame, index, as_is):
+    holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=0)
+
+    if as_is:
+        dt = holidays_df.index.intersection(holidays.index)
+        holidays_df.loc[dt, :] = holidays.loc[dt, :]
+        return holidays_df
+
+    for name in holidays["holiday"].unique():
+        ds = holidays[holidays["holiday"] == name]["ds"]
+        dt = [ds]
+        if "upper_window" in holidays.columns:
+            ds_upper_bound = ds + pd.to_timedelta(
+                holidays[holidays["holiday"] == name]["upper_window"], unit=index.freqstr
+            )
+            i = 0
+            while True:
+                ds_add = ds + pd.to_timedelta(
+                    holidays[holidays["holiday"] == name]["upper_window"] - i, unit=index.freqstr
+                )
+                case_up = ds_add <= ds_upper_bound
+                case_down = ds < ds_add
+                if not all(case_up & case_down):
+                    break
+                dt.append(ds_add)
+                i += 1
+        if "lower_window" in holidays.columns:
+            ds_lower_bound = ds - pd.to_timedelta(
+                holidays[holidays["holiday"] == name]["lower_window"], unit=index.freqstr
+            )
+            i = 0
+            while True:
+                ds_add = ds - pd.to_timedelta(
+                    holidays[holidays["holiday"] == name]["lower_window"] - i, unit=index.freqstr
+                )
+                case_down = ds_lower_bound <= ds_add
+                case_up = ds_add < ds
+                if not all(case_up & case_down):
+                    break
+                dt.append(ds_add)
+                i += 1
+        dt = pd.concat(dt)
+        dt = holidays_df.index.intersection(dt)
+        holidays_df.loc[dt, name] = 1
     return holidays_df
 
 
@@ -1395,8 +1454,7 @@ def plot_holidays(
 
         * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
 
-        * | if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
-          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+        * if DataFrame, then dataframe is expected to be in prophet`s holiday format;
 
     segments:
         segments to use
@@ -1404,6 +1462,9 @@ def plot_holidays(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+    as_is:
+        * | Use this option if DataFrame is represented as a dataframe with a timestamp index and holiday names columns.
+          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
     start:
         start timestamp for plot
     end:
@@ -1414,54 +1475,7 @@ def plot_holidays(
     if segments is None:
         segments = sorted(ts.segments)
 
-    if isinstance(holidays, str):
-        holidays_df = _create_holidays_df(
-            country_holidays=holidays_lib.CountryHoliday(country=holidays), timestamp=ts.index.tolist()
-        )
-    elif isinstance(holidays, pd.DataFrame):
-        holidays_df = pd.DataFrame(index=ts.index, columns=holidays["holiday"].unique(), data=0)
-        for name in holidays["holiday"].unique():
-            ds = holidays[holidays["holiday"] == name]["ds"]
-            dt = [ds]
-            if "upper_window" in holidays.columns:
-                ds_upper_bound = ds + pd.to_timedelta(
-                    holidays[holidays["holiday"] == name]["upper_window"], unit=ts.freq
-                )
-                i = 0
-                while True:
-                    ds_add = ds + pd.to_timedelta(
-                        holidays[holidays["holiday"] == name]["upper_window"] - i, unit=ts.freq
-                    )
-                    case_up = ds_add <= ds_upper_bound
-                    case_down = ds < ds_add
-                    if not all(case_up & case_down):
-                        break
-                    dt.append(ds_add)
-                    i += 1
-            if "lower_window" in holidays.columns:
-                ds_lower_bound = ds - pd.to_timedelta(
-                    holidays[holidays["holiday"] == name]["lower_window"], unit=ts.freq
-                )
-                i = 0
-                while True:
-                    ds_add = ds - pd.to_timedelta(
-                        holidays[holidays["holiday"] == name]["lower_window"] - i, unit=ts.freq
-                    )
-                    case_down = ds_lower_bound <= ds_add
-                    case_up = ds_add < ds
-                    if not all(case_up & case_down):
-                        break
-                    dt.append(ds_add)
-                    i += 1
-            dt = pd.concat(dt)
-            dt = holidays_df.index.intersection(dt)
-            holidays_df.loc[dt, name] = 1
-    elif isinstance(holidays, pd.DataFrame) and as_is is True:
-        holidays_df = pd.DataFrame(index=ts.index, columns=holidays["holiday"].unique(), data=0)
-        dt = holidays_df.index.intersection(holidays.index)
-        holidays_df.loc[dt, :] = holidays.loc[dt, :]
-    else:
-        raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+    holidays_df = _create_holidays_df(holidays, index=ts.index, as_is=as_is)
 
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
