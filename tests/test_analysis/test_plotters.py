@@ -10,7 +10,8 @@ from etna.analysis import plot_trend
 from etna.analysis.plotters import _create_holidays_df
 from etna.analysis.plotters import _get_labels_names
 from etna.analysis.plotters import _validate_intersecting_segments
-from etna.datasets import TSDataset, generate_ar_df
+from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
@@ -264,8 +265,6 @@ def test_create_holidays_df_as_is(simple_df):
 def test_create_holidays_df_non_day_freq():
     classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="H")
     ts = TSDataset.to_dataset(classic_df)
-    holidays = pd.DataFrame(
-        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3}
-    )
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
     df = _create_holidays_df(holidays, ts.index, as_is=False)
     assert df.sum().sum() == 3
