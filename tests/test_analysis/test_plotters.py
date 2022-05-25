@@ -270,7 +270,7 @@ def test_create_holidays_df_non_day_freq():
     assert df.sum().sum() == 4
 
 
-def test_create_holidays_df_15T_freq():
+def test_create_holidays_df_15t_freq():
     classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="15T")
     ts = TSDataset.to_dataset(classic_df)
     holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
