@@ -3,6 +3,7 @@ import math
 import warnings
 from copy import deepcopy
 from enum import Enum
+from functools import singledispatch
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -12,9 +13,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Tuple
-from typing import Type
 from typing import Union
-from functools import singledispatch
 
 import holidays as holidays_lib
 import matplotlib.pyplot as plt
@@ -1361,7 +1360,7 @@ def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex
 
 
 @_create_holidays_df.register
-def _(holidays: str, index, as_is):
+def _create_holidays_df_str(holidays: str, index, as_is):
     if as_is:
         raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
     timestamp = index.tolist()
@@ -1380,7 +1379,7 @@ def _(holidays: str, index, as_is):
 
 
 @_create_holidays_df.register
-def _(holidays: pd.DataFrame, index, as_is):
+def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
     holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=0)
 
     if as_is:
