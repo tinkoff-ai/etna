@@ -279,9 +279,7 @@ def test_create_holidays_df_15T_freq():
 
 
 def test_create_holidays_df_several_holidays(simple_df):
-    christmas = pd.DataFrame(
-        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": 3}
-    )
+    christmas = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": 3})
     new_year = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 2})
     holidays = pd.concat((christmas, new_year))
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
