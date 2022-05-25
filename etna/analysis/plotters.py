@@ -1355,7 +1355,7 @@ def plot_periodogram(
 
 
 @singledispatch
-def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex, as_is: bool):
+def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex, as_is: bool) -> pd.DataFrame:
     raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
 
 
@@ -1380,14 +1380,17 @@ def _create_holidays_df_str(holidays: str, index, as_is):
 
 @_create_holidays_df.register
 def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
-    holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=0)
+    if holidays.empty:
+        raise ValueError("Got empty `holiday` pd.DataFrame.")
 
     if as_is:
+        holidays_df = pd.DataFrame(index=index, columns=holidays.columns, data=False)
         dt = holidays_df.index.intersection(holidays.index)
         holidays_df.loc[dt, :] = holidays.loc[dt, :]
         return holidays_df
 
     for name in holidays["holiday"].unique():
+        holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)
         ds = holidays[holidays["holiday"] == name]["ds"]
         dt = [ds]
         if "upper_window" in holidays.columns:
@@ -1422,7 +1425,7 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
                 i += 1
         dt = pd.concat(dt)
         dt = holidays_df.index.intersection(dt)
-        holidays_df.loc[dt, name] = 1
+        holidays_df.loc[dt, name] = True
     return holidays_df
 
 
