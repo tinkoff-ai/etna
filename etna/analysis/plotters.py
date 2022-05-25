@@ -1376,6 +1376,7 @@ def plot_holidays(
     figsize: Tuple[int, int] = (10, 5),
     start: Optional[str] = None,
     end: Optional[str] = None,
+    as_is: bool = False,
 ):
     """Plot holidays for segments.
 
@@ -1423,12 +1424,14 @@ def plot_holidays(
             ds = holidays[holidays["holiday"] == name]["ds"]
             dt = [ds]
             if "upper_window" in holidays.columns:
-                ds_upper_bound = ds + pd.to_timedelta(holidays[holidays["holiday"] == name]["upper_window"],
-                                                      unit=ts.freq)
+                ds_upper_bound = ds + pd.to_timedelta(
+                    holidays[holidays["holiday"] == name]["upper_window"], unit=ts.freq
+                )
                 i = 0
                 while True:
-                    ds_add = ds + pd.to_timedelta(holidays[holidays["holiday"] == name]["upper_window"] - i,
-                                                  unit=ts.freq)
+                    ds_add = ds + pd.to_timedelta(
+                        holidays[holidays["holiday"] == name]["upper_window"] - i, unit=ts.freq
+                    )
                     case_up = ds_add <= ds_upper_bound
                     case_down = ds < ds_add
                     if not all(case_up & case_down):
@@ -1436,12 +1439,14 @@ def plot_holidays(
                     dt.append(ds_add)
                     i += 1
             if "lower_window" in holidays.columns:
-                ds_lower_bound = ds - pd.to_timedelta(holidays[holidays["holiday"] == name]["lower_window"],
-                                                      unit=ts.freq)
+                ds_lower_bound = ds - pd.to_timedelta(
+                    holidays[holidays["holiday"] == name]["lower_window"], unit=ts.freq
+                )
                 i = 0
                 while True:
-                    ds_add = ds - pd.to_timedelta(holidays[holidays["holiday"] == name]["lower_window"] - i,
-                                                  unit=ts.freq)
+                    ds_add = ds - pd.to_timedelta(
+                        holidays[holidays["holiday"] == name]["lower_window"] - i, unit=ts.freq
+                    )
                     case_down = ds_lower_bound <= ds_add
                     case_up = ds_add < ds
                     if not all(case_up & case_down):
@@ -1451,6 +1456,10 @@ def plot_holidays(
             dt = pd.concat(dt)
             dt = holidays_df.index.intersection(dt)
             holidays_df.loc[dt, name] = 1
+    elif isinstance(holidays, pd.DataFrame) and as_is is True:
+        holidays_df = pd.DataFrame(index=ts.index, columns=holidays["holiday"].unique(), data=0)
+        dt = holidays_df.index.intersection(holidays.index)
+        holidays_df.loc[dt, :] = holidays.loc[dt, :]
     else:
         raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
 
