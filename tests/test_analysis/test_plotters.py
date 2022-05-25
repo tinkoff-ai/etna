@@ -267,4 +267,4 @@ def test_create_holidays_df_non_day_freq():
     ts = TSDataset.to_dataset(classic_df)
     holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
     df = _create_holidays_df(holidays, ts.index, as_is=False)
-    assert df.sum().sum() == 3
+    assert df.sum().sum() == 4
