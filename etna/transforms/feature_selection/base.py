@@ -18,7 +18,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
 
     def _get_features_to_use(self, df: pd.DataFrame) -> List[str]:
         """Get list of features from the dataframe to perform the selection on."""
-        features = set(df.columns.get_level_values("feature")) - set(["target"])
+        features = set(df.columns.get_level_values("feature")) - {"target"}
         if self.features_to_use != "all":
             features = features.intersection(self.features_to_use)
             if sorted(features) != sorted(self.features_to_use):

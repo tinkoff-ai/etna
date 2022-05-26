@@ -142,7 +142,7 @@ def test_cross_corr_with_full_nans(a, b, normed, expected_result):
             pd.date_range(start="2020-01-03", periods=40, freq="D"),
             "month",
             ["2020-Jan"] * 29 + ["2020-Feb"] * 11,
-            [i for i in range(3, 32)] + [i for i in range(1, 12)],
+            list(range(3, 32)) + list(range(1, 12)),
             [str(i) for i in range(3, 32)] + [str(i) for i in range(1, 12)],
         ),
         (
