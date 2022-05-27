@@ -56,7 +56,7 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         in_column_start_index = in_column_index[0]
         left_tie_len = len(df[:in_column_start_index]) - 1
         right_tie_len = len(df[in_column_start_index:])
-        folds_for_left_tie = [fold for fold in range(n_folds_per_gap - left_tie_len, n_folds_per_gap)]
+        folds_for_left_tie = list(range(n_folds_per_gap - left_tie_len, n_folds_per_gap))
         folds_for_right_tie = [fold for _ in range(n_periods) for fold in range(n_folds_per_gap)][:right_tie_len]
         return folds_for_left_tie + folds_for_right_tie
 

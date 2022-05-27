@@ -324,7 +324,7 @@ class TSDataset:
 
         if isinstance(known_future, str):
             if known_future == "all":
-                return sorted(list(exog_columns))
+                return sorted(exog_columns)
             else:
                 raise ValueError("The only possible literal is 'all'")
         else:
@@ -335,7 +335,7 @@ class TSDataset:
                     f"{known_future_unique.difference(exog_columns)}"
                 )
             else:
-                return sorted(list(known_future_unique))
+                return sorted(known_future_unique)
 
     @staticmethod
     def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
@@ -493,6 +493,7 @@ class TSDataset:
             df_slice = self[start:end, segment, column]  # type: ignore
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
+            ax[i].grid()
 
         plt.show()
 

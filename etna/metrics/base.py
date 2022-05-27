@@ -24,10 +24,6 @@ class MetricAggregationMode(str, Enum):
         )
 
 
-def identity(x):
-    return x
-
-
 class Metric(BaseMixin):
     """
     Base class for all the multi-segment metrics.
@@ -64,7 +60,7 @@ class Metric(BaseMixin):
         if MetricAggregationMode(mode) == MetricAggregationMode.macro:
             self._aggregate_metrics = self._macro_average
         elif MetricAggregationMode(mode) == MetricAggregationMode.per_segment:
-            self._aggregate_metrics = identity
+            self._aggregate_metrics = self._per_segment_average
         self.mode = mode
 
     @property
@@ -134,7 +130,7 @@ class Metric(BaseMixin):
             raise ValueError("y_true and y_pred have different timestamps")
 
     @staticmethod
-    def _macro_average(metrics_per_segments: Dict[str, float]) -> float:
+    def _macro_average(metrics_per_segments: Dict[str, float]) -> Union[float, Dict[str, float]]:
         """
         Compute macro averaging of metrics over segment.
 
@@ -147,6 +143,21 @@ class Metric(BaseMixin):
         aggregated value of metric
         """
         return np.mean(list(metrics_per_segments.values())).item()
+
+    @staticmethod
+    def _per_segment_average(metrics_per_segments: Dict[str, float]) -> Union[float, Dict[str, float]]:
+        """
+        Compute per-segment averaging of metrics over segment.
+
+        Parameters
+        ----------
+        metrics_per_segments: dict of {segment: metric_value} for segments to aggregate
+
+        Returns
+        -------
+        aggregated dict of metric
+        """
+        return metrics_per_segments
 
     def _log_start(self):
         """Log metric computation."""

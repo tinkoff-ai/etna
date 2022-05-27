@@ -2,6 +2,7 @@ import itertools
 import math
 import warnings
 from copy import deepcopy
+from enum import Enum
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -55,12 +56,12 @@ def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optio
     intersection_quantiles_set = set.intersection(
         *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
     )
-    intersection_quantiles = sorted(list(intersection_quantiles_set))
+    intersection_quantiles = sorted(intersection_quantiles_set)
 
     if quantiles is None:
         selected_quantiles = intersection_quantiles
     else:
-        selected_quantiles = sorted(list(set(quantiles) & intersection_quantiles_set))
+        selected_quantiles = sorted(set(quantiles) & intersection_quantiles_set)
         non_existent = set(quantiles) - intersection_quantiles_set
         if non_existent:
             warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
@@ -141,7 +142,7 @@ def plot_forecast(
             unique_segments.update(forecast.segments)
         segments = list(unique_segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     if prediction_intervals:
         quantiles = _select_quantiles(forecast_results, quantiles)
@@ -176,7 +177,7 @@ def plot_forecast(
 
         # plot forecast plot for each of given forecasts
         quantile_prefix = "target_"
-        for j, (forecast_name, forecast) in enumerate(forecast_results.items()):
+        for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
             segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
@@ -244,16 +245,32 @@ def plot_forecast(
         ax[i].legend(loc="upper left")
 
 
+def _validate_intersecting_segments(fold_numbers: pd.Series):
+    """Validate if segments aren't intersecting."""
+    fold_info = []
+    for fold_number in fold_numbers.unique():
+        fold_start = fold_numbers[fold_numbers == fold_number].index.min()
+        fold_end = fold_numbers[fold_numbers == fold_number].index.max()
+        fold_info.append({"fold_start": fold_start, "fold_end": fold_end})
+
+    fold_info.sort(key=lambda x: x["fold_start"])
+
+    for fold_info_1, fold_info_2 in zip(fold_info[:-1], fold_info[1:]):
+        if fold_info_2["fold_start"] <= fold_info_1["fold_end"]:
+            raise ValueError("Folds are intersecting")
+
+
 def plot_backtest(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
-    folds: Optional[List[int]] = None,
     columns_num: int = 2,
-    history_len: int = 0,
+    history_len: Union[int, Literal["all"]] = 0,
     figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot targets and forecast for backtest pipeline.
+
+    This function doesn't support intersecting folds.
 
     Parameters
     ----------
@@ -263,53 +280,99 @@ def plot_backtest(
         dataframe of timeseries that was used for backtest
     segments:
         segments to plot
-    folds:
-        folds to plot
     columns_num:
         number of subplots columns
     history_len:
-        length of pre-backtest history to plot
+        length of pre-backtest history to plot, if value is "all" then plot all the history
     figsize:
         size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``history_len`` is negative
+    ValueError:
+        if folds are intersecting
     """
+    if history_len != "all" and history_len < 0:
+        raise ValueError("Parameter history_len should be non-negative or 'all'")
+
     if segments is None:
         segments = sorted(ts.segments)
+
+    fold_numbers = forecast_df[segments[0]]["fold_number"]
+    _validate_intersecting_segments(fold_numbers)
+    folds = sorted(set(fold_numbers))
+
+    # prepare dataframes
     df = ts.df
-
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
-
-    if not folds:
-        folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
-
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
+    freq_timedelta = df.index[1] - df.index[0]
+
+    # prepare colors
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color_cycle = itertools.cycle(default_colors)
+    lines_colors = {line_name: next(color_cycle) for line_name in ["history", "test", "forecast"]}
+
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     for i, segment in enumerate(segments):
         segment_backtest_df = backtest_df[segment]
         segment_history_df = history_df[segment]
+        segment_forecast_df = forecast_df[segment]
+        is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
 
-        if history_len:
-            plot_df = segment_history_df.tail(history_len)
+        # plot history
+        if history_len == "all":
+            plot_df = segment_history_df.append(segment_backtest_df)
+        elif history_len > 0:
+            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
         else:
             plot_df = segment_backtest_df
+        ax[i].plot(plot_df.index, plot_df.target, color=lines_colors["history"])
 
-        ax[i].plot(plot_df.index, plot_df.target, label="history")
-        ax[i].plot(segment_backtest_df.index, segment_backtest_df.target, label="test")
-
-        segment_forecast_df = forecast_df[segment]
         for fold_number in folds:
-            forecast_df_slice_fold = segment_forecast_df[segment_forecast_df.fold_number == fold_number]
+            start_fold = fold_numbers[fold_numbers == fold_number].index.min()
+            end_fold = fold_numbers[fold_numbers == fold_number].index.max()
+            end_fold_exclusive = end_fold + freq_timedelta
+
+            # draw test
+            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            ax[i].plot(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
+
+            if is_full_folds:
+                # draw forecast
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                ax[i].plot(forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"])
+            else:
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
+
+                # draw points on test
+                ax[i].scatter(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
+
+                # draw forecast
+                ax[i].scatter(
+                    forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"]
+                )
+
+            # draw borders of current fold
+            opacity = 0.075 * ((fold_number + 1) % 2) + 0.075
             ax[i].axvspan(
-                forecast_df_slice_fold.index.min(),
-                forecast_df_slice_fold.index.max(),
-                alpha=0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2),
+                start_fold,
+                end_fold_exclusive,
+                alpha=opacity,
                 color="skyblue",
             )
 
-        ax[i].plot(segment_forecast_df.index, segment_forecast_df.target, label="forecast")
+        # plot legend
+        legend_handles = [
+            Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
+        ]
+        ax[i].legend(handles=legend_handles)
 
         ax[i].set_title(segment)
-        ax[i].legend()
         ax[i].tick_params("x", rotation=45)
 
 
@@ -317,8 +380,7 @@ def plot_backtest_interactive(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
-    folds: Optional[List[int]] = None,
-    history_len: int = 0,
+    history_len: Union[int, Literal["all"]] = 0,
     figsize: Tuple[int, int] = (900, 600),
 ) -> go.Figure:
     """Plot targets and forecast for backtest pipeline using plotly.
@@ -331,10 +393,8 @@ def plot_backtest_interactive(
         dataframe of timeseries that was used for backtest
     segments:
         segments to plot
-    folds:
-        folds to plot
     history_len:
-        length of pre-backtest history to plot
+        length of pre-backtest history to plot, if value is "all" then plot all the history
     figsize:
         size of the figure in pixels
 
@@ -342,82 +402,135 @@ def plot_backtest_interactive(
     -------
     go.Figure:
         result of plotting
+
+    Raises
+    ------
+    ValueError:
+        if ``history_len`` is negative
+    ValueError:
+        if folds are intersecting
     """
+    if history_len != "all" and history_len < 0:
+        raise ValueError("Parameter history_len should be non-negative or 'all'")
+
     if segments is None:
         segments = sorted(ts.segments)
+
+    fold_numbers = forecast_df[segments[0]]["fold_number"]
+    _validate_intersecting_segments(fold_numbers)
+    folds = sorted(set(fold_numbers))
+
+    # prepare dataframes
     df = ts.df
-
-    if not folds:
-        folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
-
-    fig = go.Figure()
-    colors = plotly.colors.qualitative.Dark24
-
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
+    freq_timedelta = df.index[1] - df.index[0]
 
+    # prepare colors
+    colors = plotly.colors.qualitative.Dark24
+
+    fig = go.Figure()
     for i, segment in enumerate(segments):
         segment_backtest_df = backtest_df[segment]
         segment_history_df = history_df[segment]
+        segment_forecast_df = forecast_df[segment]
+        is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
 
-        if history_len:
-            plot_df = segment_history_df.tail(history_len)
+        # plot history
+        if history_len == "all":
+            plot_df = segment_history_df.append(segment_backtest_df)
+        elif history_len > 0:
+            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
         else:
             plot_df = segment_backtest_df
-
-        # history
         fig.add_trace(
             go.Scattergl(
                 x=plot_df.index,
                 y=plot_df.target,
                 legendgroup=f"{segment}",
                 name=f"{segment}",
+                mode="lines",
                 marker_color=colors[i % len(colors)],
                 showlegend=True,
-                line=dict(width=2, dash="solid"),
+                line=dict(width=2, dash="dash"),
             )
         )
 
-        # test
-        fig.add_trace(
-            go.Scattergl(
-                x=segment_backtest_df.index,
-                y=segment_backtest_df.target,
-                legendgroup=f"{segment}",
-                name=f"Test: {segment}",
-                marker_color=colors[i % len(colors)],
-                showlegend=False,
-                line=dict(width=2, dash="dot"),
-            )
-        )
+        for fold_number in folds:
+            start_fold = fold_numbers[fold_numbers == fold_number].index.min()
+            end_fold = fold_numbers[fold_numbers == fold_number].index.max()
+            end_fold_exclusive = end_fold + freq_timedelta
 
-        # folds
-        segment_forecast_df = forecast_df[segment]
-        if i == 0:
-            for fold_number in folds:
-                forecast_df_slice_fold = segment_forecast_df[segment_forecast_df.fold_number == fold_number]
-                opacity = 0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2)
+            # draw test
+            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            fig.add_trace(
+                go.Scattergl(
+                    x=backtest_df_slice_fold.index,
+                    y=backtest_df_slice_fold.target,
+                    legendgroup=f"{segment}",
+                    name=f"Test: {segment}",
+                    mode="lines",
+                    marker_color=colors[i % len(colors)],
+                    showlegend=False,
+                    line=dict(width=2, dash="solid"),
+                )
+            )
+
+            if is_full_folds:
+                # draw forecast
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                fig.add_trace(
+                    go.Scattergl(
+                        x=forecast_df_slice_fold.index,
+                        y=forecast_df_slice_fold.target,
+                        legendgroup=f"{segment}",
+                        name=f"Forecast: {segment}",
+                        mode="lines",
+                        marker_color=colors[i % len(colors)],
+                        showlegend=False,
+                        line=dict(width=2, dash="dot"),
+                    )
+                )
+            else:
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
+
+                # draw points on test
+                fig.add_trace(
+                    go.Scattergl(
+                        x=backtest_df_slice_fold.index,
+                        y=backtest_df_slice_fold.target,
+                        legendgroup=f"{segment}",
+                        name=f"Test: {segment}",
+                        mode="markers",
+                        marker_color=colors[i % len(colors)],
+                        showlegend=False,
+                    )
+                )
+
+                # draw forecast
+                fig.add_trace(
+                    go.Scattergl(
+                        x=forecast_df_slice_fold.index,
+                        y=forecast_df_slice_fold.target,
+                        legendgroup=f"{segment}",
+                        name=f"Forecast: {segment}",
+                        mode="markers",
+                        marker_color=colors[i % len(colors)],
+                        showlegend=False,
+                    )
+                )
+
+            if i == 0:
+                opacity = 0.075 * ((fold_number + 1) % 2) + 0.075
                 fig.add_vrect(
-                    x0=forecast_df_slice_fold.index.min(),
-                    x1=forecast_df_slice_fold.index.max(),
+                    x0=start_fold,
+                    x1=end_fold_exclusive,
                     line_width=0,
                     fillcolor="blue",
                     opacity=opacity,
                 )
-
-        # forecast
-        fig.add_trace(
-            go.Scattergl(
-                x=segment_forecast_df.index,
-                y=segment_forecast_df.target,
-                legendgroup=f"{segment}",
-                name=f"Forecast: {segment}",
-                marker_color=colors[i % len(colors)],
-                showlegend=False,
-                line=dict(width=2, dash="dash"),
-            )
-        )
 
     fig.update_layout(
         height=figsize[1],
@@ -478,14 +591,14 @@ def plot_anomalies(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df[in_column].values, c="b")
+        ax[i].plot(segment_df.index.values, segment_df[in_column].values)
 
         anomaly = sorted(anomaly)  # type: ignore
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
@@ -647,6 +760,7 @@ def plot_anomalies_interactive(
         plt.plot(x, y)
         plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
         plt.xticks(rotation=45)
+        plt.grid()
         plt.show()
 
     interact(update, **sliders)
@@ -675,25 +789,25 @@ def plot_clusters(
         size of the figure per subplot with one segment in inches
     """
     unique_clusters = sorted(set(segment2cluster.values()))
-    rows_num = math.ceil(len(unique_clusters) / columns_num)
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, axs = plt.subplots(rows_num, columns_num, constrained_layout=True, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(unique_clusters), columns_num=columns_num, figsize=figsize)
+
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    segment_color = default_colors[0]
     for i, cluster in enumerate(unique_clusters):
         segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
-        h, w = i // columns_num, i % columns_num
         for segment in segments:
             segment_slice = ts[:, segment, "target"]
-            axs[h][w].plot(
+            ax[i].plot(
                 segment_slice.index.values,
                 segment_slice.values,
                 alpha=1 / math.sqrt(len(segments)),
-                c="blue",
+                c=segment_color,
             )
-        axs[h][w].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
+        ax[i].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
         if centroids_df is not None:
             centroid = centroids_df[cluster, "target"]
-            axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
-        axs[h][w].legend()
+            ax[i].plot(centroid.index.values, centroid.values, c="red", label="centroid")
+        ax[i].legend()
 
 
 def plot_time_series_with_change_points(
@@ -722,7 +836,7 @@ def plot_time_series_with_change_points(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
         segment_df = ts[:, segment, :][segment]
@@ -830,7 +944,7 @@ def plot_residuals(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
@@ -922,7 +1036,7 @@ def plot_trend(
     if segments is None:
         segments = ts.segments
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     df = ts.df
 
     if not isinstance(trend_transform, list):
@@ -934,7 +1048,7 @@ def plot_trend(
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
         for label, df_now in zip(labels, df_detrend):
-            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment])
+            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment], lw=3)
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend()
@@ -990,7 +1104,7 @@ def plot_feature_relevance(
     relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features], **relevance_params).loc[segments]
 
     if relevance_aggregation_mode == "per-segment":
-        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
             # warning about NaNs
@@ -1020,6 +1134,7 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def plot_imputation(
@@ -1047,7 +1162,7 @@ def plot_imputation(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_after = deepcopy(ts)
     ts_after.fit_transform(transforms=[imputer])
@@ -1080,6 +1195,7 @@ def plot_periodogram(
     amplitude_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
     periodogram_params: Optional[Dict[str, Any]] = None,
     segments: Optional[List[str]] = None,
+    xticks: Optional[List[Any]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
 ):
@@ -1103,6 +1219,8 @@ def plot_periodogram(
         additional keyword arguments for periodogram, :py:func:`scipy.signal.periodogram` is used
     segments:
         segments to use
+    xticks:
+        list of tick locations of the x-axis, useful to highlight specific reference periodicities
     columns_num:
         if ``amplitude_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
     figsize:
@@ -1130,17 +1248,21 @@ def plot_periodogram(
 
     # plot periodograms
     if amplitude_aggregation_mode == "per-segment":
-        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
             segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
             if segment_df.isna().any():
                 raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
+            spectrum = spectrum[frequencies >= 1]
+            frequencies = frequencies[frequencies >= 1]
             ax[i].step(frequencies, spectrum)
             ax[i].set_xscale("log")
             ax[i].set_xlabel("Frequency")
             ax[i].set_ylabel("Power spectral density")
+            if xticks is not None:
+                ax[i].set_xticks(ticks=xticks, labels=xticks)
             ax[i].set_title(f"Periodogram: {segment}")
     else:
         # find length of each segment
@@ -1166,12 +1288,17 @@ def plot_periodogram(
         frequencies = frequencies_segments[0]
         amplitude_aggregation_fn = AGGREGATION_FN[AggregationMode(amplitude_aggregation_mode)]
         spectrum = amplitude_aggregation_fn(spectrums_segments, axis=0)  # type: ignore
+        spectrum = spectrum[frequencies >= 1]
+        frequencies = frequencies[frequencies >= 1]
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         ax.step(frequencies, spectrum)  # type: ignore
         ax.set_xscale("log")  # type: ignore
         ax.set_xlabel("Frequency")  # type: ignore
         ax.set_ylabel("Power spectral density")  # type: ignore
+        if xticks is not None:
+            ax.set_xticks(ticks=xticks, labels=xticks)  # type: ignore
         ax.set_title("Periodogram")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
@@ -1234,7 +1361,7 @@ def plot_holidays(
     else:
         raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     df = ts.to_pandas()
 
@@ -1283,3 +1410,199 @@ def plot_holidays(
             Line2D([0], [0], marker="o", color=color, label=label) for label, color in holidays_colors.items()
         ]
         ax[i].legend(handles=legend_handles)
+
+
+class PerFoldAggregation(str, Enum):
+    """Enum for types of aggregation in a metric per-segment plot."""
+
+    mean = "mean"
+    sum = "median"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregations are allowed"
+        )
+
+    def get_function(self):
+        """Get aggregation function."""
+        if self.value == "mean":
+            return np.nanmean
+        elif self.value == "median":
+            return np.nanmedian
+
+
+def plot_metric_per_segment(
+    metrics_df: pd.DataFrame,
+    metric_name: str,
+    ascending: bool = False,
+    per_fold_aggregation_mode: str = PerFoldAggregation.mean,
+    top_k: Optional[int] = None,
+    barplot_params: Optional[Dict[str, Any]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot barplot with per-segment metrics.
+
+    Parameters
+    ----------
+    metrics_df:
+        dataframe with metrics calculated on the backtest
+    metric_name:
+        name of the metric to visualize
+    ascending:
+
+        * If True, small values at the top;
+
+        * If False, big values at the top.
+
+    per_fold_aggregation_mode:
+        how to aggregate metrics over the folds if they aren't already aggregated
+        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+    top_k:
+        number segments to show after ordering according to ``ascending``
+    barplot_params:
+        dictionary with parameters for plotting, :py:func:`seaborn.barplot` is used
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``metric_name`` isn't present in ``metrics_df``
+    NotImplementedError:
+        unknown ``per_fold_aggregation_mode`` is given
+    """
+    if barplot_params is None:
+        barplot_params = {}
+
+    aggregation_mode = PerFoldAggregation(per_fold_aggregation_mode)
+
+    plt.figure(figsize=figsize)
+
+    if metric_name not in metrics_df.columns:
+        raise ValueError("Given metric_name isn't present in metrics_df")
+
+    if "fold_number" in metrics_df.columns:
+        metrics_dict = (
+            metrics_df.groupby("segment").agg({metric_name: aggregation_mode.get_function()}).to_dict()[metric_name]
+        )
+    else:
+        metrics_dict = metrics_df["segment", metric_name].to_dict()[metric_name]
+
+    segments = np.array(list(metrics_dict.keys()))
+    values = np.array(list(metrics_dict.values()))
+    sort_idx = np.argsort(values)
+    if not ascending:
+        sort_idx = sort_idx[::-1]
+    segments = segments[sort_idx][:top_k]
+    values = values[sort_idx][:top_k]
+    sns.barplot(x=values, y=segments, orient="h", **barplot_params)
+    plt.title("Metric per-segment plot")
+    plt.xlabel("Segment")
+    plt.ylabel(metric_name)
+    plt.grid()
+
+
+class MetricPlotType(str, Enum):
+    """Enum for types of plot in :py:func:`~etna.analysis.plotters.metric_per_segment_distribution_plot`.
+
+    Attributes
+    ----------
+    hist:
+        Histogram plot, :py:func:`seaborn.histplot` is used
+    box:
+        Boxplot, :py:func:`seaborn.boxplot` is used
+    violin:
+        Violin plot, :py:func:`seaborn.violinplot` is used
+    """
+
+    hist = "hist"
+    box = "box"
+    violin = "violin"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} plots are allowed"
+        )
+
+    def get_function(self):
+        """Get aggregation function."""
+        if self.value == "hist":
+            return sns.histplot
+        elif self.value == "box":
+            return sns.boxplot
+        elif self.value == "violin":
+            return sns.violinplot
+
+
+def metric_per_segment_distribution_plot(
+    metrics_df: pd.DataFrame,
+    metric_name: str,
+    per_fold_aggregation_mode: Optional[str] = None,
+    plot_type: Union[Literal["hist"], Literal["box"], Literal["violin"]] = "hist",
+    seaborn_params: Optional[Dict[str, Any]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot per-segment metrics distribution.
+
+    Parameters
+    ----------
+    metrics_df:
+        dataframe with metrics calculated on the backtest
+    metric_name:
+        name of the metric to visualize
+    per_fold_aggregation_mode:
+
+        * If None, separate distributions for each fold will be drawn
+
+        * If str, determines how to aggregate metrics over the folds if they aren't already aggregated
+        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+
+    plot_type:
+        type of plot (see :py:class:`~etna.analysis.plotters.MetricPlotType`)
+    seaborn_params:
+        dictionary with parameters for plotting
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``metric_name`` isn't present in ``metrics_df``
+    NotImplementedError:
+        unknown ``per_fold_aggregation_mode`` is given
+    """
+    if seaborn_params is None:
+        seaborn_params = {}
+
+    metrics_df = metrics_df.reset_index(drop=True)
+    plot_type_enum = MetricPlotType(plot_type)
+    plot_function = plot_type_enum.get_function()
+
+    plt.figure(figsize=figsize)
+
+    if metric_name not in metrics_df.columns:
+        raise ValueError("Given metric_name isn't present in metrics_df")
+
+    # draw plot for each fold
+    if per_fold_aggregation_mode is None and "fold_number" in metrics_df.columns:
+        if plot_type_enum == MetricPlotType.hist:
+            plot_function(data=metrics_df, x=metric_name, hue="fold_number", **seaborn_params)
+        else:
+            plot_function(data=metrics_df, x="fold_number", y=metric_name, **seaborn_params)
+            plt.xlabel("Fold")
+
+    # draw one plot of aggregated data
+    else:
+        if "fold_number" in metrics_df.columns:
+            agg_func = PerFoldAggregation(per_fold_aggregation_mode).get_function()
+            metrics_df = metrics_df.groupby("segment").agg({metric_name: agg_func})
+
+        if plot_type_enum == MetricPlotType.hist:
+            plot_function(data=metrics_df, x=metric_name, **seaborn_params)
+        else:
+            plot_function(data=metrics_df, y=metric_name, **seaborn_params)
+
+    plt.title("Metric per-segment distribution plot")
+    plt.grid()

@@ -16,7 +16,7 @@ def simple_window() -> np.array:
 
 def test_const_ts(const_ts_anomal):
     anomal = get_anomalies_density(const_ts_anomal)
-    assert set(["segment_0", "segment_1"]) == set(anomal.keys())
+    assert {"segment_0", "segment_1"} == set(anomal.keys())
     for seg in anomal.keys():
         assert len(anomal[seg]) == 0
 

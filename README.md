@@ -1,4 +1,7 @@
-<h1 align="center">ETNA Time Series Library</h1>
+<div align="center">
+<img src="etna_logo.png" width="100%"/>
+</div>
+
 <h3 align="center">Predict your time series the easiest way</h3>
 
 <p align="center">
@@ -198,6 +201,8 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 - [EDA notebook for Ubiquant Market Prediction](https://www.kaggle.com/code/martins0n/ubiquant-eda-toy-predictions-etna) on Kaggle
 
 - [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
+
+- ETNA Tutorial [Part 1 (Rus)](https://youtu.be/4iFVRfB2j30), [Part 2 (Rus)](https://youtu.be/Ct9dyUdHlmc),  [Part 3 (Rus)](https://youtu.be/Qof38dtigtE) on YouTube thanks to [RC Gewissta](https://github.com/Gewissta)
 
 ## Acknowledgments
 
