@@ -71,7 +71,6 @@ class FourierTransform(Transform, FutureMixin):
         if period < 2:
             raise ValueError("Period should be at least 2")
         self.period = period
-        self.order = order
         self.mods: Sequence[int]
 
         if order is not None and mods is None:
@@ -84,7 +83,7 @@ class FourierTransform(Transform, FutureMixin):
             self.mods = mods
         else:
             raise ValueError("There should be exactly one option set: order or mods")
-
+        self.order = None
         self.out_column = out_column
 
     def fit(self, df: pd.DataFrame) -> "FourierTransform":
