@@ -24,7 +24,7 @@ def date_range(request) -> pd.DatetimeIndex:
 def all_date_present_df(date_range: pd.Series) -> pd.DataFrame:
     """Create pd.DataFrame that contains some target on given range of dates without gaps."""
     df = pd.DataFrame({"timestamp": date_range})
-    df["target"] = [i for i in range(len(df))]
+    df["target"] = list(range(len(df)))
     df.set_index("timestamp", inplace=True)
     return df
 

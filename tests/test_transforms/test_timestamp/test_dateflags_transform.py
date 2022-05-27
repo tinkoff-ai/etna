@@ -177,7 +177,7 @@ def test_interface_correct_args_out_column(true_params: List[str], train_df: pd.
     true_params = [f"{out_column}_{param}" for param in true_params]
     for seg in result.columns.get_level_values(0).unique():
         tmp_df = result[seg]
-        assert sorted(list(tmp_df.columns)) == sorted(true_params + ["target"])
+        assert sorted(tmp_df.columns) == sorted(true_params + ["target"])
         for param in true_params:
             assert tmp_df[param].dtype == "category"
 
