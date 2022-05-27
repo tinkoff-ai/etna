@@ -598,7 +598,7 @@ def plot_anomalies(
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df[in_column].values, c="b")
+        ax[i].plot(segment_df.index.values, segment_df[in_column].values)
 
         anomaly = sorted(anomaly)  # type: ignore
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
@@ -760,6 +760,7 @@ def plot_anomalies_interactive(
         plt.plot(x, y)
         plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
         plt.xticks(rotation=45)
+        plt.grid()
         plt.show()
 
     interact(update, **sliders)
@@ -789,6 +790,9 @@ def plot_clusters(
     """
     unique_clusters = sorted(set(segment2cluster.values()))
     _, ax = prepare_axes(num_plots=len(unique_clusters), columns_num=columns_num, figsize=figsize)
+
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    segment_color = default_colors[0]
     for i, cluster in enumerate(unique_clusters):
         segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
         for segment in segments:
@@ -797,7 +801,7 @@ def plot_clusters(
                 segment_slice.index.values,
                 segment_slice.values,
                 alpha=1 / math.sqrt(len(segments)),
-                c="blue",
+                c=segment_color,
             )
         ax[i].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
         if centroids_df is not None:
@@ -1044,7 +1048,7 @@ def plot_trend(
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
         for label, df_now in zip(labels, df_detrend):
-            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment])
+            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment], lw=3)
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend()
@@ -1130,6 +1134,7 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def plot_imputation(
@@ -1293,6 +1298,7 @@ def plot_periodogram(
         if xticks is not None:
             ax.set_xticks(ticks=xticks, labels=xticks)  # type: ignore
         ax.set_title("Periodogram")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
@@ -1494,6 +1500,7 @@ def plot_metric_per_segment(
     plt.title("Metric per-segment plot")
     plt.xlabel("Segment")
     plt.ylabel(metric_name)
+    plt.grid()
 
 
 class MetricPlotType(str, Enum):
@@ -1598,3 +1605,4 @@ def metric_per_segment_distribution_plot(
             plot_function(data=metrics_df, y=metric_name, **seaborn_params)
 
     plt.title("Metric per-segment distribution plot")
+    plt.grid()
