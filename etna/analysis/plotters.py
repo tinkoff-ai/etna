@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 
 
 def _get_borders_ts(ts: "TSDataset", start: Optional[str], end: Optional[str]) -> Tuple[str, str]:
+    """Get start and end parameters according to given TSDataset."""
     if start is not None:
         start_idx = ts.df.index.get_loc(start)
     else:
