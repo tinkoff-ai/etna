@@ -41,6 +41,24 @@ if TYPE_CHECKING:
     from etna.transforms.decomposition.stl import STLTransform
 
 
+def _get_borders_ts(ts: "TSDataset", start: Optional[str], end: Optional[str]) -> Tuple[str, str]:
+    """Get start and end parameters according to given TSDataset."""
+    if start is not None:
+        start_idx = ts.df.index.get_loc(start)
+    else:
+        start_idx = 0
+
+    if end is not None:
+        end_idx = ts.df.index.get_loc(end)
+    else:
+        end_idx = len(ts.df.index) - 1
+
+    if start_idx >= end_idx:
+        raise ValueError("Parameter 'end' must be greater than 'start'!")
+
+    return ts.df.index[start_idx], ts.df.index[end_idx]
+
+
 def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:
     """Get quantiles that are present inside the TSDataset."""
     cols = [col for col in ts.columns.get_level_values("feature").unique().tolist() if col.startswith("target_0.")]
@@ -569,6 +587,8 @@ def plot_anomalies(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -587,20 +607,26 @@ def plot_anomalies(
         number of subplots columns
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
-        segment_df = ts[:, segment, :][segment]
+        segment_df = ts[start:end, segment, :][segment]  # type: ignore
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
         ax[i].plot(segment_df.index.values, segment_df[in_column].values)
 
-        anomaly = sorted(anomaly)  # type: ignore
+        anomaly = [i for i in sorted(anomaly) if i in segment_df.index]  # type: ignore
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
@@ -689,6 +715,8 @@ def plot_anomalies_interactive(
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
     in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -709,6 +737,10 @@ def plot_anomalies_interactive(
         column to plot
     figsize:
         size of the figure in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
 
     Notes
     -----
@@ -733,7 +765,9 @@ def plot_anomalies_interactive(
 
     from etna.datasets import TSDataset
 
-    df = ts[:, segment, in_column]
+    start, end = _get_borders_ts(ts, start, end)
+
+    df = ts[start:end, segment, in_column]  # type: ignore
     ts = TSDataset(ts[:, segment, :], ts.freq)
     x, y = df.index.values, df.values
     cache = {}
@@ -751,7 +785,7 @@ def plot_anomalies_interactive(
         key = "_".join([str(val) for val in kwargs.values()])
         if key not in cache:
             anomalies = method(ts, **kwargs)[segment]
-            anomalies = sorted(anomalies)
+            anomalies = [i for i in sorted(anomalies) if i in df.index]
             cache[key] = anomalies
         else:
             anomalies = cache[key]
@@ -816,6 +850,8 @@ def plot_time_series_with_change_points(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot segments with their trend change points.
 
@@ -832,19 +868,28 @@ def plot_time_series_with_change_points(
         number of subplots columns
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
-        segment_df = ts[:, segment, :][segment]
+        segment_df = ts[start:end, segment, :][segment]  # type: ignore
         change_points_segment = change_points[segment]
 
         # plot each part of segment separately
         timestamp = segment_df.index.values
         target = segment_df["target"].values
+        change_points_segment = [
+            i for i in change_points_segment if pd.Timestamp(timestamp[0]) < i < pd.Timestamp(timestamp[-1])
+        ]
         all_change_points_segment = [pd.Timestamp(timestamp[0])] + change_points_segment + [pd.Timestamp(timestamp[-1])]
         for idx in range(len(all_change_points_segment) - 1):
             start_time = all_change_points_segment[idx]
@@ -1143,6 +1188,8 @@ def plot_imputation(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot the result of imputation by a given imputer.
 
@@ -1158,7 +1205,13 @@ def plot_imputation(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
@@ -1170,8 +1223,8 @@ def plot_imputation(
 
     for i, segment in enumerate(segments):
         # we want to capture nans at the beginning, so don't use `ts[:, segment, :]`
-        segment_before_df = ts.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
-        segment_after_df = ts_after.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+        segment_before_df = ts.to_pandas().loc[start:end, pd.IndexSlice[segment, feature_name]]  # type: ignore
+        segment_after_df = ts_after.to_pandas().loc[start:end, pd.IndexSlice[segment, feature_name]]  # type: ignore
 
         # plot result after imputation
         ax[i].plot(segment_after_df.index, segment_after_df)
@@ -1321,6 +1374,8 @@ def plot_holidays(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot holidays for segments.
 
@@ -1348,7 +1403,13 @@ def plot_holidays(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
@@ -1366,7 +1427,7 @@ def plot_holidays(
     df = ts.to_pandas()
 
     for i, segment in enumerate(segments):
-        segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+        segment_df = df.loc[start:end, pd.IndexSlice[segment, "target"]]  # type: ignore
         segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
 
         # plot target on segment
