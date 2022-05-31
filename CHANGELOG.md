@@ -41,22 +41,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 ### Fixed
 -
--
--
--
--
+- 
+- Fix bug when `ts.plot` does not save figure ([#714](https://github.com/tinkoff-ai/etna/pull/714))
+- 
+- 
 - Fix bug in plot_clusters ([#675](https://github.com/tinkoff-ai/etna/pull/675))
--
+- 
 - Fix bugs and documentation for cross_corr_plot ([#691](https://github.com/tinkoff-ai/etna/pull/691))
--
--
+- 
+- 
 - Fix bugs and documentation for plot_backtest and plot_backtest_interactive ([#700](https://github.com/tinkoff-ai/etna/pull/700))
--
--
--
--
--
--
+- 
+- 
+- 
+- 
+- 
+- 
 
 ## [1.9.0] - 2022-05-17
 ### Added
