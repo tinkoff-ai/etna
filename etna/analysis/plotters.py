@@ -1395,14 +1395,18 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
         ds = holidays[holidays["holiday"] == name]["ds"]
         dt = [ds]
         if "upper_window" in holidays.columns:
-            periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0] + 1
-            ds_upper_bound = pd.timedelta_range(start=0, periods=periods, freq=freq)
+            periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0]
+            if periods < 0:
+                raise ValueError("Upper windows should be positive.")
+            ds_upper_bound = pd.timedelta_range(start=0, periods=periods + 1, freq=freq)
             for bound in ds_upper_bound:
                 ds_add = ds + bound
                 dt.append(ds_add)
         if "lower_window" in holidays.columns:
-            periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0] + 1
-            ds_lower_bound = pd.timedelta_range(start=0, periods=periods, freq=freq)
+            periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0]
+            if periods > 0:
+                raise ValueError("Lower windows should be negative.")
+            ds_lower_bound = pd.timedelta_range(start=0, periods=abs(periods) + 1, freq=freq)
             for bound in ds_lower_bound:
                 ds_add = ds - bound
                 dt.append(ds_add)
@@ -1454,6 +1458,16 @@ def plot_holidays(
         start timestamp for plot
     end:
         end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        * Holiday nor pd.DataFrame or String.
+        * Holiday is an empty pd.DataFrame.
+        * `as_is=True` while holiday is String.
+        * If upper_window is negative.
+        * If lower_window is positive.
+
     """
     start, end = _get_borders_ts(ts, start, end)
 

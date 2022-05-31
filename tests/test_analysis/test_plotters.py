@@ -241,7 +241,7 @@ def test_create_holidays_df_upper_window(simple_df):
     assert df.sum().sum() == 3
 
 
-def test_create_holidays_df_upper_window_only(simple_df):
+def test_create_holidays_df_only_upper_window_in_range(simple_df):
     """Test if upper_window bounds are used even in case where holiday and TSDataset do not intersect."""
     holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2019-12-25"]), "upper_window": 10})
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
@@ -250,7 +250,7 @@ def test_create_holidays_df_upper_window_only(simple_df):
 
 def test_create_holidays_df_lower_upper_windows(simple_df):
     holidays = pd.DataFrame(
-        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "upper_window": 3, "lower_window": 3}
+        {"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "upper_window": 3, "lower_window": -3}
     )
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 7
@@ -265,7 +265,7 @@ def test_create_holidays_df_as_is(simple_df):
 def test_create_holidays_df_non_day_freq():
     classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="H")
     ts = TSDataset.to_dataset(classic_df)
-    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"], ), "upper_window": 3})
     df = _create_holidays_df(holidays, ts.index, as_is=False)
     assert df.sum().sum() == 4
 
@@ -273,14 +273,35 @@ def test_create_holidays_df_non_day_freq():
 def test_create_holidays_df_15t_freq():
     classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="15T")
     ts = TSDataset.to_dataset(classic_df)
-    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 3})
+    holidays = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01 01:00:00"]), "upper_window": 3})
     df = _create_holidays_df(holidays, ts.index, as_is=False)
     assert df.sum().sum() == 4
+    assert df.loc["2020-01-01 01:00:00":"2020-01-01 01:45:00"].sum().sum() == 4
 
 
 def test_create_holidays_df_several_holidays(simple_df):
-    christmas = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": 3})
+    christmas = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": -3})
     new_year = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01"]), "upper_window": 2})
     holidays = pd.concat((christmas, new_year))
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 7
+
+
+def test_create_holidays_df_zero_windows(simple_df):
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": 0, "upper_window": 0})
+    df = _create_holidays_df(holidays, simple_df.index, as_is=False)
+    assert df.sum().sum() == 1
+    assert df.loc["2020-01-07"].sum() == 1
+
+
+def test_create_holidays_df_upper_window_negative(simple_df):
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "upper_window": -1})
+    with pytest.raises(ValueError):
+        _create_holidays_df(holidays, simple_df.index, as_is=False)
+
+
+def test_create_holidays_df_lower_window_positive(simple_df):
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": 1})
+    with pytest.raises(ValueError):
+        _create_holidays_df(holidays, simple_df.index, as_is=False)
+
