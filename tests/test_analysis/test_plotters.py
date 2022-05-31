@@ -241,11 +241,24 @@ def test_create_holidays_df_upper_window(simple_df):
     assert df.sum().sum() == 3
 
 
-def test_create_holidays_df_only_upper_window_in_range(simple_df):
-    """Test if upper_window bounds are used even in case where holiday and TSDataset do not intersect."""
+def test_create_holidays_df_upper_window_out_of_index(simple_df):
     holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2019-12-25"]), "upper_window": 10})
     df = _create_holidays_df(holidays, simple_df.index, as_is=False)
     assert df.sum().sum() == 4
+
+
+def test_create_holidays_df_lower_window(simple_df):
+    holidays = pd.DataFrame({"holiday": "Christmas", "ds": pd.to_datetime(["2020-01-07"]), "lower_window": -2})
+    df = _create_holidays_df(holidays, simple_df.index, as_is=False)
+    assert df.sum().sum() == 3
+
+
+def test_create_holidays_df_lower_window_out_of_index(simple_df):
+    holidays = pd.DataFrame(
+        {"holiday": "Moscow Anime Festival", "ds": pd.to_datetime(["2020-02-22"]), "lower_window": -5}
+    )
+    df = _create_holidays_df(holidays, simple_df.index, as_is=False)
+    assert df.sum().sum() == 2
 
 
 def test_create_holidays_df_lower_upper_windows(simple_df):
