@@ -3,6 +3,7 @@ import math
 import warnings
 from copy import deepcopy
 from enum import Enum
+from functools import singledispatch
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -12,7 +13,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Tuple
-from typing import Type
 from typing import Union
 
 import holidays as holidays_lib
@@ -1354,7 +1354,17 @@ def plot_periodogram(
         ax.grid()  # type: ignore
 
 
-def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
+@singledispatch
+def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex, as_is: bool) -> pd.DataFrame:
+    raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+
+
+@_create_holidays_df.register
+def _create_holidays_df_str(holidays: str, index, as_is):
+    if as_is:
+        raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
+    timestamp = index.tolist()
+    country_holidays = holidays_lib.CountryHoliday(country=holidays)
     holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
     holiday_names = holiday_names.difference({None})
 
@@ -1368,6 +1378,44 @@ def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], time
     return holidays_df
 
 
+@_create_holidays_df.register
+def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
+    if holidays.empty:
+        raise ValueError("Got empty `holiday` pd.DataFrame.")
+
+    if as_is:
+        holidays_df = pd.DataFrame(index=index, columns=holidays.columns, data=False)
+        dt = holidays_df.index.intersection(holidays.index)
+        holidays_df.loc[dt, :] = holidays.loc[dt, :]
+        return holidays_df
+
+    holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)
+    for name in holidays["holiday"].unique():
+        freq = pd.infer_freq(index)
+        ds = holidays[holidays["holiday"] == name]["ds"]
+        dt = [ds]
+        if "upper_window" in holidays.columns:
+            periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0]
+            if periods < 0:
+                raise ValueError("Upper windows should be non-negative.")
+            ds_upper_bound = pd.timedelta_range(start=0, periods=periods + 1, freq=freq)
+            for bound in ds_upper_bound:
+                ds_add = ds + bound
+                dt.append(ds_add)
+        if "lower_window" in holidays.columns:
+            periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0]
+            if periods > 0:
+                raise ValueError("Lower windows should be non-positive.")
+            ds_lower_bound = pd.timedelta_range(start=0, periods=abs(periods) + 1, freq=freq)
+            for bound in ds_lower_bound:
+                ds_add = ds - bound
+                dt.append(ds_add)
+        dt = pd.concat(dt)
+        dt = holidays_df.index.intersection(dt)
+        holidays_df.loc[dt, name] = True
+    return holidays_df
+
+
 def plot_holidays(
     ts: "TSDataset",
     holidays: Union[str, pd.DataFrame],
@@ -1376,6 +1424,7 @@ def plot_holidays(
     figsize: Tuple[int, int] = (10, 5),
     start: Optional[str] = None,
     end: Optional[str] = None,
+    as_is: bool = False,
 ):
     """Plot holidays for segments.
 
@@ -1394,8 +1443,7 @@ def plot_holidays(
 
         * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
 
-        * | if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
-          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+        * if DataFrame, then dataframe is expected to be in prophet`s holiday format;
 
     segments:
         segments to use
@@ -1403,24 +1451,30 @@ def plot_holidays(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+    as_is:
+        * | Use this option if DataFrame is represented as a dataframe with a timestamp index and holiday names columns.
+          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
     start:
         start timestamp for plot
     end:
         end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        * Holiday nor pd.DataFrame or String.
+        * Holiday is an empty pd.DataFrame.
+        * `as_is=True` while holiday is String.
+        * If upper_window is negative.
+        * If lower_window is positive.
+
     """
     start, end = _get_borders_ts(ts, start, end)
 
     if segments is None:
         segments = sorted(ts.segments)
 
-    if isinstance(holidays, str):
-        holidays_df = _create_holidays_df(
-            country_holidays=holidays_lib.CountryHoliday(country=holidays), timestamp=ts.index.tolist()
-        )
-    elif isinstance(holidays, pd.DataFrame):
-        holidays_df = holidays
-    else:
-        raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+    holidays_df = _create_holidays_df(holidays, index=ts.index, as_is=as_is)
 
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
