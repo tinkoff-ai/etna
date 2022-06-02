@@ -3,6 +3,7 @@ from typing import Tuple
 import pandas as pd
 import pytest
 import scipy
+import numpy as np
 from numpy.random import RandomState
 from scipy.stats import norm
 
@@ -68,10 +69,10 @@ def splited_piecewise_constant_ts(
     segment_2 = [constant_2_1] * first_constant_len + [constant_2_2] * horizon * 2
 
     quantile = norm.ppf(q=(1 + INTERVAL_WIDTH) / 2)
-    se_1 = scipy.stats.sem([0.0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
-    se_2 = scipy.stats.sem([0.0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
-    lower = [x - se_1 * quantile for x in segment_1] + [x - se_2 * quantile for x in segment_2]
-    upper = [x + se_1 * quantile for x in segment_1] + [x + se_2 * quantile for x in segment_2]
+    sigma_1 = np.std([0.0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
+    sigma_2 = np.std([0.0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
+    lower = [x - sigma_1 * quantile for x in segment_1] + [x - sigma_2 * quantile for x in segment_2]
+    upper = [x + sigma_1 * quantile for x in segment_1] + [x + sigma_2 * quantile for x in segment_2]
 
     ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
     lower_p = (1 - INTERVAL_WIDTH) / 2
