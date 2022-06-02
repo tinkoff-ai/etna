@@ -230,7 +230,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
-        sigma = np.sqrt(np.std(residuals))
+        sigma = np.std(residuals)
         borders = []
         for quantile in quantiles:
             z_q = norm.ppf(q=quantile)
