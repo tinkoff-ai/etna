@@ -12,51 +12,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
-- Add plot_metric_per_segment ([#658](https://github.com/tinkoff-ai/etna/pull/658))
 -
 -
--
-- Add metric_per_segment_distribution_plot ([#666](https://github.com/tinkoff-ai/etna/pull/666))
+- Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
 -
 -
 -
 -
 -
+- Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
 -
-
+-
 ### Changed
 -
+- 
+- Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
+- 
+- Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
+- 
+- 
+- 
+- 
+- 
+- 
+- Add xticks parameter for plot_periodogram, clip frequencies to be >= 1 ([#706](https://github.com/tinkoff-ai/etna/pull/706))
+- 
+- 
+- 
+### Fixed
 -
--
--
--
--
--
--
--
--
--
--
-- Remove parameter normalize in linear models ([#686](https://github.com/tinkoff-ai/etna/pull/686))
--
--
+- 
+- Fix bug when `ts.plot` does not save figure ([#714](https://github.com/tinkoff-ai/etna/pull/714))
+- 
+- 
+- Fix bug in plot_clusters ([#675](https://github.com/tinkoff-ai/etna/pull/675))
+- 
+- Fix bugs and documentation for cross_corr_plot ([#691](https://github.com/tinkoff-ai/etna/pull/691))
+- 
+- 
+- Fix bugs and documentation for plot_backtest and plot_backtest_interactive ([#700](https://github.com/tinkoff-ai/etna/pull/700))
+- 
+- 
+- 
+- 
+- 
+- 
 
+## [1.9.0] - 2022-05-17
+### Added
+- Add plot_metric_per_segment ([#658](https://github.com/tinkoff-ai/etna/pull/658))
+- Add metric_per_segment_distribution_plot ([#666](https://github.com/tinkoff-ai/etna/pull/666))
+### Changed
+- Remove parameter normalize in linear models ([#686](https://github.com/tinkoff-ai/etna/pull/686))
 ### Fixed
 - Add missed `forecast_params` in forecast CLI method ([#671](https://github.com/tinkoff-ai/etna/pull/671))
 - Add `_per_segment_average` method to the Metric class ([#684](https://github.com/tinkoff-ai/etna/pull/684))
--
--
--
--
+- Fix `get_statistics_relevance_table` working with NaNs and categoricals ([#672](https://github.com/tinkoff-ai/etna/pull/672))
 - Fix bugs and documentation for stl_plot ([#685](https://github.com/tinkoff-ai/etna/pull/685))
--
--
--
--
--
--
--
--
+- Fix cuda docker images ([#694](https://github.com/tinkoff-ai/etna/pull/694)])
 
 ## [1.8.0] - 2022-04-28
 ### Added

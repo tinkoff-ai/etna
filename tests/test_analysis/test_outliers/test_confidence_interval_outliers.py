@@ -35,7 +35,7 @@ def test_get_anomalies_prediction_interval_interface(outliers_tsds, model, in_co
     """Test that `get_anomalies_prediction_interval` produces correct columns."""
     anomalies = get_anomalies_prediction_interval(outliers_tsds, model=model, interval_width=0.95, in_column=in_column)
     assert isinstance(anomalies, dict)
-    assert sorted(list(anomalies.keys())) == sorted(outliers_tsds.segments)
+    assert sorted(anomalies.keys()) == sorted(outliers_tsds.segments)
     for segment in anomalies.keys():
         assert isinstance(anomalies[segment], list)
         for date in anomalies[segment]:

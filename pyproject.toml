@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "1.8.0"
+version = "1.9.0"
 repository = "https://github.com/tinkoff-ai/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -46,6 +46,7 @@ ruptures = "1.1.5"
 numba = ">=0.53.1,<0.56.0"
 seaborn = "^0.11.1"
 statsmodels = ">=0.12,<0.14"
+pmdarima = ">=1.8.0"
 dill = "^0.3.4"
 toml = "^0.10.2"
 loguru = "^0.5.3"
@@ -88,6 +89,8 @@ black = {version = "21.9b0", optional = true}
 isort = {version = "^5.8.0", optional = true}
 flake8 = {version = "^3.9.2", optional = true}
 pep8-naming = {version = "^0.12.1", optional = true}
+flake8-bugbear = {version = "^22.4.25", optional = true}
+flake8-comprehensions = {version = "^3.9.0", optional = true}
 flake8-docstrings = {version = "^1.6.0", optional = true}
 mypy = {version = "^0.910", optional = true}
 types-PyYAML = {version = "^6.0.0", optional = true}
@@ -100,6 +103,7 @@ ipywidgets = {version = "^7.6.5", optional = true}
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
 
+
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
@@ -110,7 +114,7 @@ release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
 jupyter = ["jupyter", "nbconvert"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions"]
 
 all = [
     "prophet",
@@ -125,7 +129,7 @@ all-dev = [
     "click", "semver",
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
-    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell",
+    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions",
     "click", "semver",
     "jupyter", "nbconvert"
 ]
@@ -135,7 +139,7 @@ etna = "etna.commands.__main__:app"
 
 [tool.black]
 line-length = 120
-target-version = ['py36', 'py37', 'py38']
+target-version = ['py37', 'py38', 'py39']
 include = '\.pyi?$'
 exclude = '''
 /(
