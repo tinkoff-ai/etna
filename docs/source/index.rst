@@ -20,6 +20,7 @@ Welcome to ETNA's documentation
    settings
    arm
    api
+   release
 
 Indices and tables
 ==================
