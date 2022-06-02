@@ -231,11 +231,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
-        se = scipy.stats.sem(residuals)
+        sigma = np.sqrt(np.std(residuals))
         borders = []
         for quantile in quantiles:
             z_q = norm.ppf(q=quantile)
-            border = predictions[:, :, "target"] + se * z_q
+            border = predictions[:, :, "target"] + sigma * z_q
             border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
             borders.append(border)
 
