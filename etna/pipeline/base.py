@@ -13,7 +13,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import scipy
 from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
