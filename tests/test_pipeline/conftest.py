@@ -1,9 +1,8 @@
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
-import scipy
-import numpy as np
 from numpy.random import RandomState
 from scipy.stats import norm
 
