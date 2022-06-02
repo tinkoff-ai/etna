@@ -413,11 +413,15 @@ def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, mode, exp
 @pytest.mark.parametrize(
     "mask", (FoldMask("2020-01-01", "2020-01-02", ["2020-01-03"]), FoldMask("2020-01-03", "2020-01-05", ["2020-01-06"]))
 )
-def test_generate_folds_datasets(simple_ts: TSDataset, mask):
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts", "simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_generate_folds_datasets(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=simple_ts, masks=[mask], mode="constant")[0]
-    train, test = list(pipeline._generate_folds_datasets(simple_ts, [mask], 4))[0]
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant")[0]
+    train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
     assert train.index.min() == np.datetime64(mask.first_train_timestamp)
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
     assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
@@ -427,12 +431,16 @@ def test_generate_folds_datasets(simple_ts: TSDataset, mask):
 @pytest.mark.parametrize(
     "mask", (FoldMask(None, "2020-01-02", ["2020-01-03"]), FoldMask(None, "2020-01-05", ["2020-01-06"]))
 )
-def test_generate_folds_datasets_without_first_date(simple_ts: TSDataset, mask):
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts", "simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work without first date."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=simple_ts, masks=[mask], mode="constant")[0]
-    train, test = list(pipeline._generate_folds_datasets(simple_ts, [mask], 4))[0]
-    assert train.index.min() == np.datetime64(simple_ts.index.min())
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant")[0]
+    train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
+    assert train.index.min() == np.datetime64(ts.index.min())
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
     assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
     assert test.index.max() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(4, "D")
