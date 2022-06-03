@@ -1,7 +1,7 @@
-import pandas as pd
-from typing import List
-import tbats
 from etna.models.base import BaseAdapter, PerSegmentPredictionIntervalModel
+import pandas as pd
+import tbats
+from typing import List
 
 class _TBATSAdapter(BaseAdapter):
     def __init__(self, model):

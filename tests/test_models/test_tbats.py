@@ -1,10 +1,10 @@
-import pandas as pd
-import pytest
-import numpy as np
 from etna.datasets import TSDataset
 from etna.metrics import MSE
 from etna.models.tbats import TBATSPerSegmentModel, BATSPerSegmentModel
 from etna.transforms import LagTransform
+import numpy as np
+import pandas as pd
+import pytest
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 
 
