@@ -81,3 +81,38 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
     return 100 * np.mean(
         2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps)
     )
+
+
+def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
+    """
+    Sign metric
+
+    .. math ::
+    Sign = \frac{1}{n} sum_{i=0}^{n} {sign(y_true_i - y_pred_i)}
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    Returns
+    -------
+    float
+        A floating point value (the best value is 0.0).
+    """
+
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    return np.mean(np.sign(y_true_array - y_pred_array))
+
+
