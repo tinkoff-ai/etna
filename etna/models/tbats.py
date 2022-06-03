@@ -38,19 +38,36 @@ class _TBATSAdapter(BaseAdapter):
 
 class _TBATSPerSegmentModel(PerSegmentPredictionIntervalModel):
     def __int__(self, model):
-        self.adapter = _TBATSAdapter(model)
-        super().__init__(base_model=self.adapter)
+        super().__init__(base_model=model)
 
 
 class BATSPerSegmentModel(_TBATSPerSegmentModel):
+    """
+    Class for holding per segment interval BATS model for
+    """
     def __init__(self, **kwargs):
+        """
+        Parameters
+        ----------
+        kwargs
+            Parameters for BATS model
+        """
         self.kwargs = kwargs
         self.model = tbats.BATS(**kwargs)
         super().__init__(_TBATSAdapter(self.model))
 
 
 class TBATSPerSegmentModel(_TBATSPerSegmentModel):
+    """
+        Class for holding per segment interval TBATS model for
+    """
     def __init__(self, **kwargs):
+        """
+        Parameters
+        ----------
+        kwargs
+            Parameters for TBATS model
+        """
         self.kwargs = kwargs
         self.model = tbats.TBATS(**kwargs)
         super().__init__(_TBATSAdapter(self.model))
