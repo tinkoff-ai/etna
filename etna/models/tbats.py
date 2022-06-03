@@ -1,7 +1,8 @@
 from typing import List
 
 import pandas as pd
-import tbats
+from tbats import BATS
+from tbats import TBATS
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
@@ -45,6 +46,7 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
     """
     Class for holding per segment interval BATS model for
     """
+
     def __init__(self, **kwargs):
         """
         Parameters
@@ -53,14 +55,15 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
             Parameters for BATS model
         """
         self.kwargs = kwargs
-        self.model = tbats.BATS(**kwargs)
+        self.model = BATS(**kwargs)
         super().__init__(_TBATSAdapter(self.model))
 
 
 class TBATSPerSegmentModel(_TBATSPerSegmentModel):
     """
-        Class for holding per segment interval TBATS model for
+    Class for holding per segment interval TBATS model for
     """
+
     def __init__(self, **kwargs):
         """
         Parameters
@@ -69,5 +72,5 @@ class TBATSPerSegmentModel(_TBATSPerSegmentModel):
             Parameters for TBATS model
         """
         self.kwargs = kwargs
-        self.model = tbats.TBATS(**kwargs)
+        self.model = TBATS(**kwargs)
         super().__init__(_TBATSAdapter(self.model))
