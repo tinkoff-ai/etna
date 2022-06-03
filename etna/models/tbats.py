@@ -46,7 +46,7 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
     """Class for holding segment interval BATS model."""
 
     def __init__(self, **kwargs):
-        """
+        """Create BATSPerSegmentModel with given parameters.
         Parameters
         ----------
         kwargs
@@ -61,7 +61,7 @@ class TBATSPerSegmentModel(_TBATSPerSegmentModel):
     """Class for holding segment interval TBATS model."""
 
     def __init__(self, **kwargs):
-        """
+        """Create TBATSPerSegmentModel with given parameters.
         Parameters
         ----------
         kwargs
