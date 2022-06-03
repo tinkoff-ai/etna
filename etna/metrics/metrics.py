@@ -184,7 +184,7 @@ class Sign(Metric):
     Sign metric
 
     ..math::
-        Sign = \\frac{1}{n}\\sum_{i=0}^{n}{sign(y\_true_i - y\_pred_i)}
+        Sign = \\frac{\\sum_{i=0}^{n-1}{sign(y\_true_i - y\_pred_i)}}{n}
     """
 
     def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
