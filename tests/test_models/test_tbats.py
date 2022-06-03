@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
-from etna.metrics import MSE
+from etna.metrics import MAE
 from etna.models.tbats import BATSPerSegmentModel
 from etna.models.tbats import TBATSPerSegmentModel
 from etna.transforms import LagTransform
@@ -19,19 +19,20 @@ def linear_segments_ts_unique(random_seed):
 
 @pytest.fixture()
 def sinusoid_ts():
-    horizon = 2
+    horizon = 14
+    periods = 100
     sinusoid_ts_1 = pd.DataFrame(
         {
-            "segment": np.zeros(8),
-            "timestamp": pd.date_range(start="1/1/2018", end="1/08/2018"),
-            "target": [np.sin(i) for i in range(8)],
+            "segment": np.zeros(periods),
+            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
+            "target": [np.sin(i) for i in range(periods)],
         }
     )
     sinusoid_ts_2 = pd.DataFrame(
         {
-            "segment": np.ones(8),
-            "timestamp": pd.date_range(start="1/1/2018", end="1/08/2018"),
-            "target": [np.sin(i + 1) for i in range(8)],
+            "segment": np.ones(periods),
+            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
+            "target": [np.sin(i + 1) for i in range(periods)],
         }
     )
     df = pd.concat((sinusoid_ts_1, sinusoid_ts_2))
@@ -70,21 +71,18 @@ def test_format(model, new_format_df):
     model.fit(ts)
     future_ts = ts.make_future(3)
     model.forecast(future_ts)
-    if not future_ts.isnull().values.any():
-        assert True
-    else:
-        assert False
+    assert not future_ts.isnull().values.any()
 
 
 @pytest.mark.parametrize("model", [TBATSPerSegmentModel(), BATSPerSegmentModel()])
 def test_dummy(model, sinusoid_ts):
     train, test = sinusoid_ts
     model.fit(train)
-    future_ts = train.make_future(2)
+    future_ts = train.make_future(14)
     y_pred = model.forecast(future_ts)
-    metric = MSE(mode="macro")
+    metric = MAE("macro")
     value_metric = metric(y_pred, test)
-    assert value_metric < 4
+    assert value_metric < 0.33
 
 
 @pytest.mark.parametrize("model", [TBATSPerSegmentModel(), BATSPerSegmentModel()])

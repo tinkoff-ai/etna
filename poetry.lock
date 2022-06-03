@@ -3011,7 +3011,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <3.10.0"
-content-hash = "0c9b283035a3dfef33377fe49b11b8f0699e2ba871c6f0aeadbf7bfb055b3f1f"
+content-hash = "58655551ea12485e1a40460e681b5f0bc4de34a11b7811c53bab1ed6c398fc76"
 
 [metadata.files]
 absl-py = [
