@@ -4,8 +4,8 @@ from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
+from etna.metrics import sign
 from etna.metrics import smape
-from etna.metrics.functional_metrics import sign
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 
@@ -184,7 +184,7 @@ class Sign(Metric):
     Sign metric
 
     ..math::
-        Sign = \frac{1}{n} sum_{i=0}^{n} {sign(y_true_i - y_pred_i)}
+        Sign = \\frac{1}{n}\\sum_{i=0}^{n} {sign(y\_true_i - y\_pred_i)}
     """
 
     def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
@@ -201,8 +201,6 @@ class Sign(Metric):
         """
 
         super().__init__(mode=mode, metric_fn=sign, **kwargs)
-
-
 
 
 __all__ = ["MAE", "MSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign"]

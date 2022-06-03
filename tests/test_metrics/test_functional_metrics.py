@@ -6,8 +6,8 @@ from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
-from etna.metrics import smape
 from etna.metrics import sign
+from etna.metrics import smape
 
 
 @pytest.fixture()
@@ -26,7 +26,8 @@ def y_pred_1d():
 
 
 @pytest.mark.parametrize(
-    "metric, right_metrics_value", ((mae, 1), (mse, 1), (mape, 100), (smape, 66.6666666667), (medae, 1), (r2_score, 0), (sign, -1))
+    "metric, right_metrics_value",
+    ((mae, 1), (mse, 1), (mape, 100), (smape, 66.6666666667), (medae, 1), (r2_score, 0), (sign, -1)),
 )
 def test_all_1d_metrics(metric, right_metrics_value, y_true_1d, y_pred_1d):
     assert round(metric(y_true_1d, y_pred_1d), 10) == right_metrics_value

@@ -8,8 +8,8 @@ from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
-from etna.metrics import smape
 from etna.metrics import sign
+from etna.metrics import smape
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE

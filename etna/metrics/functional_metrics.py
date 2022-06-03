@@ -114,5 +114,3 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
         raise ValueError("Shapes of the labels must be the same")
 
     return np.mean(np.sign(y_true_array - y_pred_array))
-
-
