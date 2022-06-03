@@ -84,8 +84,7 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
 
 
 def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
-    """
-    Sign metric
+    """Sign metric.
 
     .. math ::
     Sign = \\frac{\\sum_{i=0}^{n-1}{sign(y\_true_i - y\_pred_i)}}{n}
@@ -107,7 +106,6 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
     float
         A floating point value (the best value is 0.0).
     """
-
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
     if len(y_true_array.shape) != len(y_pred_array.shape):

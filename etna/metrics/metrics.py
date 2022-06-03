@@ -63,7 +63,6 @@ class R2(Metric):
 
     .. math::
         R^2(y\_true, y\_pred) = 1 - \\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{\\sum_{i=0}^{n-1}{(y\_true_i - \\overline{y\_true})^2}}
-
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
@@ -180,15 +179,17 @@ class MSLE(Metric):
 
 
 class Sign(Metric):
-    """
-    Sign metric
+    """Sign metric.
 
     ..math::
         Sign = \\frac{\\sum_{i=0}^{n-1}{sign(y\_true_i - y\_pred_i)}}{n}
+
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
     """
 
     def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
-
         """Init metric.
 
         Parameters
@@ -197,9 +198,7 @@ class Sign(Metric):
             metrics aggregation mode
         kwargs:
             metric's computation arguments
-
         """
-
         super().__init__(mode=mode, metric_fn=sign, **kwargs)
 
 
