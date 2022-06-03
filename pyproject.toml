@@ -64,6 +64,7 @@ plotly = "*"
 hydra_slayer = "*"
 matplotlib = "*"
 typing_extensions = "*"
+tbats = "*"
 
 prophet = {version = "^1.0", optional = true}
 
