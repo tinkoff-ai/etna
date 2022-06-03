@@ -88,7 +88,7 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
     Sign metric
 
     .. math ::
-    Sign = \frac{1}{n} sum_{i=0}^{n} {sign(y_true_i - y_pred_i)}
+    Sign = \\frac{1}{n}\\sum_{i=0}^{n}{sign(y\_true_i - y\_pred_i)}
 
     Parameters
     ----------
