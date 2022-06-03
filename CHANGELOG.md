@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
--
+- Add Sign metric ([#632](https://github.com/tinkoff-ai/etna/issues/632))
 -
 -
 -
