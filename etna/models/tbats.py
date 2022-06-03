@@ -1,7 +1,11 @@
-from etna.models.base import BaseAdapter, PerSegmentPredictionIntervalModel
+from typing import List
+
 import pandas as pd
 import tbats
-from typing import List
+
+from etna.models.base import BaseAdapter
+from etna.models.base import PerSegmentPredictionIntervalModel
+
 
 class _TBATSAdapter(BaseAdapter):
     def __init__(self, model):
@@ -18,14 +22,14 @@ class _TBATSAdapter(BaseAdapter):
         if prediction_interval:
             for quantile in quantiles:
                 pred, confidence_intervals = self.fitted_model.forecast(steps=df.shape[0], confidence_level=quantile)
-                y_pred['target'] = pred
-                if quantile < 1/2:
-                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals['lower_bound']
+                y_pred["target"] = pred
+                if quantile < 1 / 2:
+                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
                 else:
-                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals['upper_bound']
+                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
         else:
             pred = self.fitted_model.forecast(steps=df.shape[0])
-            y_pred['target'] = pred
+            y_pred["target"] = pred
         return y_pred
 
     def get_model(self):
@@ -43,6 +47,7 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
         self.kwargs = kwargs
         self.model = tbats.BATS(**kwargs)
         super().__init__(_TBATSAdapter(self.model))
+
 
 class TBATSPerSegmentModel(_TBATSPerSegmentModel):
     def __init__(self, **kwargs):
