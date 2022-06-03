@@ -17,6 +17,6 @@ from etna.metrics.metrics import MedAE
 from etna.metrics.metrics import MSE
 from etna.metrics.metrics import MSLE
 from etna.metrics.metrics import R2
-from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import Sign
+from etna.metrics.metrics import SMAPE
 from etna.metrics.utils import compute_metrics
