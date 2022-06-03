@@ -43,8 +43,7 @@ class _TBATSPerSegmentModel(PerSegmentPredictionIntervalModel):
 
 
 class BATSPerSegmentModel(_TBATSPerSegmentModel):
-    """Class for holding per segment interval BATS model for
-    """
+    """Class for holding per segment interval BATS model for"""
 
     def __init__(self, **kwargs):
         """
@@ -59,8 +58,7 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
 
 
 class TBATSPerSegmentModel(_TBATSPerSegmentModel):
-    """Class for holding per segment interval TBATS model for
-    """
+    """Class for holding per segment interval TBATS model for"""
 
     def __init__(self, **kwargs):
         """
