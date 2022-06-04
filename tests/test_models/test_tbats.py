@@ -73,8 +73,6 @@ def test_reper(model_class, model_class_repr):
     model = model_class(**kwargs)
     model_repr = model.__repr__()
     true_repr = f"{model_class_repr}({kwargs_repr}, )"
-    print(model_repr)
-    print(true_repr)
     assert model_repr == true_repr
 
 
