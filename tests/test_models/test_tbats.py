@@ -46,11 +46,35 @@ def sinusoid_ts():
     ((TBATSPerSegmentModel, "TBATSPerSegmentModel"), (BATSPerSegmentModel, "BATSPerSegmentModel")),
 )
 def test_reper(model_class, model_class_repr):
-    kwargs = {"seasonal_periods": [14, 30.5]}
-    kwargs_repr = "seasonal_periods = [14, 30.5]"
+    kwargs = {
+        "use_box_cox": None,
+        "box_cox_bounds": None,
+        "use_trend": None,
+        "use_damped_trend": None,
+        "seasonal_periods": None,
+        "use_arma_errors": None,
+        "show_warnings": None,
+        "n_jobs": None,
+        "multiprocessing_start_method": None,
+        "context": None,
+    }
+    kwargs_repr = (
+        "use_box_cox = None, "
+        + "box_cox_bounds = None, "
+        + "use_trend = None, "
+        + "use_damped_trend = None, "
+        + "seasonal_periods = None, "
+        + "use_arma_errors = None, "
+        + "show_warnings = None, "
+        + "n_jobs = None, "
+        + "multiprocessing_start_method = None, "
+        + "context = None"
+    )
     model = model_class(**kwargs)
     model_repr = model.__repr__()
     true_repr = f"{model_class_repr}({kwargs_repr}, )"
+    print(model_repr)
+    print(true_repr)
     assert model_repr == true_repr
 
 
