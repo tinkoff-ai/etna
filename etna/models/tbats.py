@@ -5,6 +5,7 @@ from typing import Optional
 import pandas as pd
 from tbats.abstract import ContextInterface
 from tbats.abstract import Estimator
+from tbats.abstract import Model
 from tbats.bats import BATS
 from tbats.tbats import TBATS
 
@@ -15,7 +16,7 @@ from etna.models.base import PerSegmentPredictionIntervalModel
 class _TBATSAdapter(BaseAdapter):
     def __init__(self, model: Estimator):
         self.model = model
-        self.fitted_model = None
+        self.fitted_model: Model = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]):
         target = df["target"]
