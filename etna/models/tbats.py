@@ -1,16 +1,19 @@
+from typing import Iterable
 from typing import List
+from typing import Optional
 
 import pandas as pd
-from tbats import BATS
-from tbats import TBATS
-from tbats.abstract import Model
+from tbats.abstract import ContextInterface
+from tbats.abstract import Estimator
+from tbats.bats import BATS
+from tbats.tbats import TBATS
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 
 
 class _TBATSAdapter(BaseAdapter):
-    def __init__(self, model):
+    def __init__(self, model: Estimator):
         self.model = model
         self.fitted_model = None
 
@@ -19,7 +22,7 @@ class _TBATSAdapter(BaseAdapter):
         self.fitted_model = self.model.fit(target)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: List[int]) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: List[float]) -> pd.DataFrame:
         y_pred = pd.DataFrame()
         if prediction_interval:
             for quantile in quantiles:
@@ -34,12 +37,12 @@ class _TBATSAdapter(BaseAdapter):
             y_pred["target"] = pred
         return y_pred
 
-    def get_model(self) -> Model:
+    def get_model(self) -> Estimator:
         return self.model
 
 
 class _TBATSPerSegmentModel(PerSegmentPredictionIntervalModel):
-    def __int__(self, model):
+    def __int__(self, model: Estimator):
         super().__init__(base_model=model)
 
 
@@ -48,16 +51,16 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
 
     def __init__(
         self,
-        use_box_cox=None,
-        box_cox_bounds=(0, 1),
-        use_trend=None,
-        use_damped_trend=None,
-        seasonal_periods=None,
-        use_arma_errors=True,
-        show_warnings=True,
-        n_jobs=None,
-        multiprocessing_start_method="spawn",
-        context=None,
+        use_box_cox: Optional[bool] = None,
+        box_cox_bounds: Optional[tuple] = (0, 1),
+        use_trend: Optional[bool] = None,
+        use_damped_trend: Optional[bool] = None,
+        seasonal_periods: Optional[Iterable[int]] = None,
+        use_arma_errors: Optional[bool] = True,
+        show_warnings: Optional[bool] = True,
+        n_jobs: Optional[int] = None,
+        multiprocessing_start_method: Optional[str] = "spawn",
+        context: Optional[ContextInterface] = None,
     ):
         """Create BATSPerSegmentModel with given parameters.
         Parameters
@@ -114,16 +117,16 @@ class TBATSPerSegmentModel(_TBATSPerSegmentModel):
 
     def __init__(
         self,
-        use_box_cox=None,
-        box_cox_bounds=(0, 1),
-        use_trend=None,
-        use_damped_trend=None,
-        seasonal_periods=None,
-        use_arma_errors=True,
-        show_warnings=True,
-        n_jobs=None,
-        multiprocessing_start_method="spawn",
-        context=None,
+        use_box_cox: Optional[bool] = None,
+        box_cox_bounds: Optional[tuple] = (0, 1),
+        use_trend: Optional[bool] = None,
+        use_damped_trend: Optional[bool] = None,
+        seasonal_periods: Optional[Iterable[int]] = None,
+        use_arma_errors: Optional[bool] = True,
+        show_warnings: Optional[bool] = True,
+        n_jobs: Optional[int] = None,
+        multiprocessing_start_method: Optional[str] = "spawn",
+        context: Optional[ContextInterface] = None,
     ):
         """Create TBATSPerSegmentModel with given parameters.
         Parameters
