@@ -99,6 +99,3 @@ class FilterFeaturesTransform(Transform):
             dataset before transformation
         """
         return pd.concat([df, self._df_removed], axis=1)
-
-
-
