@@ -1,5 +1,4 @@
 from typing import Iterable
-from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -18,12 +17,12 @@ class _TBATSAdapter(BaseAdapter):
         self.model = model
         self._fitted_model: Optional[Model] = None
 
-    def fit(self, df: pd.DataFrame, regressors: List[str]):
+    def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
         target = df["target"]
         self._fitted_model = self.model.fit(target)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: List[float]) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
         if self._fitted_model is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
         y_pred = pd.DataFrame()
