@@ -523,3 +523,21 @@ def test_backtest_nans_at_beginning(ts_name, request):
         metrics=[MAE()],
         n_folds=2,
     )
+
+
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_backtest_nans_at_beginning_with_mask(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    mask = FoldMask(
+        ts.index.min(),
+        ts.index.min() + np.timedelta64(5, "D"),
+        [ts.index.min() + np.timedelta64(6, "D"), ts.index.min() + np.timedelta64(8, "D")],
+    )
+    pipeline = Pipeline(model=NaiveModel(), horizon=3)
+    _ = pipeline.backtest(
+        ts=ts,
+        metrics=[MAE()],
+        n_folds=[mask],
+    )
