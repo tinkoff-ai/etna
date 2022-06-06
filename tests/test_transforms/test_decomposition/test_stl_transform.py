@@ -43,7 +43,7 @@ def df_trend_seasonal_one_segment() -> pd.DataFrame:
 
 
 @pytest.fixture
-def df_trend_seasonal_nan_begins_one_segment(df_trend_seasonal_one_segment) -> pd.DataFrame:
+def df_trend_seasonal_starting_with_nans_one_segment(df_trend_seasonal_one_segment) -> pd.DataFrame:
     result = df_trend_seasonal_one_segment.copy()
     result.iloc[:2] = np.NaN
     return result
@@ -60,7 +60,7 @@ def ts_trend_seasonal() -> TSDataset:
 
 
 @pytest.fixture
-def ts_trend_seasonal_nan_begins() -> TSDataset:
+def ts_trend_seasonal_starting_with_nans() -> TSDataset:
     df_1 = get_one_df(coef=0.1, period=7, magnitude=1)
     df_1["segment"] = "segment_1"
 
@@ -88,7 +88,9 @@ def ts_trend_seasonal_nan_tails() -> TSDataset:
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-@pytest.mark.parametrize("df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_nan_begins_one_segment"])
+@pytest.mark.parametrize(
+    "df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_starting_with_nans_one_segment"]
+)
 def test_transform_one_segment(df_name, model, request):
     """Test that transform for one segment removes trend and seasonality."""
     df = request.getfixturevalue(df_name)
@@ -100,7 +102,7 @@ def test_transform_one_segment(df_name, model, request):
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_nan_begins"])
+@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans"])
 def test_transform_multi_segments(ts_name, model, request):
     """Test that transform for all segments removes trend and seasonality."""
     ts = request.getfixturevalue(ts_name)
@@ -113,7 +115,9 @@ def test_transform_multi_segments(ts_name, model, request):
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-@pytest.mark.parametrize("df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_nan_begins_one_segment"])
+@pytest.mark.parametrize(
+    "df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_starting_with_nans_one_segment"]
+)
 def test_inverse_transform_one_segment(df_name, model, request):
     """Test that transform + inverse_transform don't change dataframe."""
     df = request.getfixturevalue(df_name)
@@ -124,7 +128,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_nan_begins"])
+@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans"])
 def test_inverse_transform_multi_segments(ts_name, model, request):
     """Test that transform + inverse_transform don't change tsdataset."""
     ts = request.getfixturevalue(ts_name)
