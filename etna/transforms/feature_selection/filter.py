@@ -9,7 +9,12 @@ from etna.transforms.base import Transform
 class FilterFeaturesTransform(Transform):
     """Filters features in each segment of the dataframe."""
 
-    def __init__(self, include: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]] = None):
+    def __init__(
+        self,
+        include: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        return_features: bool = False,
+    ):
         """Create instance of FilterFeaturesTransform.
 
         Parameters
@@ -18,7 +23,8 @@ class FilterFeaturesTransform(Transform):
             list of columns to pass through filter
         exclude:
             list of columns to not pass through
-
+        return_features:
+            bool, indicates whether to return features or not.
         Raises
         ------
         ValueError:
@@ -26,6 +32,8 @@ class FilterFeaturesTransform(Transform):
         """
         self.include: Optional[Sequence[str]] = None
         self.exclude: Optional[Sequence[str]] = None
+        self.return_features: bool = return_features
+        self._df_removed: pd.DataFrame = pd.DataFrame()
         if include is not None and exclude is None:
             self.include = list(set(include))
         elif exclude is not None and include is None:
@@ -67,8 +75,27 @@ class FilterFeaturesTransform(Transform):
                 raise ValueError(f"Features {set(self.include) - set(features)} are not present in the dataset.")
             segments = sorted(set(df.columns.get_level_values("segment")))
             result = result.loc[:, pd.IndexSlice[segments, self.include]]
+            if self.return_features:
+                self._df_removed = df.drop(result.columns, axis=1).copy()
         if self.exclude is not None and self.exclude:
             if not set(self.exclude).issubset(features):
                 raise ValueError(f"Features {set(self.exclude) - set(features)} are not present in the dataset.")
             result = result.drop(columns=self.exclude, level="feature")
+            if self.return_features:
+                self._df_removed = df.drop(result.columns, axis=1).copy()
         return result
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply inverse transform method of transforms to the data.
+
+        Parameters
+        ----------
+        df:
+            transformed dataframe
+
+        Returns
+        -------
+        retult: pd.DataFrame
+            dataset before transformation
+        """
+        return pd.concat([df, self._df_removed], axis=1)
