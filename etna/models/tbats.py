@@ -5,9 +5,9 @@ from typing import Optional
 import pandas as pd
 from tbats.abstract import ContextInterface
 from tbats.abstract import Estimator
-from tbats.abstract import Model
 from tbats.bats import BATS
 from tbats.tbats import TBATS
+from tbats.tbats.Model import Model
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
@@ -16,25 +16,27 @@ from etna.models.base import PerSegmentPredictionIntervalModel
 class _TBATSAdapter(BaseAdapter):
     def __init__(self, model: Estimator):
         self.model = model
-        self.fitted_model: Model = None
+        self._fitted_model: Optional[Model] = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]):
         target = df["target"]
-        self.fitted_model = self.model.fit(target)
+        self._fitted_model = self.model.fit(target)
         return self
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: List[float]) -> pd.DataFrame:
+        if self._fitted_model is None:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
         y_pred = pd.DataFrame()
         if prediction_interval:
             for quantile in quantiles:
-                pred, confidence_intervals = self.fitted_model.forecast(steps=df.shape[0], confidence_level=quantile)
+                pred, confidence_intervals = self._fitted_model.forecast(steps=df.shape[0], confidence_level=quantile)
                 y_pred["target"] = pred
                 if quantile < 1 / 2:
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
                 else:
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
         else:
-            pred = self.fitted_model.forecast(steps=df.shape[0])
+            pred = self._fitted_model.forecast(steps=df.shape[0])
             y_pred["target"] = pred
         return y_pred
 
