@@ -54,8 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - Fix tiny prediction intervals ([#722](https://github.com/tinkoff-ai/etna/pull/722))
-- 
 - Fix deepcopy issue for fitted deepmodel ([#735](https://github.com/tinkoff-ai/etna/pull/735))
+- Fix making backtest if all segments start with NaNs ([#728](https://github.com/tinkoff-ai/etna/pull/728))
 - 
 
 ## [1.9.0] - 2022-05-17

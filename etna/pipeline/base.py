@@ -88,7 +88,7 @@ class FoldMask(BaseMixin):
         dataset_timestamps = list(ts.index)
         dataset_description = ts.describe()
 
-        min_first_timestamp = dataset_description["start_timestamp"].min()
+        min_first_timestamp = ts.index.min()
         if self.first_train_timestamp and self.first_train_timestamp < min_first_timestamp:
             raise ValueError(f"First train timestamp should be later than {min_first_timestamp}!")
 
