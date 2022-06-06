@@ -110,7 +110,6 @@ def test_transform_multi_segments(ts_name, model, request):
     ts.fit_transform(transforms=[transform])
     df_transformed = ts.to_pandas(flatten=True)
     np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
-    # np.testing.assert_allclose(ts[:, :, "target"], 0, atol=0.2)
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
