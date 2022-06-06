@@ -148,7 +148,9 @@ class _OneSegmentSTLTransform(Transform):
         result = df.copy()
         if self.fit_results is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
-        season_trend = self.fit_results.get_prediction(start=df.index.min(), end=df.index.max()).predicted_mean
+        season_trend = self.fit_results.get_prediction(
+            start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
+        ).predicted_mean
         result[self.in_column] += season_trend
         if self.in_column == "target":
             quantiles = match_target_quantiles(set(result.columns))
