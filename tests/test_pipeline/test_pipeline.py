@@ -510,3 +510,16 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     features = forecast_df.columns.get_level_values(1)
     assert f"target_{quantiles[0]}" in features
     assert f"target_{quantiles[1]}" in features
+
+
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_backtest_nans_at_beginning(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    pipeline = Pipeline(model=NaiveModel(), horizon=2)
+    _ = pipeline.backtest(
+        ts=ts,
+        metrics=[MAE()],
+        n_folds=2,
+    )
