@@ -1,6 +1,7 @@
 import warnings
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -40,7 +41,11 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
     """
 
     def __init__(
-        self, model: TreeBasedRegressor, top_k: int, features_to_use: Union[List[str], Literal["all"]] = "all"
+        self,
+        model: TreeBasedRegressor,
+        top_k: int,
+        features_to_use: Union[List[str], Literal["all"]] = "all",
+        return_features: bool = False,
     ):
         """
         Init TreeFeatureSelectionTransform.
@@ -57,7 +62,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
-        super().__init__(features_to_use=features_to_use)
+        super().__init__(features_to_use=features_to_use, return_features=return_features)
         self.model = model
         self.top_k = top_k
 
@@ -124,6 +129,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
         atol: float = 1e-10,
+        return_features: Optional[bool] = False,
         **relevance_params,
     ):
         """
@@ -148,7 +154,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
 
-        super().__init__(features_to_use=features_to_use)
+        super().__init__(features_to_use=features_to_use, return_features=return_features)
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.relevance_aggregation_mode = relevance_aggregation_mode
