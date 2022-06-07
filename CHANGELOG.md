@@ -9,20 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
--
--
--
--
--
+- 
+- Make feature selection transforms return columns in inverse_transform([#688](https://github.com/tinkoff-ai/etna/issues/688))
+- 
+- 
+- 
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
--
--
--
--
--
+- 
+- 
+- 
+- 
+- 
 - Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
--
--
+- 
+- 
 ### Changed
 -
 - 

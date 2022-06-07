@@ -1,7 +1,6 @@
 import warnings
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -129,7 +128,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
         atol: float = 1e-10,
-        return_features: Optional[bool] = False,
+        return_features: bool = False,
         **relevance_params,
     ):
         """

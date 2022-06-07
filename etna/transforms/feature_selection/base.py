@@ -13,9 +13,7 @@ from etna.transforms import Transform
 class BaseFeatureSelectionTransform(Transform, ABC):
     """Base class for feature selection transforms."""
 
-    def __init__(
-        self, features_to_use: Union[List[str], Literal["all"]] = "all", return_features: Optional[bool] = False
-    ):
+    def __init__(self, features_to_use: Union[List[str], Literal["all"]] = "all", return_features: bool = False):
         self.features_to_use = features_to_use
         self.selected_features: List[str] = []
         self.return_features = return_features
