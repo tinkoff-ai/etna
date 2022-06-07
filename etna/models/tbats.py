@@ -1,5 +1,6 @@
 from typing import Iterable
 from typing import Optional
+from typing import Tuple
 
 import pandas as pd
 from tbats.abstract import ContextInterface
@@ -54,14 +55,14 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
     def __init__(
         self,
         use_box_cox: Optional[bool] = None,
-        box_cox_bounds: Optional[tuple] = (0, 1),
+        box_cox_bounds: Tuple[int, int] = (0, 1),
         use_trend: Optional[bool] = None,
         use_damped_trend: Optional[bool] = None,
         seasonal_periods: Optional[Iterable[int]] = None,
-        use_arma_errors: Optional[bool] = True,
-        show_warnings: Optional[bool] = True,
+        use_arma_errors: bool = True,
+        show_warnings: bool = True,
         n_jobs: Optional[int] = None,
-        multiprocessing_start_method: Optional[str] = "spawn",
+        multiprocessing_start_method: str = "spawn",
         context: Optional[ContextInterface] = None,
     ):
         """Create BATSPerSegmentModel with given parameters.
@@ -120,14 +121,14 @@ class TBATSPerSegmentModel(_TBATSPerSegmentModel):
     def __init__(
         self,
         use_box_cox: Optional[bool] = None,
-        box_cox_bounds: Optional[tuple] = (0, 1),
+        box_cox_bounds: Tuple[int, int] = (0, 1),
         use_trend: Optional[bool] = None,
         use_damped_trend: Optional[bool] = None,
         seasonal_periods: Optional[Iterable[int]] = None,
-        use_arma_errors: Optional[bool] = True,
-        show_warnings: Optional[bool] = True,
+        use_arma_errors: bool = True,
+        show_warnings: bool = True,
         n_jobs: Optional[int] = None,
-        multiprocessing_start_method: Optional[str] = "spawn",
+        multiprocessing_start_method: str = "spawn",
         context: Optional[ContextInterface] = None,
     ):
         """Create TBATSPerSegmentModel with given parameters.
