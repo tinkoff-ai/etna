@@ -2,10 +2,10 @@ from copy import deepcopy
 
 
 class _DeepCopyMixin:
-    """Mixin for `__deepcopy__` behaviour overriding."""
+    """Mixin for ``__deepcopy__`` behaviour overriding."""
 
     def __deepcopy__(self, memo):
-        """Drop `model` and `trainer` attributes while deepcopy."""
+        """Drop ``model`` and ``trainer`` attributes while deepcopy."""
         cls = self.__class__
         obj = cls.__new__(cls)
         memo[id(self)] = obj
