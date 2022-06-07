@@ -58,6 +58,8 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             num of features to select; if there are not enough features, then all will be selected
         features_to_use:
             columns of the dataset to select from; if "all" value is given, all columns are used
+        return_features:
+            indicates whether to return features or not.
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
@@ -149,6 +151,8 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             the method for redundancy values per-segment aggregation
         atol:
             the absolute tolerance to compare the float values
+        return_features:
+            indicates whether to return features or not.
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")

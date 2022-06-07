@@ -12,9 +12,12 @@ from sklearn.tree import ExtraTreeRegressor
 
 from etna.analysis import StatisticsRelevanceTable
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
+from etna.datasets import generate_periodic_df
 from etna.metrics import MAE
 from etna.models import ProphetModel
 from etna.pipeline import Pipeline
+from etna.transforms import GaleShapleyFeatureSelectionTransform
 from etna.transforms import LogTransform
 from etna.transforms.feature_selection import FilterFeaturesTransform
 from etna.transforms.feature_selection.feature_importance import MRMRFeatureSelectionTransform
@@ -55,6 +58,25 @@ def sinusoid_ts():
     )
     df = TSDataset.to_dataset(sinusoid_ts_1)
     ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_with_large_regressors_number(random_seed) -> TSDataset:
+    df = generate_periodic_df(periods=100, start_time="2020-01-01", n_segments=3, period=7, scale=10)
+
+    exog_df = generate_periodic_df(periods=150, start_time="2020-01-01", n_segments=3, period=7).rename(
+        {"target": "regressor_1"}, axis=1
+    )
+    for i in range(1, 4):
+        tmp = generate_periodic_df(periods=150, start_time="2020-01-01", n_segments=3, period=7)
+        tmp["target"] += np.random.uniform(low=-i / 5, high=i / 5, size=(450,))
+        exog_df = exog_df.merge(tmp.rename({"target": f"regressor_{i + 1}"}, axis=1), on=["timestamp", "segment"])
+    for i in range(4, 8):
+        tmp = generate_ar_df(periods=150, start_time="2020-01-01", n_segments=3, ar_coef=[1], random_seed=i)
+        exog_df = exog_df.merge(tmp.rename({"target": f"regressor_{i + 1}"}, axis=1), on=["timestamp", "segment"])
+
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(exog_df), known_future="all")
     return ts
 
 
@@ -225,6 +247,34 @@ def test_mrmr(relevance_table, top_k, sinusoid_ts):
             )
             < eps
         )
+
+
+def test_gale_shapley_with_features(ts_with_large_regressors_number):
+    df = ts_with_large_regressors_number.df
+    start_columns = set(df.columns)
+    transform = GaleShapleyFeatureSelectionTransform(
+        relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False, return_features=True
+    )
+    transformed = transform.fit_transform(df=df)
+    assert set(transformed.columns.get_level_values("feature")) == {
+        "target",
+        "regressor_1",
+        "regressor_2",
+        "regressor_3",
+        "regressor_4",
+        "regressor_5",
+    }
+    df_reconstructed = transform.inverse_transform(transformed)
+    assert start_columns == set(df_reconstructed.columns)
+    df_reconstructed = transform.transform(df_reconstructed)
+    assert set(df_reconstructed.columns.get_level_values("feature")) == {
+        "target",
+        "regressor_1",
+        "regressor_2",
+        "regressor_3",
+        "regressor_4",
+        "regressor_5",
+    }
 
 
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))

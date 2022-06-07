@@ -33,7 +33,7 @@ class FilterFeaturesTransform(Transform):
         self.include: Optional[Sequence[str]] = None
         self.exclude: Optional[Sequence[str]] = None
         self.return_features: bool = return_features
-        self._df_removed: pd.DataFrame = pd.DataFrame()
+        self._df_removed: Optional[pd.DataFrame] = None
         if include is not None and exclude is None:
             self.include = list(set(include))
         elif exclude is not None and include is None:
@@ -75,14 +75,12 @@ class FilterFeaturesTransform(Transform):
                 raise ValueError(f"Features {set(self.include) - set(features)} are not present in the dataset.")
             segments = sorted(set(df.columns.get_level_values("segment")))
             result = result.loc[:, pd.IndexSlice[segments, self.include]]
-            if self.return_features:
-                self._df_removed = df.drop(result.columns, axis=1).copy()
         if self.exclude is not None and self.exclude:
             if not set(self.exclude).issubset(features):
                 raise ValueError(f"Features {set(self.exclude) - set(features)} are not present in the dataset.")
             result = result.drop(columns=self.exclude, level="feature")
-            if self.return_features:
-                self._df_removed = df.drop(result.columns, axis=1).copy()
+        if self.return_features:
+            self._df_removed = df.drop(result.columns, axis=1)
         return result
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -91,11 +89,11 @@ class FilterFeaturesTransform(Transform):
         Parameters
         ----------
         df:
-            transformed dataframe
+            dataframe to apply inverse transformation
 
         Returns
         -------
-        retult: pd.DataFrame
-            dataset before transformation
+        result: pd.DataFrame
+            dataframe before transformation
         """
         return pd.concat([df, self._df_removed], axis=1)

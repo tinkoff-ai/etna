@@ -46,7 +46,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         selected_columns = sorted(self.selected_features + list(rest_columns))
         result = result.loc[:, pd.IndexSlice[:, selected_columns]]
         if self.return_features:
-            self._df_removed = df.drop(result.columns, axis=1).copy()
+            self._df_removed = df.drop(result.columns, axis=1)
         return result
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -55,11 +55,11 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         Parameters
         ----------
         df:
-            transformed dataframe
+            dataframe to apply inverse transformation
 
         Returns
         -------
-        retult: pd.DataFrame
-            dataset before transformation
+        result: pd.DataFrame
+            dataframe before transformation
         """
         return pd.concat([df, self._df_removed], axis=1)
