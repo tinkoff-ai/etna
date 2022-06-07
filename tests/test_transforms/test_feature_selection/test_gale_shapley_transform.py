@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Dict
 from typing import List
 
@@ -608,3 +609,76 @@ def test_work_with_non_regressors(ts_with_exog):
         relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, features_to_use="all"
     )
     ts_with_exog.fit_transform([selector])
+
+
+@pytest.mark.parametrize(
+    "transform, inversed_transform",
+    [
+        [
+            GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False),
+            GaleShapleyFeatureSelectionTransform(
+                relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, return_features=True
+            ),
+        ]
+    ],
+)
+def test_gale_shapley_inverse_transform_save_columns(ts_with_large_regressors_number, transform, inversed_transform):
+    ts1 = ts_with_large_regressors_number
+    ts2 = copy(ts1)
+    original_df = ts1.to_pandas().copy()
+
+    ts1.fit_transform([transform])
+
+    ts2.fit_transform([inversed_transform])
+    assert set(ts1.columns) == set(ts2.columns)
+    ts1.inverse_transform()
+    eps = 1e-9
+    columns_inversed = set(ts1.to_pandas().columns)
+    segments = ts_with_large_regressors_number.segments
+
+    for column in columns_inversed:
+        assert np.all(
+            abs(
+                ts_with_large_regressors_number.to_pandas().loc[:, pd.IndexSlice[segments, column]]
+                - original_df.loc[:, pd.IndexSlice[segments, column]]
+            )
+            < eps
+        )
+
+
+@pytest.mark.parametrize(
+    "inversed_transform",
+    [
+        GaleShapleyFeatureSelectionTransform(
+            relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, return_features=True
+        )
+    ],
+)
+def test_gale_shapley_inverse_transform_back_columns(ts_with_large_regressors_number, inversed_transform):
+    ts = ts_with_large_regressors_number
+    start_df = ts.df.copy()
+    ts.fit_transform([inversed_transform])
+    ts.inverse_transform()
+    assert set(start_df.columns) == set(ts.columns)
+    segments = ts.segments
+    for column in ts.columns:
+        assert np.all(
+            ts.to_pandas().loc[:, pd.IndexSlice[segments, column]] == start_df.loc[:, pd.IndexSlice[segments, column]]
+        )
+
+
+@pytest.mark.parametrize(
+    "inversed_transform",
+    [
+        GaleShapleyFeatureSelectionTransform(
+            relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, return_features=True
+        )
+    ],
+)
+def test_gale_shapley_inverse_transform_save_regressors(ts_with_large_regressors_number, inversed_transform):
+    ts = ts_with_large_regressors_number
+    start_regressors = set(ts.regressors)
+    ts.fit_transform([inversed_transform])
+    ts.inverse_transform()
+    columns_inversed = set(ts.regressors)
+    assert columns_inversed == start_regressors
