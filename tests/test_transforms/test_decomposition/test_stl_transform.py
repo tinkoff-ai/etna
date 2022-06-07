@@ -44,7 +44,7 @@ def df_trend_seasonal_one_segment() -> pd.DataFrame:
 
 @pytest.fixture
 def df_trend_seasonal_starting_with_nans_one_segment(df_trend_seasonal_one_segment) -> pd.DataFrame:
-    result = df_trend_seasonal_one_segment.copy()
+    result = df_trend_seasonal_one_segment
     result.iloc[:2] = np.NaN
     return result
 
