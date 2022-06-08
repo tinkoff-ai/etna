@@ -172,13 +172,37 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
     return ts, metrics_df, forecast_df
 
 
-@pytest.fixture
-def simple_ts() -> TSDataset:
+def _get_simple_df() -> pd.DataFrame:
     timerange = pd.date_range(start="2020-01-01", periods=10).to_list()
     df = pd.DataFrame({"timestamp": timerange + timerange})
     df["segment"] = ["segment_0"] * 10 + ["segment_1"] * 10
     df["target"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    return df
+
+
+@pytest.fixture
+def simple_ts() -> TSDataset:
+    df = _get_simple_df()
     df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def simple_ts_starting_with_nans_one_segment(simple_ts) -> TSDataset:
+    df = _get_simple_df()
+    df = TSDataset.to_dataset(df)
+    df.iloc[:2, 0] = np.NaN
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def simple_ts_starting_with_nans_all_segments(simple_ts) -> TSDataset:
+    df = _get_simple_df()
+    df = TSDataset.to_dataset(df)
+    df.iloc[:2, 0] = np.NaN
+    df.iloc[:3, 1] = np.NaN
     ts = TSDataset(df, freq="D")
     return ts
 
