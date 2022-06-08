@@ -9,11 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
-- 
-- 
-- 
-- 
-- 
+
+-
+- Add Sign metric ([#730](https://github.com/tinkoff-ai/etna/pull/730))
+-
+-
+-
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
 - 
 - 
