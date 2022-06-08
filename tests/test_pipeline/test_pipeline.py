@@ -554,7 +554,7 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
         DecisionTreeRegressor(random_state=42),
     ],
 )
-def test_backtest_pass_with_filter_transform(sinusoid_ts, model, relevance_table):
+def test_backtest_pass_with_filter_inversed_transform(sinusoid_ts, model, relevance_table):
     ts = sinusoid_ts
 
     pipeline = Pipeline(
