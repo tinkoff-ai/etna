@@ -60,7 +60,7 @@ class BATSModel(PerSegmentPredictionIntervalModel):
         multiprocessing_start_method: str = "spawn",
         context: Optional[ContextInterface] = None,
     ):
-        """Create BATSPerSegmentModel with given parameters.
+        """Create BATSModel with given parameters.
 
         Parameters
         ----------
@@ -127,7 +127,7 @@ class TBATSModel(PerSegmentPredictionIntervalModel):
         multiprocessing_start_method: str = "spawn",
         context: Optional[ContextInterface] = None,
     ):
-        """Create TBATSPerSegmentModel with given parameters.
+        """Create TBATSModel with given parameters.
 
         Parameters
         ----------
