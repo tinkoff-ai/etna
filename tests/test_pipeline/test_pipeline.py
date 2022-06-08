@@ -575,6 +575,7 @@ def test_backtest_pass_with_filter_inversed_transform(sinusoid_ts, model, releva
     )
     pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)
 
+
 @pytest.mark.parametrize(
     "ts_name", ["simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
 )
@@ -604,5 +605,3 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
         metrics=[MAE()],
         n_folds=[mask],
     )
-
-   
