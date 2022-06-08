@@ -23,7 +23,7 @@ imported-deps-check:
 	python -m scripts.check_imported_dependencies
 
 notebooks-check:
-	python black --check examples/*.ipynb
+	black --check examples/*.ipynb
 
 format:
 	isort --skip etna/libs --sl etna/
