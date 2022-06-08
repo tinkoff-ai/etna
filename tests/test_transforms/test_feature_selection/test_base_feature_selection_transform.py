@@ -31,6 +31,7 @@ def test_get_features_to_use_raise_warning(ts_with_exog: pd.DataFrame):
         _ = base_selector._get_features_to_use(ts_with_exog.df)
 
 
+@pytest.mark.parametrize("return_features", [True, False])
 @pytest.mark.parametrize(
     "features_to_use, selected_features, expected_columns",
     (
@@ -38,9 +39,12 @@ def test_get_features_to_use_raise_warning(ts_with_exog: pd.DataFrame):
         (["regressor_1", "regressor_2"], ["regressor_1"], ["regressor_1", "exog", "target"]),
     ),
 )
-def test_transform(ts_with_exog: pd.DataFrame, features_to_use, selected_features, expected_columns):
+def test_transform(ts_with_exog: pd.DataFrame, features_to_use, selected_features, expected_columns, return_features):
     base_selector = MRMRFeatureSelectionTransform(
-        relevance_table=StatisticsRelevanceTable(), top_k=3, features_to_use=features_to_use
+        relevance_table=StatisticsRelevanceTable(),
+        top_k=3,
+        features_to_use=features_to_use,
+        return_features=return_features,
     )
     base_selector.selected_features = selected_features
     transformed_df_with_exog = base_selector.transform(ts_with_exog.df)

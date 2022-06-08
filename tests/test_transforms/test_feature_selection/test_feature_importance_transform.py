@@ -335,21 +335,3 @@ def test_feature_importance_inverse_transform_back_columns(ts_with_regressors, i
         assert np.all(
             ts.to_pandas().loc[:, pd.IndexSlice[segments, column]] == start_df.loc[:, pd.IndexSlice[segments, column]]
         )
-
-
-@pytest.mark.parametrize(
-    "inversed_transform",
-    [
-        TreeFeatureSelectionTransform(
-            model=DecisionTreeRegressor(random_state=42), top_k=3, features_to_use="all", return_features=True
-        ),
-        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, return_features=True),
-    ],
-)
-def test_feature_importance_inverse_transform_save_regressors(ts_with_regressors, inversed_transform):
-    ts = ts_with_regressors
-    start_regressors = set(ts.regressors)
-    ts.fit_transform([inversed_transform])
-    ts.inverse_transform()
-    columns_inversed = set(ts.regressors)
-    assert columns_inversed == start_regressors

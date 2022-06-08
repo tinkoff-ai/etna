@@ -6,7 +6,9 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.tree import DecisionTreeRegressor
 
+from etna.analysis import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.metrics import MSE
@@ -23,9 +25,50 @@ from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LogTransform
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
+
+
+@pytest.fixture
+def sinusoid_ts():
+    periods = 100
+    sinusoid_ts_1 = pd.DataFrame(
+        {
+            "segment": 0,
+            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
+            "target": [np.sin(i / 10) + i / 5 for i in range(periods)],
+            "feature_1": [i / 10 for i in range(periods)],
+            "feature_2": [np.sin(i) for i in range(periods)],
+            "feature_3": [np.cos(i / 10) for i in range(periods)],
+            "feature_4": [np.cos(i) for i in range(periods)],
+            "feature_5": [i ** 2 for i in range(periods)],
+            "feature_6": [i * np.sin(i) for i in range(periods)],
+            "feature_7": [i * np.cos(i) for i in range(periods)],
+            "feature_8": [i + np.cos(i) for i in range(periods)],
+        }
+    )
+    sinusoid_ts_2 = pd.DataFrame(
+        {
+            "segment": 1,
+            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
+            "target": [np.sin(i / 10) + i / 5 for i in range(periods)],
+            "feature_1": [i / 10 for i in range(periods)],
+            "feature_2": [np.sin(i) for i in range(periods)],
+            "feature_3": [np.cos(i / 10) for i in range(periods)],
+            "feature_4": [np.cos(i) for i in range(periods)],
+            "feature_5": [i ** 2 for i in range(periods)],
+            "feature_6": [i * np.sin(i) for i in range(periods)],
+            "feature_7": [i * np.cos(i) for i in range(periods)],
+            "feature_8": [i + np.cos(i) for i in range(periods)],
+        }
+    )
+    df = pd.concat([sinusoid_ts_1, sinusoid_ts_2])
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.mark.parametrize("horizon", ([1]))
@@ -502,3 +545,24 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     features = forecast_df.columns.get_level_values(1)
     assert f"target_{quantiles[0]}" in features
     assert f"target_{quantiles[1]}" in features
+
+
+@pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
+@pytest.mark.parametrize(
+    "model",
+    [
+        DecisionTreeRegressor(random_state=42),
+    ],
+)
+def test_backtest_pass_with_filter_transform(sinusoid_ts, model, relevance_table):
+    ts = sinusoid_ts
+
+    pipeline = Pipeline(
+        model=ProphetModel(),
+        transforms=[
+            LogTransform(in_column="feature_1"),
+            FilterFeaturesTransform(exclude=["feature_1"], return_features=True),
+        ],
+        horizon=10,
+    )
+    pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)

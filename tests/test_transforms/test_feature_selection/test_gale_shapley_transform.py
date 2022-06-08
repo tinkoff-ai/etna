@@ -665,20 +665,3 @@ def test_gale_shapley_inverse_transform_back_columns(ts_with_large_regressors_nu
         assert np.all(
             ts.to_pandas().loc[:, pd.IndexSlice[segments, column]] == start_df.loc[:, pd.IndexSlice[segments, column]]
         )
-
-
-@pytest.mark.parametrize(
-    "inversed_transform",
-    [
-        GaleShapleyFeatureSelectionTransform(
-            relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, return_features=True
-        )
-    ],
-)
-def test_gale_shapley_inverse_transform_save_regressors(ts_with_large_regressors_number, inversed_transform):
-    ts = ts_with_large_regressors_number
-    start_regressors = set(ts.regressors)
-    ts.fit_transform([inversed_transform])
-    ts.inverse_transform()
-    columns_inversed = set(ts.regressors)
-    assert columns_inversed == start_regressors
