@@ -179,10 +179,10 @@ class MSLE(Metric):
 
 
 class Sign(Metric):
-    """Sign metric.
+    """Sign error metric with multi-segment computation support.
 
-    ..math::
-        Sign = \\frac{\\sum_{i=0}^{n-1}{sign(y\_true_i - y\_pred_i)}}{n}
+    .. math::
+        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=0}^{n - 1}{sign(y\_true_i - y\_pred_i)}
 
     Notes
     -----

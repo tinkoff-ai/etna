@@ -86,9 +86,6 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15) -> float:
 def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
     """Sign metric.
 
-    .. math ::
-    Sign = \\frac{\\sum_{i=0}^{n-1}{sign(y\_true_i - y\_pred_i)}}{n}
-
     Parameters
     ----------
     y_true:
