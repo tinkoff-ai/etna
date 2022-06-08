@@ -499,8 +499,6 @@ class TSDataset:
             ax[i].set_title(segment)
             ax[i].grid()
 
-        plt.show()
-
     @staticmethod
     def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
