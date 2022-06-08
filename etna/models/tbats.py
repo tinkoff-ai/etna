@@ -44,7 +44,6 @@ class _TBATSAdapter(BaseAdapter):
         return self.model
 
 
-
 class BATSModel(PerSegmentPredictionIntervalModel):
     """Class for holding segment interval BATS model."""
 
@@ -129,7 +128,7 @@ class TBATSModel(PerSegmentPredictionIntervalModel):
         context: Optional[ContextInterface] = None,
     ):
         """Create TBATSPerSegmentModel with given parameters.
-        
+
         Parameters
         ----------
         use_box_cox: bool or None, optional (default=None)
