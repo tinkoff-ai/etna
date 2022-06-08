@@ -43,7 +43,7 @@ def sinusoid_ts():
 
 @pytest.mark.parametrize(
     "model_class, model_class_repr",
-    ((TBATSModel, "TBATSPerSegmentModel"), (BATSModel, "BATSPerSegmentModel")),
+    ((TBATSModel, "TBATSModel"), (BATSModel, "BATSModel")),
 )
 def test_reper(model_class, model_class_repr):
     kwargs = {
