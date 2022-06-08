@@ -1,4 +1,4 @@
-lint: isort-check black-check flake8-check mypy-check spell-check imported-deps-check
+lint: isort-check black-check flake8-check mypy-check spell-check imported-deps-check notebooks-check
 
 isort-check:
 	isort --skip etna/libs --sl -c etna/
@@ -22,11 +22,15 @@ spell-check:
 imported-deps-check:
 	python -m scripts.check_imported_dependencies
 
+notebooks-check:
+	python black --check examples/*.ipynb
+
 format:
 	isort --skip etna/libs --sl etna/
 	isort --skip etna/libs --sl tests/
 	black etna/
 	black tests/
+	black examples/*.ipynb
 	flake8 --exclude etna/libs etna/
 	flake8 --exclude etna/libs tests/ --select E,W,C,F401,N
 	mypy
