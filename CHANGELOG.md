@@ -9,11 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
-- 
-- 
-- 
-- 
-- 
+
+-
+- Add Sign metric ([#730](https://github.com/tinkoff-ai/etna/pull/730))
+-
+-
+-
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
 - 
 - 
@@ -41,22 +42,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 ### Fixed
 -
--
--
--
--
+- 
+- Fix bug when `ts.plot` does not save figure ([#714](https://github.com/tinkoff-ai/etna/pull/714))
+- 
+- 
 - Fix bug in plot_clusters ([#675](https://github.com/tinkoff-ai/etna/pull/675))
--
+- 
 - Fix bugs and documentation for cross_corr_plot ([#691](https://github.com/tinkoff-ai/etna/pull/691))
--
--
+- 
+- 
 - Fix bugs and documentation for plot_backtest and plot_backtest_interactive ([#700](https://github.com/tinkoff-ai/etna/pull/700))
--
--
--
--
--
--
+- 
+- Make STLTransform to work with NaNs at the beginning ([#736](https://github.com/tinkoff-ai/etna/pull/736))
+- Fix tiny prediction intervals ([#722](https://github.com/tinkoff-ai/etna/pull/722))
+- Fix deepcopy issue for fitted deepmodel ([#735](https://github.com/tinkoff-ai/etna/pull/735))
+- Fix making backtest if all segments start with NaNs ([#728](https://github.com/tinkoff-ai/etna/pull/728))
+- 
 
 ## [1.9.0] - 2022-05-17
 ### Added
