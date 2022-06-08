@@ -253,7 +253,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         use_rank:
             if True, use rank in relevance table computation
         return_features:
-            bool, indicates whether to return features or not.
+            indicates whether to return features or not.
         """
         super().__init__(features_to_use=features_to_use, return_features=return_features)
         self.relevance_table = relevance_table

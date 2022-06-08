@@ -633,16 +633,11 @@ def test_gale_shapley_inverse_transform_save_columns(ts_with_large_regressors_nu
     assert set(ts1.columns) == set(ts2.columns)
     ts1.inverse_transform()
     eps = 1e-9
-    columns_inversed = set(ts1.to_pandas().columns)
-    segments = ts_with_large_regressors_number.segments
+    columns_inversed = set(ts1.columns)
 
     for column in columns_inversed:
         assert np.all(
-            abs(
-                ts_with_large_regressors_number.to_pandas().loc[:, pd.IndexSlice[segments, column]]
-                - original_df.loc[:, pd.IndexSlice[segments, column]]
-            )
-            < eps
+            abs(ts_with_large_regressors_number[:, :, column] - original_df.loc[:, pd.IndexSlice[:, column]]) < eps
         )
 
 
@@ -660,8 +655,5 @@ def test_gale_shapley_inverse_transform_back_columns(ts_with_large_regressors_nu
     ts.fit_transform([inversed_transform])
     ts.inverse_transform()
     assert set(start_df.columns) == set(ts.columns)
-    segments = ts.segments
     for column in ts.columns:
-        assert np.all(
-            ts.to_pandas().loc[:, pd.IndexSlice[segments, column]] == start_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+        assert np.all(ts[:, :, column] == start_df.loc[:, pd.IndexSlice[:, column]])

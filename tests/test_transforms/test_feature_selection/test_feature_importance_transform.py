@@ -303,16 +303,9 @@ def test_feature_importance_inverse_transform_save_columns(ts_with_regressors, t
     ts1.inverse_transform()
     eps = 1e-9
     columns_inversed = set(ts1.to_pandas().columns)
-    segments = ts_with_regressors.segments
 
     for column in columns_inversed:
-        assert np.all(
-            abs(
-                ts_with_regressors.to_pandas().loc[:, pd.IndexSlice[segments, column]]
-                - original_df.loc[:, pd.IndexSlice[segments, column]]
-            )
-            < eps
-        )
+        assert np.all(abs(ts_with_regressors[:, :, column] - original_df.loc[:, pd.IndexSlice[:, column]]) < eps)
 
 
 @pytest.mark.parametrize(
@@ -330,8 +323,5 @@ def test_feature_importance_inverse_transform_back_columns(ts_with_regressors, i
     ts.fit_transform([inversed_transform])
     ts.inverse_transform()
     assert set(start_df.columns) == set(ts.columns)
-    segments = ts.segments
     for column in ts.columns:
-        assert np.all(
-            ts.to_pandas().loc[:, pd.IndexSlice[segments, column]] == start_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+        assert np.all(ts.to_pandas().loc[:, pd.IndexSlice[:, column]] == start_df.loc[:, pd.IndexSlice[:, column]])

@@ -6,9 +6,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.tree import DecisionTreeRegressor
 
-from etna.analysis import StatisticsRelevanceTable
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.metrics import MSE
@@ -41,13 +39,6 @@ def sinusoid_ts():
             "timestamp": pd.date_range(start="1/1/2018", periods=periods),
             "target": [np.sin(i / 10) + i / 5 for i in range(periods)],
             "feature_1": [i / 10 for i in range(periods)],
-            "feature_2": [np.sin(i) for i in range(periods)],
-            "feature_3": [np.cos(i / 10) for i in range(periods)],
-            "feature_4": [np.cos(i) for i in range(periods)],
-            "feature_5": [i ** 2 for i in range(periods)],
-            "feature_6": [i * np.sin(i) for i in range(periods)],
-            "feature_7": [i * np.cos(i) for i in range(periods)],
-            "feature_8": [i + np.cos(i) for i in range(periods)],
         }
     )
     sinusoid_ts_2 = pd.DataFrame(
@@ -56,13 +47,6 @@ def sinusoid_ts():
             "timestamp": pd.date_range(start="1/1/2018", periods=periods),
             "target": [np.sin(i / 10) + i / 5 for i in range(periods)],
             "feature_1": [i / 10 for i in range(periods)],
-            "feature_2": [np.sin(i) for i in range(periods)],
-            "feature_3": [np.cos(i / 10) for i in range(periods)],
-            "feature_4": [np.cos(i) for i in range(periods)],
-            "feature_5": [i ** 2 for i in range(periods)],
-            "feature_6": [i * np.sin(i) for i in range(periods)],
-            "feature_7": [i * np.cos(i) for i in range(periods)],
-            "feature_8": [i + np.cos(i) for i in range(periods)],
         }
     )
     df = pd.concat([sinusoid_ts_1, sinusoid_ts_2])
@@ -555,14 +539,7 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     assert f"target_{quantiles[1]}" in features
 
 
-@pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
-@pytest.mark.parametrize(
-    "model",
-    [
-        DecisionTreeRegressor(random_state=42),
-    ],
-)
-def test_backtest_pass_with_filter_inversed_transform(sinusoid_ts, model, relevance_table):
+def test_backtest_pass_with_filter_transform(sinusoid_ts):
     ts = sinusoid_ts
 
     pipeline = Pipeline(

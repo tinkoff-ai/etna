@@ -52,12 +52,8 @@ def test_include_filter(ts_with_features, include):
     expected_columns = set(include)
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == expected_columns
-    segments = ts_with_features.segments
     for column in got_columns:
-        assert np.all(
-            df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+        assert np.all(df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]])
 
 
 @pytest.mark.parametrize(
@@ -77,12 +73,8 @@ def test_exclude_filter(ts_with_features, exclude, expected_columns):
     df_transformed = ts_with_features.to_pandas()
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == set(expected_columns)
-    segments = ts_with_features.segments
     for column in got_columns:
-        assert np.all(
-            df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+        assert np.all(df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]])
 
 
 def test_include_filter_wrong_column(ts_with_features):
@@ -103,53 +95,55 @@ def test_exclude_filter_wrong_column(ts_with_features):
 @pytest.mark.parametrize(
     "columns, saved_columns",
     [
-        ([], ["target", "exog_1", "exog_2"]),
-        (["target"], ["exog_1", "exog_2"]),
-        (["exog_1", "exog_2"], ["target"]),
-        (["target", "exog_1", "exog_2"], []),
-    ],
-)
-def test_transform_exclude_save_columns(ts_with_features, columns, saved_columns, return_features):
-    original_df = ts_with_features.to_pandas()
-    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
-    ts_with_features.fit_transform([transform])
-    df_transformed = ts_with_features.df
-    got_columns = set(df_transformed.columns.get_level_values("feature"))
-    assert got_columns == set(saved_columns)
-
-    segments = ts_with_features.segments
-    for column in got_columns:
-        assert np.all(
-            df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
-
-
-@pytest.mark.parametrize("return_features", [True, False])
-@pytest.mark.parametrize(
-    "columns, saved_columns",
-    [
         ([], []),
         (["target"], ["target"]),
         (["exog_1", "exog_2"], ["exog_1", "exog_2"]),
         (["target", "exog_1", "exog_2"], ["target", "exog_1", "exog_2"]),
     ],
 )
+def test_transform_exclude_save_columns(ts_with_features, columns, saved_columns, return_features):
+    original_df = ts_with_features.to_pandas()
+    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
+    ts_with_features.fit_transform([transform])
+    df_transformed = transform._df_removed
+    if return_features:
+        got_columns = set(df_transformed.columns.get_level_values("feature"))
+        assert got_columns == set(saved_columns)
+        for column in got_columns:
+            assert np.all(
+                df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]]
+            )
+    else:
+        assert df_transformed is None
+
+
+@pytest.mark.parametrize("return_features", [True, False])
+@pytest.mark.parametrize(
+    "columns, saved_columns",
+    [
+        ([], ["target", "exog_1", "exog_2"]),
+        (["target"], ["exog_1", "exog_2"]),
+        (["exog_1", "exog_2"], ["target"]),
+        (["target", "exog_1", "exog_2"], []),
+    ],
+)
 def test_transform_include_save_columns(ts_with_features, columns, saved_columns, return_features):
     original_df = ts_with_features.to_pandas()
     transform = FilterFeaturesTransform(include=columns, return_features=return_features)
     ts_with_features.fit_transform([transform])
-    df_transformed = ts_with_features.df
-    got_columns = set(df_transformed.columns.get_level_values("feature"))
-    assert got_columns == set(saved_columns)
-    segments = ts_with_features.segments
-    for column in got_columns:
-        assert np.all(
-            df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+    df_transformed = transform._df_removed
+    if return_features:
+        got_columns = set(df_transformed.columns.get_level_values("feature"))
+        assert got_columns == set(saved_columns)
+        for column in got_columns:
+            assert np.all(
+                df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]]
+            )
+    else:
+        assert df_transformed is None
 
 
+@pytest.mark.parametrize("return_features", [True, False])
 @pytest.mark.parametrize(
     "columns",
     [
@@ -159,22 +153,24 @@ def test_transform_include_save_columns(ts_with_features, columns, saved_columns
         (["target", "exog_1", "exog_2"]),
     ],
 )
-def test_inverse_transform_back_excluded_columns(ts_with_features, columns):
+def test_inverse_transform_back_excluded_columns(ts_with_features, columns, return_features):
     original_df = ts_with_features.to_pandas().copy()
-    columns_original = set(original_df.columns)
-    transform = FilterFeaturesTransform(exclude=columns, return_features=True)
+    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
     ts_with_features.fit_transform([transform])
+    transformed_df = ts_with_features.to_pandas().copy()
     ts_with_features.inverse_transform()
-    columns_inversed = set(ts_with_features.to_pandas().columns)
-    assert columns_inversed == columns_original
-    segments = ts_with_features.segments
-    for column in columns_inversed:
-        assert np.all(
-            ts_with_features.to_pandas().loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+    columns_inversed = set(ts_with_features.columns)
+    if return_features:
+        assert columns_inversed == set(original_df.columns)
+        for column in columns_inversed:
+            assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
+    else:
+        assert columns_inversed == set(transformed_df.columns)
+        for column in columns_inversed:
+            assert np.all(ts_with_features[:, :, column] == transformed_df.loc[:, pd.IndexSlice[:, column]])
 
 
+@pytest.mark.parametrize("return_features", [True, False])
 @pytest.mark.parametrize(
     "columns",
     [
@@ -184,18 +180,19 @@ def test_inverse_transform_back_excluded_columns(ts_with_features, columns):
         (["target", "exog_1", "exog_2"]),
     ],
 )
-def test_inverse_transform_back_included_columns(ts_with_features, columns):
+def test_inverse_transform_back_included_columns(ts_with_features, columns, return_features):
     original_df = ts_with_features.to_pandas().copy()
-    columns_original = set(original_df.columns)
-    transform = FilterFeaturesTransform(include=columns, return_features=True)
+    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
 
     ts_with_features.fit_transform([transform])
+    transformed_df = ts_with_features.to_pandas().copy()
     ts_with_features.inverse_transform()
     columns_inversed = set(ts_with_features.to_pandas().columns)
-    assert columns_inversed == columns_original
-    segments = ts_with_features.segments
-    for column in columns_inversed:
-        assert np.all(
-            ts_with_features.to_pandas().loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+    if return_features:
+        assert columns_inversed == set(original_df.columns)
+        for column in columns_inversed:
+            assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
+    else:
+        assert columns_inversed == set(transformed_df.columns)
+        for column in columns_inversed:
+            assert np.all(ts_with_features[:, :, column] == transformed_df.loc[:, pd.IndexSlice[:, column]])

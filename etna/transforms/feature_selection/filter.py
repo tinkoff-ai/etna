@@ -24,7 +24,7 @@ class FilterFeaturesTransform(Transform):
         exclude:
             list of columns to not pass through
         return_features:
-            bool, indicates whether to return features or not.
+            indicates whether to return features or not.
         Raises
         ------
         ValueError:
