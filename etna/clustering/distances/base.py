@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class Distance(ABC, BaseMixin):
     """Base class for distances between series."""
 
-    def __init__(self, trim_series: bool = False, inf_value: float = sys.float_info.max // 10 ** 200):
+    def __init__(self, trim_series: bool = False, inf_value: float = sys.float_info.max // 10**200):
         """Init Distance.
 
         Parameters
