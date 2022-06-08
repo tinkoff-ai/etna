@@ -4,8 +4,8 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.metrics import MAE
-from etna.models.tbats import BATSPerSegmentModel
-from etna.models.tbats import TBATSPerSegmentModel
+from etna.models.tbats import BATSModel
+from etna.models.tbats import TBATSModel
 from etna.transforms import LagTransform
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 
@@ -43,7 +43,7 @@ def sinusoid_ts():
 
 @pytest.mark.parametrize(
     "model_class, model_class_repr",
-    ((TBATSPerSegmentModel, "TBATSPerSegmentModel"), (BATSPerSegmentModel, "BATSPerSegmentModel")),
+    ((TBATSModel, "TBATSPerSegmentModel"), (BATSModel, "BATSPerSegmentModel")),
 )
 def test_reper(model_class, model_class_repr):
     kwargs = {
@@ -76,7 +76,7 @@ def test_reper(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
-@pytest.mark.parametrize("model", (TBATSPerSegmentModel(), BATSPerSegmentModel()))
+@pytest.mark.parametrize("model", (TBATSModel(), BATSModel()))
 def test_not_fitted(model, linear_segments_ts_unique):
     train, test = linear_segments_ts_unique
     to_forecast = train.make_future(3)
@@ -84,7 +84,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
         model.forecast(to_forecast)
 
 
-@pytest.mark.parametrize("model", [TBATSPerSegmentModel(), BATSPerSegmentModel()])
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_format(model, new_format_df):
     df = new_format_df
     ts = TSDataset(df, "1d")
@@ -96,7 +96,7 @@ def test_format(model, new_format_df):
     assert not future_ts.isnull().values.any()
 
 
-@pytest.mark.parametrize("model", [TBATSPerSegmentModel(), BATSPerSegmentModel()])
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_dummy(model, sinusoid_ts):
     train, test = sinusoid_ts
     model.fit(train)
@@ -107,7 +107,7 @@ def test_dummy(model, sinusoid_ts):
     assert value_metric < 0.33
 
 
-@pytest.mark.parametrize("model", [TBATSPerSegmentModel(), BATSPerSegmentModel()])
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_prediction_interval(model, example_tsds):
     model.fit(example_tsds)
     forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])

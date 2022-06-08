@@ -44,12 +44,8 @@ class _TBATSAdapter(BaseAdapter):
         return self.model
 
 
-class _TBATSPerSegmentModel(PerSegmentPredictionIntervalModel):
-    def __int__(self, model: Estimator):
-        super().__init__(base_model=model)
 
-
-class BATSPerSegmentModel(_TBATSPerSegmentModel):
+class BATSModel(PerSegmentPredictionIntervalModel):
     """Class for holding segment interval BATS model."""
 
     def __init__(
@@ -66,6 +62,7 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
         context: Optional[ContextInterface] = None,
     ):
         """Create BATSPerSegmentModel with given parameters.
+
         Parameters
         ----------
         use_box_cox: bool or None, optional (default=None)
@@ -112,10 +109,10 @@ class BATSPerSegmentModel(_TBATSPerSegmentModel):
             multiprocessing_start_method=multiprocessing_start_method,
             context=context,
         )
-        super().__init__(_TBATSAdapter(self.model))
+        super().__init__(base_model=_TBATSAdapter(self.model))
 
 
-class TBATSPerSegmentModel(_TBATSPerSegmentModel):
+class TBATSModel(PerSegmentPredictionIntervalModel):
     """Class for holding segment interval TBATS model."""
 
     def __init__(
@@ -132,6 +129,7 @@ class TBATSPerSegmentModel(_TBATSPerSegmentModel):
         context: Optional[ContextInterface] = None,
     ):
         """Create TBATSPerSegmentModel with given parameters.
+        
         Parameters
         ----------
         use_box_cox: bool or None, optional (default=None)
@@ -178,4 +176,4 @@ class TBATSPerSegmentModel(_TBATSPerSegmentModel):
             multiprocessing_start_method=multiprocessing_start_method,
             context=context,
         )
-        super().__init__(_TBATSAdapter(self.model))
+        super().__init__(base_model=_TBATSAdapter(self.model))
