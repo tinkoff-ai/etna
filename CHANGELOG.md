@@ -9,20 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
+
 -
--
+- Add Sign metric ([#730](https://github.com/tinkoff-ai/etna/pull/730))
 -
 -
 -
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
--
--
--
--
--
+- 
+- 
+- 
+- 
+- 
 - Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
--
--
+- Add BATS and TBATS model adapters ([#678](https://github.com/tinkoff-ai/etna/pull/734))
+- 
 ### Changed
 -
 - 
@@ -52,10 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Fix bugs and documentation for plot_backtest and plot_backtest_interactive ([#700](https://github.com/tinkoff-ai/etna/pull/700))
 - 
-- 
+- Make STLTransform to work with NaNs at the beginning ([#736](https://github.com/tinkoff-ai/etna/pull/736))
 - Fix tiny prediction intervals ([#722](https://github.com/tinkoff-ai/etna/pull/722))
-- 
-- 
+- Fix deepcopy issue for fitted deepmodel ([#735](https://github.com/tinkoff-ai/etna/pull/735))
+- Fix making backtest if all segments start with NaNs ([#728](https://github.com/tinkoff-ai/etna/pull/728))
 - 
 
 ## [1.9.0] - 2022-05-17
