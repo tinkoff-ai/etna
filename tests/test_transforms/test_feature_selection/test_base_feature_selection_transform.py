@@ -80,29 +80,26 @@ def test_transform_save_columns(ts_with_exog, features_to_use, selected_features
         assert df_saved is None
 
 
-@pytest.mark.parametrize("return_features", [True, False])
 @pytest.mark.parametrize(
-    "features_to_use",
-    ["all", ["regressor_1", "regressor_2"]],
+    "features_to_use, expected_columns, return_features",
+    [
+        ("all", ["exog", "regressor_1", "regressor_2", "target"], True),
+        (["regressor_1", "regressor_2"], ["regressor_2", "regressor_1", "exog", "target"], False),
+        ("all", ["regressor_2", "exog", "target"], False),
+        (["regressor_1", "regressor_2"], ["regressor_2", "regressor_1", "exog", "target"], True),
+    ],
 )
-def test_inverse_transform_back_excluded_columns(ts_with_exog, features_to_use, return_features):
-    original_df = ts_with_exog.to_pandas().copy()
-    columns_original = set(original_df.columns)
+def test_inverse_transform_back_excluded_columns(ts_with_exog, features_to_use, return_features, expected_columns):
+    original_df = ts_with_exog.to_pandas()
     transform = MRMRFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(),
-        top_k=3,
+        top_k=2,
         features_to_use=features_to_use,
-        return_features=True,
+        return_features=return_features,
     )
     ts_with_exog.fit_transform([transform])
-    transformed_df = ts_with_exog.to_pandas().copy()
     ts_with_exog.inverse_transform()
-    columns_inversed = set(ts_with_exog.to_pandas().columns)
-    if return_features:
-        assert columns_inversed == columns_original
-        for column in columns_inversed:
-            assert np.all(ts_with_exog[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
-    else:
-        assert columns_inversed == set(transformed_df.columns)
-        for column in columns_inversed:
-            assert np.all(ts_with_exog[:, :, column] == transformed_df.loc[:, pd.IndexSlice[:, column]])
+    columns_inversed = set(ts_with_exog.to_pandas().columns.get_level_values("feature"))
+    assert columns_inversed == set(expected_columns)
+    for column in columns_inversed:
+        assert np.all(ts_with_exog[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])

@@ -1,6 +1,3 @@
-from copy import copy
-
-import numpy as np
 import pandas as pd
 import pytest
 from catboost import CatBoostRegressor
@@ -272,56 +269,3 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
         if column.startswith("regressor"):
             selected_regressors.add(column)
     assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
-
-
-@pytest.mark.parametrize(
-    "transform, inversed_transform",
-    [
-        [
-            TreeFeatureSelectionTransform(
-                model=DecisionTreeRegressor(random_state=42), top_k=3, features_to_use="all", return_features=False
-            ),
-            TreeFeatureSelectionTransform(
-                model=DecisionTreeRegressor(random_state=42), top_k=3, features_to_use="all", return_features=True
-            ),
-        ],
-        [
-            MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3),
-            MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, return_features=True),
-        ],
-    ],
-)
-def test_feature_importance_inverse_transform_save_columns(ts_with_regressors, transform, inversed_transform):
-    ts1 = ts_with_regressors
-    ts2 = copy(ts1)
-    original_df = ts1.to_pandas().copy()
-
-    ts1.fit_transform([transform])
-
-    ts2.fit_transform([inversed_transform])
-    assert set(ts1.columns) == set(ts2.columns)
-    ts1.inverse_transform()
-    eps = 1e-9
-    columns_inversed = set(ts1.to_pandas().columns)
-
-    for column in columns_inversed:
-        assert np.all(abs(ts_with_regressors[:, :, column] - original_df.loc[:, pd.IndexSlice[:, column]]) < eps)
-
-
-@pytest.mark.parametrize(
-    "inversed_transform",
-    [
-        TreeFeatureSelectionTransform(
-            model=DecisionTreeRegressor(random_state=42), top_k=3, features_to_use="all", return_features=True
-        ),
-        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, return_features=True),
-    ],
-)
-def test_feature_importance_inverse_transform_back_columns(ts_with_regressors, inversed_transform):
-    ts = ts_with_regressors
-    start_df = ts.df.copy()
-    ts.fit_transform([inversed_transform])
-    ts.inverse_transform()
-    assert set(start_df.columns) == set(ts.columns)
-    for column in ts.columns:
-        assert np.all(ts.to_pandas().loc[:, pd.IndexSlice[:, column]] == start_df.loc[:, pd.IndexSlice[:, column]])
