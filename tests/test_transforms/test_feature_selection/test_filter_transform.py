@@ -161,9 +161,9 @@ def test_inverse_transform_back_excluded_columns(ts_with_features, columns, retu
     transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
     ts_with_features.fit_transform([transform])
     ts_with_features.inverse_transform()
-    columns_inversed = set(ts_with_features.to_pandas().columns.get_level_values("feature"))
+    columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
-    for column in ts_with_features.to_pandas().columns:
+    for column in ts_with_features.columns:
         assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
 
 
@@ -185,7 +185,7 @@ def test_inverse_transform_back_included_columns(ts_with_features, columns, retu
     transform = FilterFeaturesTransform(include=columns, return_features=return_features)
     ts_with_features.fit_transform([transform])
     ts_with_features.inverse_transform()
-    columns_inversed = set(ts_with_features.to_pandas().columns.get_level_values("feature"))
+    columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
-    for column in ts_with_features.to_pandas().columns:
+    for column in ts_with_features.columns:
         assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])

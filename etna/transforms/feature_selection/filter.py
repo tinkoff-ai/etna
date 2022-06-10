@@ -84,7 +84,7 @@ class FilterFeaturesTransform(Transform):
         return result
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply inverse transform method of transforms to the data.
+        """Apply inverse transform to the data.
 
         Parameters
         ----------

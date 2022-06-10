@@ -69,7 +69,7 @@ def test_transform_save_columns(ts_with_exog, features_to_use, selected_features
         return_features=return_features,
     )
     transform.selected_features = selected_features
-    transform.transform(ts_with_exog.df)
+    ts_with_exog.transform([transform])
     df_saved = transform._df_removed
     if return_features:
         got_columns = set(df_saved.columns.get_level_values("feature"))
@@ -99,7 +99,7 @@ def test_inverse_transform_back_excluded_columns(ts_with_exog, features_to_use, 
     )
     ts_with_exog.fit_transform([transform])
     ts_with_exog.inverse_transform()
-    columns_inversed = set(ts_with_exog.to_pandas().columns.get_level_values("feature"))
+    columns_inversed = set(ts_with_exog.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
     for column in columns_inversed:
         assert np.all(ts_with_exog[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])

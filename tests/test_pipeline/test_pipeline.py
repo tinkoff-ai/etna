@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -33,23 +34,13 @@ DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 @pytest.fixture
 def sinusoid_ts():
     periods = 100
-    sinusoid_ts_1 = pd.DataFrame(
-        {
-            "segment": 0,
-            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
-            "target": [np.sin(i / 10) + i / 5 for i in range(periods)],
-            "feature_1": [i / 10 for i in range(periods)],
-        }
+    df = generate_ar_df(
+        start_time="2019-01-01", periods=periods, ar_coef=[1], sigma=1, n_segments=2, random_seed=0, freq="D"
     )
-    sinusoid_ts_2 = pd.DataFrame(
-        {
-            "segment": 1,
-            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
-            "target": [np.sin(i / 10) + i / 5 for i in range(periods)],
-            "feature_1": [i / 10 for i in range(periods)],
-        }
+    df_feature = generate_ar_df(
+        start_time="2019-01-01", periods=periods, ar_coef=[0.9], sigma=2, n_segments=2, random_seed=42, freq="D"
     )
-    df = pd.concat([sinusoid_ts_1, sinusoid_ts_2])
+    df["feature_1"] = df_feature["target"].apply(lambda x: abs(x))
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts

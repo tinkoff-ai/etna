@@ -390,16 +390,15 @@ class TSDataset:
                 raise ValueError("All segments should end at the same timestamp")
 
     def inverse_transform(self):
-        # TODO: return regressors after inverse_transform
         """Apply inverse transform method of transforms to the data.
 
         Applied in reversed order.
         """
+        # TODO: return regressors after inverse_transform
         if self.transforms is not None:
             for transform in reversed(self.transforms):
                 tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
                 self.df = transform.inverse_transform(self.df)
-                columns_after = set(self.columns.get_level_values("feature"))
 
     @property
     def segments(self) -> List[str]:
