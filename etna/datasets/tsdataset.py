@@ -394,6 +394,7 @@ class TSDataset:
 
         Applied in reversed order.
         """
+        # TODO: return regressors after inverse_transform
         if self.transforms is not None:
             for transform in reversed(self.transforms):
                 tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
