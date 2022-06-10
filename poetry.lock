@@ -238,14 +238,14 @@ dev = ["pip-tools (==6.5.1)", "pytest (==7.1.1)", "flake8 (==4.0.1)", "tox (==3.
 
 [[package]]
 name = "boto3"
-version = "1.24.4"
+version = "1.24.6"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = ">=1.27.4,<1.28.0"
+botocore = ">=1.27.6,<1.28.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -254,7 +254,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.27.4"
+version = "1.27.6"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -1064,7 +1064,7 @@ qtconsole = "*"
 
 [[package]]
 name = "jupyter-client"
-version = "7.3.3"
+version = "7.3.4"
 description = "Jupyter protocol implementation and client libraries"
 category = "main"
 optional = true
@@ -1508,7 +1508,7 @@ python-versions = ">=3.7,<3.11"
 
 [[package]]
 name = "numpydoc"
-version = "1.3.1"
+version = "1.4.0"
 description = "Sphinx extension to support docstrings in Numpy format"
 category = "main"
 optional = true
@@ -1725,7 +1725,7 @@ test = ["appdirs (==1.4.4)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)", "pytes
 
 [[package]]
 name = "plotly"
-version = "5.8.0"
+version = "5.8.1"
 description = "An open-source, interactive data visualization library for Python"
 category = "main"
 optional = false
@@ -2189,20 +2189,20 @@ test = ["pytest (>=6,!=7.0.0,!=7.0.1)", "pytest-cov (>=3.0.0)", "pytest-qt"]
 
 [[package]]
 name = "requests"
-version = "2.27.1"
+version = "2.28.0"
 description = "Python HTTP for Humans."
 category = "main"
 optional = true
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+python-versions = ">=3.7, <4"
 
 [package.dependencies]
 certifi = ">=2017.4.17"
-charset-normalizer = {version = ">=2.0.0,<2.1.0", markers = "python_version >= \"3\""}
-idna = {version = ">=2.5,<4", markers = "python_version >= \"3\""}
+charset-normalizer = ">=2.0.0,<2.1.0"
+idna = ">=2.5,<4"
 urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
-socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
+socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use_chardet_on_py3 = ["chardet (>=3.0.2,<5)"]
 
 [[package]]
@@ -2752,7 +2752,7 @@ typing-extensions = "*"
 
 [[package]]
 name = "torchmetrics"
-version = "0.9.0"
+version = "0.9.1"
 description = "PyTorch native Metrics"
 category = "main"
 optional = true
@@ -2765,14 +2765,14 @@ torch = ">=1.3.1"
 typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
 
 [package.extras]
-all = ["pystoi", "pycocotools", "torchvision (>=0.8)", "sphinx-copybutton (>=0.3)", "myst-parser", "sphinxcontrib-fulltoc (>=1.0)", "sphinx (>=4.0)", "sphinxcontrib-mockautodoc", "sphinx-togglebutton (>=0.2)", "docutils (>=0.16)", "pandoc (>=1.0)", "nbsphinx (>=0.8)", "sphinx-paramlinks (>=0.5.1)", "sphinx-autodoc-typehints (>=1.0)", "torch-fidelity", "torchvision", "lpips", "scipy", "pytorch-lightning (>=1.5)", "pytest (>=6.0.0,<7.0.0)", "phmdoctest (>=1.1.1)", "psutil", "pytest-cov (>2.10)", "pypesq", "check-manifest", "sacrebleu (>=2.0.0)", "pytest-timeout", "mypy (>=0.790)", "scikit-image (>0.17.1)", "transformers (>=4.0)", "pytorch-msssim", "cloudpickle (>=1.3)", "twine (>=3.2)", "codecov (>=2.1)", "pre-commit (>=1.0)", "huggingface-hub (<0.7)", "coverage (>5.2)", "requests", "torch-complex", "jiwer (>=2.3.0)", "bert-score (==0.3.10)", "mir-eval (>=0.6)", "fast-bss-eval (>=0.1.0)", "fire", "rouge-score (>=0.0.4)", "scikit-learn (>1.0,<1.1.1)", "pytest-doctestplus (>=0.9.0)", "tqdm (>=4.41.0)", "nltk (>=3.6)", "regex (>=2021.9.24)"]
+all = ["pystoi", "torchvision (>=0.8)", "pycocotools", "myst-parser", "nbsphinx (>=0.8)", "sphinx-paramlinks (>=0.5.1)", "sphinxcontrib-mockautodoc", "sphinx-togglebutton (>=0.2)", "sphinxcontrib-fulltoc (>=1.0)", "docutils (>=0.16)", "sphinx (>=4.0,<5.0)", "sphinx-autodoc-typehints (>=1.0)", "sphinx-copybutton (>=0.3)", "pandoc (>=1.0)", "lpips", "torchvision", "torch-fidelity", "scipy", "pytorch-lightning (>=1.5)", "coverage (>5.2)", "scikit-learn (>1.0,<1.1.1)", "phmdoctest (>=1.1.1)", "codecov (>=2.1)", "sacrebleu (>=2.0.0)", "rouge-score (>=0.0.4)", "cloudpickle (>=1.3)", "pytest-timeout", "check-manifest", "jiwer (>=2.3.0)", "twine (>=3.2)", "pypesq", "pytest (>=6.0.0,<7.0.0)", "pre-commit (>=1.0)", "mir-eval (>=0.6)", "huggingface-hub (<0.7)", "scikit-image (>0.17.1)", "bert-score (==0.3.10)", "fire", "pytest-doctestplus (>=0.9.0)", "fast-bss-eval (>=0.1.0)", "requests", "pytorch-msssim", "mypy (>=0.790)", "transformers (>=4.0)", "psutil", "torch-complex", "pytest-cov (>2.10)", "nltk (>=3.6)", "regex (>=2021.9.24)", "tqdm (>=4.41.0)"]
 audio = ["pystoi"]
-detection = ["pycocotools", "torchvision (>=0.8)"]
-docs = ["sphinx-copybutton (>=0.3)", "myst-parser", "sphinxcontrib-fulltoc (>=1.0)", "sphinx (>=4.0)", "sphinxcontrib-mockautodoc", "sphinx-togglebutton (>=0.2)", "docutils (>=0.16)", "pandoc (>=1.0)", "nbsphinx (>=0.8)", "sphinx-paramlinks (>=0.5.1)", "sphinx-autodoc-typehints (>=1.0)"]
-image = ["torch-fidelity", "torchvision", "lpips", "scipy"]
+detection = ["torchvision (>=0.8)", "pycocotools"]
+docs = ["myst-parser", "nbsphinx (>=0.8)", "sphinx-paramlinks (>=0.5.1)", "sphinxcontrib-mockautodoc", "sphinx-togglebutton (>=0.2)", "sphinxcontrib-fulltoc (>=1.0)", "docutils (>=0.16)", "sphinx (>=4.0,<5.0)", "sphinx-autodoc-typehints (>=1.0)", "sphinx-copybutton (>=0.3)", "pandoc (>=1.0)"]
+image = ["lpips", "torchvision", "torch-fidelity", "scipy"]
 integrate = ["pytorch-lightning (>=1.5)"]
-test = ["pytest (>=6.0.0,<7.0.0)", "pycocotools", "phmdoctest (>=1.1.1)", "psutil", "pytest-cov (>2.10)", "pypesq", "check-manifest", "sacrebleu (>=2.0.0)", "pytest-timeout", "mypy (>=0.790)", "scikit-image (>0.17.1)", "transformers (>=4.0)", "pytorch-msssim", "cloudpickle (>=1.3)", "twine (>=3.2)", "codecov (>=2.1)", "pre-commit (>=1.0)", "huggingface-hub (<0.7)", "coverage (>5.2)", "requests", "torch-complex", "jiwer (>=2.3.0)", "bert-score (==0.3.10)", "mir-eval (>=0.6)", "fast-bss-eval (>=0.1.0)", "fire", "rouge-score (>=0.0.4)", "scikit-learn (>1.0,<1.1.1)", "pytest-doctestplus (>=0.9.0)"]
-text = ["tqdm (>=4.41.0)", "nltk (>=3.6)", "regex (>=2021.9.24)"]
+test = ["coverage (>5.2)", "scikit-learn (>1.0,<1.1.1)", "phmdoctest (>=1.1.1)", "codecov (>=2.1)", "sacrebleu (>=2.0.0)", "rouge-score (>=0.0.4)", "cloudpickle (>=1.3)", "pytest-timeout", "check-manifest", "jiwer (>=2.3.0)", "twine (>=3.2)", "pypesq", "pytest (>=6.0.0,<7.0.0)", "pre-commit (>=1.0)", "mir-eval (>=0.6)", "pycocotools", "huggingface-hub (<0.7)", "scikit-image (>0.17.1)", "bert-score (==0.3.10)", "fire", "pytest-doctestplus (>=0.9.0)", "fast-bss-eval (>=0.1.0)", "requests", "pytorch-msssim", "mypy (>=0.790)", "transformers (>=4.0)", "psutil", "torch-complex", "pytest-cov (>2.10)"]
+text = ["nltk (>=3.6)", "regex (>=2021.9.24)", "tqdm (>=4.41.0)"]
 
 [[package]]
 name = "tornado"
@@ -2874,7 +2874,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "wandb"
-version = "0.12.17"
+version = "0.12.18"
 description = "A CLI and library for interacting with the Weights and Biases API."
 category = "main"
 optional = true
@@ -2888,7 +2888,6 @@ pathtools = "*"
 promise = ">=2.0,<3"
 protobuf = ">=3.12.0,<4.0dev"
 psutil = ">=5.0.0"
-python-dateutil = ">=2.6.1"
 PyYAML = "*"
 requests = ">=2.0.0,<3"
 sentry-sdk = ">=1.0.0"
@@ -2904,7 +2903,7 @@ grpc = ["grpcio (>=1.27.2)"]
 kubeflow = ["kubernetes", "minio", "google-cloud-storage", "sh"]
 launch = ["nbconvert", "nbformat", "chardet", "iso8601", "typing-extensions", "boto3", "google-cloud-storage", "kubernetes"]
 media = ["numpy", "moviepy", "pillow", "bokeh", "soundfile", "plotly", "rdkit-pypi"]
-sweeps = ["numpy (>=1.15,<1.21)", "scipy (>=1.5.4)", "pyyaml", "scikit-learn (==0.24.1)", "jsonschema (>=3.2.0)", "jsonref (>=0.2)", "pydantic (>=1.8.2)"]
+sweeps = ["sweeps (>=0.1.0)"]
 
 [[package]]
 name = "wcwidth"
@@ -2984,7 +2983,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 all = ["prophet", "torch", "pytorch-forecasting", "wandb"]
 all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "click", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "click", "semver", "jupyter", "nbconvert"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
-jupyter = ["jupyter", "nbconvert"]
+jupyter = ["jupyter", "nbconvert", "black"]
 prophet = ["prophet"]
 release = ["click", "semver"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions"]
@@ -2995,7 +2994,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <3.10.0"
-content-hash = "b0b30fe47080f49cffc2b85214d231e7c5de8b07cfb1dfcc49af854f2315edac"
+content-hash = "865ae22972df3b5640fcbcffa97ff52b8f2b36d8febb66e4bdf30a0492a66ff5"
 
 [metadata.files]
 absl-py = [
@@ -3184,12 +3183,12 @@ bleach = [
     {file = "bleach-5.0.0.tar.gz", hash = "sha256:c6d6cc054bdc9c83b48b8083e236e5f00f238428666d2ce2e083eaa5fd568565"},
 ]
 boto3 = [
-    {file = "boto3-1.24.4-py3-none-any.whl", hash = "sha256:79b7acf5cf83b34d23a975e400374caaf4711c52266c8717b293f40f3041e0aa"},
-    {file = "boto3-1.24.4.tar.gz", hash = "sha256:8bfb695cbe27d2ee9730ea4e1c894ef1fc255219d3fc7bc804171943ae8d7914"},
+    {file = "boto3-1.24.6-py3-none-any.whl", hash = "sha256:1c13d555172cf88eb645af2429e4a7f42be85e365d6ffc110c952a556d3f8808"},
+    {file = "boto3-1.24.6.tar.gz", hash = "sha256:4af6a8bc5110b5f9d2fbd00a3c110e4c4cc36fae78d05afa354831f5789e363b"},
 ]
 botocore = [
-    {file = "botocore-1.27.4-py3-none-any.whl", hash = "sha256:54ef4b035c51fe8937a61d3017e30e0a47237916143889ecf4eace481220029a"},
-    {file = "botocore-1.27.4.tar.gz", hash = "sha256:866ac4ad7de326cfb6956462cc224eee1ef1c17987c2313c6fecdbe017e753fc"},
+    {file = "botocore-1.27.6-py3-none-any.whl", hash = "sha256:eeebe304161db6828413dc358ea80ece52f4ddbc8ecde4dd58978d5861a09293"},
+    {file = "botocore-1.27.6.tar.gz", hash = "sha256:97c909a6ec5ad421573c18ae67fc6ea4232502cd30cffaf03bfcb584d9df652d"},
 ]
 bottleneck = [
     {file = "Bottleneck-1.3.4-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:da64d103043aa5a8114d5918f45e7c323e2659c2c8e3e2b1650a2d77258f79f7"},
@@ -3827,8 +3826,8 @@ jupyter = [
     {file = "jupyter-1.0.0.zip", hash = "sha256:3e1f86076bbb7c8c207829390305a2b1fe836d471ed54be66a3b8c41e7f46cc7"},
 ]
 jupyter-client = [
-    {file = "jupyter_client-7.3.3-py3-none-any.whl", hash = "sha256:5b4f5bb9f9c3b5466ba84761312ed75f487bf3b8b0e1eeeec4bb2d0f9d855c70"},
-    {file = "jupyter_client-7.3.3.tar.gz", hash = "sha256:9e80defc0058712bf2b30327bad582f9734668aa85e90256dcba116325ce3060"},
+    {file = "jupyter_client-7.3.4-py3-none-any.whl", hash = "sha256:17d74b0d0a7b24f1c8c527b24fcf4607c56bee542ffe8e3418e50b21e514b621"},
+    {file = "jupyter_client-7.3.4.tar.gz", hash = "sha256:aa9a6c32054b290374f95f73bb0cae91455c58dfb84f65c8591912b8f65e6d56"},
 ]
 jupyter-console = [
     {file = "jupyter_console-6.4.3-py3-none-any.whl", hash = "sha256:e630bcb682c0088dda45688ad7c2424d4a825c8acf494cb036ced03ed0424841"},
@@ -4222,8 +4221,8 @@ numpy = [
     {file = "numpy-1.21.6.zip", hash = "sha256:ecb55251139706669fdec2ff073c98ef8e9a84473e51e716211b41aa0f18e656"},
 ]
 numpydoc = [
-    {file = "numpydoc-1.3.1-py3-none-any.whl", hash = "sha256:a49822cb225e71b7ef7889dd42576b5aa14c56ce62e0bc030f97abc8a3ae240f"},
-    {file = "numpydoc-1.3.1.tar.gz", hash = "sha256:349ff29e00a5caf119141967e579f8f17b24d41c46740b13ea4e8dba9971b20f"},
+    {file = "numpydoc-1.4.0-py3-none-any.whl", hash = "sha256:fd26258868ebcc75c816fe68e1d41e3b55bd410941acfb969dee3eef6e5cf260"},
+    {file = "numpydoc-1.4.0.tar.gz", hash = "sha256:9494daf1c7612f59905fa09e65c9b8a90bbacb3804d91f7a94e778831e6fcfa5"},
 ]
 oauthlib = [
     {file = "oauthlib-3.2.0-py3-none-any.whl", hash = "sha256:6db33440354787f9b7f3a6dbd4febf5d0f93758354060e802f6c06cb493022fe"},
@@ -4348,8 +4347,8 @@ platformdirs = [
     {file = "platformdirs-2.5.2.tar.gz", hash = "sha256:58c8abb07dcb441e6ee4b11d8df0ac856038f944ab98b7be6b27b2a3c7feef19"},
 ]
 plotly = [
-    {file = "plotly-5.8.0-py2.py3-none-any.whl", hash = "sha256:0e6e2382aafe2b2978d2c1b10ea93e73ad1ec80fa9a195ff6eea62af7905dfdc"},
-    {file = "plotly-5.8.0.tar.gz", hash = "sha256:58cef3292f5994d82154d51fbc7338c48009fc47ea32ffe052ad29aaa15e0df9"},
+    {file = "plotly-5.8.1-py2.py3-none-any.whl", hash = "sha256:f46424f191ea6656440a849c281685685c3154864bbf36bb1fcd0709cb59a496"},
+    {file = "plotly-5.8.1.tar.gz", hash = "sha256:63b0d47d21ec285cf18c9b413182fcf9af6cba8faa52d47a43323f7f28a85646"},
 ]
 pluggy = [
     {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
@@ -4722,8 +4721,8 @@ qtpy = [
     {file = "QtPy-2.1.0.tar.gz", hash = "sha256:ca8cd4217175186344299ee4c0f7e7adcf362c70852ba35b255a534077025c06"},
 ]
 requests = [
-    {file = "requests-2.27.1-py2.py3-none-any.whl", hash = "sha256:f22fa1e554c9ddfd16e6e41ac79759e17be9e492b3587efa038054674760e72d"},
-    {file = "requests-2.27.1.tar.gz", hash = "sha256:68d7c56fd5a8999887728ef304a6d12edc7be74f1cfa47714fc8b414525c9a61"},
+    {file = "requests-2.28.0-py3-none-any.whl", hash = "sha256:bc7861137fbce630f17b03d3ad02ad0bf978c844f3536d0edda6499dafce2b6f"},
+    {file = "requests-2.28.0.tar.gz", hash = "sha256:d568723a7ebd25875d8d1eaf5dfa068cd2fc8194b2e483d7b1f7c81918dbec6b"},
 ]
 requests-oauthlib = [
     {file = "requests-oauthlib-1.3.1.tar.gz", hash = "sha256:75beac4a47881eeb94d5ea5d6ad31ef88856affe2332b9aafb52c6452ccf0d7a"},
@@ -5109,8 +5108,8 @@ torch = [
     {file = "torch-1.11.0-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:0e48af66ad755f0f9c5f2664028a414f57c49d6adc37e77e06fe0004da4edb61"},
 ]
 torchmetrics = [
-    {file = "torchmetrics-0.9.0-py3-none-any.whl", hash = "sha256:4fec7d3d070dafba9dc024853bd7c654fd3f7d2c2fe72fab9415cafccd719b8e"},
-    {file = "torchmetrics-0.9.0.tar.gz", hash = "sha256:3aa32ea575915b313d872d3460996c0f12a7bb37e6ce3da0e8d80865603b89f6"},
+    {file = "torchmetrics-0.9.1-py3-none-any.whl", hash = "sha256:ee470ad0d523cd8816ab39bce58f925bf5dd162782c9ae4a6a3c180aff9a89a0"},
+    {file = "torchmetrics-0.9.1.tar.gz", hash = "sha256:cc1e97f88672e5f926838cf5719760fe47b87ab83b1b2811be3b8b79b5e4932c"},
 ]
 tornado = [
     {file = "tornado-6.1-cp35-cp35m-macosx_10_9_x86_64.whl", hash = "sha256:d371e811d6b156d82aa5f9a4e08b58debf97c302a35714f6f45e35139c332e32"},
@@ -5264,8 +5263,8 @@ urllib3 = [
     {file = "urllib3-1.26.9.tar.gz", hash = "sha256:aabaf16477806a5e1dd19aa41f8c2b7950dd3c746362d7e3223dbe6de6ac448e"},
 ]
 wandb = [
-    {file = "wandb-0.12.17-py2.py3-none-any.whl", hash = "sha256:40e599ed7a4a633a4e1da77d026ee872fcb60a207aafbd1bf8ec1ab5b8171ccf"},
-    {file = "wandb-0.12.17.tar.gz", hash = "sha256:ad2fe5a9cbb44c445cb0cfc6d04804f74dca2999ae98f0c8db93721b522f76f1"},
+    {file = "wandb-0.12.18-py2.py3-none-any.whl", hash = "sha256:da82ccfb23b68a84e2eb1db8cb8213d234ab5a5589f22d7366c016ed4c47ef6a"},
+    {file = "wandb-0.12.18.tar.gz", hash = "sha256:0db719cf2984f5805cfdde445962fae024ef43e77603eecc031c67fe475ec05f"},
 ]
 wcwidth = [
     {file = "wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},
