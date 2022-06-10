@@ -32,7 +32,7 @@ DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
 @pytest.fixture
-def sinusoid_ts():
+def ts_with_feature():
     periods = 100
     df = generate_ar_df(
         start_time="2019-01-01", periods=periods, ar_coef=[1], sigma=1, n_segments=2, random_seed=0, freq="D"
@@ -530,8 +530,8 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     assert f"target_{quantiles[1]}" in features
 
 
-def test_backtest_pass_with_filter_transform(sinusoid_ts):
-    ts = sinusoid_ts
+def test_backtest_pass_with_filter_transform(ts_with_feature):
+    ts = ts_with_feature
 
     pipeline = Pipeline(
         model=ProphetModel(),
