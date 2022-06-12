@@ -223,7 +223,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Add prediction intervals to the forecasts."""
         if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
-        _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
+        with tslogger.disable():
+            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
