@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
 - 
-- 
+- Make TSDataset method to_dataset work with copy of the passed dataframe ([#741](https://github.com/tinkoff-ai/etna/pull/741))
 - 
 - Make feature selection transforms return columns in inverse_transform([#688](https://github.com/tinkoff-ai/etna/issues/688))
 - 
