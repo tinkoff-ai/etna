@@ -9,7 +9,12 @@ from etna.transforms.base import Transform
 class FilterFeaturesTransform(Transform):
     """Filters features in each segment of the dataframe."""
 
-    def __init__(self, include: Optional[Sequence[str]] = None, exclude: Optional[Sequence[str]] = None):
+    def __init__(
+        self,
+        include: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+        return_features: bool = False,
+    ):
         """Create instance of FilterFeaturesTransform.
 
         Parameters
@@ -18,7 +23,8 @@ class FilterFeaturesTransform(Transform):
             list of columns to pass through filter
         exclude:
             list of columns to not pass through
-
+        return_features:
+            indicates whether to return features or not.
         Raises
         ------
         ValueError:
@@ -26,6 +32,8 @@ class FilterFeaturesTransform(Transform):
         """
         self.include: Optional[Sequence[str]] = None
         self.exclude: Optional[Sequence[str]] = None
+        self.return_features: bool = return_features
+        self._df_removed: Optional[pd.DataFrame] = None
         if include is not None and exclude is None:
             self.include = list(set(include))
         elif exclude is not None and include is None:
@@ -71,4 +79,21 @@ class FilterFeaturesTransform(Transform):
             if not set(self.exclude).issubset(features):
                 raise ValueError(f"Features {set(self.exclude) - set(features)} are not present in the dataset.")
             result = result.drop(columns=self.exclude, level="feature")
+        if self.return_features:
+            self._df_removed = df.drop(result.columns, axis=1)
         return result
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply inverse transform to the data.
+
+        Parameters
+        ----------
+        df:
+            dataframe to apply inverse transformation
+
+        Returns
+        -------
+        result: pd.DataFrame
+            dataframe before transformation
+        """
+        return pd.concat([df, self._df_removed], axis=1)

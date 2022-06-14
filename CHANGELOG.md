@@ -9,20 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
+
 -
 - Add Sign metric ([#730](https://github.com/tinkoff-ai/etna/pull/730))
 -
 -
 -
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
--
--
--
--
--
+- 
+- 
+- 
+- 
+- 
 - Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
--
--
+- Add BATS and TBATS model adapters ([#678](https://github.com/tinkoff-ai/etna/pull/734))
+- 
 ### Changed
 -
 - 
@@ -30,9 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
 - 
+- Make TSDataset method to_dataset work with copy of the passed dataframe ([#741](https://github.com/tinkoff-ai/etna/pull/741))
 - 
-- 
-- 
+- Make feature selection transforms return columns in inverse_transform([#688](https://github.com/tinkoff-ai/etna/issues/688))
 - 
 - 
 - Add xticks parameter for plot_periodogram, clip frequencies to be >= 1 ([#706](https://github.com/tinkoff-ai/etna/pull/706))
@@ -56,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix tiny prediction intervals ([#722](https://github.com/tinkoff-ai/etna/pull/722))
 - Fix deepcopy issue for fitted deepmodel ([#735](https://github.com/tinkoff-ai/etna/pull/735))
 - Fix making backtest if all segments start with NaNs ([#728](https://github.com/tinkoff-ai/etna/pull/728))
-- 
+- Fix logging issues with backtest while emp intervals using ([#747](https://github.com/tinkoff-ai/etna/pull/747))
 
 ## [1.9.0] - 2022-05-17
 ### Added

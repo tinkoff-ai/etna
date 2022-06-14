@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -23,9 +24,26 @@ from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LogTransform
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
+
+
+@pytest.fixture
+def ts_with_feature():
+    periods = 100
+    df = generate_ar_df(
+        start_time="2019-01-01", periods=periods, ar_coef=[1], sigma=1, n_segments=2, random_seed=0, freq="D"
+    )
+    df_feature = generate_ar_df(
+        start_time="2019-01-01", periods=periods, ar_coef=[0.9], sigma=2, n_segments=2, random_seed=42, freq="D"
+    )
+    df["feature_1"] = df_feature["target"].apply(lambda x: abs(x))
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.mark.parametrize("horizon", ([1]))
@@ -510,6 +528,20 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     features = forecast_df.columns.get_level_values(1)
     assert f"target_{quantiles[0]}" in features
     assert f"target_{quantiles[1]}" in features
+
+
+def test_backtest_pass_with_filter_transform(ts_with_feature):
+    ts = ts_with_feature
+
+    pipeline = Pipeline(
+        model=ProphetModel(),
+        transforms=[
+            LogTransform(in_column="feature_1"),
+            FilterFeaturesTransform(exclude=["feature_1"], return_features=True),
+        ],
+        horizon=10,
+    )
+    pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)
 
 
 @pytest.mark.parametrize(
