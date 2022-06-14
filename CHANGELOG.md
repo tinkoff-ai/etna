@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
 - 
 - 
-- 
+- Jupyter extension for black ([#742](https://github.com/tinkoff-ai/etna/pull/742))
 - 
 - 
 - Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
