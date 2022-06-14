@@ -817,7 +817,7 @@ def test_inverse_transform_back_included_columns(ts_with_features, columns, retu
 
 def test_to_dataset_not_modify_dataframe():
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
-    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": 1})
     df_copy = df_original.copy(deep=True)
     df_mod = TSDataset.to_dataset(df_original)
     pd.testing.assert_frame_equal(df_original, df_copy)
