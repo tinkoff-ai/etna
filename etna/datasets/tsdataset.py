@@ -658,8 +658,8 @@ class TSDataset:
         2021-01-05           4           9
         """
         df_copy = df.copy(deep=True)
-        df_copy["timestamp"] = pd.to_datetime(df["timestamp"])
-        df_copy["segment"] = df["segment"].astype(str)
+        df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
+        df_copy["segment"] = df_copy["segment"].astype(str)
         feature_columns = df_copy.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")
