@@ -633,25 +633,25 @@ def plot_anomalies(
 
 
 def get_correlation_matrix(
-    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson"
+    ts: "TSDataset",
+    columns: Optional[str] = None,
+    segments: Optional[List[str]] = None,
+    method: str = "pearson",
 ) -> np.ndarray:
     """Compute pairwise correlation of timeseries for selected segments.
-
     Parameters
     ----------
     ts:
         TSDataset with timeseries data
+    columns:
+        Columns to use, if None use all columns
     segments:
         Segments to use
     method:
         Method of correlation:
-
         * pearson: standard correlation coefficient
-
         * kendall: Kendall Tau correlation coefficient
-
         * spearman: Spearman rank correlation
-
     Returns
     -------
     np.ndarray
@@ -659,21 +659,29 @@ def get_correlation_matrix(
     """
     if method not in ["pearson", "kendall", "spearman"]:
         raise ValueError(f"'{method}' is not a valid method of correlation.")
+
     if segments is None:
         segments = sorted(ts.segments)
-    correlation_matrix = ts[:, segments, :].corr(method=method).values
+
+    if columns:
+        correlation_matrix = ts[:, segments, columns].corr(method=method).values
+    else:
+        correlation_matrix = ts[:, segments, :].corr(method=method).values
+
     return correlation_matrix
 
 
 def plot_correlation_matrix(
     ts: "TSDataset",
+    columns: Optional[str] = None,
     segments: Optional[List[str]] = None,
     method: str = "pearson",
+    mode: str = "macro",
+    columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 10),
     **heatmap_kwargs,
 ):
     """Plot pairwise correlation heatmap for selected segments.
-
     Parameters
     ----------
     ts:
@@ -682,30 +690,56 @@ def plot_correlation_matrix(
         Segments to use
     method:
         Method of correlation:
-
         * pearson: standard correlation coefficient
-
         * kendall: Kendall Tau correlation coefficient
-
         * spearman: Spearman rank correlation
-
+    columns:
+        Columns to use, if None use all columns
     figsize:
         size of the figure in inches
     """
     if segments is None:
         segments = sorted(ts.segments)
+
     if "vmin" not in heatmap_kwargs:
         heatmap_kwargs["vmin"] = -1
     if "vmax" not in heatmap_kwargs:
         heatmap_kwargs["vmax"] = 1
 
-    correlation_matrix = get_correlation_matrix(ts, segments, method)
-    fig, ax = plt.subplots(figsize=figsize)
-    ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
-    labels = list(ts[:, segments, :].columns.values)
-    ax.set_xticklabels(labels, rotation=45, horizontalalignment="right")
-    ax.set_yticklabels(labels, rotation=0, horizontalalignment="right")
-    ax.set_title("Correlation Heatmap")
+    if mode not in ["macro", "per-segment"]:
+        raise ValueError(f"'{mode}' is not a valid method of mode.")
+
+    if mode == "macro":
+        fig, ax = plt.subplots(figsize=figsize)
+        correlation_matrix = get_correlation_matrix(ts, columns, segments, method)
+
+        if columns:
+            labels = list(ts[:, segments, columns].columns.values)
+        else:
+            labels = list(ts[:, segments, :].columns.values)
+
+        ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
+        ax.set_xticks(np.arange(len(labels)), labels=labels)
+        ax.set_yticks(np.arange(len(labels)), labels=labels)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+        ax.set_title("Correlation Heatmap")
+
+    if mode == "per-segment":
+        fig, ax = prepare_axes(len(segments), columns_num=columns_num, figsize=figsize)
+
+        for i, segment in enumerate(segments):
+            correlation_matrix = get_correlation_matrix(ts, columns, [segment], method)
+            if columns:
+                labels = list(ts[:, segment, columns].columns.values)
+            else:
+                labels = list(ts[:, segment, :].columns.values)
+            ax[i] = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax[i], **heatmap_kwargs)
+            ax[i].set_xticks(np.arange(len(labels)), labels=labels)
+            ax[i].set_yticks(np.arange(len(labels)), labels=labels)
+            plt.setp(ax[i].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+            plt.setp(ax[i].get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+            ax[i].set_title("Correlation Heatmap" + " " + segment)
 
 
 def plot_anomalies_interactive(
