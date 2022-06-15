@@ -1377,7 +1377,6 @@ def plot_periodogram(
         for segment in segments:
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
             segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
             frequencies_segments.append(frequencies)
             spectrums_segments.append(spectrum)
