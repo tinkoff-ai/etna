@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 - 
-- 
+- Jupyter extension for black ([#742](https://github.com/tinkoff-ai/etna/pull/742))
 - 
 - 
 - 

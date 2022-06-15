@@ -164,7 +164,7 @@ class MeanTransform(WindowStatisticsTransform):
             dataframe with results
         """
         window = self.window if self.window != -1 else len(df)
-        self._alpha_range = np.array([self.alpha ** i for i in range(window)])
+        self._alpha_range = np.array([self.alpha**i for i in range(window)])
         self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
         return super().transform(df)
 
