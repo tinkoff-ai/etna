@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 - 
-- Jupyter extension for black ([#742](https://github.com/tinkoff-ai/etna/pull/742))
+- 
 - 
 - 
 - 
@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
 - Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
 - Add BATS and TBATS model adapters ([#678](https://github.com/tinkoff-ai/etna/pull/734))
+- Jupyter extension for black ([#742](https://github.com/tinkoff-ai/etna/pull/742))
 ### Changed
 - Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
 - Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
