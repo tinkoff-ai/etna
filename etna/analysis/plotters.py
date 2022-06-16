@@ -706,7 +706,7 @@ def plot_correlation_matrix(
     mode: 'macro' or 'per-segment'
         Aggregation mode
     columns_num:
-        number of subplots columns
+        Number of subplots columns
     figsize:
         size of the figure in inches
     """
