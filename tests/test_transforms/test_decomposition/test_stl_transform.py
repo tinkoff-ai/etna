@@ -38,8 +38,15 @@ def get_one_df(coef: float, period: int, magnitude: float) -> pd.DataFrame:
 @pytest.fixture
 def df_trend_seasonal_one_segment() -> pd.DataFrame:
     df = get_one_df(coef=0.1, period=7, magnitude=1)
-    df.set_index("timestamp")
+    df.set_index("timestamp", inplace=True)
     return df
+
+
+@pytest.fixture
+def df_trend_seasonal_starting_with_nans_one_segment(df_trend_seasonal_one_segment) -> pd.DataFrame:
+    result = df_trend_seasonal_one_segment
+    result.iloc[:2] = np.NaN
+    return result
 
 
 @pytest.fixture
@@ -50,6 +57,20 @@ def ts_trend_seasonal() -> TSDataset:
     df_2["segment"] = "segment_2"
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
+
+
+@pytest.fixture
+def ts_trend_seasonal_starting_with_nans() -> TSDataset:
+    df_1 = get_one_df(coef=0.1, period=7, magnitude=1)
+    df_1["segment"] = "segment_1"
+
+    df_2 = get_one_df(coef=0.05, period=7, magnitude=2)
+    df_2["segment"] = "segment_2"
+
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
+    df.loc[[df.index[0], df.index[1]], pd.IndexSlice["segment_1", "target"]] = None
+    return TSDataset(df, freq="D")
 
 
 @pytest.fixture
@@ -67,41 +88,56 @@ def ts_trend_seasonal_nan_tails() -> TSDataset:
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-def test_transform_one_segment(df_trend_seasonal_one_segment, model):
+@pytest.mark.parametrize(
+    "df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_starting_with_nans_one_segment"]
+)
+def test_transform_one_segment(df_name, model, request):
     """Test that transform for one segment removes trend and seasonality."""
+    df = request.getfixturevalue(df_name)
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model=model)
-    df_transformed = transform.fit_transform(df_trend_seasonal_one_segment)
-    np.testing.assert_allclose(df_transformed["target"], 0, atol=0.2)
+    df_transformed = transform.fit_transform(df)
+    df_expected = df.copy()
+    df_expected.loc[~df_expected["target"].isna(), "target"] = 0
+    np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-def test_transform_multi_segments(ts_trend_seasonal, model):
+@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans"])
+def test_transform_multi_segments(ts_name, model, request):
     """Test that transform for all segments removes trend and seasonality."""
+    ts = request.getfixturevalue(ts_name)
+    df_expected = ts.to_pandas(flatten=True)
+    df_expected.loc[~df_expected["target"].isna(), "target"] = 0
     transform = STLTransform(in_column="target", period=7, model=model)
-    ts_trend_seasonal.fit_transform(transforms=[transform])
-    np.testing.assert_allclose(ts_trend_seasonal[:, :, "target"], 0, atol=0.2)
+    ts.fit_transform(transforms=[transform])
+    df_transformed = ts.to_pandas(flatten=True)
+    np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-def test_inverse_transform_one_segment(df_trend_seasonal_one_segment, model):
+@pytest.mark.parametrize(
+    "df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_starting_with_nans_one_segment"]
+)
+def test_inverse_transform_one_segment(df_name, model, request):
     """Test that transform + inverse_transform don't change dataframe."""
+    df = request.getfixturevalue(df_name)
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model=model)
-    df_transformed = transform.fit_transform(df_trend_seasonal_one_segment)
+    df_transformed = transform.fit_transform(df)
     df_inverse_transformed = transform.inverse_transform(df_transformed)
-    assert np.all(df_trend_seasonal_one_segment["target"] == df_inverse_transformed["target"])
+    assert df["target"].equals(df_inverse_transformed["target"])
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
-def test_inverse_transform_multi_segments(ts_trend_seasonal, model):
+@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans"])
+def test_inverse_transform_multi_segments(ts_name, model, request):
     """Test that transform + inverse_transform don't change tsdataset."""
+    ts = request.getfixturevalue(ts_name)
     transform = STLTransform(in_column="target", period=7, model=model)
-    dataframe_initial = ts_trend_seasonal.to_pandas()
-    ts_trend_seasonal.fit_transform(transforms=[transform])
-    ts_trend_seasonal.inverse_transform()
-    for segment in ts_trend_seasonal.segments:
-        assert np.all(
-            ts_trend_seasonal[:, segment, "target"] == dataframe_initial.loc[:, pd.IndexSlice[segment, "target"]]
-        )
+    df = ts.to_pandas(flatten=True)
+    ts.fit_transform(transforms=[transform])
+    ts.inverse_transform()
+    df_inverse_transformed = ts.to_pandas(flatten=True)
+    assert df_inverse_transformed["target"].equals(df["target"])
 
 
 @pytest.mark.parametrize("model_stl", ["arima", "holt"])
