@@ -15,6 +15,7 @@ from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics import Width
+from etna.models import CatBoostModelPerSegment
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
@@ -26,6 +27,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LogTransform
+from etna.transforms.missing_values.truncate import TruncateTransform
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -41,6 +43,22 @@ def ts_with_feature():
         start_time="2019-01-01", periods=periods, ar_coef=[0.9], sigma=2, n_segments=2, random_seed=42, freq="D"
     )
     df["feature_1"] = df_feature["target"].apply(lambda x: abs(x))
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def range_ts():
+    periods = 100
+    df = pd.DataFrame(
+        {
+            "segment": np.zeros(periods),
+            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
+            "target": np.arange(1, periods + 1),
+            "feature": np.arange(-2, periods - 2),
+        }
+    )
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
@@ -573,3 +591,16 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
         metrics=[MAE()],
         n_folds=[mask],
     )
+
+
+def test_backtest_truncated_transform(range_ts):
+    ts = range_ts
+
+    pipeline = Pipeline(
+        model=CatBoostModelPerSegment(),
+        transforms=[
+            TruncateTransform(in_column="target", mask_column="feature", segments_to_truncate=[-2, -1, 0]),
+        ],
+        horizon=10,
+    )
+    pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)
