@@ -398,6 +398,7 @@ class TSDataset:
 
         Applied in reversed order.
         """
+        # TODO: return regressors after inverse_transform
         if self.transforms is not None:
             for transform in reversed(self.transforms):
                 tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
@@ -659,16 +660,17 @@ class TSDataset:
         2021-01-04           3           8
         2021-01-05           4           9
         """
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df["segment"] = df["segment"].astype(str)
-        feature_columns = df.columns.tolist()
+        df_copy = df.copy(deep=True)
+        df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
+        df_copy["segment"] = df_copy["segment"].astype(str)
+        feature_columns = df_copy.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")
-        df = df.pivot(index="timestamp", columns="segment")
-        df = df.reorder_levels([1, 0], axis=1)
-        df.columns.names = ["segment", "feature"]
-        df = df.sort_index(axis=1, level=(0, 1))
-        return df
+        df_copy = df_copy.pivot(index="timestamp", columns="segment")
+        df_copy = df_copy.reorder_levels([1, 0], axis=1)
+        df_copy.columns.names = ["segment", "feature"]
+        df_copy = df_copy.sort_index(axis=1, level=(0, 1))
+        return df_copy
 
     def _find_all_borders(
         self,
