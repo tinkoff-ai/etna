@@ -15,6 +15,7 @@ def match_target_quantiles(features: Set[str]) -> Set[str]:
     pattern = re.compile("target_\d+\.\d+$")
     return {i for i in list(features) if pattern.match(i) is not None}
 
+
 class _OneSegmentTruncateTransform(Transform):
     """Instance of this class applies truncate transformation to one segment data."""
 

@@ -29,6 +29,7 @@ class DummyMetric(Metric):
     def name(self) -> str:
         return self.__repr__()
 
+
 @pytest.fixture()
 def range_ts():
     periods = 100

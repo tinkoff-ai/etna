@@ -29,6 +29,7 @@ from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
+
 @pytest.fixture
 def range_ts():
     periods = 100
@@ -43,6 +44,7 @@ def range_ts():
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
+
 
 @pytest.mark.parametrize("horizon", ([1]))
 def test_init_pass(horizon):
@@ -518,6 +520,7 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     features = forecast_df.columns.get_level_values(1)
     assert f"target_{quantiles[0]}" in features
     assert f"target_{quantiles[1]}" in features
+
 
 def test_backtest_truncated_transform(range_ts):
     ts = range_ts
