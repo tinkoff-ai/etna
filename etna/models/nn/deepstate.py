@@ -82,7 +82,7 @@ class SeasonalitySSM(LevelSSM):
 
 class DeepStateNetwork(LightningModule):
     def __init__(self, ssm: SSM, n_samples: int, input_size: int, num_layers: int = 1):
-        super(DeepStateNetwork).__init__()
+        super().__init__()
         self.ssm = ssm
         self.n_samples = n_samples
         self.latent_dim = self.ssm.latent_dim()
@@ -117,21 +117,21 @@ class DeepStateNetwork(LightningModule):
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
             innovation_coeff=self.ssm.innovation_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
-            prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim, 1)
-            prior_cov=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim, latent_dim)
+            prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
+            prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
             seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
         _, prior_mean, prior_cov = lds.log_likelihood(targets=targets)
 
-        output, (_, _) = self.RNN(encoder_real, h_n, c_n)  # (batch_size, seq_length, latent_dim)
+        output, (_, _) = self.RNN(decoder_real, h_n, c_n)  # (batch_size, seq_length, latent_dim)
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
             innovation_coeff=self.ssm.innovation_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
-            prior_mean=prior_mean,  # (batch_size, latent_dim, 1)
-            prior_cov=prior_cov,  # (batch_size, latent_dim, latent_dim)
+            prior_mean=prior_mean,  # (batch_size, latent_dim)
+            prior_std=prior_std,  # (batch_size, latent_dim)
             seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
@@ -149,10 +149,11 @@ class DeepStateNetwork(LightningModule):
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
-            innovation_coeff=self.ssm.innovation_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
-            noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
-            prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim, 1)
-            prior_cov=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim, latent_dim)
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index)
+            * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
+            noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, 1)
+            prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
+            prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
             seq_length=targets.shape[1],
             latent_dim=self.latent_dim,
         )
@@ -169,9 +170,9 @@ class LDS:
         emission_coeff: Tensor,  # (batch_size, seq_length, latent_dim)
         transition_coeff: Tensor,  # (latent_dim, latent_dim)
         innovation_coeff: Tensor,  # (batch_size, seq_length, latent_dim)
-        noise_std: Tensor,  # (batch_size, seq_length, latent_dim)
-        prior_mean: Tensor,  # (batch_size, latent_dim, 1)
-        prior_cov: Tensor,  # (batch_size, latent_dim, latent_dim)
+        noise_std: Tensor,  # (batch_size, seq_length, 1)
+        prior_mean: Tensor,  # (batch_size, latent_dim)
+        prior_std: Tensor,  # (batch_size, latent_dim)
         seq_length: int,
         latent_dim: int,
     ):
@@ -180,7 +181,8 @@ class LDS:
         self.innovation_coeff = innovation_coeff
         self.noise_std = noise_std
         self.prior_mean = prior_mean
-        self.prior_cov = prior_cov
+        self.prior_std = prior_std
+        self.prior_cov = torch.diag_embed(prior_std * prior_std)  # (batch_size, latent_dim, latent_dim)
         self.seq_length = seq_length
         self.latent_dim = latent_dim
 
@@ -188,9 +190,9 @@ class LDS:
         self,
         target: Tensor,  # (batch_size, 1)
         noise_std: Tensor,  # (batch_size, 1)
-        prior_mean: Tensor,  # (batch_size, latent_dim, 1)
+        prior_mean: Tensor,  # (batch_size, latent_dim)
         prior_cov: Tensor,  # (batch_size, latent_dim, latent_dim)
-        emission_coeff: Tensor,  # (batch_size, latent_dim, 1)
+        emission_coeff: Tensor,  # (batch_size, latent_dim)
     ):
         """
         One step of the Kalman filter.
@@ -214,31 +216,42 @@ class LDS:
         Returns
         -------
         Tensor
-            Log probability, shape (batch_size, )
+            Log probability, shape (batch_size, 1)
         Tensor
-            Filtered_mean, shape (batch_size, latent_dim)
+            Filtered_mean, shape (batch_size, latent_dim, 1)
         Tensor
             Filtered_covariance, shape (batch_size, latent_dim, latent_dim)
         """
-        # H * mu (batch_size, 1, 1)
-        target_mean = emission_coeff.permute(0, 2, 1) @ prior_mean
-        # v (batch_size, 1, 1)
+        emission_coeff = emission_coeff.unsqueeze(-1)
+
+        # H * mu (batch_size, 1)
+        target_mean = (emission_coeff.permute(0, 2, 1) @ prior_mean.unsqueeze(-1)).squeeze(-1)
+        print(target_mean.shape)
+        # v (batch_size, 1)
         residual = target - target_mean
+        print(residual.shape)
         # R (batch_size, 1, 1)
         noise_cov = torch.diag_embed(noise_std * noise_std)
+        print(noise_cov.shape)
         # F (batch_size, 1, 1)
         target_cov = emission_coeff.permute(0, 2, 1) @ prior_cov @ emission_coeff + noise_cov
-        # K (batch_size, latent_dim, 1)
-        kalman_gain = prior_cov @ emission_coeff @ torch.inverse(target_cov)
+        print(target_cov.shape)
+        # K (batch_size, latent_dim)
+        kalman_gain = (prior_cov @ emission_coeff @ torch.inverse(target_cov)).squeeze(-1)
+        print(kalman_gain.shape)
 
-        # mu = mu_t + K * v (batch_size, latent_dim, 1)
-        filtered_mean = prior_mean + kalman_gain @ residual
+        # mu = mu_t + K * v (batch_size, latent_dim)
+        filtered_mean = prior_mean + (kalman_gain.unsqueeze(-1) @ residual.unsqueeze(-1)).squeeze(-1)
+        print(filtered_mean.shape)
         # P = (I - KH)P_t (batch_size, latent_dim, latent_dim)
-        filtered_cov = (torch.eye(self.latent_dim) - kalman_gain @ emission_coeff.permute(0, 2, 1)) @ prior_cov
-        # log-likelihood (batch_size, )
+        filtered_cov = (
+            torch.eye(self.latent_dim) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
+        ) @ prior_cov
+        print(filtered_cov.shape)
+        # log-likelihood (batch_size, 1)
         log_p = (
-            torch.distributions.multivariate_normal.MultivariateNormal(target_mean, target_cov)
-            .log_prob(target)
+            Normal(target_mean.squeeze(-1), torch.sqrt(target_cov.squeeze(-1).squeeze(-1)))
+            .log_prob(target.squeeze(-1))
             .unsqueeze(-1)
         )
         return log_p, filtered_mean, filtered_cov
@@ -262,25 +275,24 @@ class LDS:
             Covariance of p(l_T | l_{T-1}), where T is seq_length, with shape
             (batch_size, latent_dim, latent_dim)
         """
-        targets = targets.permute(1, 0, 2)
         log_p_seq = []
         mean = self.prior_mean
         cov = self.prior_cov
 
         for t in range(self.seq_length):
             log_p, filtered_mean, filtered_cov = self.kalman_filter_step(
-                target=targets[t],
-                noise_std=self.noise_std[t],
+                target=targets[:, t],
+                noise_std=self.noise_std[:, t],
                 prior_mean=mean,
                 prior_cov=cov,
-                emission_coeff=self.emission_coeff[t],
+                emission_coeff=self.emission_coeff[:, t],
             )
 
             log_p_seq.append(log_p)
-            mean = self.transition_coeff @ filtered_mean
-            cov = self.transition_coeff @ filtered_cov @ self.transition_coeff.permute(0, 2, 1) + self.innovation_coeff[
-                t
-            ] @ self.innovation_coeff[t].permute(0, 2, 1)
+            mean = (self.transition_coeff @ filtered_mean.unsqueeze(-1)).squeeze(-1)
+            cov = self.transition_coeff @ filtered_cov @ self.transition_coeff.T + self.innovation_coeff[
+                :, t
+            ].unsqueeze(-1) @ self.innovation_coeff[:, t].unsqueeze(-1).permute(0, 2, 1)
 
         return torch.cat(log_p_seq), mean, cov
 
@@ -304,20 +316,28 @@ class LDS:
 
     def sample(self, n_samples: int) -> Tensor:
 
-        eps_latent = MultivariateNormal(torch.zeros_like(self.prior_mean), torch.ones_like(self.prior_cov)).sample(
-            (n_samples, self.seq_length)
-        )
-        eps_observation = Normal(torch.zeros_like(self.noise_std), torch.ones_like(self.noise_std)).sample(
-            (n_samples, self.seq_length)
+        batch_size = self.prior_mean.shape[0]
+
+        # (n_samples, batch_size, seq_length, latent_dim)
+        eps_latent = MultivariateNormal(torch.zeros(self.latent_dim), torch.eye(self.latent_dim)).sample(
+            (n_samples, batch_size, self.seq_length)
         )
 
+        # (n_samples, batch_size, seq_length, 1)
+        eps_observation = Normal(0, 1).sample((n_samples, batch_size, self.seq_length))
+
+        # (n_samples, batch_size, latent_dim)
+        l_t = MultivariateNormal(self.prior_mean, self.prior_cov).sample((n_samples,))
         samples_seq = []
-        l_t = MultivariateNormal(self.prior_mean, self.prior_cov).sample(n_samples)
         for t in range(self.seq_length):
-            z_t = self.emission_coeff[:, t].permute(0, 2, 1) @ l_t + self.noise_std[:, t] * eps_observation[:, t]
-            l_t = self.transition_coeff[:, t] @ l_t + self.innovation_coeff[:, t] * eps_latent[:, t]
+            z_t = (self.emission_coeff[:, t].unsqueeze(-1).permute(0, 2, 1) @ l_t.unsqueeze(-1)) + (
+                self.noise_std[:, t].unsqueeze(0) * eps_observation[:, :, t].unsqueeze(-1)
+            ).unsqueeze(-1)
+            l_t = (self.transition_coeff @ l_t.unsqueeze(-1)).squeeze(-1) + self.innovation_coeff[:, t].unsqueeze(
+                0
+            ) * eps_latent[:, :, t]
             samples_seq.append(z_t)
 
-        # (n_samples, batch_size, seq_length, obs_dim)
-        samples = torch.cat(samples_seq, dim=-2)
+        # (n_samples, batch_size, seq_length, 1)
+        samples = torch.cat(samples_seq, dim=2)
         return samples
