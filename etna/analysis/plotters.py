@@ -650,9 +650,13 @@ def get_correlation_matrix(
         Segments to use
     method:
         Method of correlation:
+
         * pearson: standard correlation coefficient
+
         * kendall: Kendall Tau correlation coefficient
+
         * spearman: Spearman rank correlation
+
     Returns
     -------
     np.ndarray
@@ -664,7 +668,7 @@ def get_correlation_matrix(
     if segments is None:
         segments = sorted(ts.segments)
     if columns is None:
-        columns = list(set(ts.df.columns.get_level_values(1)))
+        columns = list(set(ts.df.columns.get_level_values("feature")))
 
     correlation_matrix = ts[:, segments, columns].corr(method=method).values
     return correlation_matrix
@@ -694,10 +698,13 @@ def plot_correlation_matrix(
         Method of correlation:
 
         * pearson: standard correlation coefficient
+
         * kendall: Kendall Tau correlation coefficient
+
         * spearman: Spearman rank correlation
+
     mode: 'macro' or 'per-segment'
-        aggregation mode
+        Aggregation mode
     columns_num:
         number of subplots columns
     figsize:
@@ -706,7 +713,7 @@ def plot_correlation_matrix(
     if segments is None:
         segments = sorted(ts.segments)
     if columns is None:
-        columns = list(set(ts.df.columns.get_level_values(1)))
+        columns = list(set(ts.df.columns.get_level_values("feature")))
     if "vmin" not in heatmap_kwargs:
         heatmap_kwargs["vmin"] = -1
     if "vmax" not in heatmap_kwargs:
