@@ -14,6 +14,7 @@ from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics import Width
+from etna.models import CatBoostModelPerSegment
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
@@ -23,10 +24,25 @@ from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms.utils import TruncateTransform
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
+@pytest.fixture
+def range_ts():
+    periods = 100
+    df = pd.DataFrame(
+        {
+            "segment": np.zeros(periods),
+            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
+            "target": np.arange(1, periods + 1),
+            "feature": np.arange(-2, periods - 2),
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
 
 @pytest.mark.parametrize("horizon", ([1]))
 def test_init_pass(horizon):
@@ -502,3 +518,15 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     features = forecast_df.columns.get_level_values(1)
     assert f"target_{quantiles[0]}" in features
     assert f"target_{quantiles[1]}" in features
+
+def test_backtest_truncated_transform(range_ts):
+    ts = range_ts
+
+    pipeline = Pipeline(
+        model=CatBoostModelPerSegment(),
+        transforms=[
+            TruncateTransform(in_column="target", mask_column="feature", segments_to_truncate=[-2, -1, 0]),
+        ],
+        horizon=10,
+    )
+    pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)
