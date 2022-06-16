@@ -8,55 +8,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
--
--
--
--
--
--
-- Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
--
--
--
--
--
-- Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
--
--
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 ### Changed
 -
 - Add columns and mode parameters in plot_correlation_matrix ([#726](https://github.com/tinkoff-ai/etna/pull/753))
 - Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
-- 
-- Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
-- 
+=======
 - 
 - 
 - 
 - 
 - 
-- Add xticks parameter for plot_periodogram, clip frequencies to be >= 1 ([#706](https://github.com/tinkoff-ai/etna/pull/706))
+- 
+- 
+- 
+- 
 - 
 - 
 - 
 ### Fixed
--
--
--
--
--
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [1.10.0] - 2022-06-12
+### Added
+- Add Sign metric ([#730](https://github.com/tinkoff-ai/etna/pull/730))
+- Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
+- Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
+- Add BATS and TBATS model adapters ([#678](https://github.com/tinkoff-ai/etna/pull/734))
+- Jupyter extension for black ([#742](https://github.com/tinkoff-ai/etna/pull/742))
+### Changed
+- Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
+- Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
+- Make feature selection transforms return columns in inverse_transform([#688](https://github.com/tinkoff-ai/etna/issues/688))
+- Add xticks parameter for plot_periodogram, clip frequencies to be >= 1 ([#706](https://github.com/tinkoff-ai/etna/pull/706))
+- Make TSDataset method to_dataset work with copy of the passed dataframe ([#741](https://github.com/tinkoff-ai/etna/pull/741))
+### Fixed
+- Fix bug when `ts.plot` does not save figure ([#714](https://github.com/tinkoff-ai/etna/pull/714))
 - Fix bug in plot_clusters ([#675](https://github.com/tinkoff-ai/etna/pull/675))
--
 - Fix bugs and documentation for cross_corr_plot ([#691](https://github.com/tinkoff-ai/etna/pull/691))
--
--
 - Fix bugs and documentation for plot_backtest and plot_backtest_interactive ([#700](https://github.com/tinkoff-ai/etna/pull/700))
--
--
--
--
--
--
+- Make STLTransform to work with NaNs at the beginning ([#736](https://github.com/tinkoff-ai/etna/pull/736))
+- Fix tiny prediction intervals ([#722](https://github.com/tinkoff-ai/etna/pull/722))
+- Fix deepcopy issue for fitted deepmodel ([#735](https://github.com/tinkoff-ai/etna/pull/735))
+- Fix making backtest if all segments start with NaNs ([#728](https://github.com/tinkoff-ai/etna/pull/728))
+- Fix logging issues with backtest while emp intervals using ([#747](https://github.com/tinkoff-ai/etna/pull/747))
 
 ## [1.9.0] - 2022-05-17
 ### Added
