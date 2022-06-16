@@ -19,6 +19,8 @@ from etna.models.sarimax import SARIMAXModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.models.sklearn import SklearnMultiSegmentModel
 from etna.models.sklearn import SklearnPerSegmentModel
+from etna.models.tbats import BATSModel
+from etna.models.tbats import TBATSModel
 
 if SETTINGS.prophet_required:
     from etna.models.prophet import ProphetModel

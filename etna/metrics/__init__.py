@@ -7,6 +7,7 @@ from sklearn.metrics import r2_score
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.functional_metrics import mape
+from etna.metrics.functional_metrics import sign
 from etna.metrics.functional_metrics import smape
 from etna.metrics.intervals_metrics import Coverage
 from etna.metrics.intervals_metrics import Width
@@ -17,4 +18,5 @@ from etna.metrics.metrics import MSLE
 from etna.metrics.metrics import R2
 from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import MedAE
+from etna.metrics.metrics import Sign
 from etna.metrics.utils import compute_metrics

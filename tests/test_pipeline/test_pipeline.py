@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -24,6 +25,8 @@ from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LogTransform
 from etna.transforms.utils import TruncateTransform
 from tests.utils import DummyMetric
 
@@ -41,6 +44,21 @@ def range_ts():
             "feature": np.arange(-2, periods - 2),
         }
     )
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_with_feature():
+    periods = 100
+    df = generate_ar_df(
+        start_time="2019-01-01", periods=periods, ar_coef=[1], sigma=1, n_segments=2, random_seed=0, freq="D"
+    )
+    df_feature = generate_ar_df(
+        start_time="2019-01-01", periods=periods, ar_coef=[0.9], sigma=2, n_segments=2, random_seed=42, freq="D"
+    )
+    df["feature_1"] = df_feature["target"].apply(lambda x: abs(x))
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
@@ -431,11 +449,15 @@ def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, mode, exp
 @pytest.mark.parametrize(
     "mask", (FoldMask("2020-01-01", "2020-01-02", ["2020-01-03"]), FoldMask("2020-01-03", "2020-01-05", ["2020-01-06"]))
 )
-def test_generate_folds_datasets(simple_ts: TSDataset, mask):
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts", "simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_generate_folds_datasets(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=simple_ts, masks=[mask], mode="constant")[0]
-    train, test = list(pipeline._generate_folds_datasets(simple_ts, [mask], 4))[0]
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant")[0]
+    train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
     assert train.index.min() == np.datetime64(mask.first_train_timestamp)
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
     assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
@@ -445,12 +467,16 @@ def test_generate_folds_datasets(simple_ts: TSDataset, mask):
 @pytest.mark.parametrize(
     "mask", (FoldMask(None, "2020-01-02", ["2020-01-03"]), FoldMask(None, "2020-01-05", ["2020-01-06"]))
 )
-def test_generate_folds_datasets_without_first_date(simple_ts: TSDataset, mask):
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts", "simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work without first date."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=simple_ts, masks=[mask], mode="constant")[0]
-    train, test = list(pipeline._generate_folds_datasets(simple_ts, [mask], 4))[0]
-    assert train.index.min() == np.datetime64(simple_ts.index.min())
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant")[0]
+    train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
+    assert train.index.min() == np.datetime64(ts.index.min())
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
     assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
     assert test.index.max() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(4, "D")
@@ -533,3 +559,48 @@ def test_backtest_truncated_transform(range_ts):
         horizon=10,
     )
     pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)
+
+
+def test_backtest_pass_with_filter_transform(ts_with_feature):
+    ts = ts_with_feature
+
+    pipeline = Pipeline(
+        model=ProphetModel(),
+        transforms=[
+            LogTransform(in_column="feature_1"),
+            FilterFeaturesTransform(exclude=["feature_1"], return_features=True),
+        ],
+        horizon=10,
+    )
+    pipeline.backtest(ts=ts, metrics=[MAE()], aggregate_metrics=True)
+
+
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_backtest_nans_at_beginning(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    pipeline = Pipeline(model=NaiveModel(), horizon=2)
+    _ = pipeline.backtest(
+        ts=ts,
+        metrics=[MAE()],
+        n_folds=2,
+    )
+
+
+@pytest.mark.parametrize(
+    "ts_name", ["simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
+)
+def test_backtest_nans_at_beginning_with_mask(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    mask = FoldMask(
+        ts.index.min(),
+        ts.index.min() + np.timedelta64(5, "D"),
+        [ts.index.min() + np.timedelta64(6, "D"), ts.index.min() + np.timedelta64(8, "D")],
+    )
+    pipeline = Pipeline(model=NaiveModel(), horizon=3)
+    _ = pipeline.backtest(
+        ts=ts,
+        metrics=[MAE()],
+        n_folds=[mask],
+    )

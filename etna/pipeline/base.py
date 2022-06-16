@@ -13,7 +13,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import scipy
 from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
@@ -89,7 +88,7 @@ class FoldMask(BaseMixin):
         dataset_timestamps = list(ts.index)
         dataset_description = ts.describe()
 
-        min_first_timestamp = dataset_description["start_timestamp"].min()
+        min_first_timestamp = ts.index.min()
         if self.first_train_timestamp and self.first_train_timestamp < min_first_timestamp:
             raise ValueError(f"First train timestamp should be later than {min_first_timestamp}!")
 
@@ -224,18 +223,19 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Add prediction intervals to the forecasts."""
         if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
-        _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
+        with tslogger.disable():
+            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
             - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
-        se = scipy.stats.sem(residuals)
+        sigma = np.std(residuals.values, axis=0)
         borders = []
         for quantile in quantiles:
             z_q = norm.ppf(q=quantile)
-            border = predictions[:, :, "target"] + se * z_q
+            border = predictions[:, :, "target"] + sigma * z_q
             border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
             borders.append(border)
 
