@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Union, Literal, Sequence, List
 from typing import Dict
 from typing import Optional
 
@@ -20,6 +20,7 @@ def forecast(
     exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
     forecast_config_path: Optional[Path] = typer.Argument(None, help="path to yaml config with forecast params"),
     raw_output: bool = typer.Argument(False, help="by default we return only forecast without features"),
+    known_future: Optional[List[str]] = typer.Argument(None, help="path to csv with exog data"),
 ):
     """Command to make forecast with etna without coding.
 
@@ -68,8 +69,9 @@ def forecast(
     if exog_path:
         df_exog = pd.read_csv(exog_path, parse_dates=["timestamp"])
         df_exog = TSDataset.to_dataset(df_exog)
+        known_future = "all" if not known_future else known_future
 
-    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
+    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=known_future)
 
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     pipeline.fit(tsdataset)
