@@ -25,15 +25,16 @@ def all_date_present_df(date_range: pd.Series) -> pd.DataFrame:
     """Create pd.DataFrame that contains some target on given range of dates without gaps."""
     df = pd.DataFrame({"timestamp": date_range})
     df["target"] = list(range(len(df)))
-    df.set_index("timestamp", inplace=True)
+    df["segment"] = "segment_1"
+    df = TSDataset.to_dataset(df)
     return df
 
 
 @pytest.fixture
-def all_date_present_df_two_segments(all_date_present_df: pd.Series) -> pd.DataFrame:
+def all_date_present_df_two_segments(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
     """Create pd.DataFrame that contains two segments with some targets on given range of dates without gaps."""
-    df_1 = all_date_present_df.reset_index()
-    df_2 = all_date_present_df.copy().reset_index()
+    df_1 = TSDataset.to_flatten(all_date_present_df)
+    df_2 = df_1.copy()
 
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
@@ -50,8 +51,8 @@ def df_with_missing_value_x_index(random_seed, all_date_present_df: pd.DataFrame
     # because Imputer should know starting and ending dates
     timestamps = sorted(all_date_present_df.index)[1:-1]
     idx = np.random.choice(timestamps)
-    df = all_date_present_df
-    df.loc[idx, "target"] = np.NaN
+    df = all_date_present_df.loc[:, pd.IndexSlice["segment_1", :]]
+    df.loc[idx, pd.IndexSlice[:, "target"]] = np.NaN
     return df, idx
 
 
@@ -60,8 +61,8 @@ def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd
     """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
     timestamps = sorted(all_date_present_df.index)
     rng = timestamps[2:7]
-    df = all_date_present_df
-    df.loc[rng, "target"] = np.NaN
+    df = all_date_present_df.loc[:, pd.IndexSlice["segment_1", :]]
+    df.loc[rng, pd.IndexSlice[:, "target"]] = np.NaN
     return df, rng
 
 
@@ -71,8 +72,8 @@ def df_with_missing_range_x_index_two_segments(
 ) -> Tuple[pd.DataFrame, list]:
     """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
     df_one_segment, rng = df_with_missing_range_x_index
-    df_1 = df_one_segment.reset_index()
-    df_2 = df_one_segment.copy().reset_index()
+    df_1 = TSDataset.to_flatten(df_one_segment)
+    df_2 = df_1.copy()
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
