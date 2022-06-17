@@ -1,7 +1,11 @@
 from pathlib import Path
-from typing import Any, Union, Literal, Sequence, List
+from typing import Any
 from typing import Dict
+from typing import List
+from typing import Literal
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import hydra_slayer
 import pandas as pd
@@ -19,9 +23,12 @@ def backtest(
     freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(default=None, help="path to csv with exog data"),
-    known_future: Optional[List[str]] = typer.Argument(None, help="list of all known_future columns (regressor "
-                                                                  "columns). If not specified then all exog_columns "
-                                                                  "considered known_future."),
+    known_future: Optional[List[str]] = typer.Argument(
+        None,
+        help="list of all known_future columns (regressor "
+        "columns). If not specified then all exog_columns "
+        "considered known_future.",
+    ),
 ):
     """Command to run backtest with etna without coding.
 
@@ -63,12 +70,13 @@ def backtest(
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
     df_exog = None
+    k_f: Union[Literal["all"], Sequence[Any]] = ()
     if exog_path:
         df_exog = pd.read_csv(exog_path, parse_dates=["timestamp"])
         df_exog = TSDataset.to_dataset(df_exog)
-        known_future = "all" if not known_future else known_future
+        k_f = "all" if not known_future else known_future
 
-    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=known_future)
+    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
 
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     backtest_configs_hydra_slayer: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
