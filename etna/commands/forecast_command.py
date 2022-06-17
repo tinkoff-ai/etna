@@ -20,7 +20,9 @@ def forecast(
     exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
     forecast_config_path: Optional[Path] = typer.Argument(None, help="path to yaml config with forecast params"),
     raw_output: bool = typer.Argument(False, help="by default we return only forecast without features"),
-    known_future: Optional[List[str]] = typer.Argument(None, help="path to csv with exog data"),
+    known_future: Optional[List[str]] = typer.Argument(None, help="list of all known_future columns (regressor "
+                                                                  "columns). If not specified then all exog_columns "
+                                                                  "considered known_future."),
 ):
     """Command to make forecast with etna without coding.
 

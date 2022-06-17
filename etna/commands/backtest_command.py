@@ -19,7 +19,9 @@ def backtest(
     freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(default=None, help="path to csv with exog data"),
-    known_future: Optional[List[str]] = typer.Argument(None, help="list all"),
+    known_future: Optional[List[str]] = typer.Argument(None, help="list of all known_future columns (regressor "
+                                                                  "columns). If not specified then all exog_columns "
+                                                                  "considered known_future."),
 ):
     """Command to run backtest with etna without coding.
 
