@@ -27,13 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
+- Make LagTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
 - 
 - 
 - 
+- Make LogTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
 - 
-- 
-- 
-- 
+- Make AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
 - 
 ### Fixed
 - 
