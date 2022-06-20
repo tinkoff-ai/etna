@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Make LagTransform, LogTransform, AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
 - 
 - 
 - 
