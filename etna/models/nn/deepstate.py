@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Optional
 from typing import Tuple
 from typing import TypedDict
 
@@ -105,6 +106,10 @@ class DeepStateNetwork(LightningModule):
             )
         )
 
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        return optimizer
+
     def forward(self, inference_batch: InferenceBatch):
         encoder_real = inference_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
         targets = inference_batch["target"].float()  # (batch_size, seq_length, 1)
@@ -115,11 +120,13 @@ class DeepStateNetwork(LightningModule):
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
-            innovation_coeff=self.ssm.innovation_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
-            noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index)
+            * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
+            noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, 1)
             prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
             prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
-            seq_length=output.shape[1],
+            prior_cov=None,
+            seq_length=self.seq_length,
             latent_dim=self.latent_dim,
         )
         _, prior_mean, prior_cov = lds.log_likelihood(targets=targets)
@@ -128,10 +135,12 @@ class DeepStateNetwork(LightningModule):
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
-            innovation_coeff=self.ssm.innovation_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index)
+            * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
             prior_mean=prior_mean,  # (batch_size, latent_dim)
-            prior_std=prior_std,  # (batch_size, latent_dim)
+            prior_std=None,  # (batch_size, latent_dim)
+            prior_cov=prior_cov,
             seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
@@ -154,11 +163,12 @@ class DeepStateNetwork(LightningModule):
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, 1)
             prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
             prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
-            seq_length=targets.shape[1],
+            prior_cov=None,
+            seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
         log_likelihood, _, _ = lds.log_likelihood(targets=targets)
-        log_likelihood = torch.sum(log_likelihood, dim=0)
+        log_likelihood = torch.mean(torch.sum(log_likelihood, dim=1))
         return -log_likelihood
 
 
@@ -172,7 +182,8 @@ class LDS:
         innovation_coeff: Tensor,  # (batch_size, seq_length, latent_dim)
         noise_std: Tensor,  # (batch_size, seq_length, 1)
         prior_mean: Tensor,  # (batch_size, latent_dim)
-        prior_std: Tensor,  # (batch_size, latent_dim)
+        prior_std: Optional[Tensor],  # (batch_size, latent_dim)
+        prior_cov: Optional[Tensor],  # (batch_size, latent_dim, latent_dim)
         seq_length: int,
         latent_dim: int,
     ):
@@ -182,7 +193,9 @@ class LDS:
         self.noise_std = noise_std
         self.prior_mean = prior_mean
         self.prior_std = prior_std
-        self.prior_cov = torch.diag_embed(prior_std * prior_std)  # (batch_size, latent_dim, latent_dim)
+        self.prior_cov = (
+            prior_cov if prior_cov is not None else torch.diag_embed(prior_std * prior_std)
+        )  # (batch_size, latent_dim, latent_dim)
         self.seq_length = seq_length
         self.latent_dim = latent_dim
 
@@ -226,28 +239,28 @@ class LDS:
 
         # H * mu (batch_size, 1)
         target_mean = (emission_coeff.permute(0, 2, 1) @ prior_mean.unsqueeze(-1)).squeeze(-1)
-        print(target_mean.shape)
+        # print(target_mean.shape)
         # v (batch_size, 1)
         residual = target - target_mean
-        print(residual.shape)
+        # print(residual.shape)
         # R (batch_size, 1, 1)
         noise_cov = torch.diag_embed(noise_std * noise_std)
-        print(noise_cov.shape)
+        # print(noise_cov.shape)
         # F (batch_size, 1, 1)
         target_cov = emission_coeff.permute(0, 2, 1) @ prior_cov @ emission_coeff + noise_cov
-        print(target_cov.shape)
+        # print(target_cov.shape)
         # K (batch_size, latent_dim)
         kalman_gain = (prior_cov @ emission_coeff @ torch.inverse(target_cov)).squeeze(-1)
-        print(kalman_gain.shape)
+        # print(kalman_gain.shape)
 
         # mu = mu_t + K * v (batch_size, latent_dim)
         filtered_mean = prior_mean + (kalman_gain.unsqueeze(-1) @ residual.unsqueeze(-1)).squeeze(-1)
-        print(filtered_mean.shape)
+        # print(filtered_mean.shape)
         # P = (I - KH)P_t (batch_size, latent_dim, latent_dim)
         filtered_cov = (
             torch.eye(self.latent_dim) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
         ) @ prior_cov
-        print(filtered_cov.shape)
+        # print(filtered_cov.shape)
         # log-likelihood (batch_size, 1)
         log_p = (
             Normal(target_mean.squeeze(-1), torch.sqrt(target_cov.squeeze(-1).squeeze(-1)))
@@ -294,7 +307,7 @@ class LDS:
                 :, t
             ].unsqueeze(-1) @ self.innovation_coeff[:, t].unsqueeze(-1).permute(0, 2, 1)
 
-        return torch.cat(log_p_seq), mean, cov
+        return torch.cat(log_p_seq, dim=1), mean, cov
 
     def log_likelihood(self, targets: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         """Compute the log-likelihood of the target.
