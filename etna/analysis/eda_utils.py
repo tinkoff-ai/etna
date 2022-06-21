@@ -743,7 +743,7 @@ def _prepare_seasonal_plot_df(
         elif SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.last:
             to_add_index = pd.date_range(end=timestamp.min(), periods=num_to_add + 1, closed="left", freq=freq)
 
-        df = df.append(pd.DataFrame(None, index=to_add_index)).sort_index()
+        df = pd.concat(df, pd.DataFrame(None, index=to_add_index)).sort_index()
 
     return df
 
