@@ -1,7 +1,11 @@
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import List
+from typing import Literal
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import hydra_slayer
 import pandas as pd
@@ -20,6 +24,12 @@ def forecast(
     exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
     forecast_config_path: Optional[Path] = typer.Argument(None, help="path to yaml config with forecast params"),
     raw_output: bool = typer.Argument(False, help="by default we return only forecast without features"),
+    known_future: Optional[List[str]] = typer.Argument(
+        None,
+        help="list of all known_future columns (regressor "
+        "columns). If not specified then all exog_columns "
+        "considered known_future.",
+    ),
 ):
     """Command to make forecast with etna without coding.
 
@@ -65,11 +75,13 @@ def forecast(
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
     df_exog = None
+    k_f: Union[Literal["all"], Sequence[Any]] = ()
     if exog_path:
         df_exog = pd.read_csv(exog_path, parse_dates=["timestamp"])
         df_exog = TSDataset.to_dataset(df_exog)
+        k_f = "all" if not known_future else known_future
 
-    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog)
+    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
 
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     pipeline.fit(tsdataset)
