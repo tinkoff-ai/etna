@@ -9,7 +9,6 @@ from numpy.testing import assert_almost_equal
 
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.math import LagTransform
-from etna.transforms.math.lags import _OneSegmentLagTransform
 
 
 @pytest.fixture
@@ -104,13 +103,6 @@ def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_df_two_se
         for lag in lags:
             true_values = pd.Series([None] * lag + list(int_df_two_segments[segment, "target"].values[:-lag]))
             assert_almost_equal(true_values.values, lags_df[segment, f"regressor_lag_feature_{lag}"].values)
-
-
-@pytest.mark.parametrize("lags", (0, -1, (10, 15, -2)))
-def test_invalid_lags_value_one_segment(lags):
-    """Test that _OneSegmentLagFeature can't be created with non-positive lags."""
-    with pytest.raises(ValueError):
-        _ = _OneSegmentLagTransform(in_column="target", lags=lags)
 
 
 @pytest.mark.parametrize("lags", (0, -1, (10, 15, -2)))
