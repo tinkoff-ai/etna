@@ -12,14 +12,15 @@ from etna.datasets import TSDataset
 
 @pytest.fixture
 def eucl_ts(random_seed) -> TSDataset:
-    df = pd.DataFrame()
+    dfs = []
     for i in range(1, 8):
         date_range = pd.date_range("2020-01-01", "2020-05-01")
         for j, sigma in enumerate([0.1, 0.3, 0.5, 0.8]):
             tmp = pd.DataFrame({"timestamp": date_range})
             tmp["segment"] = f"{i}{j}"
             tmp["target"] = np.random.normal(i, sigma, len(tmp))
-            df = df.append(tmp, ignore_index=True)
+            dfs.append(tmp, ignore_index=True)
+    df = pd.concat(dfs)
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
     return ts
 
