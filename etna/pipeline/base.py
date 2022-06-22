@@ -450,7 +450,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             forecast = forecast_ts.df
             fold_number_df = pd.DataFrame(
                 np.tile(fold_number, (forecast.index.shape[0], len(segments))),
-                columns=pd.MultiIndex.from_product([segments, ["fold_info"]], names=("segment111", "feature222")),
+                columns=pd.MultiIndex.from_product([segments, ["fold_info"]], names=("segment", "feature")),
                 index=forecast.index,
             )
             forecast = forecast.join(fold_number_df)
