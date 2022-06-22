@@ -25,7 +25,9 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && rm get-pip.py
 
 COPY requirements.txt /
-RUN pip install --no-cache-dir -r requirements.txt -f https://download.pytorch.org/whl/${CUDA_VERSION_FOR_TORCH}/torch_stable.html
+RUN pip install --no-cache-dir -r requirements.txt -f https://download.pytorch.org/whl/${CUDA_VERSION_FOR_TORCH}/torch_stable.html \
+    && pip install --no-cache-dir prophet \
+    && rm -rf ~/.cache
 WORKDIR /code
 
 CMD [ "bash" ]
