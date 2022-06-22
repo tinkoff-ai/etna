@@ -225,7 +225,7 @@ def ts_for_ohe_sanity():
     rng = np.random.default_rng(12345)
 
     def f(x):
-        return x ** 2 + rng.normal(0, 0.01)
+        return x**2 + rng.normal(0, 0.01)
 
     df_to_forecast["segment_0", "target"] = df_regressors["segment_0"]["regressor_0"][:100].apply(f)
     ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")

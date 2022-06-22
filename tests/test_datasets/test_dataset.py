@@ -23,9 +23,9 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_1["segment"] = "Moscow"
-    df_1["target"] = [x ** 2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
+    df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     df_2["segment"] = "Omsk"
-    df_2["target"] = [x ** 0.5 + np.random.uniform(-2, 2) for x in list(range(len(df_2)))]
+    df_2["target"] = [x**0.5 + np.random.uniform(-2, 2) for x in list(range(len(df_2)))]
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
 
     df = TSDataset.to_dataset(classic_df)
@@ -795,3 +795,30 @@ def test_update_regressors_not_add_not_regressors(ts_with_regressors, transforms
 def test_update_regressors_after_filter(ts_with_regressors, transforms, expected_regressors):
     _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize("return_features", [True, False])
+@pytest.mark.parametrize(
+    "columns",
+    [
+        ([]),
+        (["target"]),
+        (["exog_1", "exog_2"]),
+        (["target", "exog_1", "exog_2"]),
+    ],
+)
+def test_inverse_transform_back_included_columns(ts_with_features, columns, return_features):
+    original_regressors = ts_with_features.regressors
+    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
+    ts_with_features.fit_transform([transform])
+    ts_with_features.inverse_transform()
+    assert set(original_regressors) == set(ts_with_features.regressors)
+
+
+def test_to_dataset_not_modify_dataframe():
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": 1})
+    df_copy = df_original.copy(deep=True)
+    df_mod = TSDataset.to_dataset(df_original)
+    pd.testing.assert_frame_equal(df_original, df_copy)
