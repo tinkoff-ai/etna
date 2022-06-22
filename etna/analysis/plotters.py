@@ -91,9 +91,9 @@ def _prepare_forecast_results(
     forecast_ts: Union["TSDataset", List["TSDataset"], Dict[str, "TSDataset"]]
 ) -> Dict[str, "TSDataset"]:
     """Prepare dictionary with forecasts results."""
-    from etna.datasets import TSDataset
+    import etna
 
-    if isinstance(forecast_ts, TSDataset):
+    if isinstance(forecast_ts, etna.datasets.tsdataset.TSDataset):
         return {"1": forecast_ts}
     elif isinstance(forecast_ts, list) and len(forecast_ts) > 0:
         return {str(i + 1): forecast for i, forecast in enumerate(forecast_ts)}

@@ -1164,7 +1164,7 @@ class TSDataset:
             if not i["encoder_real"].isnan().any()
         ]
 
-        return DataLoader(ts_samples, batch_size=batch_size)
+        return DataLoader(ts_samples, batch_size=batch_size, shuffle=True)
 
 
 def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, datetime_index):
@@ -1184,14 +1184,10 @@ def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, dateti
         if total_sample_length + start_idx > total_length:
             return
 
-        x_dict["decoder_real"] = x[["target"] + columns_to_add].values[
+        x_dict["decoder_real"] = x[columns_to_add].values[
             start_idx + encoder_length : start_idx + decoder_length + encoder_length
         ]
-        x_dict["decoder_real"][:, 0] = (
-            x["target"].shift(1).values[start_idx + encoder_length : start_idx + decoder_length + encoder_length]
-        )
-        x_dict["encoder_real"] = x[["target"] + columns_to_add].values[start_idx : start_idx + encoder_length]
-        x_dict["encoder_real"][:, 0] = x["target"].shift(1).values[start_idx : start_idx + encoder_length]
+        x_dict["encoder_real"] = x[columns_to_add].values[start_idx : start_idx + encoder_length]
         x_dict["target"] = x["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
         x_dict["datetime_index"] = (
             x[datetime_index].astype(int).values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)

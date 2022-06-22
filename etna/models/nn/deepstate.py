@@ -110,32 +110,49 @@ class DeepStateNetwork(LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
+    def get_ssm_parameters(
+        self,
+        train_batch: TrainBatch,
+    ):
+        encoder_real = train_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
+        output, (_, _) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
+        innovation_coeff = (self.projectors["innovation"](output),)  # (batch_size, seq_length, latent_dim)
+        noise_std = (self.projectors["noise_std"](output),)  # (batch_size, seq_length, 1)
+        prior_mean = (self.projectors["prior_mean"](output[:, 0]),)  # (batch_size, latent_dim)
+        prior_std = (self.projectors["prior_std"](output[:, 0]),)  # (batch_size, latent_dim)
+        return prior_mean, prior_std, noise_std, innovation_coeff
+
     def forward(self, inference_batch: InferenceBatch):
         encoder_real = inference_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
         targets = inference_batch["target"].float()  # (batch_size, seq_length, 1)
         decoder_real = inference_batch["decoder_real"].float()  # (batch_size, horizon, input_size)
-        datetime_index = inference_batch["datetime_index"].to(torch.int64)  # (batch_size, seq_length, 1)
+        datetime_index_train = inference_batch["datetime_index"].to(torch.int64)[
+            :, : encoder_real.shape[1]
+        ]  # (batch_size, seq_length, 1)
+        datetime_index_test = inference_batch["datetime_index"].to(torch.int64)[
+            :, encoder_real.shape[1] :
+        ]  # (batch_size, horizon, 1)
 
         output, (h_n, c_n) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
         lds = LDS(
-            emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
+            emission_coeff=self.ssm.emission_coeff(datetime_index_train),  # (batch_size, seq_length, latent_dim)
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
-            innovation_coeff=self.ssm.innovation_coeff(datetime_index)
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index_train)
             * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, 1)
             prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
             prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
             prior_cov=None,
-            seq_length=self.seq_length,
+            seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
         _, prior_mean, prior_cov = lds.log_likelihood(targets=targets)
 
-        output, (_, _) = self.RNN(decoder_real, h_n, c_n)  # (batch_size, seq_length, latent_dim)
+        output, (_, _) = self.RNN(decoder_real, (h_n, c_n))  # (batch_size, seq_length, latent_dim)
         lds = LDS(
-            emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
+            emission_coeff=self.ssm.emission_coeff(datetime_index_test),  # (batch_size, seq_length, latent_dim)
             transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
-            innovation_coeff=self.ssm.innovation_coeff(datetime_index)
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index_test)
             * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
             prior_mean=prior_mean,  # (batch_size, latent_dim)
@@ -145,7 +162,7 @@ class DeepStateNetwork(LightningModule):
             latent_dim=self.latent_dim,
         )
 
-        forecast = torch.mean(lds.sample(n_samples=self.n_smaples), dim=0)
+        forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0)
         return forecast
 
     def training_step(self, train_batch: TrainBatch, batch_idx):
@@ -291,7 +308,6 @@ class LDS:
         log_p_seq = []
         mean = self.prior_mean
         cov = self.prior_cov
-
         for t in range(self.seq_length):
             log_p, filtered_mean, filtered_cov = self.kalman_filter_step(
                 target=targets[:, t],
@@ -300,7 +316,6 @@ class LDS:
                 prior_cov=cov,
                 emission_coeff=self.emission_coeff[:, t],
             )
-
             log_p_seq.append(log_p)
             mean = (self.transition_coeff @ filtered_mean.unsqueeze(-1)).squeeze(-1)
             cov = self.transition_coeff @ filtered_cov @ self.transition_coeff.T + self.innovation_coeff[

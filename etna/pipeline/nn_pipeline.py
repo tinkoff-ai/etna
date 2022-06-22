@@ -56,7 +56,7 @@ class NNPipeline(BasePipeline):
 
         test_dataloader = self.ts.to_test_dataloader(
             encoder_length=self.encoder_length,
-            decoder_length=self.decoder_length,
+            decoder_length=self.horizon,
             columns_to_add=self.columns_to_add,
             datetime_index=self.datetime_index,
             batch_size=self.test_batch_size,
