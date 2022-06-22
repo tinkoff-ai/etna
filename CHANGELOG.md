@@ -31,13 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
 - 
 - 
 - 
 ### Fixed
 - 
-- 
+- Fix missing prophet in docker images ([#767](https://github.com/tinkoff-ai/etna/pull/767))
+- Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
 - 
 - 
 - 

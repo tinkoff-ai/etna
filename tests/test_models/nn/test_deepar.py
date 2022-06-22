@@ -152,3 +152,25 @@ def test_forecast_with_different_freq(weekly_period_df, freq):
 
     assert len(forecast.df) == horizon
     assert pd.infer_freq(forecast.df.index) in {freq, freq[1:]}
+
+
+def test_prediction_interval_run_infuture(example_tsds):
+    horizon = 10
+    transform = PytorchForecastingTransform(
+        max_encoder_length=horizon,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        target_normalizer=GroupNormalizer(groups=["segment"]),
+    )
+    example_tsds.fit_transform([transform])
+    model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
+    model.fit(example_tsds)
+    future = example_tsds.make_future(10)
+    forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+        assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
+        assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
