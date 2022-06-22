@@ -444,7 +444,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         if self._folds is None:
             raise ValueError("Something went wrong during backtest initialization!")
         forecasts_list = []
+        print('self._folds.items()', self._folds.items())
         for fold_number, fold_info in self._folds.items():
+            print('fold_number:', fold_number, ' | ', 'fold_info:', fold_info)
             forecast_ts = fold_info["forecast"]
             segments = forecast_ts.segments
             forecast = forecast_ts.df
