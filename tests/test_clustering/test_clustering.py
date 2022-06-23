@@ -19,8 +19,8 @@ def eucl_ts(random_seed) -> TSDataset:
             tmp = pd.DataFrame({"timestamp": date_range})
             tmp["segment"] = f"{i}{j}"
             tmp["target"] = np.random.normal(i, sigma, len(tmp))
-            dfs.append(tmp, ignore_index=True)
-    df = pd.concat(dfs)
+            dfs.append(tmp)
+    df = pd.concat(dfs, ignore_index=True)
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
     return ts
 

@@ -40,8 +40,8 @@ def dtw_ts(pattern) -> TSDataset:
         tmp = pd.DataFrame({"timestamp": date_range})
         tmp["segment"] = str(i)
         tmp["target"] = pattern
-        dfs.append(tmp, ignore_index=True)
-    df = pd.concat(dfs)
+        dfs.append(tmp)
+    df = pd.concat(dfs, ignore_index=True)
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
     return ts
 
