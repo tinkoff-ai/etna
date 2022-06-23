@@ -1,8 +1,7 @@
 ---
-name: "How to question"
+name: "Other issue"
 description: Asking how-to questions
 labels: help wanted, question
-assignees: iKintosh, julia-shenshina, martins0n
 
 body:
 - type: checkboxes
@@ -22,7 +21,7 @@ body:
 
 - type: textarea
   attributes:
-    label: ❓ Questions and Help
+    label: ❓ What is the issue?
     description: |
       What is your question? What have you tried?
       *Please paste a code snippet if your question requires it!*
