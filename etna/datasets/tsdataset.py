@@ -1138,12 +1138,11 @@ class TSDataset:
         df = self.to_pandas(flatten=True)
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [
-            i
-            for dict_segment in ts_segments
-            for i in make_samples(dict_segment, encoder_length, decoder_length, columns_to_add, datetime_index)
-            if not i["encoder_real"].isnan().any()
-        ]
+        ts_samples = []
+        for dict_segment in ts_segments:
+            ts_samples.extend(
+                make_samples(dict_segment, encoder_length, decoder_length, columns_to_add, datetime_index)
+            )
 
         return DataLoader(ts_samples, batch_size=batch_size, shuffle=True)
 
@@ -1158,12 +1157,11 @@ class TSDataset:
         df = self.make_future(decoder_length, encoder_length).to_pandas(flatten=True)
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [
-            i
-            for dict_segment in ts_segments
-            for i in make_samples(dict_segment, encoder_length, decoder_length, columns_to_add, datetime_index)
-            if not i["encoder_real"].isnan().any()
-        ]
+        ts_samples = []
+        for dict_segment in ts_segments:
+            ts_samples.extend(
+                make_samples(dict_segment, encoder_length, decoder_length, columns_to_add, datetime_index)
+            )
 
         return DataLoader(ts_samples, batch_size=batch_size)
 
@@ -1202,8 +1200,14 @@ def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, dateti
 
         return x_dict
 
-    n_samples_per_segment = x.shape[0] // (encoder_length + decoder_length)
-    start_idxs = np.random.randint(0, max(1, x.shape[0] - encoder_length - decoder_length), size=n_samples_per_segment)
+    segment_start = x["target"].first_valid_index()
+    segment_len = x.index.max() - segment_start + 1
+    segment_start -= x.index.min()
+    n_samples_per_segment = segment_len // (encoder_length + decoder_length)
+    start_idxs = np.random.randint(
+        segment_start, max(segment_start + 1, segment_len - encoder_length - decoder_length), size=n_samples_per_segment
+    )
+    samples = []
     for start_idx in start_idxs:
         batch = _make(
             x=x,
@@ -1213,6 +1217,5 @@ def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, dateti
             columns_to_add=columns_to_add,
             datetime_index=datetime_index,
         )
-        if batch is None:
-            break
-        yield batch
+        samples.append(batch)
+    return samples

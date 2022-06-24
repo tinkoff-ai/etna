@@ -157,7 +157,7 @@ class DeepStateNetwork(LightningModule):
 
     def forward(self, inference_batch: InferenceBatch):
         encoder_real = inference_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
-        targets = inference_batch["target"].float()  # (batch_size, seq_length, 1)
+        targets = inference_batch["target"].float()[:, : encoder_real.shape[1]]  # (batch_size, seq_length, 1)
         decoder_real = inference_batch["decoder_real"].float()  # (batch_size, horizon, input_size)
         datetime_index_train = (
             inference_batch["datetime_index"].permute(2, 0, 1).to(torch.int64)[:, :, : encoder_real.shape[1]]
