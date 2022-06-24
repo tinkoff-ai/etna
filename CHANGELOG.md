@@ -22,22 +22,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 ### Changed
+- Add columns and mode parameters in plot_correlation_matrix ([#726](https://github.com/tinkoff-ai/etna/pull/753))
 - 
 - 
 - 
 - 
+- Make LagTransform, LogTransform, AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
 - 
 - 
 - 
-- 
-- 
+- Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
 - 
 - 
 - 
 ### Fixed
 - 
-- 
-- 
+- Fix missing prophet in docker images ([#767](https://github.com/tinkoff-ai/etna/pull/767))
+- Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
+- FutureWarning: The frame.append method is deprecated. Use pandas.concat instead ([#764](https://github.com/tinkoff-ai/etna/pull/764))
 - 
 - 
 - 
