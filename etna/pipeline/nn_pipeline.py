@@ -67,7 +67,7 @@ class NNPipeline(BasePipeline):
         for batch in test_dataloader:
             segment = batch["segment"]
             predictions = self.model(batch)
-            future_ts.df.loc[:, pd.IndexSlice[segment, "target"]] = predictions.detach().numpy()[0]
+            future_ts.df.loc[:, pd.IndexSlice[segment, "target"]] = predictions.detach().numpy().T
 
         future_ts.inverse_transform()
         return future_ts

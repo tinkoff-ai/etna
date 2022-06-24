@@ -131,13 +131,9 @@ class DeepStateNetwork(LightningModule):
         self.projectors = nn.ModuleDict(
             dict(
                 prior_mean=nn.Linear(in_features=self.latent_dim, out_features=self.latent_dim),
-                prior_std=nn.Sequential(
-                    nn.Linear(in_features=self.latent_dim, out_features=self.latent_dim), nn.Softplus()
-                ),
-                innovation=nn.Sequential(
-                    nn.Linear(in_features=self.latent_dim, out_features=self.latent_dim), nn.Softplus()
-                ),
-                noise_std=nn.Sequential(nn.Linear(in_features=self.latent_dim, out_features=1), nn.Softplus()),
+                prior_std=nn.Linear(in_features=self.latent_dim, out_features=self.latent_dim),
+                innovation=nn.Linear(in_features=self.latent_dim, out_features=self.latent_dim),
+                noise_std=nn.Linear(in_features=self.latent_dim, out_features=1),
                 offset=nn.Linear(in_features=self.latent_dim, out_features=1),
             )
         )
@@ -156,7 +152,7 @@ class DeepStateNetwork(LightningModule):
         noise_std = (self.projectors["noise_std"](output),)  # (batch_size, seq_length, 1)
         prior_mean = (self.projectors["prior_mean"](output[:, 0]),)  # (batch_size, latent_dim)
         prior_std = (self.projectors["prior_std"](output[:, 0]),)  # (batch_size, latent_dim)
-        offset = (self.projectors["offset"](output[:, 0]),)  # (batch_size, seq_length, 1)
+        offset = (self.projectors["offset"](output),)  # (batch_size, seq_length, 1)
         return prior_mean, prior_std, noise_std, innovation_coeff, offset
 
     def forward(self, inference_batch: InferenceBatch):
@@ -201,7 +197,7 @@ class DeepStateNetwork(LightningModule):
             latent_dim=self.latent_dim,
         )
 
-        forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0)
+        forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0).squeeze(-1)
         return forecast
 
     def training_step(self, train_batch: TrainBatch, batch_idx):

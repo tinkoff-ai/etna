@@ -1,4 +1,5 @@
 import math
+import random
 import warnings
 from copy import copy
 from typing import TYPE_CHECKING
@@ -1144,7 +1145,7 @@ class TSDataset:
             if not i["encoder_real"].isnan().any()
         ]
 
-        return DataLoader(ts_samples, batch_size=batch_size)
+        return DataLoader(ts_samples, batch_size=batch_size, shuffle=True)
 
     def to_test_dataloader(
         self, encoder_length, decoder_length, columns_to_add, datetime_index: Optional[List[str]], batch_size: int
@@ -1154,7 +1155,7 @@ class TSDataset:
         if datetime_index is None:
             datetime_index = "timestamp"
 
-        df = self.make_future(decoder_length, encoder_length + 1).to_pandas(flatten=True)
+        df = self.make_future(decoder_length, encoder_length).to_pandas(flatten=True)
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
         ts_samples = [
@@ -1164,7 +1165,7 @@ class TSDataset:
             if not i["encoder_real"].isnan().any()
         ]
 
-        return DataLoader(ts_samples, batch_size=batch_size, shuffle=True)
+        return DataLoader(ts_samples, batch_size=batch_size)
 
 
 def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, datetime_index):
@@ -1201,8 +1202,9 @@ def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, dateti
 
         return x_dict
 
-    start_idx = 0
-    while True:
+    n_samples_per_segment = x.shape[0] // (encoder_length + decoder_length)
+    start_idxs = np.random.randint(0, max(1, x.shape[0] - encoder_length - decoder_length), size=n_samples_per_segment)
+    for start_idx in start_idxs:
         batch = _make(
             x=x,
             start_idx=start_idx,
@@ -1214,4 +1216,3 @@ def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, dateti
         if batch is None:
             break
         yield batch
-        start_idx += 1
