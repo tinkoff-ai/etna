@@ -103,7 +103,7 @@ def test_interface_not_inplace(ts_non_negative):
     "inplace, segment, check_column, function, inverse_function, expected_result",
     [
         (False, "1", "target_transformed", lambda x: x**2, None, np.array([i**2 for i in range(100)])),
-        (True, "1", "target", lambda x: x**2, lambda x: np.sqrt(x), np.array([i**  for i in range(100)])),
+        (True, "1", "target", lambda x: x**2, lambda x: np.sqrt(x), np.array([i**2 for i in range(100)])),
         (False, "1", "target_transformed", lambda x: np.roll(x, 2), None, np.array([98, 99] + list(range(98)))),
         (True, "1", "target", lambda x: np.roll(x, 2), lambda x: np.roll(x, -2), np.array([98, 99] + list(range(98)))),
         (False, "2", "target_transformed", lambda x: x**2, None, np.array([1, 9] * 50)),
