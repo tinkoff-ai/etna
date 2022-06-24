@@ -3,7 +3,6 @@ from abc import abstractmethod
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing_extensions import TypedDict
 
 import torch
 import torch.nn as nn
@@ -11,6 +10,7 @@ from pytorch_lightning import LightningModule
 from torch import Tensor
 from torch.distributions.multivariate_normal import MultivariateNormal
 from torch.distributions.normal import Normal
+from typing_extensions import TypedDict
 
 from etna.core import BaseMixin
 
@@ -169,7 +169,7 @@ class DeepStateNetwork(LightningModule):
         output, (h_n, c_n) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_train),  # (batch_size, seq_length, latent_dim)
-            transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
+            transition_coeff=self.ssm.transition_coeff().type_as(targets),  # (latent_dim, latent_dim)
             innovation_coeff=self.ssm.innovation_coeff(datetime_index_train)
             * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, 1)
@@ -185,7 +185,7 @@ class DeepStateNetwork(LightningModule):
         output, (_, _) = self.RNN(decoder_real, (h_n, c_n))  # (batch_size, seq_length, latent_dim)
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_test),  # (batch_size, seq_length, latent_dim)
-            transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
+            transition_coeff=self.ssm.transition_coeff().type_as(targets),  # (latent_dim, latent_dim)
             innovation_coeff=self.ssm.innovation_coeff(datetime_index_test)
             * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, latent_dim)
@@ -211,7 +211,7 @@ class DeepStateNetwork(LightningModule):
 
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),  # (batch_size, seq_length, latent_dim)
-            transition_coeff=self.ssm.transition_coeff(),  # (latent_dim, latent_dim)
+            transition_coeff=self.ssm.transition_coeff().type_as(targets),  # (latent_dim, latent_dim)
             innovation_coeff=self.ssm.innovation_coeff(datetime_index)
             * self.projectors["innovation"](output),  # (batch_size, seq_length, latent_dim)
             noise_std=self.projectors["noise_std"](output),  # (batch_size, seq_length, 1)
@@ -316,7 +316,7 @@ class LDS:
         # print(filtered_mean.shape)
         # P = (I - KH)P_t (batch_size, latent_dim, latent_dim)
         filtered_cov = (
-            torch.eye(self.latent_dim) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
+            torch.eye(self.latent_dim).type_as(target) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
         ) @ prior_cov
         # print(filtered_cov.shape)
         # log-likelihood (batch_size, 1)
