@@ -174,4 +174,4 @@ def test_prediction_interval_run_infuture_warning_unknown_quantiles(example_tsds
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
-        assert {"target_0.3"}.isdisjoint(segment_slice.columns)
+        assert {"target_0.4"}.isdisjoint(segment_slice.columns)

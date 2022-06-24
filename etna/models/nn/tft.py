@@ -48,7 +48,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         attention_head_size: int = 4,
         dropout: float = 0.1,
         hidden_continuous_size: int = 8,
-        loss: MultiHorizonMetric = None,
+        loss: "MultiHorizonMetric" = None,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
         quantiles_kwargs: Optional[Dict[str, Any]] = None,
         *args,

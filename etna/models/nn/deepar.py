@@ -46,7 +46,7 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         hidden_size: int = 10,
         rnn_layers: int = 2,
         dropout: float = 0.1,
-        loss: Optional[DistributionLoss] = None,
+        loss: Optional["DistributionLoss"] = None,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
         quantiles_kwargs: Optional[Dict[str, Any]] = None,
     ):
