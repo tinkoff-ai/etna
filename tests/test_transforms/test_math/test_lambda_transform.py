@@ -102,12 +102,12 @@ def test_interface_not_inplace(ts_non_negative):
 @pytest.mark.parametrize(
     "inplace, segment, check_column, function, inverse_function, expected_result",
     [
-        (False, "1", "target_transformed", lambda x: x**2, None, np.array([i**2 for i in range(100)])),
-        (True, "1", "target", lambda x: x**2, lambda x: np.sqrt(x), np.array([i**2 for i in range(100)])),
+        (False, "1", "target_transformed", lambda x: x ** 2, None, np.array([i ** 2 for i in range(100)])),
+        (True, "1", "target", lambda x: x ** 2, lambda x: np.sqrt(x), np.array([i ** 2 for i in range(100)])),
         (False, "1", "target_transformed", lambda x: np.roll(x, 2), None, np.array([98, 99] + list(range(98)))),
         (True, "1", "target", lambda x: np.roll(x, 2), lambda x: np.roll(x, -2), np.array([98, 99] + list(range(98)))),
-        (False, "2", "target_transformed", lambda x: x**2, None, np.array([1, 9] * 50)),
-        (True, "2", "target", lambda x: x**2, lambda x: np.sqrt(x), np.array([1, 9] * 50)),
+        (False, "2", "target_transformed", lambda x: x ** 2, None, np.array([1, 9] * 50)),
+        (True, "2", "target", lambda x: x ** 2, lambda x: np.sqrt(x), np.array([1, 9] * 50)),
         (False, "2", "target_transformed", lambda x: np.roll(x, 2), None, np.array([1, 3] * 50)),
         (True, "2", "target", lambda x: np.roll(x, 2), lambda x: np.roll(x, -2), np.array([1, 3] * 50)),
     ],
@@ -126,7 +126,7 @@ def test_transform(ts_range_const, inplace, check_column, function, inverse_func
 
 @pytest.mark.parametrize(
     "function, inverse_function",
-    [(lambda x: x**2, lambda x: np.sqrt(x)), (lambda x: np.roll(x, 2), lambda x: np.roll(x, -2))],
+    [(lambda x: x ** 2, lambda x: np.sqrt(x)), (lambda x: np.roll(x, 2), lambda x: np.roll(x, -2))],
 )
 def test_inverse_transform(ts_range_const, function, inverse_function):
     transform = LambdaTransform(
@@ -137,4 +137,6 @@ def test_inverse_transform(ts_range_const, function, inverse_function):
     ts_range_const.inverse_transform()
     check_column = "target"
     for segment in ts_range_const.segments:
-        np.testing.assert_allclose(ts_range_const[:, segment, check_column], original_df[(segment, check_column)], rtol=1e-9)
+        np.testing.assert_allclose(
+            ts_range_const[:, segment, check_column], original_df[(segment, check_column)], rtol=1e-9
+        )
