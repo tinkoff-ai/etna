@@ -13,19 +13,8 @@ body:
 
 - type: textarea
   attributes:
-    label: Motivation
-    description: |
-      Please outline the motivation for the proposal.
-      Is your feature request related to a problem? e.g., I'm always frustrated when [...];
-      Answers the question why it should be done.
-      *If this is related to another GitHub issue, please link here too*
-  validations:
-    required: true
-
-- type: textarea
-  attributes:
     label: Proposal
-    description: A clear and concise description of what you want to happen. Ideally step by step.
+    description: A clear and concise description of what you want to happen. Ideally step by step with interface examples.
   validations:
     required: true
 
@@ -38,24 +27,9 @@ body:
 
 - type: textarea
   attributes:
-    label: Alternatives
-    description: |
-      A clear and concise description of any alternative solutions or features you've considered.
-  validations:
-    required: false
-
-- type: textarea
-  attributes:
     label: Additional context
     description: Add any other context or screenshots about the feature request here.
   validations:
     required: false
-    
-- type: checkboxes
-  attributes:
-    label: Checklist
-    options:
-      - label: I discussed this issue with ETNA Team
-        required: false
 
 ...

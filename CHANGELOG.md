@@ -37,8 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 ### Fixed
 - 
-- 
-- 
+- Fix missing prophet in docker images ([#767](https://github.com/tinkoff-ai/etna/pull/767))
+- Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
+- FutureWarning: The frame.append method is deprecated. Use pandas.concat instead ([#764](https://github.com/tinkoff-ai/etna/pull/764))
 - 
 - 
 - 
