@@ -35,18 +35,18 @@ class _OneSegmentLambdaTransform(Transform):
             inverse function of transform_func
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if `True`, apply transformation inplace to in_column,
 
-            * if False, add column and apply transformation to out_column
+            * if `False`, add column and apply transformation to out_column
 
         Warnings
         --------
-        throws if inplace=True and out_column is initialized, transformation will be applied inplace
+        throws if `inplace=True` and out_column is initialized, transformation will be applied inplace
 
         Raises
         ------
         Value error:
-            if inplace=True and inverse_transform_func is not defined
+            if `inplace=True` and inverse_transform_func is not defined
         """
         self.in_column = in_column
         self.inplace = inplace
@@ -128,18 +128,18 @@ class LambdaTransform(PerSegmentWrapper):
             inverse function of transform_func
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if `True`, apply transformation inplace to in_column,
 
-            * if False, add column and apply transformation to out_column
+            * if `False`, add column and apply transformation to out_column
 
         Warnings
         --------
-        throws if inplace=True and out_column is initialized, transformation will be applied inplace
+        throws if `inplace=True` and out_column is initialized, transformation will be applied inplace
 
         Raises
         ------
         Value error:
-            if inplace=True and inverse_transform_func is not defined
+            if `inplace=True` and inverse_transform_func is not defined
         """
         self.in_column = in_column
         self.inplace = inplace
