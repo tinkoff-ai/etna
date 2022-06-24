@@ -207,14 +207,18 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
 
         if prediction_interval:
-            quantiles_predicts = self.model.predict(  # type: ignore
-                prediction_dataloader,
-                mode="quantiles",
-                mode_kwargs={"quantiles": quantiles, **self.quantiles_kwargs},
-            ).numpy()
-            # shape (segments, encoder_length, len(quantiles))
+            if not isinstance(self.loss, QuantileLoss):
+                warnings.warn(
+                    "Quantiles can't be computed because TFTModel supports this only if QunatileLoss is chosen"
+                )
+            else:
+                quantiles_predicts = self.model.predict(  # type: ignore
+                    prediction_dataloader,
+                    mode="quantiles",
+                    mode_kwargs={"quantiles": quantiles, **self.quantiles_kwargs},
+                ).numpy()
+                # shape (segments, encoder_length, len(quantiles))
 
-            if isinstance(self.loss, QuantileLoss):
                 loss_quantiles = self.loss.quantiles
                 computed_quantiles_indices = []
                 computed_quantiles = []
@@ -234,19 +238,19 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
                 quantiles_predicts = quantiles_predicts[:, :, computed_quantiles_indices]
                 quantiles = computed_quantiles
 
-            quantiles_predicts = quantiles_predicts.transpose((1, 0, 2))
-            # shape (encoder_length, segments, len(quantiles))
-            quantiles_predicts = quantiles_predicts.reshape(quantiles_predicts.shape[0], -1)
-            # shape (encoder_length, segments * len(quantiles))
+                quantiles_predicts = quantiles_predicts.transpose((1, 0, 2))
+                # shape (encoder_length, segments, len(quantiles))
+                quantiles_predicts = quantiles_predicts.reshape(quantiles_predicts.shape[0], -1)
+                # shape (encoder_length, segments * len(quantiles))
 
-            df = ts.df
-            segments = ts.segments
-            quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
-            columns = pd.MultiIndex.from_product([segments, quantile_columns])
-            quantiles_df = pd.DataFrame(quantiles_predicts, columns=columns, index=df.index)
-            df = pd.concat((df, quantiles_df), axis=1)
-            df = df.sort_index(axis=1)
-            ts.df = df
+                df = ts.df
+                segments = ts.segments
+                quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
+                columns = pd.MultiIndex.from_product([segments, quantile_columns])
+                quantiles_df = pd.DataFrame(quantiles_predicts, columns=columns, index=df.index)
+                df = pd.concat((df, quantiles_df), axis=1)
+                df = df.sort_index(axis=1)
+                ts.df = df
 
         ts.inverse_transform()
         return ts
