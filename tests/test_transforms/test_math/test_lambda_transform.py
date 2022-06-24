@@ -67,10 +67,9 @@ def test_save_transform(ts_non_negative, transform_original, transform_function,
     ts.fit_transform(
         [LambdaTransform(in_column="target", out_column=out_column, transform_func=transform_function, inplace=False)]
     )
-    eps = 1e-9
     assert set(ts_copy.columns) == set(ts.columns)
     for column in ts.columns:
-        assert np.all(abs(ts_copy[:, :, column] - ts[:, :, column]) < eps)
+        np.testing.assert_allclose(ts_copy[:, :, column], ts[:, :, column], rtol=1e-9)
 
 
 def test_nesessary_inverse_transform(ts_non_negative):
@@ -122,8 +121,7 @@ def test_transform(ts_range_const, inplace, check_column, function, inverse_func
         out_column=check_column,
     )
     ts_range_const.fit_transform([transform])
-    eps = 1e-9
-    assert np.all(np.array(ts_range_const[:, segment, check_column]) - expected_result < eps)
+    np.testing.assert_allclose(np.array(ts_range_const[:, segment, check_column]), expected_result, rtol=1e-9)
 
 
 @pytest.mark.parametrize(
@@ -138,6 +136,5 @@ def test_inverse_transform(ts_range_const, function, inverse_function):
     ts_range_const.fit_transform([transform])
     ts_range_const.inverse_transform()
     check_column = "target"
-    eps = 1e-9
     for segment in ts_range_const.segments:
-        assert np.all(ts_range_const[:, segment, check_column] - original_df[(segment, check_column)] < eps)
+        np.testing.assert_allclose(ts_range_const[:, segment, check_column], original_df[(segment, check_column)], rtol=1e-9)

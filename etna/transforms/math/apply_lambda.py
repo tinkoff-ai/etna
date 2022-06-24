@@ -34,8 +34,11 @@ class _OneSegmentLambdaTransform(Transform):
         inverse_transform_func:
             inverse function of transform_func
         inplace:
-            * if True, apply logarithm transformation inplace to in_column,
-            * if False, add column add transformed column to dataset
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add column and apply transformation to out_column
+
         Warnings
         --------
         throws if inplace=True and out_column is initialized, transformation will be applied inplace
@@ -107,7 +110,7 @@ class LambdaTransform(PerSegmentWrapper):
         self,
         in_column: str,
         transform_func: Callable[[pd.DataFrame], pd.DataFrame],
-        inplace: bool = False,
+        inplace: bool = True,
         out_column: Optional[str] = None,
         inverse_transform_func: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
     ):
@@ -124,8 +127,11 @@ class LambdaTransform(PerSegmentWrapper):
         inverse_transform_func:
             inverse function of transform_func
         inplace:
-            * if True, apply logarithm transformation inplace to in_column,
-            * if False, add column add transformed column to dataset
+
+            * if True, apply transformation inplace to in_column,
+
+            * if False, add column and apply transformation to out_column
+
         Warnings
         --------
         throws if inplace=True and out_column is initialized, transformation will be applied inplace
@@ -147,7 +153,7 @@ class LambdaTransform(PerSegmentWrapper):
 
         if self.inplace:
             result_out_column = self.in_column
-        elif out_column:
+        elif out_column is not None:
             result_out_column = out_column
         else:
             result_out_column = self.__repr__()
