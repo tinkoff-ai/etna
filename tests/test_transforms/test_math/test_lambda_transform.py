@@ -91,7 +91,7 @@ def test_interface_inplace(ts_non_negative):
 
 def test_interface_not_inplace(ts_non_negative):
     add_column = "target_transformed"
-    transform = LambdaTransform(in_column="target", out_column=add_column, transform_func=lambda x: x)
+    transform = LambdaTransform(in_column="target", out_column=add_column, transform_func=lambda x: x, inplace=False)
     original_columns = set(ts_non_negative.columns)
     ts_non_negative.fit_transform([transform])
     assert set(ts_non_negative.columns) == original_columns.union(
@@ -103,13 +103,9 @@ def test_interface_not_inplace(ts_non_negative):
     "inplace, segment, check_column, function, inverse_function, expected_result",
     [
         (False, "1", "target_transformed", lambda x: x**2, None, np.array([i**2 for i in range(100)])),
-        (True, "1", "target", lambda x: x**2, lambda x: np.sqrt(x), np.array([i**2 for i in range(100)])),
-        (False, "1", "target_transformed", lambda x: np.roll(x, 2), None, np.array([98, 99] + list(range(98)))),
-        (True, "1", "target", lambda x: np.roll(x, 2), lambda x: np.roll(x, -2), np.array([98, 99] + list(range(98)))),
+        (True, "1", "target", lambda x: x**2, lambda x: x**0.5, np.array([i**2 for i in range(100)])),
         (False, "2", "target_transformed", lambda x: x**2, None, np.array([1, 9] * 50)),
-        (True, "2", "target", lambda x: x**2, lambda x: np.sqrt(x), np.array([1, 9] * 50)),
-        (False, "2", "target_transformed", lambda x: np.roll(x, 2), None, np.array([1, 3] * 50)),
-        (True, "2", "target", lambda x: np.roll(x, 2), lambda x: np.roll(x, -2), np.array([1, 3] * 50)),
+        (True, "2", "target", lambda x: x**2, lambda x: x**0.5, np.array([1, 9] * 50)),
     ],
 )
 def test_transform(ts_range_const, inplace, check_column, function, inverse_function, expected_result, segment):
@@ -126,7 +122,7 @@ def test_transform(ts_range_const, inplace, check_column, function, inverse_func
 
 @pytest.mark.parametrize(
     "function, inverse_function",
-    [(lambda x: x**2, lambda x: np.sqrt(x)), (lambda x: np.roll(x, 2), lambda x: np.roll(x, -2))],
+    [(lambda x: x**2, lambda x: x**0.5)],
 )
 def test_inverse_transform(ts_range_const, function, inverse_function):
     transform = LambdaTransform(
