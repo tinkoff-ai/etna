@@ -128,3 +128,63 @@ def test_forecast_without_make_future(weekly_period_df):
     model.fit(ts)
     with pytest.raises(ValueError, match="The future is not generated!"):
         _ = model.forecast(ts=ts)
+
+
+def _get_default_transform(horizon: int):
+    return PytorchForecastingTransform(
+        max_encoder_length=21,
+        min_encoder_length=21,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        static_categoricals=["segment"],
+        target_normalizer=None,
+    )
+
+
+def test_prediction_interval_run_infuture(example_tsds):
+    horizon = 10
+    transform = _get_default_transform(horizon)
+    example_tsds.fit_transform([transform])
+    model = TFTModel(max_epochs=8, learning_rate=[0.1], gpus=0, batch_size=64)
+    model.fit(example_tsds)
+    future = example_tsds.make_future(horizon)
+    forecast = model.forecast(future, prediction_interval=True, quantiles=[0.02, 0.98])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.98"] - segment_slice["target_0.02"] >= 0).all()
+        assert (segment_slice["target"] - segment_slice["target_0.02"] >= 0).all()
+        assert (segment_slice["target_0.98"] - segment_slice["target"] >= 0).all()
+
+
+def test_prediction_interval_run_infuture_warning_not_found_quantiles(example_tsds):
+    horizon = 10
+    transform = _get_default_transform(horizon)
+    example_tsds.fit_transform([transform])
+    model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64)
+    model.fit(example_tsds)
+    future = example_tsds.make_future(horizon)
+    with pytest.warns(UserWarning, match="Quantiles: \[0.4\] can't be computed"):
+        forecast = model.forecast(future, prediction_interval=True, quantiles=[0.02, 0.4, 0.98])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
+        assert {"target_0.4"}.isdisjoint(segment_slice.columns)
+
+
+def test_prediction_interval_run_infuture_warning_loss(example_tsds):
+    from pytorch_forecasting.metrics import MAE as MAEPF
+
+    horizon = 10
+    transform = _get_default_transform(horizon)
+    example_tsds.fit_transform([transform])
+    model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64, loss=MAEPF())
+    model.fit(example_tsds)
+    future = example_tsds.make_future(horizon)
+    with pytest.warns(UserWarning, match="Quantiles can't be computed"):
+        forecast = model.forecast(future, prediction_interval=True, quantiles=[0.02, 0.98])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target"}.issubset(segment_slice.columns)
+        assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.columns)

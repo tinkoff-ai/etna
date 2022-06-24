@@ -166,7 +166,7 @@ def test_prediction_interval_run_infuture(example_tsds):
     example_tsds.fit_transform([transform])
     model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
     model.fit(example_tsds)
-    future = example_tsds.make_future(10)
+    future = example_tsds.make_future(horizon)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
