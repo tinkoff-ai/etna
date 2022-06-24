@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import TypedDict
@@ -11,21 +12,23 @@ from torch import Tensor
 from torch.distributions.multivariate_normal import MultivariateNormal
 from torch.distributions.normal import Normal
 
+from etna.core import BaseMixin
+
 
 class TrainBatch(TypedDict):
     encoder_real: Tensor  # (batch_size, seq_length, input_size)
-    datetime_index: Tensor  # (batch_size, seq_length, 1)
+    datetime_index: Tensor  # (batch_size, seq_length, num_models)
     target: Tensor  # (batch_size, seq_length, 1)
 
 
 class InferenceBatch(TypedDict):
     encoder_real: Tensor  # (batch_size, seq_length, input_size)
     decoder_real: Tensor  # (batch_size, horizon, input_size)
-    datetime_index: Tensor  # (batch_size, seq_length, 1)
+    datetime_index: Tensor  # (batch_size, seq_length + horizon, num_models)
     target: Tensor  # (batch_size, seq_length, 1)
 
 
-class SSM(ABC):
+class SSM(ABC, BaseMixin):
     @abstractmethod
     def latent_dim(self) -> int:
         raise NotImplementedError
@@ -81,6 +84,38 @@ class SeasonalitySSM(LevelSSM):
         return emission_coeff
 
 
+class CompositeSSM(SSM):
+    def __init__(
+        self,
+        seasonal_ssms: List[SeasonalitySSM],
+        add_level: bool = False,
+        add_level_trend: bool = False,
+    ):
+        self.add_level = add_level
+        self.add_level_trend = add_level_trend
+        self.seasonal_ssms = seasonal_ssms
+        self.nonseasonal_ssm = []
+        if self.add_level:
+            self.nonseasonal_ssm = [LevelSSM()]
+        elif self.add_level_trend:
+            self.nonseasonal_ssm = [LevelTrendSSM()]
+        self.ssms = self.seasonal_ssms + self.nonseasonal_ssm
+
+    def latent_dim(self) -> int:
+        return sum([ssm.latent_dim() for ssm in self.ssms])
+
+    def emission_coeff(self, datetime_index: Tensor) -> Tensor:
+        emission_coeff = torch.cat([ssm.emission_coeff(datetime_index[i]) for i, ssm in enumerate(self.ssms)], dim=-1)
+        return emission_coeff
+
+    def transition_coeff(self) -> Tensor:
+        transition_coeff = torch.block_diag(*[ssm.transition_coeff() for ssm in self.ssms])
+        return transition_coeff
+
+    def innovation_coeff(self, datetime_index: Tensor) -> Tensor:
+        return self.emission_coeff(datetime_index)
+
+
 class DeepStateNetwork(LightningModule):
     def __init__(self, ssm: SSM, n_samples: int, input_size: int, num_layers: int = 1):
         super().__init__()
@@ -103,6 +138,7 @@ class DeepStateNetwork(LightningModule):
                     nn.Linear(in_features=self.latent_dim, out_features=self.latent_dim), nn.Softplus()
                 ),
                 noise_std=nn.Sequential(nn.Linear(in_features=self.latent_dim, out_features=1), nn.Softplus()),
+                offset=nn.Linear(in_features=self.latent_dim, out_features=1),
             )
         )
 
@@ -120,18 +156,19 @@ class DeepStateNetwork(LightningModule):
         noise_std = (self.projectors["noise_std"](output),)  # (batch_size, seq_length, 1)
         prior_mean = (self.projectors["prior_mean"](output[:, 0]),)  # (batch_size, latent_dim)
         prior_std = (self.projectors["prior_std"](output[:, 0]),)  # (batch_size, latent_dim)
-        return prior_mean, prior_std, noise_std, innovation_coeff
+        offset = (self.projectors["offset"](output[:, 0]),)  # (batch_size, seq_length, 1)
+        return prior_mean, prior_std, noise_std, innovation_coeff, offset
 
     def forward(self, inference_batch: InferenceBatch):
         encoder_real = inference_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
         targets = inference_batch["target"].float()  # (batch_size, seq_length, 1)
         decoder_real = inference_batch["decoder_real"].float()  # (batch_size, horizon, input_size)
-        datetime_index_train = inference_batch["datetime_index"].to(torch.int64)[
-            :, : encoder_real.shape[1]
-        ]  # (batch_size, seq_length, 1)
-        datetime_index_test = inference_batch["datetime_index"].to(torch.int64)[
-            :, encoder_real.shape[1] :
-        ]  # (batch_size, horizon, 1)
+        datetime_index_train = (
+            inference_batch["datetime_index"].permute(2, 0, 1).to(torch.int64)[:, :, : encoder_real.shape[1]]
+        )  # (num_models, batch_size, seq_length, 1)
+        datetime_index_test = (
+            inference_batch["datetime_index"].permute(2, 0, 1).to(torch.int64)[:, :, encoder_real.shape[1] :]
+        )  # (num_models, batch_size, horizon, 1)
 
         output, (h_n, c_n) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
         lds = LDS(
@@ -143,6 +180,7 @@ class DeepStateNetwork(LightningModule):
             prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
             prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
             prior_cov=None,
+            offset=self.projectors["offset"](output),  # (batch_size, seq_length, 1)
             seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
@@ -158,6 +196,7 @@ class DeepStateNetwork(LightningModule):
             prior_mean=prior_mean,  # (batch_size, latent_dim)
             prior_std=None,  # (batch_size, latent_dim)
             prior_cov=prior_cov,
+            offset=self.projectors["offset"](output),  # (batch_size, seq_length, 1)
             seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
@@ -168,7 +207,9 @@ class DeepStateNetwork(LightningModule):
     def training_step(self, train_batch: TrainBatch, batch_idx):
         encoder_real = train_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
         targets = train_batch["target"].float()  # (batch_size, seq_length, 1)
-        datetime_index = train_batch["datetime_index"].to(torch.int64)  # (batch_size, seq_length, 1)
+        datetime_index = (
+            train_batch["datetime_index"].permute(2, 0, 1).to(torch.int64)
+        )  # (num_models, batch_size, seq_length, 1)
 
         output, (_, _) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
 
@@ -181,6 +222,7 @@ class DeepStateNetwork(LightningModule):
             prior_mean=self.projectors["prior_mean"](output[:, 0]),  # (batch_size, latent_dim)
             prior_std=self.projectors["prior_std"](output[:, 0]),  # (batch_size, latent_dim)
             prior_cov=None,
+            offset=self.projectors["offset"](output),  # (batch_size, seq_length, 1)
             seq_length=output.shape[1],
             latent_dim=self.latent_dim,
         )
@@ -201,6 +243,7 @@ class LDS:
         prior_mean: Tensor,  # (batch_size, latent_dim)
         prior_std: Optional[Tensor],  # (batch_size, latent_dim)
         prior_cov: Optional[Tensor],  # (batch_size, latent_dim, latent_dim)
+        offset: Tensor,  # (batch_size, seq_length, 1)
         seq_length: int,
         latent_dim: int,
     ):
@@ -213,6 +256,7 @@ class LDS:
         self.prior_cov = (
             prior_cov if prior_cov is not None else torch.diag_embed(prior_std * prior_std)
         )  # (batch_size, latent_dim, latent_dim)
+        self.offset = offset
         self.seq_length = seq_length
         self.latent_dim = latent_dim
 
@@ -223,6 +267,7 @@ class LDS:
         prior_mean: Tensor,  # (batch_size, latent_dim)
         prior_cov: Tensor,  # (batch_size, latent_dim, latent_dim)
         emission_coeff: Tensor,  # (batch_size, latent_dim)
+        offset: Tensor,  # (batch_size, 1)
     ):
         """
         One step of the Kalman filter.
@@ -258,7 +303,7 @@ class LDS:
         target_mean = (emission_coeff.permute(0, 2, 1) @ prior_mean.unsqueeze(-1)).squeeze(-1)
         # print(target_mean.shape)
         # v (batch_size, 1)
-        residual = target - target_mean
+        residual = target - target_mean - offset
         # print(residual.shape)
         # R (batch_size, 1, 1)
         noise_cov = torch.diag_embed(noise_std * noise_std)
@@ -315,6 +360,7 @@ class LDS:
                 prior_mean=mean,
                 prior_cov=cov,
                 emission_coeff=self.emission_coeff[:, t],
+                offset=self.offset[:, t],
             )
             log_p_seq.append(log_p)
             mean = (self.transition_coeff @ filtered_mean.unsqueeze(-1)).squeeze(-1)
@@ -358,9 +404,11 @@ class LDS:
         l_t = MultivariateNormal(self.prior_mean, self.prior_cov).sample((n_samples,))
         samples_seq = []
         for t in range(self.seq_length):
-            z_t = (self.emission_coeff[:, t].unsqueeze(-1).permute(0, 2, 1) @ l_t.unsqueeze(-1)) + (
-                self.noise_std[:, t].unsqueeze(0) * eps_observation[:, :, t].unsqueeze(-1)
-            ).unsqueeze(-1)
+            z_t = (
+                (self.emission_coeff[:, t].unsqueeze(-1).permute(0, 2, 1) @ l_t.unsqueeze(-1))
+                + self.offset[:, t].unsqueeze(0).unsqueeze(-1)
+                + (self.noise_std[:, t].unsqueeze(0) * eps_observation[:, :, t].unsqueeze(-1)).unsqueeze(-1)
+            )
             l_t = (self.transition_coeff @ l_t.unsqueeze(-1)).squeeze(-1) + self.innovation_coeff[:, t].unsqueeze(
                 0
             ) * eps_latent[:, :, t]

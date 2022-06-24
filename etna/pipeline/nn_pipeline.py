@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -16,7 +17,7 @@ class NNPipeline(BasePipeline):
         model,
         transforms,
         columns_to_add,
-        datetime_index: Optional[str] = None,
+        datetime_index: Optional[List[str]] = None,
         train_batch_size=32,
         test_batch_size=64,
         trainer_kwargs=dict(),

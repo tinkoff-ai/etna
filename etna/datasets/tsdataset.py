@@ -1128,7 +1128,7 @@ class TSDataset:
         print(result_string)
 
     def to_train_dataloader(
-        self, encoder_length, decoder_length, columns_to_add, datetime_index: Optional[str], batch_size: int
+        self, encoder_length, decoder_length, columns_to_add, datetime_index: Optional[List[str]], batch_size: int
     ):
         from torch.utils.data import DataLoader
 
@@ -1147,7 +1147,7 @@ class TSDataset:
         return DataLoader(ts_samples, batch_size=batch_size)
 
     def to_test_dataloader(
-        self, encoder_length, decoder_length, columns_to_add, datetime_index: Optional[str], batch_size: int
+        self, encoder_length, decoder_length, columns_to_add, datetime_index: Optional[List[str]], batch_size: int
     ):
         from torch.utils.data import DataLoader
 
@@ -1190,7 +1190,7 @@ def make_samples(x: dict, encoder_length, decoder_length, columns_to_add, dateti
         x_dict["encoder_real"] = x[columns_to_add].values[start_idx : start_idx + encoder_length]
         x_dict["target"] = x["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
         x_dict["datetime_index"] = (
-            x[datetime_index].astype(int).values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
+            x[datetime_index].astype(int).values[start_idx : start_idx + decoder_length + encoder_length]
         )
 
         x_dict["target"] = torch.from_numpy(x_dict["target"]).double()
