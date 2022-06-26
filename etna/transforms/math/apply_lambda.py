@@ -4,12 +4,11 @@ from typing import Optional
 
 import pandas as pd
 
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
 
 
-class LambdaTransform(Transform, FutureMixin):
+class LambdaTransform(Transform):
     """LambdaTransform applies input function for given series."""
 
     def __init__(
