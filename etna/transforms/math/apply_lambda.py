@@ -30,7 +30,7 @@ class LambdaTransform(Transform):
         transform_func:
             function to transform data
         inverse_transform_func:
-            inverse function of transform_func
+            inverse function of ''transform_func''
         inplace:
 
             * if `True`, apply transformation inplace to in_column,
@@ -44,7 +44,7 @@ class LambdaTransform(Transform):
         Raises
         ------
         Value error:
-            if `inplace=True` and inverse_transform_func is not defined
+            if `inplace=True` and ''inverse_transform_func'' is not defined
         """
         self.in_column = in_column
         self.inplace = inplace
