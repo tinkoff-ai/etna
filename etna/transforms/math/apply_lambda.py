@@ -9,7 +9,7 @@ from etna.transforms.utils import match_target_quantiles
 
 
 class LambdaTransform(Transform):
-    """LambdaTransform applies input function for given series."""
+    """``LambdaTransform`` applies input function for given series."""
 
     def __init__(
         self,
@@ -19,7 +19,7 @@ class LambdaTransform(Transform):
         out_column: Optional[str] = None,
         inverse_transform_func: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
     ):
-        """Init LogTransform.
+        """Init ``LambdaTransform``.
 
         Parameters
         ----------
@@ -30,21 +30,21 @@ class LambdaTransform(Transform):
         transform_func:
             function to transform data
         inverse_transform_func:
-            inverse function of ''transform_func''
+            inverse function of ``transform_func``
         inplace:
 
-            * if `True`, apply transformation inplace to in_column,
+            * if `True`, apply transformation inplace to ``in_column``,
 
-            * if `False`, add column and apply transformation to out_column
+            * if `False`, add column and apply transformation to ``out_column``
 
         Warnings
         --------
-        throws if `inplace=True` and out_column is initialized, transformation will be applied inplace
+        throws if `inplace=True` and ``out_column`` is initialized, transformation will be applied inplace
 
         Raises
         ------
         Value error:
-            if `inplace=True` and ''inverse_transform_func'' is not defined
+            if `inplace=True` and ``inverse_transform_func`` is not defined
         """
         self.in_column = in_column
         self.inplace = inplace
@@ -66,7 +66,7 @@ class LambdaTransform(Transform):
             self.change_column = self.__repr__()
 
     def fit(self, df: pd.DataFrame) -> "LambdaTransform":
-        """Fit preprocess method, does nothing in LambdaTransform case.
+        """Fit preprocess method, does nothing in ``LambdaTransform`` case.
 
         Parameters
         ----------
@@ -75,7 +75,7 @@ class LambdaTransform(Transform):
 
         Returns
         -------
-        result: LambdaTransform
+        result: ``LambdaTransform``
         """
         return self
 
