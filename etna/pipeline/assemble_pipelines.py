@@ -3,7 +3,7 @@ from typing import Sequence
 from typing import Union
 
 from etna.models.base import BaseModel
-from etna.pipeline import Pipeline
+from etna.pipeline.pipeline import Pipeline
 from etna.transforms import Transform
 
 
