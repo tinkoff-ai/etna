@@ -3,6 +3,7 @@ from typing import TypedDict
 
 import torch
 
+
 class _DeepCopyMixin:
     """Mixin for ``__deepcopy__`` behaviour overriding."""
 

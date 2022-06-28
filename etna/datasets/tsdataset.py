@@ -3,6 +3,7 @@ import warnings
 from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -1128,75 +1129,35 @@ class TSDataset:
         result_string = "\n".join(lines)
         print(result_string)
 
-    def to_train_dataloader(self, encoder_length, decoder_length, columns_to_add, batch_size: int = 1):
+    def to_train_dataloader(
+        self, batch_size: int, make_samples: Callable[[pd.DataFrame], dict], shuffle: bool = True, **kwargs
+    ) -> "DataLoader":
         from torch.utils.data import DataLoader
 
         df = self.to_pandas(flatten=True)
+        # start_index_not_nan = df.setisna().sum(axis=1).idxmin()
+        # df = df[start_index_not_nan:]
+        df = df.dropna()  # TODO: Fix this
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [
-            i
-            for dict_segment in ts_segments
-            for i in make_samples(dict_segment, encoder_length, decoder_length, columns_to_add)
-            if not i["encoder_real"].isnan().any()
-        ]
+        ts_samples = [i for dict_segment in ts_segments for i in make_samples(dict_segment)]
 
-        return DataLoader(ts_samples, batch_size=batch_size)
+        return DataLoader(ts_samples, batch_size=batch_size, shuffle=shuffle, **kwargs)
 
-    def to_test_dataloader(self, encoder_length, decoder_length, columns_to_add, batch_size: int = 1):
+    def to_test_dataloader(
+        self,
+        encoder_length: int,
+        decoder_length: int,
+        batch_size: int,
+        make_samples: Callable[[pd.DataFrame], dict],
+        shuffle: bool = False,
+        **kwargs,
+    ) -> "DataLoader":
         from torch.utils.data import DataLoader
 
-        df = self.make_future(decoder_length, encoder_length + 1).to_pandas(flatten=True)
+        df = self.make_future(decoder_length, encoder_length).to_pandas(flatten=True)
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [
-            i
-            for dict_segment in ts_segments
-            for i in make_samples(dict_segment, encoder_length, decoder_length, columns_to_add)
-            if not i["encoder_real"].isnan().any()
-        ]
+        ts_samples = [i for df_segment in ts_segments for i in make_samples(df_segment)]
 
-        return DataLoader(ts_samples, batch_size=batch_size)
-
-
-def make_samples(x: dict, encoder_length, decoder_length, columns_to_add):
-    import torch
-
-    def _make(x, start_idx, encoder_length, decoder_length, columns_to_add) -> Optional[dict]:
-        x_dict = {"target": list(), "encoder_real": list(), "decoder_real": list(), "segment": None}
-        total_length = len(x["target"])
-        total_sample_length = encoder_length + decoder_length
-
-        if total_sample_length + start_idx > total_length:
-            return
-
-        x_dict["decoder_real"] = x[["target"] + columns_to_add].values[
-            start_idx + encoder_length : start_idx + decoder_length + encoder_length
-        ]
-        x_dict["decoder_real"][:, 0] = (
-            x["target"].shift(1).values[start_idx + encoder_length : start_idx + decoder_length + encoder_length]
-        )
-        x_dict["encoder_real"] = x[["target"] + columns_to_add].values[start_idx : start_idx + encoder_length]
-        x_dict["encoder_real"][:, 0] = x["target"].shift(1).values[start_idx : start_idx + encoder_length]
-        x_dict["target"] = x["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
-
-        x_dict["target"] = torch.from_numpy(x_dict["target"]).double()
-        x_dict["decoder_real"] = torch.from_numpy(x_dict["decoder_real"]).double()
-        x_dict["encoder_real"] = torch.from_numpy(x_dict["encoder_real"]).double()
-        x_dict["segment"] = x["segment"].values[0]
-
-        return x_dict
-
-    start_idx = 0
-    while True:
-        batch = _make(
-            x=x,
-            start_idx=start_idx,
-            encoder_length=encoder_length,
-            decoder_length=decoder_length,
-            columns_to_add=columns_to_add,
-        )
-        if batch is None:
-            break
-        yield batch
-        start_idx += 1
+        return DataLoader(ts_samples, batch_size=batch_size, shuffle=shuffle, **kwargs)
