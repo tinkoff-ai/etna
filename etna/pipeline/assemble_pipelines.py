@@ -23,6 +23,10 @@ def assemble_pipelines(
     horizons:
         Sequence of horizons
 
+    Raises
+    ------
+    ValueError:
+        If the length of models sequence not equals to length of horizons sequence.
     Returns
     -------
     list of pipelines
