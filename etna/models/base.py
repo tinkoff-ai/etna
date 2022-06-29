@@ -1,6 +1,6 @@
 import functools
 import inspect
-from abc import ABC
+from abc import ABC, abstractproperty
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any
@@ -450,4 +450,61 @@ class BaseAdapter(ABC):
         pass
 
 
-BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel]
+class DeepBaseModel(BaseMixin):
+    def fit(self, ts: TSDataset):
+        ts = ts.to_torch_dataset(self.make_samples)
+        self.torch_fit(ts)
+        return self
+    
+    @abstractmethod
+    def make_samples(self, *args, **kwargs):
+        pass
+
+    def torch_fit(self, ts: "Dataset"):
+        from torch.utils.data import DataLoader
+        from pytorch_lightning import Trainer
+        
+        if self.split_params:
+            from torch.utils.data import random_split
+            tsdataset_length = len(ts)
+            train_frac = self.split_params["train_frac"]
+            train_dataset, val_dataset = random_split(ts, [int(train_frac * tsdataset_length), tsdataset_length - int(train_frac * tsdataset_length)], self.split_params["generator"])
+            train_dataloader = DataLoader(train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs)
+            val_dataloader = DataLoader(val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_kwargs)
+        else:
+            train_dataloader = DataLoader(ts, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs)
+            val_dataloader = None
+
+        trainer = Trainer(**self.trainer_kwargs)
+        trainer.fit(self, train_dataloader, val_dataloader)
+        return self
+
+    def torch_forecast(self, ts: "Dataset"):
+        from torch.utils.data import DataLoader
+
+        test_dataloader = DataLoader(ts, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_kwargs)
+
+        predictions_dict = dict()
+        for batch in test_dataloader:
+            segments = batch["segment"]
+            predictions = self(batch)
+            predictions_array = predictions.detach().numpy()
+            for idx, segment in enumerate(segments):
+                predictions_dict[(segment, "target")] = predictions_array[idx, :]
+
+        return predictions_dict
+
+    def forecast(self, ts: "TSDataset", horizon: int):
+
+        test_dataset = ts.to_torch_dataset(make_samples=self.make_samples, dropna=False)
+        predictions = self.torch_forecast(test_dataset)
+        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
+        for (segment, feature_nm), value in predictions.items():
+            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:, :horizon]
+
+        future_ts.inverse_transform()
+
+        return future_ts
+
+
+BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel, DeepBaseModel]

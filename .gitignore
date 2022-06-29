@@ -125,3 +125,5 @@ config.env
 tmp
 wandb
 !examples/wandb
+
+lightning_logs

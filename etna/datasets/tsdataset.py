@@ -17,6 +17,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
+from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -310,6 +311,16 @@ class TSDataset:
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
+        # can't put known_future into constructor, _check_known_future fails with df_exog=None
+        future_ts.known_future = self.known_future
+        future_ts._regressors = self.regressors
+        future_ts.transforms = self.transforms
+        future_ts.df_exog = self.df_exog
+        return future_ts
+
+    def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
+        future_dataset = self.df.iloc[start_idx:end_idx].copy(deep=True)
+        future_ts = TSDataset(df=future_dataset, freq=self.freq)
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         future_ts.known_future = self.known_future
         future_ts._regressors = self.regressors
@@ -1129,35 +1140,17 @@ class TSDataset:
         result_string = "\n".join(lines)
         print(result_string)
 
-    def to_train_dataloader(
-        self, batch_size: int, make_samples: Callable[[pd.DataFrame], dict], shuffle: bool = True, **kwargs
-    ) -> "DataLoader":
-        from torch.utils.data import DataLoader
+    def to_torch_dataset(
+        self, make_samples: Callable[[pd.DataFrame], dict], dropna: bool = True
+    ) -> "torch.utils.data.Dataset":
 
         df = self.to_pandas(flatten=True)
         # start_index_not_nan = df.setisna().sum(axis=1).idxmin()
         # df = df[start_index_not_nan:]
-        df = df.dropna()  # TODO: Fix this
+        if dropna:
+            df = df.dropna()  # TODO: Fix this
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
         ts_samples = [i for dict_segment in ts_segments for i in make_samples(dict_segment)]
 
-        return DataLoader(ts_samples, batch_size=batch_size, shuffle=shuffle, **kwargs)
-
-    def to_test_dataloader(
-        self,
-        encoder_length: int,
-        decoder_length: int,
-        batch_size: int,
-        make_samples: Callable[[pd.DataFrame], dict],
-        shuffle: bool = False,
-        **kwargs,
-    ) -> "DataLoader":
-        from torch.utils.data import DataLoader
-
-        df = self.make_future(decoder_length, encoder_length).to_pandas(flatten=True)
-
-        ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [i for df_segment in ts_segments for i in make_samples(df_segment)]
-
-        return DataLoader(ts_samples, batch_size=batch_size, shuffle=shuffle, **kwargs)
+        return _TorchDataset(ts_samples)

@@ -1,9 +1,9 @@
 from enum import Enum
+from typing import List
 from typing import Sequence
 
 import pandas as pd
-
-from etna.datasets.tsdataset import TSDataset
+from torch.utils.data import Dataset
 
 
 class DataFrameFormat(str, Enum):
@@ -64,6 +64,8 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     2020-03-13         True   1.00         True   1.00
     2020-03-14        False   1.00        False   1.00
     """
+    from etna.datasets.tsdataset import TSDataset
+
     # check segments length
     if len(segments) == 0:
         raise ValueError("Parameter segments shouldn't be empty")
@@ -90,3 +92,14 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
         return df_wide
 
     return df_long
+
+
+class _TorchDataset(Dataset):
+    def __init__(self, ts_samples: List[pd.DataFrame]):
+        self.ts_samples = ts_samples
+
+    def __getitem__(self, index):
+        return self.ts_samples[index]
+
+    def __len__(self):
+        return len(self.ts_samples)

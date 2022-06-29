@@ -1,17 +1,26 @@
 from typing import Optional
+from typing import TypedDict
 
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 from pytorch_lightning import LightningModule
+from pytorch_lightning import Trainer
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 
-from etna.models.nn.utils import InferenceBatch
-from etna.models.nn.utils import TrainBatch
+from etna.datasets import TSDataset
+from etna.models.base import DeepBaseModel
 
 
-class RNN(LightningModule):
+class Batch(TypedDict):
+    encoder_real: torch.Tensor
+    decoder_real: torch.Tensor
+    target: torch.Tensor
+
+
+class RNN(LightningModule, DeepBaseModel):
     def __init__(
         self,
         input_size: int,
@@ -19,12 +28,23 @@ class RNN(LightningModule):
         encoder_length: int,
         num_layers: int = 2,
         hidden_size: int = 16,
+        train_batch_size: int = 16,
+        test_batch_size: int = 1,
+        lr: float = 1e-3,
         loss=nn.MSELoss(),
+        trainer_kwargs: dict = {},
+        train_dataloader_kwargs: dict = {},
+        test_dataloader_kwargs: dict = {},
+        val_dataloader_kwargs: dict = {},
+        split_kwargs: Optional[dict] = None,
+        optimizer_kwargs: Optional[dict] = None,
     ) -> None:
         super().__init__()
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.train_batch_size = train_batch_size
+        self.test_batch_size = test_batch_size
         self.decoder_length = decoder_length
         self.encoder_length = encoder_length
         self.loss = loss
@@ -32,6 +52,13 @@ class RNN(LightningModule):
             num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
         )
         self.projection = nn.Linear(in_features=self.hidden_size, out_features=1)
+        self.trainer_kwargs = trainer_kwargs
+        self.train_dataloader_kwargs = train_dataloader_kwargs
+        self.val_dataloader_kwargs = val_dataloader_kwargs
+        self.test_dataloader_kwargs = test_dataloader_kwargs
+        self.split_params = {} if split_kwargs is None else split_kwargs
+        self.lr = lr
+        self.optimizer_kwargs = {} if optimizer_kwargs is None else optimizer_kwargs
 
     def forward(self, x):
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
@@ -53,10 +80,10 @@ class RNN(LightningModule):
         return forecast
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_kwargs)
         return optimizer
 
-    def training_step(self, batch: TrainBatch, *args, **kwargs):
+    def training_step(self, batch: Batch, *args, **kwargs):
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_lenght-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         target = batch["target"].float()
@@ -68,15 +95,11 @@ class RNN(LightningModule):
         target_prediction = output[:, -decoder_length:]
         target_prediction = self.projection(target_prediction)
 
-        # assert target_prediction.shape == target.shape
-
         target = target[:, -decoder_length:]
 
         return self.loss(target_prediction, target)
 
-            
-
-    def make_samples(self, x: pd.DataFrame):
+    def make_samples(self, x: pd.DataFrame) -> dict:
 
         encoder_length = self.encoder_length
         decoder_length = self.decoder_length
