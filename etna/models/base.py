@@ -538,7 +538,7 @@ class DeepBaseAbstractModel(ABC):
 
 
 class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
-    """Class for partially implented interfaces."""
+    """Class for partially implemented interfaces."""
 
     def __init__(
         self,
@@ -661,7 +661,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         Returns
         -------
         :
-            Dictinary with predictions
+            Dictionary with predictions
         """
         test_dataloader = DataLoader(
             dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_kwargs
