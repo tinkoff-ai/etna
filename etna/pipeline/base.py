@@ -456,7 +456,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             forecast = forecast.join(fold_number_df)
             forecasts_list.append(forecast)
         forecasts = pd.concat(forecasts_list)
-        return forecasts.sort_index(axis=1)
+        forecasts.sort_index(axis="columns", ascending=[True, False], inplace=True)
+        return forecasts
 
     def _prepare_fold_masks(self, ts: TSDataset, masks: Union[int, List[FoldMask]], mode: str) -> List[FoldMask]:
         """Prepare and validate fold masks."""
