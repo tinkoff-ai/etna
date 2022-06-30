@@ -3,7 +3,15 @@ from typing import List
 from typing import Sequence
 
 import pandas as pd
-from torch.utils.data import Dataset
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    from torch.utils.data import Dataset
+else:
+    from unittest.mock import Mock
+
+    Dataset = Mock  # type: ignore
 
 
 class DataFrameFormat(str, Enum):
@@ -95,7 +103,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
 
 
 class _TorchDataset(Dataset):
-    def __init__(self, ts_samples: List[pd.DataFrame]):
+    def __init__(self, ts_samples: List[dict]):
         self.ts_samples = ts_samples
 
     def __getitem__(self, index):

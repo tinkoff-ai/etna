@@ -1,21 +1,37 @@
 import functools
 import inspect
-from abc import ABC, abstractproperty
+from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any
 from typing import Dict
+from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Sized
+from typing import Tuple
 from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
+
+if SETTINGS.torch_required:
+    from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
+    from torch.utils.data import DataLoader
+    from torch.utils.data import Dataset
+    from torch.utils.data import random_split
+else:
+    from unittest.mock import Mock
+
+    LightningModule = Mock  # type: ignore
 
 
 # TODO: make PyCharm see signature of decorated method
@@ -450,39 +466,206 @@ class BaseAdapter(ABC):
         pass
 
 
-class DeepBaseModel(BaseMixin):
-    def fit(self, ts: TSDataset):
-        ts = ts.to_torch_dataset(self.make_samples)
-        self.torch_fit(ts)
-        return self
-    
+class DeepBaseAbstractModel(ABC):
+    """Interface for etna native deep models."""
+
     @abstractmethod
-    def make_samples(self, *args, **kwargs):
+    def forecast(self, ts: TSDataset, horizon: int, *args, **kwargs) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+
+        horizon:
+            Horizon to predict for
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
         pass
 
-    def torch_fit(self, ts: "Dataset"):
-        from torch.utils.data import DataLoader
-        from pytorch_lightning import Trainer
-        
-        if self.split_params:
-            from torch.utils.data import random_split
-            tsdataset_length = len(ts)
-            train_frac = self.split_params["train_frac"]
-            train_dataset, val_dataset = random_split(ts, [int(train_frac * tsdataset_length), tsdataset_length - int(train_frac * tsdataset_length)], self.split_params["generator"])
-            train_dataloader = DataLoader(train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs)
-            val_dataloader = DataLoader(val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_kwargs)
-        else:
-            train_dataloader = DataLoader(ts, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs)
-            val_dataloader = None
+    @abstractmethod
+    def make_samples(self, x: pd.DataFrame) -> Union[Iterator[dict], Iterable[dict]]:
+        """Make samples from input slices of TSDataset.
 
-        trainer = Trainer(**self.trainer_kwargs)
-        trainer.fit(self, train_dataloader, val_dataloader)
+        Parameters
+        ----------
+        x:
+            Slices are per-segment Dataframes
+
+        Returns
+        -------
+        :
+            Samples of input slices
+        """
+        pass
+
+    @abstractmethod
+    def raw_fit(self, ts: "Dataset") -> "DeepBaseAbstractModel":
+        """Fit model with torch like Dataset.
+
+        Parameters
+        ----------
+        ts:
+            Samples with data to fit on.
+
+        Returns
+        -------
+        :
+            Trained Model
+        """
+        pass
+
+    @abstractmethod
+    def raw_predict(self, ts: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
+        """Make inference on torch like Dataset.
+
+        Parameters
+        ----------
+        ts:
+            Samples with data to make inference on.
+
+        Returns
+        -------
+        :
+            Predictions for each segment
+        """
+        pass
+
+
+class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
+    """Class for partially implented interfaces."""
+
+    def __init__(
+        self,
+        *,
+        encoder_length: int,
+        decoder_length: int,
+        train_batch_size: int,
+        test_batch_size: int,
+        train_dataloader_kwargs: dict,
+        test_dataloader_kwargs: dict,
+        val_dataloader_kwargs: dict,
+        split_kwargs: dict,
+        trainer_kwargs: dict,
+    ):
+        """Init DeepBaseModel.
+
+        Parameters
+        ----------
+        encoder_length:
+            encoder length
+        decoder_length:
+            decoder length
+        train_batch_size:
+            batch size for training
+        test_batch_size:
+            batch size for testing
+        train_dataloader_kwargs:
+            kwargs for train dataloader like sampler for example
+        test_dataloader_kwargs:
+            kwargs for test dataloader
+        val_dataloader_kwargs:
+            kwargs for validation dataloader
+        split_kwargs:
+            kwargs for torch dataset split for train-test splitting
+        trainer_kwargs:
+            Pytorch ligthning trainer kwargs
+        """
+        super().__init__()
+        self.encoder_length = encoder_length
+        self.decoder_length = decoder_length
+        self.train_batch_size = train_batch_size
+        self.test_batch_size = test_batch_size
+        self.trainer_kwargs = trainer_kwargs
+        self.train_dataloader_kwargs = train_dataloader_kwargs
+        self.val_dataloader_kwargs = val_dataloader_kwargs
+        self.test_dataloader_kwargs = test_dataloader_kwargs
+        self.split_kwargs = split_kwargs
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "DeepBaseModel":
+        """Fit Model.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset with features
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        ts_torch = ts.to_torch_dataset(self.make_samples)
+        self.raw_fit(ts_torch)
         return self
 
-    def torch_forecast(self, ts: "Dataset"):
-        from torch.utils.data import DataLoader
+    def raw_fit(self, dataset: "Dataset") -> "DeepBaseModel":
+        """Fit model on torch like Dataset.
 
-        test_dataloader = DataLoader(ts, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_kwargs)
+        Parameters
+        ----------
+        dataset: Dataset
+            Torch like dataset for model fit
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        if self.split_kwargs:
+            if isinstance(dataset, Sized):
+                tsdataset_length = len(dataset)
+            else:
+                tsdataset_length = self.split_kwargs["dataset_size"]
+            train_frac = self.split_kwargs["train_frac"]
+            train_dataset, val_dataset = random_split(
+                dataset,
+                lengths=[int(train_frac * tsdataset_length), tsdataset_length - int(train_frac * tsdataset_length)],
+                generator=self.split_kwargs.get("generator"),
+            )
+            train_dataloader = DataLoader(
+                train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs
+            )
+            val_dataloader: Optional[DataLoader] = DataLoader(
+                val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_kwargs
+            )
+        else:
+            train_dataloader = DataLoader(
+                dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs
+            )
+            val_dataloader = None
+
+        if "logger" not in self.trainer_kwargs:
+            self.trainer_kwargs["logger"] = (tslogger.pl_loggers,)
+        else:
+            self.trainer_kwargs["logger"] += tslogger.pl_loggers
+
+        trainer = Trainer(**self.trainer_kwargs)
+        trainer.fit(self, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+        return self
+
+    def raw_predict(self, dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
+        """Make inference on torch like Dataset.
+
+        Parameters
+        ----------
+        dataset: Dataset
+            Torch like dataset for model inference
+
+        Returns
+        -------
+        :
+            Dictinary with predictions
+        """
+        test_dataloader = DataLoader(
+            dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_kwargs
+        )
 
         predictions_dict = dict()
         for batch in test_dataloader:
@@ -494,17 +677,42 @@ class DeepBaseModel(BaseMixin):
 
         return predictions_dict
 
+    @log_decorator
     def forecast(self, ts: "TSDataset", horizon: int):
+        """Make predictions.
 
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+
+        horizon:
+            Horizon to predict for
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
         test_dataset = ts.to_torch_dataset(make_samples=self.make_samples, dropna=False)
-        predictions = self.torch_forecast(test_dataset)
+        predictions = self.raw_predict(test_dataset)
         future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
         for (segment, feature_nm), value in predictions.items():
-            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:, :horizon]
+            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
 
         future_ts.inverse_transform()
 
         return future_ts
+
+    def get_model(self) -> "DeepBaseModel":
+        """Get model.
+
+        Returns
+        -------
+        :
+           Torch Module
+        """
+        raise NotImplementedError
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel, DeepBaseModel]

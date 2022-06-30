@@ -1,8 +1,8 @@
 from typing import Sequence
 
 from etna.datasets import TSDataset
-from etna.models.base import DeepBaseModel
 from etna.models.base import BaseModel
+from etna.models.base import DeepBaseModel
 from etna.models.base import PredictIntervalAbstractModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform

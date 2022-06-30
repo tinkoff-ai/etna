@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -17,11 +19,15 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
+from etna import SETTINGS
 from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
+
+if SETTINGS.torch_required:
+    from torch.utils.data import Dataset
 
 TTimestamp = Union[str, pd.Timestamp]
 
@@ -319,6 +325,20 @@ class TSDataset:
         return future_ts
 
     def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
+        """Return new TSDataset with integer-location based indexing.
+
+        Parameters
+        ----------
+        start_idx:
+            starting index of the slice.
+
+        end_idx:
+            last index of the slice.
+
+        Returns
+        -------
+        :
+        """
         future_dataset = self.df.iloc[start_idx:end_idx].copy(deep=True)
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
@@ -1141,12 +1161,24 @@ class TSDataset:
         print(result_string)
 
     def to_torch_dataset(
-        self, make_samples: Callable[[pd.DataFrame], dict], dropna: bool = True
-    ) -> "torch.utils.data.Dataset":
+        self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True
+    ) -> "Dataset":
+        """Convert the tsdataset to a torch.Dataset.
 
+        Parameters
+        ----------
+        make_samples:
+            function that takes per segment DataFrame and returns iterabale of samples
+
+        dropna:
+            if ``True``, missing rows are dropped
+
+        Returns
+        -------
+        :
+            torch.Dataset with with train or test samples to infer on
+        """
         df = self.to_pandas(flatten=True)
-        # start_index_not_nan = df.setisna().sum(axis=1).idxmin()
-        # df = df[start_index_not_nan:]
         if dropna:
             df = df.dropna()  # TODO: Fix this
 
