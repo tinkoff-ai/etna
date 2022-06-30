@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - 
-- 
+- Lambda transform ([#762](https://github.com/tinkoff-ai/etna/issues/762))
 - 
 - 
 - 
@@ -32,14 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
-- 
+- Make native prediction intervals for TFTModel ([#770](https://github.com/tinkoff-ai/etna/pull/770))
 - 
 - 
 ### Fixed
 - 
 - Fix missing prophet in docker images ([#767](https://github.com/tinkoff-ai/etna/pull/767))
 - Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
-- 
+- FutureWarning: The frame.append method is deprecated. Use pandas.concat instead ([#764](https://github.com/tinkoff-ai/etna/pull/764))
 - 
 - 
 - 

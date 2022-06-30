@@ -42,12 +42,13 @@ def two_dfs_with_different_timestamps(random_seed):
     """Generate two dataframes with the same segments and different timestamps"""
 
     def generate_df(start_time):
-        df = pd.DataFrame()
+        dfs = []
         for i in range(5):
             tmp = pd.DataFrame({"timestamp": pd.date_range(start_time, "2021-01-01")})
             tmp["segment"] = f"segment_{i + 1}"
             tmp["target"] = np.random.uniform(0, 10, len(tmp))
-            df = df.append(tmp)
+            dfs.append(tmp)
+        df = pd.concat(dfs)
         df = df.pivot(index="timestamp", columns="segment")
         df = df.reorder_levels([1, 0], axis=1)
         df = df.sort_index(axis=1)
@@ -65,12 +66,13 @@ def two_dfs_with_different_segments_sets(random_seed):
     """Generate two dataframes with the same timestamps and different segments"""
 
     def generate_df(n_segments):
-        df = pd.DataFrame()
+        dfs = []
         for i in range(n_segments):
             tmp = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-01-01")})
             tmp["segment"] = f"segment_{i + 1}"
             tmp["target"] = np.random.uniform(0, 10, len(tmp))
-            df = df.append(tmp)
+            dfs.append(tmp)
+        df = pd.concat(dfs)
         df = df.pivot(index="timestamp", columns="segment")
         df = df.reorder_levels([1, 0], axis=1)
         df = df.sort_index(axis=1)
@@ -88,12 +90,13 @@ def train_test_dfs(random_seed):
     """Generate two dataframes with the same segments and the same timestamps"""
 
     def generate_df():
-        df = pd.DataFrame()
+        dfs = []
         for i in range(5):
             tmp = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-01-01")})
             tmp["segment"] = f"segment_{i + 1}"
             tmp["target"] = np.random.uniform(0, 10, len(tmp))
-            df = df.append(tmp)
+            dfs.append(tmp)
+        df = pd.concat(dfs)
         df = df.pivot(index="timestamp", columns="segment")
         df = df.reorder_levels([1, 0], axis=1)
         df = df.sort_index(axis=1)
@@ -316,7 +319,7 @@ def imbalanced_tsdf(random_seed) -> TSDataset:
     df2["segment"] = "segment_2"
     df2["target"] = np.random.uniform(0, 5, len(df2))
 
-    df = df1.append(df2)
+    df = pd.concat((df1, df2))
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
     ts = TSDataset(df, freq="D")

@@ -18,6 +18,7 @@ from etna.transforms.math import AddConstTransform
 from etna.transforms.math import BoxCoxTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math import LagTransform
+from etna.transforms.math import LambdaTransform
 from etna.transforms.math import LogTransform
 from etna.transforms.math import MADTransform
 from etna.transforms.math import MaxAbsScalerTransform

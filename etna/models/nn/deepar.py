@@ -20,6 +20,7 @@ if SETTINGS.torch_required:
     import pytorch_lightning as pl
     from pytorch_forecasting.data import TimeSeriesDataSet
     from pytorch_forecasting.metrics import DistributionLoss
+    from pytorch_forecasting.metrics import NormalDistributionLoss
     from pytorch_forecasting.models import DeepAR
     from pytorch_lightning import LightningModule
 
@@ -45,8 +46,9 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         hidden_size: int = 10,
         rnn_layers: int = 2,
         dropout: float = 0.1,
-        loss: Optional[DistributionLoss] = None,
+        loss: Optional["DistributionLoss"] = None,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
+        quantiles_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize DeepAR wrapper.
@@ -79,7 +81,11 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
             Defaults to :py:class:`pytorch_forecasting.metrics.NormalDistributionLoss`.
         trainer_kwargs:
             Additional arguments for pytorch_lightning Trainer.
+        quantiles_kwargs:
+            Additional arguments for computing quantiles, look at ``to_quantiles()`` method for your loss.
         """
+        if loss is None:
+            loss = NormalDistributionLoss()
         self.max_epochs = max_epochs
         self.gpus = gpus
         self.gradient_clip_val = gradient_clip_val
@@ -92,6 +98,7 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         self.dropout = dropout
         self.loss = loss
         self.trainer_kwargs = trainer_kwargs if trainer_kwargs is not None else dict()
+        self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, DeepAR]] = None
         self.trainer: Optional[pl.Trainer] = None
 
@@ -194,7 +201,9 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
 
         if prediction_interval:
             quantiles_predicts = self.model.predict(  # type: ignore
-                prediction_dataloader, mode="quantiles", mode_kwargs={"quantiles": quantiles}
+                prediction_dataloader,
+                mode="quantiles",
+                mode_kwargs={"quantiles": quantiles, **self.quantiles_kwargs},
             ).numpy()
             # shape (segments, encoder_length, len(quantiles))
             quantiles_predicts = quantiles_predicts.transpose((1, 0, 2))

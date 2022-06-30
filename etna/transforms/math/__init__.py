@@ -1,4 +1,5 @@
 from etna.transforms.math.add_constant import AddConstTransform
+from etna.transforms.math.apply_lambda import LambdaTransform
 from etna.transforms.math.differencing import DifferencingTransform
 from etna.transforms.math.lags import LagTransform
 from etna.transforms.math.log import LogTransform
