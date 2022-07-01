@@ -21,7 +21,8 @@ class Batch(TypedDict):
 
     encoder_real: "torch.Tensor"
     decoder_real: "torch.Tensor"
-    target: "torch.Tensor"
+    encoder_target: "torch.Tensor"
+    decoder_target: "torch.Tensor"
     segment: "torch.Tensor"
 
 
@@ -155,16 +156,18 @@ class RNN(DeepBaseModel):
         """
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
-        target = batch["target"].float()
+
+        encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
+        decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
 
         decoder_length = decoder_real.shape[1]
 
         output, (_, _) = self.layer(torch.cat((encoder_real, decoder_real), dim=1))
 
         target_prediction = output[:, -decoder_length:]
-        target_prediction = self.projection(target_prediction)
+        target_prediction = self.projection(target_prediction)  # (batch_size, decoder_length, 1)
 
-        target = target[:, -decoder_length:]
+        target = decoder_target
 
         return self.loss(target_prediction, target)
 
@@ -195,9 +198,10 @@ class RNN(DeepBaseModel):
                 .values[start_idx : start_idx + encoder_length]
             )
             x_dict["encoder_real"][:, 0] = x["target"].shift(1).values[start_idx : start_idx + encoder_length]
-            x_dict["target"] = (
-                x["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
-            )
+            target = x["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
+
+            x_dict["encoder_target"] = target[1:encoder_length]
+            x_dict["decoder_target"] = target[encoder_length:]
 
             x_dict["encoder_real"] = x_dict["encoder_real"][1:]
             x_dict["segment"] = x["segment"].values[0]

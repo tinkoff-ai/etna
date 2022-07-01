@@ -642,7 +642,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             val_dataloader = None
 
         if "logger" not in self.trainer_kwargs:
-            self.trainer_kwargs["logger"] = (tslogger.pl_loggers,)
+            self.trainer_kwargs["logger"] = tslogger.pl_loggers
         else:
             self.trainer_kwargs["logger"] += tslogger.pl_loggers
 
