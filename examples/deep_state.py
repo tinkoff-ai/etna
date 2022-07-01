@@ -19,6 +19,10 @@ np.random.seed(42)
 original_df = pd.read_csv("examples/data/example_dataset.csv")
 original_df.head()
 
+from etna.loggers import tslogger, WandbLogger
+
+
+tslogger.add(WandbLogger(project="native_test", tags=["deepstate"]))
 
 df = TSDataset.to_dataset(original_df)
 ts = TSDataset(df, freq="D")
@@ -42,7 +46,8 @@ pipe = Pipeline(
         input_size=1,
         train_batch_size=32,
         test_batch_size=1,
-        trainer_kwargs=dict(max_epochs=1),
+        trainer_kwargs=dict(max_epochs=3),
+        split_kwargs=dict(train_frac=0.8),
     ),
     transforms=[SegmentEncoderTransform()],
 )

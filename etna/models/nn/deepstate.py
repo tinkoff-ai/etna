@@ -1,4 +1,4 @@
-# Uncomment this to run `examples/deepstate.py`
+# # Uncomment this to run `examples/deepstate.py`
 
 
 # from abc import ABC
@@ -86,7 +86,7 @@
 #         return emission_coeff
 
 
-# class DeepStateNetwork(LightningModule, DeepBaseModel):
+# class DeepStateNetwork(DeepBaseModel):
 #     def __init__(
 #         self,
 #         ssm: SSM,
@@ -95,11 +95,26 @@
 #         decoder_length,
 #         test_batch_size,
 #         train_batch_size,
-#         trainer_kwargs,
 #         input_size: int,
 #         num_layers: int = 1,
+#         trainer_kwargs: Optional[dict] = None,
+#         train_dataloader_kwargs: Optional[dict] = None,
+#         test_dataloader_kwargs: Optional[dict] = None,
+#         val_dataloader_kwargs: Optional[dict] = None,
+#         split_kwargs: Optional[dict] = None,
+#         optimizer_kwargs: Optional[dict] = None,
 #     ):
-#         super().__init__()
+#         super().__init__(
+#             encoder_length=encoder_length,
+#             decoder_length=decoder_length,
+#             train_batch_size=train_batch_size,
+#             test_batch_size=test_batch_size,
+#             train_dataloader_kwargs={} if train_dataloader_kwargs is None else train_dataloader_kwargs,
+#             test_dataloader_kwargs={} if test_dataloader_kwargs is None else test_dataloader_kwargs,
+#             val_dataloader_kwargs={} if val_dataloader_kwargs is None else val_dataloader_kwargs,
+#             trainer_kwargs={} if trainer_kwargs is None else trainer_kwargs,
+#             split_kwargs={} if split_kwargs is None else split_kwargs,
+#         )
 #         self.ssm = ssm
 #         self.n_samples = n_samples
 #         self.latent_dim = self.ssm.latent_dim()
@@ -188,10 +203,10 @@
 #         forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0)
 #         return forecast
 
-#     def training_step(self, train_batch: TrainBatch, batch_idx):
-#         encoder_real = train_batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
-#         targets = train_batch["target"].float()  # (batch_size, seq_length, 1)
-#         datetime_index = train_batch["encoder_datetime_index"].to(torch.int64)  # (batch_size, seq_length, 1)
+#     def step(self, batch: TrainBatch, *args, **kwargs):
+#         encoder_real = batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
+#         targets = batch["target"].float()  # (batch_size, seq_length, 1)
+#         datetime_index = batch["encoder_datetime_index"].to(torch.int64)  # (batch_size, seq_length, 1)
 
 #         output, (_, _) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
 
@@ -209,7 +224,7 @@
 #         )
 #         log_likelihood, _, _ = lds.log_likelihood(targets=targets)
 #         log_likelihood = torch.mean(torch.sum(log_likelihood, dim=1))
-#         return -log_likelihood
+#         return -log_likelihood, targets, []
 
 #     def make_samples(self, x: dict):
 #         import torch

@@ -141,8 +141,8 @@ class RNN(DeepBaseModel):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_kwargs)
         return optimizer
 
-    def training_step(self, batch: Batch, *args, **kwargs):  # type: ignore
-        """Training step.
+    def step(self, batch: Batch, *args, **kwargs):  # type: ignore
+        """Step for loss computation for training or validation.
 
         Parameters
         ----------
@@ -152,7 +152,7 @@ class RNN(DeepBaseModel):
         Returns
         -------
         :
-            loss
+            loss, true_target, prediction_target
         """
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
@@ -169,7 +169,8 @@ class RNN(DeepBaseModel):
 
         target = decoder_target
 
-        return self.loss(target_prediction, target)
+        loss = self.loss(target_prediction, target)
+        return loss, target, target_prediction
 
     def make_samples(self, x: pd.DataFrame) -> Iterator[dict]:
         """Make samples from segment DataFrame."""

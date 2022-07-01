@@ -16,6 +16,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+import torch
 
 from etna import SETTINGS
 from etna.core.mixins import BaseMixin
@@ -536,6 +537,22 @@ class DeepBaseAbstractModel(ABC):
         """
         pass
 
+    @abstractmethod
+    def step(self, batch: dict, *args, **kwargs) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
+        """Make batch step.
+
+        Parameters
+        ----------
+        batch:
+            Batch with data to make inference on.
+
+        Returns
+        -------
+        :
+            loss, true_target, prediction_target
+        """
+        pass
+
 
 class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
     """Class for partially implemented interfaces."""
@@ -703,6 +720,40 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         future_ts.inverse_transform()
 
         return future_ts
+
+    def training_step(self, batch: dict, *args, **kwargs):  # type: ignore
+        """Training step.
+
+        Parameters
+        ----------
+        batch:
+            batch of data
+
+        Returns
+        -------
+        :
+            loss
+        """
+        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("train_loss", loss, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch: dict, *args, **kwargs):  # type: ignore
+        """Validate step.
+
+        Parameters
+        ----------
+        batch:
+            batch of data
+
+        Returns
+        -------
+        :
+            loss
+        """
+        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("val_loss", loss, on_epoch=True)
+        return loss
 
     def get_model(self) -> "DeepBaseModel":
         """Get model.

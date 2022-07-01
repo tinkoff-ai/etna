@@ -15,6 +15,10 @@ torch.manual_seed(42)
 random.seed(42)
 np.random.seed(42)
 
+from etna.loggers import tslogger, WandbLogger
+
+
+tslogger.add(WandbLogger(project="native_test", tags=["rnn"]))
 
 original_df = pd.read_csv("examples/data/example_dataset.csv")
 original_df.head()
@@ -33,6 +37,7 @@ pipe = Pipeline(
         test_batch_size=4,
         encoder_length=14,
         decoder_length=14,
+        split_kwargs=dict(train_frac=0.8),
     ),
     transforms=[StandardScalerTransform("target"), LagTransform(in_column="target", lags=lags, out_column="lag")],
     horizon=7,
