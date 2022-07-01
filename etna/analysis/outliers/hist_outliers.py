@@ -34,9 +34,9 @@ def optimal_sse(left: int, right: int, p: np.ndarray, pp: np.ndarray) -> float:
     """
     if left == 0:
         avg = p[right]
-        return pp[right] - avg**2 / (right - left + 1)
+        return pp[right] - avg ** 2 / (right - left + 1)
     avg = p[right] - p[left - 1]
-    return pp[right] - pp[left - 1] - avg**2 / (right - left + 1)
+    return pp[right] - pp[left - 1] - avg ** 2 / (right - left + 1)
 
 
 @numba.jit(nopython=True)

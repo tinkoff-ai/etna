@@ -10,7 +10,7 @@ from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 
 
-@pytest.mark.parametrize("catboostmodel", [CatBoostModelMultiSegment, CatBoostModelPerSegment])
+@pytest.mark.parametrize("catboostmodel", [CatBoostModelMultiSegment])
 def test_run(catboostmodel, new_format_df):
     df = new_format_df
     ts = TSDataset(df, "1d")
