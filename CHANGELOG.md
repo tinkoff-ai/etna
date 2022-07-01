@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Github actions cache issue with poetry update ([#778](https://github.com/tinkoff-ai/etna/pull/778))
 - 
 - 
 
