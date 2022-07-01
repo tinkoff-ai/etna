@@ -11,7 +11,7 @@ from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
 from etna.metrics import Metric
-from etna.models import CatBoostModelMultiSegment
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import LinearMultiSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import ProphetModel
@@ -107,7 +107,7 @@ def test_backtest_logging(example_tsds: TSDataset):
     metrics = [MAE(), MSE(), SMAPE()]
     metrics_str = ["MAE", "MSE", "SMAPE"]
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=10, transforms=[date_flags])
+    pipe = Pipeline(model=CatBoostMultiSegmentModel(), horizon=10, transforms=[date_flags])
     n_folds = 5
     pipe.backtest(ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds)
     with open(file.name, "r") as in_file:
@@ -126,7 +126,7 @@ def test_backtest_logging_no_tables(example_tsds: TSDataset):
     idx = tslogger.add(ConsoleLogger(table=False))
     metrics = [MAE(), MSE(), SMAPE()]
     date_flags = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True)
-    pipe = Pipeline(model=CatBoostModelMultiSegment(), horizon=10, transforms=[date_flags])
+    pipe = Pipeline(model=CatBoostMultiSegmentModel(), horizon=10, transforms=[date_flags])
     n_folds = 5
     pipe.backtest(ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds)
     with open(file.name, "r") as in_file:
