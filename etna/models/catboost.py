@@ -1,4 +1,3 @@
-import warnings
 from typing import List
 from typing import Optional
 
@@ -463,7 +462,7 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
 
 @deprecated(
     reason="CatBoostModelMultiSegment is deprecated; will be deleted in etna==2.0. "
-           "Use CatBoostMultiSegmentModel instead."
+    "Use CatBoostMultiSegmentModel instead."
 )
 class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
     """Class for holding Catboost model for all segments.

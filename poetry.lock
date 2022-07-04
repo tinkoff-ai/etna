@@ -2869,6 +2869,14 @@ doc = ["mkdocs (>=1.1.2,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mdx-inclu
 test = ["shellingham (>=1.3.0,<2.0.0)", "pytest (>=4.4.0,<5.4.0)", "pytest-cov (>=2.10.0,<3.0.0)", "coverage (>=5.2,<6.0)", "pytest-xdist (>=1.32.0,<2.0.0)", "pytest-sugar (>=0.9.4,<0.10.0)", "mypy (==0.910)", "black (>=22.3.0,<23.0.0)", "isort (>=5.0.6,<6.0.0)"]
 
 [[package]]
+name = "types-deprecated"
+version = "1.2.9"
+description = "Typing stubs for Deprecated"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.9"
 description = "Typing stubs for PyYAML"
@@ -3035,7 +3043,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <3.10.0"
-content-hash = "a0bded65c983020a805f42c37f8571f210ccb9382a83848eed1914a21ebbbd02"
+content-hash = "b7abeb089c01585b78536e0cd123777100d593cb600814e9e3c9252d994852a9"
 
 [metadata.files]
 absl-py = [
@@ -5254,6 +5262,10 @@ typed-ast = [
 typer = [
     {file = "typer-0.4.1-py3-none-any.whl", hash = "sha256:e8467f0ebac0c81366c2168d6ad9f888efdfb6d4e1d3d5b4a004f46fa444b5c3"},
     {file = "typer-0.4.1.tar.gz", hash = "sha256:5646aef0d936b2c761a10393f0384ee6b5c7fe0bb3e5cd710b17134ca1d99cff"},
+]
+types-deprecated = [
+    {file = "types-Deprecated-1.2.9.tar.gz", hash = "sha256:e04ce58929509865359e91dcc38720123262b4cd68fa2a8a90312d50390bb6fa"},
+    {file = "types_Deprecated-1.2.9-py3-none-any.whl", hash = "sha256:53d05621e1d75de537f5a57d93508c8df17e37c07ee60b9fb09d39e1b7586c1e"},
 ]
 types-pyyaml = [
     {file = "types-PyYAML-6.0.9.tar.gz", hash = "sha256:33ae75c84b8f61fddf0c63e9c7e557db9db1694ad3c2ee8628ec5efebb5a5e9b"},

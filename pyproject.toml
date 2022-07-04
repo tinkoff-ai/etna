@@ -66,6 +66,7 @@ matplotlib = "*"
 typing_extensions = "*"
 tbats = "^1.1.0"
 Deprecated = "1.2.13"
+types-Deprecated = "1.2.9"
 
 prophet = {version = "^1.0", optional = true}
 
