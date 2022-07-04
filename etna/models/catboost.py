@@ -112,7 +112,7 @@ class CatBoostPerSegmentModel(PerSegmentModel):
     ... ]
     >>> ts.fit_transform(transforms=transforms)
     >>> future = ts.make_future(horizon)
-    >>> model = CatBoostModelPerSegment()
+    >>> model = CatBoostPerSegmentModel()
     >>> model.fit(ts=ts)
     CatBoostPerSegmentModel(iterations = None, depth = None, learning_rate = None,
     logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
@@ -234,7 +234,7 @@ class CatBoostMultiSegmentModel(MultiSegmentModel):
     ... ]
     >>> ts.fit_transform(transforms=transforms)
     >>> future = ts.make_future(horizon)
-    >>> model = CatBoostModelMultiSegment()
+    >>> model = CatBoostMultiSegmentModel()
     >>> model.fit(ts=ts)
     CatBoostMultiSegmentModel(iterations = None, depth = None, learning_rate = None,
     logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
