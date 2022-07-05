@@ -27,7 +27,6 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LogTransform
 from tests.utils import DummyMetric
-from etna.ensembles import VotingEnsemble
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -578,12 +577,6 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
 def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
     ts, _, expected_forecast_df = step_ts
     HORIZON = 5
-    ensemble = VotingEnsemble(
-        pipelines=[
-            Pipeline(model=NaiveModel(lag=7), transforms=[], horizon=HORIZON),
-            Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=HORIZON),
-        ]
-    )
-
-    _, forecast_df, _ = ensemble.backtest(ts, metrics=[MAE()])
+    pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5, step=1)
+    _, forecast_df, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
     assert np.all(forecast_df.values == expected_forecast_df.values)
