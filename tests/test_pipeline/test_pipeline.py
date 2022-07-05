@@ -22,6 +22,7 @@ from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
+from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
