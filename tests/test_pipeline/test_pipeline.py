@@ -27,6 +27,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LogTransform
 from tests.utils import DummyMetric
+from etna.ensembles import VotingEnsemble
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
