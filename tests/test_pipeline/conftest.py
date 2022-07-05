@@ -169,7 +169,6 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
         [[segment], ["target", "fold_number"]], names=("segment", "feature")
     )
     forecast_df.sort_index(axis=1, inplace=True)
-    
     return ts, metrics_df, forecast_df
 
 
