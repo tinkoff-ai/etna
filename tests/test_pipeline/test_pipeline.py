@@ -577,7 +577,14 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
 
 def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
     ts, _, expected_forecast_df = step_ts
-    HORIZON = 5
-    pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5, step=1)
-    _, forecast_df, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
+    pipeline = AutoRegressivePipeline(
+        model=NaiveModel(),
+        horizon=5,
+        step=1
+    )
+    _, forecast_df, _ = pipeline.backtest(
+        ts=ts,
+        metrics=[MAE()],
+        n_folds=3
+    )
     assert np.all(forecast_df.values == expected_forecast_df.values)
