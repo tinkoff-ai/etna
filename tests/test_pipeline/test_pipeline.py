@@ -20,7 +20,6 @@ from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
-from etna.pipeline import AutoRegressivePipeline
 from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
@@ -577,10 +576,9 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
 
 def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
     ts, _, expected_forecast_df = step_ts
-    pipeline = AutoRegressivePipeline(
+    pipeline = Pipeline(
         model=NaiveModel(),
-        horizon=5,
-        step=1
+        horizon=5
     )
     _, forecast_df, _ = pipeline.backtest(
         ts=ts,
