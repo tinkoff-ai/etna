@@ -16,7 +16,7 @@ def base_pipeline_yaml_path():
         _target_: etna.pipeline.Pipeline
         horizon: 4
         model:
-          _target_: etna.models.CatBoostModelMultiSegment
+          _target_: etna.models.CatBoostMultiSegmentModel
         transforms:
           - _target_: etna.transforms.LinearTrendTransform
             in_column: target
@@ -52,7 +52,7 @@ def elementary_boosting_model_pipeline():
         _target_: etna.pipeline.Pipeline
         horizon: 3
         model:
-          _target_: etna.models.CatBoostModelPerSegment
+          _target_: etna.models.CatBoostPerSegmentModel
         """
     )
     tmp.flush()
@@ -100,7 +100,7 @@ def base_pipeline_omegaconf_path():
         _target_: etna.pipeline.Pipeline
         horizon: 4
         model:
-          _target_: etna.models.CatBoostModelMultiSegment
+          _target_: etna.models.CatBoostMultiSegmentModel
         transforms:
           - _target_: etna.transforms.LinearTrendTransform
             in_column: target

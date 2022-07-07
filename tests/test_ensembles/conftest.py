@@ -11,7 +11,7 @@ from sklearn.tree import DecisionTreeRegressor
 from etna.datasets import TSDataset
 from etna.ensembles import StackingEnsemble
 from etna.ensembles import VotingEnsemble
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.pipeline import Pipeline
@@ -21,9 +21,9 @@ from etna.transforms import LagTransform
 
 @pytest.fixture
 def catboost_pipeline() -> Pipeline:
-    """Generate pipeline with CatBoostModelMultiSegment."""
+    """Generate pipeline with CatBoostPerSegmentModel."""
     pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="regressor_lag_feature")],
         horizon=7,
     )
