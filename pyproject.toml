@@ -18,6 +18,9 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License"
 ]
 
 packages = [
@@ -25,7 +28,7 @@ packages = [
 ]
 
 authors = [
-    "Andrey Alekseev <an.alekseev@tinkoff.ru>",
+    "Andrey Alekseev <ilekseev@gmail.com>",
     "Julia Shenshina <y.a.shenshina@tinkoff.ru>",
     "Martin Gabdushev <m.gabdushev@tinkoff.ru>",
     "Albina Munirova <a.i.munirova@tinkoff.ru>",
@@ -171,6 +174,16 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 120
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
+
+[tool.mypy]
+ignore_missing_imports = true
+strict_optional = true
+files = "etna/"
+exclude = "etna/libs"
+
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
