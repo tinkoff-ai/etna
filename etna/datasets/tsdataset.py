@@ -242,13 +242,15 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int, tail_steps: Optional[int] = None) -> "TSDataset":
+    def make_future(self, future_steps: int, tail_steps: int = 0) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
         ----------
         future_steps:
             number of timestamp in the future to build features for.
+        tail_steps:
+            number of timestamp for context to build features for.
 
         Returns
         -------
@@ -309,10 +311,7 @@ class TSDataset:
                 tslogger.log(f"Transform {repr(transform)} is applied to dataset")
                 df = transform.transform(df)
 
-        if tail_steps is not None:
-            future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
-        else:
-            future_dataset = df.tail(future_steps).copy(deep=True)
+        future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
 
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
@@ -331,22 +330,22 @@ class TSDataset:
         ----------
         start_idx:
             starting index of the slice.
-
         end_idx:
             last index of the slice.
 
         Returns
         -------
         :
+            tsdataset based on indexing slice.
         """
-        future_dataset = self.df.iloc[start_idx:end_idx].copy(deep=True)
-        future_ts = TSDataset(df=future_dataset, freq=self.freq)
+        df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
+        tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts.known_future = self.known_future
-        future_ts._regressors = self.regressors
-        future_ts.transforms = self.transforms
-        future_ts.df_exog = self.df_exog
-        return future_ts
+        tsdataset_slice.known_future = self.known_future
+        tsdataset_slice._regressors = self.regressors
+        tsdataset_slice.transforms = self.transforms
+        tsdataset_slice.df_exog = self.df_exog
+        return tsdataset_slice
 
     @staticmethod
     def _check_known_future(
@@ -1169,7 +1168,6 @@ class TSDataset:
         ----------
         make_samples:
             function that takes per segment DataFrame and returns iterabale of samples
-
         dropna:
             if ``True``, missing rows are dropped
 
@@ -1185,4 +1183,4 @@ class TSDataset:
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
         ts_samples = [i for dict_segment in ts_segments for i in make_samples(dict_segment)]
 
-        return _TorchDataset(ts_samples)
+        return _TorchDataset(ts_samples=ts_samples)

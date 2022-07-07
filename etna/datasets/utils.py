@@ -103,7 +103,16 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
 
 
 class _TorchDataset(Dataset):
+    """In memory dataset for torch dataloader."""
+
     def __init__(self, ts_samples: List[dict]):
+        """Init torch dataset.
+
+        Parameters
+        ----------
+        ts_samples:
+            time series samples for training or inference
+        """
         self.ts_samples = ts_samples
 
     def __getitem__(self, index):

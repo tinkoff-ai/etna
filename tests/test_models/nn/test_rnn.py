@@ -29,7 +29,7 @@ def test_rnn_model_run_weekly_overfit_with_scaler(weekly_period_df, horizon):
     encoder_length = 14
     decoder_length = 14
     model = RNN(
-        input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_kwargs=dict(max_epochs=100)
+        input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=100)
     )
     ts_pred = ts_train.make_future(decoder_length, encoder_length)
     model.fit(ts_train)

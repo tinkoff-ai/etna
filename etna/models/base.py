@@ -16,7 +16,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import torch
 
 from etna import SETTINGS
 from etna.core.mixins import BaseMixin
@@ -24,6 +23,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 
 if SETTINGS.torch_required:
+    import torch
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
     from torch.utils.data import DataLoader
@@ -471,14 +471,13 @@ class DeepBaseAbstractModel(ABC):
     """Interface for etna native deep models."""
 
     @abstractmethod
-    def forecast(self, ts: TSDataset, horizon: int, *args, **kwargs) -> TSDataset:
+    def forecast(self, ts: TSDataset, horizon: int) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features and expected decoder length for context
-
         horizon:
             Horizon to predict for
 
@@ -490,13 +489,13 @@ class DeepBaseAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def make_samples(self, x: pd.DataFrame) -> Union[Iterator[dict], Iterable[dict]]:
-        """Make samples from input slices of TSDataset.
+    def make_samples(self, df: pd.DataFrame) -> Union[Iterator[dict], Iterable[dict]]:
+        """Make samples from input slice of TSDataset.
 
         Parameters
         ----------
-        x:
-            Slices are per-segment Dataframes
+        df:
+            Slice is per-segment Dataframes
 
         Returns
         -------
@@ -506,12 +505,12 @@ class DeepBaseAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def raw_fit(self, ts: "Dataset") -> "DeepBaseAbstractModel":
+    def raw_fit(self, torch_dataset: "Dataset") -> "DeepBaseAbstractModel":
         """Fit model with torch like Dataset.
 
         Parameters
         ----------
-        ts:
+        torch_dataset:
             Samples with data to fit on.
 
         Returns
@@ -522,12 +521,12 @@ class DeepBaseAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def raw_predict(self, ts: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
+    def raw_predict(self, torch_dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
         """Make inference on torch like Dataset.
 
         Parameters
         ----------
-        ts:
+        torch_dataset:
             Samples with data to make inference on.
 
         Returns
@@ -553,6 +552,17 @@ class DeepBaseAbstractModel(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_model(self) -> "DeepBaseModel":
+        """Get model.
+
+        Returns
+        -------
+        :
+           Torch Module
+        """
+        pass
+
 
 class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
     """Class for partially implemented interfaces."""
@@ -564,11 +574,11 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         decoder_length: int,
         train_batch_size: int,
         test_batch_size: int,
-        train_dataloader_kwargs: dict,
-        test_dataloader_kwargs: dict,
-        val_dataloader_kwargs: dict,
-        split_kwargs: dict,
-        trainer_kwargs: dict,
+        train_dataloader_params: dict,
+        test_dataloader_params: dict,
+        val_dataloader_params: dict,
+        split_params: dict,
+        trainer_params: dict,
     ):
         """Init DeepBaseModel.
 
@@ -582,27 +592,27 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             batch size for training
         test_batch_size:
             batch size for testing
-        train_dataloader_kwargs:
-            kwargs for train dataloader like sampler for example
-        test_dataloader_kwargs:
-            kwargs for test dataloader
-        val_dataloader_kwargs:
-            kwargs for validation dataloader
-        split_kwargs:
-            kwargs for torch dataset split for train-test splitting
-        trainer_kwargs:
-            Pytorch ligthning trainer kwargs
+        trainer_params:
+            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+        train_dataloader_params:
+            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
+        test_dataloader_params:
+            parameters for test dataloader
+        val_dataloader_params:
+            parameters for validation dataloader
+        split_params:
+            parameters for torch dataset split for train-test splitting ``{"train_size": `float`, "generator": `Optional[torch.Generator]`}``
         """
         super().__init__()
         self.encoder_length = encoder_length
         self.decoder_length = decoder_length
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
-        self.trainer_kwargs = trainer_kwargs
-        self.train_dataloader_kwargs = train_dataloader_kwargs
-        self.val_dataloader_kwargs = val_dataloader_kwargs
-        self.test_dataloader_kwargs = test_dataloader_kwargs
-        self.split_kwargs = split_kwargs
+        self.trainer_params = trainer_params
+        self.train_dataloader_params = train_dataloader_params
+        self.val_dataloader_params = val_dataloader_params
+        self.test_dataloader_params = test_dataloader_params
+        self.split_params = split_params
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "DeepBaseModel":
@@ -618,16 +628,16 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         :
             Model after fit
         """
-        ts_torch = ts.to_torch_dataset(self.make_samples)
+        ts_torch = ts.to_torch_dataset(self.make_samples, dropna=True)
         self.raw_fit(ts_torch)
         return self
 
-    def raw_fit(self, dataset: "Dataset") -> "DeepBaseModel":
+    def raw_fit(self, torch_dataset: "Dataset") -> "DeepBaseModel":
         """Fit model on torch like Dataset.
 
         Parameters
         ----------
-        dataset: Dataset
+        torch_dataset: Dataset
             Torch like dataset for model fit
 
         Returns
@@ -635,44 +645,44 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         :
             Model after fit
         """
-        if self.split_kwargs:
-            if isinstance(dataset, Sized):
-                tsdataset_length = len(dataset)
+        if self.split_params:
+            if isinstance(torch_dataset, Sized):
+                tsdataset_length = len(torch_dataset)
             else:
-                tsdataset_length = self.split_kwargs["dataset_size"]
-            train_frac = self.split_kwargs["train_frac"]
+                tsdataset_length = self.split_params["dataset_size"]
+            train_frac = self.split_params["train_frac"]
             train_dataset, val_dataset = random_split(
-                dataset,
+                torch_dataset,
                 lengths=[int(train_frac * tsdataset_length), tsdataset_length - int(train_frac * tsdataset_length)],
-                generator=self.split_kwargs.get("generator"),
+                generator=self.split_params.get("generator"),
             )
             train_dataloader = DataLoader(
-                train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs
+                train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
             val_dataloader: Optional[DataLoader] = DataLoader(
-                val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_kwargs
+                val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
             train_dataloader = DataLoader(
-                dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_kwargs
+                torch_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
             val_dataloader = None
 
-        if "logger" not in self.trainer_kwargs:
-            self.trainer_kwargs["logger"] = tslogger.pl_loggers
+        if "logger" not in self.trainer_params:
+            self.trainer_params["logger"] = tslogger.pl_loggers
         else:
-            self.trainer_kwargs["logger"] += tslogger.pl_loggers
+            self.trainer_params["logger"] += tslogger.pl_loggers
 
-        trainer = Trainer(**self.trainer_kwargs)
+        trainer = Trainer(**self.trainer_params)
         trainer.fit(self, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
         return self
 
-    def raw_predict(self, dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
+    def raw_predict(self, torch_dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
         """Make inference on torch like Dataset.
 
         Parameters
         ----------
-        dataset: Dataset
+        torch_dataset: Dataset
             Torch like dataset for model inference
 
         Returns
@@ -681,28 +691,29 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             Dictionary with predictions
         """
         test_dataloader = DataLoader(
-            dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_kwargs
+            torch_dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_params
         )
 
         predictions_dict = dict()
-        for batch in test_dataloader:
-            segments = batch["segment"]
-            predictions = self(batch)
-            predictions_array = predictions.detach().numpy()
-            for idx, segment in enumerate(segments):
-                predictions_dict[(segment, "target")] = predictions_array[idx, :]
+        self.eval()
+        with torch.no_grad():
+            for batch in test_dataloader:
+                segments = batch["segment"]
+                predictions = self(batch)
+                predictions_array = predictions.numpy()
+                for idx, segment in enumerate(segments):
+                    predictions_dict[(segment, "target")] = predictions_array[idx, :]
 
         return predictions_dict
 
     @log_decorator
-    def forecast(self, ts: "TSDataset", horizon: int):
+    def forecast(self, ts: "TSDataset", horizon: int) -> "TSDataset":
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features and expected decoder length for context
-
         horizon:
             Horizon to predict for
 

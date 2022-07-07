@@ -33,11 +33,11 @@ lags = [10, 11, 12, 13, 14]
 pipe = Pipeline(
     model=RNN(
         6,
-        trainer_kwargs=dict(max_epochs=5),
+        trainer_params=dict(max_epochs=5),
         test_batch_size=4,
         encoder_length=14,
         decoder_length=14,
-        split_kwargs=dict(train_frac=0.8),
+        split_params=dict(train_frac=0.8),
     ),
     transforms=[StandardScalerTransform("target"), LagTransform(in_column="target", lags=lags, out_column="lag")],
     horizon=7,
