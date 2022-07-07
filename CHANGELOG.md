@@ -20,16 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
 ### Changed
 - Add columns and mode parameters in plot_correlation_matrix ([#726](https://github.com/tinkoff-ai/etna/pull/753))
-- 
+- Add CatBoostPerSegmentModel and CatBoostMultiSegmentModel classes, deprecate CatBoostModelPerSegment and CatBoostModelMultiSegment ([#779](https://github.com/tinkoff-ai/etna/pull/779))
 - 
 - 
 - 
 - Make LagTransform, LogTransform, AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
 - 
-- 
+- Update poetry.core version ([#780](https://github.com/tinkoff-ai/etna/pull/780))
 - 
 - Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
 - Make native prediction intervals for TFTModel ([#770](https://github.com/tinkoff-ai/etna/pull/770))

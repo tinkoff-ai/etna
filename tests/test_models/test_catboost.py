@@ -4,13 +4,13 @@ import pytest
 from catboost import CatBoostRegressor
 
 from etna.datasets.tsdataset import TSDataset
-from etna.models import CatBoostModelMultiSegment
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostMultiSegmentModel
+from etna.models import CatBoostPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 
 
-@pytest.mark.parametrize("catboostmodel", [CatBoostModelMultiSegment, CatBoostModelPerSegment])
+@pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
 def test_run(catboostmodel, new_format_df):
     df = new_format_df
     ts = TSDataset(df, "1d")
@@ -29,7 +29,7 @@ def test_run(catboostmodel, new_format_df):
         assert False
 
 
-@pytest.mark.parametrize("catboostmodel", [CatBoostModelMultiSegment, CatBoostModelPerSegment])
+@pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
     exog = new_format_exog
@@ -77,7 +77,7 @@ def test_catboost_multi_segment_forecast(constant_ts):
     train.fit_transform([lags])
     future = train.make_future(horizon)
 
-    model = CatBoostModelMultiSegment()
+    model = CatBoostMultiSegmentModel()
     model.fit(train)
     forecast = model.forecast(future)
 
@@ -86,19 +86,19 @@ def test_catboost_multi_segment_forecast(constant_ts):
 
 
 def test_get_model_multi():
-    etna_model = CatBoostModelMultiSegment()
+    etna_model = CatBoostMultiSegmentModel()
     model = etna_model.get_model()
     assert isinstance(model, CatBoostRegressor)
 
 
 def test_get_model_per_segment_before_training():
-    etna_model = CatBoostModelPerSegment()
+    etna_model = CatBoostPerSegmentModel()
     with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
         _ = etna_model.get_model()
 
 
 def test_get_model_per_segment_after_training(example_tsds):
-    pipeline = Pipeline(model=CatBoostModelPerSegment(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
+    pipeline = Pipeline(model=CatBoostPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
     pipeline.fit(ts=example_tsds)
     models_dict = pipeline.model.get_model()
     assert isinstance(models_dict, dict)
