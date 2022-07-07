@@ -43,9 +43,7 @@ def assemble_pipelines(
                 raise ValueError("Lengths of the result models, horizons and transforms are not equals")
             n_transforms = len(transform)
 
-    different_lens = {n_models, n_horizons, n_transforms}
-
-    if len(different_lens) > 2 or (len(different_lens) == 2 and 1 not in different_lens):
+    if (n_transforms != n_models and n_models != 1) or (n_transforms != n_horizons and n_horizons != 1):
         raise ValueError("Lengths of the result models, horizons and transforms are not equals")
 
     models = models if isinstance(models, Sequence) else [models for _ in range(n_transforms)]
