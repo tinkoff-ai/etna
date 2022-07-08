@@ -30,7 +30,7 @@ from etna.transforms import PytorchForecastingTransform
 @pytest.mark.parametrize(
     "model, transforms, num_skip_timestamps",
     [
-        (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])], 2),
+        (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])], 0),
         (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])], 0),
         (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], 3),
         (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], 3),

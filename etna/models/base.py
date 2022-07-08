@@ -78,7 +78,7 @@ class Model(ABC, BaseMixin):
 
     @staticmethod
     def _forecast_segment(model, segment: Union[str, List[str]], ts: TSDataset) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
+        segment_features = ts.df.loc[:, pd.IndexSlice[segment, :]]
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
@@ -251,7 +251,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
     @staticmethod
     def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
         """Make predictions for one segment."""
-        segment_features = ts[:, segment, :]
+        segment_features = ts.df.loc[:, pd.IndexSlice[segment, :]]
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
