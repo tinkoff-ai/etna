@@ -27,31 +27,8 @@ from etna.transforms import LagTransform
 from etna.transforms import PytorchForecastingTransform
 
 
-@pytest.mark.parametrize(
-    "model, transforms, num_skip_timestamps",
-    [
-        (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])], 0),
-        (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])], 0),
-        (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], 3),
-        (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], 3),
-        (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], 3),
-        (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], 3),
-        (ProphetModel(), [], 0),
-        (SARIMAXModel(), [], 0),
-        (AutoARIMAModel(), [], 0),
-        (HoltModel(), [], 0),
-        (HoltWintersModel(), [], 0),
-        (SimpleExpSmoothingModel(), [], 0),
-        (MovingAverageModel(window=3), [], 0),
-        (NaiveModel(), [], 0),
-        (SeasonalMovingAverageModel(), [], 0),
-        (BATSModel(), [], 0),
-        (TBATSModel(), [], 0),
-    ],
-)
-def test_forecast_in_sample(model, transforms, num_skip_timestamps, example_tsds):
-    ts = example_tsds
-    df = example_tsds.to_pandas()
+def _test_forecast_in_sample_full(ts, model, transforms):
+    df = ts.to_pandas()
 
     # fitting
     ts.fit_transform(transforms)
@@ -61,9 +38,6 @@ def test_forecast_in_sample(model, transforms, num_skip_timestamps, example_tsds
     forecast_ts = TSDataset(df, freq="D")
     forecast_ts.transform(ts.transforms)
     forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-    # not to fail because of NaNs
-    if num_skip_timestamps:
-        forecast_ts.df = forecast_ts.df.iloc[num_skip_timestamps:]
     model.forecast(forecast_ts)
 
     # checking
@@ -71,10 +45,36 @@ def test_forecast_in_sample(model, transforms, num_skip_timestamps, example_tsds
     assert not np.any(forecast_df["target"].isna())
 
 
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ProphetModel(), []),
+        (SARIMAXModel(), []),
+        (AutoARIMAModel(), []),
+        (HoltModel(), []),
+        (HoltWintersModel(), []),
+        (SimpleExpSmoothingModel(), []),
+        (MovingAverageModel(window=3), []),
+        (NaiveModel(), []),
+        (SeasonalMovingAverageModel(), []),
+        (BATSModel(), []),
+        (TBATSModel(), []),
+    ],
+)
+def test_forecast_in_sample_full(model, transforms, example_tsds):
+    _test_forecast_in_sample_full(example_tsds, model, transforms)
+
+
 @pytest.mark.xfail
 @pytest.mark.parametrize(
-    "model, transforms, num_skip_timestamps",
+    "model, transforms",
     [
+        (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         (
             DeepARModel(max_epochs=1, learning_rate=[0.01]),
             [
@@ -86,7 +86,6 @@ def test_forecast_in_sample(model, transforms, num_skip_timestamps, example_tsds
                     target_normalizer=GroupNormalizer(groups=["segment"]),
                 )
             ],
-            2,
         ),
         (
             TFTModel(max_epochs=1, learning_rate=[0.01]),
@@ -101,13 +100,15 @@ def test_forecast_in_sample(model, transforms, num_skip_timestamps, example_tsds
                     target_normalizer=None,
                 )
             ],
-            2,
         ),
     ],
 )
-def test_forecast_in_sample_failed(model, transforms, num_skip_timestamps, example_tsds):
-    ts = example_tsds
-    df = example_tsds.to_pandas()
+def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
+    _test_forecast_in_sample_full(example_tsds, model, transforms)
+
+
+def _test_forecast_in_sample_middle(ts, model, transforms):
+    df = ts.to_pandas()
 
     # fitting
     ts.fit_transform(transforms)
@@ -117,9 +118,84 @@ def test_forecast_in_sample_failed(model, transforms, num_skip_timestamps, examp
     forecast_ts = TSDataset(df, freq="D")
     forecast_ts.transform(ts.transforms)
     forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-    # not to fail because of NaNs
-    if num_skip_timestamps:
-        forecast_ts.df = forecast_ts.df.iloc[num_skip_timestamps:]
+    forecast_ts.df = forecast_ts.df.iloc[5:]
+    model.forecast(forecast_ts)
+
+    # checking
+    forecast_df = forecast_ts.to_pandas(flatten=True)
+    assert not np.any(forecast_df["target"].isna())
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ProphetModel(), []),
+        (SARIMAXModel(), []),
+        (AutoARIMAModel(), []),
+        (HoltModel(), []),
+        (HoltWintersModel(), []),
+        (SimpleExpSmoothingModel(), []),
+        (MovingAverageModel(window=3), []),
+        (NaiveModel(), []),
+        (SeasonalMovingAverageModel(), []),
+        (BATSModel(), []),
+        (TBATSModel(), []),
+    ],
+)
+def test_forecast_in_sample_middle(model, transforms, example_tsds):
+    _test_forecast_in_sample_middle(example_tsds, model, transforms)
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            DeepARModel(max_epochs=1, learning_rate=[0.01]),
+            [
+                PytorchForecastingTransform(
+                    max_encoder_length=1,
+                    max_prediction_length=1,
+                    time_varying_known_reals=["time_idx"],
+                    time_varying_unknown_reals=["target"],
+                    target_normalizer=GroupNormalizer(groups=["segment"]),
+                )
+            ],
+        ),
+        (
+            TFTModel(max_epochs=1, learning_rate=[0.01]),
+            [
+                PytorchForecastingTransform(
+                    max_encoder_length=21,
+                    min_encoder_length=21,
+                    max_prediction_length=5,
+                    time_varying_known_reals=["time_idx"],
+                    time_varying_unknown_reals=["target"],
+                    static_categoricals=["segment"],
+                    target_normalizer=None,
+                )
+            ],
+        ),
+    ],
+)
+def test_forecast_in_sample_middle_failed(model, transforms, example_tsds):
+    _test_forecast_in_sample_middle(example_tsds, model, transforms)
+
+
+def _test_forecast_out_sample_with_gap(ts, model, transforms):
+    # fitting
+    ts.fit_transform(transforms)
+    model.fit(ts)
+
+    # forecasting
+    forecast_ts = ts.make_future(5)
+    forecast_ts.df = forecast_ts.df.iloc[2:]
     model.forecast(forecast_ts)
 
     # checking
@@ -176,17 +252,4 @@ def test_forecast_in_sample_failed(model, transforms, num_skip_timestamps, examp
     ],
 )
 def test_forecast_out_sample_with_gap(model, transforms, example_tsds):
-    ts = example_tsds
-
-    # fitting
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting
-    forecast_ts = ts.make_future(5)
-    forecast_ts.df = forecast_ts.df.iloc[2:]
-    model.forecast(forecast_ts)
-
-    # checking
-    forecast_df = forecast_ts.to_pandas(flatten=True)
-    assert not np.any(forecast_df["target"].isna())
+    _test_forecast_out_sample_with_gap(example_tsds, model, transforms)
