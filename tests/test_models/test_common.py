@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.util.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets import TSDataset
@@ -81,7 +82,7 @@ def _test_forecast_out_sample_prefix(ts, model, transforms):
     # checking
     forecast_full_df = forecast_full_ts.to_pandas()
     forecast_prefix_df = forecast_prefix_ts.to_pandas()
-    assert forecast_prefix_df.equals(forecast_full_df.iloc[:-2])
+    assert_frame_equal(forecast_prefix_df, forecast_full_df.iloc[:-2])
 
 
 def _test_forecast_out_sample_suffix(ts, model, transforms):
@@ -101,7 +102,7 @@ def _test_forecast_out_sample_suffix(ts, model, transforms):
     # checking
     forecast_full_df = forecast_full_ts.to_pandas()
     forecast_gap_df = forecast_gap_ts.to_pandas()
-    assert forecast_gap_df.equals(forecast_full_df.iloc[2:])
+    assert_frame_equal(forecast_gap_df, forecast_full_df.iloc[2:])
 
 
 @pytest.mark.parametrize(
