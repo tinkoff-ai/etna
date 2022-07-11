@@ -102,7 +102,7 @@ class RNN(DeepBaseModel):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.loss = torch.nn.MSELoss() if loss is None else loss
-        self.layer = nn.LSTM(
+        self.rnn = nn.LSTM(
             num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
         )
         self.projection = nn.Linear(in_features=self.hidden_size, out_features=1)
@@ -126,16 +126,16 @@ class RNN(DeepBaseModel):
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
-        output, (h_n, c_n) = self.layer(encoder_real)
+        output, (h_n, c_n) = self.rnn(encoder_real)
         forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
 
         for i in range(decoder_length - 1):
-            output, (h_n, c_n) = self.layer(decoder_real[:, i, None], (h_n, c_n))
+            output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))
             forecast_point = self.projection(output[:, -1]).flatten()
             forecast[:, i, 0] = forecast_point
             decoder_real[:, i + 1, 0] = forecast_point
 
-        output, (h_n, c_n) = self.layer(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
+        output, (h_n, c_n) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
         forecast_point = self.projection(output[:, -1]).flatten()
         forecast[:, decoder_length - 1, 0] = forecast_point
         return forecast
@@ -166,7 +166,7 @@ class RNN(DeepBaseModel):
 
         decoder_length = decoder_real.shape[1]
 
-        output, (_, _) = self.layer(torch.cat((encoder_real, decoder_real), dim=1))
+        output, (_, _) = self.rnn(torch.cat((encoder_real, decoder_real), dim=1))
 
         target_prediction = output[:, -decoder_length:]
         target_prediction = self.projection(target_prediction)  # (batch_size, decoder_length, 1)
