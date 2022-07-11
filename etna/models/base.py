@@ -601,7 +601,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         val_dataloader_params:
             parameters for validation dataloader
         split_params:
-            dictionary with parameters for py:func:`torch.utils.data.random_split` for train-test splitting
+            dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
@@ -655,6 +655,8 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
                 torch_dataset_size = len(torch_dataset)
             else:
                 torch_dataset_size = self.split_params["torch_dataset_size"]
+            if torch_dataset_size is None:
+                raise ValueError("torch_dataset_size must be provided if torch_dataset is not sized")
             train_size = self.split_params["train_size"]
             train_dataset, val_dataset = random_split(
                 torch_dataset,

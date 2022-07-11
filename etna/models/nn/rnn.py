@@ -80,7 +80,7 @@ class RNN(DeepBaseModel):
         val_dataloader_params:
             parameters for validation dataloader
         split_params:
-            dictionary with parameters for py:func:`torch.utils.data.random_split` for train-test splitting
+            dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
