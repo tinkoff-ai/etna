@@ -601,12 +601,12 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         val_dataloader_params:
             parameters for validation dataloader
         split_params:
-            parameters for torch dataset split for train-test splitting
-                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values
+            dictionary with parameters for py:func:`torch.utils.data.random_split` for train-test splitting
+                * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
-                * ``"generator"``: ``Optional[torch.Generator]` - generator for reproducibile train-test splitting
+                * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
 
-                * ``"torch_dataset_size"``: ``Optional[int]`` - number of samples in dataset, in case of dataset not implementing ``__len__``
+                * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
         super().__init__()
         self.encoder_length = encoder_length
