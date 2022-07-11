@@ -602,11 +602,11 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             parameters for validation dataloader
         split_params:
             parameters for torch dataset split for train-test splitting
-                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values 
-                
+                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values
+
                 * ``"generator"``: ``Optional[torch.Generator]` - generator for reproducibile train-test splitting
-                
-                * ``"torch_dataset_size"``: ``Optional[int]`` - number of samples in dataset, in case of dataset not implementing ``__len__``      
+
+                * ``"torch_dataset_size"``: ``Optional[int]`` - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
         super().__init__()
         self.encoder_length = encoder_length
@@ -658,7 +658,10 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             train_size = self.split_params["train_size"]
             train_dataset, val_dataset = random_split(
                 torch_dataset,
-                lengths=[int(train_size * torch_dataset_size), torch_dataset_size - int(train_size * torch_dataset_size)],
+                lengths=[
+                    int(train_size * torch_dataset_size),
+                    torch_dataset_size - int(train_size * torch_dataset_size),
+                ],
                 generator=self.split_params.get("generator"),
             )
             train_dataloader = DataLoader(
@@ -707,7 +710,9 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
                 predictions = self(batch)
                 predictions_array = predictions.numpy()
                 for idx, segment in enumerate(segments):
-                    predictions_dict[(segment, "target")] = predictions_array[idx, :] # TODO: rethink in case of issue-791
+                    predictions_dict[(segment, "target")] = predictions_array[
+                        idx, :
+                    ]  # TODO: rethink in case of issue-791
 
         return predictions_dict
 

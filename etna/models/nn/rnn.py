@@ -81,10 +81,10 @@ class RNN(DeepBaseModel):
             parameters for validation dataloader
         split_params:
             parameters for torch dataset split for train-test splitting
-                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values 
-                
+                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values
+
                 * ``"generator"``: ``Optional[torch.Generator]` - generator for reproducibile train-test splitting
-                
+
                 * ``"torch_dataset_size"``: ``Optional[int]`` - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
         super().__init__(
@@ -185,7 +185,7 @@ class RNN(DeepBaseModel):
                 "decoder_real": list(),
                 "encoder_target": list(),
                 "decoder_target": list(),
-                "segment": None
+                "segment": None,
             }
             total_length = len(df["target"])
             total_sample_length = encoder_length + decoder_length
@@ -202,7 +202,7 @@ class RNN(DeepBaseModel):
             sample["decoder_real"][:, 0] = (
                 df["target"].shift(1).values[start_idx + encoder_length : start_idx + encoder_length + decoder_length]
             )
-            
+
             # Get shifted target and concatenate it with real values features
             sample["encoder_real"] = (
                 df.select_dtypes(include=[np.number])
