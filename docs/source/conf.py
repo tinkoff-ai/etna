@@ -72,7 +72,6 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/3.5.0/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
-    "torch": ("https://pytorch.org/docs/stable/", None),
     "pytorch_lightning": ("https://pytorch-lightning.readthedocs.io/en/stable/", None),
 }
 

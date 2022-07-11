@@ -336,7 +336,7 @@ class TSDataset:
         Returns
         -------
         :
-            tsdataset based on indexing slice.
+            TSDataset based on indexing slice.
         """
         df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
         tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
@@ -1162,7 +1162,7 @@ class TSDataset:
     def to_torch_dataset(
         self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True
     ) -> "Dataset":
-        """Convert the tsdataset to a torch.Dataset.
+        """Convert the TSDataset to a torch.Dataset.
 
         Parameters
         ----------
@@ -1181,6 +1181,6 @@ class TSDataset:
             df = df.dropna()  # TODO: Fix this
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [i for dict_segment in ts_segments for i in make_samples(dict_segment)]
+        ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
 
         return _TorchDataset(ts_samples=ts_samples)

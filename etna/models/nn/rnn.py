@@ -16,7 +16,7 @@ if SETTINGS.torch_required:
 from etna.models.base import DeepBaseModel
 
 
-class Batch(TypedDict):
+class RNNBatch(TypedDict):
     """Batch specification for RNN."""
 
     encoder_real: "torch.Tensor"
@@ -39,13 +39,13 @@ class RNN(DeepBaseModel):
         lr: float = 1e-3,
         loss: Optional["torch.nn.Module"] = None,
         train_batch_size: int = 16,
-        test_batch_size: int = 1,
+        test_batch_size: int = 16,
+        optimizer_params: Optional[dict] = None,
         trainer_params: Optional[dict] = None,
         train_dataloader_params: Optional[dict] = None,
         test_dataloader_params: Optional[dict] = None,
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
-        optimizer_params: Optional[dict] = None,
     ) -> None:
         """Init RNN based on LSTM cell.
 
@@ -69,6 +69,8 @@ class RNN(DeepBaseModel):
             batch size for training
         test_batch_size:
             batch size for testing
+        optimizer_params:
+            parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
             Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
@@ -78,9 +80,12 @@ class RNN(DeepBaseModel):
         val_dataloader_params:
             parameters for validation dataloader
         split_params:
-            parameters for torch dataset split for train-test splitting ``{"train_size": `float`, "generator": `Optional[torch.Generator]`}``
-        optimizer_params:
-            parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
+            parameters for torch dataset split for train-test splitting
+                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values 
+                
+                * ``"generator"``: ``Optional[torch.Generator]` - generator for reproducibile train-test splitting
+                
+                * ``"torch_dataset_size"``: ``Optional[int]`` - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
         super().__init__(
             encoder_length=encoder_length,
@@ -104,7 +109,7 @@ class RNN(DeepBaseModel):
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
 
-    def forward(self, x: Batch, *args, **kwargs):  # type: ignore
+    def forward(self, x: RNNBatch, *args, **kwargs):  # type: ignore
         """Forward pass.
 
         Parameters
@@ -119,11 +124,10 @@ class RNN(DeepBaseModel):
         """
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
+        decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
         output, (h_n, c_n) = self.layer(encoder_real)
-        forecast = torch.zeros(
-            size=(decoder_real.shape[0], decoder_real.shape[1], 1), dtype=decoder_real.dtype, device=decoder_real.device
-        )  # (batch_size, decoder_length, 1)
+        forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
 
         for i in range(decoder_length - 1):
             output, (h_n, c_n) = self.layer(decoder_real[:, i, None], (h_n, c_n))
@@ -136,12 +140,12 @@ class RNN(DeepBaseModel):
         forecast[:, decoder_length - 1, 0] = forecast_point
         return forecast
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Optimizer configuration."""
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
         return optimizer
 
-    def step(self, batch: Batch, *args, **kwargs):  # type: ignore
+    def step(self, batch: RNNBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -167,44 +171,51 @@ class RNN(DeepBaseModel):
         target_prediction = output[:, -decoder_length:]
         target_prediction = self.projection(target_prediction)  # (batch_size, decoder_length, 1)
 
-        target = decoder_target
-
-        loss = self.loss(target_prediction, target)
-        return loss, target, target_prediction
+        loss = self.loss(target_prediction, decoder_target)
+        return loss, decoder_target, target_prediction
 
     def make_samples(self, df: pd.DataFrame) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
         encoder_length = self.encoder_length
         decoder_length = self.decoder_length
 
-        def _make(df, start_idx, encoder_length, decoder_length) -> Optional[dict]:
-            sample: Dict[str, Any] = {"target": list(), "encoder_real": list(), "decoder_real": list(), "segment": None}
+        def _make(df: pd.DataFrame, start_idx: int, encoder_length: int, decoder_length: int) -> Optional[dict]:
+            sample: Dict[str, Any] = {
+                "encoder_real": list(),
+                "decoder_real": list(),
+                "encoder_target": list(),
+                "decoder_target": list(),
+                "segment": None
+            }
             total_length = len(df["target"])
             total_sample_length = encoder_length + decoder_length
 
             if total_sample_length + start_idx > total_length:
                 return None
 
+            # Get shifted target and concatenate it with real values features
             sample["decoder_real"] = (
                 df.select_dtypes(include=[np.number])
                 .pipe(lambda x: x[["target"] + [i for i in x.columns if i != "target"]])
-                .values[start_idx + encoder_length : start_idx + decoder_length + encoder_length]
+                .values[start_idx + encoder_length : start_idx + encoder_length + decoder_length]
             )
             sample["decoder_real"][:, 0] = (
-                df["target"].shift(1).values[start_idx + encoder_length : start_idx + decoder_length + encoder_length]
+                df["target"].shift(1).values[start_idx + encoder_length : start_idx + encoder_length + decoder_length]
             )
+            
+            # Get shifted target and concatenate it with real values features
             sample["encoder_real"] = (
                 df.select_dtypes(include=[np.number])
                 .pipe(lambda x: x[["target"] + [i for i in x.columns if i != "target"]])
                 .values[start_idx : start_idx + encoder_length]
             )
             sample["encoder_real"][:, 0] = df["target"].shift(1).values[start_idx : start_idx + encoder_length]
-            target = df["target"].values[start_idx : start_idx + decoder_length + encoder_length].reshape(-1, 1)
+            sample["encoder_real"] = sample["encoder_real"][1:]
 
+            target = df["target"].values[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
             sample["encoder_target"] = target[1:encoder_length]
             sample["decoder_target"] = target[encoder_length:]
 
-            sample["encoder_real"] = sample["encoder_real"][1:]
             sample["segment"] = df["segment"].values[0]
 
             return sample

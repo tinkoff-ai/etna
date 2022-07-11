@@ -553,7 +553,7 @@ class DeepBaseAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def get_model(self) -> "DeepBaseModel":
+    def get_model(self) -> "DeepBaseAbstractModel":
         """Get model.
 
         Returns
@@ -601,7 +601,12 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         val_dataloader_params:
             parameters for validation dataloader
         split_params:
-            parameters for torch dataset split for train-test splitting ``{"train_size": `float`, "generator": `Optional[torch.Generator]`}``
+            parameters for torch dataset split for train-test splitting
+                * ``"train_size"``: ``float`` value from 0 to 1 - fraction of values 
+                
+                * ``"generator"``: ``Optional[torch.Generator]` - generator for reproducibile train-test splitting
+                
+                * ``"torch_dataset_size"``: ``Optional[int]`` - number of samples in dataset, in case of dataset not implementing ``__len__``      
         """
         super().__init__()
         self.encoder_length = encoder_length
@@ -628,8 +633,8 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         :
             Model after fit
         """
-        ts_torch = ts.to_torch_dataset(self.make_samples, dropna=True)
-        self.raw_fit(ts_torch)
+        torch_dataset = ts.to_torch_dataset(self.make_samples, dropna=True)
+        self.raw_fit(torch_dataset)
         return self
 
     def raw_fit(self, torch_dataset: "Dataset") -> "DeepBaseModel":
@@ -647,13 +652,13 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         """
         if self.split_params:
             if isinstance(torch_dataset, Sized):
-                tsdataset_length = len(torch_dataset)
+                torch_dataset_size = len(torch_dataset)
             else:
-                tsdataset_length = self.split_params["dataset_size"]
-            train_frac = self.split_params["train_frac"]
+                torch_dataset_size = self.split_params["torch_dataset_size"]
+            train_size = self.split_params["train_size"]
             train_dataset, val_dataset = random_split(
                 torch_dataset,
-                lengths=[int(train_frac * tsdataset_length), tsdataset_length - int(train_frac * tsdataset_length)],
+                lengths=[int(train_size * torch_dataset_size), torch_dataset_size - int(train_size * torch_dataset_size)],
                 generator=self.split_params.get("generator"),
             )
             train_dataloader = DataLoader(
@@ -702,7 +707,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
                 predictions = self(batch)
                 predictions_array = predictions.numpy()
                 for idx, segment in enumerate(segments):
-                    predictions_dict[(segment, "target")] = predictions_array[idx, :]
+                    predictions_dict[(segment, "target")] = predictions_array[idx, :] # TODO: rethink in case of issue-791
 
         return predictions_dict
 
