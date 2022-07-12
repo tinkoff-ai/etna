@@ -29,7 +29,7 @@ Example of pipeline's config:
     _target_: etna.pipeline.Pipeline
     horizon: 4
     model:
-      _target_: etna.models.CatBoostModelMultiSegment
+      _target_: etna.models.CatBoostMultiSegmentModel
     transforms:
       - _target_: etna.transforms.LinearTrendTransform
         in_column: target
@@ -103,7 +103,7 @@ Example of pipeline's config:
     _target_: etna.pipeline.Pipeline
     horizon: 4
     model:
-      _target_: etna.models.CatBoostModelMultiSegment
+      _target_: etna.models.CatBoostMultiSegmentModel
     transforms:
       - _target_: etna.transforms.LinearTrendTransform
         in_column: target

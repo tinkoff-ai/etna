@@ -7,7 +7,7 @@ from numpy.random import RandomState
 from scipy.stats import norm
 
 from etna.datasets import TSDataset
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 
@@ -16,9 +16,9 @@ INTERVAL_WIDTH = 0.95
 
 @pytest.fixture
 def catboost_pipeline() -> Pipeline:
-    """Generate pipeline with CatBoostModelMultiSegment."""
+    """Generate pipeline with CatBoostPerSegmentModel."""
     pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="regressor_lag_feature")],
         horizon=7,
     )
@@ -27,9 +27,9 @@ def catboost_pipeline() -> Pipeline:
 
 @pytest.fixture
 def catboost_pipeline_big() -> Pipeline:
-    """Generate pipeline with CatBoostModelMultiSegment."""
+    """Generate pipeline with CatBoostPerSegmentModel."""
     pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[25, 26, 27], out_column="regressor_lag_feature")],
         horizon=24,
     )
