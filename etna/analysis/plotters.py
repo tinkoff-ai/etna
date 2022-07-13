@@ -1195,7 +1195,7 @@ def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndar
     alpha:
         Significance level, default alpha = 0.05
     """
-    _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=0.05, method="holm")
+    _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=alpha, method="holm")
     eps = 1  # magic constant
     pvalues = np.array(pvalues)
     pvalues = pvalues + eps
@@ -1216,8 +1216,8 @@ def plot_pvalues(
     figsize: Tuple[int, int] = (10, 5),
 ):
     """
-    Plot fictious pvalues of the features.
-    Also plot fictious significance level.
+    Plot fictitious pvalues of the features.
+    Also plot fictitious significance level.
     Columns that lie to the left of the vertical line have p-value < alpha.
 
     Parameters
