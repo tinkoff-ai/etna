@@ -1,9 +1,9 @@
+from copy import deepcopy
 from typing import Any
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
-from copy import deepcopy
 
 from etna.models.base import BaseModel
 from etna.pipeline.pipeline import Pipeline
@@ -55,7 +55,9 @@ def assemble_pipelines(
     for transform_item in transforms:
         if isinstance(transform_item, Sequence):
             if n_transforms != 1 and len(transform_item) != n_transforms:
-                raise ValueError("Transforms elements should be either one Transform, ether sequence of Transforms with same length")
+                raise ValueError(
+                    "Transforms elements should be either one Transform, ether sequence of Transforms with same length"
+                )
             n_transforms = len(transform_item)
 
     lenghts = {n_models, n_horizons, n_transforms}
@@ -84,5 +86,6 @@ def assemble_pipelines(
         transfoms_pipelines = [transfoms_pipelines[0] for _ in range(n_pipelines)]
 
     return [
-        Pipeline(deepcopy(model), deepcopy(transform), horizon) for model, transform, horizon in zip(models, transfoms_pipelines, horizons)
+        Pipeline(deepcopy(model), deepcopy(transform), horizon)
+        for model, transform, horizon in zip(models, transfoms_pipelines, horizons)
     ]
