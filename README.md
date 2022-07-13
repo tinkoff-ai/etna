@@ -69,7 +69,7 @@ train_ts, test_ts = ts.train_test_split(test_size=HORIZON)
 
 Define transformations and model:
 ```python
-from etna.models import CatBoostModelMultiSegment
+from etna.models import CatBoostMultiSegmentModel
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import FourierTransform
@@ -95,7 +95,7 @@ transforms = [
 ]
 
 # Prepare model
-model = CatBoostModelMultiSegment()
+model = CatBoostMultiSegmentModel()
 ```
 
 Fit `Pipeline` and make a prediction:
