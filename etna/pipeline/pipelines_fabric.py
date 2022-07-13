@@ -60,9 +60,9 @@ def assemble_pipelines(
                 )
             n_transforms = len(transform_item)
 
-    lenghts = {n_models, n_horizons, n_transforms}
+    lengths = {n_models, n_horizons, n_transforms}
     n_pipelines = max(n_models, n_horizons, n_transforms)
-    if not len(lenghts) == 1 and not (len(lenghts) == 2 and 1 in lenghts):
+    if not len(lengths) == 1 and not (len(lengths) == 2 and 1 in lengths):
         if n_models != 1 and n_models != n_pipelines:
             raise ValueError("Lengths of the result models is not equals to horizons or transforms")
         if n_transforms != 1 and n_transforms != n_pipelines:
