@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - assemble pipelines ([#717](https://github.com/tinkoff-ai/etna/issues/717))
 - 
 - 
-- 
+- Tests on in-sample, out-sample predictions with gap for all models ([#785](https://github.com/tinkoff-ai/etna/pull/786))
 - 
 - 
 - 
