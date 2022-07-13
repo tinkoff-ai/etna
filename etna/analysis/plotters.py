@@ -24,9 +24,11 @@ import plotly.graph_objects as go
 import seaborn as sns
 from matplotlib.lines import Line2D
 from scipy.signal import periodogram
+from statsmodels.stats.multitest import multipletests
 from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
+from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
 from etna.analysis.utils import prepare_axes
@@ -1146,8 +1148,7 @@ def plot_feature_relevance(
 
     is_ascending = not relevance_table.greater_is_better
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
-    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features], **relevance_params).loc[segments]
-
+    relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
     if relevance_aggregation_mode == "per-segment":
         _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
@@ -1179,6 +1180,111 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         ax.set_title("Feature relevance")  # type: ignore
+        ax.grid()  # type: ignore
+
+
+def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
+    """
+    Convert p-values into fictitious variables, the sum of which is 100.
+    Also converts alpha into fictitious variable.
+
+    Parameters
+    ----------
+    pvalues:
+        DataFrame with pvalues
+    alpha:
+        Significance level, default alpha = 0.05
+    """
+    _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=0.05, method="holm")
+    eps = 1  # magic constant
+    pvalues = np.array(pvalues)
+    pvalues = pvalues + eps
+    coef = 100 / sum(np.array(pvalues))
+    pvalues = coef * pvalues
+    new_alpha = coef * (eps + alpha)
+    return pvalues, new_alpha
+
+
+def plot_pvalues(
+    ts: "TSDataset",
+    relevance_table: StatisticsRelevanceTable,
+    relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
+    alpha: float = 0.05,
+    top_k: Optional[int] = None,
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """
+    Plot fictious pvalues of the features.
+    Also plot fictious significance level.
+    Columns that lie to the left of the vertical line have p-value < alpha.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    relevance_table:
+        method to evaluate the feature relevance
+    relevance_aggregation_mode:
+        aggregation strategy for obtained feature relevance table;
+        all the strategies can be examined
+        at :py:class:`~etna.analysis.feature_selection.mrmr_selection.AggregationMode`
+    alpha:
+        Significance level, default alpha = 0.05
+    top_k:
+        number of best features to plot, if None plot all the features
+    segments:
+        segments to use
+    columns_num:
+        if ``relevance_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if segments is None:
+        segments = sorted(ts.segments)
+
+    is_ascending = not relevance_table.greater_is_better
+    features = list(set(ts.columns.get_level_values("feature")) - {"target"})
+    pvalues_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features])
+
+    if relevance_aggregation_mode == "per-segment":
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
+
+        for i, segment in enumerate(segments):
+            pvalues = pvalues_df.loc[segment].sort_values(ascending=is_ascending)
+
+            # warning about NaNs
+            if pvalues.isna().any():
+                na_relevance_features = pvalues[pvalues.isna()].index.tolist()
+                warnings.warn(
+                    f"P-values on segment: {segment} of features: {na_relevance_features} can't be calculated."
+                )
+            pvalues = pvalues.dropna()[:top_k]
+            pvalues.sort_values(inplace=True)
+            index = pvalues.index
+            pvalues, new_alpha = get_fictitious_pvalues(pvalues, alpha)
+
+            sns.barplot(x=pvalues, y=index, orient="h", ax=ax[i])
+            ax[i].axvline(x=new_alpha)
+            ax[i].set_title(f"P-values relevance: {segment}")
+
+    else:
+        relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
+        pvalues = pvalues_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
+        pvalues = pvalues.sort_values(ascending=is_ascending)
+        # warning about NaNs
+        if pvalues.isna().any():
+            na_relevance_features = pvalues[pvalues.isna()].index.tolist()
+            warnings.warn(f"P-values of features: {na_relevance_features} can't be calculated.")
+        pvalues = pvalues.dropna()[:top_k]
+        index = pvalues.index
+        pvalues, new_alpha = get_fictitious_pvalues(pvalues, alpha)
+        _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+        print(type(ax))
+        sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
+        ax.axvline(x=new_alpha)  # type: ignore
+        ax.set_title("P-values fictitious variables")  # type: ignore
         ax.grid()  # type: ignore
 
 
