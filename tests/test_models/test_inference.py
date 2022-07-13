@@ -116,10 +116,10 @@ def _test_forecast_out_sample_suffix(ts, model, transforms):
         (HoltWintersModel(), []),
         (SimpleExpSmoothingModel(), []),
         (MovingAverageModel(window=3), []),
-        (NaiveModel(), []),
+        (NaiveModel(lag=3), []),
         (SeasonalMovingAverageModel(), []),
-        (BATSModel(), []),
-        (TBATSModel(), []),
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_in_sample_full(model, transforms, example_tsds):
@@ -183,10 +183,10 @@ def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
         (HoltWintersModel(), []),
         (SimpleExpSmoothingModel(), []),
         (MovingAverageModel(window=3), []),
-        (NaiveModel(), []),
+        (NaiveModel(lag=3), []),
         (SeasonalMovingAverageModel(), []),
-        (BATSModel(), []),
-        (TBATSModel(), []),
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_in_sample_suffix(model, transforms, example_tsds):
@@ -246,9 +246,9 @@ def test_forecast_in_sample_suffix_failed(model, transforms, example_tsds):
         (SimpleExpSmoothingModel(), []),
         (MovingAverageModel(window=3), []),
         (SeasonalMovingAverageModel(), []),
-        (NaiveModel(), []),
-        (BATSModel(), []),
-        (TBATSModel(), []),
+        (NaiveModel(lag=3), []),
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_out_sample_prefix(model, transforms, example_tsds):
@@ -305,9 +305,6 @@ def test_forecast_out_sample_prefix_failed(model, transforms, example_tsds):
         (HoltModel(), []),
         (HoltWintersModel(), []),
         (SimpleExpSmoothingModel(), []),
-        (NaiveModel(), []),
-        (BATSModel(), []),
-        (TBATSModel(), []),
         (
             TFTModel(max_epochs=1, learning_rate=[0.01]),
             [
@@ -335,6 +332,9 @@ def test_forecast_out_sample_suffix(model, transforms, example_tsds):
         (AutoARIMAModel(), []),
         (MovingAverageModel(window=3), []),
         (SeasonalMovingAverageModel(), []),
+        (NaiveModel(lag=3), []),
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
         (
             DeepARModel(max_epochs=5, learning_rate=[0.01]),
             [
