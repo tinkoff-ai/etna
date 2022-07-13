@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
 - Make native prediction intervals for TFTModel ([#770](https://github.com/tinkoff-ai/etna/pull/770))
-- 
+- Test cases for testing inference of models ([#794](https://github.com/tinkoff-ai/etna/pull/794))
 - 
 ### Fixed
 - 
