@@ -10,18 +10,26 @@ from etna.transforms import TrendTransform
 @pytest.mark.parametrize(
     "models, transforms, horizons, message",
     [
-        ([LinearPerSegmentModel(), LinearPerSegmentModel()], [TrendTransform(in_column="target")], [1, 2, 3], "Lengths of the result models is not equals to horizons or transforms"),
+        (
+            [LinearPerSegmentModel(), LinearPerSegmentModel()],
+            [TrendTransform(in_column="target")],
+            [1, 2, 3],
+            "Lengths of the result models is not equals to horizons or transforms",
+        ),
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel(), LinearPerSegmentModel()],
-            [TrendTransform(in_column="target"), [TrendTransform(in_column="target"), TrendTransform(in_column="target")]],
+            [
+                TrendTransform(in_column="target"),
+                [TrendTransform(in_column="target"), TrendTransform(in_column="target")],
+            ],
             [1, 2, 3],
-            "Lengths of the result transforms is not equals to models or horizons"
+            "Lengths of the result transforms is not equals to models or horizons",
         ),
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel(), LinearPerSegmentModel()],
             [TrendTransform(in_column="target")],
             [1, 2],
-            "Lengths of the result horizons is not equals to models or transforms"
+            "Lengths of the result horizons is not equals to models or transforms",
         ),
     ],
 )
@@ -81,12 +89,7 @@ def test_not_equal_lengths(models, transforms, horizons, message):
             [1, 2],
             2,
         ),
-        (
-            [LinearPerSegmentModel(), LinearPerSegmentModel()],
-            [TrendTransform(in_column="target")],
-            [1,2],
-            2
-        )
+        ([LinearPerSegmentModel(), LinearPerSegmentModel()], [TrendTransform(in_column="target")], [1, 2], 2),
     ],
 )
 def test_output_pipelines(models, transforms, horizons, expected_len):
@@ -127,11 +130,11 @@ def test_none_in_tranforms(models, transforms, horizons, expected_transforms_len
     pipelines = assemble_pipelines(models, transforms, horizons)
     assert [len(pipeline.transforms) for pipeline in pipelines] == expected_transforms_lens
 
+
 def test_different_objects():
     models = LinearPerSegmentModel()
-    transforms = [TrendTransform(in_column='target')]
-    horizons = [1,2,3,4,5]
+    transforms = [TrendTransform(in_column="target")]
+    horizons = [1, 2, 3, 4, 5]
     pipelines = assemble_pipelines(models, transforms, horizons)
     assert len({id(pipeline.model) for pipeline in pipelines}) == len(pipelines)
     assert len({id(pipeline.horizon) for pipeline in pipelines}) == len(pipelines)
-
