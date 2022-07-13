@@ -162,7 +162,7 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
         target_forecast += [start_value + i * add_value] * horizon
         fold_number_forecast += [i] * horizon
     forecast_df = pd.DataFrame(
-        {"target": target_forecast, "fold_number": fold_number_forecast},
+        {"fold_number": fold_number_forecast, "target": target_forecast},
         index=timestamp_forecast,
     )
     forecast_df.columns = pd.MultiIndex.from_product(
