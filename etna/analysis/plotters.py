@@ -1403,7 +1403,7 @@ def _create_holidays_df_str(holidays: str, index, as_is):
     if as_is:
         raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
     timestamp = index.tolist()
-    country_holidays = holidays_lib.CountryHoliday(country=holidays)
+    country_holidays = holidays_lib.country_holidays(country=holidays)
     holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
     holiday_names = holiday_names.difference({None})
 
