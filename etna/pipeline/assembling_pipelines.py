@@ -28,7 +28,9 @@ def assemble_pipelines(
 
     Returns
     -------
-    list of pipelines
+    :
+        list of pipelines
+
 
     Raises
     ------
