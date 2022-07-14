@@ -139,6 +139,7 @@ def test_different_objects():
     assert len({id(pipeline.model) for pipeline in pipelines}) == len(pipelines)
     assert len({id(pipeline.horizon) for pipeline in pipelines}) == len(pipelines)
 
+
 @pytest.mark.parametrize(
     "models, transforms, horizons, expected_len",
     [
