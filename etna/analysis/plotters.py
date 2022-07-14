@@ -27,6 +27,7 @@ from scipy.signal import periodogram
 from statsmodels.stats.multitest import multipletests
 from typing_extensions import Literal
 
+from etna.analysis import ModelRelevanceTable
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
@@ -1101,13 +1102,37 @@ def plot_trend(
         ax[i].legend()
 
 
+def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
+    """
+    Convert p-values into fictitious variables, the sum of which is 100.
+    Also converts alpha into fictitious variable.
+
+    Parameters
+    ----------
+    pvalues:
+        dataFrame with pvalues
+    alpha:
+        significance level, default alpha = 0.05
+    """
+    _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=alpha, method="holm")
+    eps = 1  # magic constant
+    pvalues = np.array(pvalues)
+    pvalues = pvalues + eps
+    coef = 100 / sum(np.array(pvalues))
+    pvalues = coef * pvalues
+    new_alpha = coef * (alpha + eps)
+    return pvalues, new_alpha
+
+
 def plot_feature_relevance(
     ts: "TSDataset",
-    relevance_table: RelevanceTable,
+    relevance_table: Union[RelevanceTable, StatisticsRelevanceTable],
+    mode: Union[Literal["relevance"], Literal["p-values"]],
     normalized: bool = False,
     relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
     relevance_params: Optional[Dict[str, Any]] = None,
     top_k: Optional[int] = None,
+    alpha: float = 0.05,
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
@@ -1134,6 +1159,8 @@ def plot_feature_relevance(
         :py:class:`~etna.analysis.feature_relevance.relevance.RelevanceTable`
     top_k:
         number of best features to plot, if None plot all the features
+    alpha:
+        significance level, default alpha = 0.05
     segments:
         segments to use
     columns_num:
@@ -1145,6 +1172,13 @@ def plot_feature_relevance(
         relevance_params = {}
     if segments is None:
         segments = sorted(ts.segments)
+    if mode not in ["p-values", "relevance"]:
+        raise ValueError("Unsupported mode!")
+
+    if mode == "p-values" and isinstance(relevance_table, ModelRelevanceTable):
+        raise ValueError("With p-values mode need StatisticsRelevanceTable")
+    if mode == "relevance" and isinstance(relevance_table, StatisticsRelevanceTable):
+        raise ValueError("With relevance mode need RelevanceTable")
 
     is_ascending = not relevance_table.greater_is_better
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
@@ -1152,6 +1186,7 @@ def plot_feature_relevance(
     if relevance_aggregation_mode == "per-segment":
         _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
+
             relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
             # warning about NaNs
             if relevance.isna().any():
@@ -1160,10 +1195,18 @@ def plot_feature_relevance(
                     f"Relevances on segment: {segment} of features: {na_relevance_features} can't be calculated."
                 )
             relevance = relevance.dropna()[:top_k]
-            if normalized:
-                relevance = relevance / relevance.sum()
-            sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
-            ax[i].set_title(f"Feature relevance: {segment}")
+            if mode == "p-values":
+                relevance.sort_values(inplace=True)
+                index = relevance.index
+                pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha)
+                sns.barplot(x=pvalues, y=index, orient="h", ax=ax[i])
+                ax[i].axvline(x=new_alpha)
+                ax[i].set_title(f"P-values relevance: {segment}")
+            else:
+                if normalized:
+                    relevance = relevance / relevance.sum()
+                sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
+                ax[i].set_title(f"Feature relevance: {segment}")
 
     else:
         relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
@@ -1175,117 +1218,21 @@ def plot_feature_relevance(
             warnings.warn(f"Relevances of features: {na_relevance_features} can't be calculated.")
         # if top_k == None, all the values are selected
         relevance = relevance.dropna()[:top_k]
-        if normalized:
-            relevance = relevance / relevance.sum()
-        _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
-        sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
-        ax.set_title("Feature relevance")  # type: ignore
-        ax.grid()  # type: ignore
-
-
-def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
-    """
-    Convert p-values into fictitious variables, the sum of which is 100.
-    Also converts alpha into fictitious variable.
-
-    Parameters
-    ----------
-    pvalues:
-        DataFrame with pvalues
-    alpha:
-        Significance level, default alpha = 0.05
-    """
-    _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=alpha, method="holm")
-    eps = 1  # magic constant
-    pvalues = np.array(pvalues)
-    pvalues = pvalues + eps
-    coef = 100 / sum(np.array(pvalues))
-    pvalues = coef * pvalues
-    new_alpha = coef * (eps + alpha)
-    return pvalues, new_alpha
-
-
-def plot_pvalues(
-    ts: "TSDataset",
-    relevance_table: StatisticsRelevanceTable,
-    relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
-    alpha: float = 0.05,
-    top_k: Optional[int] = None,
-    segments: Optional[List[str]] = None,
-    columns_num: int = 2,
-    figsize: Tuple[int, int] = (10, 5),
-):
-    """
-    Plot fictitious pvalues of the features.
-    Also plot fictitious significance level.
-    Columns that lie to the left of the vertical line have p-value < alpha.
-
-    Parameters
-    ----------
-    ts:
-        TSDataset with timeseries data
-    relevance_table:
-        method to evaluate the feature relevance
-    relevance_aggregation_mode:
-        aggregation strategy for obtained feature relevance table;
-        all the strategies can be examined
-        at :py:class:`~etna.analysis.feature_selection.mrmr_selection.AggregationMode`
-    alpha:
-        Significance level, default alpha = 0.05
-    top_k:
-        number of best features to plot, if None plot all the features
-    segments:
-        segments to use
-    columns_num:
-        if ``relevance_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
-    figsize:
-        size of the figure per subplot with one segment in inches
-    """
-    if segments is None:
-        segments = sorted(ts.segments)
-
-    is_ascending = not relevance_table.greater_is_better
-    features = list(set(ts.columns.get_level_values("feature")) - {"target"})
-    pvalues_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features])
-
-    if relevance_aggregation_mode == "per-segment":
-        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
-
-        for i, segment in enumerate(segments):
-            pvalues = pvalues_df.loc[segment].sort_values(ascending=is_ascending)
-
-            # warning about NaNs
-            if pvalues.isna().any():
-                na_relevance_features = pvalues[pvalues.isna()].index.tolist()
-                warnings.warn(
-                    f"P-values on segment: {segment} of features: {na_relevance_features} can't be calculated."
-                )
-            pvalues = pvalues.dropna()[:top_k]
-            pvalues.sort_values(inplace=True)
-            index = pvalues.index
-            pvalues, new_alpha = get_fictitious_pvalues(pvalues, alpha)
-
-            sns.barplot(x=pvalues, y=index, orient="h", ax=ax[i])
-            ax[i].axvline(x=new_alpha)
-            ax[i].set_title(f"P-values relevance: {segment}")
-
-    else:
-        relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
-        pvalues = pvalues_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
-        pvalues = pvalues.sort_values(ascending=is_ascending)
-        # warning about NaNs
-        if pvalues.isna().any():
-            na_relevance_features = pvalues[pvalues.isna()].index.tolist()
-            warnings.warn(f"P-values of features: {na_relevance_features} can't be calculated.")
-        pvalues = pvalues.dropna()[:top_k]
-        index = pvalues.index
-        pvalues, new_alpha = get_fictitious_pvalues(pvalues, alpha)
-        _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
-        print(type(ax))
-        sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
-        ax.axvline(x=new_alpha)  # type: ignore
-        ax.set_title("P-values fictitious variables")  # type: ignore
-        ax.grid()  # type: ignore
+        if mode == "p-values":
+            relevance.sort_values(inplace=True)
+            index = relevance.index
+            pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha)
+            _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+            sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
+            ax.axvline(x=new_alpha)  # type: ignore
+            ax.set_title("P-values relevance:")  # type: ignore
+        else:
+            if normalized:
+                relevance = relevance / relevance.sum()
+            _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+            sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
+            ax.set_title("Feature relevance")  # type: ignore
+            ax.grid()  # type: ignore
 
 
 def plot_imputation(
