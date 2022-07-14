@@ -118,6 +118,7 @@ config.env
 
 # tensorboard
 /runs
+lightning_logs
 
 *.html
 .devcontainer
@@ -125,5 +126,3 @@ config.env
 tmp
 wandb
 !examples/wandb
-
-lightning_logs
