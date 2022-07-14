@@ -138,3 +138,48 @@ def test_different_objects():
     pipelines = assemble_pipelines(models, transforms, horizons)
     assert len({id(pipeline.model) for pipeline in pipelines}) == len(pipelines)
     assert len({id(pipeline.horizon) for pipeline in pipelines}) == len(pipelines)
+
+@pytest.mark.parametrize(
+    "models, transforms, horizons, expected_len",
+    [
+        (LinearPerSegmentModel(), [TrendTransform(in_column="target")], 1, 1),
+        (
+            LinearPerSegmentModel(),
+            [
+                TrendTransform(in_column="target"),
+                [LagTransform(lags=[1, 2, 3], in_column="target"), LagTransform(lags=[2, 3, 4], in_column="target")],
+            ],
+            [1, 2],
+            2,
+        ),
+        (
+            [LinearPerSegmentModel(), LinearPerSegmentModel()],
+            [
+                TrendTransform(in_column="target"),
+                [LagTransform(lags=[1, 2, 3], in_column="target"), LagTransform(lags=[2, 3, 4], in_column="target")],
+            ],
+            1,
+            2,
+        ),
+        (
+            [LinearPerSegmentModel(), LinearPerSegmentModel()],
+            [
+                TrendTransform(in_column="target"),
+                [
+                    LagTransform(lags=[1, 2, 3], in_column="target"),
+                    LagTransform(lags=[2, 3, 4], in_column="target"),
+                ],
+                [
+                    LagTransform(lags=[1, 2, 3], in_column="target"),
+                    LagTransform(lags=[2, 3, 4], in_column="target"),
+                ],
+            ],
+            [1, 2],
+            3,
+        ),
+    ],
+)
+def test_transofrms_lengths(models, transforms, horizons, expected_len):
+    pipelines = assemble_pipelines(models, transforms, horizons)
+    for pipeline in pipelines:
+        assert len(pipeline.transforms) == expected_len

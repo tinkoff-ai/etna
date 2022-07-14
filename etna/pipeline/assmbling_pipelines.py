@@ -82,9 +82,6 @@ def assemble_pipelines(
             elif isinstance(transform, Transform) and transform is not None:
                 transfoms_pipelines[-1].append(transform)
 
-    if n_transforms == 1:
-        transfoms_pipelines = [transfoms_pipelines[0] for _ in range(n_pipelines)]
-
     return [
         Pipeline(deepcopy(model), deepcopy(transform), horizon)
         for model, transform, horizon in zip(models, transfoms_pipelines, horizons)
