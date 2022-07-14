@@ -19,11 +19,14 @@ def assemble_pipelines(
 
     After broadcasting we have:
 
-    - models: .. math:: (M_1, \dots, M_n),
-    - transforms: .. math:: (T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n}),
-    - horizons: .. math:: (H_1, \dots, H_n).
+    - models:
+    .. math:: M_1, \dots, M_n
+    - transforms:
+    .. math:: T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n}
+    - horizons:
+    .. math:: H_1, \dots, H_n
 
-    We expect that in input shape of size $n$ can be reduced to size $1$ or even become a scalar value. During broadcasting we copy this value $n$ times.
+    We expect that in input shape of size `n` can be reduced to size 1 or even become a scalar value. During broadcasting we copy this value `n` times.
 
     Parameters
     ----------
