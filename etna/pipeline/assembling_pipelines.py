@@ -22,7 +22,7 @@ def assemble_pipelines(
     - models:
     .. math:: M_1, \dots, M_n
     - transforms:
-    .. math:: T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n}
+    .. math:: (T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n})
     - horizons:
     .. math:: H_1, \dots, H_n
 
