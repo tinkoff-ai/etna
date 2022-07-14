@@ -207,7 +207,7 @@ def test_create_holidays_df_str_fail(simple_df):
 
 
 def test_create_holidays_df_str_non_existing_country(simple_df):
-    with pytest.raises(NotImplementedError):
+    with pytest.raises((NotImplementedError, KeyError)):
         _create_holidays_df("THIS_COUNTRY_DOES_NOT_EXIST", simple_df.index, as_is=False)
 
 
