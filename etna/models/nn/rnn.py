@@ -64,7 +64,7 @@ class RNN(DeepBaseModel):
         lr:
             learning rate
         loss:
-            loss function
+            loss function, MSELoss by default
         train_batch_size:
             batch size for training
         test_batch_size:
@@ -135,6 +135,7 @@ class RNN(DeepBaseModel):
             forecast[:, i, 0] = forecast_point
             decoder_real[:, i + 1, 0] = forecast_point
 
+        # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
         output, (h_n, c_n) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
         forecast_point = self.projection(output[:, -1]).flatten()
         forecast[:, decoder_length - 1, 0] = forecast_point

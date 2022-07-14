@@ -1,6 +1,7 @@
 import math
 import warnings
 from copy import copy
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -341,9 +342,9 @@ class TSDataset:
         df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
         tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        tsdataset_slice.known_future = self.known_future
-        tsdataset_slice._regressors = self.regressors
-        tsdataset_slice.transforms = self.transforms
+        tsdataset_slice.known_future = deepcopy(self.known_future)
+        tsdataset_slice._regressors = deepcopy(self.regressors)
+        tsdataset_slice.transforms = deepcopy(self.transforms)
         tsdataset_slice.df_exog = self.df_exog
         return tsdataset_slice
 

@@ -458,6 +458,13 @@ def test_make_future_with_regressors(df_and_regressors):
     assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
 
 
+def test_make_future_with_regressors_and_context(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts_future = ts.make_future(10, tail_steps=11)
+    assert np.all(ts_future.index == pd.date_range(ts.index[-11], periods=21, freq="D"))
+
+
 def test_make_future_inherits_regressors(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
@@ -822,3 +829,27 @@ def test_to_dataset_not_modify_dataframe():
     df_copy = df_original.copy(deep=True)
     df_mod = TSDataset.to_dataset(df_original)
     pd.testing.assert_frame_equal(df_original, df_copy)
+
+
+@pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])
+def test_tsdataset_idx_slice_start_idx(tsdf_with_exog, start_idx, end_idx):
+    ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
+    assert ts_slice.known_future == tsdf_with_exog.known_future
+    assert ts_slice._regressors == tsdf_with_exog.regressors
+    assert ts_slice.transforms == tsdf_with_exog.transforms
+    pd.testing.assert_frame_equal(ts_slice.df, tsdf_with_exog.df.iloc[start_idx:end_idx])
+    pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
+
+
+def test_to_torch_dataset(tsdf_with_exog: TSDataset):
+    def make_samples(df):
+        return [{"target": df.target.values, "segment": df["segment"].values[0]}]
+
+    torch_dataset = tsdf_with_exog.to_torch_dataset(make_samples, dropna=False)
+    assert len(torch_dataset) == len(tsdf_with_exog.segments)
+    np.testing.assert_array_equal(
+        torch_dataset[0]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Moscow", "target"]].values
+    )
+    np.testing.assert_array_equal(
+        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
+    )
