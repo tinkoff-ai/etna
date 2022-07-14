@@ -15,12 +15,19 @@ def assemble_pipelines(
     transforms: Sequence[Union[Transform, Sequence[Optional[Transform]]]],
     horizons: Union[int, Sequence[int]],
 ) -> List[Pipeline]:
-    """Create pipelines from input horizons and models or sequence of models.
+    """Create pipelines with broadcasting from models, transforms and horizons.
+
+    After broadcasting we have:
+    * models: $(M_1, \dots, M_n)$,
+    * transforms: $(T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n})$,
+    * horizons: $(H_1, \dots, H_n)$.
+
+    We expect that in input shape of size $n$ can be reduced to size $1$ or even become a scalar value. During broadcasting we copy this value $n$ times.
 
     Parameters
     ----------
     models:
-        Instance or Sequence of the etna Model
+        Instance of Sequence of models
     transforms:
         Sequence of the transforms
     horizons:
@@ -31,7 +38,6 @@ def assemble_pipelines(
     :
         list of pipelines
 
-
     Raises
     ------
     ValueError:
@@ -39,7 +45,7 @@ def assemble_pipelines(
 
     Examples
     --------
-    >>> from etna.pipeline.pipelines_fabric import assemble_pipelines
+    >>> from etna.pipeline import assemble_pipelines
     >>> from etna.models import LinearPerSegmentModel, NaiveModel
     >>> from etna.transforms import TrendTransform, AddConstTransform, LagTransform
     >>> assemble_pipelines(models=LinearPerSegmentModel(), transforms=[LagTransform(in_column='target', lags=[1]), AddConstTransform(in_column='target', value=1)], horizons=[1,2,3])
