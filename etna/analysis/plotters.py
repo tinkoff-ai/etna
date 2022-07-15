@@ -27,7 +27,6 @@ from scipy.signal import periodogram
 from statsmodels.stats.multitest import multipletests
 from typing_extensions import Literal
 
-from etna.analysis import ModelRelevanceTable
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
@@ -1127,7 +1126,6 @@ def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndar
 def plot_feature_relevance(
     ts: "TSDataset",
     relevance_table: Union[RelevanceTable, StatisticsRelevanceTable],
-    mode: Union[Literal["relevance"], Literal["p-values"]],
     normalized: bool = False,
     relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
     relevance_params: Optional[Dict[str, Any]] = None,
@@ -1148,6 +1146,8 @@ def plot_feature_relevance(
         TSDataset with timeseries data
     relevance_table:
         method to evaluate the feature relevance
+        RelevanceTable uses relevance table with feature importance from model
+        StatisticsRelevanceTable uses relevance table with p-values from tsfresh
     normalized:
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
@@ -1160,7 +1160,7 @@ def plot_feature_relevance(
     top_k:
         number of best features to plot, if None plot all the features
     alpha:
-        significance level, default alpha = 0.05
+        significance level, default alpha = 0.05, only for StatisticsRelevanceTable
     segments:
         segments to use
     columns_num:
@@ -1172,13 +1172,6 @@ def plot_feature_relevance(
         relevance_params = {}
     if segments is None:
         segments = sorted(ts.segments)
-    if mode not in ["p-values", "relevance"]:
-        raise ValueError("Unsupported mode!")
-
-    if mode == "p-values" and isinstance(relevance_table, ModelRelevanceTable):
-        raise ValueError("With p-values mode need StatisticsRelevanceTable")
-    if mode == "relevance" and isinstance(relevance_table, StatisticsRelevanceTable):
-        raise ValueError("With relevance mode need RelevanceTable")
 
     is_ascending = not relevance_table.greater_is_better
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
@@ -1195,7 +1188,7 @@ def plot_feature_relevance(
                     f"Relevances on segment: {segment} of features: {na_relevance_features} can't be calculated."
                 )
             relevance = relevance.dropna()[:top_k]
-            if mode == "p-values":
+            if type(relevance_table) is StatisticsRelevanceTable:
                 relevance.sort_values(inplace=True)
                 index = relevance.index
                 pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha)
@@ -1218,7 +1211,7 @@ def plot_feature_relevance(
             warnings.warn(f"Relevances of features: {na_relevance_features} can't be calculated.")
         # if top_k == None, all the values are selected
         relevance = relevance.dropna()[:top_k]
-        if mode == "p-values":
+        if type(relevance_table) is StatisticsRelevanceTable:
             relevance.sort_values(inplace=True)
             index = relevance.index
             pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha)
@@ -1226,6 +1219,7 @@ def plot_feature_relevance(
             sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
             ax.axvline(x=new_alpha)  # type: ignore
             ax.set_title("P-values relevance:")  # type: ignore
+            ax.grid()  # type: ignore
         else:
             if normalized:
                 relevance = relevance / relevance.sum()
