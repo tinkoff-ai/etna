@@ -1145,9 +1145,12 @@ def plot_feature_relevance(
     ts:
         TSDataset with timeseries data
     relevance_table:
-        method to evaluate the feature relevance
-        RelevanceTable uses relevance table with feature importance from model
-        StatisticsRelevanceTable uses relevance table with p-values from tsfresh
+        method to evaluate the feature relevance;
+
+        * if :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable` table is used then relevances are normalized p-values
+
+        * if :py:class:`~etna.analysis.feature_relevance.relevance.ModelRelevanceTable` table is used then relevances are importances from some model
+
     normalized:
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
@@ -1160,7 +1163,7 @@ def plot_feature_relevance(
     top_k:
         number of best features to plot, if None plot all the features
     alpha:
-        significance level, default alpha = 0.05, only for StatisticsRelevanceTable
+        significance level, default alpha = 0.05, only for :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable`
     segments:
         segments to use
     columns_num:
