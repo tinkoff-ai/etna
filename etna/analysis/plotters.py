@@ -1101,9 +1101,9 @@ def plot_trend(
         ax[i].legend()
 
 
-def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float, normalized: bool) -> Tuple[np.ndarray, float]:
+def get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
     """
-    Convert p-values into fictitious variables, the sum of which is 100.
+    Convert p-values into fictitious variables, the sum of which is 1.
     Also converts alpha into fictitious variable.
 
     Parameters
@@ -1112,16 +1112,18 @@ def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float, normalized: bool
         dataFrame with pvalues
     alpha:
         significance level, default alpha = 0.05
-    normalized:
-        whether obtained fictitious p-values should be normalized to sum up to 1
+    Returns
+    ----------
+    pvalues:
+        array with fictitious relevances
+    new_alpha:
+        adjusted significance level
     """
     _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=alpha, method="holm")
-    eps = 1  # magic constant
+    eps = 1e-1  # magic constant
     pvalues = np.array(pvalues)
     pvalues = pvalues + eps
-    coef = 100 / sum(np.array(pvalues))
-    if normalized:
-        coef = 1 / sum(np.array(pvalues))
+    coef = 1 / sum(np.array(pvalues))
     pvalues = coef * pvalues
     new_alpha = coef * (alpha + eps)
     return pvalues, new_alpha
@@ -1129,7 +1131,7 @@ def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float, normalized: bool
 
 def plot_feature_relevance(
     ts: "TSDataset",
-    relevance_table: Union[RelevanceTable, StatisticsRelevanceTable],
+    relevance_table: RelevanceTable,
     normalized: bool = False,
     relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
     relevance_params: Optional[Dict[str, Any]] = None,
@@ -1198,7 +1200,10 @@ def plot_feature_relevance(
             if isinstance(relevance_table, StatisticsRelevanceTable):
                 relevance.sort_values(inplace=True)
                 index = relevance.index
-                pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha, normalized)
+                pvalues, new_alpha = get_fictitious_relevances(
+                    relevance,
+                    alpha,
+                )
                 sns.barplot(x=pvalues, y=index, orient="h", ax=ax[i])
                 ax[i].axvline(x=new_alpha)
                 ax[i].set_title(f"P-values relevance: {segment}")
@@ -1221,7 +1226,10 @@ def plot_feature_relevance(
         if isinstance(relevance_table, StatisticsRelevanceTable):
             relevance.sort_values(inplace=True)
             index = relevance.index
-            pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha, normalized)
+            pvalues, new_alpha = get_fictitious_relevances(
+                relevance,
+                alpha,
+            )
             _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
             sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
             ax.axvline(x=new_alpha)  # type: ignore
