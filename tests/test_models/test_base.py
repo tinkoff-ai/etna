@@ -127,20 +127,18 @@ def test_deep_base_model_raw_fit_split_params_with_unsized_torch_dataset(
 
 
 @patch("etna.models.base.DataLoader")
-def test_deep_base_model_raw_predict_call(dataloader):
-    self_mock = MagicMock()
+def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
     batch = {"segment": ["segment1", "segment2"], "target": torch.Tensor([[1, 2], [3, 4]])}
     dataloader.return_value = [batch]
-    self_mock.return_value = batch["target"]
-    predictions_dict = DeepBaseModel.raw_predict(self=self_mock, torch_dataset=MagicMock())
-    self_mock.eval.assert_called_once()
+    deep_base_model_mock.return_value = batch["target"]
+    predictions_dict = DeepBaseModel.raw_predict(self=deep_base_model_mock, torch_dataset=MagicMock())
+    deep_base_model_mock.eval.assert_called_once()
     np.testing.assert_allclose(predictions_dict[("segment1", "target")], batch["target"][0].numpy())
     np.testing.assert_allclose(predictions_dict[("segment2", "target")], batch["target"][1].numpy())
 
 
-def test_deep_base_model_forecast_inverse_transform_call_check():
-    self_mock = MagicMock()
+def test_deep_base_model_forecast_inverse_transform_call_check(deep_base_model_mock):
     ts = MagicMock()
     horizon = 7
-    DeepBaseModel.forecast(self=self_mock, ts=ts, horizon=horizon)
+    DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, horizon=horizon)
     ts.tsdataset_idx_slice.return_value.inverse_transform.assert_called_once()
