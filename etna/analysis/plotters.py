@@ -24,7 +24,6 @@ import plotly.graph_objects as go
 import seaborn as sns
 from matplotlib.lines import Line2D
 from scipy.signal import periodogram
-from statsmodels.stats.multitest import multipletests
 from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
@@ -1103,7 +1102,7 @@ def plot_trend(
 
 def get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
     """
-    Convert p-values into fictitious variables, the sum of which is 1.
+    Convert p-values into fictitious variables, with function f(x) = 1 - x.
     Also converts alpha into fictitious variable.
 
     Parameters
@@ -1119,13 +1118,8 @@ def get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.n
     new_alpha:
         adjusted significance level
     """
-    _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=alpha, method="holm")
-    eps = 1e-1  # magic constant
-    pvalues = np.array(pvalues)
-    pvalues = pvalues + eps
-    coef = 1 / sum(np.array(pvalues))
-    pvalues = coef * pvalues
-    new_alpha = coef * (alpha + eps)
+    pvalues = 1 - pvalues
+    new_alpha = 1 - alpha
     return pvalues, new_alpha
 
 
@@ -1145,6 +1139,12 @@ def plot_feature_relevance(
     Plot relevance of the features.
 
     The most important features are at the top, the least important are at the bottom.
+
+    For StatisticsRelevanceTable also plot vertical line: fictitious significance level.
+
+    Values that lie to the right of this line have p-value < alpha.
+
+    And the values that lie to the left have p-value > alpha.
 
     Parameters
     ----------
@@ -1181,7 +1181,7 @@ def plot_feature_relevance(
         relevance_params = {}
     if segments is None:
         segments = sorted(ts.segments)
-
+    border_value = None
     is_ascending = not relevance_table.greater_is_better
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
     relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
@@ -1199,19 +1199,17 @@ def plot_feature_relevance(
             relevance = relevance.dropna()[:top_k]
             if isinstance(relevance_table, StatisticsRelevanceTable):
                 relevance.sort_values(inplace=True)
-                index = relevance.index
-                pvalues, new_alpha = get_fictitious_relevances(
+                relevance, border_value = get_fictitious_relevances(
                     relevance,
                     alpha,
                 )
-                sns.barplot(x=pvalues, y=index, orient="h", ax=ax[i])
-                ax[i].axvline(x=new_alpha)
-                ax[i].set_title(f"P-values relevance: {segment}")
-            else:
-                if normalized:
-                    relevance = relevance / relevance.sum()
-                sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
-                ax[i].set_title(f"Feature relevance: {segment}")
+
+            if normalized and not isinstance(relevance_table, StatisticsRelevanceTable):
+                relevance = relevance / relevance.sum()
+            sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
+            if border_value is not None:
+                ax[i].axvline(border_value)
+            ax[i].set_title(f"Feature relevance: {segment}")
 
     else:
         relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
@@ -1225,23 +1223,18 @@ def plot_feature_relevance(
         relevance = relevance.dropna()[:top_k]
         if isinstance(relevance_table, StatisticsRelevanceTable):
             relevance.sort_values(inplace=True)
-            index = relevance.index
-            pvalues, new_alpha = get_fictitious_relevances(
+            relevance, border_value = get_fictitious_relevances(
                 relevance,
                 alpha,
             )
-            _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
-            sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
-            ax.axvline(x=new_alpha)  # type: ignore
-            ax.set_title("P-values relevance:")  # type: ignore
-            ax.grid()  # type: ignore
-        else:
-            if normalized:
-                relevance = relevance / relevance.sum()
-            _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
-            sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
-            ax.set_title("Feature relevance")  # type: ignore
-            ax.grid()  # type: ignore
+        if normalized and not isinstance(relevance_table, StatisticsRelevanceTable):
+            relevance = relevance / relevance.sum()
+        _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
+        sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
+        if border_value is not None:
+            ax.axvline(border_value)  # type: ignore
+        ax.set_title("Feature relevance")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def plot_imputation(
