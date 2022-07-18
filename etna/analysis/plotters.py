@@ -1101,7 +1101,7 @@ def plot_trend(
         ax[i].legend()
 
 
-def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
+def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float, normalized: bool) -> Tuple[np.ndarray, float]:
     """
     Convert p-values into fictitious variables, the sum of which is 100.
     Also converts alpha into fictitious variable.
@@ -1112,12 +1112,16 @@ def get_fictitious_pvalues(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndar
         dataFrame with pvalues
     alpha:
         significance level, default alpha = 0.05
+    normalized:
+        whether obtained fictitious p-values should be normalized to sum up to 1
     """
     _, pvalues, _, _ = multipletests(pvals=pvalues, alpha=alpha, method="holm")
     eps = 1  # magic constant
     pvalues = np.array(pvalues)
     pvalues = pvalues + eps
     coef = 100 / sum(np.array(pvalues))
+    if normalized:
+        coef = 1 / sum(np.array(pvalues))
     pvalues = coef * pvalues
     new_alpha = coef * (alpha + eps)
     return pvalues, new_alpha
@@ -1191,10 +1195,10 @@ def plot_feature_relevance(
                     f"Relevances on segment: {segment} of features: {na_relevance_features} can't be calculated."
                 )
             relevance = relevance.dropna()[:top_k]
-            if type(relevance_table) is StatisticsRelevanceTable:
+            if isinstance(relevance_table, StatisticsRelevanceTable):
                 relevance.sort_values(inplace=True)
                 index = relevance.index
-                pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha)
+                pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha, normalized)
                 sns.barplot(x=pvalues, y=index, orient="h", ax=ax[i])
                 ax[i].axvline(x=new_alpha)
                 ax[i].set_title(f"P-values relevance: {segment}")
@@ -1214,10 +1218,10 @@ def plot_feature_relevance(
             warnings.warn(f"Relevances of features: {na_relevance_features} can't be calculated.")
         # if top_k == None, all the values are selected
         relevance = relevance.dropna()[:top_k]
-        if type(relevance_table) is StatisticsRelevanceTable:
+        if isinstance(relevance_table, StatisticsRelevanceTable):
             relevance.sort_values(inplace=True)
             index = relevance.index
-            pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha)
+            pvalues, new_alpha = get_fictitious_pvalues(relevance, alpha, normalized)
             _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
             sns.barplot(x=pvalues, y=index, orient="h", ax=ax)
             ax.axvline(x=new_alpha)  # type: ignore
