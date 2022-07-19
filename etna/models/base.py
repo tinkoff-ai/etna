@@ -467,8 +467,44 @@ class BaseAdapter(ABC):
         pass
 
 
-class DeepBaseAbstractModel(ABC):
+class DeepAbstractModule(ABC):
     """Interface for etna native deep models."""
+
+    @abstractmethod
+    def make_samples(self, df: pd.DataFrame) -> Union[Iterator[dict], Iterable[dict]]:
+        """Make samples from input slice of TSDataset.
+
+        Parameters
+        ----------
+        df:
+            Slice is per-segment Dataframes
+
+        Returns
+        -------
+        :
+            Samples of input slices
+        """
+        pass
+
+    @abstractmethod
+    def step(self, batch: dict, *args, **kwargs) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
+        """Make batch step.
+
+        Parameters
+        ----------
+        batch:
+            Batch with data to make inference on.
+
+        Returns
+        -------
+        :
+            loss, true_target, prediction_target
+        """
+        pass
+
+
+class DeepBaseAbstractModel(ABC):
+    """Interface for holding class of etna native deep models."""
 
     @abstractmethod
     def forecast(self, ts: TSDataset, horizon: int) -> TSDataset:
@@ -485,22 +521,6 @@ class DeepBaseAbstractModel(ABC):
         -------
         :
             Dataset with predictions
-        """
-        pass
-
-    @abstractmethod
-    def make_samples(self, df: pd.DataFrame) -> Union[Iterator[dict], Iterable[dict]]:
-        """Make samples from input slice of TSDataset.
-
-        Parameters
-        ----------
-        df:
-            Slice is per-segment Dataframes
-
-        Returns
-        -------
-        :
-            Samples of input slices
         """
         pass
 
@@ -537,23 +557,7 @@ class DeepBaseAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def step(self, batch: dict, *args, **kwargs) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
-        """Make batch step.
-
-        Parameters
-        ----------
-        batch:
-            Batch with data to make inference on.
-
-        Returns
-        -------
-        :
-            loss, true_target, prediction_target
-        """
-        pass
-
-    @abstractmethod
-    def get_model(self) -> "DeepBaseAbstractModel":
+    def get_model(self) -> "DeepBaseModule":
         """Get model.
 
         Returns
@@ -564,23 +568,11 @@ class DeepBaseAbstractModel(ABC):
         pass
 
 
-class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
-    """Class for partially implemented interfaces."""
+class DeepBaseModule(DeepAbstractModule, LightningModule):
+    """Class for partially implemented LightningModule interface."""
 
-    def __init__(
-        self,
-        *,
-        encoder_length: int,
-        decoder_length: int,
-        train_batch_size: int,
-        test_batch_size: int,
-        train_dataloader_params: dict,
-        test_dataloader_params: dict,
-        val_dataloader_params: dict,
-        split_params: dict,
-        trainer_params: dict,
-    ):
-        """Init DeepBaseModel.
+    def __init__(self, encoder_length: int, decoder_length: int):
+        """Init DeepBaseModule.
 
         Parameters
         ----------
@@ -588,12 +580,73 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             encoder length
         decoder_length:
             decoder length
+        """
+        super().__init__()
+        self.encoder_length = encoder_length
+        self.decoder_length = decoder_length
+
+    def training_step(self, batch: dict, *args, **kwargs):  # type: ignore
+        """Training step.
+
+        Parameters
+        ----------
+        batch:
+            batch of data
+
+        Returns
+        -------
+        :
+            loss
+        """
+        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("train_loss", loss, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch: dict, *args, **kwargs):  # type: ignore
+        """Validate step.
+
+        Parameters
+        ----------
+        batch:
+            batch of data
+
+        Returns
+        -------
+        :
+            loss
+        """
+        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("val_loss", loss, on_epoch=True)
+        return loss
+
+
+class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
+    """Class for partially implemented interfaces for holding deep models."""
+
+    def __init__(
+        self,
+        *,
+        module: DeepBaseModule,
+        train_batch_size: int,
+        test_batch_size: int,
+        train_dataloader_params: Optional[dict],
+        test_dataloader_params: Optional[dict],
+        val_dataloader_params: Optional[dict],
+        split_params: Optional[dict],
+        trainer_params: Optional[dict],
+    ):
+        """Init DeepBaseModel.
+
+        Parameters
+        ----------
+        module:
+            network to train
         train_batch_size:
             batch size for training
         test_batch_size:
             batch size for testing
         trainer_params:
-            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch ligthning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
@@ -609,19 +662,18 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
         super().__init__()
-        self.encoder_length = encoder_length
-        self.decoder_length = decoder_length
+        self.module = module
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
-        self.trainer_params = trainer_params
-        self.train_dataloader_params = train_dataloader_params
-        self.val_dataloader_params = val_dataloader_params
-        self.test_dataloader_params = test_dataloader_params
-        self.split_params = split_params
+        self.train_dataloader_params = {} if train_dataloader_params is None else train_dataloader_params
+        self.test_dataloader_params = {} if test_dataloader_params is None else test_dataloader_params
+        self.val_dataloader_params = {} if val_dataloader_params is None else val_dataloader_params
+        self.trainer_params = {} if trainer_params is None else trainer_params
+        self.split_params = {} if split_params is None else split_params
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "DeepBaseModel":
-        """Fit Model.
+        """Fit model.
 
         Parameters
         ----------
@@ -633,7 +685,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         :
             Model after fit
         """
-        torch_dataset = ts.to_torch_dataset(self.make_samples, dropna=True)
+        torch_dataset = ts.to_torch_dataset(self.module.make_samples, dropna=True)
         self.raw_fit(torch_dataset)
         return self
 
@@ -642,7 +694,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
 
         Parameters
         ----------
-        torch_dataset: Dataset
+        torch_dataset:
             Torch like dataset for model fit
 
         Returns
@@ -686,7 +738,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             self.trainer_params["logger"] += tslogger.pl_loggers
 
         trainer = Trainer(**self.trainer_params)
-        trainer.fit(self, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+        trainer.fit(self.module, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
         return self
 
     def raw_predict(self, torch_dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
@@ -694,7 +746,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
 
         Parameters
         ----------
-        torch_dataset: Dataset
+        torch_dataset:
             Torch like dataset for model inference
 
         Returns
@@ -707,11 +759,11 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         )
 
         predictions_dict = dict()
-        self.eval()
+        self.module.eval()
         with torch.no_grad():
             for batch in test_dataloader:
                 segments = batch["segment"]
-                predictions = self(batch)
+                predictions = self.module(batch)
                 predictions_array = predictions.numpy()
                 for idx, segment in enumerate(segments):
                     predictions_dict[(segment, "target")] = predictions_array[
@@ -736,9 +788,11 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         :
             Dataset with predictions
         """
-        test_dataset = ts.to_torch_dataset(make_samples=self.make_samples, dropna=False)
+        test_dataset = ts.to_torch_dataset(make_samples=self.module.make_samples, dropna=False)
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
+        future_ts = ts.tsdataset_idx_slice(
+            start_idx=self.module.encoder_length, end_idx=self.module.encoder_length + horizon
+        )
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
 
@@ -746,41 +800,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
 
         return future_ts
 
-    def training_step(self, batch: dict, *args, **kwargs):  # type: ignore
-        """Training step.
-
-        Parameters
-        ----------
-        batch:
-            batch of data
-
-        Returns
-        -------
-        :
-            loss
-        """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("train_loss", loss, on_epoch=True)
-        return loss
-
-    def validation_step(self, batch: dict, *args, **kwargs):  # type: ignore
-        """Validate step.
-
-        Parameters
-        ----------
-        batch:
-            batch of data
-
-        Returns
-        -------
-        :
-            loss
-        """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("val_loss", loss, on_epoch=True)
-        return loss
-
-    def get_model(self) -> "DeepBaseModel":
+    def get_model(self) -> "DeepBaseModule":
         """Get model.
 
         Returns
@@ -788,7 +808,7 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
         :
            Torch Module
         """
-        raise NotImplementedError
+        return self.module
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel, DeepBaseModel]
