@@ -24,7 +24,7 @@ class _TBATSAdapter(BaseAdapter):
         target = df["target"]
         self._fitted_model = self.model.fit(target)
         self._last_train_timestamp = df["timestamp"].max()
-        self._freq = pd.infer_freq(df["timestamp"])
+        self._freq = pd.infer_freq(df["timestamp"], warn=False)
         return self
 
     def _determine_num_steps_to_forecast(self, last_test_timestamp: pd.Timestamp) -> int:
