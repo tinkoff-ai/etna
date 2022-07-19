@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
 - 
 - Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
-- 
+- Add visualization for p-values for plot_feature_relevance ([#795](https://github.com/tinkoff-ai/etna/pull/795))
 - 
 - 
 - 
