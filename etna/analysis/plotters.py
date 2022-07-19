@@ -1100,7 +1100,7 @@ def plot_trend(
         ax[i].legend()
 
 
-def get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
+def _get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
     """
     Convert p-values into fictitious variables, with function f(x) = 1 - x.
 
@@ -1142,11 +1142,11 @@ def plot_feature_relevance(
 
     The most important features are at the top, the least important are at the bottom.
 
-    For :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable` also plot vertical line: fictitious significance level.
+    For :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable` also plot vertical line: transformed significance level.
 
-    Values that lie to the right of this line have p-value < alpha.
+    * Values that lie to the right of this line have p-value < alpha.
 
-    And the values that lie to the left have p-value > alpha.
+    * And the values that lie to the left have p-value > alpha.
 
     Parameters
     ----------
@@ -1191,7 +1191,7 @@ def plot_feature_relevance(
         for i, segment in enumerate(segments):
             relevance = relevance_df.loc[segment]
             if isinstance(relevance_table, StatisticsRelevanceTable):
-                relevance, border_value = get_fictitious_relevances(
+                relevance, border_value = _get_fictitious_relevances(
                     relevance,
                     alpha,
                 )
@@ -1217,7 +1217,7 @@ def plot_feature_relevance(
         relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
         relevance = relevance_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
         if isinstance(relevance_table, StatisticsRelevanceTable):
-            relevance, border_value = get_fictitious_relevances(
+            relevance, border_value = _get_fictitious_relevances(
                 relevance,
                 alpha,
             )
