@@ -118,8 +118,6 @@ def _test_forecast_out_sample_suffix(ts, model, transforms):
         (MovingAverageModel(window=3), []),
         (NaiveModel(lag=3), []),
         (SeasonalMovingAverageModel(), []),
-        (BATSModel(use_trend=True), []),
-        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_in_sample_full(model, transforms, example_tsds):
@@ -174,7 +172,7 @@ def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
         (TBATSModel(use_trend=True), []),
     ],
 )
-def test_forecast_in_sample_not_implemented(model, transforms, example_tsds):
+def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds):
     with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
         _test_forecast_in_sample_full(example_tsds, model, transforms)
 
@@ -197,8 +195,6 @@ def test_forecast_in_sample_not_implemented(model, transforms, example_tsds):
         (MovingAverageModel(window=3), []),
         (NaiveModel(lag=3), []),
         (SeasonalMovingAverageModel(), []),
-        (BATSModel(use_trend=True), []),
-        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_in_sample_suffix(model, transforms, example_tsds):
@@ -239,6 +235,18 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
 )
 def test_forecast_in_sample_suffix_failed(model, transforms, example_tsds):
     _test_forecast_in_sample_suffix(example_tsds, model, transforms)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
+    ],
+)
+def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
+    with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
+        _test_forecast_in_sample_suffix(example_tsds, model, transforms)
 
 
 @pytest.mark.parametrize(
