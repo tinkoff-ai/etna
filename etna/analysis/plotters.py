@@ -1103,6 +1103,7 @@ def plot_trend(
 def get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
     """
     Convert p-values into fictitious variables, with function f(x) = 1 - x.
+
     Also converts alpha into fictitious variable.
 
     Parameters
@@ -1111,8 +1112,9 @@ def get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.n
         dataFrame with pvalues
     alpha:
         significance level, default alpha = 0.05
+
     Returns
-    ----------
+    -------
     pvalues:
         array with fictitious relevances
     new_alpha:
@@ -1140,7 +1142,7 @@ def plot_feature_relevance(
 
     The most important features are at the top, the least important are at the bottom.
 
-    For StatisticsRelevanceTable also plot vertical line: fictitious significance level.
+    For :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable` also plot vertical line: fictitious significance level.
 
     Values that lie to the right of this line have p-value < alpha.
 
@@ -1188,24 +1190,25 @@ def plot_feature_relevance(
     if relevance_aggregation_mode == "per-segment":
         _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
-
-            relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
             # warning about NaNs
+            relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
+            if isinstance(relevance_table, StatisticsRelevanceTable):
+                relevance, border_value = get_fictitious_relevances(
+                    relevance,
+                    alpha,
+                )
             if relevance.isna().any():
                 na_relevance_features = relevance[relevance.isna()].index.tolist()
                 warnings.warn(
                     f"Relevances on segment: {segment} of features: {na_relevance_features} can't be calculated."
                 )
             relevance = relevance.dropna()[:top_k]
-            if isinstance(relevance_table, StatisticsRelevanceTable):
-                relevance.sort_values(inplace=True)
-                relevance, border_value = get_fictitious_relevances(
-                    relevance,
-                    alpha,
-                )
 
-            if normalized and not isinstance(relevance_table, StatisticsRelevanceTable):
+            if normalized:
+                if border_value is not None:
+                    border_value = border_value / relevance.sum()
                 relevance = relevance / relevance.sum()
+
             sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
             if border_value is not None:
                 ax[i].axvline(border_value)
@@ -1215,20 +1218,24 @@ def plot_feature_relevance(
         relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
         relevance = relevance_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
         relevance = relevance.sort_values(ascending=is_ascending)
+
+        if isinstance(relevance_table, StatisticsRelevanceTable):
+            relevance, border_value = get_fictitious_relevances(
+                relevance,
+                alpha,
+            )
         # warning about NaNs
         if relevance.isna().any():
             na_relevance_features = relevance[relevance.isna()].index.tolist()
             warnings.warn(f"Relevances of features: {na_relevance_features} can't be calculated.")
         # if top_k == None, all the values are selected
         relevance = relevance.dropna()[:top_k]
-        if isinstance(relevance_table, StatisticsRelevanceTable):
-            relevance.sort_values(inplace=True)
-            relevance, border_value = get_fictitious_relevances(
-                relevance,
-                alpha,
-            )
-        if normalized and not isinstance(relevance_table, StatisticsRelevanceTable):
+
+        if normalized:
+            if border_value is not None:
+                border_value = border_value / relevance.sum()
             relevance = relevance / relevance.sum()
+
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         if border_value is not None:
