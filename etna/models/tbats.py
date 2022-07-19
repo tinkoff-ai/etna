@@ -17,27 +17,50 @@ class _TBATSAdapter(BaseAdapter):
     def __init__(self, model: Estimator):
         self.model = model
         self._fitted_model: Optional[Model] = None
+        self._last_train_timestamp = None
+        self._freq = None
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
         target = df["target"]
         self._fitted_model = self.model.fit(target)
+        self._last_train_timestamp = df["timestamp"].max()
+        self._freq = pd.infer_freq(df["timestamp"])
         return self
+
+    def _determine_num_steps_to_forecast(self, last_test_timestamp: pd.Timestamp) -> int:
+        diff = last_test_timestamp - self._last_train_timestamp
+        unit_diff = pd.timedelta_range(start=0, periods=2, freq=self._freq)[1]
+        num_steps = diff / unit_diff
+        return int(num_steps)
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
         if self._fitted_model is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise NotImplementedError("It is not possible to make in-sample predictions with BATS/TBATS model!")
+
+        steps_to_forecast = self._determine_num_steps_to_forecast(df["timestamp"].max())
+        steps_to_skip = steps_to_forecast - df.shape[0]
+
         y_pred = pd.DataFrame()
         if prediction_interval:
             for quantile in quantiles:
-                pred, confidence_intervals = self._fitted_model.forecast(steps=df.shape[0], confidence_level=quantile)
+                pred, confidence_intervals = self._fitted_model.forecast(
+                    steps=steps_to_forecast, confidence_level=quantile
+                )
                 y_pred["target"] = pred
                 if quantile < 1 / 2:
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
                 else:
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
         else:
-            pred = self._fitted_model.forecast(steps=df.shape[0])
+            pred = self._fitted_model.forecast(steps=steps_to_forecast)
             y_pred["target"] = pred
+
+        # skip non-relevant timestamps
+        y_pred = y_pred.iloc[steps_to_skip:].reset_index(drop=True)
+
         return y_pred
 
     def get_model(self) -> Estimator:
