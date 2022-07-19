@@ -1184,26 +1184,25 @@ def plot_feature_relevance(
     if segments is None:
         segments = sorted(ts.segments)
     border_value = None
-    is_ascending = not relevance_table.greater_is_better
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
     relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
     if relevance_aggregation_mode == "per-segment":
         _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
-            # warning about NaNs
-            relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
+            relevance = relevance_df.loc[segment]
             if isinstance(relevance_table, StatisticsRelevanceTable):
                 relevance, border_value = get_fictitious_relevances(
                     relevance,
                     alpha,
                 )
+            # warning about NaNs
             if relevance.isna().any():
                 na_relevance_features = relevance[relevance.isna()].index.tolist()
                 warnings.warn(
                     f"Relevances on segment: {segment} of features: {na_relevance_features} can't be calculated."
                 )
+            relevance = relevance.sort_values(ascending=False)
             relevance = relevance.dropna()[:top_k]
-
             if normalized:
                 if border_value is not None:
                     border_value = border_value / relevance.sum()
@@ -1217,8 +1216,6 @@ def plot_feature_relevance(
     else:
         relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
         relevance = relevance_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
-        relevance = relevance.sort_values(ascending=is_ascending)
-
         if isinstance(relevance_table, StatisticsRelevanceTable):
             relevance, border_value = get_fictitious_relevances(
                 relevance,
@@ -1229,8 +1226,8 @@ def plot_feature_relevance(
             na_relevance_features = relevance[relevance.isna()].index.tolist()
             warnings.warn(f"Relevances of features: {na_relevance_features} can't be calculated.")
         # if top_k == None, all the values are selected
+        relevance = relevance.sort_values(ascending=False)
         relevance = relevance.dropna()[:top_k]
-
         if normalized:
             if border_value is not None:
                 border_value = border_value / relevance.sum()
