@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "1.9.0"
+version = "1.10.0"
 repository = "https://github.com/tinkoff-ai/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -18,6 +18,9 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License"
 ]
 
 packages = [
@@ -25,7 +28,7 @@ packages = [
 ]
 
 authors = [
-    "Andrey Alekseev <an.alekseev@tinkoff.ru>",
+    "Andrey Alekseev <ilekseev@gmail.com>",
     "Julia Shenshina <y.a.shenshina@tinkoff.ru>",
     "Martin Gabdushev <m.gabdushev@tinkoff.ru>",
     "Albina Munirova <a.i.munirova@tinkoff.ru>",
@@ -53,7 +56,7 @@ loguru = "^0.5.3"
 hydra-slayer = "^0.2.0"
 typer = "^0.4.0"
 omegaconf = "^2.1.1"
-holidays = "^0.11.3"
+holidays = "^0.13"
 boto3 = "^1.5"
 botocore = "*"
 scipy = "<1.8.0"
@@ -64,6 +67,9 @@ plotly = "*"
 hydra_slayer = "*"
 matplotlib = "*"
 typing_extensions = "*"
+tbats = "^1.1.0"
+Deprecated = "1.2.13"
+types-Deprecated = "1.2.9"
 
 prophet = {version = "^1.0", optional = true}
 
@@ -85,7 +91,7 @@ pytest = {version = "^6.2", optional = true}
 coverage = {version = "^5.4", optional = true}
 pytest-cov = {version = "^2.11.1", optional = true}
 
-black = {version = "21.9b0", optional = true}
+black = {extras = ["jupyter"], version = "^22.3.0", optional = true}
 isort = {version = "^5.8.0", optional = true}
 flake8 = {version = "^3.9.2", optional = true}
 pep8-naming = {version = "^0.12.1", optional = true}
@@ -113,7 +119,7 @@ wandb = ["wandb"]
 release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
-jupyter = ["jupyter", "nbconvert"]
+jupyter = ["jupyter", "nbconvert", "black"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions"]
 
 all = [
@@ -168,6 +174,16 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 120
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
+
+[tool.mypy]
+ignore_missing_imports = true
+strict_optional = true
+files = "etna/"
+exclude = "etna/libs"
+
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

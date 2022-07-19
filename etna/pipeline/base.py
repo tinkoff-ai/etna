@@ -13,7 +13,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import scipy
 from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
@@ -89,7 +88,7 @@ class FoldMask(BaseMixin):
         dataset_timestamps = list(ts.index)
         dataset_description = ts.describe()
 
-        min_first_timestamp = dataset_description["start_timestamp"].min()
+        min_first_timestamp = ts.index.min()
         if self.first_train_timestamp and self.first_train_timestamp < min_first_timestamp:
             raise ValueError(f"First train timestamp should be later than {min_first_timestamp}!")
 
@@ -224,18 +223,19 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Add prediction intervals to the forecasts."""
         if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
-        _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
+        with tslogger.disable():
+            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
             - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
-        se = scipy.stats.sem(residuals)
+        sigma = np.std(residuals.values, axis=0)
         borders = []
         for quantile in quantiles:
             z_q = norm.ppf(q=quantile)
-            border = predictions[:, :, "target"] + se * z_q
+            border = predictions[:, :, "target"] + sigma * z_q
             border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
             borders.append(border)
 
@@ -411,13 +411,13 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Get dataframe with metrics."""
         if self._folds is None:
             raise ValueError("Something went wrong during backtest initialization!")
-        metrics_df = pd.DataFrame()
+        metrics_dfs = []
 
         for i, fold in self._folds.items():
             fold_metrics = pd.DataFrame(fold["metrics"]).reset_index().rename({"index": "segment"}, axis=1)
             fold_metrics[self._fold_column] = i
-            metrics_df = metrics_df.append(fold_metrics)
-
+            metrics_dfs.append(fold_metrics)
+        metrics_df = pd.concat(metrics_dfs)
         metrics_df.sort_values(["segment", self._fold_column], inplace=True)
 
         if aggregate_metrics:
@@ -429,14 +429,15 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Get information about folds."""
         if self._folds is None:
             raise ValueError("Something went wrong during backtest initialization!")
-        timerange_df = pd.DataFrame()
+        timerange_dfs = []
         for fold_number, fold_info in self._folds.items():
             tmp_df = pd.DataFrame()
             for stage_name in ("train", "test"):
                 for border in ("start", "end"):
                     tmp_df[f"{stage_name}_{border}_time"] = [fold_info[f"{stage_name}_timerange"][border]]
             tmp_df[self._fold_column] = fold_number
-            timerange_df = timerange_df.append(tmp_df)
+            timerange_dfs.append(tmp_df)
+        timerange_df = pd.concat(timerange_dfs)
         return timerange_df
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:
@@ -456,6 +457,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             forecast = forecast.join(fold_number_df)
             forecasts_list.append(forecast)
         forecasts = pd.concat(forecasts_list)
+        forecasts.sort_index(axis=1, inplace=True)
         return forecasts
 
     def _prepare_fold_masks(self, ts: TSDataset, masks: Union[int, List[FoldMask]], mode: str) -> List[FoldMask]:

@@ -52,12 +52,8 @@ def test_include_filter(ts_with_features, include):
     expected_columns = set(include)
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == expected_columns
-    segments = ts_with_features.segments
     for column in got_columns:
-        assert np.all(
-            df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+        assert np.all(df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]])
 
 
 @pytest.mark.parametrize(
@@ -77,12 +73,8 @@ def test_exclude_filter(ts_with_features, exclude, expected_columns):
     df_transformed = ts_with_features.to_pandas()
     got_columns = set(df_transformed.columns.get_level_values("feature"))
     assert got_columns == set(expected_columns)
-    segments = ts_with_features.segments
     for column in got_columns:
-        assert np.all(
-            df_transformed.loc[:, pd.IndexSlice[segments, column]]
-            == original_df.loc[:, pd.IndexSlice[segments, column]]
-        )
+        assert np.all(df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]])
 
 
 def test_include_filter_wrong_column(ts_with_features):
@@ -97,3 +89,103 @@ def test_exclude_filter_wrong_column(ts_with_features):
     transform = FilterFeaturesTransform(exclude=["non-existent-column"])
     with pytest.raises(ValueError, match="Features {.*} are not present in the dataset"):
         ts_with_features.fit_transform([transform])
+
+
+@pytest.mark.parametrize("return_features", [True, False])
+@pytest.mark.parametrize(
+    "columns, saved_columns",
+    [
+        ([], []),
+        (["target"], ["target"]),
+        (["exog_1", "exog_2"], ["exog_1", "exog_2"]),
+        (["target", "exog_1", "exog_2"], ["target", "exog_1", "exog_2"]),
+    ],
+)
+def test_transform_exclude_save_columns(ts_with_features, columns, saved_columns, return_features):
+    original_df = ts_with_features.to_pandas()
+    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
+    ts_with_features.fit_transform([transform])
+    df_transformed = transform._df_removed
+    if return_features:
+        got_columns = set(df_transformed.columns.get_level_values("feature"))
+        assert got_columns == set(saved_columns)
+        for column in got_columns:
+            assert np.all(
+                df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]]
+            )
+    else:
+        assert df_transformed is None
+
+
+@pytest.mark.parametrize("return_features", [True, False])
+@pytest.mark.parametrize(
+    "columns, saved_columns",
+    [
+        ([], ["target", "exog_1", "exog_2"]),
+        (["target"], ["exog_1", "exog_2"]),
+        (["exog_1", "exog_2"], ["target"]),
+        (["target", "exog_1", "exog_2"], []),
+    ],
+)
+def test_transform_include_save_columns(ts_with_features, columns, saved_columns, return_features):
+    original_df = ts_with_features.to_pandas()
+    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
+    ts_with_features.fit_transform([transform])
+    df_transformed = transform._df_removed
+    if return_features:
+        got_columns = set(df_transformed.columns.get_level_values("feature"))
+        assert got_columns == set(saved_columns)
+        for column in got_columns:
+            assert np.all(
+                df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]]
+            )
+    else:
+        assert df_transformed is None
+
+
+@pytest.mark.parametrize(
+    "columns, return_features, expected_columns",
+    [
+        ([], True, ["exog_1", "target", "exog_2"]),
+        ([], False, ["target", "exog_1", "exog_2"]),
+        (["target"], True, ["exog_1", "target", "exog_2"]),
+        (["target"], False, ["exog_2", "exog_1"]),
+        (["exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
+        (["exog_1", "exog_2"], False, ["target"]),
+        (["target", "exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
+        (["target", "exog_1", "exog_2"], False, []),
+    ],
+)
+def test_inverse_transform_back_excluded_columns(ts_with_features, columns, return_features, expected_columns):
+    original_df = ts_with_features.to_pandas()
+    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
+    ts_with_features.fit_transform([transform])
+    ts_with_features.inverse_transform()
+    columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
+    assert columns_inversed == set(expected_columns)
+    for column in ts_with_features.columns:
+        assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
+
+
+@pytest.mark.parametrize(
+    "columns, return_features, expected_columns",
+    [
+        ([], True, ["exog_1", "target", "exog_2"]),
+        ([], False, []),
+        (["target"], True, ["exog_1", "target", "exog_2"]),
+        (["target"], False, ["target"]),
+        (["exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
+        (["exog_1", "exog_2"], False, ["exog_1", "exog_2"]),
+        (["target", "exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
+        (["target", "exog_1", "exog_2"], False, ["exog_1", "target", "exog_2"]),
+    ],
+)
+def test_inverse_transform_back_included_columns(ts_with_features, columns, return_features, expected_columns):
+    original_df = ts_with_features.to_pandas()
+    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
+    ts_with_features.fit_transform([transform])
+    ts_with_features.inverse_transform()
+    columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
+    assert columns_inversed == set(expected_columns)
+    for column in ts_with_features.columns:
+        assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])

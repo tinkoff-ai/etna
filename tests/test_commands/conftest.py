@@ -16,13 +16,77 @@ def base_pipeline_yaml_path():
         _target_: etna.pipeline.Pipeline
         horizon: 4
         model:
-          _target_: etna.models.CatBoostModelMultiSegment
+          _target_: etna.models.CatBoostMultiSegmentModel
         transforms:
           - _target_: etna.transforms.LinearTrendTransform
             in_column: target
           - _target_: etna.transforms.SegmentEncoderTransform
         """
     )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def elementary_linear_model_pipeline():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        _target_: etna.pipeline.Pipeline
+        horizon: 3
+        model:
+          _target_: etna.models.LinearPerSegmentModel
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def elementary_boosting_model_pipeline():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        _target_: etna.pipeline.Pipeline
+        horizon: 3
+        model:
+          _target_: etna.models.CatBoostPerSegmentModel
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def increasing_timeseries_path():
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range("2022-06-01", periods=10)),
+            "target": list(range(10)),
+            "segment": ["segment_0"] * 10,
+        }
+    )
+    tmp = NamedTemporaryFile("w")
+    df.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def increasing_timeseries_exog_path():
+    df_regressors = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range("2022-06-01", periods=13)),
+            "regressor_1": list(range(10)) + [3, 3, 3],
+            "segment": ["segment_0"] * 13,
+        }
+    )
+    tmp = NamedTemporaryFile("w")
+    df_regressors.to_csv(tmp, index=False)
     tmp.flush()
     yield Path(tmp.name)
     tmp.close()
@@ -36,7 +100,7 @@ def base_pipeline_omegaconf_path():
         _target_: etna.pipeline.Pipeline
         horizon: 4
         model:
-          _target_: etna.models.CatBoostModelMultiSegment
+          _target_: etna.models.CatBoostMultiSegmentModel
         transforms:
           - _target_: etna.transforms.LinearTrendTransform
             in_column: target

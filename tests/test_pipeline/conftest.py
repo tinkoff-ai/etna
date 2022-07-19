@@ -1,13 +1,13 @@
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
-import scipy
 from numpy.random import RandomState
 from scipy.stats import norm
 
 from etna.datasets import TSDataset
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 
@@ -16,9 +16,9 @@ INTERVAL_WIDTH = 0.95
 
 @pytest.fixture
 def catboost_pipeline() -> Pipeline:
-    """Generate pipeline with CatBoostModelMultiSegment."""
+    """Generate pipeline with CatBoostPerSegmentModel."""
     pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="regressor_lag_feature")],
         horizon=7,
     )
@@ -27,9 +27,9 @@ def catboost_pipeline() -> Pipeline:
 
 @pytest.fixture
 def catboost_pipeline_big() -> Pipeline:
-    """Generate pipeline with CatBoostModelMultiSegment."""
+    """Generate pipeline with CatBoostPerSegmentModel."""
     pipeline = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[25, 26, 27], out_column="regressor_lag_feature")],
         horizon=24,
     )
@@ -68,10 +68,10 @@ def splited_piecewise_constant_ts(
     segment_2 = [constant_2_1] * first_constant_len + [constant_2_2] * horizon * 2
 
     quantile = norm.ppf(q=(1 + INTERVAL_WIDTH) / 2)
-    se_1 = scipy.stats.sem([0.0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
-    se_2 = scipy.stats.sem([0.0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
-    lower = [x - se_1 * quantile for x in segment_1] + [x - se_2 * quantile for x in segment_2]
-    upper = [x + se_1 * quantile for x in segment_1] + [x + se_2 * quantile for x in segment_2]
+    sigma_1 = np.std([0.0] * horizon * 2 + [constant_1_1 - constant_1_2] * horizon)
+    sigma_2 = np.std([0.0] * horizon * 2 + [constant_2_1 - constant_2_2] * horizon)
+    lower = [x - sigma_1 * quantile for x in segment_1] + [x - sigma_2 * quantile for x in segment_2]
+    upper = [x + sigma_1 * quantile for x in segment_1] + [x + sigma_2 * quantile for x in segment_2]
 
     ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
     lower_p = (1 - INTERVAL_WIDTH) / 2
@@ -162,23 +162,46 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
         target_forecast += [start_value + i * add_value] * horizon
         fold_number_forecast += [i] * horizon
     forecast_df = pd.DataFrame(
-        {"target": target_forecast, "fold_number": fold_number_forecast},
+        {"fold_number": fold_number_forecast, "target": target_forecast},
         index=timestamp_forecast,
     )
     forecast_df.columns = pd.MultiIndex.from_product(
-        [[segment], ["target", "fold_number"]], names=("segment", "feature")
+        [[segment], ["fold_number", "target"]], names=("segment", "feature")
     )
-
     return ts, metrics_df, forecast_df
 
 
-@pytest.fixture
-def simple_ts() -> TSDataset:
+def _get_simple_df() -> pd.DataFrame:
     timerange = pd.date_range(start="2020-01-01", periods=10).to_list()
     df = pd.DataFrame({"timestamp": timerange + timerange})
     df["segment"] = ["segment_0"] * 10 + ["segment_1"] * 10
     df["target"] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    return df
+
+
+@pytest.fixture
+def simple_ts() -> TSDataset:
+    df = _get_simple_df()
     df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def simple_ts_starting_with_nans_one_segment(simple_ts) -> TSDataset:
+    df = _get_simple_df()
+    df = TSDataset.to_dataset(df)
+    df.iloc[:2, 0] = np.NaN
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def simple_ts_starting_with_nans_all_segments(simple_ts) -> TSDataset:
+    df = _get_simple_df()
+    df = TSDataset.to_dataset(df)
+    df.iloc[:2, 0] = np.NaN
+    df.iloc[:3, 1] = np.NaN
     ts = TSDataset(df, freq="D")
     return ts
 

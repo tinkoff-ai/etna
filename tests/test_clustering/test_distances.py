@@ -34,13 +34,14 @@ def pattern():
 @pytest.fixture
 def dtw_ts(pattern) -> TSDataset:
     """Get df with complex pattern with timestamp lag."""
-    df = pd.DataFrame()
+    dfs = []
     for i in range(1, 8):
         date_range = pd.date_range(f"2020-01-0{str(i)}", periods=35)
         tmp = pd.DataFrame({"timestamp": date_range})
         tmp["segment"] = str(i)
         tmp["target"] = pattern
-        df = df.append(tmp, ignore_index=True)
+        dfs.append(tmp)
+    df = pd.concat(dfs, ignore_index=True)
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
     return ts
 

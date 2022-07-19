@@ -344,9 +344,9 @@ def plot_backtest(
 
         # plot history
         if history_len == "all":
-            plot_df = segment_history_df.append(segment_backtest_df)
+            plot_df = pd.concat((segment_history_df, segment_backtest_df))
         elif history_len > 0:
-            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
+            plot_df = pd.concat((segment_history_df.tail(history_len), segment_backtest_df))
         else:
             plot_df = segment_backtest_df
         ax[i].plot(plot_df.index, plot_df.target, color=lines_colors["history"])
@@ -634,7 +634,10 @@ def plot_anomalies(
 
 
 def get_correlation_matrix(
-    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson"
+    ts: "TSDataset",
+    columns: Optional[List[str]] = None,
+    segments: Optional[List[str]] = None,
+    method: str = "pearson",
 ) -> np.ndarray:
     """Compute pairwise correlation of timeseries for selected segments.
 
@@ -642,6 +645,8 @@ def get_correlation_matrix(
     ----------
     ts:
         TSDataset with timeseries data
+    columns:
+        Columns to use, if None use all columns
     segments:
         Segments to use
     method:
@@ -660,16 +665,23 @@ def get_correlation_matrix(
     """
     if method not in ["pearson", "kendall", "spearman"]:
         raise ValueError(f"'{method}' is not a valid method of correlation.")
+
     if segments is None:
         segments = sorted(ts.segments)
-    correlation_matrix = ts[:, segments, :].corr(method=method).values
+    if columns is None:
+        columns = list(set(ts.df.columns.get_level_values("feature")))
+
+    correlation_matrix = ts[:, segments, columns].corr(method=method).values
     return correlation_matrix
 
 
 def plot_correlation_matrix(
     ts: "TSDataset",
+    columns: Optional[List[str]] = None,
     segments: Optional[List[str]] = None,
     method: str = "pearson",
+    mode: str = "macro",
+    columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 10),
     **heatmap_kwargs,
 ):
@@ -679,6 +691,8 @@ def plot_correlation_matrix(
     ----------
     ts:
         TSDataset with timeseries data
+    columns:
+        Columns to use, if None use all columns
     segments:
         Segments to use
     method:
@@ -690,23 +704,48 @@ def plot_correlation_matrix(
 
         * spearman: Spearman rank correlation
 
+    mode: 'macro' or 'per-segment'
+        Aggregation mode
+    columns_num:
+        Number of subplots columns
     figsize:
         size of the figure in inches
     """
     if segments is None:
         segments = sorted(ts.segments)
+    if columns is None:
+        columns = list(set(ts.df.columns.get_level_values("feature")))
     if "vmin" not in heatmap_kwargs:
         heatmap_kwargs["vmin"] = -1
     if "vmax" not in heatmap_kwargs:
         heatmap_kwargs["vmax"] = 1
 
-    correlation_matrix = get_correlation_matrix(ts, segments, method)
-    fig, ax = plt.subplots(figsize=figsize)
-    ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
-    labels = list(ts[:, segments, :].columns.values)
-    ax.set_xticklabels(labels, rotation=45, horizontalalignment="right")
-    ax.set_yticklabels(labels, rotation=0, horizontalalignment="right")
-    ax.set_title("Correlation Heatmap")
+    if mode not in ["macro", "per-segment"]:
+        raise ValueError(f"'{mode}' is not a valid method of mode.")
+
+    if mode == "macro":
+        fig, ax = plt.subplots(figsize=figsize)
+        correlation_matrix = get_correlation_matrix(ts, columns, segments, method)
+        labels = list(ts[:, segments, columns].columns.values)
+        ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
+        ax.set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
+        ax.set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+        ax.set_title("Correlation Heatmap")
+
+    if mode == "per-segment":
+        fig, ax = prepare_axes(len(segments), columns_num=columns_num, figsize=figsize)
+
+        for i, segment in enumerate(segments):
+            correlation_matrix = get_correlation_matrix(ts, columns, [segment], method)
+            labels = list(ts[:, segment, columns].columns.values)
+            ax[i] = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax[i], **heatmap_kwargs)
+            ax[i].set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
+            ax[i].set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
+            plt.setp(ax[i].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+            plt.setp(ax[i].get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+            ax[i].set_title("Correlation Heatmap" + " " + segment)
 
 
 def plot_anomalies_interactive(
@@ -1423,7 +1462,7 @@ def _create_holidays_df_str(holidays: str, index, as_is):
     if as_is:
         raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
     timestamp = index.tolist()
-    country_holidays = holidays_lib.CountryHoliday(country=holidays)
+    country_holidays = holidays_lib.country_holidays(country=holidays)
     holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
     holiday_names = holiday_names.difference({None})
 
