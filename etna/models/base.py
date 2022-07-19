@@ -658,11 +658,13 @@ class DeepBaseModel(LightningModule, FitAbstractModel, DeepBaseAbstractModel, Ba
             if torch_dataset_size is None:
                 raise ValueError("torch_dataset_size must be provided if torch_dataset is not sized")
             train_size = self.split_params["train_size"]
+            torch_dataset_train_size = int(torch_dataset_size * train_size)
+            torch_dataset_val_size = torch_dataset_size - torch_dataset_train_size
             train_dataset, val_dataset = random_split(
                 torch_dataset,
                 lengths=[
-                    int(train_size * torch_dataset_size),
-                    torch_dataset_size - int(train_size * torch_dataset_size),
+                    torch_dataset_train_size,
+                    torch_dataset_val_size,
                 ],
                 generator=self.split_params.get("generator"),
             )
