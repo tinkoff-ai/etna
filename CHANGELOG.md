@@ -8,55 +8,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
--
--
--
--
--
--
-- Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
--
--
--
--
--
-- Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
--
--
+- 
+- Lambda transform ([#762](https://github.com/tinkoff-ai/etna/issues/762))
+- assemble pipelines ([#774](https://github.com/tinkoff-ai/etna/pull/774))
+- 
+- 
+- Tests on in-sample, out-sample predictions with gap for all models ([#785](https://github.com/tinkoff-ai/etna/pull/786))
+- 
+- 
+- 
+- 
+- 
+- 
 ### Changed
--
+- Add columns and mode parameters in plot_correlation_matrix ([#726](https://github.com/tinkoff-ai/etna/pull/753))
+- Add CatBoostPerSegmentModel and CatBoostMultiSegmentModel classes, deprecate CatBoostModelPerSegment and CatBoostModelMultiSegment ([#779](https://github.com/tinkoff-ai/etna/pull/779))
 - 
-- Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
+- Allow Prophet update to 1.1 ([#799](https://github.com/tinkoff-ai/etna/pull/799))
 - 
-- Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
-- Add visualization for p-values for plot_feature_relevance ([#795](https://github.com/tinkoff-ai/etna/pull/795))
+- Make LagTransform, LogTransform, AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
+- Add visualization for p-values for plot_feature_relevance ([$795](https://github.com/tinkoff-ai/etna/pull/795))
+- Update poetry.core version ([#780](https://github.com/tinkoff-ai/etna/pull/780))
 - 
-- 
-- 
-- 
-- 
-- Add xticks parameter for plot_periodogram, clip frequencies to be >= 1 ([#706](https://github.com/tinkoff-ai/etna/pull/706))
-- 
-- 
+- Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
+- Make native prediction intervals for TFTModel ([#770](https://github.com/tinkoff-ai/etna/pull/770))
+- Test cases for testing inference of models ([#794](https://github.com/tinkoff-ai/etna/pull/794))
 - 
 ### Fixed
--
--
--
--
--
+- 
+- Fix missing prophet in docker images ([#767](https://github.com/tinkoff-ai/etna/pull/767))
+- Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
+- FutureWarning: The frame.append method is deprecated. Use pandas.concat instead ([#764](https://github.com/tinkoff-ai/etna/pull/764))
+- Correct ordering if multi-index in backtest ([#771](https://github.com/tinkoff-ai/etna/pull/771))
+- 
+- 
+- 
+- 
+- 
+- 
+- Github actions cache issue with poetry update ([#778](https://github.com/tinkoff-ai/etna/pull/778))
+- 
+- 
+
+## [1.10.0] - 2022-06-12
+### Added
+- Add Sign metric ([#730](https://github.com/tinkoff-ai/etna/pull/730))
+- Add AutoARIMA model ([#679](https://github.com/tinkoff-ai/etna/pull/679))
+- Add parameters `start`, `end` to some eda methods ([#665](https://github.com/tinkoff-ai/etna/pull/665))
+- Add BATS and TBATS model adapters ([#678](https://github.com/tinkoff-ai/etna/pull/734))
+- Jupyter extension for black ([#742](https://github.com/tinkoff-ai/etna/pull/742))
+### Changed
+- Change color of lines in plot_anomalies and plot_clusters, add grid to all plots, make trend line thicker in plot_trend ([#705](https://github.com/tinkoff-ai/etna/pull/705))
+- Change format of holidays for holiday_plot ([#708](https://github.com/tinkoff-ai/etna/pull/708))
+- Make feature selection transforms return columns in inverse_transform([#688](https://github.com/tinkoff-ai/etna/issues/688))
+- Add xticks parameter for plot_periodogram, clip frequencies to be >= 1 ([#706](https://github.com/tinkoff-ai/etna/pull/706))
+- Make TSDataset method to_dataset work with copy of the passed dataframe ([#741](https://github.com/tinkoff-ai/etna/pull/741))
+### Fixed
+- Fix bug when `ts.plot` does not save figure ([#714](https://github.com/tinkoff-ai/etna/pull/714))
 - Fix bug in plot_clusters ([#675](https://github.com/tinkoff-ai/etna/pull/675))
--
 - Fix bugs and documentation for cross_corr_plot ([#691](https://github.com/tinkoff-ai/etna/pull/691))
--
--
 - Fix bugs and documentation for plot_backtest and plot_backtest_interactive ([#700](https://github.com/tinkoff-ai/etna/pull/700))
--
--
--
--
--
--
+- Make STLTransform to work with NaNs at the beginning ([#736](https://github.com/tinkoff-ai/etna/pull/736))
+- Fix tiny prediction intervals ([#722](https://github.com/tinkoff-ai/etna/pull/722))
+- Fix deepcopy issue for fitted deepmodel ([#735](https://github.com/tinkoff-ai/etna/pull/735))
+- Fix making backtest if all segments start with NaNs ([#728](https://github.com/tinkoff-ai/etna/pull/728))
+- Fix logging issues with backtest while emp intervals using ([#747](https://github.com/tinkoff-ai/etna/pull/747))
 
 ## [1.9.0] - 2022-05-17
 ### Added
