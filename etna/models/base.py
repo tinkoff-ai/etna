@@ -629,11 +629,11 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         module: DeepBaseModule,
         train_batch_size: int,
         test_batch_size: int,
+        trainer_params: Optional[dict],
         train_dataloader_params: Optional[dict],
         test_dataloader_params: Optional[dict],
         val_dataloader_params: Optional[dict],
         split_params: Optional[dict],
-        trainer_params: Optional[dict],
     ):
         """Init DeepBaseModel.
 
