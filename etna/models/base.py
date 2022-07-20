@@ -790,9 +790,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         """
         test_dataset = ts.to_torch_dataset(make_samples=self.net.make_samples, dropna=False)
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(
-            start_idx=self.net.encoder_length, end_idx=self.net.encoder_length + horizon
-        )
+        future_ts = ts.tsdataset_idx_slice(start_idx=self.net.encoder_length, end_idx=self.net.encoder_length + horizon)
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
 
