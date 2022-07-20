@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import Iterable
-from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -471,18 +470,22 @@ class DeepAbstractNet(ABC):
     """Interface for etna native deep models."""
 
     @abstractmethod
-    def make_samples(self, df: pd.DataFrame) -> Union[Iterator[dict], Iterable[dict]]:
+    def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterable[dict]:
         """Make samples from input slice of TSDataset.
 
         Parameters
         ----------
         df:
-            Slice is per-segment Dataframes
+            slice is per-segment Dataframes
+        encoder_length:
+            encoder_length
+        decoder_length:
+            decoder_length
 
         Returns
         -------
         :
-            Samples of input slices
+            samples of input slices
         """
         pass
 
@@ -571,19 +574,9 @@ class DeepBaseAbstractModel(ABC):
 class DeepBaseNet(DeepAbstractNet, LightningModule):
     """Class for partially implemented LightningModule interface."""
 
-    def __init__(self, encoder_length: int, decoder_length: int):
-        """Init DeepBaseNet.
-
-        Parameters
-        ----------
-        encoder_length:
-            encoder length
-        decoder_length:
-            decoder length
-        """
+    def __init__(self):
+        """Init DeepBaseNet."""
         super().__init__()
-        self.encoder_length = encoder_length
-        self.decoder_length = decoder_length
 
     def training_step(self, batch: dict, *args, **kwargs):  # type: ignore
         """Training step.
@@ -627,6 +620,8 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         self,
         *,
         net: DeepBaseNet,
+        encoder_length: int,
+        decoder_length: int,
         train_batch_size: int,
         test_batch_size: int,
         trainer_params: Optional[dict],
@@ -641,6 +636,10 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         ----------
         net:
             network to train
+        encoder_length:
+            encoder length
+        decoder_length:
+            decoder length
         train_batch_size:
             batch size for training
         test_batch_size:
@@ -663,6 +662,8 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         """
         super().__init__()
         self.net = net
+        self.encoder_length = encoder_length
+        self.decoder_length = decoder_length
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.train_dataloader_params = {} if train_dataloader_params is None else train_dataloader_params
@@ -685,7 +686,12 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         :
             Model after fit
         """
-        torch_dataset = ts.to_torch_dataset(self.net.make_samples, dropna=True)
+        torch_dataset = ts.to_torch_dataset(
+            functools.partial(
+                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
+            ),
+            dropna=True,
+        )
         self.raw_fit(torch_dataset)
         return self
 
@@ -788,9 +794,14 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         :
             Dataset with predictions
         """
-        test_dataset = ts.to_torch_dataset(make_samples=self.net.make_samples, dropna=False)
+        test_dataset = ts.to_torch_dataset(
+            make_samples=functools.partial(
+                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
+            ),
+            dropna=False,
+        )
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(start_idx=self.net.encoder_length, end_idx=self.net.encoder_length + horizon)
+        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
 

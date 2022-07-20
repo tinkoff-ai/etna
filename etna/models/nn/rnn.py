@@ -33,8 +33,6 @@ class RNNNet(DeepBaseNet):
     def __init__(
         self,
         input_size: int,
-        decoder_length: int,
-        encoder_length: int,
         num_layers: int,
         hidden_size: int,
         lr: float,
@@ -47,10 +45,6 @@ class RNNNet(DeepBaseNet):
         ----------
         input_size:
             size of the input feature space: target plus extra features
-        encoder_length:
-            encoder length
-        decoder_length:
-            decoder length
         num_layers:
             number of layers
         hidden_size:
@@ -62,10 +56,7 @@ class RNNNet(DeepBaseNet):
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         """
-        super().__init__(
-            encoder_length=encoder_length,
-            decoder_length=decoder_length,
-        )
+        super().__init__()
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -138,10 +129,8 @@ class RNNNet(DeepBaseNet):
         loss = self.loss(target_prediction, decoder_target)
         return loss, decoder_target, target_prediction
 
-    def make_samples(self, df: pd.DataFrame) -> Iterator[dict]:
+    def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        encoder_length = self.encoder_length
-        decoder_length = self.decoder_length
 
         def _make(df: pd.DataFrame, start_idx: int, encoder_length: int, decoder_length: int) -> Optional[dict]:
             sample: Dict[str, Any] = {
@@ -227,14 +216,14 @@ class RNNModel(DeepBaseModel):
         super().__init__(
             net=RNNNet(
                 input_size=input_size,
-                decoder_length=decoder_length,
-                encoder_length=encoder_length,
                 num_layers=num_layers,
                 hidden_size=hidden_size,
                 lr=lr,
                 loss=nn.MSELoss() if loss is None else loss,
                 optimizer_params=optimizer_params,
             ),
+            decoder_length=decoder_length,
+            encoder_length=encoder_length,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
             train_dataloader_params=train_dataloader_params,
