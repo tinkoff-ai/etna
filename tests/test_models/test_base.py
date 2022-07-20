@@ -52,7 +52,7 @@ def test_deep_base_model_raw_fit(
     DeepBaseModel.raw_fit(self=deep_base_model_mock, torch_dataset=sized_torch_dataset_mock)
     trainer.assert_called_with(logger=loggers)
     trainer.return_value.fit.assert_called_with(
-        deep_base_model_mock.module, train_dataloaders=dataloader.return_value, val_dataloaders=None
+        deep_base_model_mock.net, train_dataloaders=dataloader.return_value, val_dataloaders=None
     )
     random_split.assert_not_called()
 
@@ -68,7 +68,7 @@ def _test_deep_base_model_raw_fit_split_params(
 ):
     DeepBaseModel.raw_fit(self=deep_base_model_mock, torch_dataset=torch_dataset_mock)
     trainer.return_value.fit.assert_called_with(
-        deep_base_model_mock.module, train_dataloaders=dataloader.return_value, val_dataloaders=dataloader.return_value
+        deep_base_model_mock.net, train_dataloaders=dataloader.return_value, val_dataloaders=dataloader.return_value
     )
     calls = [
         call(random_split.return_value[0], batch_size=deep_base_model_mock.train_batch_size, shuffle=True),
@@ -131,9 +131,9 @@ def test_deep_base_model_raw_fit_split_params_with_unsized_torch_dataset(
 def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
     batch = {"segment": ["segment1", "segment2"], "target": torch.Tensor([[1, 2], [3, 4]])}
     dataloader.return_value = [batch]
-    deep_base_model_mock.module.return_value = batch["target"]
+    deep_base_model_mock.net.return_value = batch["target"]
     predictions_dict = DeepBaseModel.raw_predict(self=deep_base_model_mock, torch_dataset=MagicMock())
-    deep_base_model_mock.module.eval.assert_called_once()
+    deep_base_model_mock.net.eval.assert_called_once()
     np.testing.assert_allclose(predictions_dict[("segment1", "target")], batch["target"][0].numpy())
     np.testing.assert_allclose(predictions_dict[("segment2", "target")], batch["target"][1].numpy())
 

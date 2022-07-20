@@ -14,7 +14,7 @@ if SETTINGS.torch_required:
     import torch.nn as nn
 
 from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseModule
+from etna.models.base import DeepBaseNet
 
 
 class RNNBatch(TypedDict):
@@ -27,7 +27,7 @@ class RNNBatch(TypedDict):
     segment: "torch.Tensor"
 
 
-class RNNModule(DeepBaseModule):
+class RNNNet(DeepBaseNet):
     """RNN based Lightning module with LSTM cell."""
 
     def __init__(
@@ -225,7 +225,7 @@ class RNNModel(DeepBaseModel):
         split_params: Optional[dict] = None,
     ):
         super().__init__(
-            module=RNNModule(
+            net=RNNNet(
                 input_size=input_size,
                 decoder_length=decoder_length,
                 encoder_length=encoder_length,

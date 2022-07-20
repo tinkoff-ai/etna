@@ -467,7 +467,7 @@ class BaseAdapter(ABC):
         pass
 
 
-class DeepAbstractModule(ABC):
+class DeepAbstractNet(ABC):
     """Interface for etna native deep models."""
 
     @abstractmethod
@@ -557,7 +557,7 @@ class DeepBaseAbstractModel(ABC):
         pass
 
     @abstractmethod
-    def get_model(self) -> "DeepBaseModule":
+    def get_model(self) -> "DeepBaseNet":
         """Get model.
 
         Returns
@@ -568,11 +568,11 @@ class DeepBaseAbstractModel(ABC):
         pass
 
 
-class DeepBaseModule(DeepAbstractModule, LightningModule):
+class DeepBaseNet(DeepAbstractNet, LightningModule):
     """Class for partially implemented LightningModule interface."""
 
     def __init__(self, encoder_length: int, decoder_length: int):
-        """Init DeepBaseModule.
+        """Init DeepBaseNet.
 
         Parameters
         ----------
@@ -626,7 +626,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
     def __init__(
         self,
         *,
-        module: DeepBaseModule,
+        net: DeepBaseNet,
         train_batch_size: int,
         test_batch_size: int,
         trainer_params: Optional[dict],
@@ -639,7 +639,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
 
         Parameters
         ----------
-        module:
+        net:
             network to train
         train_batch_size:
             batch size for training
@@ -662,7 +662,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
         super().__init__()
-        self.module = module
+        self.net = net
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.train_dataloader_params = {} if train_dataloader_params is None else train_dataloader_params
@@ -685,7 +685,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         :
             Model after fit
         """
-        torch_dataset = ts.to_torch_dataset(self.module.make_samples, dropna=True)
+        torch_dataset = ts.to_torch_dataset(self.net.make_samples, dropna=True)
         self.raw_fit(torch_dataset)
         return self
 
@@ -738,7 +738,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
             self.trainer_params["logger"] += tslogger.pl_loggers
 
         trainer = Trainer(**self.trainer_params)
-        trainer.fit(self.module, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+        trainer.fit(self.net, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
         return self
 
     def raw_predict(self, torch_dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
@@ -759,11 +759,11 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         )
 
         predictions_dict = dict()
-        self.module.eval()
+        self.net.eval()
         with torch.no_grad():
             for batch in test_dataloader:
                 segments = batch["segment"]
-                predictions = self.module(batch)
+                predictions = self.net(batch)
                 predictions_array = predictions.numpy()
                 for idx, segment in enumerate(segments):
                     predictions_dict[(segment, "target")] = predictions_array[
@@ -788,10 +788,10 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         :
             Dataset with predictions
         """
-        test_dataset = ts.to_torch_dataset(make_samples=self.module.make_samples, dropna=False)
+        test_dataset = ts.to_torch_dataset(make_samples=self.net.make_samples, dropna=False)
         predictions = self.raw_predict(test_dataset)
         future_ts = ts.tsdataset_idx_slice(
-            start_idx=self.module.encoder_length, end_idx=self.module.encoder_length + horizon
+            start_idx=self.net.encoder_length, end_idx=self.net.encoder_length + horizon
         )
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
@@ -800,7 +800,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
 
         return future_ts
 
-    def get_model(self) -> "DeepBaseModule":
+    def get_model(self) -> "DeepBaseNet":
         """Get model.
 
         Returns
@@ -808,7 +808,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         :
            Torch Module
         """
-        return self.module
+        return self.net
 
 
 BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel, DeepBaseModel]

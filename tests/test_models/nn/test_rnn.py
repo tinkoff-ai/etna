@@ -5,7 +5,7 @@ import pytest
 
 from etna.metrics import MAE
 from etna.models.nn import RNNModel
-from etna.models.nn.rnn import RNNModule
+from etna.models.nn.rnn import RNNNet
 from etna.transforms import StandardScalerTransform
 
 
@@ -40,7 +40,7 @@ def test_rnn_make_samples(example_df):
     rnn_module.encoder_length = 8
     rnn_module.decoder_length = 4
 
-    ts_samples = list(RNNModule.make_samples(rnn_module, df=example_df))
+    ts_samples = list(RNNNet.make_samples(rnn_module, df=example_df))
     first_sample = ts_samples[0]
     second_sample = ts_samples[1]
 
