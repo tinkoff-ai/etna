@@ -1163,7 +1163,7 @@ class TSDataset:
     def to_torch_dataset(
         self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True
     ) -> "Dataset":
-        """Convert the TSDataset to a torch.Dataset.
+        """Convert the TSDataset to a :py:class:`torch.Dataset`.
 
         Parameters
         ----------
@@ -1175,7 +1175,7 @@ class TSDataset:
         Returns
         -------
         :
-            torch.Dataset with with train or test samples to infer on
+            :py:class:`torch.Dataset` with with train or test samples to infer on
         """
         df = self.to_pandas(flatten=True)
         if dropna:
