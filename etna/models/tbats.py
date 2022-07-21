@@ -11,6 +11,7 @@ from tbats.tbats.Model import Model
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.utils import determine_num_steps_to_forecast
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -21,20 +22,19 @@ class _TBATSAdapter(BaseAdapter):
         self._freq = None
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
+        freq = pd.infer_freq(df["timestamp"], warn=False)
+        if freq is None:
+            raise ValueError("Can't determine frequency of a given dataframe")
+
         target = df["target"]
         self._fitted_model = self.model.fit(target)
         self._last_train_timestamp = df["timestamp"].max()
-        self._freq = pd.infer_freq(df["timestamp"], warn=False)
+        self._freq = freq
+
         return self
 
-    def _determine_num_steps_to_forecast(self, last_test_timestamp: pd.Timestamp) -> int:
-        diff = last_test_timestamp - self._last_train_timestamp
-        unit_diff = pd.timedelta_range(start=0, periods=2, freq=self._freq)[1]
-        num_steps = diff / unit_diff
-        return int(num_steps)
-
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
-        if self._fitted_model is None:
+        if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
@@ -43,7 +43,9 @@ class _TBATSAdapter(BaseAdapter):
                 "In-sample predictions aren't supported by current implementation."
             )
 
-        steps_to_forecast = self._determine_num_steps_to_forecast(df["timestamp"].max())
+        steps_to_forecast = determine_num_steps_to_forecast(
+            last_train_timestamp=self._last_train_timestamp, last_test_timestamp=df["timestamp"].max(), freq=self._freq
+        )
         steps_to_skip = steps_to_forecast - df.shape[0]
 
         y_pred = pd.DataFrame()
