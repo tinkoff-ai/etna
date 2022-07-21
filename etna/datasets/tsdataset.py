@@ -533,14 +533,16 @@ class TSDataset:
             ax[i].grid()
 
     @staticmethod
-    def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
+    def to_flatten(df: pd.DataFrame, columns: Optional[List[str]] = None) -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
 
         Parameters
         ----------
         df:
             DataFrame in ETNA format.
-
+        columns:
+            List of columns to return
+            If None, return all the columns in the dataset
         Returns
         -------
         pd.DataFrame:
@@ -569,6 +571,8 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
+        if columns is not None:
+            df = df.loc[:, pd.IndexSlice[:, columns]].copy()
         # flatten dataframe
         aggregator_list = []
         segments = df.columns.get_level_values("segment").unique().tolist()
@@ -579,14 +583,17 @@ class TSDataset:
         df_flat = df_flat.reset_index()
         df_flat.columns.name = None
 
+        if columns is not None:
+            columns_to_drop = list({"timestamp", "segment"} - set(columns))
+            df_flat.drop(columns=columns_to_drop, inplace=True)
+
         # mark category as category
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
         df_flat[category_columns] = df_flat[category_columns].astype("category")
-
         return df_flat
 
-    def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
+    def to_pandas(self, flatten: bool = False, columns: Optional[List[str]] = None) -> pd.DataFrame:
         """Return pandas DataFrame.
 
         Parameters
@@ -595,7 +602,9 @@ class TSDataset:
             * If False, return pd.DataFrame with multiindex
 
             * If True, return with flatten index
-
+        columns:
+            List of columns to return
+            If None, return all the columns in the dataset
         Returns
         -------
         pd.DataFrame
@@ -635,8 +644,10 @@ class TSDataset:
         2021-06-05      1.00      1.00
         """
         if not flatten:
-            return self.df.copy()
-        return self.to_flatten(self.df)
+            if columns is None:
+                return self.df.copy()
+            return self.df.loc[:, self.idx[:, columns]].copy()
+        return self.to_flatten(self.df, columns=columns)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
