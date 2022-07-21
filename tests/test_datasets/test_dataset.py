@@ -903,3 +903,32 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     np.testing.assert_array_equal(
         torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
     )
+
+
+@pytest.mark.parametrize(
+    "columns, expected_columns",
+    (
+        (["regressor_2"], ["timestamp", "segment", "target", "regressor_1"]),
+        (["regressor_2", "out_of_dataset_column"], ["timestamp", "segment", "target", "regressor_1"]),
+    ),
+)
+def test_remove_columns(df_and_regressors, columns, expected_columns):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts.remove_columns(columns=columns)
+    got_columns = ts.to_flatten(ts.df).columns
+    assert sorted(got_columns) == sorted(expected_columns)
+
+
+@pytest.mark.parametrize(
+    "columns, expected_regressors",
+    (
+        (["target", "regressor_2"], ["regressor_1"]),
+        (["out_of_dataset_column"], ["regressor_1", "regressor_2"]),
+    ),
+)
+def test_remove_columns_update_regressors(df_and_regressors, columns, expected_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts.remove_columns(columns=columns)
+    assert sorted(ts.regressors) == sorted(expected_regressors)
