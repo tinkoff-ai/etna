@@ -868,6 +868,22 @@ class TSDataset:
 
         return train, test
 
+    def remove_columns(self, columns: List[str]):
+        """Remove columns from the dataset.
+
+        Columns that are not presented in the dataset will be ignored
+
+        Parameters
+        ----------
+        columns:
+            List of columns to be removed
+        """
+        for df in [self.df, self.df_exog, self.raw_df]:
+            columns_in_df = self.columns.get_level_values("feature")
+            columns_to_remove = list(set(columns_in_df) & set(columns))
+            df.drop(columns=columns_to_remove, level="feature", inplace=True)
+        self._regressors = list(set(self._regressors) - set(columns))
+
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
         """Return TSDataset timestamp index.
