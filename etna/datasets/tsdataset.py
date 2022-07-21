@@ -868,6 +868,29 @@ class TSDataset:
 
         return train, test
 
+    def update_columns_from_pandas(self, df: pd.DataFrame, regressors: Optional[List[str]] = None):
+        """Update the dataset with the new columns from pandas dataframe.
+
+        Parameters
+        ----------
+        df:
+            Dataframe with the new columns in wide etna format
+            If columns with the same names already exist in the dataset, there values will be updated
+        regressors:
+            List of regressors in the passed dataframe
+        """
+        columns_in_dataset = self.columns.get_level_values("feature")
+        new_columns = df.columns.get_level_values("feature")
+
+        columns_to_update = list(set(columns_in_dataset) & set(new_columns))
+        self.df.loc[:, self.idx[:, columns_to_update]] = df.loc[:, self.idx[:, columns_to_update]]
+
+        columns_to_add = list(set(new_columns) - set(columns_in_dataset))
+        self.df = self.df.join(df.loc[:, self.idx[:, columns_to_add]]).sort_index(axis=1)
+
+        if regressors is not None:
+            self._regressors = list(set(self._regressors) | set(regressors))
+
     def remove_columns(self, columns: List[str]):
         """Remove columns from the dataset.
 
