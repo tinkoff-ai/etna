@@ -14,6 +14,7 @@ if SETTINGS.torch_required:
     import torch.nn as nn
 
 from etna.models.base import DeepBaseModel
+from etna.models.base import DeepBaseNet
 
 
 class RNNBatch(TypedDict):
@@ -26,26 +27,17 @@ class RNNBatch(TypedDict):
     segment: "torch.Tensor"
 
 
-class RNN(DeepBaseModel):
-    """RNN based on LSTM cell."""
+class RNNNet(DeepBaseNet):
+    """RNN based Lightning module with LSTM cell."""
 
     def __init__(
         self,
         input_size: int,
-        decoder_length: int,
-        encoder_length: int,
-        num_layers: int = 2,
-        hidden_size: int = 16,
-        lr: float = 1e-3,
-        loss: Optional["torch.nn.Module"] = None,
-        train_batch_size: int = 16,
-        test_batch_size: int = 16,
-        optimizer_params: Optional[dict] = None,
-        trainer_params: Optional[dict] = None,
-        train_dataloader_params: Optional[dict] = None,
-        test_dataloader_params: Optional[dict] = None,
-        val_dataloader_params: Optional[dict] = None,
-        split_params: Optional[dict] = None,
+        num_layers: int,
+        hidden_size: int,
+        lr: float,
+        loss: "torch.nn.Module",
+        optimizer_params: Optional[dict],
     ) -> None:
         """Init RNN based on LSTM cell.
 
@@ -53,10 +45,6 @@ class RNN(DeepBaseModel):
         ----------
         input_size:
             size of the input feature space: target plus extra features
-        encoder_length:
-            encoder length
-        decoder_length:
-            decoder length
         num_layers:
             number of layers
         hidden_size:
@@ -64,40 +52,11 @@ class RNN(DeepBaseModel):
         lr:
             learning rate
         loss:
-            loss function, MSELoss by default
-        train_batch_size:
-            batch size for training
-        test_batch_size:
-            batch size for testing
+            loss function
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
-        trainer_params:
-            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
-        train_dataloader_params:
-            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
-        test_dataloader_params:
-            parameters for test dataloader
-        val_dataloader_params:
-            parameters for validation dataloader
-        split_params:
-            dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
-                * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
-
-                * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
-
-                * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
-        super().__init__(
-            encoder_length=encoder_length,
-            decoder_length=decoder_length,
-            train_batch_size=train_batch_size,
-            test_batch_size=test_batch_size,
-            train_dataloader_params={} if train_dataloader_params is None else train_dataloader_params,
-            test_dataloader_params={} if test_dataloader_params is None else test_dataloader_params,
-            val_dataloader_params={} if val_dataloader_params is None else val_dataloader_params,
-            trainer_params={} if trainer_params is None else trainer_params,
-            split_params={} if split_params is None else split_params,
-        )
+        super().__init__()
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -141,11 +100,6 @@ class RNN(DeepBaseModel):
         forecast[:, decoder_length - 1, 0] = forecast_point
         return forecast
 
-    def configure_optimizers(self) -> "torch.optim.Optimizer":
-        """Optimizer configuration."""
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
-        return optimizer
-
     def step(self, batch: RNNBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
@@ -175,10 +129,8 @@ class RNN(DeepBaseModel):
         loss = self.loss(target_prediction, decoder_target)
         return loss, decoder_target, target_prediction
 
-    def make_samples(self, df: pd.DataFrame) -> Iterator[dict]:
+    def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        encoder_length = self.encoder_length
-        decoder_length = self.decoder_length
 
         def _make(df: pd.DataFrame, start_idx: int, encoder_length: int, decoder_length: int) -> Optional[dict]:
             sample: Dict[str, Any] = {
@@ -233,3 +185,90 @@ class RNN(DeepBaseModel):
                 break
             yield batch
             start_idx += 1
+
+    def configure_optimizers(self) -> "torch.optim.Optimizer":
+        """Optimizer configuration."""
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
+        return optimizer
+
+
+class RNNModel(DeepBaseModel):
+    """RNN based model on LSTM cell."""
+
+    def __init__(
+        self,
+        input_size: int,
+        decoder_length: int,
+        encoder_length: int,
+        num_layers: int = 2,
+        hidden_size: int = 16,
+        lr: float = 1e-3,
+        loss: Optional["torch.nn.Module"] = None,
+        train_batch_size: int = 16,
+        test_batch_size: int = 16,
+        optimizer_params: Optional[dict] = None,
+        trainer_params: Optional[dict] = None,
+        train_dataloader_params: Optional[dict] = None,
+        test_dataloader_params: Optional[dict] = None,
+        val_dataloader_params: Optional[dict] = None,
+        split_params: Optional[dict] = None,
+    ):
+        super().__init__(
+            net=RNNNet(
+                input_size=input_size,
+                num_layers=num_layers,
+                hidden_size=hidden_size,
+                lr=lr,
+                loss=nn.MSELoss() if loss is None else loss,
+                optimizer_params=optimizer_params,
+            ),
+            decoder_length=decoder_length,
+            encoder_length=encoder_length,
+            train_batch_size=train_batch_size,
+            test_batch_size=test_batch_size,
+            train_dataloader_params=train_dataloader_params,
+            test_dataloader_params=test_dataloader_params,
+            val_dataloader_params=val_dataloader_params,
+            trainer_params=trainer_params,
+            split_params=split_params,
+        )
+        """Init RNN model based on LSTM cell.
+
+        Parameters
+        ----------
+        input_size:
+            size of the input feature space: target plus extra features
+        encoder_length:
+            encoder length
+        decoder_length:
+            decoder length
+        num_layers:
+            number of layers
+        hidden_size:
+            size of the hidden state
+        lr:
+            learning rate
+        loss:
+            loss function, MSELoss by default
+        train_batch_size:
+            batch size for training
+        test_batch_size:
+            batch size for testing
+        optimizer_params:
+            parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
+        trainer_params:
+            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+        train_dataloader_params:
+            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
+        test_dataloader_params:
+            parameters for test dataloader
+        val_dataloader_params:
+            parameters for validation dataloader
+        split_params:
+            dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
+                * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
+
+                * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
+
+                * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
+        """

@@ -583,10 +583,10 @@ def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
 
 
 def test_pipeline_with_deepmodel(example_tsds):
-    from etna.models.nn import RNN
+    from etna.models.nn import RNNModel
 
     pipeline = Pipeline(
-        model=RNN(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1)),
+        model=RNNModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1)),
         transforms=[],
         horizon=2,
     )
