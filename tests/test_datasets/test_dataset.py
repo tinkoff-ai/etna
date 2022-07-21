@@ -906,6 +906,44 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
 
 
 @pytest.mark.parametrize(
+    "expected_columns",
+    ((["target", "regressor_1", "regressor_2"]),),
+)
+def test_update_columns_update_existing_columns(df_and_regressors, expected_columns):
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts.update_columns_from_pandas(df=df_exog, regressors=[])
+    got_columns = set(ts.columns.get_level_values("feature"))
+    assert sorted(got_columns) == sorted(expected_columns)
+
+
+@pytest.mark.parametrize(
+    "expected_columns",
+    ((["target", "regressor_1", "regressor_2"]),),
+)
+def test_update_columns_add_columns(df_and_regressors, expected_columns):
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    ts.update_columns_from_pandas(df=df_exog, regressors=[])
+    got_columns = set(ts.columns.get_level_values("feature"))
+    assert sorted(got_columns) == sorted(expected_columns)
+
+
+@pytest.mark.parametrize(
+    "known_future, regressors, expected_regressors",
+    (
+        ([], ["regressor_1"], ["regressor_1"]),
+        (["regressor_1"], ["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
+    ),
+)
+def test_update_columns_update_regressors(df_and_regressors, known_future, regressors, expected_regressors):
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
+    ts.update_columns_from_pandas(df=df_exog, regressors=regressors)
+    assert sorted(ts.regressors) == sorted(expected_regressors)
+
+
+@pytest.mark.parametrize(
     "columns, expected_columns",
     (
         (["regressor_2"], ["timestamp", "segment", "target", "regressor_1"]),
