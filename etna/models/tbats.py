@@ -38,7 +38,10 @@ class _TBATSAdapter(BaseAdapter):
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
-            raise NotImplementedError("It is not possible to make in-sample predictions with BATS/TBATS model!")
+            raise NotImplementedError(
+                "It is not possible to make in-sample predictions with BATS/TBATS model! "
+                "In-sample predictions aren't supported by current implementation."
+            )
 
         steps_to_forecast = self._determine_num_steps_to_forecast(df["timestamp"].max())
         steps_to_skip = steps_to_forecast - df.shape[0]
