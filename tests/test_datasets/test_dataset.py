@@ -619,6 +619,35 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
     assert expected_df.equals(obtained_df)
 
 
+@pytest.mark.parametrize(
+    "columns, expected_columns",
+    (
+        (None, ["timestamp", "target", "segment", "regressor_1", "regressor_2"]),
+        (["regressor_2"], ["regressor_2"]),
+    ),
+)
+def test_to_flatten_correct_columns(df_and_regressors, columns, expected_columns):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    flattened_df = ts.to_flatten(ts.df, columns=columns)
+    assert sorted(flattened_df.columns) == sorted(expected_columns)
+
+
+@pytest.mark.parametrize(
+    "columns, expected_columns",
+    (
+        (None, ["target", "regressor_1", "regressor_2"]),
+        (["regressor_2"], ["regressor_2"]),
+    ),
+)
+def test_to_pandas_correct_columns(df_and_regressors, columns, expected_columns):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    pandas_df = ts.to_pandas(flatten=False, columns=columns)
+    got_columns = set(pandas_df.columns.get_level_values("feature"))
+    assert sorted(got_columns) == sorted(expected_columns)
+
+
 def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
     with pytest.warns(Warning, match="Segments contains NaNs in the last timestamps."):
         ts_diff_endings.transform([])
