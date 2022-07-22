@@ -109,7 +109,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
         self.trainer: Optional[pl.Trainer] = None
         self._last_train_timestamp = None
-        self._freq = None
+        self._freq: Optional[str] = None
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
@@ -197,7 +197,6 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         TSDataset
             TSDataset with predictions.
         """
-        
         if ts.index[0] < self._last_train_timestamp:
             raise NotImplementedError(
                 "It is not possible to make in-sample predictions with TFT model! "
@@ -210,7 +209,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
             )
         else:
             pass
-    
+
         pf_transform = self._get_pf_transform(ts)
         if pf_transform.pf_dataset_predict is None:
             raise ValueError(
@@ -222,7 +221,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
 
         predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
         # shape (segments, encoder_length)
-        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[-len(ts.df) :]
+        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[: len(ts.df)]
 
         if prediction_interval:
             if not isinstance(self.loss, QuantileLoss):
@@ -265,7 +264,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
                 segments = ts.segments
                 quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
                 columns = pd.MultiIndex.from_product([segments, quantile_columns])
-                quantiles_df = pd.DataFrame(quantiles_predicts, columns=columns, index=df.index)
+                quantiles_df = pd.DataFrame(quantiles_predicts[: len(df)], columns=columns, index=df.index)
                 df = pd.concat((df, quantiles_df), axis=1)
                 df = df.sort_index(axis=1)
                 ts.df = df
