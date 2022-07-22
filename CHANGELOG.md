@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
 - FutureWarning: The frame.append method is deprecated. Use pandas.concat instead ([#764](https://github.com/tinkoff-ai/etna/pull/764))
 - Correct ordering if multi-index in backtest ([#771](https://github.com/tinkoff-ai/etna/pull/771))
-- 
+- Raise errors in models.nn if they can't make in-sample and some cases out-sample predictions ([#813](https://github.com/tinkoff-ai/etna/pull/813))
 - 
 - 
 - 
