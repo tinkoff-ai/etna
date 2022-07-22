@@ -101,6 +101,8 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, DeepAR]] = None
         self.trainer: Optional[pl.Trainer] = None
+        self._last_train_timestamp = None
+        self._freq = None
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
@@ -145,6 +147,8 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         -------
         DeepARModel
         """
+        self._last_train_timestamp = ts.df.index[-1]
+        self._freq = ts.freq
         pf_transform = self._get_pf_transform(ts)
         self.model = self._from_dataset(pf_transform.pf_dataset_train)
 
@@ -186,6 +190,19 @@ class DeepARModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         TSDataset
             TSDataset with predictions.
         """
+        if ts.index[0] < self._last_train_timestamp:
+            raise NotImplementedError(
+                "It is not possible to make in-sample predictions with DeepAR model! "
+                "In-sample predictions aren't supported by current implementation."
+            )
+        elif ts.index[0] != pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]:
+            raise NotImplementedError(
+                "You can only forecast from the next point after the last one in the training dataset: "
+                f"last train timestamp: {self._last_train_timestamp}, first test timestamp is {ts.index[0]}"
+            )
+        else:
+            pass
+            
         pf_transform = self._get_pf_transform(ts)
         if pf_transform.pf_dataset_predict is None:
             raise ValueError(
