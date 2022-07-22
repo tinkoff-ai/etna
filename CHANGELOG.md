@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- 
+- LSTM based RNN and native deep models base classes ([#776](https://github.com/tinkoff-ai/etna/pull/776))
 - Lambda transform ([#762](https://github.com/tinkoff-ai/etna/issues/762))
 - assemble pipelines ([#774](https://github.com/tinkoff-ai/etna/pull/774))
 - 
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow Prophet update to 1.1 ([#799](https://github.com/tinkoff-ai/etna/pull/799))
 - 
 - Make LagTransform, LogTransform, AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
-- 
+- Improve the behavior of plot_feature_relevance visualizing p-values ([#795](https://github.com/tinkoff-ai/etna/pull/795))
 - Update poetry.core version ([#780](https://github.com/tinkoff-ai/etna/pull/780))
 - 
 - Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))

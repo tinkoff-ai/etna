@@ -580,3 +580,14 @@ def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
     _, forecast_df, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)
     assert np.all(forecast_df.values == expected_forecast_df.values)
+
+
+def test_pipeline_with_deepmodel(example_tsds):
+    from etna.models.nn import RNNModel
+
+    pipeline = Pipeline(
+        model=RNNModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1)),
+        transforms=[],
+        horizon=2,
+    )
+    _ = pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
