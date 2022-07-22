@@ -418,6 +418,7 @@ def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
         (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
         (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
         (ProphetModel(), []),
+        (SARIMAXModel(), []),
         (HoltModel(), []),
         (HoltWintersModel(), []),
         (SimpleExpSmoothingModel(), []),
@@ -431,7 +432,6 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
 @pytest.mark.parametrize(
     "model, transforms",
     [
-        (SARIMAXModel(), []),
         (AutoARIMAModel(), []),
         (
             DeepARModel(max_epochs=5, learning_rate=[0.01]),
