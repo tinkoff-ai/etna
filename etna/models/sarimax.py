@@ -274,7 +274,7 @@ class _SARIMAXAdapter(BaseAdapter):
                 y_pred[f"mean_{quantile:.4g}"] = series
         else:
             forecast = self._result.get_prediction(
-                start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
+                start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=True, exog=exog_future
             )
             y_pred = forecast.predicted_mean
             y_pred.name = "mean"
