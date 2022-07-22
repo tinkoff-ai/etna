@@ -888,7 +888,7 @@ class TSDataset:
         ]
 
         columns_to_add = list(set(new_columns) - set(columns_in_dataset))
-        self.df = self.df.join(df.loc[:, self.idx[:, columns_to_add]]).sort_index(axis=1)
+        self.df = pd.concat((self.df, df.loc[:, self.idx[:, columns_to_add]]), axis=1).sort_index(axis=1)
 
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
@@ -904,7 +904,7 @@ class TSDataset:
             List of columns to be removed
         """
         for df in [self.df, self.df_exog, self.raw_df]:
-            columns_in_df = self.columns.get_level_values("feature")
+            columns_in_df = df.columns.get_level_values("feature")
             columns_to_remove = list(set(columns_in_df) & set(columns))
             df.drop(columns=columns_to_remove, level="feature", inplace=True)
         self._regressors = list(set(self._regressors) - set(columns))
