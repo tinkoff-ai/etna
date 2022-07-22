@@ -883,7 +883,9 @@ class TSDataset:
         new_columns = df.columns.get_level_values("feature")
 
         columns_to_update = list(set(columns_in_dataset) & set(new_columns))
-        self.df.loc[:, self.idx[:, columns_to_update]] = df.loc[:, self.idx[:, columns_to_update]]
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df.loc[
+            :, self.idx[self.segments, columns_to_update]
+        ]
 
         columns_to_add = list(set(new_columns) - set(columns_in_dataset))
         self.df = self.df.join(df.loc[:, self.idx[:, columns_to_add]]).sort_index(axis=1)
