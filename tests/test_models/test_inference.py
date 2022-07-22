@@ -245,6 +245,8 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
 @pytest.mark.parametrize(
     "model, transforms",
     [
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
         (
             DeepARModel(max_epochs=1, learning_rate=[0.01]),
             [
@@ -271,17 +273,6 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
                 )
             ],
         ),
-    ],
-)
-def test_forecast_in_sample_suffix_failed(model, transforms, example_tsds):
-    _test_forecast_in_sample_suffix(example_tsds, model, transforms)
-
-
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (BATSModel(use_trend=True), []),
-        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
