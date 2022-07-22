@@ -197,7 +197,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         TSDataset
             TSDataset with predictions.
         """
-        if ts.index[0] < self._last_train_timestamp:
+        if ts.index[0] <= self._last_train_timestamp:
             raise NotImplementedError(
                 "It is not possible to make in-sample predictions with TFT model! "
                 "In-sample predictions aren't supported by current implementation."
