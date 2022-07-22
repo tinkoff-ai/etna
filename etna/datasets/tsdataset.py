@@ -541,8 +541,8 @@ class TSDataset:
         df:
             DataFrame in ETNA format.
         columns:
-            List of columns to return
-            If None, return all the columns in the dataset
+            List of columns to return.
+            If None, return all the columns in the dataset.
         Returns
         -------
         pd.DataFrame:
@@ -603,8 +603,8 @@ class TSDataset:
 
             * If True, return with flatten index
         columns:
-            List of columns to return
-            If None, return all the columns in the dataset
+            List of columns to return.
+            If None, return all the columns in the dataset.
         Returns
         -------
         pd.DataFrame
@@ -874,8 +874,8 @@ class TSDataset:
         Parameters
         ----------
         df:
-            Dataframe with the new columns in wide etna format
-            If columns with the same names already exist in the dataset, there values will be updated
+            Dataframe with the new columns in wide ETNA format.
+            If columns with the same names already exist in the dataset, then values will be updated.
         regressors:
             List of regressors in the passed dataframe
         """
