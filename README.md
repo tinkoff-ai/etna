@@ -218,14 +218,19 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 [Artem Makhin](https://github.com/Ama16),
 [Ivan Mitskovets](https://github.com/imitskovets),
 [Albina Munirova](https://github.com/albinamunirova),
-[Nikolay Romantsov](https://github.com/WinstonDovlatov),
-[Julia Shenshina](https://github.com/julia-shenshina)
+[Julia Shenshina](https://github.com/julia-shenshina),
+[Yuriy Tarasyuk](https://github.com/DBcreator),
+[Konstantin Vedernikov](https://github.com/scanhex12)
 
 ### ETNA.Contributors
 
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen),
-[Carlosbogo](https://github.com/Carlosbogo)
+[Carlosbogo](https://github.com/Carlosbogo),
+[Nikolay Romantsov](https://github.com/WinstonDovlatov),
+[mvakhmenin](https://github.com/mvakhmenin),
+[Pacman1984](https://github.com/Pacman1984),
+[looopka](https://github.com/looopka)
 
 ## License
 
