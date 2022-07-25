@@ -101,10 +101,10 @@ class WandbLogger(BaseLogger):
 
         Notes
         -----
-        We log nothing via current method in wandb case.
-        Currently you could call ``wandb.log`` by hand if you need this.
+        We log dictionary to wandb only.
         """
-        pass
+        if isinstance(msg, dict):
+            self.experiment.log(msg)
 
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
