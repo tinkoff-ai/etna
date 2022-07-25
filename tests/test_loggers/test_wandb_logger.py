@@ -24,4 +24,5 @@ def test_wandb_logger_log(wandb, tslogger):
         call({"MAE": 0}),
         call({"MAPE": 1.5}),
     ]
+    assert wandb.init.return_value.log.call_count == 2
     wandb.init.return_value.log.assert_has_calls(calls)
