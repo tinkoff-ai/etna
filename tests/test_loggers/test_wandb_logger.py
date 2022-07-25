@@ -10,7 +10,8 @@ from etna.loggers import tslogger as _tslogger
 @pytest.fixture()
 def tslogger():
     _tslogger.loggers = []
-    return _tslogger
+    yield _tslogger
+    _tslogger.loggers = []
 
 
 @patch("etna.loggers.wandb_logger.wandb")
