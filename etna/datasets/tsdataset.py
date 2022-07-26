@@ -571,11 +571,11 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
+        segments = df.columns.get_level_values("segment").unique().tolist()
         if columns is not None:
-            df = df.loc[:, pd.IndexSlice[:, columns]].copy()
+            df = df.loc[:, pd.IndexSlice[segments, columns]].copy()
         # flatten dataframe
         aggregator_list = []
-        segments = df.columns.get_level_values("segment").unique().tolist()
         for segment in segments:
             aggregator_list.append(df[segment].copy())
             aggregator_list[-1]["segment"] = segment
@@ -646,7 +646,8 @@ class TSDataset:
         if not flatten:
             if columns is None:
                 return self.df.copy()
-            return self.df.loc[:, self.idx[:, columns]].copy()
+            segments = self.columns.get_level_values("segment").unique().tolist()
+            return self.df.loc[:, self.idx[segments, columns]].copy()
         return self.to_flatten(self.df, columns=columns)
 
     @staticmethod
@@ -871,6 +872,9 @@ class TSDataset:
     def update_columns_from_pandas(self, df: pd.DataFrame, regressors: Optional[List[str]] = None):
         """Update the dataset with the new columns from pandas dataframe.
 
+        It is recommended to add the exogenous regressor using the constructor of the TSDataset.
+        This method does not add the regressors as exogenous data in df_exog, but only update the df attribute.
+
         Parameters
         ----------
         df:
@@ -888,7 +892,8 @@ class TSDataset:
         ]
 
         columns_to_add = list(set(new_columns) - set(columns_in_dataset))
-        self.df = pd.concat((self.df, df.loc[:, self.idx[:, columns_to_add]]), axis=1).sort_index(axis=1)
+        if len(columns_to_add) != 0:
+            self.df = pd.concat((self.df, df.loc[:, self.idx[:, columns_to_add]]), axis=1).sort_index(axis=1)
 
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
