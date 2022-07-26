@@ -119,6 +119,7 @@ def test_forecast_without_make_future(weekly_period_df):
 
     model = DeepARModel(max_epochs=1)
     model.fit(ts)
+    ts.df.index = ts.df.index + pd.Timedelta(days=len(ts.df))
     with pytest.raises(ValueError, match="The future is not generated!"):
         _ = model.forecast(ts=ts)
 

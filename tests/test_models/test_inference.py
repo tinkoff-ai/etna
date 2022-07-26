@@ -69,14 +69,20 @@ def _test_forecast_out_sample_prefix(ts, model, transforms):
     # fitting
     ts.fit_transform(transforms)
     model.fit(ts)
-
     # forecasting full
     forecast_full_ts = ts.make_future(5)
+
+    import torch  # TODO: remove after fix at issue-802
+
+    torch.manual_seed(11)
+
     model.forecast(forecast_full_ts)
 
     # forecasting only prefix
     forecast_prefix_ts = ts.make_future(5)
     forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-2]
+
+    torch.manual_seed(11)  # TODO: remove after fix at issue-802
     model.forecast(forecast_prefix_ts)
 
     # checking
@@ -168,6 +174,17 @@ def test_forecast_in_sample_full(model, transforms, example_tsds):
         (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+    ],
+)
+def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
+    _test_forecast_in_sample_full(example_tsds, model, transforms)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
         (
             DeepARModel(max_epochs=1, learning_rate=[0.01]),
             [
@@ -194,17 +211,6 @@ def test_forecast_in_sample_full(model, transforms, example_tsds):
                 )
             ],
         ),
-    ],
-)
-def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
-    _test_forecast_in_sample_full(example_tsds, model, transforms)
-
-
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (BATSModel(use_trend=True), []),
-        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds):
@@ -236,10 +242,11 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
     _test_forecast_in_sample_suffix(example_tsds, model, transforms)
 
 
-@pytest.mark.xfail(strict=True)
 @pytest.mark.parametrize(
     "model, transforms",
     [
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
         (
             DeepARModel(max_epochs=1, learning_rate=[0.01]),
             [
@@ -268,17 +275,6 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
         ),
     ],
 )
-def test_forecast_in_sample_suffix_failed(model, transforms, example_tsds):
-    _test_forecast_in_sample_suffix(example_tsds, model, transforms)
-
-
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (BATSModel(use_trend=True), []),
-        (TBATSModel(use_trend=True), []),
-    ],
-)
 def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
     with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
         _test_forecast_in_sample_suffix(example_tsds, model, transforms)
@@ -304,16 +300,6 @@ def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_ts
         (NaiveModel(lag=3), []),
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-    ],
-)
-def test_forecast_out_sample_prefix(model, transforms, example_tsds):
-    _test_forecast_out_sample_prefix(example_tsds, model, transforms)
-
-
-@pytest.mark.xfail(strict=True)
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
         (
             DeepARModel(max_epochs=5, learning_rate=[0.01]),
             [
@@ -342,7 +328,7 @@ def test_forecast_out_sample_prefix(model, transforms, example_tsds):
         ),
     ],
 )
-def test_forecast_out_sample_prefix_failed(model, transforms, example_tsds):
+def test_forecast_out_sample_prefix(model, transforms, example_tsds):
     _test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
 
@@ -362,6 +348,15 @@ def test_forecast_out_sample_prefix_failed(model, transforms, example_tsds):
         (SimpleExpSmoothingModel(), []),
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
+    ],
+)
+def test_forecast_out_sample_suffix(model, transforms, example_tsds):
+    _test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
         (
             TFTModel(max_epochs=1, learning_rate=[0.01]),
             [
@@ -376,20 +371,6 @@ def test_forecast_out_sample_prefix_failed(model, transforms, example_tsds):
                 )
             ],
         ),
-    ],
-)
-def test_forecast_out_sample_suffix(model, transforms, example_tsds):
-    _test_forecast_out_sample_suffix(example_tsds, model, transforms)
-
-
-@pytest.mark.xfail(strict=True)
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (AutoARIMAModel(), []),
-        (MovingAverageModel(window=3), []),
-        (SeasonalMovingAverageModel(), []),
-        (NaiveModel(lag=3), []),
         (
             DeepARModel(max_epochs=5, learning_rate=[0.01]),
             [
@@ -402,6 +383,21 @@ def test_forecast_out_sample_suffix(model, transforms, example_tsds):
                 )
             ],
         ),
+    ],
+)
+def test_forecast_out_sample_suffix_not_implemented(model, transforms, example_tsds):
+    with pytest.raises(NotImplementedError, match="You can only forecast from the next point after the last one"):
+        _test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+
+@pytest.mark.xfail(strict=True)
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (AutoARIMAModel(), []),
+        (MovingAverageModel(window=3), []),
+        (SeasonalMovingAverageModel(), []),
+        (NaiveModel(lag=3), []),
     ],
 )
 def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
@@ -433,6 +429,17 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
     "model, transforms",
     [
         (AutoARIMAModel(), []),
+    ],
+)
+def test_forecast_mixed_in_out_sample_failed(model, transforms, example_tsds):
+    _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (BATSModel(use_trend=True), []),
+        (TBATSModel(use_trend=True), []),
         (
             DeepARModel(max_epochs=5, learning_rate=[0.01]),
             [
@@ -459,17 +466,6 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
                 )
             ],
         ),
-    ],
-)
-def test_forecast_mixed_in_out_sample_failed(model, transforms, example_tsds):
-    _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
-
-
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (BATSModel(use_trend=True), []),
-        (TBATSModel(use_trend=True), []),
     ],
 )
 def test_forecast_mixed_in_out_sample_not_implemented(model, transforms, example_tsds):
