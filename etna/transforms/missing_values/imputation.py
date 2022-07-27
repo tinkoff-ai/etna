@@ -39,7 +39,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         window: int,
         seasonality: int,
         default_value: Optional[float],
-        constant_value: int = 0,
+        constant_value: float = 0,
     ):
         """
         Create instance of _OneSegmentTimeSeriesImputerTransform.
@@ -74,6 +74,8 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             the length of the seasonality
         default_value:
             value which will be used to impute the NaNs left after applying the imputer with the chosen strategy
+        constant_value:
+            value to fill gaps in "constant" strategy
 
         Raises
         ------
@@ -86,7 +88,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.window = window
         self.seasonality = seasonality
         self.default_value = default_value
-        self.fill_value: Optional[int] = None
+        self.fill_value: Optional[float] = None
         self.nan_timestamps: Optional[List[pd.Timestamp]] = None
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
@@ -227,7 +229,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
         window: int = -1,
         seasonality: int = 1,
         default_value: Optional[float] = None,
-        constant_value: int = 0,
+        constant_value: float = 0,
     ):
         """
         Create instance of TimeSeriesImputerTransform.
@@ -262,6 +264,8 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
             the length of the seasonality
         default_value:
             value which will be used to impute the NaNs left after applying the imputer with the chosen strategy
+        constant_value:
+            value to fill gaps in "constant" strategy
 
         Raises
         ------
@@ -273,6 +277,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
         self.window = window
         self.seasonality = seasonality
         self.default_value = default_value
+        self.constant_value = constant_value
         super().__init__(
             transform=_OneSegmentTimeSeriesImputerTransform(
                 in_column=self.in_column,
@@ -280,6 +285,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
                 window=self.window,
                 seasonality=self.seasonality,
                 default_value=self.default_value,
+                constant_value=self.constant_value,
             )
         )
 
