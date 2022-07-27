@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
+from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import Transform
 
 if SETTINGS.torch_required:
@@ -27,13 +28,15 @@ else:
 NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 
 
-class PytorchForecastingTransform(Transform):
+class PytorchForecastingTransform(Transform, DymmyInColumnMixin):
     """Transform for models from PytorchForecasting library.
 
     Notes
     -----
     This transform should be added at the very end of ``transforms`` parameter.
     """
+
+    in_column = "all"
 
     def __init__(
         self,
