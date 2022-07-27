@@ -576,7 +576,7 @@ class TSDataset:
             ax[i].grid()
 
     @staticmethod
-    def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
+    def to_flatten(df: pd.DataFrame, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
 
         The order of columns is (timestamp, segment, target,
@@ -586,7 +586,10 @@ class TSDataset:
         ----------
         df:
             DataFrame in ETNA format.
-
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
+            Always return columns with timestamp and segemnt.
         Returns
         -------
         pd.DataFrame:
@@ -615,13 +618,17 @@ class TSDataset:
         3 2021-06-04  segment_0    1.0
         4 2021-06-05  segment_0    1.0
         """
-        dtypes = df.dtypes
-        category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
-
-        # flatten dataframe
         columns = df.columns.get_level_values("feature").unique()
         segments = df.columns.get_level_values("segment").unique()
+        dtypes = df.dtypes
+        category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
+        if isinstance(features, str):
+            if features != "all":
+                raise ValueError("The only possible literal is 'all'")
+        else:
+            df = df.loc[:, pd.IndexSlice[segments, features]].copy()
 
+        # flatten dataframe
         df_dict = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
         df_dict["segment"] = np.repeat(segments, len(df.index))
@@ -641,7 +648,7 @@ class TSDataset:
 
         return df_flat
 
-    def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
+    def to_pandas(self, flatten: bool = False, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame.
 
         Parameters
@@ -652,7 +659,9 @@ class TSDataset:
             * If True, return with flatten index,
             its order of columns is (timestamp, segment, target,
             features in alphabetical order).
-
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
         Returns
         -------
         pd.DataFrame
@@ -692,8 +701,13 @@ class TSDataset:
         2021-06-05      1.00      1.00
         """
         if not flatten:
-            return self.df.copy()
-        return self.to_flatten(self.df)
+            if isinstance(features, str):
+                if features == "all":
+                    return self.df.copy()
+                raise ValueError("The only possible literal is 'all'")
+            segments = self.columns.get_level_values("segment").unique().tolist()
+            return self.df.loc[:, self.idx[segments, features]].copy()
+        return self.to_flatten(self.df, features=features)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
@@ -997,6 +1011,51 @@ class TSDataset:
         test._regressors = self.regressors
 
         return train, test
+
+    def update_columns_from_pandas(self, df: pd.DataFrame, regressors: Optional[List[str]] = None):
+        """Update the dataset with the new columns from pandas dataframe.
+
+        It is recommended to add the exogenous regressor using the constructor of the TSDataset.
+        This method does not add the regressors as exogenous data in df_exog, but only update the df attribute.
+
+        Parameters
+        ----------
+        df:
+            Dataframe with the new columns in wide ETNA format.
+            If columns with the same names already exist in the dataset, then values will be updated.
+        regressors:
+            List of regressors in the passed dataframe
+        """
+        columns_in_dataset = self.columns.get_level_values("feature")
+        new_columns = df.columns.get_level_values("feature")
+
+        columns_to_update = list(set(columns_in_dataset) & set(new_columns))
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df.loc[
+            :, self.idx[self.segments, columns_to_update]
+        ]
+
+        columns_to_add = list(set(new_columns) - set(columns_in_dataset))
+        if len(columns_to_add) != 0:
+            self.df = pd.concat((self.df, df.loc[:, self.idx[:, columns_to_add]]), axis=1).sort_index(axis=1)
+
+        if regressors is not None:
+            self._regressors = list(set(self._regressors) | set(regressors))
+
+    def remove_columns(self, columns: List[str]):
+        """Remove columns from the dataset.
+
+        Columns that are not presented in the dataset will be ignored
+
+        Parameters
+        ----------
+        columns:
+            List of columns to be removed
+        """
+        for df in [self.df, self.df_exog, self.raw_df]:
+            columns_in_df = df.columns.get_level_values("feature")
+            columns_to_remove = list(set(columns_in_df) & set(columns))
+            df.drop(columns=columns_to_remove, level="feature", inplace=True)
+        self._regressors = list(set(self._regressors) - set(columns))
 
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
