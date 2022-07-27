@@ -7,9 +7,10 @@ import pandas as pd
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
+from etna.transforms.base import DymmyInColumnMixin
 
 
-class FourierTransform(Transform, FutureMixin):
+class FourierTransform(Transform, FutureMixin, DymmyInColumnMixin):
     """Adds fourier features to the dataset.
 
     Notes

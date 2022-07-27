@@ -6,9 +6,10 @@ import pandas as pd
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
+from etna.transforms.base import DymmyInColumnMixin
 
 
-class TimeFlagsTransform(Transform, FutureMixin):
+class TimeFlagsTransform(Transform, FutureMixin, DymmyInColumnMixin):
     """TimeFlagsTransform is a class that implements extraction of the main time-based features from datetime column."""
 
     def __init__(

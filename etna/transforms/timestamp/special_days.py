@@ -7,6 +7,7 @@ import pandas as pd
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
+from etna.transforms.base import DymmyInColumnMixin
 
 
 def calc_day_number_in_week(datetime_day: datetime.datetime) -> int:
@@ -166,7 +167,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
         return df.loc[:, ["datetime"]].apply(check, axis=1).rename("anomaly_monthdays")
 
 
-class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
+class SpecialDaysTransform(PerSegmentWrapper, FutureMixin, DymmyInColumnMixin):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
 
     Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.

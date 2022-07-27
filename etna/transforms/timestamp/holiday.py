@@ -7,9 +7,10 @@ import pandas as pd
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
+from etna.transforms.base import DymmyInColumnMixin
 
 
-class HolidayTransform(Transform, FutureMixin):
+class HolidayTransform(Transform, FutureMixin, DymmyInColumnMixin):
     """HolidayTransform generates series that indicates holidays in given dataframe."""
 
     def __init__(self, iso_code: str = "RUS", out_column: Optional[str] = None):
