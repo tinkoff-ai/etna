@@ -10,6 +10,9 @@ from etna.core import BaseMixin
 class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
+class DymmyInColumnMixin:
+    """Mixin for transforms that has no explicit in_column."""
+    in_column = "target"
 
 class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
