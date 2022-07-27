@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 ### Fixed
-- 
+- Fix missing `constant_value` in `TimeSeriesImputerTransform` ([#819](https://github.com/tinkoff-ai/etna/pull/819))
 - 
 - 
 - Make in-sample predictions of SARIMAXModel non-dynamic in all cases ([#812](https://github.com/tinkoff-ai/etna/pull/812))
