@@ -620,32 +620,46 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
 
 
 @pytest.mark.parametrize(
-    "columns, expected_columns",
+    "features, expected_columns",
     (
-        (None, ["timestamp", "target", "segment", "regressor_1", "regressor_2"]),
-        (["regressor_2"], ["regressor_2"]),
+        ("all", ["timestamp", "target", "segment", "regressor_1", "regressor_2"]),
+        (["regressor_2"], ["timestamp", "segment", "regressor_2"]),
     ),
 )
-def test_to_flatten_correct_columns(df_and_regressors, columns, expected_columns):
+def test_to_flatten_correct_columns(df_and_regressors, features, expected_columns):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    flattened_df = ts.to_flatten(ts.df, columns=columns)
+    flattened_df = ts.to_flatten(ts.df, features=features)
     assert sorted(flattened_df.columns) == sorted(expected_columns)
 
 
+def test_to_flatten_raise_error_incorrect_literal(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.raises(ValueError, match="The only possible literal is 'all'"):
+        _ = ts.to_flatten(ts.df, features="incorrect")
+
+
 @pytest.mark.parametrize(
-    "columns, expected_columns",
+    "features, expected_columns",
     (
-        (None, ["target", "regressor_1", "regressor_2"]),
+        ("all", ["target", "regressor_1", "regressor_2"]),
         (["regressor_2"], ["regressor_2"]),
     ),
 )
-def test_to_pandas_correct_columns(df_and_regressors, columns, expected_columns):
+def test_to_pandas_correct_columns(df_and_regressors, features, expected_columns):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    pandas_df = ts.to_pandas(flatten=False, columns=columns)
+    pandas_df = ts.to_pandas(flatten=False, features=features)
     got_columns = set(pandas_df.columns.get_level_values("feature"))
     assert sorted(got_columns) == sorted(expected_columns)
+
+
+def test_to_pandas_raise_error_incorrect_literal(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.raises(ValueError, match="The only possible literal is 'all'"):
+        _ = ts.to_pandas(flatten=False, features="incorrect")
 
 
 def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
