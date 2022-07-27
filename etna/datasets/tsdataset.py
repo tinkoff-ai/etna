@@ -533,16 +533,17 @@ class TSDataset:
             ax[i].grid()
 
     @staticmethod
-    def to_flatten(df: pd.DataFrame, columns: Optional[List[str]] = None) -> pd.DataFrame:
+    def to_flatten(df: pd.DataFrame, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
 
         Parameters
         ----------
         df:
             DataFrame in ETNA format.
-        columns:
-            List of columns to return.
-            If None, return all the columns in the dataset.
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
+            Always return columns with timestamp and segemnt.
         Returns
         -------
         pd.DataFrame:
@@ -572,8 +573,11 @@ class TSDataset:
         4 2021-06-05     1.0  segment_0
         """
         segments = df.columns.get_level_values("segment").unique().tolist()
-        if columns is not None:
-            df = df.loc[:, pd.IndexSlice[segments, columns]].copy()
+        if isinstance(features, str):
+            if features != "all":
+                raise ValueError("The only possible literal is 'all'")
+        else:
+            df = df.loc[:, pd.IndexSlice[segments, features]].copy()
         # flatten dataframe
         aggregator_list = []
         for segment in segments:
@@ -583,17 +587,13 @@ class TSDataset:
         df_flat = df_flat.reset_index()
         df_flat.columns.name = None
 
-        if columns is not None:
-            columns_to_drop = list({"timestamp", "segment"} - set(columns))
-            df_flat.drop(columns=columns_to_drop, inplace=True)
-
         # mark category as category
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
         df_flat[category_columns] = df_flat[category_columns].astype("category")
         return df_flat
 
-    def to_pandas(self, flatten: bool = False, columns: Optional[List[str]] = None) -> pd.DataFrame:
+    def to_pandas(self, flatten: bool = False, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame.
 
         Parameters
@@ -602,9 +602,9 @@ class TSDataset:
             * If False, return pd.DataFrame with multiindex
 
             * If True, return with flatten index
-        columns:
-            List of columns to return.
-            If None, return all the columns in the dataset.
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
         Returns
         -------
         pd.DataFrame
@@ -644,11 +644,13 @@ class TSDataset:
         2021-06-05      1.00      1.00
         """
         if not flatten:
-            if columns is None:
-                return self.df.copy()
+            if isinstance(features, str):
+                if features == "all":
+                    return self.df.copy()
+                raise ValueError("The only possible literal is 'all'")
             segments = self.columns.get_level_values("segment").unique().tolist()
-            return self.df.loc[:, self.idx[segments, columns]].copy()
-        return self.to_flatten(self.df, columns=columns)
+            return self.df.loc[:, self.idx[segments, features]].copy()
+        return self.to_flatten(self.df, features=features)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
