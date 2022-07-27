@@ -4,9 +4,9 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
-from etna.transforms.base import DymmyInColumnMixin
 
 
 class TimeFlagsTransform(Transform, FutureMixin, DymmyInColumnMixin):

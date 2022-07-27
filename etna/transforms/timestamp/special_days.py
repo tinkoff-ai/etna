@@ -4,10 +4,10 @@ from typing import Tuple
 
 import pandas as pd
 
+from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
-from etna.transforms.base import DymmyInColumnMixin
 
 
 def calc_day_number_in_week(datetime_day: datetime.datetime) -> int:
