@@ -113,6 +113,7 @@ class _OneSegmentChangePointSegmentationTransform(Transform):
 
 class ChangePointSegmentationTransform(PerSegmentWrapper, FutureMixin):
     """ChangePointSegmentationTransform make label encoder to change points.
+    
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -127,6 +128,7 @@ class ChangePointSegmentationTransform(PerSegmentWrapper, FutureMixin):
         **change_point_model_predict_params,
     ):
         """Init ChangePointSegmentationTransform.
+
         Parameters
         ----------
         in_column:
