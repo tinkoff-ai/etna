@@ -4,6 +4,7 @@ import pytest
 from ruptures import Binseg
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import SMAPE
 from etna.models import CatBoostModelPerSegment
 from etna.pipeline import Pipeline
@@ -19,6 +20,13 @@ def pre_transformed_df() -> pd.DataFrame:
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df=df)
     return df
+
+
+@pytest.fixture
+def simple_ar_ts(random_seed):
+    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=3, ar_coef=[2], freq="D")
+    df_ts_format = TSDataset.to_dataset(df)
+    return TSDataset(df_ts_format, freq="D")
 
 
 @pytest.fixture
