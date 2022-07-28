@@ -77,7 +77,7 @@ def test_transform(pre_transformed_df: pd.DataFrame):
     )
     bs.fit(df=pre_transformed_df["segment_1"])
     transformed = bs.transform(df=pre_transformed_df["segment_1"])
-    assert set(transformed.columns) == set(["target", out_column])
+    assert set(transformed.columns) == {"target", out_column}
     assert transformed[out_column].dtype == "category"
 
 
