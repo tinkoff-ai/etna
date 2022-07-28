@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 - 
-- 
+- Add ChangePointSegmentationTransform ([#821](https://github.com/tinkoff-ai/etna/issues/821))
 - 
 - 
 - 
