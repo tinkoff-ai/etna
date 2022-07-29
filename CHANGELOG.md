@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## TSDataset 2.0
+### Added
+-
+- 
+- 
+- 
+- Add methods `remove_columns`, `add_columns_from_pandas` to TSDataset ([#809](https://github.com/tinkoff-ai/etna/pull/809))
+- Add `features` parameter to `to_pandas`, `to_flatten` methods of TSDataset ([#809](https://github.com/tinkoff-ai/etna/pull/809))
+- 
+- 
+- 
+### Changed
+-
+- 
+- 
+- All the transforms now has `in_column` attribute ([#820](https://github.com/tinkoff-ai/etna/pull/820))
+-
+-
+### Fixed
+-
+- 
+- 
+- 
+- 
 
 ## Unreleased
 ### Added
