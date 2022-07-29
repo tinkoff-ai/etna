@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Add known_future to cli docs ([#823](https://github.com/tinkoff-ai/etna/pull/823))
 - 
 - 
 - 
