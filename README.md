@@ -192,6 +192,12 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 
 - [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
 
+- [ETNA Regressors](https://medium.com/its-tinkoff/etna-regressors-d2722923e88e) on Medium
+
+- [Time series forecasting with ETNA: first steps](https://medium.com/its-tinkoff/time-series-forecasting-with-etna-first-steps-dfaf90c5b919) on Medium
+
+- [ETNA: Time Series Analysis. What, why and how?](https://medium.com/its-tinkoff/etna-time-series-analysis-what-why-and-how-e45557af4f6c) on Medium
+
 - [Tabular Playground Series - Mar 2022 (7th place!)](https://www.kaggle.com/code/chikovalexander/tps-mar-2022-etna/notebook?scriptVersionId=91575908) on Kaggle
 
 - [Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
@@ -201,8 +207,6 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 - [EDA notebook for Ubiquant Market Prediction](https://www.kaggle.com/code/martins0n/ubiquant-eda-toy-predictions-etna) on Kaggle
 
 - [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
-
-- ETNA Tutorial [Part 1 (Rus)](https://youtu.be/4iFVRfB2j30), [Part 2 (Rus)](https://youtu.be/Ct9dyUdHlmc),  [Part 3 (Rus)](https://youtu.be/Qof38dtigtE) on YouTube thanks to [RC Gewissta](https://github.com/Gewissta)
 
 ## Acknowledgments
 
