@@ -8,6 +8,8 @@ from etna.models.catboost import CatBoostModelMultiSegment
 from etna.models.catboost import CatBoostModelPerSegment
 from etna.models.catboost import CatBoostMultiSegmentModel
 from etna.models.catboost import CatBoostPerSegmentModel
+from etna.models.deadline_ma import DeadlineMovingAverageModel
+from etna.models.deadline_ma import _DeadlineMovingAverageModel
 from etna.models.holt_winters import HoltModel
 from etna.models.holt_winters import HoltWintersModel
 from etna.models.holt_winters import SimpleExpSmoothingModel
