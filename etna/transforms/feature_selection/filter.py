@@ -3,11 +3,14 @@ from typing import Sequence
 
 import pandas as pd
 
+from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import Transform
 
 
-class FilterFeaturesTransform(Transform):
+class FilterFeaturesTransform(Transform, DymmyInColumnMixin):
     """Filters features in each segment of the dataframe."""
+
+    in_column = "all"
 
     def __init__(
         self,
