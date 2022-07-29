@@ -84,10 +84,10 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         """
         self.in_column = in_column
         self.strategy = ImputerMode(strategy)
-        self.constant_value = constant_value
         self.window = window
         self.seasonality = seasonality
         self.default_value = default_value
+        self.constant_value = constant_value
         self.fill_value: Optional[float] = None
         self.nan_timestamps: Optional[List[pd.Timestamp]] = None
 
