@@ -79,7 +79,7 @@ def test_all_missing_impute_fail_two_segments(df_all_missing_two_segments: pd.Da
 
 
 @pytest.mark.parametrize("constant_value", (0, 42))
-def test_one_missing_value_zero(df_with_missing_value_x_index: pd.DataFrame, constant_value: float):
+def test_one_missing_value_constant(df_with_missing_value_x_index: pd.DataFrame, constant_value: float):
     """Check that imputer with constant-strategy works correctly in case of one missing value in data."""
     df, idx = df_with_missing_value_x_index
     imputer = _OneSegmentTimeSeriesImputerTransform(

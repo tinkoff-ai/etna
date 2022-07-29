@@ -112,7 +112,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.nan_timestamps = series[series.isna()].index
         if self.strategy == ImputerMode.zero:
             warnings.warn(
-                "zero strategy will be removed in etna 1.12.0. Use constant strategy instead.",
+                "zero strategy will be removed in etna 2.0.0. Use constant strategy instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
