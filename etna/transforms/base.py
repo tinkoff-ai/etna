@@ -1,3 +1,4 @@
+from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 
@@ -10,6 +11,12 @@ from etna.core import SaveMixin
 
 class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
+
+
+class DymmyInColumnMixin:
+    """Mixin for transforms that has no explicit in_column."""
+
+    in_column = "target"
 
 
 class Transform(SaveMixin, AbstractSaveable, BaseMixin):
