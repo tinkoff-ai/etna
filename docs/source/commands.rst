@@ -19,7 +19,7 @@ Basic ``forecast`` usage:
             [EXOG_PATH]             path to csv with exog data
             [FORECAST_CONFIG_PATH]  path to yaml config with forecast params
             [RAW_OUTPUT]            by default we return only forecast without features [default: False]
-            [KNOWN_FUTURE]          list of all known_future columns (regressor columns); If not specified then all exog_columns considered known_future [default: None]
+            [KNOWN_FUTURE]          list of all known_future columns (regressor columns). If not specified then all exog_columns considered known_future [default: None]
 
 **How to create config?**
 
@@ -93,7 +93,7 @@ Basic ``backtest`` usage:
             FREQ                    frequency of timestamp in files in pandas format  [required]
             OUTPUT_PATH             where to save forecast  [required]
             [EXOG_PATH]             path to csv with exog data
-            [KNOWN_FUTURE]          list of all known_future columns (regressor columns); If not specified then all exog_columns considered known_future [default: None]
+            [KNOWN_FUTURE]          list of all known_future columns (regressor columns). If not specified then all exog_columns considered known_future [default: None]
 
 
 **How to create configs?**
