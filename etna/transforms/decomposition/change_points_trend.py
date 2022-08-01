@@ -98,7 +98,7 @@ class _OneSegmentChangePointsTrendTransform(ChangePointsTransform):
         """
         super(_OneSegmentChangePointsTrendTransform, self).fit(df=df)
 
-        self.per_interval_models = self._init_detrend_models(intervals=self.intervals) # type: ignore
+        self.per_interval_models = self._init_detrend_models(intervals=self.intervals)  # type: ignore
         self._fit_per_interval_model(series=self.series)
         return self
 
