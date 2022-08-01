@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Lambda transform ([#762](https://github.com/tinkoff-ai/etna/issues/762))
 - assemble pipelines ([#774](https://github.com/tinkoff-ai/etna/pull/774))
-- 
+- DeadlineMovingAverageModel ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - 
 - Tests on in-sample, out-sample predictions with gap for all models ([#785](https://github.com/tinkoff-ai/etna/pull/786))
 - 
