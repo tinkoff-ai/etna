@@ -8,12 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- 
-- Lambda transform ([#762](https://github.com/tinkoff-ai/etna/issues/762))
-- assemble pipelines ([#774](https://github.com/tinkoff-ai/etna/pull/774))
 - DeadlineMovingAverageModel ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - 
-- Tests on in-sample, out-sample predictions with gap for all models ([#785](https://github.com/tinkoff-ai/etna/pull/786))
+- 
+- 
+- 
+- 
 - 
 - 
 - 
@@ -21,34 +21,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 ### Changed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+### Fixed
+- Fix missing `constant_value` in `TimeSeriesImputerTransform` ([#819](https://github.com/tinkoff-ai/etna/pull/819))
+- 
+- 
+- Make in-sample predictions of SARIMAXModel non-dynamic in all cases ([#812](https://github.com/tinkoff-ai/etna/pull/812))
+- 
+- 
+- 
+- Add known_future to cli docs ([#823](https://github.com/tinkoff-ai/etna/pull/823))
+- 
+- 
+- 
+- 
+
+## [1.11.0] - 2022-07-25
+### Added
+- LSTM based RNN and native deep models base classes ([#776](https://github.com/tinkoff-ai/etna/pull/776))
+- Lambda transform ([#762](https://github.com/tinkoff-ai/etna/issues/762))
+- assemble pipelines ([#774](https://github.com/tinkoff-ai/etna/pull/774))
+- Tests on in-sample, out-sample predictions with gap for all models ([#785](https://github.com/tinkoff-ai/etna/pull/786))
+### Changed
 - Add columns and mode parameters in plot_correlation_matrix ([#726](https://github.com/tinkoff-ai/etna/pull/753))
 - Add CatBoostPerSegmentModel and CatBoostMultiSegmentModel classes, deprecate CatBoostModelPerSegment and CatBoostModelMultiSegment ([#779](https://github.com/tinkoff-ai/etna/pull/779))
-- 
 - Allow Prophet update to 1.1 ([#799](https://github.com/tinkoff-ai/etna/pull/799))
-- 
 - Make LagTransform, LogTransform, AddConstTransform vectorized ([#756](https://github.com/tinkoff-ai/etna/pull/756))
-- 
+- Improve the behavior of plot_feature_relevance visualizing p-values ([#795](https://github.com/tinkoff-ai/etna/pull/795))
 - Update poetry.core version ([#780](https://github.com/tinkoff-ai/etna/pull/780))
-- 
 - Make native prediction intervals for DeepAR ([#761](https://github.com/tinkoff-ai/etna/pull/761))
 - Make native prediction intervals for TFTModel ([#770](https://github.com/tinkoff-ai/etna/pull/770))
 - Test cases for testing inference of models ([#794](https://github.com/tinkoff-ai/etna/pull/794))
-- 
+- Wandb.log to WandbLogger ([#816](https://github.com/tinkoff-ai/etna/pull/816))
 ### Fixed
-- 
 - Fix missing prophet in docker images ([#767](https://github.com/tinkoff-ai/etna/pull/767))
 - Add `known_future` parameter to CLI ([#758](https://github.com/tinkoff-ai/etna/pull/758))
 - FutureWarning: The frame.append method is deprecated. Use pandas.concat instead ([#764](https://github.com/tinkoff-ai/etna/pull/764))
 - Correct ordering if multi-index in backtest ([#771](https://github.com/tinkoff-ai/etna/pull/771))
-- 
-- 
-- 
-- 
-- 
-- 
+- Raise errors in models.nn if they can't make in-sample and some cases out-sample predictions ([#813](https://github.com/tinkoff-ai/etna/pull/813))
+- Teach BATS/TBATS to work with in-sample, out-sample predictions correctly ([#806](https://github.com/tinkoff-ai/etna/pull/806))
 - Github actions cache issue with poetry update ([#778](https://github.com/tinkoff-ai/etna/pull/778))
-- 
-- 
 
 ## [1.10.0] - 2022-06-12
 ### Added
@@ -466,3 +489,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Anomalies (Outliers) plot
   - Backtest (CrossValidation) plot
   - Forecast plot
+Footer
+© 2022 GitHub, Inc.
+Footer navigation
+
+    Terms
+    Privacy
+    Security
+    Status
+    Docs
+    Contact GitHub
+    Pricing
+    API
+    Training
+    Blog
+    About
+
