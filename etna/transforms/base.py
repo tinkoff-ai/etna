@@ -1,6 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import List
 
 import pandas as pd
 
@@ -19,6 +20,16 @@ class DymmyInColumnMixin:
 
 class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
 
     @abstractmethod
     def fit(self, df: pd.DataFrame) -> "Transform":
