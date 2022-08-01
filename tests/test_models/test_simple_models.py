@@ -10,6 +10,7 @@ from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.models.seasonal_ma import _SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
+from etna.metrics import MAE
 
 
 @pytest.fixture()
@@ -47,10 +48,10 @@ def test_simple_model_forecaster_run(simple_df, model):
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_forecaster_run(simple_df, model):
-    sma_model = model(window=1)
-    sma_model.fit(simple_df)
+    model = model(window=1)
+    model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7)
-    res = sma_model.forecast(future_ts)
+    res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
     assert not res.isnull().values.any()
     assert len(res) == 14
@@ -230,3 +231,11 @@ def test_get_model_after_training(example_tsds, etna_model_class, expected_class
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], expected_class)
+
+
+def test_pipeline_with_deadline_model(example_tsds):
+    model = DeadlineMovingAverageModel(window=3, seasonality="month")
+    pipeline = Pipeline(model=model)
+    pipeline.backtest(ts=example_tsds, metrics=[MAE()])
+
+

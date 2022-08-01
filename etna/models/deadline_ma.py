@@ -54,6 +54,11 @@ class _DeadlineMovingAverageModel:
         regressors:
             List of the columns with regressors(ignored in this model)
 
+        Raises
+        ------
+        ValueError
+            If freq of dataframe is not supported
+            If series is too short for chosen shift value
         Returns
         -------
         :
