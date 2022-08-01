@@ -110,7 +110,8 @@ def test_dummy(model, sinusoid_ts):
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_prediction_interval(model, example_tsds):
     model.fit(example_tsds)
-    forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+    future_ts = example_tsds.make_future(3)
+    forecast = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)

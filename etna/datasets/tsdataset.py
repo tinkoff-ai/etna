@@ -1,9 +1,13 @@
 import math
 import warnings
 from copy import copy
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 from typing import Dict
+from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -16,10 +20,15 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
+from etna import SETTINGS
+from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
+
+if SETTINGS.torch_required:
+    from torch.utils.data import Dataset
 
 TTimestamp = Union[str, pd.Timestamp]
 
@@ -234,13 +243,15 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int) -> "TSDataset":
+    def make_future(self, future_steps: int, tail_steps: int = 0) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
         ----------
         future_steps:
             number of timestamp in the future to build features for.
+        tail_steps:
+            number of timestamp for context to build features for.
 
         Returns
         -------
@@ -301,7 +312,8 @@ class TSDataset:
                 tslogger.log(f"Transform {repr(transform)} is applied to dataset")
                 df = transform.transform(df)
 
-        future_dataset = df.tail(future_steps).copy(deep=True)
+        future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
+
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
@@ -311,6 +323,30 @@ class TSDataset:
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
+
+    def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
+        """Return new TSDataset with integer-location based indexing.
+
+        Parameters
+        ----------
+        start_idx:
+            starting index of the slice.
+        end_idx:
+            last index of the slice.
+
+        Returns
+        -------
+        :
+            TSDataset based on indexing slice.
+        """
+        df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
+        tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
+        # can't put known_future into constructor, _check_known_future fails with df_exog=None
+        tsdataset_slice.known_future = deepcopy(self.known_future)
+        tsdataset_slice._regressors = deepcopy(self.regressors)
+        tsdataset_slice.transforms = deepcopy(self.transforms)
+        tsdataset_slice.df_exog = self.df_exog
+        return tsdataset_slice
 
     @staticmethod
     def _check_known_future(
@@ -1123,3 +1159,29 @@ class TSDataset:
         # print the results
         result_string = "\n".join(lines)
         print(result_string)
+
+    def to_torch_dataset(
+        self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True
+    ) -> "Dataset":
+        """Convert the TSDataset to a :py:class:`torch.Dataset`.
+
+        Parameters
+        ----------
+        make_samples:
+            function that takes per segment DataFrame and returns iterabale of samples
+        dropna:
+            if ``True``, missing rows are dropped
+
+        Returns
+        -------
+        :
+            :py:class:`torch.Dataset` with with train or test samples to infer on
+        """
+        df = self.to_pandas(flatten=True)
+        if dropna:
+            df = df.dropna()  # TODO: Fix this
+
+        ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
+        ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
+
+        return _TorchDataset(ts_samples=ts_samples)
