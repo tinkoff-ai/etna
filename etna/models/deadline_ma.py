@@ -57,6 +57,7 @@ class _DeadlineMovingAverageModel:
         ValueError
             If freq of dataframe is not supported
             If series is too short for chosen shift value
+
         Returns
         -------
         :
@@ -109,7 +110,7 @@ class _DeadlineMovingAverageModel:
         res = pd.DataFrame(res)
         res.index = index
         for i in range(len(self.series), len(res)):
-            for w in range(1, self.window+1):
+            for w in range(1, self.window + 1):
                 if self.seasonality == SeasonalityMode.month:
                     prev_date = res.index[i] - pd.DateOffset(months=w)
 
@@ -122,9 +123,11 @@ class _DeadlineMovingAverageModel:
 
             res.loc[index[i]] = res.loc[index[i]] / self.window
 
-        res = res.values.reshape(len(res), )
+        res = res.values.reshape(
+            len(res),
+        )
 
-        return res[-len(df):]
+        return res[-len(df) :]
 
 
 class DeadlineMovingAverageModel(PerSegmentModel):
@@ -133,8 +136,6 @@ class DeadlineMovingAverageModel(PerSegmentModel):
     def __init__(self, window: int = 3, seasonality: str = "month"):
         """
         Initialize deadline moving average model.
-
-        Length of remembered tail of series is ``window * seasonality``.
 
         Parameters
         ----------
