@@ -1,7 +1,6 @@
 from copy import deepcopy
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Type
 
@@ -10,16 +9,15 @@ import pandas as pd
 from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
-from etna.analysis.change_points_trend.search import _find_change_points_segment
 from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.ChangePoints import ChangePointsTransform
 from etna.transforms.utils import match_target_quantiles
 
 TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
 TDetrendModel = Type[RegressorMixin]
 
 
-class _OneSegmentChangePointsTrendTransform(Transform):
+class _OneSegmentChangePointsTrendTransform(ChangePointsTransform):
     """_OneSegmentChangePointsTransform subtracts multiple linear trend from series."""
 
     def __init__(
@@ -42,26 +40,12 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
-        self.in_column = in_column
-        self.out_columns = in_column
-        self.change_point_model = change_point_model
-        self.detrend_model = detrend_model
-        self.per_interval_models: Optional[Dict[TTimestampInterval, TDetrendModel]] = None
-        self.intervals: Optional[List[TTimestampInterval]] = None
-        self.change_point_model_predict_params = change_point_model_predict_params
+        super(_OneSegmentChangePointsTrendTransform, self).__init__(
+            in_column=in_column, change_point_model=change_point_model, **change_point_model_predict_params
+        )
 
-    @staticmethod
-    def _build_trend_intervals(change_points: List[pd.Timestamp]) -> List[TTimestampInterval]:
-        """Create list of stable trend intervals from list of change points."""
-        change_points = sorted(change_points)
-        left_border = pd.Timestamp.min
-        intervals = []
-        for point in change_points:
-            right_border = point
-            intervals.append((left_border, right_border))
-            left_border = right_border
-        intervals.append((left_border, pd.Timestamp.max))
-        return intervals
+        self.out_columns = in_column
+        self.detrend_model = detrend_model
 
     def _init_detrend_models(
         self, intervals: List[TTimestampInterval]
@@ -112,15 +96,10 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         -------
         :
         """
-        series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
-        if series.isnull().values.any():
-            raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
-        change_points = _find_change_points_segment(
-            series=series, change_point_model=self.change_point_model, **self.change_point_model_predict_params
-        )
-        self.intervals = self._build_trend_intervals(change_points=change_points)
+        super(_OneSegmentChangePointsTrendTransform, self).fit(df=df)
+
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
-        self._fit_per_interval_model(series=series)
+        self._fit_per_interval_model(series=self.series)
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
