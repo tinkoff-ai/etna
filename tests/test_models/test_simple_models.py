@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.metrics import MAE
 from etna.models.deadline_ma import DeadlineMovingAverageModel
 from etna.models.deadline_ma import _DeadlineMovingAverageModel
 from etna.models.moving_average import MovingAverageModel
@@ -10,7 +11,6 @@ from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.models.seasonal_ma import _SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
-from etna.metrics import MAE
 
 
 @pytest.fixture()
@@ -237,5 +237,3 @@ def test_pipeline_with_deadline_model(example_tsds):
     model = DeadlineMovingAverageModel(window=3, seasonality="month")
     pipeline = Pipeline(model=model)
     pipeline.backtest(ts=example_tsds, metrics=[MAE()])
-
-
