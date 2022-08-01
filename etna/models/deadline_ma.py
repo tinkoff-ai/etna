@@ -1,4 +1,5 @@
 import warnings
+from enum import Enum
 from typing import Dict
 from typing import List
 
@@ -8,8 +9,21 @@ import pandas as pd
 from etna.models.base import PerSegmentModel
 
 
+class SeasonalityMode(Enum):
+    """Enum for seasonality mode for DeadlineMovingAverageModel."""
+
+    month = "month"
+    year = "year"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} seasonality allowed."
+        )
+
+
 class _DeadlineMovingAverageModel:
-    """Seasonal moving average model that uses exact previous dates to predict."""
+    """Moving average model that uses exact previous dates to predict."""
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
         """
@@ -22,13 +36,12 @@ class _DeadlineMovingAverageModel:
         window: int
             Number of values taken for forecast for each point.
         seasonality: str
-            Monthly or annual seasonality.
+            Only allowed monthly or annual seasonality.
         """
         self.name = "target"
         self.window = window
-        if seasonality not in ["month", "year"]:
-            raise ValueError("Incorrect type of seasonality")
-        self.seasonality = seasonality
+        self.seasonality = SeasonalityMode(seasonality)
+        self.freqs_available = {"H", "D"}
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_DeadlineMovingAverageModel":
         """
@@ -47,37 +60,34 @@ class _DeadlineMovingAverageModel:
             Fitted model
         """
         freq = pd.infer_freq(df["timestamp"])
-        if freq not in {"H", "D"}:
-            warnings.warn(message=f"{type(freq)} is not supported! Use daily or hourly frequency!")
+        if freq not in self.freqs_available:
+            raise ValueError(f"{freq} is not supported! Use daily or hourly frequency!")
+
         if set(df.columns) != {"timestamp", "target"}:
             warnings.warn(
                 message=f"{type(self).__name__} does not work with any exogenous series or features. "
                 f"It uses only target series for predict/\n "
             )
         targets = df["target"]
-        self.dates = df["timestamp"]
-        if self.seasonality == "month":
-            first_index = self.dates.iloc[-1] - pd.DateOffset(months=self.window)
-            if first_index < self.dates.iloc[0]:
-                raise ValueError(
-                    "Given series is too short for chosen shift value. Try lower shift value, or give" "longer series."
-                )
-        else:
-            first_index = self.dates.iloc[-1] - pd.DateOffset(years=self.window)
-            if first_index < self.dates.iloc[0]:
-                raise ValueError(
-                    "Given series is too short for chosen shift value. Try lower shift value, or give" "longer series."
-                )
+        self.timestamps = df["timestamp"]
 
-        self.series = targets.loc[self.dates >= first_index]
+        if self.seasonality == SeasonalityMode.month:
+            first_index = self.timestamps.iloc[-1] - pd.DateOffset(months=self.window)
+
+        elif self.seasonality == SeasonalityMode.year:
+            first_index = self.timestamps.iloc[-1] - pd.DateOffset(years=self.window)
+
+        if first_index < self.timestamps.iloc[0]:
+            raise ValueError(
+                "Given series is too short for chosen shift value. Try lower shift value, or give" "longer series."
+            )
+
+        self.series = targets.loc[self.timestamps >= first_index]
         self.shift = len(self.series)
 
-        # ???
-        if targets.name is not None:
-            self.name = targets.name
         return self
 
-    def predict(self, df: pd.DataFrame):
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
         """
         Compute predictions from a DeadlineMovingAverageModel.
 
@@ -91,18 +101,18 @@ class _DeadlineMovingAverageModel:
         :
             Array with predictions.
         """
-        timestamp = df["timestamp"]
+        timestamps = df["timestamp"]
         res = np.zeros((len(df), 1))
         for w in range(1, self.window + 1):
-            prev_dates = []
-            if self.seasonality == "month":
-                prev_dates = timestamp - pd.DateOffset(months=w)
-            else:
-                prev_dates = timestamp - pd.DateOffset(years=w)
+            if self.seasonality == SeasonalityMode.month:
+                prev_dates = timestamps - pd.DateOffset(months=w)
+            elif self.seasonality == SeasonalityMode.year:
+                prev_dates = timestamps - pd.DateOffset(years=w)
             values = []
             for date in prev_dates:
-                value = self.series.loc[self.dates == date].values
+                value = self.series.loc[self.timestamps == date].values
                 values.append(value)
+
             res += np.array(values)
 
         res = res / self.window
@@ -113,11 +123,11 @@ class _DeadlineMovingAverageModel:
 
 
 class DeadlineMovingAverageModel(PerSegmentModel):
-    """Seasonal moving average model that uses exact previous dates to predict."""
+    """Moving average model that uses exact previous dates to predict."""
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
         """
-        Initialize seasonal moving average model.
+        Initialize deadline moving average model.
 
         Length of remembered tail of series is ``window * seasonality``.
 
@@ -125,8 +135,8 @@ class DeadlineMovingAverageModel(PerSegmentModel):
         ----------
         window: int
             Number of values taken for forecast for each point.
-        seasonality: int
-            Lag between values taken for forecast.
+        seasonality: str
+            Only allowed monthly or annual seasonality.
         """
         self.window = window
         self.seasonality = seasonality
