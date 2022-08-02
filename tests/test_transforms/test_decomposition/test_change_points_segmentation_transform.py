@@ -8,8 +8,8 @@ from etna.datasets import generate_ar_df
 from etna.metrics import SMAPE
 from etna.models import CatBoostModelPerSegment
 from etna.pipeline import Pipeline
-from etna.transforms import ChangePointSegmentationTransform
-from etna.transforms.encoders.change_point_segmentation import _OneSegmentChangePointSegmentationTransform
+from etna.transforms import ChangePointsSegmentationTransform
+from etna.transforms.decomposition.change_points_segmentation import _OneSegmentChangePointsSegmentationTransform
 
 
 @pytest.fixture
@@ -59,7 +59,7 @@ def test_build_intervals():
         (pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")),
         (pd.Timestamp("2020-02-24"), pd.Timestamp.max),
     ]
-    intervals = _OneSegmentChangePointSegmentationTransform._build_intervals(change_points=change_points)
+    intervals = _OneSegmentChangePointsSegmentationTransform._build_intervals(change_points=change_points)
     assert isinstance(intervals, list)
     assert len(intervals) == 4
     for (exp_left, exp_right), (real_left, real_right) in zip(expected_intervals, intervals):
@@ -70,7 +70,7 @@ def test_build_intervals():
 def test_fit(pre_transformed_df: pd.DataFrame):
     """Check that fit method save intervals."""
     out_column = "result"
-    bs = _OneSegmentChangePointSegmentationTransform(
+    bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     bs.fit(df=pre_transformed_df["segment_1"])
@@ -80,7 +80,7 @@ def test_fit(pre_transformed_df: pd.DataFrame):
 def test_transform(pre_transformed_df: pd.DataFrame):
     """Check that transform method generate new column."""
     out_column = "result"
-    bs = _OneSegmentChangePointSegmentationTransform(
+    bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     bs.fit(df=pre_transformed_df["segment_1"])
@@ -92,7 +92,7 @@ def test_transform(pre_transformed_df: pd.DataFrame):
 def test_inverse_transform(pre_transformed_df: pd.DataFrame):
     """Check that inverse_transform works."""
     out_column = "result"
-    bs = _OneSegmentChangePointSegmentationTransform(
+    bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     bs.fit(df=pre_transformed_df["segment_1"])
@@ -104,7 +104,7 @@ def test_inverse_transform(pre_transformed_df: pd.DataFrame):
 def test_monotonously_result(pre_transformed_df: pd.DataFrame):
     """Check that resulting column is monotonously non-decreasing."""
     out_column = "result"
-    bs = _OneSegmentChangePointSegmentationTransform(
+    bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     bs.fit(df=pre_transformed_df["segment_1"])
@@ -117,7 +117,7 @@ def test_monotonously_result(pre_transformed_df: pd.DataFrame):
 def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
     """Test that transform for one segment raise error when calling transform without being fit."""
     out_column = "result"
-    transform = _OneSegmentChangePointSegmentationTransform(
+    transform = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     with pytest.raises(ValueError, match="Transform is not fitted!"):
@@ -126,7 +126,7 @@ def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     out_column = "result"
-    bs = _OneSegmentChangePointSegmentationTransform(
+    bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
@@ -137,7 +137,7 @@ def test_backtest(simple_ar_ts):
     model = CatBoostModelPerSegment()
     horizon = 3
     out_column = "result"
-    bs = ChangePointSegmentationTransform(
+    bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     pipeline = Pipeline(model=model, transforms=[bs], horizon=horizon)
@@ -146,7 +146,7 @@ def test_backtest(simple_ar_ts):
 
 def test_future_and_past_filling(simple_ar_ts):
     out_column = "result"
-    bs = ChangePointSegmentationTransform(
+    bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
     )
     before, ts = simple_ar_ts.train_test_split(test_start="2021-06-01")

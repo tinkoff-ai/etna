@@ -49,7 +49,7 @@ class ChangePointsTransform(Transform):
         return intervals
 
     def fit(self, df: pd.DataFrame) -> "ChangePointsTransform":
-        """Fit ChangePointsTransform: find change points in ``df``.
+        """Fit ChangePointsTransform: find change points in ``df`` and build intervals..
 
         Parameters
         ----------
@@ -70,17 +70,3 @@ class ChangePointsTransform(Transform):
         )
         self.intervals = self._build_intervals(change_points=change_points)
         return self
-
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Do nothing in this case.
-
-        Parameters
-        ----------
-        df:
-            one segment dataframe
-        Returns
-        -------
-        df: pd.DataFrame
-            one segment dataframe
-        """
-        return df

@@ -1,23 +1,20 @@
 from typing import Optional
-from typing import Tuple
 
 import pandas as pd
 from ruptures.base import BaseEstimator
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.ChangePoints import ChangePointsTransform
-
-TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
+from etna.transforms.decomposition.change_points import ChangePointsTransform
 
 
-class _OneSegmentChangePointSegmentationTransform(ChangePointsTransform):
-    """_OneSegmentChangePointSegmentationTransform make label encoder to change points."""
+class _OneSegmentChangePointsSegmentationTransform(ChangePointsTransform):
+    """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(
         self, in_column: str, change_point_model: BaseEstimator, out_column: str, **change_point_model_predict_params
     ):
-        """Init _OneSegmentChangePointSegmentationTransform.
+        """Init _OneSegmentChangePointsSegmentationTransform.
         Parameters
         ----------
         in_column:
@@ -29,7 +26,7 @@ class _OneSegmentChangePointSegmentationTransform(ChangePointsTransform):
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
-        super(_OneSegmentChangePointSegmentationTransform, self).__init__(
+        super(_OneSegmentChangePointsSegmentationTransform, self).__init__(
             in_column=in_column, change_point_model=change_point_model, **change_point_model_predict_params
         )
 
@@ -64,9 +61,23 @@ class _OneSegmentChangePointSegmentationTransform(ChangePointsTransform):
         df.loc[:, self.out_column] = result_series
         return df
 
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Do nothing in this case.
 
-class ChangePointSegmentationTransform(PerSegmentWrapper, FutureMixin):
-    """ChangePointSegmentationTransform make label encoder to change points.
+        Parameters
+        ----------
+        df:
+            one segment dataframe
+        Returns
+        -------
+        df: pd.DataFrame
+            one segment dataframe
+        """
+        return df
+
+
+class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
+    """ChangePointsSegmentationTransform make label encoder to change points.
 
     Warning
     -------
@@ -81,7 +92,7 @@ class ChangePointSegmentationTransform(PerSegmentWrapper, FutureMixin):
         out_column: Optional[str] = None,
         **change_point_model_predict_params,
     ):
-        """Init ChangePointSegmentationTransform.
+        """Init ChangePointsSegmentationTransform.
 
         Parameters
         ----------
@@ -99,7 +110,7 @@ class ChangePointSegmentationTransform(PerSegmentWrapper, FutureMixin):
         self.change_point_model = change_point_model
         self.change_point_model_predict_params = change_point_model_predict_params
         super().__init__(
-            transform=_OneSegmentChangePointSegmentationTransform(
+            transform=_OneSegmentChangePointsSegmentationTransform(
                 in_column=self.in_column,
                 out_column=self.out_column if self.out_column is not None else self.__repr__(),
                 change_point_model=self.change_point_model,

@@ -2,19 +2,16 @@ from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Tuple
-from typing import Type
 
 import numpy as np
 import pandas as pd
 from ruptures.base import BaseEstimator
-from sklearn.base import RegressorMixin
 
 from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.ChangePoints import ChangePointsTransform
+from etna.transforms.decomposition.change_points import ChangePointsTransform
+from etna.transforms.decomposition.change_points import TDetrendModel
+from etna.transforms.decomposition.change_points import TTimestampInterval
 from etna.transforms.utils import match_target_quantiles
-
-TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
-TDetrendModel = Type[RegressorMixin]
 
 
 class _OneSegmentChangePointsTrendTransform(ChangePointsTransform):
