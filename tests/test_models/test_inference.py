@@ -149,16 +149,16 @@ def _test_forecast_mixed_in_out_sample(ts, model, transforms):
 @pytest.mark.parametrize(
     "model, transforms",
     [
-        (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
-        (ProphetModel(), []),
-        (SARIMAXModel(), []),
+        # (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+        # (ProphetModel(), []),
+        # (SARIMAXModel(), []),
         (AutoARIMAModel(), []),
-        (HoltModel(), []),
-        (HoltWintersModel(), []),
-        (SimpleExpSmoothingModel(), []),
-        (MovingAverageModel(window=3), []),
-        (NaiveModel(lag=3), []),
-        (SeasonalMovingAverageModel(), []),
+        # (HoltModel(), []),
+        # (HoltWintersModel(), []),
+        # (SimpleExpSmoothingModel(), []),
+        # (MovingAverageModel(window=3), []),
+        # (NaiveModel(lag=3), []),
+        # (SeasonalMovingAverageModel(), []),
     ],
 )
 def test_forecast_in_sample_full(model, transforms, example_tsds):
@@ -341,6 +341,7 @@ def test_forecast_out_sample_prefix(model, transforms, example_tsds):
         (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
         (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
         (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+        (AutoARIMAModel(), []),
         (ProphetModel(), []),
         (SARIMAXModel(), []),
         (HoltModel(), []),
@@ -394,7 +395,6 @@ def test_forecast_out_sample_suffix_not_implemented(model, transforms, example_t
 @pytest.mark.parametrize(
     "model, transforms",
     [
-        (AutoARIMAModel(), []),
         (MovingAverageModel(window=3), []),
         (SeasonalMovingAverageModel(), []),
         (NaiveModel(lag=3), []),
@@ -413,6 +413,7 @@ def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
         (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
         (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
         (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+        (AutoARIMAModel(), []),
         (ProphetModel(), []),
         (SARIMAXModel(), []),
         (HoltModel(), []),
@@ -421,17 +422,6 @@ def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
     ],
 )
 def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
-    _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
-
-
-@pytest.mark.xfail(strict=True)
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (AutoARIMAModel(), []),
-    ],
-)
-def test_forecast_mixed_in_out_sample_failed(model, transforms, example_tsds):
     _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
 
