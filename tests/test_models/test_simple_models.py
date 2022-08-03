@@ -257,3 +257,119 @@ def test_pipeline_with_deadline_model(big_ts):
     pipeline = Pipeline(model=model, horizon=200)
     metrics, forecast, _ = pipeline.backtest(ts=big_ts, metrics=[MAE()], n_folds=3)
     assert not forecast.isnull().values.any()
+
+
+@pytest.fixture()
+def two_month_ts():
+    history = 61
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.arange(history)
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-01-01", periods=history)
+
+    df = TSDataset.to_dataset(df1)
+    tsds = TSDataset(df, freq="1d")
+    return tsds
+
+
+def test_deadline_model_correct_with_big_horizons(two_month_ts):
+    model = DeadlineMovingAverageModel(window=2, seasonality="month")
+    model.fit(two_month_ts)
+    future_ts = two_month_ts.make_future(future_steps=90)
+    res = model.forecast(future_ts)
+    expected = np.array(
+        [
+            [16.5],
+            [17.5],
+            [18.5],
+            [19.5],
+            [20.5],
+            [21.5],
+            [22.5],
+            [23.5],
+            [24.5],
+            [25.5],
+            [26.5],
+            [27.5],
+            [28.5],
+            [29.5],
+            [30.5],
+            [31.5],
+            [32.5],
+            [33.5],
+            [34.5],
+            [35.5],
+            [36.5],
+            [37.5],
+            [38.5],
+            [39.5],
+            [40.5],
+            [41.5],
+            [42.5],
+            [43.5],
+            [44.0],
+            [44.5],
+            [45.5],
+            [24.25],
+            [25.25],
+            [26.25],
+            [27.25],
+            [28.25],
+            [29.25],
+            [30.25],
+            [31.25],
+            [32.25],
+            [33.25],
+            [34.25],
+            [35.25],
+            [36.25],
+            [37.25],
+            [38.25],
+            [39.25],
+            [40.25],
+            [41.25],
+            [42.25],
+            [43.25],
+            [44.25],
+            [45.25],
+            [46.25],
+            [47.25],
+            [48.25],
+            [49.25],
+            [50.25],
+            [51.25],
+            [51.5],
+            [52.75],
+            [20.375],
+            [21.375],
+            [22.375],
+            [23.375],
+            [24.375],
+            [25.375],
+            [26.375],
+            [27.375],
+            [28.375],
+            [29.375],
+            [30.375],
+            [31.375],
+            [32.375],
+            [33.375],
+            [34.375],
+            [35.375],
+            [36.375],
+            [37.375],
+            [38.375],
+            [39.375],
+            [40.375],
+            [41.375],
+            [42.375],
+            [43.375],
+            [44.375],
+            [45.375],
+            [46.375],
+            [47.375],
+            [47.75],
+        ]
+    )
+    assert np.all(res.df.values == expected)
