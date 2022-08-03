@@ -78,25 +78,37 @@ def test_all_missing_impute_fail_two_segments(df_all_missing_two_segments: pd.Da
         _ = imputer.fit_transform(df_all_missing_two_segments)
 
 
-def test_one_missing_value_zero(df_with_missing_value_x_index: pd.DataFrame):
-    """Check that imputer with constant-strategy with zero value correctly in case of one missing value in data."""
+@pytest.mark.parametrize("constant_value", (0, 42))
+def test_one_missing_value_constant(df_with_missing_value_x_index: pd.DataFrame, constant_value: float):
+    """Check that imputer with constant-strategy works correctly in case of one missing value in data."""
     df, idx = df_with_missing_value_x_index
     imputer = _OneSegmentTimeSeriesImputerTransform(
-        in_column="target", strategy="constant", window=-1, seasonality=1, default_value=None
+        in_column="target",
+        strategy="constant",
+        window=-1,
+        seasonality=1,
+        default_value=None,
+        constant_value=constant_value,
     )
     result = imputer.fit_transform(df)["target"]
-    assert result.loc[idx] == 0
+    assert result.loc[idx] == constant_value
     assert not result.isna().any()
 
 
-def test_range_missing_zero(df_with_missing_range_x_index: pd.DataFrame):
-    """Check that imputer with constant-strategy with zero value works correctly in case of range of missing values in data."""
+@pytest.mark.parametrize("constant_value", (0, 42))
+def test_range_missing_constant(df_with_missing_range_x_index: pd.DataFrame, constant_value: float):
+    """Check that imputer with constant-strategy works correctly in case of range of missing values in data."""
     df, rng = df_with_missing_range_x_index
     imputer = _OneSegmentTimeSeriesImputerTransform(
-        in_column="target", strategy="constant", window=-1, seasonality=1, default_value=None
+        in_column="target",
+        strategy="constant",
+        window=-1,
+        seasonality=1,
+        default_value=None,
+        constant_value=constant_value,
     )
     result = imputer.fit_transform(df)["target"]
-    expected_series = pd.Series(index=rng, data=[0 for _ in rng], name="target")
+    expected_series = pd.Series(index=rng, data=[constant_value for _ in rng], name="target")
     np.testing.assert_array_almost_equal(result.loc[rng].reset_index(drop=True), expected_series)
     assert not result.isna().any()
 
@@ -360,3 +372,17 @@ def test_fit_transform_nans_at_the_end(fill_strategy, ts_diff_endings):
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
     ts_diff_endings.fit_transform([imputer])
     assert (ts_diff_endings[:, :, "target"].isna()).sum().sum() == 0
+
+
+@pytest.mark.parametrize("constant_value", (0, 32))
+def test_constant_fill_strategy(df_with_missing_range_x_index_two_segments: pd.DataFrame, constant_value: float):
+    raw_df, rng = df_with_missing_range_x_index_two_segments
+    inferred_freq = pd.infer_freq(raw_df.index[-5:])
+    ts = TSDataset(raw_df, freq=inferred_freq)
+    imputer = TimeSeriesImputerTransform(
+        in_column="target", strategy="constant", constant_value=constant_value, default_value=constant_value - 1
+    )
+    ts.fit_transform([imputer])
+    df = ts.to_pandas(flatten=False)
+    for segment in ["segment_1", "segment_2"]:
+        np.testing.assert_array_equal(df.loc[rng][segment]["target"].values, [constant_value] * 5)
