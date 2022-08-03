@@ -14,10 +14,10 @@ from etna.pipeline.base import BasePipeline
 
 
 class DirectEnsemble(BasePipeline, EnsembleMixin):
-    """DirectEnsemble is a pipeline that forecast future values merging the forecasts of base pipelies.
+    """DirectEnsemble is a pipeline that forecasts future values merging the forecasts of base pipelines.
 
     Ensemble expects several pipelines during init. These pipelines are expected to have different forecasting horizons.
-    In each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
+    For each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
     which covers this point.
 
     Examples
@@ -67,7 +67,7 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
         Raises
         ------
         ValueError:
-            If rwo or more pipelines have the same horizons.
+            If two or more pipelines have the same horizons.
         """
         self._validate_pipeline_number(pipelines=pipelines)
         self.pipelines = pipelines
@@ -110,7 +110,8 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
         segments = sorted(forecasts[0].segments)
         horizons = [pipeline.horizon for pipeline in self.pipelines]
         pipelines_order = np.argsort(horizons)[::-1]
-        forecast_df = forecasts[pipelines_order[0]][:, :, "target"]
+        # TODO: Fix slicing with explicit passing the segments in issue #775
+        forecast_df = forecasts[pipelines_order[0]][:, segments, "target"]
         for idx in pipelines_order:
             # TODO: Fix slicing with explicit passing the segments in issue #775
             horizon, forecast = horizons[idx], forecasts[idx][:, segments, "target"]
