@@ -29,7 +29,7 @@ class _DeadlineMovingAverageModel:
         """
         Initialize deadline moving average model.
 
-        Length of remembered tail of series is ``window * seasonality``.
+        Length of remembered tail of series is equal to the number of ``window`` months or years, depending on the ``seasonality``.
 
         Parameters
         ----------
@@ -46,16 +46,19 @@ class _DeadlineMovingAverageModel:
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_DeadlineMovingAverageModel":
         """
         Fit DeadlineMovingAverageModel model.
+
         Parameters
         ----------
         df: pd.DataFrame
             Data to fit on
         regressors:
             List of the columns with regressors(ignored in this model)
+
         Raises
         ------
         ValueError
             If freq of dataframe is not supported
+        ValueError
             If series is too short for chosen shift value
 
         Returns
@@ -95,10 +98,12 @@ class _DeadlineMovingAverageModel:
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         """
         Compute predictions from a DeadlineMovingAverageModel.
+
         Parameters
         ----------
         df: pd.DataFrame
-            Used only for getting the horizon of forecast and timestamps
+            Used only for getting the horizon of forecast and timestamps.
+
         Returns
         -------
         :

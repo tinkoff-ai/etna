@@ -233,7 +233,26 @@ def test_get_model_after_training(example_tsds, etna_model_class, expected_class
         assert isinstance(models_dict[segment], expected_class)
 
 
-def test_pipeline_with_deadline_model(example_tsds):
-    model = DeadlineMovingAverageModel(window=3, seasonality="month")
-    pipeline = Pipeline(model=model)
-    pipeline.backtest(ts=example_tsds, metrics=[MAE()])
+@pytest.fixture
+def big_ts() -> TSDataset:
+    np.random.seed(42)
+    periods = 1000
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df1["segment"] = "segment_1"
+    df1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    df2["segment"] = "segment_2"
+    df2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    df = pd.concat([df1, df2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    tsds = TSDataset(df, freq="D")
+
+    return tsds
+
+def test_pipeline_with_deadline_model(big_ts):
+    model = DeadlineMovingAverageModel(window=5, seasonality="month")
+    pipeline = Pipeline(model=model, horizon=200)
+    metrics, forecast, _ = pipeline.backtest(ts=big_ts, metrics=[MAE()], n_folds=3)
+    assert not forecast.isnull().values.any()
