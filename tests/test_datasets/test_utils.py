@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import duplicate_data
+from etna.datasets.utils import _TorchDataset
 
 
 @pytest.fixture
@@ -56,3 +57,13 @@ def test_duplicate_data_wide_format(df_exog_no_segments):
         assert np.all(df_temp.index == df_exog_no_segments["timestamp"])
         for column in df_exog_no_segments.columns.drop("timestamp"):
             assert np.all(df_temp[column].values == df_exog_no_segments[column].values)
+
+
+def test_torch_dataset():
+    """Unit test for `_TorchDataset` class."""
+    ts_samples = [{"decoder_target": np.array([1, 2, 3]), "encoder_target": np.array([1, 2, 3])}]
+
+    torch_dataset = _TorchDataset(ts_samples=ts_samples)
+
+    assert torch_dataset[0] == ts_samples[0]
+    assert len(torch_dataset) == 1

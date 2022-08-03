@@ -118,6 +118,7 @@ config.env
 
 # tensorboard
 /runs
+lightning_logs
 
 *.html
 .devcontainer

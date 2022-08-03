@@ -1,9 +1,17 @@
 from enum import Enum
+from typing import List
 from typing import Sequence
 
 import pandas as pd
 
-from etna.datasets.tsdataset import TSDataset
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    from torch.utils.data import Dataset
+else:
+    from unittest.mock import Mock
+
+    Dataset = Mock  # type: ignore
 
 
 class DataFrameFormat(str, Enum):
@@ -64,6 +72,8 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     2020-03-13         True   1.00         True   1.00
     2020-03-14        False   1.00        False   1.00
     """
+    from etna.datasets.tsdataset import TSDataset
+
     # check segments length
     if len(segments) == 0:
         raise ValueError("Parameter segments shouldn't be empty")
@@ -90,3 +100,23 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
         return df_wide
 
     return df_long
+
+
+class _TorchDataset(Dataset):
+    """In memory dataset for torch dataloader."""
+
+    def __init__(self, ts_samples: List[dict]):
+        """Init torch dataset.
+
+        Parameters
+        ----------
+        ts_samples:
+            time series samples for training or inference
+        """
+        self.ts_samples = ts_samples
+
+    def __getitem__(self, index):
+        return self.ts_samples[index]
+
+    def __len__(self):
+        return len(self.ts_samples)

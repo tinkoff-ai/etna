@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 from typing import List
 from typing import Optional
@@ -17,6 +18,7 @@ class ImputerMode(str, Enum):
     running_mean = "running_mean"
     forward_fill = "forward_fill"
     seasonal = "seasonal"
+    constant = "constant"
 
 
 class _OneSegmentTimeSeriesImputerTransform(Transform):
@@ -30,7 +32,15 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 
     """
 
-    def __init__(self, in_column: str, strategy: str, window: int, seasonality: int, default_value: Optional[float]):
+    def __init__(
+        self,
+        in_column: str,
+        strategy: str,
+        window: int,
+        seasonality: int,
+        default_value: Optional[float],
+        constant_value: float = 0,
+    ):
         """
         Create instance of _OneSegmentTimeSeriesImputerTransform.
 
@@ -51,6 +61,8 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
 
             - If "seasonal" then replace missing dates using seasonal moving average
 
+            - If "constant" then replace missing dates using constant value.
+
         window:
             In case of moving average and seasonality.
 
@@ -62,6 +74,8 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             the length of the seasonality
         default_value:
             value which will be used to impute the NaNs left after applying the imputer with the chosen strategy
+        constant_value:
+            value to fill gaps in "constant" strategy
 
         Raises
         ------
@@ -73,7 +87,8 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.window = window
         self.seasonality = seasonality
         self.default_value = default_value
-        self.fill_value: Optional[int] = None
+        self.constant_value = constant_value
+        self.fill_value: Optional[float] = None
         self.nan_timestamps: Optional[List[pd.Timestamp]] = None
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
@@ -96,7 +111,14 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         series = raw_series[raw_series.first_valid_index() :]
         self.nan_timestamps = series[series.isna()].index
         if self.strategy == ImputerMode.zero:
+            warnings.warn(
+                "zero strategy will be removed in etna 2.0.0. Use constant strategy instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self.fill_value = 0
+        if self.strategy == ImputerMode.constant:
+            self.fill_value = self.constant_value
         elif self.strategy == ImputerMode.mean:
             self.fill_value = series.mean()
         return self
@@ -163,7 +185,11 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         if self.nan_timestamps is None:
             raise ValueError("Trying to apply the unfitted transform! First fit the transform.")
 
-        if self.strategy == ImputerMode.zero or self.strategy == ImputerMode.mean:
+        if (
+            self.strategy == ImputerMode.zero
+            or self.strategy == ImputerMode.mean
+            or self.strategy == ImputerMode.constant
+        ):
             df = df.fillna(value=self.fill_value)
         elif self.strategy == ImputerMode.forward_fill:
             df = df.fillna(method="ffill")
@@ -199,10 +225,11 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
     def __init__(
         self,
         in_column: str = "target",
-        strategy: str = ImputerMode.zero,
+        strategy: str = ImputerMode.constant,
         window: int = -1,
         seasonality: int = 1,
         default_value: Optional[float] = None,
+        constant_value: float = 0,
     ):
         """
         Create instance of TimeSeriesImputerTransform.
@@ -224,6 +251,8 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
 
             - If "seasonal" then replace missing dates using seasonal moving average
 
+            - If "constant" then replace missing dates using constant value.
+
         window:
             In case of moving average and seasonality.
 
@@ -235,6 +264,8 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
             the length of the seasonality
         default_value:
             value which will be used to impute the NaNs left after applying the imputer with the chosen strategy
+        constant_value:
+            value to fill gaps in "constant" strategy
 
         Raises
         ------
@@ -246,6 +277,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
         self.window = window
         self.seasonality = seasonality
         self.default_value = default_value
+        self.constant_value = constant_value
         super().__init__(
             transform=_OneSegmentTimeSeriesImputerTransform(
                 in_column=self.in_column,
@@ -253,6 +285,7 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
                 window=self.window,
                 seasonality=self.seasonality,
                 default_value=self.default_value,
+                constant_value=self.constant_value,
             )
         )
 

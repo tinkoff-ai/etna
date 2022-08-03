@@ -178,6 +178,9 @@ We have also prepared a set of tutorials for an easy introduction:
 | [Clustering](https://github.com/tinkoff-ai/etna/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/clustering.ipynb) |
 | [Deep learning models](https://github.com/tinkoff-ai/etna/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/NN_examples.ipynb) |
 | [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/ensembles.ipynb) |
+| [Custom Transform and Model](https://github.com/tinkoff-ai/etna/tree/master/examples/custom_transform_and_model.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/custom_transform_and_model.ipynb) |
+| [Exogenous data](https://github.com/tinkoff-ai/etna/tree/master/examples/exogenous_data.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/exogenous_data.ipynb) |
+
 
 ## Documentation
 
@@ -192,6 +195,12 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 
 - [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
 
+- [ETNA Regressors](https://medium.com/its-tinkoff/etna-regressors-d2722923e88e) on Medium
+
+- [Time series forecasting with ETNA: first steps](https://medium.com/its-tinkoff/time-series-forecasting-with-etna-first-steps-dfaf90c5b919) on Medium
+
+- [ETNA: Time Series Analysis. What, why and how?](https://medium.com/its-tinkoff/etna-time-series-analysis-what-why-and-how-e45557af4f6c) on Medium
+
 - [Tabular Playground Series - Mar 2022 (7th place!)](https://www.kaggle.com/code/chikovalexander/tps-mar-2022-etna/notebook?scriptVersionId=91575908) on Kaggle
 
 - [Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
@@ -202,7 +211,7 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 
 - [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
 
-- ETNA Tutorial [Part 1 (Rus)](https://youtu.be/4iFVRfB2j30), [Part 2 (Rus)](https://youtu.be/Ct9dyUdHlmc),  [Part 3 (Rus)](https://youtu.be/Qof38dtigtE) on YouTube thanks to [RC Gewissta](https://github.com/Gewissta)
+- [ETNA Meetup Jun 2022](https://www.youtube.com/watch?v=N1Xy3EqY058&list=PLLrf_044z4JrSsjMd-3dF6VbBLPI_yOxG) on YouTube
 
 ## Acknowledgments
 
@@ -218,14 +227,19 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 [Artem Makhin](https://github.com/Ama16),
 [Ivan Mitskovets](https://github.com/imitskovets),
 [Albina Munirova](https://github.com/albinamunirova),
-[Nikolay Romantsov](https://github.com/WinstonDovlatov),
-[Julia Shenshina](https://github.com/julia-shenshina)
+[Julia Shenshina](https://github.com/julia-shenshina),
+[Yuriy Tarasyuk](https://github.com/DBcreator),
+[Konstantin Vedernikov](https://github.com/scanhex12)
 
 ### ETNA.Contributors
 
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen),
-[Carlosbogo](https://github.com/Carlosbogo)
+[Carlosbogo](https://github.com/Carlosbogo),
+[Nikolay Romantsov](https://github.com/WinstonDovlatov),
+[mvakhmenin](https://github.com/mvakhmenin),
+[Pacman1984](https://github.com/Pacman1984),
+[looopka](https://github.com/looopka)
 
 ## License
 
