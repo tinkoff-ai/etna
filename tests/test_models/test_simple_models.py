@@ -251,6 +251,7 @@ def big_ts() -> TSDataset:
 
     return tsds
 
+
 def test_pipeline_with_deadline_model(big_ts):
     model = DeadlineMovingAverageModel(window=5, seasonality="month")
     pipeline = Pipeline(model=model, horizon=200)
