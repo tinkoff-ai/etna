@@ -21,7 +21,7 @@ class DymmyInColumnMixin:
     in_column = "target"
 
 
-class Transform(ABC, BaseMixin):
+class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     in_column: Union[Literal["all"], List[str], str] = "target"
@@ -36,15 +36,30 @@ class Transform(ABC, BaseMixin):
         """
         return []
 
-    def _get_required_features(self) -> Union[Literal["all"], List[str]]:
+    @property
+    def required_features(self) -> Union[Literal["all"], List[str]]:
         """Get the list of required features."""
         required_features = self.in_column
         if isinstance(required_features, str) and required_features != "all":
             required_features = [required_features]
         return required_features
 
+    def _update_dataset(self, ts: TSDataset, df: pd.DataFrame, df_transformed: pd.DataFrame) -> TSDataset:
+        """Update TSDataset based on the difference between dfs."""
+        columns_before = set(df.columns.get_level_values("features"))
+        columns_after = set(df_transformed.columns.get_level_values("features"))
+
+        # Transforms now can only remove or only add/update columns
+        removed_features = list(columns_before - columns_after)
+        if len(removed_features) != 0:
+            ts.remove_features(features=removed_features)
+        else:
+            new_regressors = self.get_regressors_info()
+            ts.update_columns_from_pandas(df=df_transformed, regressors=new_regressors)
+        return ts
+
     @abstractmethod
-    def _fit(self, df: pd.DataFrame) -> "Transform":
+    def _fit(self, df: pd.DataFrame) -> "NewTransform":
         """Fit the transform.
 
         Should be implemented by user.
@@ -61,7 +76,7 @@ class Transform(ABC, BaseMixin):
         """
         pass
 
-    def fit(self, ts: TSDataset) -> "Transform":
+    def fit(self, ts: TSDataset) -> "NewTransform":
         """Fit the transform.
 
         Parameters
@@ -74,10 +89,114 @@ class Transform(ABC, BaseMixin):
         :
             The fitted transform instance.
         """
-        features_to_use = self._get_required_features()
-        df = ts.to_pandas(flatten=False, features=features_to_use)
+        df = ts.to_pandas(flatten=False, features=self.required_features)
         self._fit(df=df)
         return self
+
+    @abstractmethod
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Transform dataframe.
+
+        Should be implemented by user
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna wide format.
+
+        Returns
+        -------
+        :
+            Transformed Dataframe in etna wide format.
+        """
+        pass
+
+    def transform(self, ts: TSDataset) -> TSDataset:
+        """Transform TSDataset inplace.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to transform.
+
+        Returns
+        -------
+        :
+            Transformed TSDataset.
+        """
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        df_transformed = self._transform(df=df)
+        ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+        return ts
+
+    def fit_transform(self, ts: TSDataset) -> TSDataset:
+        """Fit and transform TSDataset.
+
+        May be reimplemented. But it is not recommended.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to transform.
+
+        Returns
+        -------
+        :
+            Transformed TSDataset.
+        """
+        return self.fit(ts=ts).transform(ts=ts)
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform dataframe.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna wide format.
+
+        Returns
+        -------
+        :
+            Dataframe in etna wide format after applying inverse transformation.
+        """
+        return df
+
+    def inverse_transform(self, ts: TSDataset) -> TSDataset:
+        """Inverse transform TSDataset.
+
+        Should be reimplemented in the classes with reimplemented _inverse_transform method.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to be inverse transformed.
+
+        Returns
+        -------
+        :
+            TSDataset after applying inverse transformation.
+        """
+        return ts
+
+
+class Transform(ABC, BaseMixin):
+    """Base class to create any transforms to apply to data."""
+
+    @abstractmethod
+    def fit(self, df: pd.DataFrame) -> "Transform":
+        """Fit feature model.
+
+        Should be implemented by user.
+
+        Parameters
+        ----------
+        df
+
+        Returns
+        -------
+        :
+        """
+        pass
 
     @abstractmethod
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -136,7 +255,7 @@ class PerSegmentWrapper(Transform):
         self.segments = df.columns.get_level_values(0).unique()
         for segment in self.segments:
             self.segment_transforms[segment] = deepcopy(self._base_transform)
-            self.segment_transforms[segment]._fit(df=df[segment])
+            self.segment_transforms[segment].fit(df[segment])
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:

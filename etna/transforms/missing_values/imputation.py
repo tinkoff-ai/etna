@@ -89,7 +89,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         self.fill_value: Optional[int] = None
         self.nan_timestamps: Optional[List[pd.Timestamp]] = None
 
-    def _fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentTimeSeriesImputerTransform":
         """
         Fit preprocess params.
 
