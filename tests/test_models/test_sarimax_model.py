@@ -140,19 +140,23 @@ def test_sarimax_forecast_1_point(example_tsds):
 
 
 def test_prediction_simple_differencing():
+    """Check that SARIMAX gives similar results with different values of ``simple_differencing``.
+
+    We generate dataset from ``generate_ar_df`` with ``ar_coef=[1]`` and it gives us (0, 1, 1) process.
+    """
     horizon = 7
-    df = generate_ar_df(periods=100, n_segments=3, start_time="2020-01-01")
+    df = generate_ar_df(periods=100, n_segments=3, start_time="2020-01-01", ar_coef=[1])
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
 
     # prepare prediction from regular model
-    model_regular = SARIMAXModel(order=(1, 1, 1))
+    model_regular = SARIMAXModel(order=(0, 1, 1))
     model_regular.fit(ts)
     future_ts = ts.make_future(future_steps=horizon)
     regular_prediction = model_regular.forecast(future_ts)
     regular_prediction = regular_prediction.to_pandas(flatten=True)
 
     # prepare prediction from model with simple differencing
-    model_simplified = SARIMAXModel(order=(1, 1, 1), simple_differencing=True)
+    model_simplified = SARIMAXModel(order=(0, 1, 1), simple_differencing=True)
     model_simplified.fit(ts)
     future_ts = ts.make_future(future_steps=horizon)
     simplified_prediction = model_simplified.forecast(future_ts)
