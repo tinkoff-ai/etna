@@ -1,6 +1,9 @@
+import numpy as np
 import pytest
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
 
@@ -134,3 +137,26 @@ def test_sarimax_forecast_1_point(example_tsds):
     assert len(pred.df) == horizon
     pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
     assert len(pred_quantiles.df) == horizon
+
+
+def test_prediction_simple_differencing():
+    horizon = 7
+    df = generate_ar_df(periods=100, n_segments=3, start_time="2020-01-01")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+
+    # prepare prediction from regular model
+    model_regular = SARIMAXModel(order=(1, 1, 1))
+    model_regular.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
+    regular_prediction = model_regular.forecast(future_ts)
+    regular_prediction = regular_prediction.to_pandas(flatten=True)
+
+    # prepare prediction from model with simple differencing
+    model_simplified = SARIMAXModel(order=(1, 1, 1), simple_differencing=True)
+    model_simplified.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
+    simplified_prediction = model_simplified.forecast(future_ts)
+    simplified_prediction = simplified_prediction.to_pandas(flatten=True)
+
+    correlation = np.corrcoef(regular_prediction["target"], simplified_prediction["target"])[0, 1]
+    assert correlation >= 0.95

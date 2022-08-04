@@ -197,8 +197,8 @@ class _SARIMAXAdapter(BaseAdapter):
 
         self._check_df(df)
 
-        targets = df["target"]
-        targets.index = df["timestamp"]
+        # make it a numpy array for forgetting about indices
+        targets = df["target"].values
 
         exog_train = self._select_regressors(df)
 
