@@ -6,11 +6,13 @@ from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
+from pmdarima.arima.arima import _seasonal_prediction_with_confidence
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.utils import determine_num_steps
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -164,6 +166,8 @@ class _SARIMAXAdapter(BaseAdapter):
         self._model: Optional[SARIMAX] = None
         self._result: Optional[SARIMAX] = None
         self.regressor_columns: Optional[List[str]] = None
+        self._freq = None
+        self._first_train_timestamp = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXAdapter":
         """
@@ -221,6 +225,14 @@ class _SARIMAXAdapter(BaseAdapter):
             **self.kwargs,
         )
         self._result = self._model.fit()
+
+        freq = pd.infer_freq(df["timestamp"], warn=False)
+        if freq is None:
+            raise ValueError("Can't determine frequency of a given dataframe")
+        self._freq = freq
+
+        self._first_train_timestamp = df["timestamp"].min()
+
         return self
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
@@ -256,30 +268,36 @@ class _SARIMAXAdapter(BaseAdapter):
             )
 
         exog_future = self._select_regressors(df)
+        start_timestamp = df["timestamp"].min()
+        end_timestamp = df["timestamp"].max()
+        start_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+        )
+        end_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+        )
         if prediction_interval:
-            forecast = self._result.get_prediction(
-                start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
+            forecast, _ = _seasonal_prediction_with_confidence(
+                arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
             )
-            y_pred = forecast.predicted_mean
-            y_pred.name = "mean"
-            y_pred = pd.DataFrame(y_pred)
+            y_pred = pd.DataFrame({"mean": forecast})
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
-                borders = forecast.conf_int(alpha=alpha)
+                _, borders = _seasonal_prediction_with_confidence(
+                    arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=alpha
+                )
                 if quantile < 1 / 2:
-                    series = borders["lower target"]
+                    series = borders[:, 0]
                 else:
-                    series = borders["upper target"]
+                    series = borders[:, 1]
                 y_pred[f"mean_{quantile:.4g}"] = series
         else:
-            forecast = self._result.get_prediction(
-                start=df["timestamp"].min(), end=df["timestamp"].max(), dynamic=False, exog=exog_future
+            forecast, _ = _seasonal_prediction_with_confidence(
+                arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
             )
-            y_pred = forecast.predicted_mean
-            y_pred.name = "mean"
-            y_pred = pd.DataFrame(y_pred)
-        y_pred = y_pred.reset_index(drop=True, inplace=False)
+            y_pred = pd.DataFrame({"mean": forecast})
+
         rename_dict = {
             column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
         }
