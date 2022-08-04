@@ -379,9 +379,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         # check timestamps
         if start_timestamp is None:
-            start_timestamp = ts.index.min()
+            start_timestamp = ts.describe()["start_timestamp"].max()
         if end_timestamp is None:
-            end_timestamp = ts.index.max()
+            end_timestamp = ts.index[-1]
         if start_timestamp > end_timestamp:
             raise ValueError("Value of end_timestamp is less than start_timestamp")
 
