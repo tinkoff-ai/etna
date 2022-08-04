@@ -2,10 +2,13 @@ from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 from typing import List
+from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna.core import BaseMixin
+from etna.datasets import TSDataset
 
 
 class FutureMixin:
@@ -21,6 +24,8 @@ class DymmyInColumnMixin:
 class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
+    in_column: Union[Literal["all"], List[str], str] = "target"
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
 
@@ -31,21 +36,48 @@ class Transform(ABC, BaseMixin):
         """
         return []
 
+    def _get_required_features(self) -> Union[Literal["all"], List[str]]:
+        """Get the list of required features."""
+        required_features = self.in_column
+        if isinstance(required_features, str) and required_features != "all":
+            required_features = [required_features]
+        return required_features
+
     @abstractmethod
-    def fit(self, df: pd.DataFrame) -> "Transform":
-        """Fit feature model.
+    def _fit(self, df: pd.DataFrame) -> "Transform":
+        """Fit the transform.
 
         Should be implemented by user.
 
         Parameters
         ----------
-        df
+        df:
+            Dataframe in etna wide format.
 
         Returns
         -------
         :
+            The fitted transform instance.
         """
         pass
+
+    def fit(self, ts: TSDataset) -> "Transform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        features_to_use = self._get_required_features()
+        df = ts.to_pandas(flatten=False, features=features_to_use)
+        self._fit(df=df)
+        return self
 
     @abstractmethod
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -104,7 +136,7 @@ class PerSegmentWrapper(Transform):
         self.segments = df.columns.get_level_values(0).unique()
         for segment in self.segments:
             self.segment_transforms[segment] = deepcopy(self._base_transform)
-            self.segment_transforms[segment].fit(df[segment])
+            self.segment_transforms[segment]._fit(df=df[segment])
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:

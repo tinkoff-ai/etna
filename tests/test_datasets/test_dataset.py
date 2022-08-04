@@ -962,29 +962,29 @@ def test_update_columns_update_regressors(df_and_regressors, known_future, regre
 
 
 @pytest.mark.parametrize(
-    "columns, expected_columns",
+    "features, expected_columns",
     (
         (["regressor_2"], ["timestamp", "segment", "target", "regressor_1"]),
         (["regressor_2", "out_of_dataset_column"], ["timestamp", "segment", "target", "regressor_1"]),
     ),
 )
-def test_remove_columns(df_and_regressors, columns, expected_columns):
+def test_remove_features(df_and_regressors, features, expected_columns):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    ts.remove_columns(columns=columns)
+    ts.remove_features(features=features)
     got_columns = ts.to_flatten(ts.df).columns
     assert sorted(got_columns) == sorted(expected_columns)
 
 
 @pytest.mark.parametrize(
-    "columns, expected_regressors",
+    "features, expected_regressors",
     (
         (["target", "regressor_2"], ["regressor_1"]),
         (["out_of_dataset_column"], ["regressor_1", "regressor_2"]),
     ),
 )
-def test_remove_columns_update_regressors(df_and_regressors, columns, expected_regressors):
+def test_remove_features_update_regressors(df_and_regressors, features, expected_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    ts.remove_columns(columns=columns)
+    ts.remove_features(features=features)
     assert sorted(ts.regressors) == sorted(expected_regressors)

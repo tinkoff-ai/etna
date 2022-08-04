@@ -900,21 +900,20 @@ class TSDataset:
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
 
-    def remove_columns(self, columns: List[str]):
+    def remove_features(self, features: List[str]):
         """Remove columns from the dataset.
 
         Columns that are not presented in the dataset will be ignored
 
         Parameters
         ----------
-        columns:
-            List of columns to be removed
+        features:
+            List of features to be removed
         """
-        for df in [self.df, self.df_exog, self.raw_df]:
-            columns_in_df = df.columns.get_level_values("feature")
-            columns_to_remove = list(set(columns_in_df) & set(columns))
-            df.drop(columns=columns_to_remove, level="feature", inplace=True)
-        self._regressors = list(set(self._regressors) - set(columns))
+        columns_in_df = self.df.columns.get_level_values("feature")
+        columns_to_remove = list(set(columns_in_df) & set(features))
+        self.df.drop(columns=columns_to_remove, level="feature", inplace=True)
+        self._regressors = list(set(self._regressors) - set(features))
 
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
