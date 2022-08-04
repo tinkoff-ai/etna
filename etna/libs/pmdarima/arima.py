@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+# Note: Copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
 
 import numpy as np
 import numpy.polynomial.polynomial as np_polynomial
@@ -30,7 +31,6 @@ from pmdarima.utils import diff_inv
 from pmdarima.utils import check_endog
 
 
-# Note: Originally copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
 def ARMAtoMA(ar, ma, max_deg):
     r"""
     Convert ARMA coefficients to infinite MA coefficients.
