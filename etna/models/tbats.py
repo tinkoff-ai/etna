@@ -11,7 +11,7 @@ from tbats.tbats.Model import Model
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
-from etna.models.utils import determine_num_steps_to_forecast
+from etna.models.utils import determine_num_steps
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -43,8 +43,8 @@ class _TBATSAdapter(BaseAdapter):
                 "In-sample predictions aren't supported by current implementation."
             )
 
-        steps_to_forecast = determine_num_steps_to_forecast(
-            last_train_timestamp=self._last_train_timestamp, last_test_timestamp=df["timestamp"].max(), freq=self._freq
+        steps_to_forecast = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
         )
         steps_to_skip = steps_to_forecast - df.shape[0]
 
