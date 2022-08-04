@@ -32,19 +32,18 @@ class BaseMixin:
         """Collect all information about etna object in dict."""
         init_args = inspect.signature(self.__init__).parameters
         params = {}
-        for arg, _ in init_args.items():
+        for arg in init_args.keys():
             value = self.__dict__[arg]
             if isinstance(value, BaseMixin):
                 params[arg] = value.to_dict()
+            elif isinstance(value, BaseEstimator):
+                params[arg] = {}
+                params[arg]["_target_"] = value.__class__
+                model_parameters = value.get_params()
+                params[arg].update(model_parameters)
             else:
-                if isinstance(value, BaseEstimator):
-                    params[arg] = {}
-                    params[arg]["_target_"] = value.__class__
-                    model_parameters = value.get_params()
-                    params[arg].update(model_parameters)
-                else:
-                    params[arg] = value
-                    warnings.warn("Some of external objects in input parameters is not instance of BaseEstimator")
+                params[arg] = value
+                warnings.warn("Some of external objects in input parameters could be not written in dict")
 
         params["_target_"] = self.__class__
         return params
