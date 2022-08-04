@@ -17,7 +17,6 @@ from etna.models.nn import DeepARModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import ChangePointsTrendTransform
-from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
 
 
@@ -52,7 +51,6 @@ def ensemble_samples():
         ChangePointsTrendTransform(
             in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
         ),
-        LambdaTransform(in_column="target", transform_func=lambda x: x + 3, inverse_transform_func=lambda x: x - 3),
     ],
 )
 def test_to_dict_transforms(target_object):
