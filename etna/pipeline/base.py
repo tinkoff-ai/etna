@@ -320,6 +320,16 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             )
         return predictions
 
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+    ) -> TSDataset:
+        raise NotImplementedError()
+
     def predict(
         self,
         ts: Optional[TSDataset] = None,
@@ -361,8 +371,32 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         ValueError:
             Value of ``ts`` isn't set and ``self.ts`` isn't present
         """
-        pass
+        # check ts
+        if ts is None:
+            ts = self.ts
+        if ts is None:
+            raise ValueError("Value of ts isn't set and self.ts isn't present")
 
+        # check timestamps
+        if start_timestamp is None:
+            start_timestamp = ts.index.min()
+        if end_timestamp is None:
+            end_timestamp = ts.index.max()
+        if start_timestamp > end_timestamp:
+            raise ValueError("Value of end_timestamp is less than start_timestamp")
+
+        # check quantiles
+        self._validate_quantiles(quantiles=quantiles)
+
+        # make prediction
+        prediction = self._predict(
+            ts=ts,
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+        )
+        return prediction
 
     def _init_backtest(self):
         self._folds: Optional[Dict[int, Any]] = None
