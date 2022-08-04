@@ -6,10 +6,10 @@ from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
-from pmdarima.arima.arima import _seasonal_prediction_with_confidence
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+from etna.libs.pmdarima import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.models.utils import determine_num_steps
@@ -277,14 +277,14 @@ class _SARIMAXAdapter(BaseAdapter):
             start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
         )
         if prediction_interval:
-            forecast, _ = _seasonal_prediction_with_confidence(
+            forecast, _ = seasonal_prediction_with_confidence(
                 arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
             )
             y_pred = pd.DataFrame({"mean": forecast})
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
-                _, borders = _seasonal_prediction_with_confidence(
+                _, borders = seasonal_prediction_with_confidence(
                     arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=alpha
                 )
                 if quantile < 1 / 2:
@@ -293,7 +293,7 @@ class _SARIMAXAdapter(BaseAdapter):
                     series = borders[:, 1]
                 y_pred[f"mean_{quantile:.4g}"] = series
         else:
-            forecast, _ = _seasonal_prediction_with_confidence(
+            forecast, _ = seasonal_prediction_with_confidence(
                 arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
             )
             y_pred = pd.DataFrame({"mean": forecast})
