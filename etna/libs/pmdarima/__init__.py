@@ -1,1 +1,1 @@
-from etna.libs.pmdarima.arima import seasonal_prediction_with_confidence
+from etna.libs.pmdarima.utils import seasonal_prediction_with_confidence
