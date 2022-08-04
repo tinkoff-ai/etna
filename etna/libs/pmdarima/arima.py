@@ -25,13 +25,80 @@ SOFTWARE.
 import numpy as np
 import numpy.polynomial.polynomial as np_polynomial
 from sklearn.utils.validation import check_array
-from pmdarima.arima import ARMAtoMA
 from pmdarima.utils import diff
 from pmdarima.utils import diff_inv
 from pmdarima.utils import check_endog
 
 
-# Note: Originally copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.3/pmdarima/arima/arima.py)
+# Note: Originally copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
+def ARMAtoMA(ar, ma, max_deg):
+    r"""
+    Convert ARMA coefficients to infinite MA coefficients.
+    Compute coefficients of MA model equivalent to given ARMA model.
+    MA coefficients are cut off at max_deg.
+    The same function as ARMAtoMA() in stats library of R
+    Parameters
+    ----------
+    ar : array-like, shape=(n_orders,)
+        The array of AR coefficients.
+    ma : array-like, shape=(n_orders,)
+        The array of MA coefficients.
+    max_deg : int
+        Coefficients are computed up to the order of max_deg.
+    Returns
+    -------
+    np.ndarray, shape=(max_deg,)
+        Equivalent MA coefficients.
+    Notes
+    -----
+    Here is the derivation. Suppose ARMA model is defined as
+    .. math::
+    x_t - ar_1*x_{t-1} - ar_2*x_{t-2} - ... - ar_p*x_{t-p}\\
+        = e_t + ma_1*e_{t-1} + ma_2*e_{t-2} + ... + ma_q*e_{t-q}
+    namely
+    .. math::
+    (1 - \sum_{i=1}^p[ar_i*B^i]) x_t = (1 + \sum_{i=1}^q[ma_i*B^i]) e_t
+    where :math:`B` is a backward operator.
+    Equivalent MA model is
+    .. math::
+        x_t = (1 - \sum_{i=1}^p[ar_i*B^i])^{-1}\\
+        * (1 + \sum_{i=1}^q[ma_i*B^i]) e_t\\
+        = (1 + \sum_{i=1}[ema_i*B^i]) e_t
+    where :math:``ema_i`` is a coefficient of equivalent MA model.
+    The :math:``ema_i`` satisfies
+    .. math::
+        (1 - \sum_{i=1}^p[ar_i*B^i]) * (1 + \sum_{i=1}[ema_i*B^i]) \\
+        = 1 + \sum_{i=1}^q[ma_i*B^i]
+    thus
+    .. math::
+        \sum_{i=1}[ema_i*B^i] = \sum_{i=1}^p[ar_i*B^i] \\
+        + \sum_{i=1}^p[ar_i*B^i] * \sum_{j=1}[ema_j*B^j] \\
+        + \Sum_{i=1}^q[ma_i*B^i]
+    therefore
+    .. math::
+        ema_i = ar_i (but 0 if i>p) \\
+        + \Sum_{j=1}^{min(i-1,p)}[ar_j*ema_{i-j}] + ma_i(but 0 if i>q) \\
+        = \sum_{j=1}{min(i,p)}[ar_j*ema_{i-j}(but 1 if j=i)] \\
+        + ma_i(but 0 if i>q)
+    Examples
+    --------
+    >>> ar = np.array([0.1])
+    >>> ma = np.empty(0)
+    >>> ARMAtoMA(ar, ma, 3)
+    array[0.1, 0.01, 0.001]
+    """
+    p = len(ar)
+    q = len(ma)
+    ema = np.empty(max_deg)
+    for i in range(0, max_deg):
+        temp = ma[i] if i < q else 0.0
+        for j in range(0, min(i + 1, p)):
+            temp += ar[j] * (ema[i - j - 1] if i - j - 1 >= 0 else 1.0)
+        ema[i] = temp
+    return ema
+
+
+# Note: Originally copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
 def seasonal_prediction_with_confidence(arima_res,
                                         start,
                                         end,
