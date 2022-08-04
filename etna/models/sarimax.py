@@ -197,7 +197,7 @@ class _SARIMAXAdapter(BaseAdapter):
 
         self._check_df(df)
 
-        # make it a numpy array for forgetting about indices
+        # make it a numpy array for forgetting about indices, it is necessary for _seasonal_prediction_with_confidence
         targets = df["target"].values
 
         exog_train = self._select_regressors(df)
