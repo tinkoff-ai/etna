@@ -189,6 +189,49 @@ class AbstractPipeline(ABC):
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
 
+    @abstractmethod
+    def predict(
+        self,
+        ts: Optional[TSDataset] = None,
+        start_timestamp: Optional[pd.Timestamp] = None,
+        end_timestamp: Optional[pd.Timestamp] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """
+        Make predictions in a given range.
+
+        Currently, in situation when segments start with different timestamps
+        we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with context, if isn't set ``self.ts`` is used
+        start_timestamp:
+            First timestamp of prediction range to return, should be >= than first timestamp in ``ts``;
+            expected that beginning of each segment <= ``start_timestamp``;
+            if isn't set the first timestamp of ``ts`` is taken
+        end_timestamp:
+            Last timestamp of prediction range to return; if isn't set the last timestamp of ``ts`` is taken
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions in ``[start_timestamp, end_timestamp]`` range.
+
+        Raises
+        ------
+        ValueError:
+            Value of ``end_timestamp`` is less than ``start_timestamp``
+        ValueError:
+            Value of ``ts`` isn't set and ``self.ts`` isn't present
+        """
+
 
 class BasePipeline(AbstractPipeline, BaseMixin):
     """Base class for pipeline."""
@@ -276,6 +319,50 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 predictions=predictions, quantiles=quantiles, n_folds=n_folds
             )
         return predictions
+
+    def predict(
+        self,
+        ts: Optional[TSDataset] = None,
+        start_timestamp: Optional[pd.Timestamp] = None,
+        end_timestamp: Optional[pd.Timestamp] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """
+        Make predictions in a given range.
+
+        Currently, in situation when segments start with different timestamps
+        we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with context, if isn't set ``self.ts`` is used
+        start_timestamp:
+            First timestamp of prediction range to return, should be >= than first timestamp in ``ts``;
+            expected that beginning of each segment <= ``start_timestamp``;
+            if isn't set the first timestamp of ``ts`` is taken
+        end_timestamp:
+            Last timestamp of prediction range to return; if isn't set the last timestamp of ``ts`` is taken
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions in ``[start_timestamp, end_timestamp]`` range.
+
+        Raises
+        ------
+        ValueError:
+            Value of ``end_timestamp`` is less than ``start_timestamp``
+        ValueError:
+            Value of ``ts`` isn't set and ``self.ts`` isn't present
+        """
+        pass
+
 
     def _init_backtest(self):
         self._folds: Optional[Dict[int, Any]] = None
