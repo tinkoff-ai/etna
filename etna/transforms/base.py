@@ -15,16 +15,11 @@ class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-class DymmyInColumnMixin:
-    """Mixin for transforms that has no explicit in_column."""
-
-    in_column = "target"
-
-
 class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
-    in_column: Union[Literal["all"], List[str], str] = "target"
+    def __init__(self):
+        in_column: Union[Literal["all"], List[str], str] = "target"
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.

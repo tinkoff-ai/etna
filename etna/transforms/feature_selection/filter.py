@@ -3,14 +3,12 @@ from typing import Sequence
 
 import pandas as pd
 
-from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import Transform
 
 
-class FilterFeaturesTransform(Transform, DymmyInColumnMixin):
+class FilterFeaturesTransform(Transform):
     """Filters features in each segment of the dataframe."""
 
-    in_column = "all"
 
     def __init__(
         self,
@@ -43,6 +41,7 @@ class FilterFeaturesTransform(Transform, DymmyInColumnMixin):
             self.exclude = list(set(exclude))
         else:
             raise ValueError("There should be exactly one option set: include or exclude")
+        self.in_column = "all"
 
     def fit(self, df: pd.DataFrame) -> "FilterFeaturesTransform":
         """Fit method does nothing and is kept for compatibility.
