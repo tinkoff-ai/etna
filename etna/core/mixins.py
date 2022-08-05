@@ -1,6 +1,9 @@
 import inspect
 import warnings
 from enum import Enum
+from typing import Any
+from typing import Dict
+from typing import List
 
 from sklearn.base import BaseEstimator
 
@@ -28,24 +31,44 @@ class BaseMixin:
                 args_str_representation += f"{arg} = {repr(value)}, "
         return f"{self.__class__.__name__}({args_str_representation})"
 
+    @staticmethod
+    def _get_target_from_class(value: Any):
+        if value is None:
+            return None
+        return str(value.__class__)[8:-2]
+
+    @staticmethod
+    def _parse_value(value: Any) -> Any:
+        if isinstance(value, BaseMixin):
+            return value.to_dict()
+        elif isinstance(value, BaseEstimator):
+            answer = {}
+            answer["_target_"] = BaseMixin._get_target_from_class(value)
+            model_parameters = value.get_params()
+            answer.update(model_parameters)
+            return answer
+        elif isinstance(value, str) or isinstance(value, float) or isinstance(value, int):
+            return value
+        elif isinstance(value, List):
+            return [BaseMixin._parse_value(elem) for elem in value]
+        elif isinstance(value, Dict):
+            return {key: BaseMixin._parse_value(item) for key, item in value.items()}
+        else:
+            answer = {}
+            answer["_target_"] = BaseMixin._get_target_from_class(value)
+            warnings.warn("Some of external objects in input parameters could be not written in dict")
+            return answer
+
     def to_dict(self):
         """Collect all information about etna object in dict."""
         init_args = inspect.signature(self.__init__).parameters
         params = {}
         for arg in init_args.keys():
             value = self.__dict__[arg]
-            if isinstance(value, BaseMixin):
-                params[arg] = value.to_dict()
-            elif isinstance(value, BaseEstimator):
-                params[arg] = {}
-                params[arg]["_target_"] = value.__class__
-                model_parameters = value.get_params()
-                params[arg].update(model_parameters)
-            else:
-                params[arg] = value
-                warnings.warn("Some of external objects in input parameters could be not written in dict")
-
-        params["_target_"] = self.__class__
+            if value is None:
+                continue
+            params[arg] = BaseMixin._parse_value(value=value)
+        params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
 
 
