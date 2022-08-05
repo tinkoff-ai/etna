@@ -9,7 +9,7 @@ import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from etna.libs.pmdarima import seasonal_prediction_with_confidence
+from etna.libs.pmdarima.arima import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.models.utils import determine_num_steps
