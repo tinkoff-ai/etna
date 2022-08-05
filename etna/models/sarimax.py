@@ -270,12 +270,15 @@ class _SARIMAXAdapter(BaseAdapter):
         exog_future = self._select_regressors(df)
         start_timestamp = df["timestamp"].min()
         end_timestamp = df["timestamp"].max()
+        # determine index of start_timestamp if counting from first timestamp of train
         start_idx = determine_num_steps(
             start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
         )
+        # determine index of end_timestamp if counting from first timestamp of train
         end_idx = determine_num_steps(
             start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
         )
+
         if prediction_interval:
             forecast, _ = seasonal_prediction_with_confidence(
                 arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
