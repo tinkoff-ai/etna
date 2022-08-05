@@ -80,12 +80,6 @@ def ARMAtoMA(ar, ma, max_deg):
         + \Sum_{j=1}^{min(i-1,p)}[ar_j*ema_{i-j}] + ma_i(but 0 if i>q) \\
         = \sum_{j=1}{min(i,p)}[ar_j*ema_{i-j}(but 1 if j=i)] \\
         + ma_i(but 0 if i>q)
-    Examples
-    --------
-    >>> ar = np.array([0.1])
-    >>> ma = np.empty(0)
-    >>> ARMAtoMA(ar, ma, 3)
-    array[0.1, 0.01, 0.001]
     """
     p = len(ar)
     q = len(ma)
