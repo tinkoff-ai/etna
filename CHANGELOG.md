@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 -
 - 
-- 
+- Base class for transforms now works with TSDataset ([835](https://github.com/tinkoff-ai/etna/pull/835))
 - All the transforms now has `in_column` attribute ([#820](https://github.com/tinkoff-ai/etna/pull/820))
 -
 -
