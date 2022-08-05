@@ -18,8 +18,8 @@ class FutureMixin:
 class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
-    def __init__(self):
-        self.in_column: Union[Literal["all"], List[str], str] = "target"
+    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
+        self.in_column = in_column
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
@@ -46,8 +46,8 @@ class NewTransform(ABC, BaseMixin):
 
     def _update_dataset(self, ts: TSDataset, df: pd.DataFrame, df_transformed: pd.DataFrame) -> TSDataset:
         """Update TSDataset based on the difference between dfs."""
-        columns_before = set(df.columns.get_level_values("features"))
-        columns_after = set(df_transformed.columns.get_level_values("features"))
+        columns_before = set(df.columns.get_level_values("feature"))
+        columns_after = set(df_transformed.columns.get_level_values("feature"))
 
         # Transforms now can only remove or only add/update columns
         removed_features = list(columns_before - columns_after)
