@@ -19,7 +19,7 @@ class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     def __init__(self):
-        in_column: Union[Literal["all"], List[str], str] = "target"
+        self.in_column: Union[Literal["all"], List[str], str] = "target"
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
@@ -35,9 +35,14 @@ class NewTransform(ABC, BaseMixin):
     def required_features(self) -> Union[Literal["all"], List[str]]:
         """Get the list of required features."""
         required_features = self.in_column
-        if isinstance(required_features, str) and required_features != "all":
-            required_features = [required_features]
-        return required_features
+        if isinstance(required_features, list):
+            return required_features
+        elif isinstance(required_features, str):
+            if required_features == "all":
+                return "all"
+            return [required_features]
+        else:
+            raise ValueError("in_column attribute is in incorrect format!")
 
     def _update_dataset(self, ts: TSDataset, df: pd.DataFrame, df_transformed: pd.DataFrame) -> TSDataset:
         """Update TSDataset based on the difference between dfs."""

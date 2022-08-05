@@ -9,7 +9,6 @@ from etna.transforms.base import Transform
 class FilterFeaturesTransform(Transform):
     """Filters features in each segment of the dataframe."""
 
-
     def __init__(
         self,
         include: Optional[Sequence[str]] = None,

@@ -35,7 +35,6 @@ class PytorchForecastingTransform(Transform):
     This transform should be added at the very end of ``transforms`` parameter.
     """
 
-
     def __init__(
         self,
         max_encoder_length: int = 30,
