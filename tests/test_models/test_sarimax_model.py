@@ -1,11 +1,18 @@
-import numpy as np
 import pytest
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from etna.datasets import TSDataset
-from etna.datasets import generate_ar_df
 from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
+
+
+def _check_prediction(ts, model, horizon):
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
+    res = model.forecast(future_ts)
+    res = res.to_pandas(flatten=True)
+
+    assert not res.isnull().values.any()
+    assert len(res) == 14
 
 
 def test_sarimax_forecaster_run(example_tsds):
@@ -14,16 +21,7 @@ def test_sarimax_forecaster_run(example_tsds):
     When:
     Then: I get 7 periods per dataset as a forecast
     """
-
-    horizon = 7
-    model = SARIMAXModel()
-    model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+    _check_prediction(ts=example_tsds, model=SARIMAXModel(), horizon=7)
 
 
 def test_sarimax_save_regressors_on_fit(example_reg_tsds):
@@ -43,21 +41,22 @@ def test_sarimax_select_regressors_correctly(example_reg_tsds):
         assert (segment_regressors == segment_regressors_expected).all().all()
 
 
+def test_sarimax_forecaster_run_with_simple_differencing(example_tsds):
+    """
+    Given: I have dataframe with 2 segments
+    When:
+    Then: I get 7 periods per dataset as a forecast
+    """
+    _check_prediction(ts=example_tsds, model=SARIMAXModel(simple_differencing=True), horizon=7)
+
+
 def test_sarimax_forecaster_run_with_reg(example_reg_tsds):
     """
     Given: I have dataframe with 2 segments
     When:
     Then: I get 7 periods per dataset as a forecast
     """
-    horizon = 7
-    model = SARIMAXModel()
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+    _check_prediction(ts=example_reg_tsds, model=SARIMAXModel(), horizon=7)
 
 
 def test_sarimax_forececaster_run_with_reg_custom_order(example_reg_tsds):
@@ -66,15 +65,7 @@ def test_sarimax_forececaster_run_with_reg_custom_order(example_reg_tsds):
     When: Sarimax have non standard `order` param
     Then: I get 7 periods per dataset as a forecast
     """
-    horizon = 7
-    model = SARIMAXModel(order=(3, 1, 0))
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+    _check_prediction(ts=example_reg_tsds, model=SARIMAXModel(order=(3, 1, 0)), horizon=7)
 
 
 def test_prediction_interval_run_insample(example_tsds):
@@ -137,30 +128,3 @@ def test_sarimax_forecast_1_point(example_tsds):
     assert len(pred.df) == horizon
     pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
     assert len(pred_quantiles.df) == horizon
-
-
-def test_prediction_simple_differencing():
-    """Check that SARIMAX gives similar results with different values of ``simple_differencing``.
-
-    We generate dataset from ``generate_ar_df`` with ``ar_coef=[1]`` and it gives us (0, 1, 1) process.
-    """
-    horizon = 7
-    df = generate_ar_df(periods=100, n_segments=3, start_time="2020-01-01", ar_coef=[1])
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
-
-    # prepare prediction from regular model
-    model_regular = SARIMAXModel(order=(0, 1, 1))
-    model_regular.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    regular_prediction = model_regular.forecast(future_ts)
-    regular_prediction = regular_prediction.to_pandas(flatten=True)
-
-    # prepare prediction from model with simple differencing
-    model_simplified = SARIMAXModel(order=(0, 1, 1), simple_differencing=True)
-    model_simplified.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    simplified_prediction = model_simplified.forecast(future_ts)
-    simplified_prediction = simplified_prediction.to_pandas(flatten=True)
-
-    correlation = np.corrcoef(regular_prediction["target"], simplified_prediction["target"])[0, 1]
-    assert correlation >= 0.95
