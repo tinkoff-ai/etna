@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Tuple
 
 from sklearn.base import BaseEstimator
 
@@ -52,7 +51,7 @@ class BaseMixin:
             return value
         elif isinstance(value, List):
             return [BaseMixin._parse_value(elem) for elem in value]
-        elif isinstance(value, Tuple):
+        elif isinstance(value, tuple):
             return tuple([BaseMixin._parse_value(elem) for elem in value])
         elif isinstance(value, Dict):
             return {key: BaseMixin._parse_value(item) for key, item in value.items()}
