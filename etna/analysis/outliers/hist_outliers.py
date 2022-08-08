@@ -34,9 +34,9 @@ def optimal_sse(left: int, right: int, p: np.ndarray, pp: np.ndarray) -> float:
     """
     if left == 0:
         avg = p[right]
-        return pp[right] - avg ** 2 / (right - left + 1)
+        return pp[right] - avg**2 / (right - left + 1)
     avg = p[right] - p[left - 1]
-    return pp[right] - pp[left - 1] - avg ** 2 / (right - left + 1)
+    return pp[right] - pp[left - 1] - avg**2 / (right - left + 1)
 
 
 @numba.jit(nopython=True)
@@ -178,12 +178,12 @@ def compute_f(series: np.ndarray, k: int, p: np.ndarray, pp: np.ndarray) -> typi
                 now_outliers_indices = []
                 where = 0
                 for i in range(len(ss[left_border][right_border - 1][outlier_number])):
-                    tmp_ss.append(ss[left_border][right_border - 1][outlier_number][i] + series[right_border] ** 2)
+                    tmp_ss.append(ss[left_border][right_border - 1][outlier_number][i] + series[right_border]**2)
                     tmp_s.append(s[left_border][right_border - 1][outlier_number][i] + series[right_border])
                     now_outliers_indices.append(
                         deepcopy(outliers_indices[left_border][right_border - 1][outlier_number][i])
                     )
-                    f2.append(tmp_ss[-1] - tmp_s[-1] ** 2 / (right_border - left_border + 1 - outlier_number))
+                    f2.append(tmp_ss[-1] - tmp_s[-1]**2 / (right_border - left_border + 1 - outlier_number))
                     if f2[-1] < now_min:
                         now_min = f2[-1]
                         where = i
@@ -251,10 +251,10 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
 
     p, pp = np.empty_like(series), np.empty_like(series)
     p[0] = series[0]
-    pp[0] = series[0] ** 2
+    pp[0] = series[0]**2
     for i in range(1, len(series)):
         p[i] = p[i - 1] + series[i]
-        pp[i] = pp[i - 1] + series[i] ** 2
+        pp[i] = pp[i - 1] + series[i]**2
 
     f, outliers_indices = compute_f(series, bins_number - 1, p, pp)
 
