@@ -93,11 +93,12 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         dockerfile:
           - {"name": etna-cpu, "path": docker/etna-cpu/Dockerfile}
           - {"name": etna-cuda-10.2, "path": docker/etna-cuda-10.2/Dockerfile}
-          - {"name": etna-cuda-11.1, "path": docker/etna-cuda-11.1/Dockerfile}
+          - {"name": etna-cuda-11.6.2, "path": docker/etna-cuda-11.6.2/Dockerfile}
 
     steps:
       - uses: actions/checkout@v2
