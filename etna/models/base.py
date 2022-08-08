@@ -820,4 +820,57 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         return self.net
 
 
-BaseModel = Union[PerSegmentModel, PerSegmentPredictionIntervalModel, MultiSegmentModel, DeepBaseModel]
+class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
+    """Class for holding specific models for per-segment prediction which are able to build prediction intervals."""
+
+    def __init__(self, base_model: Any):
+        """
+        Init PerSegmentPredictionIntervalModel.
+
+        Parameters
+        ----------
+        base_model:
+            Internal model which will be used to forecast segments, expected to have fit/predict interface
+        """
+        super().__init__()
+        self._base_model = base_model
+
+    @log_decorator
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        horizon = len(ts.df)
+        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
+        y = (
+            self._base_model.predict(x, prediction_interval=prediction_interval, quantiles=quantiles)
+            .reshape(-1, horizon)
+            .T
+        )
+        ts.loc[:, pd.IndexSlice[:, "target"]] = y
+        ts.inverse_transform()
+        return ts
+
+
+BaseModel = Union[
+    PerSegmentModel,
+    PerSegmentPredictionIntervalModel,
+    MultiSegmentModel,
+    DeepBaseModel,
+    MultiSegmentPredictionIntervalModel,
+]
