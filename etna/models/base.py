@@ -866,6 +866,19 @@ class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstr
         ts.inverse_transform()
         return ts
 
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self._base_model.get_model()
+
 
 BaseModel = Union[
     PerSegmentModel,
