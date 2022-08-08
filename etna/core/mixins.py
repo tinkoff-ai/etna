@@ -1,7 +1,7 @@
 import inspect
 import warnings
 from enum import Enum
-from typing import Any
+from typing import Any, Tuple
 from typing import Dict
 from typing import List
 
@@ -35,7 +35,7 @@ class BaseMixin:
     def _get_target_from_class(value: Any):
         if value is None:
             return None
-        return str(value.__class__)[8:-2]
+        return str(value.__module__) + "." + str(value.__class__.__name__)
 
     @staticmethod
     def _parse_value(value: Any) -> Any:
@@ -47,10 +47,12 @@ class BaseMixin:
             model_parameters = value.get_params()
             answer.update(model_parameters)
             return answer
-        elif isinstance(value, str) or isinstance(value, float) or isinstance(value, int):
+        elif isinstance(value, (str, float, int)):
             return value
         elif isinstance(value, List):
             return [BaseMixin._parse_value(elem) for elem in value]
+        elif isinstance(value, Tuple):
+            return tuple([BaseMixin._parse_value(elem) for elem in value])
         elif isinstance(value, Dict):
             return {key: BaseMixin._parse_value(item) for key, item in value.items()}
         else:
