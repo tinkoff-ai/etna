@@ -821,11 +821,11 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
 
 
 class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
-    """Class for holding specific models for per-segment prediction which are able to build prediction intervals."""
+    """Class for holding specific models for multi-segment prediction which are able to build prediction intervals."""
 
     def __init__(self, base_model: Any):
         """
-        Init PerSegmentPredictionIntervalModel.
+        Init MultiSegmentPredictionIntervalModel.
 
         Parameters
         ----------
