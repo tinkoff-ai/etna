@@ -43,6 +43,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
             in_column=in_column,
             change_point_model=change_point_model,
             detrend_model=detrend_model,
+            out_column=out_column,
             **change_point_model_predict_params,
         )
 
