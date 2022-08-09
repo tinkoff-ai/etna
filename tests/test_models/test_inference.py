@@ -149,16 +149,16 @@ def _test_forecast_mixed_in_out_sample(ts, model, transforms):
 @pytest.mark.parametrize(
     "model, transforms",
     [
-        # (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
-        # (ProphetModel(), []),
-        # (SARIMAXModel(), []),
+        (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+        (ProphetModel(), []),
+        (SARIMAXModel(), []),
         (AutoARIMAModel(), []),
-        # (HoltModel(), []),
-        # (HoltWintersModel(), []),
-        # (SimpleExpSmoothingModel(), []),
-        # (MovingAverageModel(window=3), []),
-        # (NaiveModel(lag=3), []),
-        # (SeasonalMovingAverageModel(), []),
+        (HoltModel(), []),
+        (HoltWintersModel(), []),
+        (SimpleExpSmoothingModel(), []),
+        (MovingAverageModel(window=3), []),
+        (NaiveModel(lag=3), []),
+        (SeasonalMovingAverageModel(), []),
     ],
 )
 def test_forecast_in_sample_full(model, transforms, example_tsds):
