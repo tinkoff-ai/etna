@@ -1,5 +1,8 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import List
+from typing import Optional
+from typing import Union
 
 import torch
 from torch import Tensor
@@ -124,7 +127,7 @@ class SeasonalitySSM(LevelSSM):
     """Class for Seasonality State Space Model."""
 
     def __init__(self, num_seasons: int):
-        """Create instance of _SingleDifferencingTransform.
+        """Create instance of SeasonalitySSM.
 
         Parameters
         ----------
@@ -139,3 +142,40 @@ class SeasonalitySSM(LevelSSM):
     def emission_coeff(self, datetime_index: Tensor) -> Tensor:
         emission_coeff = one_hot(datetime_index.squeeze(-1), num_classes=self.latent_dim())
         return emission_coeff.float()
+
+
+class CompositeSSM(SSM):
+    """Class to compose several State Space Models."""
+
+    def __init__(
+        self, seasonal_ssms: List[SeasonalitySSM], nonseasonal_ssm: Optional[Union[LevelSSM, LevelTrendSSM]] = None
+    ):
+        """Create instance of CompositeSSM.
+
+        Parameters
+        ----------
+        seasonal_ssms:
+            List with the instances of Seasonality State Space Models.
+        nonseasonal_ssm:
+            Instance of Level or Level-Trend State Space Model.
+        """
+        self.seasonal_ssms = seasonal_ssms
+        self.nonseasonal_ssm = nonseasonal_ssm
+        self.ssms: List[SSM] = self.seasonal_ssms  # type: ignore
+        if self.nonseasonal_ssm is not None:
+            self.ssms.append(self.nonseasonal_ssm)
+
+    def latent_dim(self) -> int:
+        return sum([ssm.latent_dim() for ssm in self.ssms])
+
+    def emission_coeff(self, datetime_index: Tensor) -> Tensor:
+        emission_coeff = torch.cat([ssm.emission_coeff(datetime_index[i]) for i, ssm in enumerate(self.ssms)], dim=-1)
+        return emission_coeff
+
+    def transition_coeff(self, datetime_index: Tensor) -> Tensor:
+        place_holder = datetime_index[0]
+        transition_coeff = torch.block_diag(*[ssm.transition_coeff(place_holder) for ssm in self.ssms])
+        return transition_coeff
+
+    def innovation_coeff(self, datetime_index: Tensor) -> Tensor:
+        return self.emission_coeff(datetime_index)
