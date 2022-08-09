@@ -37,3 +37,34 @@ def test_sample_shape(lds, n_samples=3):
 
     samples = lds.sample(n_samples=n_samples)
     assert samples.shape == expected_shape
+
+
+def test_kalman_filter_step_shape(lds):
+    log_p_expected_shape = (lds.batch_size, 1)
+    filtered_mean_expected_shape = (lds.batch_size, lds.latent_dim)
+    filtered_cov_expected_shape = (lds.batch_size, lds.latent_dim, lds.latent_dim)
+
+    log_p, filtered_mean, filtered_cov = lds.kalman_filter_step(
+        target=torch.rand(size=(lds.batch_size, 1)),
+        noise_std=lds.noise_std[:, 0],
+        prior_mean=lds.prior_mean[:, 0],
+        prior_cov=lds.prior_cov[:, 0],
+        emission_coeff=lds.emission_coeff[:, 0],
+        offset=lds.offset[:, 0],
+    )
+
+    assert log_p.shape == log_p_expected_shape
+    assert filtered_mean.shape == filtered_mean_expected_shape
+    assert filtered_cov.shape == filtered_cov_expected_shape
+
+
+def test_kalman_filter_shape(lds):
+    log_p_expected_shape = (lds.batch_size, lds.seq_length)
+    filtered_mean_expected_shape = (lds.batch_size, lds.latent_dim)
+    filtered_cov_expected_shape = (lds.batch_size, lds.latent_dim, lds.latent_dim)
+
+    log_p, filtered_mean, filtered_cov = lds.kalman_filter(targets=torch.rand(size=(lds.batch_size, lds.seq_length, 1)))
+
+    assert log_p.shape == log_p_expected_shape
+    assert filtered_mean.shape == filtered_mean_expected_shape
+    assert filtered_cov.shape == filtered_cov_expected_shape
