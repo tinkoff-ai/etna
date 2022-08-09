@@ -21,9 +21,9 @@ class _OneSegmentChangePointsTrendTransform(_ChangePointsTransform):
     def __init__(
         self,
         in_column: str,
-        out_column: str,
         change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
+        out_column: str,
         **change_point_model_predict_params,
     ):
         """Init _OneSegmentChangePointsTrendTransform.
@@ -32,15 +32,17 @@ class _OneSegmentChangePointsTrendTransform(_ChangePointsTransform):
         ----------
         in_column:
             name of column to apply transform to
-        out_column:
-            result column name. If not given make transform inplace
         change_point_model:
             model to get trend change points
         detrend_model:
             model to get trend in data
+        out_column:
+            result column name. If not given make transform inplace
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
+        if out_column is None:
+            out_column = in_column
         super(_OneSegmentChangePointsTrendTransform, self).__init__(
             in_column=in_column,
             out_column=out_column,
