@@ -5,10 +5,10 @@ from ruptures.base import BaseEstimator
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.decomposition.change_points import ChangePointsTransform
+from etna.transforms.decomposition.change_points import _ChangePointsTransform
 
 
-class _OneSegmentChangePointsSegmentationTransform(ChangePointsTransform):
+class _OneSegmentChangePointsSegmentationTransform(_ChangePointsTransform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(
@@ -21,16 +21,17 @@ class _OneSegmentChangePointsSegmentationTransform(ChangePointsTransform):
             name of column to apply transform to
         change_point_model:
             model to get change points
-        out_column: str, optional
+        out_column:
             result column name. If not given use ``self.__repr__()``
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
         super(_OneSegmentChangePointsSegmentationTransform, self).__init__(
-            in_column=in_column, change_point_model=change_point_model, **change_point_model_predict_params
+            in_column=in_column,
+            out_column=out_column,
+            change_point_model=change_point_model,
+            **change_point_model_predict_params,
         )
-
-        self.out_column = out_column
 
     def _fill_per_interval(self, series: pd.Series) -> pd.Series:
         """Fill values in resulting series."""
@@ -51,9 +52,10 @@ class _OneSegmentChangePointsSegmentationTransform(ChangePointsTransform):
         ----------
         df:
             one segment dataframe
+
         Returns
         -------
-        df: pd.DataFrame
+        df:
             df with new column
         """
         series = df[self.in_column]
@@ -68,9 +70,10 @@ class _OneSegmentChangePointsSegmentationTransform(ChangePointsTransform):
         ----------
         df:
             one segment dataframe
+
         Returns
         -------
-        df: pd.DataFrame
+        df:
             one segment dataframe
         """
         return df
@@ -100,7 +103,7 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
             name of column to fit change point model
         change_point_model:
             model to get change points
-        out_column: str, optional
+        out_column:
             result column name. If not given use ``self.__repr__()``
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
@@ -109,6 +112,8 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
         self.out_column = out_column
         self.change_point_model = change_point_model
         self.change_point_model_predict_params = change_point_model_predict_params
+        if self.out_column is None:
+            self.out_column = repr(self)
         super().__init__(
             transform=_OneSegmentChangePointsSegmentationTransform(
                 in_column=self.in_column,

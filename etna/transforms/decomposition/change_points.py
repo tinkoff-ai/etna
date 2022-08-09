@@ -14,23 +14,27 @@ TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
 TDetrendModel = Type[RegressorMixin]
 
 
-class ChangePointsTransform(Transform):
-    """ChangePointsTransform is the base class for transforms with change points."""
+class _ChangePointsTransform(Transform):
+    """_ChangePointsTransform is the base class for transforms with change points."""
 
-    def __init__(self, in_column: str, change_point_model: BaseEstimator, **change_point_model_predict_params):
-        """Init ChangePointsTransform.
+    def __init__(
+        self, in_column: str, out_column: str, change_point_model: BaseEstimator, **change_point_model_predict_params
+    ):
+        """Init _ChangePointsTransform.
 
         Parameters
         ----------
         in_column:
             name of column to apply transform to
+        out_column:
+            result column name
         change_point_model:
             model to get change points
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
-        self.out_columns = in_column
+        self.out_columns = out_column
         self.change_point_model = change_point_model
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model_predict_params = change_point_model_predict_params
@@ -48,8 +52,8 @@ class ChangePointsTransform(Transform):
         intervals.append((left_border, pd.Timestamp.max))
         return intervals
 
-    def fit(self, df: pd.DataFrame) -> "ChangePointsTransform":
-        """Fit ChangePointsTransform: find change points in ``df`` and build intervals..
+    def fit(self, df: pd.DataFrame) -> "_ChangePointsTransform":
+        """Fit _ChangePointsTransform: find change points in ``df`` and build intervals.
 
         Parameters
         ----------
@@ -59,6 +63,11 @@ class ChangePointsTransform(Transform):
         Returns
         -------
         :
+
+        Raises:
+        -------
+        ValueError
+            If series contains NaNs in the middle
         """
         self.series = df.loc[
             df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column
