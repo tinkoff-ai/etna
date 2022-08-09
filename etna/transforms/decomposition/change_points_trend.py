@@ -23,7 +23,7 @@ class _OneSegmentChangePointsTrendTransform(_ChangePointsTransform):
         in_column: str,
         change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
-        out_column: str,
+        out_column: Optional[str] = None,
         **change_point_model_predict_params,
     ):
         """Init _OneSegmentChangePointsTrendTransform.
