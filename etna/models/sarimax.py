@@ -6,7 +6,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
@@ -55,10 +54,8 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         self._encode_categoricals(df)
         self._check_df(df)
 
-        # make it a numpy array for forgetting about indices, it is necessary for _seasonal_prediction_with_confidence
-        targets = df["target"].values
         exog_train = self._select_regressors(df)
-        self._fit_results = self._get_fit_results(endog=targets, exog=exog_train)
+        self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
         freq = pd.infer_freq(df["timestamp"], warn=False)
         if freq is None:
@@ -134,7 +131,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         return y_pred
 
     @abstractmethod
-    def _get_fit_results(self, endog: np.ndarray, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
+    def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
         pass
 
     def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
@@ -326,9 +323,11 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         self.kwargs = kwargs
         super().__init__()
 
-    def _get_fit_results(self, endog: np.ndarray, exog: pd.DataFrame):
+    def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame):
+        # make it a numpy array for forgetting about indices, it is necessary for _seasonal_prediction_with_confidence
+        endog_np = endog.values
         model = SARIMAX(
-            endog=endog,
+            endog=endog_np,
             exog=exog,
             order=self.order,
             seasonal_order=self.seasonal_order,
