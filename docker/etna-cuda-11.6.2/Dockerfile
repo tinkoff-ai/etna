@@ -1,6 +1,6 @@
-ARG BASE_IMAGE=nvidia/cuda:11.1-cudnn8-runtime-ubuntu18.04
+ARG BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu18.04
 ARG DISTRO_ARCH=ubuntu1804/x86_64
-ARG CUDA_VERSION_FOR_TORCH=cu111
+ARG CUDA_VERSION_FOR_TORCH=cu116
 
 FROM ${BASE_IMAGE}
 

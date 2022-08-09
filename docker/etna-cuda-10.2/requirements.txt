@@ -1,2 +1,2 @@
+jupyterlab
 etna[all]
-jupyter
