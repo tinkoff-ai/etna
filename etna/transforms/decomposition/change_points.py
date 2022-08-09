@@ -34,7 +34,7 @@ class _ChangePointsTransform(Transform):
             params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
-        self.out_columns = out_column
+        self.out_column = out_column
         self.change_point_model = change_point_model
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model_predict_params = change_point_model_predict_params
@@ -64,8 +64,8 @@ class _ChangePointsTransform(Transform):
         -------
         :
 
-        Raises:
-        -------
+        Raises
+        ------
         ValueError
             If series contains NaNs in the middle
         """
