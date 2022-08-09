@@ -27,13 +27,15 @@ def test_run_with_reg(new_format_df, new_format_exog):
 
     regressors = new_format_exog.copy()
     regressors.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
-    regressors_cap = new_format_exog.copy()
-    regressors_cap.columns.set_levels(["regressor_cap"], level="feature", inplace=True)
-    exog = pd.concat([regressors, regressors_cap], axis=1)
+    regressors_floor = new_format_exog.copy()
+    regressors_floor.columns.set_levels(["floor"], level="feature", inplace=True)
+    regressors_cap = regressors_floor.copy() + 1
+    regressors_cap.columns.set_levels(["cap"], level="feature", inplace=True)
+    exog = pd.concat([regressors, regressors_floor, regressors_cap], axis=1)
 
     ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
-    model = ProphetModel()
+    model = ProphetModel(growth="logistic")
     model.fit(ts)
     future_ts = ts.make_future(3)
     model.forecast(future_ts)
