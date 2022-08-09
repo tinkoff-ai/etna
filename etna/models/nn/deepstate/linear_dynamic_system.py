@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import torch
 from torch import Tensor
 from torch.distributions.multivariate_normal import MultivariateNormal
@@ -56,8 +58,131 @@ class LDS(BaseMixin):
 
         self.batch_size = self.prior_mean.shape[0]
         self.prior_cov: Tensor = torch.diag_embed(prior_std * prior_std)  # (batch_size, latent_dim, latent_dim)
+        self._eye = torch.eye(self.latent_dim).type_as(noise_std)
+
+    def kalman_filter_step(
+        self,
+        target: Tensor,  # (batch_size, 1)
+        noise_std: Tensor,  # (batch_size, 1)
+        prior_mean: Tensor,  # (batch_size, latent_dim)
+        prior_cov: Tensor,  # (batch_size, latent_dim, latent_dim)
+        emission_coeff: Tensor,  # (batch_size, latent_dim)
+        offset: Tensor,  # (batch_size, 1)
+    ):
+        """One step of the Kalman filter.
+
+        This function computes the filtered state (mean and covariance) given the
+        LDS coefficients in the prior state (mean and variance) and observations.
+
+        Parameters
+        ----------
+        target:
+            Observations of the system with shape (batch_size, 1)
+        noise_std:
+            Standard deviation of the observations noise with shape (batch_size, 1)
+        prior_mean:
+            Prior mean of the latent state with shape (batch_size, latent_dim)
+        prior_cov:
+            Prior covariance of the latent state with shape (batch_size, latent_dim, latent_dim)
+        emission_coeff:
+            Emission coefficient with shape (batch_size, latent_dim)
+        offset:
+            Offset for the observations with shape (batch_size, 1)
+
+        Returns
+        -------
+        :
+            Log probability with shape (batch_size, 1)
+        :
+            Filtered_mean with shape (batch_size, latent_dim, 1)
+        :
+            Filtered_covariance with shape (batch_size, latent_dim, latent_dim)
+        """
+        emission_coeff = emission_coeff.unsqueeze(-1)
+
+        # H * mu (batch_size, 1)
+        target_mean = (emission_coeff.permute(0, 2, 1) @ prior_mean.unsqueeze(-1)).squeeze(-1)
+        # v (batch_size, 1)
+        residual = target - target_mean - offset
+        # R (batch_size, 1, 1)
+        noise_cov = torch.diag_embed(noise_std * noise_std)
+        # F (batch_size, 1, 1)
+        target_cov = emission_coeff.permute(0, 2, 1) @ prior_cov @ emission_coeff + noise_cov
+        # K (batch_size, latent_dim)
+        kalman_gain = (prior_cov @ emission_coeff @ torch.inverse(target_cov)).squeeze(-1)
+
+        # mu = mu_t + K * v (batch_size, latent_dim)
+        filtered_mean = prior_mean + (kalman_gain.unsqueeze(-1) @ residual.unsqueeze(-1)).squeeze(-1)
+        # P = (I - KH)P_t (batch_size, latent_dim, latent_dim)
+        filtered_cov = (self._eye - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)) @ prior_cov
+        # log-likelihood (batch_size, 1)
+        log_p = (
+            Normal(target_mean.squeeze(-1), torch.sqrt(target_cov.squeeze(-1).squeeze(-1)))
+            .log_prob(target.squeeze(-1))
+            .unsqueeze(-1)
+        )
+        return log_p, filtered_mean, filtered_cov
+
+    def kalman_filter(self, targets: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+        """Performs Kalman filtering of given observations.
+
+        Parameters
+        ----------
+        targets:
+            Tensor with observations with shape (batch_size, seq_length, 1)
+
+        Returns
+        -------
+        :
+            Log probabilities with shape shape (batch_size, seq_length)
+        :
+            Mean of p(l_T | l_{T-1}), where T is seq_length, with shape (batch_size, latent_dim)
+        :
+            Covariance of p(l_T | l_{T-1}), where T is seq_length, with shape (batch_size, latent_dim, latent_dim)
+        """
+        log_p_seq = []
+        mean = self.prior_mean
+        cov = self.prior_cov
+
+        for t in range(self.seq_length):
+            log_p, filtered_mean, filtered_cov = self.kalman_filter_step(
+                target=targets[:, t],
+                noise_std=self.noise_std[:, t],
+                prior_mean=mean,
+                prior_cov=cov,
+                emission_coeff=self.emission_coeff[:, t],
+                offset=self.offset[:, t],
+            )
+            log_p_seq.append(log_p)
+
+            mean = (self.transition_coeff @ filtered_mean.unsqueeze(-1)).squeeze(-1)
+            cov = self.transition_coeff @ filtered_cov @ self.transition_coeff.T + self.innovation_coeff[
+                :, t
+            ].unsqueeze(-1) @ self.innovation_coeff[:, t].unsqueeze(-1).permute(0, 2, 1)
+
+        log_p = torch.cat(log_p_seq, dim=1)
+        return log_p, mean, cov
+
+    def log_likelihood(self, targets: Tensor) -> Tensor:
+        """Compute the log-likelihood of the target.
+
+        Parameters
+        ----------
+        targets:
+            Tensor with targets of shape (batch_size, seq_length, 1)
+
+        Returns
+        -------
+        :
+            Tensor with log-likelihoods of target of shape (batch_size, seq_length)
+        """
+
+        log_p, _, _ = self.kalman_filter(targets=targets)
+
+        return log_p
 
     def _sample_initials(self, n_samples: int):
+        """Sample initial values for noise and latent state."""
         # (n_samples, batch_size, seq_length, latent_dim)
         eps_latent = MultivariateNormal(
             loc=torch.zeros(self.latent_dim), covariance_matrix=torch.eye(self.latent_dim)
