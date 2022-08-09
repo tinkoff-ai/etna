@@ -1,5 +1,5 @@
 import pytest
-from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
@@ -115,7 +115,7 @@ def test_get_model_after_training(example_tsds):
     models_dict = pipeline.model.get_model()
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
-        assert isinstance(models_dict[segment], SARIMAX)
+        assert isinstance(models_dict[segment], SARIMAXResultsWrapper)
 
 
 def test_sarimax_forecast_1_point(example_tsds):
