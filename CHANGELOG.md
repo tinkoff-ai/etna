@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - 
+- Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
 - 
-- 
-- 
+- `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
+- `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
 - 
 - 
 - 
@@ -34,18 +35,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 ### Fixed
+- 
+- 
+- 
+- Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
+- 
+- 
+- 
+- 
+- 
+- Change Docker cuda image version from 11.1 to 11.6.2 ([#838](https://github.com/tinkoff-ai/etna/pull/838))
+- 
+- 
+
+## [1.11.1] - 2022-08-03
+### Fixed
 - Fix missing `constant_value` in `TimeSeriesImputerTransform` ([#819](https://github.com/tinkoff-ai/etna/pull/819))
-- 
-- 
 - Make in-sample predictions of SARIMAXModel non-dynamic in all cases ([#812](https://github.com/tinkoff-ai/etna/pull/812))
-- 
-- 
-- 
 - Add known_future to cli docs ([#823](https://github.com/tinkoff-ai/etna/pull/823))
-- 
-- 
-- 
-- 
 
 ## [1.11.0] - 2022-07-25
 ### Added
