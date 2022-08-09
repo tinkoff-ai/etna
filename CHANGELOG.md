@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - 
+- Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
 - 
-- 
+- `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
 - 
 - 
@@ -43,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Change Docker cuda image version from 11.1 to 11.6.2 ([#838](https://github.com/tinkoff-ai/etna/pull/838))
 - 
 - 
 
