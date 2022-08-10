@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import numpy as np
 import torch
 from torch import Tensor
 from torch.nn.functional import one_hot
@@ -89,6 +90,10 @@ class SSM(ABC, BaseMixin):
         :
             Innovation coefficient matrix.
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def generate_datetime_index(self, datetime_index: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
 
