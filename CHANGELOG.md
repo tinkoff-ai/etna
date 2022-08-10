@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - 
+- Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
 - 
 - `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type hints for `Pipeline.model` match `models.nn`([#768](https://github.com/tinkoff-ai/etna/pull/840))
 - 
 - 
-- 
+- Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
 - 
 - 
 - 
