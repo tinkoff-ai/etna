@@ -169,8 +169,8 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 "Try to encode this columns manually."
             )
 
-    def get_model(self) -> SARIMAX:
-        """Get internal statsmodels.tsa.statespace.sarimax.SARIMAX model that is used inside etna class.
+    def get_model(self) -> SARIMAXResultsWrapper:
+        """Get :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAXResultsWrapper` that is used inside etna class.
 
         Returns
         -------
