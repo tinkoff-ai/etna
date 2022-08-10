@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 ### Fixed
-- 
+- Type hints for `Pipeline.model` match `models.nn`([#768](https://github.com/tinkoff-ai/etna/pull/840))
 - 
 - 
 - Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
