@@ -89,6 +89,7 @@ class TFTModel(Model, MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         quantiles_kwargs:
             Additional arguments for computing quantiles, look at ``to_quantiles()`` method for your loss.
         """
+        super().__init__()
         if loss is None:
             loss = QuantileLoss()
         self.max_epochs = max_epochs

@@ -84,6 +84,7 @@ class DeepARModel(Model, MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         quantiles_kwargs:
             Additional arguments for computing quantiles, look at ``to_quantiles()`` method for your loss.
         """
+        super().__init__()
         if loss is None:
             loss = NormalDistributionLoss()
         self.max_epochs = max_epochs

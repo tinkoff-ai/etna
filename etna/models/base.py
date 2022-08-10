@@ -822,7 +822,23 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
 
 class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
     """Class for holding specific models for multi-segment prediction which are able to build prediction intervals."""
-    pass
+
+    def __init__(self):
+        """Init MultiSegmentPredictionIntervalModel."""
+        self.model = None
+
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self.model
 
 
 BaseModel = Union[
