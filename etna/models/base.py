@@ -822,62 +822,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
 
 class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
     """Class for holding specific models for multi-segment prediction which are able to build prediction intervals."""
-
-    def __init__(self, base_model: Any):
-        """
-        Init MultiSegmentPredictionIntervalModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        super().__init__()
-        self._base_model = base_model
-
-    @log_decorator
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
-
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        horizon = len(ts.df)
-        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = (
-            self._base_model.predict(x, prediction_interval=prediction_interval, quantiles=quantiles)
-            .reshape(-1, horizon)
-            .T
-        )
-        ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
-        return ts
-
-    def get_model(self) -> Any:
-        """Get internal model that is used inside etna class.
-
-        Internal model is a model that is used inside etna to forecast segments,
-        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
-
-        Returns
-        -------
-        :
-           Internal model
-        """
-        return self._base_model.get_model()
+    pass
 
 
 BaseModel = Union[
