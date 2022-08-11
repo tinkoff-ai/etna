@@ -624,7 +624,6 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
         if dtype == "category":
             expected_df[column] = expected_df[column].astype(dtype)
 
-
     # get to_flatten result
     obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns].sort_values(
         by=["segment", "timestamp"]
