@@ -617,7 +617,13 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
     expected_df = flat_df[sorted_columns]
     # add values to absent timestamps at one segment
     to_append = pd.DataFrame({"timestamp": df["timestamp"][:5], "segment": ["2"] * 5})
+    dtypes = expected_df.dtypes.to_dict()
     expected_df = pd.concat((expected_df, to_append)).sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    # restore category dtypes: needed for old versions of pandas
+    for column, dtype in dtypes.items():
+        if dtype == "category":
+            expected_df[column] = expected_df[column].astype(dtype)
+
 
     # get to_flatten result
     obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns].sort_values(
