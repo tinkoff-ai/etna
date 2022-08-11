@@ -235,8 +235,8 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen),
-[Carlosbogo](https://github.com/Carlosbogo),
 [Nikolay Romantsov](https://github.com/WinstonDovlatov),
+[Carlosbogo](https://github.com/Carlosbogo),
 [mvakhmenin](https://github.com/mvakhmenin),
 [Pacman1984](https://github.com/Pacman1984),
 [looopka](https://github.com/looopka)
