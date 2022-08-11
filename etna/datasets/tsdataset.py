@@ -569,20 +569,24 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
-        # flatten dataframe
-        aggregator_list = []
-        segments = df.columns.get_level_values("segment").unique().tolist()
-        for segment in segments:
-            aggregator_list.append(df[segment].copy())
-            aggregator_list[-1]["segment"] = segment
-        df_flat = pd.concat(aggregator_list)
-        df_flat = df_flat.reset_index()
-        df_flat.columns.name = None
-
-        # mark category as category
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
-        df_flat[category_columns] = df_flat[category_columns].astype("category")
+
+        # flatten dataframe
+        columns = df.columns.get_level_values("feature").unique()
+        segments = df.columns.get_level_values("segment").unique()
+        df_dict = {}
+        df_dict["timestamp"] = np.tile(df.index, len(segments))
+        df_dict["segment"] = np.repeat(segments, len(df.index))
+        for column in columns:
+            df_cur = df.loc[:, pd.IndexSlice[:, column]]
+            if column in category_columns:
+                df_dict[column] = pd.api.types.union_categoricals([df_cur[col] for col in df_cur.columns])
+            else:
+                stacked = df_cur.values.T.ravel()
+                # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
+                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
+        df_flat = pd.DataFrame(df_dict)
 
         return df_flat
 

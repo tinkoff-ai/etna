@@ -602,15 +602,24 @@ def test_to_flatten_simple(example_df):
 def test_to_flatten_with_exog(df_and_regressors_flat):
     """Check that TSDataset.to_flatten works correctly with exogenous features."""
     df, df_exog = df_and_regressors_flat
-    # add a category type
+
+    # add boolean dtype
+    df_exog["regressor_boolean"] = 1
+    df_exog["regressor_boolean"] = df_exog["regressor_boolean"].astype("boolean")
+    # add Int64 dtype
+    df_exog["regressor_Int64"] = 1
+    df_exog.loc[1, "regressor_Int64"] = None
+    df_exog["regressor_Int64"] = df_exog["regressor_Int64"].astype("Int64")
+
+    # construct expected result
     flat_df = pd.merge(left=df, right=df_exog, left_on=["timestamp", "segment"], right_on=["timestamp", "segment"])
     sorted_columns = sorted(flat_df.columns)
     expected_df = flat_df[sorted_columns]
     # add values to absent timestamps at one segment
     to_append = pd.DataFrame({"timestamp": df["timestamp"][:5], "segment": ["2"] * 5})
     expected_df = pd.concat((expected_df, to_append)).sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
-    # rebuild category type according to new values
 
+    # get to_flatten result
     obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns].sort_values(
         by=["segment", "timestamp"]
     )
