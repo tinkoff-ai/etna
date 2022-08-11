@@ -50,17 +50,21 @@ def test_run_with_cap_floor():
     cap = 101
     floor = -1
 
-    df = pd.DataFrame({
-        "timestamp": pd.date_range(start="2020-01-01", periods=100),
-        "segment": "segment_0",
-        "target": list(range(100)),
-    })
-    df_exog = pd.DataFrame({
-        "timestamp": pd.date_range(start="2020-01-01", periods=120),
-        "segment": "segment_0",
-        "cap": cap,
-        "floor": floor
-    })
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2020-01-01", periods=100),
+            "segment": "segment_0",
+            "target": list(range(100)),
+        }
+    )
+    df_exog = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2020-01-01", periods=120),
+            "segment": "segment_0",
+            "cap": cap,
+            "floor": floor,
+        }
+    )
     ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all")
 
     model = ProphetModel(growth="logistic")
