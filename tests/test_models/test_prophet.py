@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 from prophet import Prophet
@@ -43,6 +44,33 @@ def test_run_with_reg(new_format_df, new_format_exog):
         assert True
     else:
         assert False
+
+
+def test_run_with_cap_floor():
+    cap = 101
+    floor = -1
+
+    df = pd.DataFrame({
+        "timestamp": pd.date_range(start="2020-01-01", periods=100),
+        "segment": "segment_0",
+        "target": list(range(100)),
+    })
+    df_exog = pd.DataFrame({
+        "timestamp": pd.date_range(start="2020-01-01", periods=120),
+        "segment": "segment_0",
+        "cap": cap,
+        "floor": floor
+    })
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all")
+
+    model = ProphetModel(growth="logistic")
+    pipeline = Pipeline(model=model, horizon=7)
+    pipeline.fit(ts)
+
+    ts_future = pipeline.forecast()
+    df_future = ts_future.to_pandas(flatten=True)
+
+    assert np.all(df_future["target"] < cap)
 
 
 def test_prediction_interval_run_insample(example_tsds):
