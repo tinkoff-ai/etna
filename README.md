@@ -233,13 +233,13 @@ To ask the questions or discuss the library you can join our [telegram chat](t.m
 
 ### ETNA.Contributors
 
-[Artem Levashov](https://github.com/soft1q),
-[Aleksey Podkidyshev](https://github.com/alekseyen),
-[Nikolay Romantsov](https://github.com/WinstonDovlatov),
-[Carlosbogo](https://github.com/Carlosbogo),
+[WinstonDovlatov](https://github.com/WinstonDovlatov),
 [mvakhmenin](https://github.com/mvakhmenin),
+[Carlosbogo](https://github.com/Carlosbogo),
 [Pacman1984](https://github.com/Pacman1984),
-[looopka](https://github.com/looopka)
+[looopka](https://github.com/looopka),
+[Artem Levashov](https://github.com/soft1q),
+[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ## License
 

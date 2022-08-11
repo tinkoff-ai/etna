@@ -2,9 +2,6 @@
 
 Before running this script you should install `github CLI <https://github.com/cli/cli>`_.
 
-Constant ``NUM_SKIP_FIRST_CONTRIBUTORS`` is responsible for skipping first points in contributors list.
-This first positions are dedicated for former team members.
-
 This scripts depends on the fact that contributors section goes after the team section
 and license section goes after the contributors section.
 """
@@ -20,7 +17,10 @@ from typing import List
 
 ROOT_PATH = pathlib.Path(__file__).parent.resolve().parent
 REPO = "/repos/tinkoff-ai/etna/contributors"
-NUM_SKIP_FIRST_CONTRIBUTORS = 3
+OLD_TEAM = [
+    "[Artem Levashov](https://github.com/soft1q)",
+    "[Aleksey Podkidyshev](https://github.com/alekseyen)",
+]
 
 
 def get_contributors() -> List[Dict[str, Any]]:
@@ -54,16 +54,10 @@ def write_contributors(contributors: List[Dict[str, Any]]):
     # it is expected that license section goes after the contributors section
     contributors_start = readme.index("### ETNA.Contributors\n")
     license_start = readme.index("## License\n")
-    existing_contributors = readme[contributors_start:license_start]
-    existing_contributors = [x.strip() for x in existing_contributors[1:] if len(x.strip())]
-    # don't touch first NUM_SKIP_FIRST_CONTRIBUTORS
-    remain_contributors = existing_contributors[:NUM_SKIP_FIRST_CONTRIBUTORS]
-    remain_nicknames = [re.findall(r"https://github.com/(.*)\)", x)[0] for x in remain_contributors]
-    new_contributors = [x for x in contributors if x["login"] not in remain_nicknames]
 
-    new_lines = [f"[{x['login']}]({x['html_url']}),\n" for x in new_contributors]
-    remain_lines = [f"{x}\n" for x in remain_contributors]
-    contributors_lines = remain_lines + new_lines
+    lines = [f"[{x['login']}]({x['html_url']}),\n" for x in contributors]
+    old_team_lines = [f"{x},\n" for x in OLD_TEAM[:-1]] + [f"{OLD_TEAM[-1]}\n"]
+    contributors_lines = lines + old_team_lines
     lines_to_write = readme[: (contributors_start + 1)] + ["\n"] + contributors_lines + ["\n"] + readme[license_start:]
     with open(readme_path, "w") as fp:
         fp.writelines(lines_to_write)
