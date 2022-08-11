@@ -1,4 +1,5 @@
 import warnings
+from abc import abstractmethod
 from datetime import datetime
 from typing import List
 from typing import Optional
@@ -8,6 +9,7 @@ from typing import Tuple
 import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
@@ -22,7 +24,163 @@ warnings.filterwarnings(
 )
 
 
-class _SARIMAXAdapter(BaseAdapter):
+class _SARIMAXBaseAdapter(BaseAdapter):
+    """Base class for adapters based on :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`."""
+
+    def __init__(self):
+        self.regressor_columns = None
+        self._fit_results = None
+        self._freq = None
+        self._first_train_timestamp = None
+
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXBaseAdapter":
+        """
+        Fits a SARIMAX model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        regressors:
+            List of the columns with regressors
+
+        Returns
+        -------
+        :
+            Fitted model
+        """
+        self.regressor_columns = regressors
+
+        self._encode_categoricals(df)
+        self._check_df(df)
+
+        exog_train = self._select_regressors(df)
+        self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
+
+        freq = pd.infer_freq(df["timestamp"], warn=False)
+        if freq is None:
+            raise ValueError("Can't determine frequency of a given dataframe")
+        self._freq = freq
+        self._first_train_timestamp = df["timestamp"].min()
+
+        return self
+
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute predictions from a SARIMAX model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        prediction_interval:
+             If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        if self._fit_results is None:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        horizon = len(df)
+        self._encode_categoricals(df)
+        self._check_df(df, horizon)
+
+        exog_future = self._select_regressors(df)
+        start_timestamp = df["timestamp"].min()
+        end_timestamp = df["timestamp"].max()
+        # determine index of start_timestamp if counting from first timestamp of train
+        start_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+        )
+        # determine index of end_timestamp if counting from first timestamp of train
+        end_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+        )
+
+        if prediction_interval:
+            forecast, _ = seasonal_prediction_with_confidence(
+                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
+            )
+            y_pred = pd.DataFrame({"mean": forecast})
+            for quantile in quantiles:
+                # set alpha in the way to get a desirable quantile
+                alpha = min(quantile * 2, (1 - quantile) * 2)
+                _, borders = seasonal_prediction_with_confidence(
+                    arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=alpha
+                )
+                if quantile < 1 / 2:
+                    series = borders[:, 0]
+                else:
+                    series = borders[:, 1]
+                y_pred[f"mean_{quantile:.4g}"] = series
+        else:
+            forecast, _ = seasonal_prediction_with_confidence(
+                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
+            )
+            y_pred = pd.DataFrame({"mean": forecast})
+
+        rename_dict = {
+            column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
+        }
+        y_pred = y_pred.rename(rename_dict, axis=1)
+        return y_pred
+
+    @abstractmethod
+    def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
+        pass
+
+    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if column_to_drop:
+            warnings.warn(
+                message=f"SARIMAX model does not work with exogenous features (features unknown in future).\n "
+                f"{column_to_drop} will be dropped"
+            )
+        if horizon:
+            short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
+            if short_regressors:
+                raise ValueError(
+                    f"Regressors {short_regressors} are too short for chosen horizon value.\n "
+                    "Try lower horizon value, or drop this regressors."
+                )
+
+    def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
+        if self.regressor_columns:
+            exog_future = df[self.regressor_columns]
+            exog_future.index = df["timestamp"]
+        else:
+            exog_future = None
+        return exog_future
+
+    def _encode_categoricals(self, df: pd.DataFrame) -> None:
+        categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
+        try:
+            df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
+        except ValueError:
+            raise ValueError(
+                f"Categorical columns {categorical_cols} can not been converted to int.\n "
+                "Try to encode this columns manually."
+            )
+
+    def get_model(self) -> SARIMAXResultsWrapper:
+        """Get :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAXResultsWrapper` that is used inside etna class.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self._fit_results
+
+
+class _SARIMAXAdapter(_SARIMAXBaseAdapter):
     """
     Class for holding Sarimax model.
 
@@ -163,48 +321,14 @@ class _SARIMAXAdapter(BaseAdapter):
         self.missing = missing
         self.validate_specification = validate_specification
         self.kwargs = kwargs
-        self._model: Optional[SARIMAX] = None
-        self._result: Optional[SARIMAX] = None
-        self.regressor_columns: Optional[List[str]] = None
-        self._freq = None
-        self._first_train_timestamp = None
+        super().__init__()
 
-    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXAdapter":
-        """
-        Fits a SARIMAX model.
-
-        Parameters
-        ----------
-        df:
-            Features dataframe
-        regressors:
-            List of the columns with regressors
-
-        Returns
-        -------
-        :
-            Fitted model
-        """
-        self.regressor_columns = regressors
-        categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
-        try:
-            df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
-        except ValueError:
-            raise ValueError(
-                f"Categorical columns {categorical_cols} can not been converted to int.\n "
-                "Try to encode this columns manually."
-            )
-
-        self._check_df(df)
-
+    def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame):
         # make it a numpy array for forgetting about indices, it is necessary for _seasonal_prediction_with_confidence
-        targets = df["target"].values
-
-        exog_train = self._select_regressors(df)
-
-        self._model = SARIMAX(
-            endog=targets,
-            exog=exog_train,
+        endog_np = endog.values
+        model = SARIMAX(
+            endog=endog_np,
+            exog=exog,
             order=self.order,
             seasonal_order=self.seasonal_order,
             trend=self.trend,
@@ -224,123 +348,8 @@ class _SARIMAXAdapter(BaseAdapter):
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        self._result = self._model.fit()
-
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
-        self._freq = freq
-
-        self._first_train_timestamp = df["timestamp"].min()
-
-        return self
-
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
-        """
-        Compute predictions from a SARIMAX model.
-
-        Parameters
-        ----------
-        df:
-            Features dataframe
-        prediction_interval:
-             If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution
-
-        Returns
-        -------
-        :
-            DataFrame with predictions
-        """
-        if self._result is None or self._model is None:
-            raise ValueError("SARIMAX model is not fitted! Fit the model before calling predict method!")
-        horizon = len(df)
-        self._check_df(df, horizon)
-
-        categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
-        try:
-            df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
-        except ValueError:
-            raise ValueError(
-                f"Categorical columns {categorical_cols} can not been converted to int.\n "
-                "Try to encode this columns manually."
-            )
-
-        exog_future = self._select_regressors(df)
-        start_timestamp = df["timestamp"].min()
-        end_timestamp = df["timestamp"].max()
-        # determine index of start_timestamp if counting from first timestamp of train
-        start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
-        )
-        # determine index of end_timestamp if counting from first timestamp of train
-        end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
-        )
-
-        if prediction_interval:
-            forecast, _ = seasonal_prediction_with_confidence(
-                arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
-            )
-            y_pred = pd.DataFrame({"mean": forecast})
-            for quantile in quantiles:
-                # set alpha in the way to get a desirable quantile
-                alpha = min(quantile * 2, (1 - quantile) * 2)
-                _, borders = seasonal_prediction_with_confidence(
-                    arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=alpha
-                )
-                if quantile < 1 / 2:
-                    series = borders[:, 0]
-                else:
-                    series = borders[:, 1]
-                y_pred[f"mean_{quantile:.4g}"] = series
-        else:
-            forecast, _ = seasonal_prediction_with_confidence(
-                arima_res=self._result, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
-            )
-            y_pred = pd.DataFrame({"mean": forecast})
-
-        rename_dict = {
-            column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
-        }
-        y_pred = y_pred.rename(rename_dict, axis=1)
-        return y_pred
-
-    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
-        if self.regressor_columns is None:
-            raise ValueError("Something went wrong, regressor_columns is None!")
-        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
-        if column_to_drop:
-            warnings.warn(
-                message=f"SARIMAX model does not work with exogenous features (features unknown in future).\n "
-                f"{column_to_drop} will be dropped"
-            )
-        if horizon:
-            short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
-            if short_regressors:
-                raise ValueError(
-                    f"Regressors {short_regressors} are too short for chosen horizon value.\n "
-                    "Try lower horizon value, or drop this regressors."
-                )
-
-    def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
-        if self.regressor_columns:
-            exog_future = df[self.regressor_columns]
-            exog_future.index = df["timestamp"]
-        else:
-            exog_future = None
-        return exog_future
-
-    def get_model(self) -> SARIMAX:
-        """Get internal statsmodels.tsa.statespace.sarimax.SARIMAX model that is used inside etna class.
-
-        Returns
-        -------
-        :
-           Internal model
-        """
-        return self._model
+        result = model.fit()
+        return result
 
 
 class SARIMAXModel(PerSegmentPredictionIntervalModel):
