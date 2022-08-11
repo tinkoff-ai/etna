@@ -577,7 +577,6 @@ class TSDataset:
         segments = df.columns.get_level_values("segment").unique()
         df_dict = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
-        df_dict["segment"] = np.repeat(segments, len(df.index))
         for column in columns:
             df_cur = df.loc[:, pd.IndexSlice[:, column]]
             if column in category_columns:
@@ -586,6 +585,7 @@ class TSDataset:
                 stacked = df_cur.values.T.ravel()
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
                 df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
+        df_dict["segment"] = np.repeat(segments, len(df.index))
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
