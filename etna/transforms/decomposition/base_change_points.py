@@ -48,7 +48,18 @@ class BaseChangePointsModelAdapter(ABC):
 
 
 class RupturesChangePointsModel(BaseChangePointsModelAdapter):
+    """RupturesChangePointsModel is the base class for holding ruptures models."""
+
     def __init__(self, change_point_model: BaseEstimator, **change_point_model_predict_params):
+        """Init RupturesChangePointsModel.
+
+        Parameters
+        ----------
+        change_point_model:
+            model to get change points
+        change_point_model_predict_params:
+            params for ``change_point_model.predict`` method
+        """
         super(RupturesChangePointsModel, self).__init__(
             change_point_model=change_point_model,
             **change_point_model_predict_params,
@@ -58,8 +69,7 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
     def find_change_points_segment(
         series: pd.Series, change_point_model: BaseEstimator, **model_predict_params
     ) -> List[pd.Timestamp]:
-        """Find trend change points within one segment."""
-
+        """Find change points within one segment."""
         signal = series.to_numpy()
         if isinstance(change_point_model.cost, CostLinear):
             signal = signal.reshape((-1, 1))
@@ -71,7 +81,7 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
         return change_points
 
     def get_change_points(self, df: pd.DataFrame, in_column: str) -> List[TTimestampInterval]:
-
+        """Find change points in given dataframe and column."""
         series = df.loc[df[in_column].first_valid_index() : df[in_column].last_valid_index(), in_column]
         if series.isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")

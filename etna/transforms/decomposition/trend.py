@@ -24,7 +24,6 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         **change_point_model_predict_params,
     ):
         """Init _OneSegmentTrendTransform.
-
         Parameters
         ----------
         in_column:
@@ -43,18 +42,15 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
             in_column=in_column,
             change_point_model=change_point_model,
             detrend_model=detrend_model,
-            out_column=out_column,
             **change_point_model_predict_params,
         )
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add column with trend, got from the detrend_model.
-
         Parameters
         ----------
         df:
             data to get trend from
-
         Returns
         -------
         pd.DataFrame:
@@ -68,12 +64,10 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
-
         Parameters
         ----------
         df:
             one segment dataframe
-
         Returns
         -------
         pd.DataFrame:
@@ -94,7 +88,6 @@ class _TrendTransform(PerSegmentWrapper):
         **change_point_model_predict_params,
     ):
         """Init _TrendTransform.
-
         Parameters
         ----------
         in_column:
@@ -121,10 +114,8 @@ class _TrendTransform(PerSegmentWrapper):
 
 class TrendTransform(_TrendTransform, FutureMixin):
     """TrendTransform adds trend as a feature.
-
     TrendTransform uses uses :py:class:`ruptures.detection.Binseg` model as a change point detection model
     in _TrendTransform.
-
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -145,7 +136,6 @@ class TrendTransform(_TrendTransform, FutureMixin):
         epsilon: Optional[float] = None,
     ):
         """Init TrendTransform.
-
         Parameters
         ----------
         in_column:
