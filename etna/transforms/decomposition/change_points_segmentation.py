@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -5,10 +6,12 @@ from ruptures.base import BaseEstimator
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.decomposition.change_points import _ChangePointsTransform
+from etna.transforms.base import Transform
+from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+from etna.transforms.decomposition.base_change_points import TTimestampInterval
 
 
-class _OneSegmentChangePointsSegmentationTransform(_ChangePointsTransform):
+class _OneSegmentChangePointsSegmentationTransform(Transform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(
@@ -26,12 +29,10 @@ class _OneSegmentChangePointsSegmentationTransform(_ChangePointsTransform):
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
-        super(_OneSegmentChangePointsSegmentationTransform, self).__init__(
-            in_column=in_column,
-            out_column=out_column,
-            change_point_model=change_point_model,
-            **change_point_model_predict_params,
-        )
+        self.in_column = in_column
+        self.out_column = out_column
+        self.intervals: Optional[List[TTimestampInterval]] = None
+        self.ruptures = RupturesChangePointsModel(change_point_model, **change_point_model_predict_params)
 
     def _fill_per_interval(self, series: pd.Series) -> pd.Series:
         """Fill values in resulting series."""
@@ -62,6 +63,26 @@ class _OneSegmentChangePointsSegmentationTransform(_ChangePointsTransform):
         result_series = self._fill_per_interval(series=series)
         df.loc[:, self.out_column] = result_series
         return df
+
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsSegmentationTransform":
+        """Fit _OneSegmentChangePointsSegmentationTransform: find change points in ``df`` and build intervals.
+
+        Parameters
+        ----------
+        df:
+            one segment dataframe indexed with timestamp
+
+        Returns
+        -------
+        :
+
+        Raises
+        ------
+        ValueError
+            If series contains NaNs in the middle
+        """
+        self.intervals = self.ruptures.get_change_points(df=df, in_column=self.in_column)
+        return self
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Do nothing in this case.

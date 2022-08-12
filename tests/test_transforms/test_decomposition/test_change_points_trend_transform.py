@@ -5,6 +5,7 @@ from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
+from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
 
@@ -47,7 +48,7 @@ def test_build_intervals():
         (pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")),
         (pd.Timestamp("2020-02-24"), pd.Timestamp.max),
     ]
-    intervals = _OneSegmentChangePointsTrendTransform._build_intervals(change_points=change_points)
+    intervals = RupturesChangePointsModel._build_intervals(change_points=change_points)
     assert isinstance(intervals, list)
     assert len(intervals) == 4
     for (exp_left, exp_right), (real_left, real_right) in zip(expected_intervals, intervals):
