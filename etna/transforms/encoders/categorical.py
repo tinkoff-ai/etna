@@ -148,7 +148,7 @@ class OneHotEncoderTransform(Transform):
         :
             Fitted transform
         """
-        x = TSDataset.to_flatten(df)[self.in_column].values.reshape(-1, 1)
+        x = TSDataset.to_flatten(df)[[self.in_column]]
         self.ohe.fit(X=x)
         return self
 
@@ -169,7 +169,7 @@ class OneHotEncoderTransform(Transform):
         out_column = self._get_column_name()
         out_columns = [out_column + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]
         result_df = TSDataset.to_flatten(df)
-        x = result_df[self.in_column].values.reshape(-1, 1)
+        x = result_df[[self.in_column]]
         result_df[out_columns] = self.ohe.transform(X=x)
         result_df[out_columns] = result_df[out_columns].astype("category")
         result_df = TSDataset.to_dataset(result_df)
