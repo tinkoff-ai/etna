@@ -1,10 +1,12 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Union
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import Tensor
 from torch.nn.functional import one_hot
@@ -93,7 +95,19 @@ class SSM(ABC, BaseMixin):
         raise NotImplementedError
 
     @abstractmethod
-    def generate_datetime_index(self, datetime_index: np.ndarray) -> np.ndarray:
+    def generate_datetime_index(self, timestamps: np.ndarray) -> np.ndarray:
+        """Generate datetime index to use in the State Space Model.
+
+        Parameters
+        ----------
+        timestamps:
+            Array with timestamps.
+
+        Returns
+        -------
+        :
+            Datetime index for State Space Model.
+        """
         raise NotImplementedError
 
 
@@ -115,6 +129,10 @@ class LevelSSM(SSM):
     def innovation_coeff(self, datetime_index: Tensor) -> Tensor:
         return self.emission_coeff(datetime_index)
 
+    def generate_datetime_index(self, timestamps: np.ndarray) -> np.ndarray:
+        seq_length = timestamps.shape[0]
+        return np.zeros(shape=(seq_length,))
+
 
 class LevelTrendSSM(LevelSSM):
     """Class for Level-Trend State Space Model."""
@@ -131,7 +149,7 @@ class LevelTrendSSM(LevelSSM):
 class SeasonalitySSM(LevelSSM):
     """Class for Seasonality State Space Model."""
 
-    def __init__(self, num_seasons: int):
+    def __init__(self, num_seasons: int, timestamp_transform: Callable[[pd.Timestamp], int]):
         """Create instance of SeasonalitySSM.
 
         Parameters
@@ -140,6 +158,7 @@ class SeasonalitySSM(LevelSSM):
             Number of seasons in the considered seasonality period.
         """
         self.num_seasons = num_seasons
+        self.timestamp_transform = timestamp_transform
 
     def latent_dim(self) -> int:
         return self.num_seasons
@@ -147,6 +166,9 @@ class SeasonalitySSM(LevelSSM):
     def emission_coeff(self, datetime_index: Tensor) -> Tensor:
         emission_coeff = one_hot(datetime_index.squeeze(-1), num_classes=self.latent_dim())
         return emission_coeff.float()
+
+    def generate_datetime_index(self, timestamps: np.ndarray) -> np.ndarray:
+        return np.array([self.timestamp_transform(timestamp) for timestamp in timestamps])
 
 
 class CompositeSSM(SSM):
@@ -184,3 +206,6 @@ class CompositeSSM(SSM):
 
     def innovation_coeff(self, datetime_index: Tensor) -> Tensor:
         return self.emission_coeff(datetime_index)
+
+    def generate_datetime_index(self, timestamps: np.ndarray) -> np.ndarray:
+        return np.vstack([ssm.generate_datetime_index(timestamps) for ssm in self.ssms])
