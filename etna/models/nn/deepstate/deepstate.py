@@ -13,7 +13,7 @@ from typing_extensions import TypedDict
 from etna.models.base import DeepBaseModel
 from etna.models.base import DeepBaseNet
 from etna.models.nn.deepstate.linear_dynamic_system import LDS
-from etna.models.nn.deepstate.state_space_model import SSM
+from etna.models.nn.deepstate.state_space_model import CompositeSSM
 
 
 class DeepStateTrainBatch(TypedDict):
@@ -34,7 +34,7 @@ class DeepStateNet(DeepBaseNet):
 
     def __init__(
         self,
-        ssm: SSM,
+        ssm: CompositeSSM,
         input_size: int,
         num_layers: int,
         n_samples: int,
@@ -126,7 +126,7 @@ class DeepStateNet(DeepBaseNet):
 
             sample["target"] = df["target"].values[start_idx : start_idx + total_sample_length].reshape(-1, 1)
             sample["datetime_index"] = self.ssm.generate_datetime_index(
-                df["timestamp"].values[start_idx : start_idx + decoder_length + encoder_length]
+                df["timestamp"].values[start_idx : start_idx + total_sample_length]
             )
             sample["segment"] = df["segment"].values[0]
             df = df.drop(columns=["target", "segment", "timestamp"])
@@ -164,7 +164,7 @@ class DeepStateModel(DeepBaseModel):
 
     def __init__(
         self,
-        ssm: SSM,
+        ssm: CompositeSSM,
         input_size: int,
         encoder_length: int,
         decoder_length: int,
