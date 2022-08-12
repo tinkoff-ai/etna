@@ -31,6 +31,7 @@ class BaseChangePointsModelAdapter(ABC):
 
     @abstractmethod
     def get_change_points(self, df: pd.DataFrame, in_column: str) -> List[pd.Timestamp]:
+        """Find change points in given dataframe and column."""
         pass
 
     @staticmethod
