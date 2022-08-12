@@ -55,6 +55,38 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
 
     return df, df_exog, ["regressor_1", "regressor_2"]
 
+@pytest.fixture()
+def df_update() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-12")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "regressor_1": 10, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "new_column": 200, "regressor_1": 20, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    return df
+
+@pytest.fixture()
+def dfs_updated(df_and_regressors, df_update) -> Tuple[pd.DataFrame,pd.DataFrame]:
+    df, df_exog, _ = df_and_regressors
+
+    df = TSDataset.to_flatten(df)
+    df["new_column"] = -1
+    df.loc[df["segment"] == "1", "new_column"] = 100
+    df.loc[df["segment"] == "1", "regressor_1"] = 10
+    df.loc[df["segment"] == "2", "new_column"] = 200
+    df.loc[df["segment"] == "2", "regressor_1"] = 20
+    df = TSDataset.to_dataset(df)
+
+    df_exog = df_exog.reindex(df_update.index)
+    df_exog = TSDataset.to_flatten(df_exog)
+    df_exog["new_column"] = -1
+    df_exog.loc[df_exog["segment"] == "1", "new_column"] = 100
+    df_exog.loc[df_exog["segment"] == "1", "regressor_1"] = 10
+    df_exog.loc[df_exog["segment"] == "2", "new_column"] = 200
+    df_exog.loc[df_exog["segment"] == "2", "regressor_1"] = 20
+    df_exog = TSDataset.to_dataset(df_exog)
+
+    return df, df_exog
+
 
 @pytest.fixture()
 def df_and_regressors_flat() -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -117,6 +149,7 @@ def df_segments_int():
     return df
 
 
+'''
 def test_check_endings_error():
     """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -917,35 +950,24 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     np.testing.assert_array_equal(
         torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
     )
-
+'''
 
 @pytest.mark.parametrize(
-    "expected_columns",
-    ((["target", "regressor_1", "regressor_2"]),),
+    "update_exog", (True, False)
 )
-def test_update_columns_update_existing_columns(df_and_regressors, expected_columns):
+def test_update_columns_from_pandas(df_and_regressors, df_update, dfs_updated, update_exog):
     df, df_exog, known_future = df_and_regressors
+    df_updated, df_exog_updated = dfs_updated
+    if not update_exog:
+        df_exog_updated = df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
 
-    df_exog.loc[:, pd.IndexSlice[:, "regressor_1"]] = 0
-    ts.update_columns_from_pandas(df=df_exog, regressors=known_future)
+    ts.update_columns_from_pandas(df_update=df_update, update_exog=update_exog, regressors=known_future)
 
-    got_columns = set(ts.columns.get_level_values("feature"))
-    assert sorted(got_columns) == sorted(expected_columns)
-    assert (ts[:, :, "regressor_1"] == 0).all().all()
+    pd.testing.assert_frame_equal(ts.df, df_updated)
+    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated)
 
-
-@pytest.mark.parametrize(
-    "expected_columns",
-    ((["target", "regressor_1", "regressor_2"]),),
-)
-def test_update_columns_add_columns(df_and_regressors, expected_columns):
-    df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D")
-    ts.update_columns_from_pandas(df=df_exog, regressors=[])
-    got_columns = set(ts.columns.get_level_values("feature"))
-    assert sorted(got_columns) == sorted(expected_columns)
-
+'''
 
 @pytest.mark.parametrize(
     "known_future, regressors, expected_regressors",
@@ -961,19 +983,47 @@ def test_update_columns_update_regressors(df_and_regressors, known_future, regre
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 
+
+
 @pytest.mark.parametrize(
-    "features, expected_columns",
+    "features, drop_from_exog, df_expected_columns, df_exog_expected_columns",
     (
-        (["regressor_2"], ["timestamp", "segment", "target", "regressor_1"]),
-        (["regressor_2", "out_of_dataset_column"], ["timestamp", "segment", "target", "regressor_1"]),
+        (
+            ["regressor_2"],
+            False,
+            ["timestamp", "segment", "target", "regressor_1"],
+            ["timestamp", "segment", "regressor_1", "regressor_2"],
+        ),
+        (
+            ["regressor_2"],
+            True,
+            ["timestamp", "segment", "target", "regressor_1"],
+            ["timestamp", "segment", "regressor_1"],
+        ),
+        (
+            ["regressor_2", "out_of_dataset_column"],
+            True,
+            ["timestamp", "segment", "target", "regressor_1"],
+            ["timestamp", "segment", "regressor_1"],
+        ),
     ),
 )
-def test_remove_features(df_and_regressors, features, expected_columns):
+def test_drop_features(df_and_regressors, features, drop_from_exog, df_expected_columns, df_exog_expected_columns):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    ts.remove_features(features=features)
-    got_columns = ts.to_flatten(ts.df).columns
-    assert sorted(got_columns) == sorted(expected_columns)
+    ts.drop_features(features=features, drop_from_exog=drop_from_exog)
+    df_columns, df_exog_columns = ts.to_flatten(ts.df).columns, ts.to_flatten(ts.df_exog).columns
+    assert sorted(df_columns) == sorted(df_expected_columns)
+    assert sorted(df_exog_columns) == sorted(df_exog_expected_columns)
+
+
+def test_drop_features_raise_warning_on_unknown_columns(
+    df_and_regressors, features=["regressor_2", "out_of_dataset_column"]
+):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.warns(UserWarning, match="Features {'out_of_dataset_column'} are not present in df!"):
+        ts.drop_features(features=features, drop_from_exog=False)
 
 
 @pytest.mark.parametrize(
@@ -983,8 +1033,10 @@ def test_remove_features(df_and_regressors, features, expected_columns):
         (["out_of_dataset_column"], ["regressor_1", "regressor_2"]),
     ),
 )
-def test_remove_features_update_regressors(df_and_regressors, features, expected_regressors):
+def test_drop_features_update_regressors(df_and_regressors, features, expected_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    ts.remove_features(features=features)
+    ts.drop_features(features=features, drop_from_exog=False)
     assert sorted(ts.regressors) == sorted(expected_regressors)
+
+'''
