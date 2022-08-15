@@ -204,6 +204,53 @@ def test_deadline_moving_average_forecaster_correct(df):
 
 
 @pytest.mark.parametrize(
+    "model",
+    [
+        SeasonalMovingAverageModel(window=1, seasonality=1),
+        SeasonalMovingAverageModel(window=3, seasonality=1),
+        SeasonalMovingAverageModel(window=1, seasonality=3),
+        SeasonalMovingAverageModel(window=3, seasonality=7),
+        MovingAverageModel(window=3),
+        NaiveModel(lag=5),
+    ],
+)
+def test_context_size_seasonal_ma(model):
+    expected_context_size = model.window * model.seasonality
+    assert model.context_size == expected_context_size
+
+
+@pytest.mark.parametrize(
+    "model, freq, expected_context_size",
+    [
+        (DeadlineMovingAverageModel(window=1, seasonality="month"), "D", 31),
+        (DeadlineMovingAverageModel(window=3, seasonality="month"), "D", 3 * 31),
+        (DeadlineMovingAverageModel(window=1, seasonality="year"), "D", 366),
+        (DeadlineMovingAverageModel(window=3, seasonality="year"), "D", 3 * 366),
+        (DeadlineMovingAverageModel(window=1, seasonality="month"), "H", 31 * 24),
+        (DeadlineMovingAverageModel(window=3, seasonality="month"), "H", 3 * 31 * 24),
+        (DeadlineMovingAverageModel(window=1, seasonality="year"), "H", 366 * 24),
+        (DeadlineMovingAverageModel(window=3, seasonality="year"), "H", 3 * 366 * 24),
+    ],
+)
+def test_context_size_deadline_ma(model, freq, expected_context_size):
+    # create dataframe
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2020-01-01", periods=expected_context_size + 10, freq=freq),
+            "segment": "segment_0",
+            "target": 1,
+        }
+    )
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=freq)
+
+    # fit model
+    model.fit(ts)
+
+    # check result
+    assert model.context_size == expected_context_size
+
+
+@pytest.mark.parametrize(
     "etna_model_class",
     (SeasonalMovingAverageModel, MovingAverageModel, NaiveModel, DeadlineMovingAverageModel),
 )

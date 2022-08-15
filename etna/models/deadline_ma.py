@@ -70,7 +70,6 @@ class _DeadlineMovingAverageModel:
         freq = pd.infer_freq(df["timestamp"])
         if freq not in self.freqs_available:
             raise ValueError(f"{freq} is not supported! Use daily or hourly frequency!")
-        self._freq = freq
 
         if set(df.columns) != {"timestamp", "target"}:
             warnings.warn(
@@ -94,6 +93,7 @@ class _DeadlineMovingAverageModel:
         self.series = targets.loc[timestamps >= first_index]
         self.timestamps = timestamps.loc[timestamps >= first_index]
         self.shift = len(self.series)
+        self._freq = freq
 
         return self
 
@@ -175,9 +175,12 @@ class DeadlineMovingAverageModel(PerSegmentModel):
             base_model=_DeadlineMovingAverageModel(window=window, seasonality=seasonality)
         )
 
+    @property
     def context_size(self) -> int:
         """Upper bound to context size of the model."""
-        return self._base_model.context_size
+        models = self.get_model()
+        model = next(iter(models.values()))
+        return model.context_size
 
     def get_model(self) -> Dict[str, "DeadlineMovingAverageModel"]:
         """Get internal model.
