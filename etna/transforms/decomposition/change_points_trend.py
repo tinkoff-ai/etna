@@ -44,10 +44,14 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         """
         self.in_column = in_column
         self.out_columns = in_column
-        self.ruptures = RupturesChangePointsModel(change_point_model, **change_point_model_predict_params)
+        self.ruptures_change_point_model = RupturesChangePointsModel(
+            change_point_model=change_point_model, **change_point_model_predict_params
+        )
         self.detrend_model = detrend_model
         self.per_interval_models: Optional[Dict[TTimestampInterval, TDetrendModel]] = None
         self.intervals: Optional[List[TTimestampInterval]] = None
+        self.change_point_model = change_point_model
+        self.change_point_model_predict_params = change_point_model_predict_params
 
     def _init_detrend_models(
         self, intervals: List[TTimestampInterval]
@@ -98,7 +102,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         -------
         :
         """
-        self.intervals = self.ruptures.get_change_points(df=df, in_column=self.in_column)
+        self.intervals = self.ruptures_change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
 
         series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]

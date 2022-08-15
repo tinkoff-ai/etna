@@ -1,3 +1,4 @@
+from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.binseg import BinsegTrendTransform
 from etna.transforms.decomposition.change_points_segmentation import ChangePointsSegmentationTransform
 from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform

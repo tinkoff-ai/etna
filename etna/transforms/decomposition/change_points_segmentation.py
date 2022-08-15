@@ -15,24 +15,26 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(
-        self, in_column: str, change_point_model: BaseEstimator, out_column: str, **change_point_model_predict_params
+        self, in_column: str, out_column: str, change_point_model: BaseEstimator, **change_point_model_predict_params
     ):
         """Init _OneSegmentChangePointsSegmentationTransform.
         Parameters
         ----------
         in_column:
             name of column to apply transform to
-        change_point_model:
-            model to get change points
         out_column:
             result column name. If not given use ``self.__repr__()``
+        change_point_model:
+            model to get change points
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.out_column = out_column
         self.intervals: Optional[List[TTimestampInterval]] = None
-        self.ruptures = RupturesChangePointsModel(change_point_model, **change_point_model_predict_params)
+        self.ruptures_change_point_model = RupturesChangePointsModel(
+            change_point_model=change_point_model, **change_point_model_predict_params
+        )
 
     def _fill_per_interval(self, series: pd.Series) -> pd.Series:
         """Fill values in resulting series."""
@@ -81,7 +83,7 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         ValueError
             If series contains NaNs in the middle
         """
-        self.intervals = self.ruptures.get_change_points(df=df, in_column=self.in_column)
+        self.intervals = self.ruptures_change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
         return self
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -118,14 +120,14 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
     ):
         """Init ChangePointsSegmentationTransform.
 
-        Parameters
+        Parameterss
         ----------
         in_column:
             name of column to fit change point model
-        change_point_model:
-            model to get change points
         out_column:
             result column name. If not given use ``self.__repr__()``
+        change_point_model:
+            model to get change points
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
