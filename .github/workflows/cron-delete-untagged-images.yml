@@ -5,6 +5,8 @@ on:
 jobs:
   comment:
     runs-on: ubuntu-latest
+    permissions:
+      packages: read|write|delete
     steps:
       - run: python3 scripts/remove_old_images.py
         env:
