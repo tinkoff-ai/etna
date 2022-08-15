@@ -871,7 +871,9 @@ class TSDataset:
 
         return train, test
 
-    def _update_columns(self, df: pd.DataFrame, df_index: Union[pd.Index, slice], df_update: pd.DataFrame) -> pd.DataFrame:
+    def _update_columns(
+        self, df: pd.DataFrame, df_index: Union[pd.Index, slice], df_update: pd.DataFrame
+    ) -> pd.DataFrame:
         columns_in_df = df.columns.get_level_values("feature")
         new_columns = df_update.columns.get_level_values("feature")
 
