@@ -55,6 +55,7 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
 
     return df, df_exog, ["regressor_1", "regressor_2"]
 
+
 @pytest.fixture()
 def df_update() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-12")
@@ -64,21 +65,22 @@ def df_update() -> pd.DataFrame:
     df = TSDataset.to_dataset(df)
     return df
 
+
 @pytest.fixture()
-def dfs_updated(df_and_regressors, df_update) -> Tuple[pd.DataFrame,pd.DataFrame]:
+def df_and_regressors_updated(df_and_regressors, df_update) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df, df_exog, _ = df_and_regressors
 
     df = TSDataset.to_flatten(df)
-    df["new_column"] = -1
     df.loc[df["segment"] == "1", "new_column"] = 100
     df.loc[df["segment"] == "1", "regressor_1"] = 10
+    df.loc[df["segment"] == "1", "regressor_2"] = 2
     df.loc[df["segment"] == "2", "new_column"] = 200
     df.loc[df["segment"] == "2", "regressor_1"] = 20
+    df.loc[df["segment"] == "2", "regressor_2"] = 4
     df = TSDataset.to_dataset(df)
 
     df_exog = df_exog.reindex(df_update.index)
     df_exog = TSDataset.to_flatten(df_exog)
-    df_exog["new_column"] = -1
     df_exog.loc[df_exog["segment"] == "1", "new_column"] = 100
     df_exog.loc[df_exog["segment"] == "1", "regressor_1"] = 10
     df_exog.loc[df_exog["segment"] == "2", "new_column"] = 200
@@ -149,7 +151,6 @@ def df_segments_int():
     return df
 
 
-'''
 def test_check_endings_error():
     """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -950,14 +951,13 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     np.testing.assert_array_equal(
         torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
     )
-'''
 
-@pytest.mark.parametrize(
-    "update_exog", (True, False)
-)
-def test_update_columns_from_pandas(df_and_regressors, df_update, dfs_updated, update_exog):
+
+"""
+@pytest.mark.parametrize("update_exog", (True, False))
+def test_update_columns_from_pandas(df_and_regressors, df_update, df_and_regressors_updated, update_exog):
     df, df_exog, known_future = df_and_regressors
-    df_updated, df_exog_updated = dfs_updated
+    df_updated, df_exog_updated = df_and_regressors_updated
     if not update_exog:
         df_exog_updated = df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
@@ -967,7 +967,6 @@ def test_update_columns_from_pandas(df_and_regressors, df_update, dfs_updated, u
     pd.testing.assert_frame_equal(ts.df, df_updated)
     pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated)
 
-'''
 
 @pytest.mark.parametrize(
     "known_future, regressors, expected_regressors",
@@ -981,8 +980,7 @@ def test_update_columns_update_regressors(df_and_regressors, known_future, regre
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
     ts.update_columns_from_pandas(df=df_exog, regressors=regressors)
     assert sorted(ts.regressors) == sorted(expected_regressors)
-
-
+"""
 
 
 @pytest.mark.parametrize(
@@ -1038,5 +1036,3 @@ def test_drop_features_update_regressors(df_and_regressors, features, expected_r
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=False)
     assert sorted(ts.regressors) == sorted(expected_regressors)
-
-'''
