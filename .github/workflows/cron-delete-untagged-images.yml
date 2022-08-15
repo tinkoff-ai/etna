@@ -1,0 +1,11 @@
+name: Delete old untagged images
+on: 
+  schedule: 
+    - cron: '0 8 * * 1'
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - run: python3 scripts/remove_old_images.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
