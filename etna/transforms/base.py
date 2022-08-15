@@ -52,14 +52,14 @@ class NewTransform(ABC, BaseMixin):
         # Transforms now can only remove or only add/update columns
         removed_features = list(columns_before - columns_after)
         if len(removed_features) != 0:
-            ts.remove_features(features=removed_features)
+            ts.drop_features(features=removed_features, drop_from_exog=False)
         else:
             new_regressors = self.get_regressors_info()
-            ts.update_columns_from_pandas(df=df_transformed, regressors=new_regressors)
+            ts.update_columns_from_pandas(df_update=df_transformed, update_exog=False, regressors=new_regressors)
         return ts
 
     @abstractmethod
-    def _fit(self, df: pd.DataFrame) -> "NewTransform":
+    def _fit(self, df: pd.DataFrame):
         """Fit the transform.
 
         Should be implemented by user.
@@ -68,11 +68,6 @@ class NewTransform(ABC, BaseMixin):
         ----------
         df:
             Dataframe in etna wide format.
-
-        Returns
-        -------
-        :
-            The fitted transform instance.
         """
         pass
 
@@ -176,6 +171,10 @@ class NewTransform(ABC, BaseMixin):
         :
             TSDataset after applying inverse transformation.
         """
+        df = ts.to_pandas(flatten=False, features="all")
+        df_transformed = self._inverse_transform(df=df)
+        if not df.equals(df_transformed):
+            ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
         return ts
 
 
