@@ -75,6 +75,8 @@ class _TBATSAdapter(BaseAdapter):
 class BATSModel(PerSegmentPredictionIntervalModel):
     """Class for holding segment interval BATS model."""
 
+    context_size = 0
+
     def __init__(
         self,
         use_box_cox: Optional[bool] = None,
@@ -141,6 +143,8 @@ class BATSModel(PerSegmentPredictionIntervalModel):
 
 class TBATSModel(PerSegmentPredictionIntervalModel):
     """Class for holding segment interval TBATS model."""
+
+    context_size = 0
 
     def __init__(
         self,

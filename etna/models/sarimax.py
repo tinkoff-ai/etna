@@ -364,6 +364,8 @@ class SARIMAXModel(PerSegmentPredictionIntervalModel):
     future.
     """
 
+    context_size = 0
+
     def __init__(
         self,
         order: Tuple[int, int, int] = (2, 1, 0),

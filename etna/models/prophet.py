@@ -198,6 +198,8 @@ class ProphetModel(PerSegmentPredictionIntervalModel):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
+    context_size = 0
+
     def __init__(
         self,
         growth: str = "linear",

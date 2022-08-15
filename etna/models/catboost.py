@@ -131,6 +131,8 @@ class CatBoostPerSegmentModel(PerSegmentModel):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
+    context_size = 0
+
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -252,6 +254,8 @@ class CatBoostMultiSegmentModel(MultiSegmentModel):
     2020-04-15      5.00      7.00      4.00      7.00
     2020-04-16      8.00      6.00      2.00      0.00
     """
+
+    context_size = 0
 
     def __init__(
         self,
@@ -383,6 +387,8 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
+    context_size = 0
+
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -511,6 +517,8 @@ class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
     2020-04-15      5.00      7.00      4.00      7.00
     2020-04-16      8.00      6.00      2.00      0.00
     """
+
+    context_size = 0
 
     def __init__(
         self,
