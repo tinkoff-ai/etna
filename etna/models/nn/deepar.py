@@ -33,6 +33,8 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
     It`s not right pattern of using Transforms and TSDataset.
     """
 
+    context_size = 0
+
     def __init__(
         self,
         batch_size: int = 64,

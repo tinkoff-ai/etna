@@ -109,6 +109,12 @@ class Model(ABC, BaseMixin):
 class FitAbstractModel(ABC):
     """Interface for model with fit method."""
 
+    @property
+    @abstractmethod
+    def context_size(self) -> int:
+        """Upper bound to context size of the model."""
+        pass
+
     @abstractmethod
     def fit(self, ts: TSDataset) -> "FitAbstractModel":
         """Fit model.
@@ -671,6 +677,11 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         self.val_dataloader_params = {} if val_dataloader_params is None else val_dataloader_params
         self.trainer_params = {} if trainer_params is None else trainer_params
         self.split_params = {} if split_params is None else split_params
+
+    @property
+    def context_size(self) -> int:
+        """Context size of the model."""
+        return self.encoder_length
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "DeepBaseModel":

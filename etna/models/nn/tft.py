@@ -34,6 +34,8 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
     It`s not right pattern of using Transforms and TSDataset.
     """
 
+    context_size = 0
+
     def __init__(
         self,
         max_epochs: int = 10,

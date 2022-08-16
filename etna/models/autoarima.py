@@ -57,6 +57,8 @@ class AutoARIMAModel(PerSegmentPredictionIntervalModel):
     We use :py:class:`pmdarima.arima.arima.ARIMA`.
     """
 
+    context_size = 0
+
     def __init__(
         self,
         **kwargs,

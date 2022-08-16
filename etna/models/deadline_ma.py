@@ -42,6 +42,7 @@ class _DeadlineMovingAverageModel:
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
         self.freqs_available = {"H", "D"}
+        self._freq = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_DeadlineMovingAverageModel":
         """
@@ -92,6 +93,7 @@ class _DeadlineMovingAverageModel:
         self.series = targets.loc[timestamps >= first_index]
         self.timestamps = timestamps.loc[timestamps >= first_index]
         self.shift = len(self.series)
+        self._freq = freq
 
         return self
 
@@ -134,6 +136,24 @@ class _DeadlineMovingAverageModel:
 
         return res[-len(df) :]
 
+    @property
+    def context_size(self) -> int:
+        """Upper bound to context size of the model."""
+        cur_value = None
+        if self.seasonality is SeasonalityMode.year:
+            cur_value = 366
+        elif self.seasonality is SeasonalityMode.month:
+            cur_value = 31
+
+        if self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before trying the find out context size!")
+        if self._freq == "H":
+            cur_value *= 24
+
+        cur_value *= self.window
+
+        return cur_value
+
 
 class DeadlineMovingAverageModel(PerSegmentModel):
     """Moving average model that uses exact previous dates to predict."""
@@ -154,6 +174,13 @@ class DeadlineMovingAverageModel(PerSegmentModel):
         super(DeadlineMovingAverageModel, self).__init__(
             base_model=_DeadlineMovingAverageModel(window=window, seasonality=seasonality)
         )
+
+    @property
+    def context_size(self) -> int:
+        """Upper bound to context size of the model."""
+        models = self.get_model()
+        model = next(iter(models.values()))
+        return model.context_size
 
     def get_model(self) -> Dict[str, "DeadlineMovingAverageModel"]:
         """Get internal model.

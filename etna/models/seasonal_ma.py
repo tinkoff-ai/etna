@@ -121,6 +121,11 @@ class SeasonalMovingAverageModel(PerSegmentModel):
             base_model=_SeasonalMovingAverageModel(window=window, seasonality=seasonality)
         )
 
+    @property
+    def context_size(self) -> int:
+        """Context size of the model."""
+        return self.window * self.seasonality
+
     def get_model(self) -> Dict[str, "SeasonalMovingAverageModel"]:
         """Get internal model.
 

@@ -53,3 +53,14 @@ def test_rnn_make_samples(example_df):
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
     np.testing.assert_equal(example_df[["target"]].iloc[: encoder_length - 1], first_sample["encoder_real"])
     np.testing.assert_equal(example_df[["target"]].iloc[1:encoder_length], second_sample["encoder_real"])
+
+
+@pytest.mark.parametrize("encoder_length", [1, 2, 10])
+def test_context_size(encoder_length):
+    encoder_length = encoder_length
+    decoder_length = encoder_length
+    model = RNNModel(
+        input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=100)
+    )
+
+    assert model.context_size == encoder_length
