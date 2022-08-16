@@ -15,6 +15,12 @@ class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
+def override(method):
+    """Indicate the fact of overriding the method."""
+    method.is_overridden = True
+    return method
+
+
 class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
@@ -171,9 +177,9 @@ class NewTransform(ABC, BaseMixin):
         :
             TSDataset after applying inverse transformation.
         """
-        df = ts.to_pandas(flatten=False, features="all")
-        df_transformed = self._inverse_transform(df=df)
-        if not df.equals(df_transformed):
+        if hasattr(self._inverse_transform, "is_overridden"):
+            df = ts.to_pandas(flatten=False, features="all")
+            df_transformed = self._inverse_transform(df=df)
             ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
         return ts
 

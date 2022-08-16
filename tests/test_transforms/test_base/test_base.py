@@ -7,6 +7,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.transforms import NewTransform
+from etna.transforms.base import override
 
 
 class NewTransformMock(NewTransform):
@@ -19,6 +20,7 @@ class NewTransformMock(NewTransform):
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
+    @override
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         df["target"] = -100
@@ -120,13 +122,13 @@ def test_inverse_transform_update_dataset(remove_columns_df):
     transform._update_dataset.assert_called()
 
 
-def test_inverse_transform_not_update_dataset_if_not_transformed(remove_columns_df):
+def test_inverse_transform_not_update_dataset_if_not_overriden(remove_columns_df):
     df, _ = remove_columns_df
     ts = TSDataset(df=df, freq="D")
 
     transform = NewTransformMock()
     transform._update_dataset = Mock()
-    transform._inverse_transform = Mock(return_value=df)
+    transform._inverse_transform = lambda df: df
 
     transform.inverse_transform(ts=ts)
     assert not transform._update_dataset.called
