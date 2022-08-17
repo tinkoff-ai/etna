@@ -12,6 +12,8 @@ from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_segmentation import _OneSegmentChangePointsSegmentationTransform
 
+out_column = "result"
+
 
 @pytest.fixture
 def pre_transformed_df() -> pd.DataFrame:
@@ -51,28 +53,11 @@ def multitrend_df_with_nans_in_tails(multitrend_df):
     return multitrend_df
 
 
-def test_build_intervals():
-    """Check correctness of intervals generation with list of change points."""
-    change_points = [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")]
-    expected_intervals = [
-        (pd.Timestamp.min, pd.Timestamp("2020-01-01")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18")),
-        (pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")),
-        (pd.Timestamp("2020-02-24"), pd.Timestamp.max),
-    ]
-    intervals = RupturesChangePointsModel._build_intervals(change_points=change_points)
-    assert isinstance(intervals, list)
-    assert len(intervals) == 4
-    for (exp_left, exp_right), (real_left, real_right) in zip(expected_intervals, intervals):
-        assert exp_left == real_left
-        assert exp_right == real_right
-
-
 def test_fit(pre_transformed_df: pd.DataFrame):
     """Check that fit method save intervals."""
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     bs.fit(df=pre_transformed_df["segment_1"])
     assert bs.intervals is not None
@@ -80,9 +65,9 @@ def test_fit(pre_transformed_df: pd.DataFrame):
 
 def test_transform(pre_transformed_df: pd.DataFrame):
     """Check that transform method generate new column."""
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     bs.fit(df=pre_transformed_df["segment_1"])
     transformed = bs.transform(df=pre_transformed_df["segment_1"])
@@ -92,9 +77,9 @@ def test_transform(pre_transformed_df: pd.DataFrame):
 
 def test_inverse_transform(pre_transformed_df: pd.DataFrame):
     """Check that inverse_transform works."""
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     bs.fit(df=pre_transformed_df["segment_1"])
 
@@ -104,9 +89,9 @@ def test_inverse_transform(pre_transformed_df: pd.DataFrame):
 
 def test_monotonously_result(pre_transformed_df: pd.DataFrame):
     """Check that resulting column is monotonously non-decreasing."""
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     bs.fit(df=pre_transformed_df["segment_1"])
 
@@ -117,18 +102,18 @@ def test_monotonously_result(pre_transformed_df: pd.DataFrame):
 
 def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
     """Test that transform for one segment raise error when calling transform without being fit."""
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     transform = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.transform(df=pre_transformed_df["segment_1"])
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = bs.fit_transform(df=df_with_nans["segment_1"])
@@ -137,18 +122,18 @@ def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
 def test_backtest(simple_ar_ts):
     model = CatBoostModelPerSegment()
     horizon = 3
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = ChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     pipeline = Pipeline(model=model, transforms=[bs], horizon=horizon)
     _, _, _ = pipeline.backtest(ts=simple_ar_ts, metrics=[SMAPE()], n_folds=3)
 
 
 def test_future_and_past_filling(simple_ar_ts):
-    out_column = "result"
+    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = ChangePointsSegmentationTransform(
-        in_column="target", change_point_model=Binseg(), out_column=out_column, n_bkps=5
+        in_column="target", change_point_model=change_point_model, out_column=out_column
     )
     before, ts = simple_ar_ts.train_test_split(test_start="2021-06-01")
     train, after = ts.train_test_split(test_start="2021-08-01")

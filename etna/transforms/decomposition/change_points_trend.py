@@ -7,12 +7,11 @@ from typing import Type
 
 import numpy as np
 import pandas as pd
-from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
-from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
 from etna.transforms.utils import match_target_quantiles
 
 TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
@@ -25,9 +24,8 @@ class _OneSegmentChangePointsTrendTransform(Transform):
     def __init__(
         self,
         in_column: str,
-        change_point_model: BaseEstimator,
+        change_point_model: BaseChangePointsModelAdapter,
         detrend_model: TDetrendModel,
-        **change_point_model_predict_params,
     ):
         """Init _OneSegmentChangePointsTrendTransform.
 
@@ -39,19 +37,14 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             model to get trend change points
         detrend_model:
             model to get trend in data
-        change_point_model_predict_params:
-            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.out_columns = in_column
-        self.ruptures_change_point_model = RupturesChangePointsModel(
-            change_point_model=change_point_model, **change_point_model_predict_params
-        )
+        self.change_point_model = change_point_model
         self.detrend_model = detrend_model
         self.per_interval_models: Optional[Dict[TTimestampInterval, TDetrendModel]] = None
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model = change_point_model
-        self.change_point_model_predict_params = change_point_model_predict_params
 
     def _init_detrend_models(
         self, intervals: List[TTimestampInterval]
@@ -102,7 +95,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         -------
         :
         """
-        self.intervals = self.ruptures_change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
+        self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
         self.per_interval_models = self._init_detrend_models(intervals=self.intervals)
 
         series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
@@ -164,9 +157,8 @@ class ChangePointsTrendTransform(PerSegmentWrapper):
     def __init__(
         self,
         in_column: str,
-        change_point_model: BaseEstimator,
+        change_point_model: BaseChangePointsModelAdapter,
         detrend_model: TDetrendModel,
-        **change_point_model_predict_params,
     ):
         """Init ChangePointsTrendTransform.
 
@@ -178,18 +170,14 @@ class ChangePointsTrendTransform(PerSegmentWrapper):
             model to get trend change points
         detrend_model:
             model to get trend in data
-        change_point_model_predict_params:
-            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.change_point_model = change_point_model
         self.detrend_model = detrend_model
-        self.change_point_model_predict_params = change_point_model_predict_params
         super().__init__(
             transform=_OneSegmentChangePointsTrendTransform(
                 in_column=self.in_column,
                 change_point_model=self.change_point_model,
                 detrend_model=self.detrend_model,
-                **self.change_point_model_predict_params,
             )
         )

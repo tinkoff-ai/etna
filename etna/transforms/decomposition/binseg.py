@@ -4,6 +4,7 @@ from ruptures.base import BaseCost
 from ruptures.detection import Binseg
 from sklearn.linear_model import LinearRegression
 
+from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_trend import TDetrendModel
 
@@ -61,13 +62,14 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
         self.pen = pen
         self.epsilon = epsilon
         detrend_model = LinearRegression() if detrend_model is None else detrend_model
+        change_point_model = Binseg(
+            model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
+        )
+        self.ruptures = RupturesChangePointsModel(
+            change_point_model=change_point_model, n_bkps=self.n_bkps, pen=self.pen, epsilon=self.epsilon
+        )
         super().__init__(
             in_column=in_column,
-            change_point_model=Binseg(
-                model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
-            ),
+            change_point_model=self.ruptures,
             detrend_model=detrend_model,
-            n_bkps=self.n_bkps,
-            pen=self.pen,
-            epsilon=self.epsilon,
         )

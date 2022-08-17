@@ -32,11 +32,10 @@ def find_change_points(
 
     result: Dict[str, List[pd.Timestamp]] = {}
     df = ts.to_pandas()
+    ruptures = RupturesChangePointsModel(change_point_model, **model_predict_params)
     for segment in ts.segments:
         df_segment = df[segment]
         raw_series = df_segment[in_column]
         series = raw_series.loc[raw_series.first_valid_index() : raw_series.last_valid_index()]
-        result[segment] = RupturesChangePointsModel.find_change_points_segment(
-            series=series, change_point_model=change_point_model, **model_predict_params
-        )
+        result[segment] = ruptures.get_change_points(series=series)
     return result

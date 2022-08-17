@@ -2,21 +2,18 @@ from typing import List
 from typing import Optional
 
 import pandas as pd
-from ruptures.base import BaseEstimator
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
-from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 
 
 class _OneSegmentChangePointsSegmentationTransform(Transform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
-    def __init__(
-        self, in_column: str, out_column: str, change_point_model: BaseEstimator, **change_point_model_predict_params
-    ):
+    def __init__(self, in_column: str, out_column: str, change_point_model: BaseChangePointsModelAdapter):
         """Init _OneSegmentChangePointsSegmentationTransform.
         Parameters
         ----------
@@ -26,15 +23,11 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
             result column name. If not given use ``self.__repr__()``
         change_point_model:
             model to get change points
-        change_point_model_predict_params:
-            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.out_column = out_column
         self.intervals: Optional[List[TTimestampInterval]] = None
-        self.ruptures_change_point_model = RupturesChangePointsModel(
-            change_point_model=change_point_model, **change_point_model_predict_params
-        )
+        self.change_point_model = change_point_model
 
     def _fill_per_interval(self, series: pd.Series) -> pd.Series:
         """Fill values in resulting series."""
@@ -83,7 +76,7 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         ValueError
             If series contains NaNs in the middle
         """
-        self.intervals = self.ruptures_change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
+        self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
         return self
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -114,9 +107,8 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
     def __init__(
         self,
         in_column: str,
-        change_point_model: BaseEstimator,
+        change_point_model: BaseChangePointsModelAdapter,
         out_column: Optional[str] = None,
-        **change_point_model_predict_params,
     ):
         """Init ChangePointsSegmentationTransform.
 
@@ -128,13 +120,10 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
             result column name. If not given use ``self.__repr__()``
         change_point_model:
             model to get change points
-        change_point_model_predict_params:
-            params for ``change_point_model.predict`` method
         """
         self.in_column = in_column
         self.out_column = out_column
         self.change_point_model = change_point_model
-        self.change_point_model_predict_params = change_point_model_predict_params
         if self.out_column is None:
             self.out_column = repr(self)
         super().__init__(
@@ -142,6 +131,5 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
                 in_column=self.in_column,
                 out_column=self.out_column if self.out_column is not None else self.__repr__(),
                 change_point_model=self.change_point_model,
-                **self.change_point_model_predict_params,
             )
         )
