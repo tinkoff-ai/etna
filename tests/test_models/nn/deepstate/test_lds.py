@@ -7,13 +7,14 @@ from etna.models.nn import LDS
 
 @pytest.fixture
 def lds(batch_size=2, seq_length=10, latent_dim=2):
+    prior_std = torch.rand(size=(batch_size, latent_dim)).float()
     lds = LDS(
         emission_coeff=torch.rand(size=(batch_size, seq_length, latent_dim)).float(),
         transition_coeff=torch.rand(size=(latent_dim, latent_dim)).float(),
         innovation_coeff=torch.rand(size=(batch_size, seq_length, latent_dim)).float(),
         noise_std=torch.rand(size=(batch_size, seq_length, 1)).float(),
         prior_mean=torch.rand(size=(batch_size, latent_dim)).float(),
-        prior_std=torch.rand(size=(batch_size, latent_dim)).float(),
+        prior_cov=torch.diag_embed(prior_std * prior_std),
         offset=torch.rand(size=(batch_size, seq_length, 1)).float(),
         seq_length=seq_length,
         latent_dim=latent_dim,
