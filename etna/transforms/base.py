@@ -54,14 +54,23 @@ class NewTransform(ABC, BaseMixin):
         """Update TSDataset based on the difference between dfs."""
         columns_before = set(df.columns.get_level_values("feature"))
         columns_after = set(df_transformed.columns.get_level_values("feature"))
+        columns_to_update = list(set(columns_before) & set(columns_after))
+        columns_to_add = list(set(columns_after) - set(columns_before))
+        columns_to_remove = list(set(columns_before) - set(columns_after))
 
-        # Transforms now can only remove or only add/update columns
-        removed_features = list(columns_before - columns_after)
-        if len(removed_features) != 0:
-            ts.drop_features(features=removed_features, drop_from_exog=False)
-        else:
+        if len(columns_to_remove) != 0:
+            ts.drop_features(features=columns_to_remove, drop_from_exog=False)
+        if len(columns_to_add) != 0:
             new_regressors = self.get_regressors_info()
-            ts.update_columns_from_pandas(df_update=df_transformed, update_exog=False, regressors=new_regressors)
+            ts.add_columns_from_pandas(
+                df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[ts.segments, columns_to_add]],
+                update_exog=False,
+                regressors=new_regressors,
+            )
+        if len(columns_to_update) != 0:
+            ts.add_columns_from_pandas(
+                df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[ts.segments, columns_to_update]]
+            )
         return ts
 
     @abstractmethod
