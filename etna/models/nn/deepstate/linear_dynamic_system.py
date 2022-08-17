@@ -18,7 +18,7 @@ class LDS(BaseMixin):
         innovation_coeff: Tensor,  # (batch_size, seq_length, latent_dim)
         noise_std: Tensor,  # (batch_size, seq_length, 1)
         prior_mean: Tensor,  # (batch_size, latent_dim)
-        prior_std: Tensor,  # (batch_size, latent_dim)
+        prior_cov: Tensor,  # (batch_size, latent_dim, latent_dim)
         offset: Tensor,  # (batch_size, seq_length, 1)
         seq_length: int,
         latent_dim: int,
@@ -37,8 +37,8 @@ class LDS(BaseMixin):
             Noise standard deviation for targets with shape (batch_size, seq_length, 1).
         prior_mean:
             Prior mean for latent state with shape (batch_size, latent_dim)
-        prior_std:
-            Prior standard deviation for latent state with shape (batch_size, latent_dim)
+        prior_cov:
+            Prior covariance matrix for latent state with shape (batch_size, latent_dim, latent_dim)
         offset:
             Offset for the target with shape (batch_size, seq_length, 1)
         seq_length:
@@ -51,13 +51,12 @@ class LDS(BaseMixin):
         self.innovation_coeff = innovation_coeff
         self.noise_std = noise_std
         self.prior_mean = prior_mean
-        self.prior_std = prior_std
+        self.prior_cov = prior_cov
         self.offset = offset
         self.seq_length = seq_length
         self.latent_dim = latent_dim
 
         self.batch_size = self.prior_mean.shape[0]
-        self.prior_cov: Tensor = torch.diag_embed(prior_std * prior_std)  # (batch_size, latent_dim, latent_dim)
         self._eye = torch.eye(self.latent_dim).type_as(noise_std)
 
     def kalman_filter_step(

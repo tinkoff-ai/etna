@@ -171,6 +171,16 @@ class SeasonalitySSM(LevelSSM):
         return np.array([self.timestamp_transform(timestamp) for timestamp in timestamps])
 
 
+class WeeklySeasonalitySSM(SeasonalitySSM):
+    def __init__(self):
+        super().__init__(num_seasons=7, timestamp_transform=lambda x: x.weekday())
+
+
+class DaylySeasonalitySSM(SeasonalitySSM):
+    def __init__(self):
+        super().__init__(num_seasons=24, timestamp_transform=lambda x: x.hour())
+
+
 class CompositeSSM(SSM):
     """Class to compose several State Space Models."""
 

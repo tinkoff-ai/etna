@@ -18,14 +18,14 @@ from etna.models.nn.deepstate.state_space_model import CompositeSSM
 
 class DeepStateTrainBatch(TypedDict):
     encoder_real: Tensor  # (batch_size, seq_length, input_size)
-    datetime_index: Tensor  # (num_models, batch_size, seq_length)
+    datetime_index: Tensor  # (batch_size, num_models , seq_length)
     target: Tensor  # (batch_size, seq_length, 1)
 
 
 class DeepStateInferenceBatch(TypedDict):
     encoder_real: Tensor  # (batch_size, seq_length, input_size)
     decoder_real: Tensor  # (batch_size, horizon, input_size)
-    datetime_index: Tensor  # (batch_size, seq_length + horizon, num_models)
+    datetime_index: Tensor  # (batch_size, num_models, seq_length + horizon)
     target: Tensor  # (batch_size, seq_length, 1)
 
 
@@ -91,6 +91,7 @@ class DeepStateNet(DeepBaseNet):
         seq_length = targets.shape[1]
 
         output, (_, _) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
+        prior_std = self.projectors["prior_std"](output[:, 0])
 
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),
@@ -98,7 +99,7 @@ class DeepStateNet(DeepBaseNet):
             innovation_coeff=self.ssm.innovation_coeff(datetime_index) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=self.projectors["prior_mean"](output[:, 0]),
-            prior_std=self.projectors["prior_std"](output[:, 0]),
+            prior_cov=torch.diag_embed(prior_std * prior_std),
             offset=self.projectors["offset"](output),
             seq_length=seq_length,
             latent_dim=self.latent_dim,
@@ -106,6 +107,50 @@ class DeepStateNet(DeepBaseNet):
         log_likelihood = lds.log_likelihood(targets=targets)
         log_likelihood = torch.mean(torch.sum(log_likelihood, dim=1))
         return -log_likelihood
+
+    def forward(self, x: DeepStateInferenceBatch, *args, **kwargs):  # type: ignore
+        encoder_real = x["encoder_real"]  # (batch_size, seq_length, input_size)
+        seq_length = encoder_real.shape[1]
+        targets = x["target"][:, :seq_length]  # (batch_size, seq_length, 1)
+        decoder_real = x["decoder_real"]  # (batch_size, horizon, input_size)
+        datetime_index_train = x["datetime_index"].permute(1, 0, 2)[
+            :, :, :seq_length
+        ]  # (num_models, batch_size, seq_length)
+        datetime_index_test = x["datetime_index"].permute(1, 0, 2)[
+            :, :, seq_length:
+        ]  # (num_models, batch_size, horizon)
+
+        output, (h_n, c_n) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
+        prior_std = self.projectors["prior_std"](output[:, 0])
+        lds = LDS(
+            emission_coeff=self.ssm.emission_coeff(datetime_index_train),
+            transition_coeff=self.ssm.transition_coeff(datetime_index_train),
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index_train) * self.projectors["innovation"](output),
+            noise_std=self.projectors["noise_std"](output),
+            prior_mean=self.projectors["prior_mean"](output[:, 0]),
+            prior_cov=torch.diag_embed(prior_std * prior_std),
+            offset=self.projectors["offset"](output),
+            seq_length=seq_length,
+            latent_dim=self.latent_dim,
+        )
+        _, prior_mean, prior_cov = lds.kalman_filter(targets=targets)
+
+        output, (_, _) = self.RNN(decoder_real, (h_n, c_n))  # (batch_size, horizon, latent_dim)
+        horizon = output.shape[1]
+        lds = LDS(
+            emission_coeff=self.ssm.emission_coeff(datetime_index_test),
+            transition_coeff=self.ssm.transition_coeff(datetime_index_test),
+            innovation_coeff=self.ssm.innovation_coeff(datetime_index_test) * self.projectors["innovation"](output),
+            noise_std=self.projectors["noise_std"](output),
+            prior_mean=prior_mean,
+            prior_cov=prior_cov,
+            offset=self.projectors["offset"](output),
+            seq_length=horizon,
+            latent_dim=self.latent_dim,
+        )
+
+        forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0).squeeze(-1)
+        return forecast
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
@@ -134,9 +179,9 @@ class DeepStateNet(DeepBaseNet):
             sample["encoder_real"] = df.values[start_idx : start_idx + encoder_length]
             sample["decoder_real"] = df.values[start_idx + encoder_length : start_idx + total_sample_length]
 
-            sample["target"] = torch.from_numpy(sample["target"]).double()
-            sample["decoder_real"] = torch.from_numpy(sample["decoder_real"]).double()
-            sample["encoder_real"] = torch.from_numpy(sample["encoder_real"]).double()
+            sample["target"] = torch.from_numpy(sample["target"]).float()
+            sample["decoder_real"] = torch.from_numpy(sample["decoder_real"]).float()
+            sample["encoder_real"] = torch.from_numpy(sample["encoder_real"]).float()
             sample["datetime_index"] = torch.from_numpy(sample["datetime_index"]).to(torch.int64)
             return sample
 
