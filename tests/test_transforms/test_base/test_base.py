@@ -48,8 +48,9 @@ def test_required_features(in_column, expected_features):
 
 
 def test_update_dataset_remove_columns(remove_columns_df):
-    ts = Mock()
     df, df_transformed = remove_columns_df
+    ts = TSDataset(df=df, freq="D")
+    ts.drop_features = Mock()
     expected_features_to_remove = list(
         set(df.columns.get_level_values("feature")) - set(df_transformed.columns.get_level_values("feature"))
     )
@@ -60,14 +61,23 @@ def test_update_dataset_remove_columns(remove_columns_df):
 
 
 def test_update_dataset_update_columns(remove_columns_df):
-    ts = Mock()
-    df_transformed, df = remove_columns_df
+    df, df_transformed = remove_columns_df
+    ts = TSDataset(df=df, freq="D")
+    ts.update_columns_from_pandas = Mock()
     transform = NewTransformMock()
 
     transform._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
-    ts.update_columns_from_pandas.assert_called_with(
-        df_update=df_transformed, update_exog=False, regressors=transform.get_regressors_info()
-    )
+    ts.update_columns_from_pandas.assert_called()
+
+
+def test_update_dataset_add_columns(remove_columns_df):
+    df_transformed, df = remove_columns_df
+    ts = TSDataset(df=df, freq="D")
+    ts.add_columns_from_pandas = Mock()
+    transform = NewTransformMock()
+
+    transform._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+    ts.add_columns_from_pandas.assert_called()
 
 
 @pytest.mark.parametrize(

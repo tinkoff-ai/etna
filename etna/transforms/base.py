@@ -68,7 +68,7 @@ class NewTransform(ABC, BaseMixin):
                 regressors=new_regressors,
             )
         if len(columns_to_update) != 0:
-            ts.add_columns_from_pandas(
+            ts.update_columns_from_pandas(
                 df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[ts.segments, columns_to_update]]
             )
         return ts
