@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 from prophet import Prophet
@@ -27,13 +28,15 @@ def test_run_with_reg(new_format_df, new_format_exog):
 
     regressors = new_format_exog.copy()
     regressors.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
-    regressors_cap = new_format_exog.copy()
-    regressors_cap.columns.set_levels(["regressor_cap"], level="feature", inplace=True)
-    exog = pd.concat([regressors, regressors_cap], axis=1)
+    regressors_floor = new_format_exog.copy()
+    regressors_floor.columns.set_levels(["floor"], level="feature", inplace=True)
+    regressors_cap = regressors_floor.copy() + 1
+    regressors_cap.columns.set_levels(["cap"], level="feature", inplace=True)
+    exog = pd.concat([regressors, regressors_floor, regressors_cap], axis=1)
 
     ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
-    model = ProphetModel()
+    model = ProphetModel(growth="logistic")
     model.fit(ts)
     future_ts = ts.make_future(3)
     model.forecast(future_ts)
@@ -41,6 +44,37 @@ def test_run_with_reg(new_format_df, new_format_exog):
         assert True
     else:
         assert False
+
+
+def test_run_with_cap_floor():
+    cap = 101
+    floor = -1
+
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2020-01-01", periods=100),
+            "segment": "segment_0",
+            "target": list(range(100)),
+        }
+    )
+    df_exog = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2020-01-01", periods=120),
+            "segment": "segment_0",
+            "cap": cap,
+            "floor": floor,
+        }
+    )
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all")
+
+    model = ProphetModel(growth="logistic")
+    pipeline = Pipeline(model=model, horizon=7)
+    pipeline.fit(ts)
+
+    ts_future = pipeline.forecast()
+    df_future = ts_future.to_pandas(flatten=True)
+
+    assert np.all(df_future["target"] < cap)
 
 
 def test_prediction_interval_run_insample(example_tsds):
