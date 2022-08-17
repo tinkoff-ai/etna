@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - 
+- Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
 - 
 - `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
-- 
+- CICD: untaged docker image cleaner ([#856](https://github.com/tinkoff-ai/etna/pull/856))
 - 
 - 
 - 
@@ -26,24 +27,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
+- Teach AutoARIMAModel to work with out-sample predictions ([#830](https://github.com/tinkoff-ai/etna/pull/830))
 - 
 - 
 - 
-- 
-- 
+- Make TSDataset.to_flatten faster for big datasets ([#848](https://github.com/tinkoff-ai/etna/pull/848))
 - 
 - 
 ### Fixed
+- Type hints for `Pipeline.model` match `models.nn`([#768](https://github.com/tinkoff-ai/etna/pull/840))
+- 
+- 
+- Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
 - 
 - 
 - 
+- ProphetModel doesn't work with cap and floor regressors ([#842](https://github.com/tinkoff-ai/etna/pull/842))
+- Fix problem with encoding category types in OHE ([#843](https://github.com/tinkoff-ai/etna/pull/843))
 - 
-- 
-- 
-- 
-- 
-- 
-- 
+- Change Docker cuda image version from 11.1 to 11.6.2 ([#838](https://github.com/tinkoff-ai/etna/pull/838))
 - 
 - 
 
