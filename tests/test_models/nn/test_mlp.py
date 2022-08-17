@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+import torch
 
 from etna.metrics import MAE
 from etna.models.nn import MLPModel
@@ -50,3 +51,20 @@ def test_mlp_make_samples(example_df):
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
     np.testing.assert_equal(example_df[["target"]].iloc[:decoder_length], first_sample["decoder_target"])
     np.testing.assert_equal(example_df[["target"]].iloc[1 : decoder_length + 1], second_sample["decoder_target"])
+
+
+def test_mlp_step():
+    torch.manual_seed(42)
+    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=None, optimizer_params=None)
+    batch = {"decoder_real": torch.Tensor([1, 2, 3]), "decoder_target": torch.Tensor([1, 2, 3]), "segment": "A"}
+    loss, decoder_target, _ = model.step(batch)
+    assert round(float(loss.detach().numpy()), 2) == 5.21
+    assert torch.all(decoder_target == torch.Tensor([1, 2, 3]))
+
+
+def test_mlp_forward():
+    torch.manual_seed(42)
+    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=None, optimizer_params=None)
+    batch = {"decoder_real": torch.Tensor([1, 2, 3]), "decoder_target": torch.Tensor([1, 2, 3]), "segment": "A"}
+    output = model.forward(batch)
+    assert round(float(output.detach().numpy()), 2) == -0.13
