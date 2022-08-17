@@ -871,49 +871,46 @@ class TSDataset:
 
         return train, test
 
-    def _update_columns(
-        self, df: pd.DataFrame, df_index: Union[pd.Index, slice], df_update: pd.DataFrame
-    ) -> pd.DataFrame:
-        columns_in_df = df.columns.get_level_values("feature")
-        new_columns = df_update.columns.get_level_values("feature")
+    def update_columns_from_pandas(self, df_update: pd.DataFrame):
+        """Update the existing columns in the dataset with the new values from pandas dataframe.
 
-        columns_to_update = list(set(columns_in_df) & set(new_columns))
-        if len(columns_to_update) != 0:
-            df.loc[df_index, self.idx[self.segments, columns_to_update]] = df_update.loc[
-                df_index, self.idx[self.segments, columns_to_update]
-            ]
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+        If columns in df_exog are not updated. If you wish to update the df_exog, create the new
+        instance of TSDataset.
 
-        columns_to_add = list(set(new_columns) - set(columns_in_df))
-        if len(columns_to_add) != 0:
-            df = pd.concat((df, df_update.loc[df_index, self.idx[:, columns_to_add]]), axis=1).sort_index(axis=1)
-        return df
+        Parameters
+        ----------
+        df_update:
+            Dataframe with new values in wide ETNA format.
+        """
+        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
+            : self.df.index.max(), self.idx[self.segments, columns_to_update]
+        ]
 
-    def update_columns_from_pandas(
-        self, df_update: pd.DataFrame, update_exog=False, regressors: Optional[List[str]] = None
+    def add_columns_from_pandas(
+        self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
     ):
         """Update the dataset with the new columns from pandas dataframe.
 
         Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
-        Columns in df_exog are updated without cropping.
 
         Parameters
         ----------
         df_update:
             Dataframe with the new columns in wide ETNA format.
-            If columns with the same names already exist in the dataset, then values will be updated.
         update_exog:
-            If True, update columns also in df_exog.
-            If columns that you wish to update present both in df and df_exog, it is recommended to turn on this flag.
+             If True, update columns also in df_exog.
+             If you wish to add new regressors in the dataset it is recommended to turn on this flag.
         regressors:
-            List of regressors in the passed dataframe
+            List of regressors in the passed dataframe.
         """
-        self.df = self._update_columns(df=self.df, df_index=self.index, df_update=df_update)
+        self.df = pd.concat((self.df, df_update[: self.df.index.max()]), axis=1).sort_index(axis=1)
         if update_exog:
             if self.df_exog is None:
                 self.df_exog = df_update
             else:
-                self.df_exog = self._update_columns(df=self.df_exog, df_index=slice(None), df_update=df_update)
-
+                self.df_exog = pd.concat((self.df_exog, df_update), axis=1).sort_index(axis=1)
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
 
