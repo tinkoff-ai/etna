@@ -57,15 +57,66 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
 
 
 @pytest.fixture()
-def df_update() -> pd.DataFrame:
+def df_update_add_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-12")
-    df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "regressor_1": 10, "segment": "1"})
-    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "new_column": 200, "regressor_1": 20, "segment": "2"})
+    df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "new_column": 200, "segment": "2"})
     df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(df)
     return df
 
 
+@pytest.fixture()
+def df_update_update_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-12")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 200, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture()
+def df_updated_add_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "new_column": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "new_column": 200, "segment": "2"})
+    df_2.loc[:4, "target"] = None
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset(df=TSDataset.to_dataset(df), freq="D").df
+    return df
+
+
+@pytest.fixture()
+def df_updated_update_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 200, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset(df=TSDataset.to_dataset(df), freq="D").df
+    return df
+
+
+@pytest.fixture()
+def df_exog_updated_add_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2020-12-01", "2021-02-12")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "new_column": 100, "segment": "1"})
+    df_1.iloc[-1:, df_1.columns.get_loc("regressor_1")] = None
+    df_1.iloc[-1:, df_1.columns.get_loc("regressor_2")] = None
+    df_1.iloc[:31, df_1.columns.get_loc("new_column")] = None
+    df_2 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 3, "regressor_2": 4, "new_column": 200, "segment": "2"})
+    df_2.iloc[:5, df_2.columns.get_loc("regressor_1")] = None
+    df_2.iloc[:5, df_2.columns.get_loc("regressor_2")] = None
+    df_2.iloc[-1:, df_2.columns.get_loc("regressor_1")] = None
+    df_2.iloc[-1:, df_2.columns.get_loc("regressor_2")] = None
+    df_2.iloc[:31, df_2.columns.get_loc("new_column")] = None
+    df_exog = pd.concat([df_1, df_2], ignore_index=True)
+    df_exog = TSDataset.to_dataset(df_exog)
+    df_exog = TSDataset(df=df_exog, freq="D").df
+    return df_exog
+
+
+"""
 @pytest.fixture()
 def df_and_regressors_updated(df_and_regressors, df_update) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df, df_exog, _ = df_and_regressors
@@ -88,6 +139,7 @@ def df_and_regressors_updated(df_and_regressors, df_update) -> Tuple[pd.DataFram
     df_exog = TSDataset.to_dataset(df_exog)
 
     return df, df_exog
+"""
 
 
 @pytest.fixture()
@@ -953,19 +1005,18 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     )
 
 
-"""
-@pytest.mark.parametrize("update_exog", (True, False))
-def test_update_columns_from_pandas(df_and_regressors, df_update, df_and_regressors_updated, update_exog):
-    df, df_exog, known_future = df_and_regressors
-    df_updated, df_exog_updated = df_and_regressors_updated
-    if not update_exog:
-        df_exog_updated = df_exog
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
+def test_add_columns_from_pandas_update_df(df_and_regressors, df_update_add_column, df_updated_add_column):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=False)
+    pd.testing.assert_frame_equal(ts.df, df_updated_add_column)
 
-    ts.update_columns_from_pandas(df_update=df_update, update_exog=update_exog, regressors=known_future)
 
-    pd.testing.assert_frame_equal(ts.df, df_updated)
-    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated)
+def test_add_columns_from_pandas_update_df_exog(df_and_regressors, df_update_add_column, df_exog_updated_add_column):
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True)
+    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_column, check_dtype=False)
 
 
 @pytest.mark.parametrize(
@@ -975,12 +1026,20 @@ def test_update_columns_from_pandas(df_and_regressors, df_update, df_and_regress
         (["regressor_1"], ["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
     ),
 )
-def test_update_columns_update_regressors(df_and_regressors, known_future, regressors, expected_regressors):
+def test_add_columns_from_pandas_update_regressors(
+    df_and_regressors, df_update_add_column, known_future, regressors, expected_regressors
+):
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
-    ts.update_columns_from_pandas(df=df_exog, regressors=regressors)
+    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True, regressors=regressors)
     assert sorted(ts.regressors) == sorted(expected_regressors)
-"""
+
+
+def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, df_updated_update_column):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    ts.update_columns_from_pandas(df_update=df_update_update_column)
+    pd.testing.assert_frame_equal(ts.df, df_updated_update_column)
 
 
 @pytest.mark.parametrize(
