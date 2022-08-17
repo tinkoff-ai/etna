@@ -39,7 +39,7 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     return ts
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
@@ -56,7 +56,7 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     return df, df_exog, ["regressor_1", "regressor_2"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_update_add_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-12")
     df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "segment": "1"})
@@ -66,7 +66,7 @@ def df_update_add_column() -> pd.DataFrame:
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_update_update_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-12")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
@@ -76,7 +76,7 @@ def df_update_update_column() -> pd.DataFrame:
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_updated_add_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "new_column": 100, "segment": "1"})
@@ -87,7 +87,7 @@ def df_updated_add_column() -> pd.DataFrame:
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_updated_update_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
@@ -97,7 +97,7 @@ def df_updated_update_column() -> pd.DataFrame:
     return df
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_exog_updated_add_column() -> pd.DataFrame:
     timestamp = pd.date_range("2020-12-01", "2021-02-12")
     df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "new_column": 100, "segment": "1"})
@@ -116,33 +116,7 @@ def df_exog_updated_add_column() -> pd.DataFrame:
     return df_exog
 
 
-"""
-@pytest.fixture()
-def df_and_regressors_updated(df_and_regressors, df_update) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    df, df_exog, _ = df_and_regressors
-
-    df = TSDataset.to_flatten(df)
-    df.loc[df["segment"] == "1", "new_column"] = 100
-    df.loc[df["segment"] == "1", "regressor_1"] = 10
-    df.loc[df["segment"] == "1", "regressor_2"] = 2
-    df.loc[df["segment"] == "2", "new_column"] = 200
-    df.loc[df["segment"] == "2", "regressor_1"] = 20
-    df.loc[df["segment"] == "2", "regressor_2"] = 4
-    df = TSDataset.to_dataset(df)
-
-    df_exog = df_exog.reindex(df_update.index)
-    df_exog = TSDataset.to_flatten(df_exog)
-    df_exog.loc[df_exog["segment"] == "1", "new_column"] = 100
-    df_exog.loc[df_exog["segment"] == "1", "regressor_1"] = 10
-    df_exog.loc[df_exog["segment"] == "2", "new_column"] = 200
-    df_exog.loc[df_exog["segment"] == "2", "regressor_1"] = 20
-    df_exog = TSDataset.to_dataset(df_exog)
-
-    return df, df_exog
-"""
-
-
-@pytest.fixture()
+@pytest.fixture
 def df_and_regressors_flat() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Return flat versions of df and df_exog."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -1016,7 +990,7 @@ def test_add_columns_from_pandas_update_df_exog(df_and_regressors, df_update_add
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
     ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True)
-    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_column, check_dtype=False)
+    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_column)
 
 
 @pytest.mark.parametrize(

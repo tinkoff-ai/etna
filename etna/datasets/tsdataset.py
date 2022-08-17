@@ -922,8 +922,8 @@ class TSDataset:
         features:
             List of features to drop.
         drop_from_exog:
-            If False, drop features only from df. Features will appear again in df after make_future.
-            If True, drop features from df and df_exog. Features won't appear in df after make_future.
+            * If False, drop features only from df. Features will appear again in df after make_future.
+            * If True, drop features from df and df_exog. Features won't appear in df after make_future.
         """
         dfs = [("df", self.df)]
         if drop_from_exog:
