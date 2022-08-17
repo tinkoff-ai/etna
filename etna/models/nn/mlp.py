@@ -78,7 +78,7 @@ class MLPNet(DeepBaseNet):
         Returns
         -------
         :
-            forecast with shape (batch_size, decoder_length, 1)
+            forecast
         """
         decoder_real = batch["decoder_real"].float()
         return self.mlp(decoder_real)
@@ -143,7 +143,7 @@ class MLPNet(DeepBaseNet):
 
 
 class MLPModel(DeepBaseModel):
-    """RNN based model on LSTM cell."""
+    """MLPModel."""
 
     def __init__(
         self,
@@ -180,7 +180,7 @@ class MLPModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
-        """Init RNN model based on LSTM cell.
+        """Init MLP model.
         Parameters
         ----------
         input_size:
@@ -202,7 +202,7 @@ class MLPModel(DeepBaseModel):
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
-            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch ligthning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
