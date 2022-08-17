@@ -41,6 +41,27 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
             result_series[tmp_series.index] = k
         return result_series.astype(int).astype("category")
 
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsSegmentationTransform":
+        """Fit _OneSegmentChangePointsSegmentationTransform: find change points in ``df`` and build intervals.
+
+        Parameters
+        ----------
+        df:
+            one segment dataframe indexed with timestamp
+
+        Returns
+        -------
+        :
+            instance after processing
+
+        Raises
+        ------
+        ValueError
+            If series contains NaNs in the middle
+        """
+        self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
+        return self
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals.
 
@@ -58,26 +79,6 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         result_series = self._fill_per_interval(series=series)
         df.loc[:, self.out_column] = result_series
         return df
-
-    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsSegmentationTransform":
-        """Fit _OneSegmentChangePointsSegmentationTransform: find change points in ``df`` and build intervals.
-
-        Parameters
-        ----------
-        df:
-            one segment dataframe indexed with timestamp
-
-        Returns
-        -------
-        :
-
-        Raises
-        ------
-        ValueError
-            If series contains NaNs in the middle
-        """
-        self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
-        return self
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Do nothing in this case.

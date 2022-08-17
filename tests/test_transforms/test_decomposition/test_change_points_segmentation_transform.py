@@ -33,18 +33,6 @@ def simple_ar_ts(random_seed):
 
 
 @pytest.fixture
-def df_with_nans() -> pd.DataFrame:
-    """Generate pd.DataFrame with timestamp."""
-    df = pd.DataFrame({"timestamp": pd.date_range("2019-12-01", "2019-12-31")})
-    tmp = np.zeros(31)
-    tmp[8] = None
-    df["target"] = tmp
-    df["segment"] = "segment_1"
-    df = TSDataset.to_dataset(df=df)
-    return df
-
-
-@pytest.fixture
 def multitrend_df_with_nans_in_tails(multitrend_df):
     multitrend_df.loc[
         [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],
@@ -53,7 +41,7 @@ def multitrend_df_with_nans_in_tails(multitrend_df):
     return multitrend_df
 
 
-def test_fit(pre_transformed_df: pd.DataFrame):
+def test_fit_one_segment(pre_transformed_df: pd.DataFrame):
     """Check that fit method save intervals."""
     change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
@@ -63,7 +51,7 @@ def test_fit(pre_transformed_df: pd.DataFrame):
     assert bs.intervals is not None
 
 
-def test_transform(pre_transformed_df: pd.DataFrame):
+def test_transform_format_one_segment(pre_transformed_df: pd.DataFrame):
     """Check that transform method generate new column."""
     change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
     bs = _OneSegmentChangePointsSegmentationTransform(
@@ -73,18 +61,6 @@ def test_transform(pre_transformed_df: pd.DataFrame):
     transformed = bs.transform(df=pre_transformed_df["segment_1"])
     assert set(transformed.columns) == {"target", out_column}
     assert transformed[out_column].dtype == "category"
-
-
-def test_inverse_transform(pre_transformed_df: pd.DataFrame):
-    """Check that inverse_transform works."""
-    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
-    bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=change_point_model, out_column=out_column
-    )
-    bs.fit(df=pre_transformed_df["segment_1"])
-
-    transformed = bs.transform(df=pre_transformed_df["segment_1"].copy(deep=True))
-    bs.inverse_transform(transformed)
 
 
 def test_monotonously_result(pre_transformed_df: pd.DataFrame):
@@ -108,15 +84,6 @@ def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
     )
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.transform(df=pre_transformed_df["segment_1"])
-
-
-def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
-    change_point_model = RupturesChangePointsModel(Binseg(), n_bkps=5)
-    bs = _OneSegmentChangePointsSegmentationTransform(
-        in_column="target", change_point_model=change_point_model, out_column=out_column
-    )
-    with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = bs.fit_transform(df=df_with_nans["segment_1"])
 
 
 def test_backtest(simple_ar_ts):
