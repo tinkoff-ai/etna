@@ -278,7 +278,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features, *args, **kwargs)
+        segment_predict = model.predict(df=segment_features, prediction_size=len(dates), *args, **kwargs)
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
@@ -433,7 +433,7 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         """
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x).reshape(-1, horizon).T
+        y = self._base_model.predict(x, prediction_size=horizon).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts

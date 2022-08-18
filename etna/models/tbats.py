@@ -12,6 +12,7 @@ from tbats.tbats.Model import Model
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_prediction_size_timestamps
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -33,7 +34,9 @@ class _TBATSAdapter(BaseAdapter):
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+    def predict(
+        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float], prediction_size: int
+    ) -> pd.DataFrame:
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
@@ -65,7 +68,9 @@ class _TBATSAdapter(BaseAdapter):
 
         # skip non-relevant timestamps
         y_pred = y_pred.iloc[steps_to_skip:].reset_index(drop=True)
-
+        y_pred = select_prediction_size_timestamps(
+            prediction=y_pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
         return y_pred
 
     def get_model(self) -> Estimator:

@@ -11,6 +11,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.utils import select_prediction_size_timestamps
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
@@ -106,7 +107,9 @@ class _ProphetAdapter(BaseAdapter):
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+    def predict(
+        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float], prediction_size: int
+    ) -> pd.DataFrame:
         """
         Compute predictions from a Prophet model.
 
@@ -118,6 +121,10 @@ class _ProphetAdapter(BaseAdapter):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
 
         Returns
         -------
@@ -140,6 +147,9 @@ class _ProphetAdapter(BaseAdapter):
             column: column.replace("yhat", "target") for column in y_pred.columns if column.startswith("yhat")
         }
         y_pred = y_pred.rename(rename_dict, axis=1)
+        y_pred = select_prediction_size_timestamps(
+            prediction=y_pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
         return y_pred
 
     def get_model(self) -> Prophet:

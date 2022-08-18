@@ -1,7 +1,10 @@
+import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import generate_ar_df
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_prediction_size_timestamps
 
 
 @pytest.mark.parametrize(
@@ -54,3 +57,46 @@ def test_determine_num_steps_fail_wrong_start(start_timestamp, end_timestamp, fr
 def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq):
     with pytest.raises(ValueError, match="End timestamp isn't reachable with freq"):
         _ = determine_num_steps(start_timestamp=start_timestamp, end_timestamp=end_timestamp, freq=freq)
+
+
+@pytest.mark.parametrize("prediction_size", [1, 5, 10])
+def test_select_prediction_size_timestamps_df_ok(prediction_size):
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=3)
+    df_selected = select_prediction_size_timestamps(
+        prediction=df, timestamp=df["timestamp"], prediction_size=prediction_size
+    )
+
+    expected_timestamp = df["timestamp"].sort_values().unique()[-prediction_size:]
+    df_expected = df[df["timestamp"].isin(expected_timestamp)]
+    pd.testing.assert_frame_equal(df_selected, df_expected)
+
+
+@pytest.mark.parametrize("prediction_size", [1, 5, 10])
+def test_select_prediction_size_timestamps_array_ok(prediction_size):
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=3)
+    array_selected = select_prediction_size_timestamps(
+        prediction=df["target"].values, timestamp=df["timestamp"], prediction_size=prediction_size
+    )
+
+    expected_timestamp = df["timestamp"].sort_values().unique()[-prediction_size:]
+    array_expected = df[df["timestamp"].isin(expected_timestamp)]["target"].values
+    np.testing.assert_array_equal(array_selected, array_expected)
+
+
+@pytest.mark.parametrize("prediction_size", [-1, 0])
+def test_select_prediction_size_timestamps_fail_non_positive(prediction_size):
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=3)
+
+    with pytest.raises(ValueError, match="Prediction size should be positive"):
+        _ = select_prediction_size_timestamps(
+            prediction=df["target"].values, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
+
+
+def test_select_prediction_size_timestamps_fail_too_large():
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=3)
+
+    with pytest.raises(ValueError, match="The value of prediction_size is bigger than number of timestamps"):
+        _ = select_prediction_size_timestamps(
+            prediction=df["target"].values, timestamp=df["timestamp"], prediction_size=11
+        )

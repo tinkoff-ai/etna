@@ -10,6 +10,7 @@ from deprecated import deprecated
 from etna.models.base import BaseAdapter
 from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
+from etna.models.utils import select_prediction_size_timestamps
 
 
 class _CatBoostAdapter(BaseAdapter):
@@ -58,7 +59,7 @@ class _CatBoostAdapter(BaseAdapter):
         self.model.fit(train_pool)
         return self
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a Catboost model.
 
@@ -66,6 +67,9 @@ class _CatBoostAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
@@ -75,6 +79,9 @@ class _CatBoostAdapter(BaseAdapter):
         features = df.drop(columns=["timestamp", "target"])
         predict_pool = Pool(features, cat_features=self._categorical)
         pred = self.model.predict(predict_pool)
+        pred = select_prediction_size_timestamps(
+            prediction=pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
         return pred
 
     def get_model(self) -> CatBoostRegressor:

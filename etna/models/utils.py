@@ -1,3 +1,6 @@
+from typing import Union
+
+import numpy as np
 import pandas as pd
 
 
@@ -48,3 +51,39 @@ def determine_num_steps(start_timestamp: pd.Timestamp, end_timestamp: pd.Timesta
         elif timestamps[-1] > end_timestamp:
             raise ValueError(f"End timestamp isn't reachable with freq: {freq}")
         cur_value += 1
+
+
+def select_prediction_size_timestamps(
+    prediction: Union[np.ndarray, pd.DataFrame], timestamp: pd.Series, prediction_size: int
+) -> Union[np.ndarray, pd.DataFrame]:
+    """Select last ``prediction_size`` timestamps in a given prediction.
+
+    Parameters
+    ----------
+    prediction:
+        prediction
+    timestamp:
+        timestamp series
+    prediction_size
+        number of last timestamps to select
+
+    Returns
+    -------
+    :
+        filtered prediction
+
+    Raises
+    ------
+    ValueError:
+        ``prediction_size`` isn't positive
+    ValueError:
+        if value of ``prediction_size`` is bigger than number of timestamps
+    """
+    timestamp_unique = timestamp.unique()
+    timestamp_unique.sort()
+    if prediction_size <= 0:
+        raise ValueError("Prediction size should be positive.")
+    if prediction_size > len(timestamp_unique):
+        raise ValueError("The value of prediction_size is bigger than number of timestamps, try to increase it.")
+    border_value = timestamp_unique[-prediction_size]
+    return prediction[timestamp >= border_value]

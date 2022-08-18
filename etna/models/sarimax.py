@@ -15,6 +15,7 @@ from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_prediction_size_timestamps
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -65,7 +66,9 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+    def predict(
+        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float], prediction_size: int
+    ) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
 
@@ -77,6 +80,9 @@ class _SARIMAXBaseAdapter(BaseAdapter):
              If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
@@ -128,6 +134,9 @@ class _SARIMAXBaseAdapter(BaseAdapter):
             column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
         }
         y_pred = y_pred.rename(rename_dict, axis=1)
+        y_pred = select_prediction_size_timestamps(
+            prediction=y_pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
         return y_pred
 
     @abstractmethod

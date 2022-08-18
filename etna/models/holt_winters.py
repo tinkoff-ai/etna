@@ -14,6 +14,7 @@ from statsmodels.tsa.holtwinters import HoltWintersResults
 
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
+from etna.models.utils import select_prediction_size_timestamps
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -234,7 +235,7 @@ class _HoltWintersAdapter(BaseAdapter):
         )
         return self
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a Holt-Winters' model.
 
@@ -242,6 +243,9 @@ class _HoltWintersAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
@@ -254,6 +258,9 @@ class _HoltWintersAdapter(BaseAdapter):
 
         forecast = self._result.predict(start=df["timestamp"].min(), end=df["timestamp"].max())
         y_pred = forecast.values
+        y_pred = select_prediction_size_timestamps(
+            prediction=y_pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
         return y_pred
 
     def _check_df(self, df: pd.DataFrame):

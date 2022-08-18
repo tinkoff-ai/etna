@@ -8,6 +8,7 @@ from sklearn.base import RegressorMixin
 from etna.models.base import BaseAdapter
 from etna.models.base import MultiSegmentModel
 from etna.models.base import PerSegmentModel
+from etna.models.utils import select_prediction_size_timestamps
 
 
 class _SklearnAdapter(BaseAdapter):
@@ -40,7 +41,7 @@ class _SklearnAdapter(BaseAdapter):
         self.model.fit(features, target)
         return self
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a Sklearn model.
 
@@ -48,6 +49,9 @@ class _SklearnAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
@@ -59,6 +63,9 @@ class _SklearnAdapter(BaseAdapter):
         except ValueError:
             raise ValueError("Only convertible to numeric features are accepted!")
         pred = self.model.predict(features)
+        pred = select_prediction_size_timestamps(
+            prediction=pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
         return pred
 
     def get_model(self) -> RegressorMixin:

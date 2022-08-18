@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from etna.models.base import PerSegmentModel
+from etna.models.utils import select_prediction_size_timestamps
 
 
 class SeasonalityMode(Enum):
@@ -97,7 +98,7 @@ class _DeadlineMovingAverageModel:
 
         return self
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a DeadlineMovingAverageModel.
 
@@ -105,6 +106,9 @@ class _DeadlineMovingAverageModel:
         ----------
         df: pd.DataFrame
             Used only for getting the horizon of forecast and timestamps.
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
@@ -132,9 +136,11 @@ class _DeadlineMovingAverageModel:
 
         res = res.values.reshape(
             len(res),
+        )[-len(df) :]
+        res = select_prediction_size_timestamps(
+            prediction=res, timestamp=df["timestamp"], prediction_size=prediction_size
         )
-
-        return res[-len(df) :]
+        return res
 
     @property
     def context_size(self) -> int:
