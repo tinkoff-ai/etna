@@ -134,7 +134,7 @@ class MLPNet(DeepBaseNet):
             if batch is None:
                 break
             yield batch
-            start_idx += 1
+            start_idx += decoder_length
 
     def configure_optimizers(self):
         """Optimizer configuration."""
@@ -167,7 +167,7 @@ class MLPModel(DeepBaseModel):
                 input_size=input_size,
                 hidden_size=hidden_size,
                 lr=lr,
-                loss=nn.MSELoss() if loss is None else loss,
+                loss=loss,  # type: ignore
                 optimizer_params=optimizer_params,
             ),
             encoder_length=encoder_length,
