@@ -57,7 +57,11 @@ def test_mlp_make_samples(example_df_with_lag):
     mlp_module = MagicMock()
     encoder_length = 0
     decoder_length = 4
-    ts_samples = list(MLPNet.make_samples(mlp_module, df=example_df_with_lag, encoder_length=encoder_length, decoder_length=decoder_length))
+    ts_samples = list(
+        MLPNet.make_samples(
+            mlp_module, df=example_df_with_lag, encoder_length=encoder_length, decoder_length=decoder_length
+        )
+    )
     first_sample = ts_samples[0]
     second_sample = ts_samples[1]
 
