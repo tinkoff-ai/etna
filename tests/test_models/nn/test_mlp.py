@@ -4,10 +4,12 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from torch import nn
 
 from etna.metrics import MAE
 from etna.models.nn import MLPModel
 from etna.models.nn.mlp import MLPNet
+from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
 
@@ -16,24 +18,25 @@ from etna.transforms import StandardScalerTransform
 def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
 
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
-    lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))
+    lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 4)))
+    fourier = FourierTransform(period=7, order=3)
     std = StandardScalerTransform(in_column="target")
-    ts_train.fit_transform([std, lag])
+    ts_train.fit_transform([std, lag, fourier])
 
     decoder_length = 14
     model = MLPModel(
-        input_size=3,
+        input_size=10,
         encoder_length=0,
-        hidden_size=[16, 10],
+        hidden_size=[10, 10, 10, 10, 10],
         decoder_length=decoder_length,
-        trainer_params=dict(max_epochs=100),
+        trainer_params=dict(max_epochs=1000),
     )
     future = ts_train.make_future(decoder_length)
     model.fit(ts_train)
     future = model.forecast(future, horizon=horizon)
 
     mae = MAE("macro")
-    assert mae(ts_test, future) < 1.7
+    assert mae(ts_test, future) < 0.05
 
 
 @pytest.fixture()
@@ -74,8 +77,7 @@ def test_mlp_make_samples(example_df_with_lag):
     )
 
 
-def test_mlp_step(random_seed):
-    random_seed
+def test_mlp_step():
     model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=None, optimizer_params=None)
     batch = {"decoder_real": torch.Tensor([1, 2, 3]), "decoder_target": torch.Tensor([1, 2, 3]), "segment": "A"}
     loss, decoder_target, output = model.step(batch)
@@ -86,9 +88,9 @@ def test_mlp_step(random_seed):
     assert output.shape == torch.Size([1])
 
 
-def test_mlp_forward():
-    torch.manual_seed(42)
-    mlp_module = MagicMock()
-    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=None, optimizer_params=None)
-    batch = {"decoder_real": torch.Tensor([1, 2, 3]), "decoder_target": torch.Tensor([1, 2, 3]), "segment": "A"}
-    MLPNet.forward(mlp_module, batch)
+def test_mlp_layers():
+    model = MLPNet(input_size=3, hidden_size=[10], lr=1e-2, loss=None, optimizer_params=None)
+    model_ = nn.Sequential(
+        nn.Linear(in_features=3, out_features=10), nn.ReLU(), nn.Linear(in_features=10, out_features=1)
+    )
+    assert repr(model_) == repr(model.mlp)
