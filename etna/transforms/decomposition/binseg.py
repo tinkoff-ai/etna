@@ -10,6 +10,7 @@ from etna.transforms.decomposition.change_points_trend import TDetrendModel
 
 class BinsegTrendTransform(ChangePointsTrendTransform):
     """BinsegTrendTransform uses :py:class:`ruptures.detection.Binseg` model as a change point detection model.
+
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -29,6 +30,7 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
         epsilon: Optional[float] = None,
     ):
         """Init BinsegTrendTransform.
+
         Parameters
         ----------
         in_column:
