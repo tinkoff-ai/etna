@@ -1,9 +1,9 @@
 import json
-from hashlib import md5
-from typing import Callable
-from typing import Any
 import random
 import time
+from hashlib import md5
+from typing import Any
+from typing import Callable
 
 
 def config_hash(config: dict):
@@ -12,6 +12,7 @@ def config_hash(config: dict):
 
 
 def retry(func: Callable[..., Any], max_retries: int = 5, sleep_time: int = 10, jitter: int = 10) -> Any:
+    """Retry function call with jitter."""
     rng = random.SystemRandom()
     for i in range(max_retries):
         try:

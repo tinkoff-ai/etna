@@ -1,16 +1,18 @@
-import logging
 from typing import List
 from typing import Optional
 from typing import Set
 
 import numpy as np
-import optuna
+from optuna.samplers import BaseSampler
+from optuna.study import Study
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 from etna.auto.utils import config_hash
 from etna.auto.utils import retry
 
 
-class ConfigSampler(optuna.samplers.BaseSampler):
+class ConfigSampler(BaseSampler):
     """Optuna based sampler for greedy search over different configurations."""
 
     def __init__(self, configs: List[dict], random_generator: Optional[np.random.Generator] = None, retries: int = 10):
@@ -36,7 +38,7 @@ class ConfigSampler(optuna.samplers.BaseSampler):
         """Infer relative search space. Not used."""
         return {}
 
-    def sample_relative(self, study: optuna.Study, trial: optuna.trial.FrozenTrial, *args, **kwargs) -> dict:
+    def sample_relative(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> dict:
         """Sample configuration to test.
 
         Parameters
@@ -58,19 +60,19 @@ class ConfigSampler(optuna.samplers.BaseSampler):
             # For some reason `_get_unfinished_hashes` does not return zero length list in `after_trial`
             _to_sample = list(self.configs_hash)
             idx = self.rng.choice(len(_to_sample))
-            hash_to_sample =  _to_sample[idx]
+            hash_to_sample = _to_sample[idx]
         else:
             _trials_to_sample = list(trials_to_sample)
             idx = self.rng.choice(len(_trials_to_sample))
             hash_to_sample = _trials_to_sample[idx]
 
         map_to_objective = self.configs_hash[hash_to_sample]
-        
+
         study._storage.set_trial_user_attr(trial._trial_id, "hash", hash_to_sample)
         study._storage.set_trial_user_attr(trial._trial_id, "pipeline", map_to_objective)
         return map_to_objective
 
-    def after_trial(self, study: optuna.Study, trial: optuna.trial.FrozenTrial, *args, **kwargs) -> None:  # noqa: D102
+    def after_trial(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> None:  # noqa: D102
         """Stop study if all configs have been tested.
 
         Parameters
@@ -85,9 +87,7 @@ class ConfigSampler(optuna.samplers.BaseSampler):
         if len(unfinished_hashes) == 1 and list(unfinished_hashes)[0] == trial.user_attrs["hash"]:
             study.stop()
 
-    def _get_unfinished_hashes(
-        self, study: optuna.Study, current_trial: Optional[optuna.trial.FrozenTrial] = None
-    ) -> Set[str]:
+    def _get_unfinished_hashes(self, study: Study, current_trial: Optional[FrozenTrial] = None) -> Set[str]:
         """Get unfinished config hashes.
 
         Parameters
@@ -111,8 +111,11 @@ class ConfigSampler(optuna.samplers.BaseSampler):
         for t in trials:
             if t.state.is_finished():
                 finished_trials_hash.append(t.user_attrs["hash"])
-            elif t.state == optuna.trial.TrialState.RUNNING:
-                def _closure(): return study._storage.get_trial(t._trial_id).user_attrs["hash"]
+            elif t.state == TrialState.RUNNING:
+
+                def _closure():
+                    return study._storage.get_trial(t._trial_id).user_attrs["hash"]
+
                 hash_to_add = retry(_closure, max_retries=self.retries)
                 running_trials_hash.append(hash_to_add)
             else:
