@@ -7,8 +7,7 @@ from sklearn.linear_model import LinearRegression
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_trend import BaseEstimator
 from etna.transforms.decomposition.change_points_trend import TDetrendModel
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
 
@@ -20,8 +19,9 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         self,
         in_column: str,
         out_column: str,
-        change_point_model: BaseChangePointsModelAdapter,
+        change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
+        **change_point_model_predict_params,
     ):
         """Init _OneSegmentTrendTransform.
 
@@ -35,9 +35,16 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
             model to get trend change points
         detrend_model:
             model to get trend from data
+        change_point_model_predict_params:
+            params for ``change_point_model.predict`` method
         """
         self.out_column = out_column
-        super().__init__(in_column=in_column, change_point_model=change_point_model, detrend_model=detrend_model)
+        super().__init__(
+            in_column=in_column,
+            change_point_model=change_point_model,
+            detrend_model=detrend_model,
+            **change_point_model_predict_params,
+        )
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add column with trend, got from the detrend_model.
@@ -65,7 +72,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         ----------
         df:
             one segment dataframe
-
+        
         Returns
         -------
         pd.DataFrame:
@@ -81,8 +88,9 @@ class _TrendTransform(PerSegmentWrapper):
         self,
         in_column: str,
         out_column: str,
-        change_point_model: BaseChangePointsModelAdapter,
+        change_point_model: BaseEstimator,
         detrend_model: TDetrendModel,
+        **change_point_model_predict_params,
     ):
         """Init _TrendTransform.
 
@@ -96,6 +104,8 @@ class _TrendTransform(PerSegmentWrapper):
             model to get trend change points
         detrend_model:
             model to get trend in data
+        change_point_model_predict_params:
+            params for ``change_point_model.predict`` method
         """
         super().__init__(
             transform=_OneSegmentTrendTransform(
@@ -103,6 +113,7 @@ class _TrendTransform(PerSegmentWrapper):
                 out_column=out_column,
                 change_point_model=change_point_model,
                 detrend_model=detrend_model,
+                **change_point_model_predict_params,
             )
         )
 
@@ -169,20 +180,14 @@ class TrendTransform(_TrendTransform, FutureMixin):
         self.n_bkps = n_bkps
         self.pen = pen
         self.epsilon = epsilon
-
-        change_point_model = Binseg(
-            model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
-        )
-
-        self.ruptures = RupturesChangePointsModel(
-            change_point_model,
-            n_bkps=self.n_bkps,
-            pen=self.pen,
-            epsilon=self.epsilon,
-        )
         super().__init__(
             in_column=self.in_column,
             out_column=self.out_column if self.out_column is not None else f"{self.__repr__()}",
-            change_point_model=self.ruptures,
+            change_point_model=Binseg(
+                model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
+            ),
             detrend_model=self.detrend_model,
+            n_bkps=self.n_bkps,
+            pen=self.pen,
+            epsilon=self.epsilon,
         )

@@ -32,82 +32,70 @@ def two_df_with_new_values():
     return df1, df2
 
 
-def get_df_for_ohe_encoding(dtype: str = "int"):
+@pytest.fixture
+def df_for_ohe_encoding():
     df_to_forecast = generate_ar_df(10, start_time="2021-01-01", n_segments=1)
     d = {
         "timestamp": pd.date_range(start="2021-01-01", end="2021-01-12"),
         "regressor_0": [5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8],
         "regressor_1": [9, 5, 9, 5, 9, 5, 9, 5, 9, 5, 9, 5],
         "regressor_2": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "regressor_3": [1, 7, 1, 7, 1, 7, 1, 7, 1, 7, 1, 7],
     }
     df_regressors = pd.DataFrame(d)
-    regressor_cols = ["regressor_0", "regressor_1", "regressor_2"]
-    df_regressors[regressor_cols] = df_regressors[regressor_cols].astype(dtype)
     df_regressors["segment"] = "segment_0"
-
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
     answer_on_regressor_0 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_0["test_0"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(int(x) == 5))
-    answer_on_regressor_0["test_1"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(int(x) == 8))
+    answer_on_regressor_0["test_0"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(x == 5))
+    answer_on_regressor_0["test_1"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(x == 8))
     answer_on_regressor_0["test_0"] = answer_on_regressor_0["test_0"].astype("category")
     answer_on_regressor_0["test_1"] = answer_on_regressor_0["test_1"].astype("category")
 
     answer_on_regressor_1 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_1["test_0"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(int(x) == 5))
-    answer_on_regressor_1["test_1"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(int(x) == 9))
+    answer_on_regressor_1["test_0"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(x == 5))
+    answer_on_regressor_1["test_1"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(x == 9))
     answer_on_regressor_1["test_0"] = answer_on_regressor_1["test_0"].astype("category")
     answer_on_regressor_1["test_1"] = answer_on_regressor_1["test_1"].astype("category")
 
     answer_on_regressor_2 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_2["test_0"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(int(x) == 0))
+    answer_on_regressor_2["test_0"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(x == 0))
     answer_on_regressor_2["test_0"] = answer_on_regressor_2["test_0"].astype("category")
 
     return tsdataset.df, (answer_on_regressor_0, answer_on_regressor_1, answer_on_regressor_2)
 
 
 @pytest.fixture
-def df_for_ohe_encoding():
-    return get_df_for_ohe_encoding()
-
-
-def get_df_for_label_encoding(dtype: str = "int"):
+def df_for_label_encoding():
     df_to_forecast = generate_ar_df(10, start_time="2021-01-01", n_segments=1)
     d = {
         "timestamp": pd.date_range(start="2021-01-01", end="2021-01-12"),
         "regressor_0": [5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8],
         "regressor_1": [9, 5, 9, 5, 9, 5, 9, 5, 9, 5, 9, 5],
         "regressor_2": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "regressor_3": [1, 7, 1, 7, 1, 7, 1, 7, 1, 7, 1, 7],
     }
     df_regressors = pd.DataFrame(d)
-    regressor_cols = ["regressor_0", "regressor_1", "regressor_2"]
-    df_regressors[regressor_cols] = df_regressors[regressor_cols].astype(dtype)
     df_regressors["segment"] = "segment_0"
-
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
     answer_on_regressor_0 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_0["test"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(int(x) == 8))
+    answer_on_regressor_0["test"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(x == 8))
     answer_on_regressor_0["test"] = answer_on_regressor_0["test"].astype("category")
 
     answer_on_regressor_1 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_1["test"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(int(x) == 9))
+    answer_on_regressor_1["test"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(x == 9))
     answer_on_regressor_1["test"] = answer_on_regressor_1["test"].astype("category")
 
     answer_on_regressor_2 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_2["test"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(int(x) == 1))
+    answer_on_regressor_2["test"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(x == 1))
     answer_on_regressor_2["test"] = answer_on_regressor_2["test"].astype("category")
 
     return tsdataset.df, (answer_on_regressor_0, answer_on_regressor_1, answer_on_regressor_2)
-
-
-@pytest.fixture
-def df_for_label_encoding():
-    return get_df_for_label_encoding()
 
 
 @pytest.fixture
@@ -123,10 +111,9 @@ def df_for_naming():
     return tsdataset.df
 
 
-@pytest.mark.parametrize("dtype", ["int", "str", "category"])
-def test_label_encoder_simple(dtype):
+def test_label_encoder_simple(df_for_label_encoding):
     """Test that LabelEncoderTransform works correct in a simple cases."""
-    df, answers = get_df_for_label_encoding(dtype=dtype)
+    df, answers = df_for_label_encoding
     for i in range(3):
         le = LabelEncoderTransform(in_column=f"regressor_{i}", out_column="test")
         le.fit(df)
@@ -134,10 +121,9 @@ def test_label_encoder_simple(dtype):
         assert le.transform(df)["segment_0"][cols].equals(answers[i][cols])
 
 
-@pytest.mark.parametrize("dtype", ["int", "str", "category"])
-def test_ohe_encoder_simple(dtype):
+def test_ohe_encoder_simple(df_for_ohe_encoding):
     """Test that OneHotEncoderTransform works correct in a simple case."""
-    df, answers = get_df_for_ohe_encoding(dtype)
+    df, answers = df_for_ohe_encoding
     for i in range(3):
         ohe = OneHotEncoderTransform(in_column=f"regressor_{i}", out_column="test")
         ohe.fit(df)

@@ -52,7 +52,7 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         Returns
         -------
         :
-            instance after processing
+            instance with trained change points
 
         Raises
         ------

@@ -8,7 +8,6 @@ from sklearn.linear_model import LinearRegression
 
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.decomposition import TrendTransform
-from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.trend import _OneSegmentTrendTransform
 
 DEFAULT_SEGMENT = "segment_1"
@@ -25,11 +24,11 @@ def test_fit_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     """
     df_one_segment_original = df_one_segment.copy()
     out_column = "regressor_result"
-
     trend_transform = _OneSegmentTrendTransform(
         in_column="target",
-        change_point_model=RupturesChangePointsModel(Binseg(), n_bkps=5),
+        change_point_model=Binseg(),
         detrend_model=LinearRegression(),
+        n_bkps=5,
         out_column=out_column,
     )
     df_one_segment = trend_transform.fit_transform(df_one_segment)
@@ -45,8 +44,9 @@ def test_inverse_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     """
     trend_transform = _OneSegmentTrendTransform(
         in_column="target",
-        change_point_model=RupturesChangePointsModel(Binseg(), n_bkps=5),
+        change_point_model=Binseg(),
         detrend_model=LinearRegression(),
+        n_bkps=5,
         out_column="test",
     )
     df_one_segment_transformed = trend_transform.fit_transform(df_one_segment)

@@ -18,7 +18,7 @@ class BaseChangePointsModelAdapter(ABC):
 
     @abstractmethod
     def get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
-        """Find change points in given series.
+        """Find change points within one segment.
 
         Parameters
         ----------
@@ -27,8 +27,8 @@ class BaseChangePointsModelAdapter(ABC):
 
         Returns
         -------
-        :
-            change points
+        change points:
+            change point timestamps
         """
         pass
 
@@ -78,10 +78,10 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
             params for ``change_point_model.predict`` method
         """
         self.change_point_model = change_point_model
-        self.change_point_model_predict_params = change_point_model_predict_params
+        self.model_predict_params = change_point_model_predict_params
 
     def get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
-        """Find change points in given series with Ruptures models.
+        """Find change points within one segment.
 
         Parameters
         ----------
@@ -90,8 +90,8 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
 
         Returns
         -------
-        :
-            change points
+        change points:
+            change point timestamps
         """
         signal = series.to_numpy()
         if isinstance(self.change_point_model.cost, CostLinear):
@@ -99,6 +99,6 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
         timestamp = series.index
         self.change_point_model.fit(signal=signal)
         # last point in change points is the first index after the series
-        change_points_indices = self.change_point_model.predict(**self.change_point_model_predict_params)[:-1]
+        change_points_indices = self.change_point_model.predict(**self.model_predict_params)[:-1]
         change_points = [timestamp[idx] for idx in change_points_indices]
         return change_points
