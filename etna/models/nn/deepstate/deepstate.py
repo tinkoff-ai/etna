@@ -16,18 +16,11 @@ from etna.models.nn.deepstate.linear_dynamic_system import LDS
 from etna.models.nn.deepstate.state_space_model import CompositeSSM
 
 
-class DeepStateTrainBatch(TypedDict):
-    encoder_real: Tensor  # (batch_size, seq_length, input_size)
-    datetime_index: Tensor  # (batch_size, num_models , seq_length)
-    target: Tensor  # (batch_size, seq_length, 1)
-
-
-class DeepStateInferenceBatch(TypedDict):
+class DeepStateBatch(TypedDict):
     encoder_real: Tensor  # (batch_size, seq_length, input_size)
     decoder_real: Tensor  # (batch_size, horizon, input_size)
-    datetime_index: Tensor  # (batch_size, num_models, seq_length + horizon)
-    target: Tensor  # (batch_size, seq_length, 1)
-
+    datetime_index: Tensor  # (batch_size, num_models , seq_length + horizon)
+    encoder_target: Tensor  # (batch_size, seq_length, 1)
 
 class DeepStateNet(DeepBaseNet):
     """DeepState network."""
@@ -84,11 +77,13 @@ class DeepStateNet(DeepBaseNet):
             )
         )
 
-    def step(self, batch: DeepStateTrainBatch, *args, **kwargs):  # type: ignore
+    def step(self, batch: DeepStateBatch, *args, **kwargs):  # type: ignore
         encoder_real = batch["encoder_real"]  # (batch_size, seq_length, input_size)
-        targets = batch["target"]  # (batch_size, seq_length, 1)
-        datetime_index = batch["datetime_index"]  # (num_models, batch_size, seq_length)
+        targets = batch["encoder_target"]  # (batch_size, seq_length, 1)
         seq_length = targets.shape[1]
+        datetime_index = batch["datetime_index"].permute(1, 0, 2)[
+            :, :, :seq_length
+        ]  # (num_models, batch_size, seq_length)
 
         output, (_, _) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
         prior_std = self.projectors["prior_std"](output[:, 0])
@@ -106,12 +101,12 @@ class DeepStateNet(DeepBaseNet):
         )
         log_likelihood = lds.log_likelihood(targets=targets)
         log_likelihood = torch.mean(torch.sum(log_likelihood, dim=1))
-        return -log_likelihood
+        return -log_likelihood, targets, targets
 
-    def forward(self, x: DeepStateInferenceBatch, *args, **kwargs):  # type: ignore
+    def forward(self, x: DeepStateBatch, *args, **kwargs):  # type: ignore
         encoder_real = x["encoder_real"]  # (batch_size, seq_length, input_size)
         seq_length = encoder_real.shape[1]
-        targets = x["target"][:, :seq_length]  # (batch_size, seq_length, 1)
+        targets = x["encoder_target"][:, :seq_length]  # (batch_size, seq_length, 1)
         decoder_real = x["decoder_real"]  # (batch_size, horizon, input_size)
         datetime_index_train = x["datetime_index"].permute(1, 0, 2)[
             :, :, :seq_length
@@ -149,7 +144,7 @@ class DeepStateNet(DeepBaseNet):
             latent_dim=self.latent_dim,
         )
 
-        forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0).squeeze(-1)
+        forecast = torch.mean(lds.sample(n_samples=self.n_samples), dim=0)
         return forecast
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
@@ -160,7 +155,6 @@ class DeepStateNet(DeepBaseNet):
                 "encoder_real": list(),
                 "decoder_real": list(),
                 "encoder_target": list(),
-                "decoder_target": list(),
                 "segment": None,
             }
             total_length = len(df["target"])
@@ -169,9 +163,9 @@ class DeepStateNet(DeepBaseNet):
             if total_sample_length + start_idx > total_length:
                 return None
 
-            sample["target"] = df["target"].values[start_idx : start_idx + total_sample_length].reshape(-1, 1)
+            sample["encoder_target"] = df["target"].values[start_idx : start_idx + encoder_length].reshape(-1, 1)
             sample["datetime_index"] = self.ssm.generate_datetime_index(
-                df["timestamp"].values[start_idx : start_idx + total_sample_length]
+                df["timestamp"].iloc[start_idx : start_idx + total_sample_length]
             )
             sample["segment"] = df["segment"].values[0]
             df = df.drop(columns=["target", "segment", "timestamp"])
@@ -179,7 +173,7 @@ class DeepStateNet(DeepBaseNet):
             sample["encoder_real"] = df.values[start_idx : start_idx + encoder_length]
             sample["decoder_real"] = df.values[start_idx + encoder_length : start_idx + total_sample_length]
 
-            sample["target"] = torch.from_numpy(sample["target"]).float()
+            sample["encoder_target"] = torch.from_numpy(sample["encoder_target"]).float()
             sample["decoder_real"] = torch.from_numpy(sample["decoder_real"]).float()
             sample["encoder_real"] = torch.from_numpy(sample["encoder_real"]).float()
             sample["datetime_index"] = torch.from_numpy(sample["datetime_index"]).to(torch.int64)
