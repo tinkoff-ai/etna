@@ -79,6 +79,8 @@ pytorch-lightning = {version = "*", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
+optuna = {version = ">=2.5.0,<3.0.0", optional = true}
+
 sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
 nbsphinx = {version = "^0.8.2", optional = true}
 Sphinx = {version = "^4.1", optional = true}
@@ -115,6 +117,7 @@ nbconvert = {version = "*", optional = true}
 prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
 wandb = ["wandb"]
+auto = ["optuna"]
 # dev deps
 release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
@@ -126,6 +129,7 @@ all = [
     "prophet",
     "torch", "pytorch-forecasting",
     "wandb",
+    "optuna",
 ]
 
 all-dev = [
