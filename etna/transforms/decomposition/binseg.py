@@ -4,14 +4,12 @@ from ruptures.base import BaseCost
 from ruptures.detection import Binseg
 from sklearn.linear_model import LinearRegression
 
-from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_trend import TDetrendModel
 
 
 class BinsegTrendTransform(ChangePointsTrendTransform):
     """BinsegTrendTransform uses :py:class:`ruptures.detection.Binseg` model as a change point detection model.
-
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -31,7 +29,6 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
         epsilon: Optional[float] = None,
     ):
         """Init BinsegTrendTransform.
-
         Parameters
         ----------
         in_column:
@@ -62,14 +59,13 @@ class BinsegTrendTransform(ChangePointsTrendTransform):
         self.pen = pen
         self.epsilon = epsilon
         detrend_model = LinearRegression() if detrend_model is None else detrend_model
-        change_point_model = Binseg(
-            model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
-        )
-        self.ruptures = RupturesChangePointsModel(
-            change_point_model=change_point_model, n_bkps=self.n_bkps, pen=self.pen, epsilon=self.epsilon
-        )
         super().__init__(
             in_column=in_column,
-            change_point_model=self.ruptures,
+            change_point_model=Binseg(
+                model=self.model, custom_cost=self.custom_cost, min_size=self.min_size, jump=self.jump
+            ),
             detrend_model=detrend_model,
+            n_bkps=self.n_bkps,
+            pen=self.pen,
+            epsilon=self.epsilon,
         )

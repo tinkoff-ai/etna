@@ -72,7 +72,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         ----------
         df:
             one segment dataframe
-        
+
         Returns
         -------
         pd.DataFrame:
