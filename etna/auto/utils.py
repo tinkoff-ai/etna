@@ -14,7 +14,7 @@ def config_hash(config: dict):
 def retry(func: Callable[..., Any], max_retries: int = 5, sleep_time: int = 10, jitter: int = 10) -> Any:
     """Retry function call with jitter."""
     rng = random.SystemRandom()
-    for i in range(max_retries):
+    for i in range(max_retries + 1):
         try:
             value = func()
             return value
