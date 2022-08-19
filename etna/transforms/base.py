@@ -15,12 +15,6 @@ class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-def override(method):
-    """Indicate the fact of overriding the method."""
-    method.is_overridden = True
-    return method
-
-
 class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
@@ -156,25 +150,10 @@ class NewTransform(ABC, BaseMixin):
         """
         return self.fit(ts=ts).transform(ts=ts)
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Inverse transform dataframe.
-
-        Parameters
-        ----------
-        df:
-            Dataframe in etna wide format.
-
-        Returns
-        -------
-        :
-            Dataframe in etna wide format after applying inverse transformation.
-        """
-        return df
-
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
 
-        Should be reimplemented in the classes with reimplemented _inverse_transform method.
+        Should be reimplemented in the subclasses where necessary.
 
         Parameters
         ----------
@@ -186,10 +165,6 @@ class NewTransform(ABC, BaseMixin):
         :
             TSDataset after applying inverse transformation.
         """
-        if hasattr(self._inverse_transform, "is_overridden"):
-            df = ts.to_pandas(flatten=False, features="all")
-            df_transformed = self._inverse_transform(df=df)
-            ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
         return ts
 
 
