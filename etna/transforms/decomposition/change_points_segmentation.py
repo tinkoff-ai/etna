@@ -80,21 +80,6 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         df.loc[:, self.out_column] = result_series
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Do nothing in this case.
-
-        Parameters
-        ----------
-        df:
-            one segment dataframe
-
-        Returns
-        -------
-        df:
-            one segment dataframe
-        """
-        return df
-
 
 class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
     """ChangePointsSegmentationTransform make label encoder to change points.
@@ -130,7 +115,7 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
         super().__init__(
             transform=_OneSegmentChangePointsSegmentationTransform(
                 in_column=self.in_column,
-                out_column=self.out_column if self.out_column is not None else self.__repr__(),
+                out_column=self.out_column,
                 change_point_model=self.change_point_model,
             )
         )

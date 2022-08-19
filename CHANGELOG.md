@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- Add `ChangePointSegmentationTransform` ([#821](https://github.com/tinkoff-ai/etna/issues/821))
+- Add `ChangePointSegmentationTransform`, `RupturesChangePointsModel` ([#821](https://github.com/tinkoff-ai/etna/issues/821))
 - 
 - 
 ### Changed

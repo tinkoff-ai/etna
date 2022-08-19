@@ -35,7 +35,5 @@ def find_change_points(
     ruptures = RupturesChangePointsModel(change_point_model, **model_predict_params)
     for segment in ts.segments:
         df_segment = df[segment]
-        raw_series = df_segment[in_column]
-        series = raw_series.loc[raw_series.first_valid_index() : raw_series.last_valid_index()]
-        result[segment] = ruptures.get_change_points(series=series)
+        result[segment] = ruptures.get_change_points(df=df_segment, in_column=in_column)
     return result

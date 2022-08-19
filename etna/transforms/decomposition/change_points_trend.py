@@ -13,9 +13,9 @@ from sklearn.base import RegressorMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+from etna.transforms.decomposition.base_change_points import TTimestampInterval
 from etna.transforms.utils import match_target_quantiles
 
-TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
 TDetrendModel = Type[RegressorMixin]
 
 

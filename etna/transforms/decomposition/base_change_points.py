@@ -17,13 +17,15 @@ class BaseChangePointsModelAdapter(ABC):
     """BaseChangePointsModelAdapter is the base class for change point models adapters."""
 
     @abstractmethod
-    def get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
+    def get_change_points(self, df: pd.DataFrame, in_column: str) -> List[pd.Timestamp]:
         """Find change points within one segment.
 
         Parameters
         ----------
-        series:
-            series in which to look for change points
+        df:
+            dataframe indexed with timestamp
+        in_column:
+            name of column to get change points
 
         Returns
         -------
@@ -55,11 +57,7 @@ class BaseChangePointsModelAdapter(ABC):
         :
             change points intervals
         """
-        series = df.loc[df[in_column].first_valid_index() : df[in_column].last_valid_index(), in_column]
-        if series.isnull().values.any():
-            raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
-
-        change_points = self.get_change_points(series=series)
+        change_points = self.get_change_points(df=df, in_column=in_column)
         intervals = self._build_intervals(change_points=change_points)
         return intervals
 
@@ -80,19 +78,25 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
         self.change_point_model = change_point_model
         self.model_predict_params = change_point_model_predict_params
 
-    def get_change_points(self, series: pd.Series) -> List[pd.Timestamp]:
+    def get_change_points(self, df: pd.DataFrame, in_column: str) -> List[pd.Timestamp]:
         """Find change points within one segment.
 
         Parameters
         ----------
-        series:
-            series in which to look for change points
+        df:
+            dataframe indexed with timestamp
+        in_column:
+            name of column to get change points
 
         Returns
         -------
         change points:
             change point timestamps
         """
+        series = df.loc[df[in_column].first_valid_index() : df[in_column].last_valid_index(), in_column]
+        if series.isnull().values.any():
+            raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
+
         signal = series.to_numpy()
         if isinstance(self.change_point_model.cost, CostLinear):
             signal = signal.reshape((-1, 1))
