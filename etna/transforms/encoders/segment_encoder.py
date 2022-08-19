@@ -1,12 +1,11 @@
 import pandas as pd
 from sklearn import preprocessing
 
-from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class SegmentEncoderTransform(Transform, FutureMixin, DymmyInColumnMixin):
+class SegmentEncoderTransform(Transform, FutureMixin):
     """Encode segment label to categorical. Creates column 'segment_code'."""
 
     idx = pd.IndexSlice

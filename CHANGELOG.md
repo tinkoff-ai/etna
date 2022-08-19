@@ -19,10 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 -
 - 
-- 
+- Base class for transforms now works with TSDataset ([835](https://github.com/tinkoff-ai/etna/pull/835))
 - All the transforms now has `in_column` attribute ([#820](https://github.com/tinkoff-ai/etna/pull/820))
--
--
+- Change name of `remove_columns` to `drop_features`, separate method `add_columns_from_pandas` to `add_columns_from_pandas` and `update_columns_from_pandas` ([835](https://github.com/tinkoff-ai/etna/pull/835))
+- 
 ### Fixed
 -
 - 
