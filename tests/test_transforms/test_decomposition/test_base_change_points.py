@@ -24,10 +24,10 @@ def df_with_nans() -> pd.DataFrame:
 
 
 @pytest.fixture
-def simple_ar_ts(random_seed):
+def simple_ar_df(random_seed):
     df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=1, ar_coef=[2], freq="D")
-    df_ts_format = TSDataset.to_dataset(df)
-    return TSDataset(df_ts_format, freq="D")
+    df_ts_format = TSDataset.to_dataset(df)["segment_0"]
+    return df_ts_format
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
@@ -53,20 +53,18 @@ def test_build_intervals():
         assert exp_right == real_right
 
 
-def test_get_change_points_intervals_format(simple_ar_ts):
+def test_get_change_points_intervals_format(simple_ar_df):
     change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
-    intervals = change_point_model.get_change_points_intervals(
-        df=simple_ar_ts.to_pandas()["segment_0"], in_column="target"
-    )
+    intervals = change_point_model.get_change_points_intervals(df=simple_ar_df, in_column="target")
     assert isinstance(intervals, list)
     assert len(intervals) == N_BKPS + 1
     for interval in intervals:
         assert len(interval) == 2
 
 
-def test_get_change_points_format(simple_ar_ts):
+def test_get_change_points_format(simple_ar_df):
     change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
-    intervals = change_point_model.get_change_points(df=simple_ar_ts.to_pandas()["segment_0"], in_column="target")
+    intervals = change_point_model.get_change_points(df=simple_ar_df, in_column="target")
     assert isinstance(intervals, list)
     assert len(intervals) == N_BKPS
     for interval in intervals:

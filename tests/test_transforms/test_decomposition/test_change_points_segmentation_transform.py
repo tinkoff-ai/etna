@@ -13,6 +13,7 @@ from etna.transforms.decomposition.base_change_points import RupturesChangePoint
 from etna.transforms.decomposition.change_points_segmentation import _OneSegmentChangePointsSegmentationTransform
 
 OUT_COLUMN = "result"
+N_BKPS = 5
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ def multitrend_df_with_nans_in_tails(multitrend_df):
 
 def test_fit_one_segment(pre_transformed_df: pd.DataFrame):
     """Check that fit method save intervals."""
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
@@ -53,7 +54,7 @@ def test_fit_one_segment(pre_transformed_df: pd.DataFrame):
 
 def test_transform_format_one_segment(pre_transformed_df: pd.DataFrame):
     """Check that transform method generate new column."""
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
@@ -65,7 +66,7 @@ def test_transform_format_one_segment(pre_transformed_df: pd.DataFrame):
 
 def test_monotonously_result(pre_transformed_df: pd.DataFrame):
     """Check that resulting column is monotonously non-decreasing."""
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
@@ -78,7 +79,7 @@ def test_monotonously_result(pre_transformed_df: pd.DataFrame):
 
 def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
     """Test that transform for one segment raise error when calling transform without being fit."""
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     transform = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
@@ -89,7 +90,7 @@ def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
 def test_backtest(simple_ar_ts):
     model = CatBoostModelPerSegment()
     horizon = 3
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
@@ -98,7 +99,7 @@ def test_backtest(simple_ar_ts):
 
 
 def test_future_and_past_filling(simple_ar_ts):
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
@@ -113,7 +114,7 @@ def test_future_and_past_filling(simple_ar_ts):
 
 
 def test_make_future(simple_ar_ts):
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5)
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
