@@ -3,9 +3,9 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import TypedDict
 
 import pandas as pd
+from typing_extensions import TypedDict
 
 from etna import SETTINGS
 
