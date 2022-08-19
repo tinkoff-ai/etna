@@ -29,7 +29,7 @@ class PoolGenerator:
                 'horizon': '${__aux__.horizon}',
                 'model': {'_target_': 'etna.models.ProphetModel'}
             }
-        Values to be interpolated should be in the form of ${__aux__.key}
+        Values to be interpolated should be in the form of ``${__aux__.key}``
         """
         self.configs_template = configs_template
 
