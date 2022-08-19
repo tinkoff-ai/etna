@@ -1,20 +1,171 @@
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import List
+from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna.core import BaseMixin
+from etna.datasets import TSDataset
 
 
 class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-class DymmyInColumnMixin:
-    """Mixin for transforms that has no explicit in_column."""
+class NewTransform(ABC, BaseMixin):
+    """Base class to create any transforms to apply to data."""
 
-    in_column = "target"
+    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
+        self.in_column = in_column
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
+
+    @property
+    def required_features(self) -> Union[Literal["all"], List[str]]:
+        """Get the list of required features."""
+        required_features = self.in_column
+        if isinstance(required_features, list):
+            return required_features
+        elif isinstance(required_features, str):
+            if required_features == "all":
+                return "all"
+            return [required_features]
+        else:
+            raise ValueError("in_column attribute is in incorrect format!")
+
+    def _update_dataset(self, ts: TSDataset, df: pd.DataFrame, df_transformed: pd.DataFrame) -> TSDataset:
+        """Update TSDataset based on the difference between dfs."""
+        columns_before = set(df.columns.get_level_values("feature"))
+        columns_after = set(df_transformed.columns.get_level_values("feature"))
+        columns_to_update = list(set(columns_before) & set(columns_after))
+        columns_to_add = list(set(columns_after) - set(columns_before))
+        columns_to_remove = list(set(columns_before) - set(columns_after))
+
+        if len(columns_to_remove) != 0:
+            ts.drop_features(features=columns_to_remove, drop_from_exog=False)
+        if len(columns_to_add) != 0:
+            new_regressors = self.get_regressors_info()
+            ts.add_columns_from_pandas(
+                df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[ts.segments, columns_to_add]],
+                update_exog=False,
+                regressors=new_regressors,
+            )
+        if len(columns_to_update) != 0:
+            ts.update_columns_from_pandas(
+                df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[ts.segments, columns_to_update]]
+            )
+        return ts
+
+    @abstractmethod
+    def _fit(self, df: pd.DataFrame):
+        """Fit the transform.
+
+        Should be implemented by user.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna wide format.
+        """
+        pass
+
+    def fit(self, ts: TSDataset) -> "NewTransform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        self._fit(df=df)
+        return self
+
+    @abstractmethod
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Transform dataframe.
+
+        Should be implemented by user
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna wide format.
+
+        Returns
+        -------
+        :
+            Transformed Dataframe in etna wide format.
+        """
+        pass
+
+    def transform(self, ts: TSDataset) -> TSDataset:
+        """Transform TSDataset inplace.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to transform.
+
+        Returns
+        -------
+        :
+            Transformed TSDataset.
+        """
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        df_transformed = self._transform(df=df)
+        ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+        return ts
+
+    def fit_transform(self, ts: TSDataset) -> TSDataset:
+        """Fit and transform TSDataset.
+
+        May be reimplemented. But it is not recommended.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to transform.
+
+        Returns
+        -------
+        :
+            Transformed TSDataset.
+        """
+        return self.fit(ts=ts).transform(ts=ts)
+
+    def inverse_transform(self, ts: TSDataset) -> TSDataset:
+        """Inverse transform TSDataset.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to be inverse transformed.
+
+        Returns
+        -------
+        :
+            TSDataset after applying inverse transformation.
+        """
+        return ts
 
 
 class Transform(ABC, BaseMixin):

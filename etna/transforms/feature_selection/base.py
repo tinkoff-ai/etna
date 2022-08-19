@@ -2,7 +2,6 @@ import warnings
 from abc import ABC
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Union
 
 import pandas as pd
@@ -19,7 +18,7 @@ class BaseFeatureSelectionTransform(Transform, ABC):
         self.selected_features: List[str] = []
         self.return_features = return_features
         self._df_removed: Optional[pd.DataFrame] = None
-        self.in_column: Union[Sequence[str], Literal["all"]] = self.features_to_use
+        self.in_column = self.features_to_use
 
     def _get_features_to_use(self, df: pd.DataFrame) -> List[str]:
         """Get list of features from the dataframe to perform the selection on."""

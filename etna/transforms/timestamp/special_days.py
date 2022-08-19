@@ -4,7 +4,6 @@ from typing import Tuple
 
 import pandas as pd
 
-from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
@@ -167,7 +166,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
         return df.loc[:, ["datetime"]].apply(check, axis=1).rename("anomaly_monthdays")
 
 
-class SpecialDaysTransform(PerSegmentWrapper, FutureMixin, DymmyInColumnMixin):
+class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
 
     Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.
