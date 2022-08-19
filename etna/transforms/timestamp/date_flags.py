@@ -6,12 +6,11 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import DymmyInColumnMixin
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import Transform
 
 
-class DateFlagsTransform(Transform, FutureMixin, DymmyInColumnMixin):
+class DateFlagsTransform(Transform, FutureMixin):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
 
     Notes

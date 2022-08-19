@@ -1012,50 +1012,72 @@ class TSDataset:
 
         return train, test
 
-    def update_columns_from_pandas(self, df: pd.DataFrame, regressors: Optional[List[str]] = None):
-        """Update the dataset with the new columns from pandas dataframe.
+    def update_columns_from_pandas(self, df_update: pd.DataFrame):
+        """Update the existing columns in the dataset with the new values from pandas dataframe.
 
-        It is recommended to add the exogenous regressor using the constructor of the TSDataset.
-        This method does not add the regressors as exogenous data in df_exog, but only update the df attribute.
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+        Columns in df_exog are not updated. If you wish to update the df_exog, create the new
+        instance of TSDataset.
 
         Parameters
         ----------
-        df:
-            Dataframe with the new columns in wide ETNA format.
-            If columns with the same names already exist in the dataset, then values will be updated.
-        regressors:
-            List of regressors in the passed dataframe
+        df_update:
+            Dataframe with new values in wide ETNA format.
         """
-        columns_in_dataset = self.columns.get_level_values("feature")
-        new_columns = df.columns.get_level_values("feature")
-
-        columns_to_update = list(set(columns_in_dataset) & set(new_columns))
-        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df.loc[
-            :, self.idx[self.segments, columns_to_update]
+        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
+            : self.df.index.max(), self.idx[self.segments, columns_to_update]
         ]
 
-        columns_to_add = list(set(new_columns) - set(columns_in_dataset))
-        if len(columns_to_add) != 0:
-            self.df = pd.concat((self.df, df.loc[:, self.idx[:, columns_to_add]]), axis=1).sort_index(axis=1)
+    def add_columns_from_pandas(
+        self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
+    ):
+        """Update the dataset with the new columns from pandas dataframe.
 
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+
+        Parameters
+        ----------
+        df_update:
+            Dataframe with the new columns in wide ETNA format.
+        update_exog:
+             If True, update columns also in df_exog.
+             If you wish to add new regressors in the dataset it is recommended to turn on this flag.
+        regressors:
+            List of regressors in the passed dataframe.
+        """
+        self.df = pd.concat((self.df, df_update[: self.df.index.max()]), axis=1).sort_index(axis=1)
+        if update_exog:
+            if self.df_exog is None:
+                self.df_exog = df_update
+            else:
+                self.df_exog = pd.concat((self.df_exog, df_update), axis=1).sort_index(axis=1)
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
 
-    def remove_columns(self, columns: List[str]):
-        """Remove columns from the dataset.
-
-        Columns that are not presented in the dataset will be ignored
+    def drop_features(self, features: List[str], drop_from_exog: bool = False):
+        """Drop columns with features from the dataset.
 
         Parameters
         ----------
-        columns:
-            List of columns to be removed
+        features:
+            List of features to drop.
+        drop_from_exog:
+            * If False, drop features only from df. Features will appear again in df after make_future.
+            * If True, drop features from df and df_exog. Features won't appear in df after make_future.
         """
-        for df in [self.df, self.df_exog, self.raw_df]:
+        dfs = [("df", self.df)]
+        if drop_from_exog:
+            dfs.append(("df_exog", self.df_exog))
+
+        for name, df in dfs:
             columns_in_df = df.columns.get_level_values("feature")
-            columns_to_remove = list(set(columns_in_df) & set(columns))
+            columns_to_remove = list(set(columns_in_df) & set(features))
+            unknown_columns = set(features) - set(columns_to_remove)
+            if len(unknown_columns) != 0:
+                warnings.warn(f"Features {unknown_columns} are not present in {name}!")
             df.drop(columns=columns_to_remove, level="feature", inplace=True)
-        self._regressors = list(set(self._regressors) - set(columns))
+        self._regressors = list(set(self._regressors) - set(features))
 
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
