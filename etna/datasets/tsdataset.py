@@ -875,7 +875,7 @@ class TSDataset:
         """Update the existing columns in the dataset with the new values from pandas dataframe.
 
         Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
-        If columns in df_exog are not updated. If you wish to update the df_exog, create the new
+        Columns in df_exog are not updated. If you wish to update the df_exog, create the new
         instance of TSDataset.
 
         Parameters
