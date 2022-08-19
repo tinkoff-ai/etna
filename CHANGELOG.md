@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
 - 
-- 
+- Bug python3.7 and TypedDict import ([867](https://github.com/tinkoff-ai/etna/pull/867))
 - 
 - ProphetModel doesn't work with cap and floor regressors ([#842](https://github.com/tinkoff-ai/etna/pull/842))
 - Fix problem with encoding category types in OHE ([#843](https://github.com/tinkoff-ai/etna/pull/843))
