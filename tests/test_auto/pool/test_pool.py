@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from etna.auto.pool.generator import Pool
+from etna.auto.pool import Pool
 from etna.auto.pool.templates import DEFAULT
 from etna.datasets import TSDataset
 from etna.pipeline import Pipeline

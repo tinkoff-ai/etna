@@ -1,2 +1,2 @@
-from etna.auto.pool import Pool
-from etna.auto.pool import PoolGenerator
+from etna.auto.pool.generator import Pool
+from etna.auto.pool.generator import PoolGenerator
