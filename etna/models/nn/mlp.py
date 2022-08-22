@@ -136,6 +136,29 @@ class MLPNet(DeepBaseNet):
             yield batch
             start_idx += decoder_length
 
+        if start_idx < len(df):
+
+            resid_length = len(df) - start_idx
+            sample: Dict[str, Any] = {"decoder_real": list(), "decoder_target": list(), "segment": None}
+
+            num_df = df.select_dtypes(include=[np.number])
+            num_cols = len([x for x in num_df.columns if x != "target"])
+
+            sample["decoder_real"] = (
+                df.select_dtypes(include=[np.number])
+                .pipe(lambda x: x[[i for i in x.columns if i != "target"]])
+                .values[start_idx : start_idx + decoder_length]
+            )
+
+            empty_arr = np.zeros((decoder_length - resid_length, num_cols))
+            sample["decoder_real"] = np.concatenate((sample["decoder_real"], empty_arr), axis=0)
+            target = df["target"].values[start_idx : start_idx + decoder_length].reshape(-1, 1)
+            sample["decoder_target"] = target
+            empty_arr = np.zeros((decoder_length - resid_length, 1))
+            sample["decoder_target"] = np.concatenate((sample["decoder_target"], empty_arr), axis=0)
+            sample["segment"] = df["segment"].values[0]
+            yield sample
+
     def configure_optimizers(self):
         """Optimizer configuration."""
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
