@@ -38,23 +38,6 @@ def multitrend_df_with_nans_in_tails(multitrend_df):
     return multitrend_df
 
 
-def test_build_trend_intervals():
-    """Check correctness of intervals generation with list of change points."""
-    change_points = [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")]
-    expected_intervals = [
-        (pd.Timestamp.min, pd.Timestamp("2020-01-01")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18")),
-        (pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")),
-        (pd.Timestamp("2020-02-24"), pd.Timestamp.max),
-    ]
-    intervals = _OneSegmentChangePointsTrendTransform._build_trend_intervals(change_points=change_points)
-    assert isinstance(intervals, list)
-    assert len(intervals) == 4
-    for (exp_left, exp_right), (real_left, real_right) in zip(expected_intervals, intervals):
-        assert exp_left == real_left
-        assert exp_right == real_right
-
-
 def test_models_after_fit(multitrend_df: pd.DataFrame):
     """Check that fit method generates correct number of detrend model's copies."""
     bs = _OneSegmentChangePointsTrendTransform(
