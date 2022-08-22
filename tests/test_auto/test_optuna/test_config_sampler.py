@@ -42,6 +42,7 @@ def test_config_sampler_one_thread(objective, config_sampler):
     assert len(study.trials) == len(config_sampler.configs)
 
 
+@pytest.mark.skip
 def test_config_sampler_multithread(objective, config_sampler, sqlite_storage):
 
     n_jobs = 4
@@ -49,4 +50,5 @@ def test_config_sampler_multithread(objective, config_sampler, sqlite_storage):
     Parallel(n_jobs=n_jobs)(delayed(study.optimize)(objective) for _ in range(n_jobs))
 
     assert study.best_trial.user_attrs["pipeline"] == {"x": 2}
+    # TODO: this test case is non-deterministic
     assert len(study.trials) == len(config_sampler.configs) + n_jobs - 1
