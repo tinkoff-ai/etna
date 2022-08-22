@@ -136,6 +136,7 @@ all-dev = [
     "prophet",
     "torch", "pytorch-forecasting",
     "wandb",
+    "optuna",
     "click", "semver",
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
