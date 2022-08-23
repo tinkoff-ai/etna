@@ -228,6 +228,8 @@ filterwarnings = [
     "ignore: ReduceLROnPlateau conditioned on metric val_loss which is not available but strict",
     "ignore: Checkpoint directory",
     "ignore: Objective did not converge. You might want to increase the number",
+    "ignore: distutils Version classes are deprecated.",
+    "ignore: invalid escape sequence",
 ]
 markers = [
     "smoke",
