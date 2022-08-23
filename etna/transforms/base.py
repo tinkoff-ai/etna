@@ -1,7 +1,9 @@
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Union
 
 import pandas as pd
@@ -268,6 +270,61 @@ class PerSegmentWrapper(Transform):
         results = []
         for key, value in self.segment_transforms.items():
             seg_df = value.inverse_transform(df[key])
+
+            _idx = seg_df.columns.to_frame()
+            _idx.insert(0, "segment", key)
+            seg_df.columns = pd.MultiIndex.from_frame(_idx)
+
+            results.append(seg_df)
+        df = pd.concat(results, axis=1)
+        df = df.sort_index(axis=1)
+        df.columns.names = ["segment", "feature"]
+        return df
+
+
+class NewPerSegmentWrapper(NewTransform):
+    """Class to apply transform in per segment manner."""
+
+    def __init__(self, transform: NewTransform):
+        self._base_transform = transform
+        self.segment_transforms: Optional[Dict[str, NewTransform]] = None
+        super().__init__(in_column=transform.in_column)
+
+    def _fit(self, df: pd.DataFrame):
+        """Fit transform on each segment."""
+        self.segment_transforms = {}
+        segments = df.columns.get_level_values("segment").unique()
+        for segment in segments:
+            self.segment_transforms[segment] = deepcopy(self._base_transform)
+            self.segment_transforms[segment]._fit(df[segment])
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply transform to each segment separately."""
+        if self.segment_transforms is None:
+            raise ValueError("Transform is not fitted!")
+
+        results = []
+        for key, value in self.segment_transforms.items():
+            seg_df = value._transform(df[key])
+
+            _idx = seg_df.columns.to_frame()
+            _idx.insert(0, "segment", key)
+            seg_df.columns = pd.MultiIndex.from_frame(_idx)
+
+            results.append(seg_df)
+        df = pd.concat(results, axis=1)
+        df = df.sort_index(axis=1)
+        df.columns.names = ["segment", "feature"]
+        return df
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply inverse_transform to each segment."""
+        if self.segment_transforms is None:
+            raise ValueError("Transform is not fitted!")
+
+        results = []
+        for key, value in self.segment_transforms.items():
+            seg_df = value._inverse_transform(df[key])
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", key)
