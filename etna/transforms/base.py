@@ -23,6 +23,7 @@ class NewTransform(ABC, BaseMixin):
     def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
         self.in_column = in_column
 
+    @abstractmethod
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
 
@@ -31,7 +32,7 @@ class NewTransform(ABC, BaseMixin):
         :
             List with regressors created by the transform.
         """
-        return []
+        pass
 
     @property
     def required_features(self) -> Union[Literal["all"], List[str]]:
@@ -151,6 +152,24 @@ class NewTransform(ABC, BaseMixin):
             Transformed TSDataset.
         """
         return self.fit(ts=ts).transform(ts=ts)
+
+    @abstractmethod
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform dataframe.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to be inverse transformed.
+
+        Returns
+        -------
+        :
+            Dataframe after applying inverse transformation.
+        """
+        pass
 
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
