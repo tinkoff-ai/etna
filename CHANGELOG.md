@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Change Docker cuda image version from 11.1 to 11.6.2 ([#838](https://github.com/tinkoff-ai/etna/pull/838))
 - Optimize time complexity of `determine_num_steps`([#864](https://github.com/tinkoff-ai/etna/pull/864))
-- 
+- All warning as errors([#880](https://github.com/tinkoff-ai/etna/pull/880))
 
 ## [1.11.1] - 2022-08-03
 ### Fixed
