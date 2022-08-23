@@ -227,6 +227,7 @@ filterwarnings = [
     "ignore: Trying to infer the `batch_size` from an ambiguous collection",
     "ignore: ReduceLROnPlateau conditioned on metric val_loss which is not available but strict",
     "ignore: Checkpoint directory",
+    "ignore: Objective did not converge. You might want to increase the number",
 ]
 markers = [
     "smoke",
