@@ -186,7 +186,7 @@ def test_forecast_check_prediction_size_called(check_func, example_tsds):
     example_tsds.fit_transform([transform])
     future = example_tsds.make_future(horizon)
     check_func.return_value = 1
-    model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
+    model = DeepARModel(max_epochs=1, learning_rate=[0.01], gpus=0, batch_size=64)
 
     model.fit(example_tsds)
     model.forecast(future, prediction_size=1)
@@ -194,4 +194,21 @@ def test_forecast_check_prediction_size_called(check_func, example_tsds):
     check_func.assert_called_once()
 
 
-# TODO: (?) add test on select select_prediction_size_timestamps
+@pytest.mark.parametrize("prediction_size", [1, 7, 10])
+def test_forecast_prediction_size_returned(prediction_size, example_tsds):
+    horizon = 10
+    transform = PytorchForecastingTransform(
+        max_encoder_length=horizon,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        target_normalizer=GroupNormalizer(groups=["segment"]),
+    )
+    example_tsds.fit_transform([transform])
+    future = example_tsds.make_future(horizon)
+    model = DeepARModel(max_epochs=1, learning_rate=[0.01], gpus=0, batch_size=64)
+
+    model.fit(example_tsds)
+    forecast_ts = model.forecast(future, prediction_size=prediction_size)
+
+    assert len(forecast_ts.index) == prediction_size

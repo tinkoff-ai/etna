@@ -195,3 +195,17 @@ def test_forecast_check_prediction_size_called(check_func, example_tsds):
     model.forecast(future, prediction_size=1)
 
     check_func.assert_called_once()
+
+
+@pytest.mark.parametrize("prediction_size", [1, 7, 10])
+def test_forecast_prediction_size_returned(prediction_size, example_tsds):
+    horizon = 10
+    transform = _get_default_transform(horizon)
+    example_tsds.fit_transform([transform])
+    future = example_tsds.make_future(horizon)
+    model = TFTModel(max_epochs=1, learning_rate=[0.1], gpus=0, batch_size=64)
+
+    model.fit(example_tsds)
+    forecast_ts = model.forecast(future, prediction_size=prediction_size)
+
+    assert len(forecast_ts.index) == prediction_size

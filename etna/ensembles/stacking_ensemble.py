@@ -44,7 +44,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
     >>> ensemble = StackingEnsemble(pipelines=[ma_pipeline, naive_pipeline])
     >>> _ = ensemble.fit(ts=ts)
     >>> forecast = ensemble.forecast()
-    >>> forecast[:,:,"target"]
+    >>> forecast[:,:,"target"]  # doctest: +SKIP
     segment    segment_0 segment_1 segment_2
     feature       target    target    target
     timestamp
