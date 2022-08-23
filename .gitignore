@@ -120,6 +120,12 @@ config.env
 /runs
 lightning_logs
 
+# pytorch lightning
+checkpoints/
+
+# macOS
+.DS_Store
+
 *.html
 .devcontainer
 /docs/source/api/
