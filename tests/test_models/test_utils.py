@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import generate_ar_df
+from etna.models.utils import check_prediction_size_value
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_prediction_size_timestamps
 
@@ -100,3 +101,44 @@ def test_select_prediction_size_timestamps_fail_too_large():
         _ = select_prediction_size_timestamps(
             prediction=df["target"].values, timestamp=df["timestamp"], prediction_size=11
         )
+
+
+@pytest.mark.parametrize(
+    "prediction_size, context_size, expected_value",
+    [
+        (5, 0, 5),
+        (10, 0, 10),
+        ("all", 0, 10),
+    ],
+)
+def test_check_prediction_size_value_ok(prediction_size, context_size, expected_value):
+    obtained_value = check_prediction_size_value(
+        prediction_size=prediction_size, num_timestamps=10, context_size=context_size
+    )
+    assert obtained_value == expected_value
+
+
+@pytest.mark.parametrize("prediction_size", [0, -1])
+def test_check_prediction_size_value_fail_non_positive(prediction_size):
+    with pytest.raises(ValueError, match="Prediction size can be only positive"):
+        check_prediction_size_value(prediction_size=prediction_size, num_timestamps=10, context_size=0)
+
+
+def test_check_prediction_size_value_fail_too_big():
+    with pytest.raises(ValueError, match="Prediction size is bigger than number of timestamps"):
+        check_prediction_size_value(prediction_size=11, num_timestamps=10, context_size=0)
+
+
+def test_check_prediction_size_value_fail_wrong_literal():
+    with pytest.raises(ValueError, match="The only possible literal for prediction size is 'all'"):
+        check_prediction_size_value(prediction_size="random", num_timestamps=10, context_size=0)
+
+
+def test_check_prediction_size_value_fail_required_context():
+    with pytest.raises(ValueError, match="Literal 'all' is available only for model that has context_size equal to 0"):
+        check_prediction_size_value(prediction_size="all", num_timestamps=10, context_size=1)
+
+
+def test_check_prediction_size_value_fail_negative_context():
+    with pytest.raises(ValueError, match="Context size can't be negative"):
+        check_prediction_size_value(prediction_size="all", num_timestamps=10, context_size=-1)

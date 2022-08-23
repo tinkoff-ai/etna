@@ -1,6 +1,7 @@
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -13,6 +14,7 @@ from etna.loggers import tslogger
 from etna.models.base import MultiSegmentPredictionIntervalModel
 from etna.models.base import log_decorator
 from etna.models.nn.utils import _DeepCopyMixin
+from etna.models.utils import check_prediction_size_value
 from etna.transforms import PytorchForecastingTransform
 
 if SETTINGS.torch_required:
@@ -173,7 +175,11 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
 
     @log_decorator
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_size: Union[Literal["all"], int] = "all",
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
         """
         Predict future.
@@ -182,6 +188,13 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -192,6 +205,10 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         TSDataset
             TSDataset with predictions.
         """
+        prediction_size = check_prediction_size_value(
+            prediction_size=prediction_size, num_timestamps=len(ts.index), context_size=self.context_size
+        )
+
         if ts.index[0] <= self._last_train_timestamp:
             raise NotImplementedError(
                 "It is not possible to make in-sample predictions with DeepAR model! "
@@ -239,5 +256,7 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
             df = df.sort_index(axis=1)
             ts.df = df
 
+        # select prediction_size predictions
+        ts.df = ts.df.iloc[-prediction_size:]
         ts.inverse_transform()
         return ts

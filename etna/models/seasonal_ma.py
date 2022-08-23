@@ -130,7 +130,7 @@ class SeasonalMovingAverageModel(PerSegmentModel):
 
     @property
     def context_size(self) -> int:
-        """Context size of the model."""
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
         return self.window * self.seasonality
 
     def get_model(self) -> Dict[str, "SeasonalMovingAverageModel"]:

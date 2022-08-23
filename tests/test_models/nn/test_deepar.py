@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 from pytorch_forecasting.data import GroupNormalizer
@@ -169,3 +171,27 @@ def test_prediction_interval_run_infuture(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
+
+
+@patch("etna.models.nn.deepar.check_prediction_size_value")
+def test_forecast_check_prediction_size_called(check_func, example_tsds):
+    horizon = 10
+    transform = PytorchForecastingTransform(
+        max_encoder_length=horizon,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        target_normalizer=GroupNormalizer(groups=["segment"]),
+    )
+    example_tsds.fit_transform([transform])
+    future = example_tsds.make_future(horizon)
+    check_func.return_value = 1
+    model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
+
+    model.fit(example_tsds)
+    model.forecast(future, prediction_size=1)
+
+    check_func.assert_called_once()
+
+
+# TODO: (?) add test on select select_prediction_size_timestamps

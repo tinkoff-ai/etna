@@ -1,3 +1,5 @@
+from typing import List
+from typing import Sequence
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
@@ -9,6 +11,92 @@ import pytest
 import torch
 
 from etna.models.base import DeepBaseModel
+from etna.models.base import MultiSegmentModel
+from etna.models.base import PerSegmentModel
+from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.utils import select_prediction_size_timestamps
+
+
+class DummyInnerModel:
+    def fit(self, df: pd.DataFrame, regressors: List[str]) -> "DummyInnerModel":
+        return self
+
+    def predict(
+        self,
+        df: pd.DataFrame,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> pd.DataFrame:
+        if prediction_interval:
+            y_pred = pd.DataFrame({"timestamp": df["timestamp"], "target": np.zeros(len(df))})
+            for quantile in quantiles:
+                y_pred[f"target_{quantile:.4g}"] = np.zeros(len(df))
+        else:
+            y_pred = np.zeros(len(df))
+
+        y_pred = select_prediction_size_timestamps(
+            prediction=y_pred, timestamp=df["timestamp"], prediction_size=prediction_size
+        )
+        return y_pred
+
+    def get_model(self) -> int:
+        return 0
+
+
+class DummyPerSegmentModel(PerSegmentModel):
+
+    context_size = 0
+
+    def __init__(self):
+        super().__init__(base_model=DummyInnerModel())
+
+
+class DummyPerSegmentPredictionIntervalModel(PerSegmentPredictionIntervalModel):
+
+    context_size = 0
+
+    def __init__(self):
+        super().__init__(base_model=DummyInnerModel())
+
+
+class DummyMultiSegmentModel(MultiSegmentModel):
+
+    context_size = 0
+
+    def __init__(self):
+        super().__init__(base_model=DummyInnerModel())
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        DummyPerSegmentModel(),
+        DummyPerSegmentPredictionIntervalModel(),
+        DummyMultiSegmentModel(),
+    ],
+)
+@patch("etna.models.base.check_prediction_size_value")
+def test_forecast_check_prediction_size_called(check_func, model, example_tsds):
+    check_func.return_value = 1
+    model.fit(example_tsds)
+    future = example_tsds.make_future(1)
+
+    model.fit(example_tsds)
+    model.forecast(future, prediction_size=1)
+
+    check_func.assert_called_once()
+
+
+@patch("etna.models.base.check_prediction_size_value")
+def test_forecast_check_prediction_size_called_deep(check_func, deep_base_model_mock):
+    horizon = 7
+    ts = MagicMock()
+
+    check_func.return_value = horizon
+    DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
+
+    check_func.assert_called_once()
 
 
 @pytest.fixture()
@@ -20,6 +108,7 @@ def deep_base_model_mock():
     model.test_batch_size = 32
     model.trainer_params = {}
     model.split_params = {}
+    model.context_size = 0
     return model
 
 
@@ -139,16 +228,18 @@ def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
 
 
 def test_deep_base_model_forecast_inverse_transform_call_check(deep_base_model_mock):
-    ts = MagicMock()
     horizon = 7
-    DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, horizon=horizon)
+    ts = MagicMock()
+    ts.index.__len__.return_value = horizon
+    DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
     ts.tsdataset_idx_slice.return_value.inverse_transform.assert_called_once()
 
 
 def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock):
-    ts = MagicMock()
-    ts_after_tsdataset_idx_slice = MagicMock()
     horizon = 7
+    ts = MagicMock()
+    ts.index.__len__.return_value = horizon
+    ts_after_tsdataset_idx_slice = MagicMock()
 
     raw_predict = {("A", "target"): np.arange(10).reshape(-1, 1), ("B", "target"): -np.arange(10).reshape(-1, 1)}
     deep_base_model_mock.raw_predict.return_value = raw_predict
@@ -156,7 +247,7 @@ def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock):
     ts_after_tsdataset_idx_slice.df = simple_df.df.iloc[-horizon:]
     ts.tsdataset_idx_slice.return_value = ts_after_tsdataset_idx_slice
 
-    future = DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, horizon=horizon)
+    future = DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
     np.testing.assert_allclose(
         future.df.loc[:, pd.IndexSlice["A", "target"]], raw_predict[("A", "target")][:horizon, 0]
     )

@@ -1,3 +1,4 @@
+from typing import Literal
 from typing import Union
 
 import numpy as np
@@ -75,7 +76,7 @@ def select_prediction_size_timestamps(
     Raises
     ------
     ValueError:
-        ``prediction_size`` isn't positive
+        if value of ``prediction_size`` isn't positive
     ValueError:
         if value of ``prediction_size`` is bigger than number of timestamps
     """
@@ -87,3 +88,55 @@ def select_prediction_size_timestamps(
         raise ValueError("The value of prediction_size is bigger than number of timestamps, try to increase it.")
     border_value = timestamp_unique[-prediction_size]
     return prediction[timestamp >= border_value]
+
+
+def check_prediction_size_value(
+    prediction_size: Union[Literal["all"], int],
+    num_timestamps: int,
+    context_size: int,
+) -> int:
+    """Check prediction size value for a model.
+
+    Parameters
+    ----------
+    prediction_size:
+        prediction size for a model prediction
+    num_timestamps:
+        number of timestamps in a dataset given to prediction
+    context_size
+        context size of the model
+
+    Returns
+    -------
+    :
+        checked prediction_size
+
+    Raises
+    ------
+    ValueError:
+        if value of ``prediction_size`` isn't positive
+    ValueError:
+        if value of ``prediction_size`` is bigger than number of timestamps
+    ValueError:
+        if incorrect literal is used
+    ValueError:
+        if model requires context and ``prediction_size`` isn't set
+    ValueError:
+        context size is negative
+    """
+    if isinstance(prediction_size, int):
+        if prediction_size <= 0:
+            raise ValueError("Prediction size can be only positive!")
+        elif prediction_size > num_timestamps:
+            raise ValueError("Prediction size is bigger than number of timestamps!")
+        else:
+            return prediction_size
+    else:
+        if prediction_size != "all":
+            raise ValueError("The only possible literal for prediction size is 'all'!")
+        elif context_size > 0:
+            raise ValueError("Literal 'all' is available only for model that has context_size equal to 0!")
+        elif context_size < 0:
+            raise ValueError("Context size can't be negative!")
+        else:
+            return num_timestamps

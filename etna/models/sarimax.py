@@ -67,7 +67,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         return self
 
     def predict(
-        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float], prediction_size: int
+        self, df: pd.DataFrame, prediction_size: int, prediction_interval: bool, quantiles: Sequence[float]
     ) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model.
@@ -76,13 +76,13 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
         prediction_interval:
              If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution
-        prediction_size:
-            Number of last timestamps to leave after making prediction.
-            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------

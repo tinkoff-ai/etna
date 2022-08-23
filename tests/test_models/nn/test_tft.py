@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 
@@ -178,3 +180,18 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target"}.issubset(segment_slice.columns)
         assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.columns)
+
+
+@patch("etna.models.nn.tft.check_prediction_size_value")
+def test_forecast_check_prediction_size_called(check_func, example_tsds):
+    horizon = 10
+    transform = _get_default_transform(horizon)
+    example_tsds.fit_transform([transform])
+    future = example_tsds.make_future(horizon)
+    check_func.return_value = 1
+    model = TFTModel(max_epochs=1, learning_rate=[0.1], gpus=0, batch_size=64)
+
+    model.fit(example_tsds)
+    model.forecast(future, prediction_size=1)
+
+    check_func.assert_called_once()

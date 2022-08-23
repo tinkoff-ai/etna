@@ -7,6 +7,7 @@ from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import Literal
 from typing import Optional
 from typing import Sequence
 from typing import Sized
@@ -20,6 +21,7 @@ from etna import SETTINGS
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
+from etna.models.utils import check_prediction_size_value
 
 if SETTINGS.torch_required:
     import torch
@@ -112,7 +114,7 @@ class FitAbstractModel(ABC):
     @property
     @abstractmethod
     def context_size(self) -> int:
-        """Upper bound to context size of the model."""
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
         pass
 
     @abstractmethod
@@ -155,18 +157,32 @@ class ForecastAbstractModel(ABC):
     """Interface for model with forecast method."""
 
     @abstractmethod
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: Union[Literal["all"], int] = "all") -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
 
         Returns
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
         pass
 
@@ -176,7 +192,11 @@ class PredictIntervalAbstractModel(ABC):
 
     @abstractmethod
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_size: Union[Literal["all"], int] = "all",
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
         """Make predictions.
 
@@ -184,6 +204,13 @@ class PredictIntervalAbstractModel(ABC):
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -193,6 +220,13 @@ class PredictIntervalAbstractModel(ABC):
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
         pass
 
@@ -271,14 +305,16 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         return internal_models
 
     @staticmethod
-    def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
+    def _forecast_segment(
+        model: Any, segment: str, ts: TSDataset, prediction_size: int, *args, **kwargs
+    ) -> pd.DataFrame:
         """Make predictions for one segment."""
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
+        dates = segment_features["timestamp"][-prediction_size:]
         dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features, prediction_size=len(dates), *args, **kwargs)
+        segment_predict = model.predict(df=segment_features, prediction_size=prediction_size, *args, **kwargs)
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
@@ -301,26 +337,49 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
         super().__init__(base_model=base_model)
 
     @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: Union[Literal["all"], int] = "all") -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataframe with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
+
         Returns
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
+        prediction_size = check_prediction_size_value(
+            prediction_size=prediction_size, num_timestamps=len(ts.index), context_size=self.context_size
+        )
+
         result_list = list()
         for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
+            segment_predict = self._forecast_segment(
+                model=model, segment=segment, ts=ts, prediction_size=prediction_size
+            )
             result_list.append(segment_predict)
 
         result_df = pd.concat(result_list, ignore_index=True)
         result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
+        df_wide = ts.to_pandas(flatten=False)
+        df_wide = df_wide.iloc[-prediction_size:]
+        df = TSDataset.to_flatten(df_wide)
         df = df.set_index(["timestamp", "segment"])
         df = df.combine_first(result_df).reset_index()
 
@@ -346,7 +405,11 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
 
     @log_decorator
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_size: Union[Literal["all"], int] = "all",
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
         """Make predictions.
 
@@ -354,6 +417,13 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -363,11 +433,27 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
+        prediction_size = check_prediction_size_value(
+            prediction_size=prediction_size, num_timestamps=len(ts.index), context_size=self.context_size
+        )
+
         result_list = list()
         for segment, model in self._get_model().items():
             segment_predict = self._forecast_segment(
-                model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
+                model=model,
+                segment=segment,
+                ts=ts,
+                prediction_size=prediction_size,
+                prediction_interval=prediction_interval,
+                quantiles=quantiles,
             )
             result_list.append(segment_predict)
 
@@ -418,22 +504,40 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         return self
 
     @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: Union[Literal["all"], int] = "all") -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
 
         Returns
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
+        prediction_size = check_prediction_size_value(
+            prediction_size=prediction_size, num_timestamps=len(ts.index), context_size=self.context_size
+        )
+
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x, prediction_size=horizon).reshape(-1, horizon).T
+        y = self._base_model.predict(x, prediction_size=prediction_size).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts
@@ -516,20 +620,32 @@ class DeepBaseAbstractModel(ABC):
     """Interface for holding class of etna native deep models."""
 
     @abstractmethod
-    def forecast(self, ts: TSDataset, horizon: int) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: Union[Literal["all"], int] = "all") -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features and expected decoder length for context
-        horizon:
-            Horizon to predict for
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
 
         Returns
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
         pass
 
@@ -680,7 +796,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
 
     @property
     def context_size(self) -> int:
-        """Context size of the model."""
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
         return self.encoder_length
 
     @log_decorator
@@ -790,21 +906,37 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         return predictions_dict
 
     @log_decorator
-    def forecast(self, ts: "TSDataset", horizon: int) -> "TSDataset":
+    def forecast(self, ts: "TSDataset", prediction_size: Union[Literal["all"], int] = "all") -> "TSDataset":
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features and expected decoder length for context
-        horizon:
-            Horizon to predict for
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+            By default, ``prediction_size`` is set like we want to predict all points in ``ts``.
+            It is not a viable option for models with ``context_size > 0``,
+            so you need specify exact ``prediction_size`` for them.
 
         Returns
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        ValueError:
+            If model requires context and ``prediction_size`` isn't set.
+        ValueError:
+            If ``prediction_size`` has incorrect value.
         """
+        prediction_size = check_prediction_size_value(
+            prediction_size=prediction_size, num_timestamps=len(ts.index), context_size=self.context_size
+        )
+
         test_dataset = ts.to_torch_dataset(
             make_samples=functools.partial(
                 self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
@@ -812,9 +944,9 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
+        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + prediction_size)
         for (segment, feature_nm), value in predictions.items():
-            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
+            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :]
 
         future_ts.inverse_transform()
 

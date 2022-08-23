@@ -35,7 +35,7 @@ class _TBATSAdapter(BaseAdapter):
         return self
 
     def predict(
-        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float], prediction_size: int
+        self, df: pd.DataFrame, prediction_size: int, prediction_interval: bool, quantiles: Iterable[float]
     ) -> pd.DataFrame:
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")

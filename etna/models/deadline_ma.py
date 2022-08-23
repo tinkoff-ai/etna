@@ -183,7 +183,7 @@ class DeadlineMovingAverageModel(PerSegmentModel):
 
     @property
     def context_size(self) -> int:
-        """Upper bound to context size of the model."""
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
         models = self.get_model()
         model = next(iter(models.values()))
         return model.context_size
