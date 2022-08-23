@@ -193,9 +193,8 @@ filterwarnings = [
     "ignore: Comparison of Timestamp with datetime.date is deprecated in order to",
     "ignore: CountryHoliday is deprecated, use country_holidays instead.",
     "ignore: Exogenous or target data contains None! It will be dropped",
-    "ignore: Given top_k=2 is less than n_segments. Algo will filter data",
+    "ignore: is less than n_segments. Algo will filter data",
     "ignore: Given top_k=30 is bigger than n_features=20. Transform will not filter",
-    "ignore: Given top_k=7 is less than n_segments. Algo will filter data",
     "ignore: Implicitly cleaning up ",
     "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
     "ignore: Mean of empty slice",
@@ -218,10 +217,8 @@ filterwarnings = [
     "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
     "ignore: Exogenous data contains columns with category type! It will be",
     "ignore: Features {'unknown'} are not found and will be dropped!",
-    "ignore: Given top_k=* is less than n_segments. Algo will filter data",
     "ignore: SARIMAX model does not work with exogenous features",
     "ignore: Series.dt.weekofyear and Series.dt.week have been deprecated",
-    "ignore: The 'check_less_precise' keyword in testing.assert_*_equal is deprecated and will be",
     "ignore: The dataloader, train_dataloader, does not have many workers which may",
     "ignore: Creating a tensor from a list of numpy.ndarrays",
     "ignore: Trying to infer the `batch_size` from an ambiguous collection",
@@ -230,6 +227,11 @@ filterwarnings = [
     "ignore: Objective did not converge. You might want to increase the number",
     "ignore: distutils Version classes are deprecated.",
     "ignore: invalid escape sequence",
+    "ignore::pandas.core.common.SettingWithCopyWarning",
+    "ignore: You haven't set all parameters inside class",
+    "ignore: New behaviour in v1.1.5",
+    "ignore: The 'check_less_precise' keyword in testing",
+    "ignore: Feature names only support names that are all strings"
 ]
 markers = [
     "smoke",
