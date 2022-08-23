@@ -46,16 +46,27 @@ def test_mlp_make_samples(simple_df_relevance):
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     df = ts.to_flatten(ts.df)
     encoder_length = 0
-    decoder_length = 4
+    decoder_length = 5
     ts_samples = list(
         MLPNet.make_samples(mlp_module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
     )
     first_sample = ts_samples[0]
     second_sample = ts_samples[1]
+    last_sample = ts_samples[-1]
+
+    expected = {
+        "decoder_real": np.array([[35.0, 0.0], [36.0, 0.0], [37.0, 0.0], [38.0, 0.0], [39.0, 0.0]]),
+        "decoder_target": np.array([[4.0], [5.0], [6.0], [7.0], [8.0]]),
+        "segment": "1",
+    }
 
     assert first_sample["segment"] == "1"
     assert first_sample["decoder_real"].shape == (decoder_length, 2)
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
+    assert len(ts_samples) == 13
+    assert np.all(last_sample["decoder_real"] == expected["decoder_real"])
+    assert np.all(last_sample["decoder_target"] == expected["decoder_target"])
+    assert last_sample["segment"] == expected["segment"]
     np.testing.assert_equal(df[["target"]].iloc[:decoder_length], first_sample["decoder_target"])
     np.testing.assert_equal(df[["target"]].iloc[decoder_length : 2 * decoder_length], second_sample["decoder_target"])
 
