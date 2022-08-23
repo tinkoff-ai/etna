@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Set
 from typing import Union
 
 import pandas as pd
@@ -47,9 +48,8 @@ class NewTransform(ABC, BaseMixin):
         else:
             raise ValueError("in_column attribute is in incorrect format!")
 
-    def _update_dataset(self, ts: TSDataset, df: pd.DataFrame, df_transformed: pd.DataFrame) -> TSDataset:
+    def _update_dataset(self, ts: TSDataset, columns_before: Set[str], df_transformed: pd.DataFrame) -> TSDataset:
         """Update TSDataset based on the difference between dfs."""
-        columns_before = set(df.columns.get_level_values("feature"))
         columns_after = set(df_transformed.columns.get_level_values("feature"))
         columns_to_update = list(set(columns_before) & set(columns_after))
         columns_to_add = list(set(columns_after) - set(columns_before))
@@ -132,8 +132,9 @@ class NewTransform(ABC, BaseMixin):
             Transformed TSDataset.
         """
         df = ts.to_pandas(flatten=False, features=self.required_features)
+        columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._transform(df=df)
-        ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
 
     def fit_transform(self, ts: TSDataset) -> TSDataset:
@@ -153,7 +154,6 @@ class NewTransform(ABC, BaseMixin):
         """
         return self.fit(ts=ts).transform(ts=ts)
 
-    @abstractmethod
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
 
@@ -169,7 +169,7 @@ class NewTransform(ABC, BaseMixin):
         :
             Dataframe after applying inverse transformation.
         """
-        pass
+        return df
 
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
