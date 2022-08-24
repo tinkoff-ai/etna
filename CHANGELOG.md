@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
 - CICD: untaged docker image cleaner ([#856](https://github.com/tinkoff-ai/etna/pull/856))
-- Notebook about forecasting strategies ([#864](https://github.com/tinkoff-ai/etna/pull/863))
 - 
+- Notebook about feature selection ([#875](https://github.com/tinkoff-ai/etna/pull/875))
 - 
 - 
 - Add `ChangePointSegmentationTransform`, `RupturesChangePointsModel` ([#821](https://github.com/tinkoff-ai/etna/issues/821))
