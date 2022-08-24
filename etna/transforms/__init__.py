@@ -1,3 +1,4 @@
+from etna.transforms.base import NewPerSegmentWrapper
 from etna.transforms.base import NewTransform
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
