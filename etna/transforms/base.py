@@ -1,7 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Dict
 from typing import List
+from typing import Optional
+from typing import Set
 from typing import Union
 
 import pandas as pd
@@ -21,6 +24,7 @@ class NewTransform(ABC, BaseMixin):
     def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
         self.in_column = in_column
 
+    @abstractmethod
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
 
@@ -29,7 +33,7 @@ class NewTransform(ABC, BaseMixin):
         :
             List with regressors created by the transform.
         """
-        return []
+        pass
 
     @property
     def required_features(self) -> Union[Literal["all"], List[str]]:
@@ -44,9 +48,8 @@ class NewTransform(ABC, BaseMixin):
         else:
             raise ValueError("in_column attribute is in incorrect format!")
 
-    def _update_dataset(self, ts: TSDataset, df: pd.DataFrame, df_transformed: pd.DataFrame) -> TSDataset:
+    def _update_dataset(self, ts: TSDataset, columns_before: Set[str], df_transformed: pd.DataFrame) -> TSDataset:
         """Update TSDataset based on the difference between dfs."""
-        columns_before = set(df.columns.get_level_values("feature"))
         columns_after = set(df_transformed.columns.get_level_values("feature"))
         columns_to_update = list(set(columns_before) & set(columns_after))
         columns_to_add = list(set(columns_after) - set(columns_before))
@@ -129,8 +132,9 @@ class NewTransform(ABC, BaseMixin):
             Transformed TSDataset.
         """
         df = ts.to_pandas(flatten=False, features=self.required_features)
+        columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._transform(df=df)
-        ts = self._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
 
     def fit_transform(self, ts: TSDataset) -> TSDataset:
@@ -149,6 +153,23 @@ class NewTransform(ABC, BaseMixin):
             Transformed TSDataset.
         """
         return self.fit(ts=ts).transform(ts=ts)
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform dataframe.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to be inverse transformed.
+
+        Returns
+        -------
+        :
+            Dataframe after applying inverse transformation.
+        """
+        return df
 
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
@@ -268,6 +289,61 @@ class PerSegmentWrapper(Transform):
         results = []
         for key, value in self.segment_transforms.items():
             seg_df = value.inverse_transform(df[key])
+
+            _idx = seg_df.columns.to_frame()
+            _idx.insert(0, "segment", key)
+            seg_df.columns = pd.MultiIndex.from_frame(_idx)
+
+            results.append(seg_df)
+        df = pd.concat(results, axis=1)
+        df = df.sort_index(axis=1)
+        df.columns.names = ["segment", "feature"]
+        return df
+
+
+class NewPerSegmentWrapper(NewTransform):
+    """Class to apply transform in per segment manner."""
+
+    def __init__(self, transform: NewTransform):
+        self._base_transform = transform
+        self.segment_transforms: Optional[Dict[str, NewTransform]] = None
+        super().__init__(in_column=transform.in_column)
+
+    def _fit(self, df: pd.DataFrame):
+        """Fit transform on each segment."""
+        self.segment_transforms = {}
+        segments = df.columns.get_level_values("segment").unique()
+        for segment in segments:
+            self.segment_transforms[segment] = deepcopy(self._base_transform)
+            self.segment_transforms[segment]._fit(df[segment])
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply transform to each segment separately."""
+        if self.segment_transforms is None:
+            raise ValueError("Transform is not fitted!")
+
+        results = []
+        for key, value in self.segment_transforms.items():
+            seg_df = value._transform(df[key])
+
+            _idx = seg_df.columns.to_frame()
+            _idx.insert(0, "segment", key)
+            seg_df.columns = pd.MultiIndex.from_frame(_idx)
+
+            results.append(seg_df)
+        df = pd.concat(results, axis=1)
+        df = df.sort_index(axis=1)
+        df.columns.names = ["segment", "feature"]
+        return df
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply inverse_transform to each segment."""
+        if self.segment_transforms is None:
+            raise ValueError("Transform is not fitted!")
+
+        results = []
+        for key, value in self.segment_transforms.items():
+            seg_df = value._inverse_transform(df[key])
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", key)
