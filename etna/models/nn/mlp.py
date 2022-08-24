@@ -136,7 +136,7 @@ class MLPNet(DeepBaseNet):
             yield batch
             start_idx += decoder_length
         if start_idx < len(df):
-            resid_length = len(df) - start_idx
+            resid_length = len(df) - decoder_length
             batch = _make(df=df, start_idx=resid_length, decoder_length=decoder_length)
             if batch is not None:
                 yield batch
