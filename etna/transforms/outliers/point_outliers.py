@@ -57,7 +57,9 @@ class MedianOutliersTransform(OutliersTransform):
         :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
+        return get_anomalies_median(
+            ts=ts, in_column=str(self.in_column), window_size=self.window_size, alpha=self.alpha
+        )
 
 
 class DensityOutliersTransform(OutliersTransform):
@@ -113,7 +115,7 @@ class DensityOutliersTransform(OutliersTransform):
         """
         return get_anomalies_density(
             ts=ts,
-            in_column=self.in_column,
+            in_column=str(self.in_column),
             window_size=self.window_size,
             distance_coef=self.distance_coef,
             n_neighbors=self.n_neighbors,
@@ -165,7 +167,11 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_prediction_interval(
-            ts=ts, model=self.model, interval_width=self.interval_width, in_column=self.in_column, **self.model_kwargs
+            ts=ts,
+            model=self.model,
+            interval_width=self.interval_width,
+            in_column=str(self.in_column),
+            **self.model_kwargs,
         )
 
 
