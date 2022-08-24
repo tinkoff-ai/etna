@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add methods `remove_columns`, `add_columns_from_pandas` to TSDataset ([#809](https://github.com/tinkoff-ai/etna/pull/809))
 - Add `features` parameter to `to_pandas`, `to_flatten` methods of TSDataset ([#809](https://github.com/tinkoff-ai/etna/pull/809))
 - Add `NewPerSegmentWrapper` class ([#879](https://github.com/tinkoff-ai/etna/pull/879))
-- 
+- Add `IrreversibleTransform`, `ReversibleTransform`, `IrreversiblePerSegmentWrapper`, `ReversiblePerSegmentWrapper` classes ([#884](https://github.com/tinkoff-ai/etna/pull/884))
 - 
 ### Changed
 -
