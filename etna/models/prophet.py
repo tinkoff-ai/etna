@@ -19,6 +19,8 @@ if SETTINGS.prophet_required:
 class _ProphetAdapter(BaseAdapter):
     """Class for holding Prophet model."""
 
+    predefined_regressors_names = ("floor", "cap")
+
     def __init__(
         self,
         growth: str = "linear",
@@ -99,7 +101,8 @@ class _ProphetAdapter(BaseAdapter):
         prophet_df["ds"] = df["timestamp"]
         prophet_df[self.regressor_columns] = df[self.regressor_columns]
         for regressor in self.regressor_columns:
-            self.model.add_regressor(regressor)
+            if regressor not in self.predefined_regressors_names:
+                self.model.add_regressor(regressor)
         self.model.fit(prophet_df)
         return self
 

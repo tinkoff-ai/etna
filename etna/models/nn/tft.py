@@ -11,8 +11,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
-from etna.models.base import Model
-from etna.models.base import PredictIntervalAbstractModel
+from etna.models.base import MultiSegmentPredictionIntervalModel
 from etna.models.base import log_decorator
 from etna.models.nn.utils import _DeepCopyMixin
 from etna.transforms import PytorchForecastingTransform
@@ -26,7 +25,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
+class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
     """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
     Notes
@@ -89,6 +88,7 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
         quantiles_kwargs:
             Additional arguments for computing quantiles, look at ``to_quantiles()`` method for your loss.
         """
+        super().__init__()
         if loss is None:
             loss = QuantileLoss()
         self.max_epochs = max_epochs
@@ -163,7 +163,6 @@ class TFTModel(Model, PredictIntervalAbstractModel, _DeepCopyMixin):
             logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
-            checkpoint_callback=False,
             gradient_clip_val=self.gradient_clip_val,
         )
         trainer_kwargs.update(self.trainer_kwargs)
