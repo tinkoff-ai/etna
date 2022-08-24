@@ -42,6 +42,7 @@ def test_required_features(in_column, expected_features):
 
 def test_update_dataset_remove_columns(remove_columns_df):
     df, df_transformed = remove_columns_df
+    columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.drop_features = Mock()
     expected_features_to_remove = list(
@@ -49,27 +50,29 @@ def test_update_dataset_remove_columns(remove_columns_df):
     )
     transform = NewTransformMock()
 
-    transform._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+    transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
     ts.drop_features.assert_called_with(features=expected_features_to_remove, drop_from_exog=False)
 
 
 def test_update_dataset_update_columns(remove_columns_df):
     df, df_transformed = remove_columns_df
+    columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.update_columns_from_pandas = Mock()
     transform = NewTransformMock()
 
-    transform._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+    transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
     ts.update_columns_from_pandas.assert_called()
 
 
 def test_update_dataset_add_columns(remove_columns_df):
     df_transformed, df = remove_columns_df
+    columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.add_columns_from_pandas = Mock()
     transform = NewTransformMock()
 
-    transform._update_dataset(ts=ts, df=df, df_transformed=df_transformed)
+    transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
     ts.add_columns_from_pandas.assert_called()
 
 
@@ -89,8 +92,11 @@ def test_fit_request_correct_columns(in_column, required_features):
     "in_column, required_features",
     [("all", "all"), ("target", ["target"]), (["target", "segment"], ["target", "segment"])],
 )
-def test_transform_request_correct_columns(in_column, required_features):
-    ts = Mock()
+def test_transform_request_correct_columns(remove_columns_df, in_column, required_features):
+    df, _ = remove_columns_df
+    ts = TSDataset(df=df, freq="D")
+    ts.to_pandas = Mock(return_value=df)
+
     transform = NewTransformMock(in_column=in_column)
     transform._update_dataset = Mock()
 
@@ -104,6 +110,7 @@ def test_transform_request_correct_columns(in_column, required_features):
 )
 def test_transform_request_update_dataset(remove_columns_df, in_column, required_features):
     df, _ = remove_columns_df
+    columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.to_pandas = Mock(return_value=df)
 
@@ -111,4 +118,4 @@ def test_transform_request_update_dataset(remove_columns_df, in_column, required
     transform._update_dataset = Mock()
 
     transform.transform(ts=ts)
-    transform._update_dataset.assert_called_with(ts=ts, df=df, df_transformed=df)
+    transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=df)
