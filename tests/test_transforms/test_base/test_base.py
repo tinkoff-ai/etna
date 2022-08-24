@@ -6,10 +6,10 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
-from etna.transforms import NewTransform
+from etna.transforms import IrreversibleTransform
 
 
-class NewTransformMock(NewTransform):
+class NewTransformMock(IrreversibleTransform):
     def get_regressors_info(self) -> List[str]:
         return ["regressor_test"]
 
