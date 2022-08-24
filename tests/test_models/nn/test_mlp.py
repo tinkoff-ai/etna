@@ -48,12 +48,13 @@ def test_mlp_make_samples(simple_df_relevance):
     encoder_length = 0
     decoder_length = 5
     ts_samples = list(
-        MLPNet.make_samples(mlp_module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
+        MLPNet.make_samples(mlp_module, df=df[df.segment == "1"], encoder_length=encoder_length, decoder_length=decoder_length)
     )
     first_sample = ts_samples[0]
     second_sample = ts_samples[1]
     last_sample = ts_samples[-1]
     expected = {
+        "decoder_real": np.array([[58.0, 0], [59.0, 0], [60.0, 0], [61.0, 0], [62.0, 0]]),
         "decoder_target": np.array([[27.0], [28.0], [29.0], [30.0], [31.0]]),
         "segment": "1",
     }
@@ -61,8 +62,9 @@ def test_mlp_make_samples(simple_df_relevance):
     assert first_sample["segment"] == "1"
     assert first_sample["decoder_real"].shape == (decoder_length, 2)
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
-    assert len(ts_samples) == 13
+    assert len(ts_samples) == 7
     assert np.all(last_sample["decoder_target"] == expected["decoder_target"])
+    assert np.all(last_sample["decoder_real"] == expected["decoder_real"])
     assert last_sample["segment"] == expected["segment"]
     np.testing.assert_equal(df[["target"]].iloc[:decoder_length], first_sample["decoder_target"])
     np.testing.assert_equal(df[["target"]].iloc[decoder_length : 2 * decoder_length], second_sample["decoder_target"])
