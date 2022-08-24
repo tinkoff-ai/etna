@@ -48,7 +48,9 @@ def test_mlp_make_samples(simple_df_relevance):
     encoder_length = 0
     decoder_length = 5
     ts_samples = list(
-        MLPNet.make_samples(mlp_module, df=df[df.segment == "1"], encoder_length=encoder_length, decoder_length=decoder_length)
+        MLPNet.make_samples(
+            mlp_module, df=df[df.segment == "1"], encoder_length=encoder_length, decoder_length=decoder_length
+        )
     )
     first_sample = ts_samples[0]
     second_sample = ts_samples[1]
