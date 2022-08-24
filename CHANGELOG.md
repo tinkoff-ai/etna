@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize time complexity of `determine_num_steps`([#864](https://github.com/tinkoff-ai/etna/pull/864))
 - All warning as errors([#880](https://github.com/tinkoff-ai/etna/pull/880))
 - Update .gitignore with .DS_Store and checkpoints ([#883](https://github.com/tinkoff-ai/etna/pull/883))
+- 
+- 
+- 
+- 
+- 
+- 
 
 ## [1.11.1] - 2022-08-03
 ### Fixed
