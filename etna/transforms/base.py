@@ -154,6 +154,49 @@ class NewTransform(ABC, BaseMixin):
         """
         return self.fit(ts=ts).transform(ts=ts)
 
+    @abstractmethod
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform dataframe.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to be inverse transformed.
+
+        Returns
+        -------
+        :
+            Dataframe after applying inverse transformation.
+        """
+        pass
+
+    @abstractmethod
+    def inverse_transform(self, ts: TSDataset) -> TSDataset:
+        """Inverse transform TSDataset.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to be inverse transformed.
+
+        Returns
+        -------
+        :
+            TSDataset after applying inverse transformation.
+        """
+        pass
+
+
+class IrreversibleTransform(NewTransform):
+    """Base class to create irreversible transforms."""
+
+    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
+        super().__init__(in_column=in_column)
+
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
 
@@ -174,7 +217,7 @@ class NewTransform(ABC, BaseMixin):
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
 
-        Should be reimplemented in the subclasses where necessary.
+        Do nothing.
 
         Parameters
         ----------
@@ -186,6 +229,34 @@ class NewTransform(ABC, BaseMixin):
         :
             TSDataset after applying inverse transformation.
         """
+        return ts
+
+
+class ReversibleTransform(NewTransform):
+    """Base class to create reversible transforms."""
+
+    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
+        super().__init__(in_column=in_column)
+
+    def inverse_transform(self, ts: TSDataset) -> TSDataset:
+        """Inverse transform TSDataset.
+
+        Apply the _inverse_transform method.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to be inverse transformed.
+
+        Returns
+        -------
+        :
+            TSDataset after applying inverse transformation.
+        """
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        columns_before = set(df.columns.get_level_values("feature"))
+        df_transformed = self._inverse_transform(df=df)
+        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
 
 
@@ -331,10 +402,25 @@ class NewPerSegmentWrapper(NewTransform):
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)
+
         df = pd.concat(results, axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
         return df
+
+
+class IrreversiblePerSegmentWrapper(NewPerSegmentWrapper, IrreversibleTransform):
+    """Class to apply irreversible transform in per segment manner."""
+
+    def __init__(self, transform: IrreversibleTransform):
+        super().__init__(transform=transform)
+
+
+class ReversiblePerSegmentWrapper(NewPerSegmentWrapper, ReversibleTransform):
+    """Class to apply reversible transform in per segment manner."""
+
+    def __init__(self, transform: ReversibleTransform):
+        super().__init__(transform=transform)
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse_transform to each segment."""
@@ -350,6 +436,7 @@ class NewPerSegmentWrapper(NewTransform):
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)
+
         df = pd.concat(results, axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
