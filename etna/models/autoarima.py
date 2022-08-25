@@ -5,7 +5,6 @@ import pmdarima as pm
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
-# from etna.models.base import PerSegmentPredictionIntervalModel
 from etna.models.base import PerSegmentModel
 from etna.models.base import PredictionIntervalAbstractModel
 from etna.models.sarimax import _SARIMAXBaseAdapter
