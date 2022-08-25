@@ -151,11 +151,36 @@ class FitAbstractModel(ABC):
         pass
 
 
+class PredictionIntervalInterface(ABC):
+    """Interface that is used to select classes that support prediction intervals."""
+
+    pass
+
+
 class ForecastAbstractModel(ABC):
     """Interface for model with forecast method."""
 
+    def _extract_prediction_interval_params(self, **kwargs) -> Dict[str, Any]:
+        extracted_params = {}
+
+        if isinstance(self, PredictionIntervalInterface):
+            prediction_interval = kwargs.get("prediction_interval", False)
+            extracted_params["prediction_interval"] = prediction_interval
+
+            quantiles = kwargs.get("quantiles", (0.025, 0.975))
+            extracted_params["quantiles"] = quantiles
+        else:
+            if "prediction_interval" in kwargs or "quantiles" in kwargs:
+                raise NotImplementedError(f"Model {self.__class__} doesn't support prediction intervals!")
+
+        return extracted_params
+
+    def _extract_prediction_size_params(self, **kwargs):
+        extracted_params = {}
+        return extracted_params
+
     @abstractmethod
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -171,30 +196,30 @@ class ForecastAbstractModel(ABC):
         pass
 
 
-class PredictIntervalAbstractModel(ABC):
-    """Interface for model with forecast method that creates prediction interval."""
-
-    @abstractmethod
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
-
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        pass
+# class PredictIntervalAbstractModel(ABC):
+#     """Interface for model with forecast method that creates prediction interval."""
+#
+#     @abstractmethod
+#     def forecast(
+#         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+#     ) -> TSDataset:
+#         """Make predictions.
+#
+#         Parameters
+#         ----------
+#         ts:
+#             Dataset with features
+#         prediction_interval:
+#             If True returns prediction interval for forecast
+#         quantiles:
+#             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+#
+#         Returns
+#         -------
+#         :
+#             Dataset with predictions
+#         """
+#         pass
 
 
 class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
@@ -301,21 +326,27 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
         super().__init__(base_model=base_model)
 
     @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataframe with features
+
         Returns
         -------
         :
             Dataset with predictions
         """
+        forecast_params = {}
+        forecast_params.update(self._extract_prediction_interval_params(**kwargs))
+        forecast_params.update(self._extract_prediction_size_params(**kwargs))
+
         result_list = list()
         for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
+            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts, **forecast_params)
+
             result_list.append(segment_predict)
 
         result_df = pd.concat(result_list, ignore_index=True)
@@ -330,57 +361,57 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
         return ts
 
 
-class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbstractModel):
-    """Class for holding specific models for per-segment prediction which are able to build prediction intervals."""
-
-    def __init__(self, base_model: Any):
-        """
-        Init PerSegmentPredictionIntervalModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        super().__init__(base_model=base_model)
-
-    @log_decorator
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
-
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        result_list = list()
-        for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(
-                model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
-            )
-            result_list.append(segment_predict)
-
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
-        ts.inverse_transform()
-        return ts
+# class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbstractModel):
+#     """Class for holding specific models for per-segment prediction which are able to build prediction intervals."""
+#
+#     def __init__(self, base_model: Any):
+#         """
+#         Init PerSegmentPredictionIntervalModel.
+#
+#         Parameters
+#         ----------
+#         base_model:
+#             Internal model which will be used to forecast segments, expected to have fit/predict interface
+#         """
+#         super().__init__(base_model=base_model)
+#
+#     @log_decorator
+#     def forecast(
+#         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+#     ) -> TSDataset:
+#         """Make predictions.
+#
+#         Parameters
+#         ----------
+#         ts:
+#             Dataset with features
+#         prediction_interval:
+#             If True returns prediction interval for forecast
+#         quantiles:
+#             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+#
+#         Returns
+#         -------
+#         :
+#             Dataset with predictions
+#         """
+#         result_list = list()
+#         for segment, model in self._get_model().items():
+#             segment_predict = self._forecast_segment(
+#                 model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
+#             )
+#             result_list.append(segment_predict)
+#
+#         result_df = pd.concat(result_list, ignore_index=True)
+#         result_df = result_df.set_index(["timestamp", "segment"])
+#         df = ts.to_pandas(flatten=True)
+#         df = df.set_index(["timestamp", "segment"])
+#         df = df.combine_first(result_df).reset_index()
+#
+#         df = TSDataset.to_dataset(df)
+#         ts.df = df
+#         ts.inverse_transform()
+#         return ts
 
 
 class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
@@ -418,7 +449,7 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         return self
 
     @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -431,9 +462,13 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         :
             Dataset with predictions
         """
+        forecast_params = {}
+        forecast_params.update(self._extract_prediction_interval_params(**kwargs))
+        forecast_params.update(self._extract_prediction_size_params(**kwargs))
+
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x).reshape(-1, horizon).T
+        y = self._base_model.predict(x, **forecast_params).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts
@@ -831,31 +866,31 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         return self.net
 
 
-class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
-    """Class for holding specific models for multi-segment prediction which are able to build prediction intervals."""
-
-    def __init__(self):
-        """Init MultiSegmentPredictionIntervalModel."""
-        self.model = None
-
-    def get_model(self) -> Any:
-        """Get internal model that is used inside etna class.
-
-        Internal model is a model that is used inside etna to forecast segments,
-        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
-
-        Returns
-        -------
-        :
-           Internal model
-        """
-        return self.model
+# class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
+#     """Class for holding specific models for multi-segment prediction which are able to build prediction intervals."""
+#
+#     def __init__(self):
+#         """Init MultiSegmentPredictionIntervalModel."""
+#         self.model = None
+#
+#     def get_model(self) -> Any:
+#         """Get internal model that is used inside etna class.
+#
+#         Internal model is a model that is used inside etna to forecast segments,
+#         e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+#
+#         Returns
+#         -------
+#         :
+#            Internal model
+#         """
+#         return self.model
 
 
 BaseModel = Union[
     PerSegmentModel,
-    PerSegmentPredictionIntervalModel,
+    # PerSegmentPredictionIntervalModel,
     MultiSegmentModel,
     DeepBaseModel,
-    MultiSegmentPredictionIntervalModel,
+    # MultiSegmentPredictionIntervalModel,
 ]
