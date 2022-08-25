@@ -166,6 +166,7 @@ class ForecastAbstractModel(ABC):
 
     def _extract_prediction_interval_params(self, **kwargs) -> Dict[str, Any]:
         extracted_params = {}
+        class_name = self.__class__.__name__
 
         if isinstance(self, PredictionIntervalAbstractModel):
             prediction_interval = kwargs.get("prediction_interval", False)
@@ -175,17 +176,18 @@ class ForecastAbstractModel(ABC):
             extracted_params["quantiles"] = quantiles
         else:
             if "prediction_interval" in kwargs or "quantiles" in kwargs:
-                raise NotImplementedError(f"Model {self.__class__} doesn't support prediction intervals!")
+                raise NotImplementedError(f"Model {class_name} doesn't support prediction intervals!")
 
         return extracted_params
 
     def _extract_prediction_size_params(self, **kwargs):
         extracted_params = {}
+        class_name = self.__class__.__name__
 
         if isinstance(self, ContextRequiredAbstractModel):
             prediction_size = kwargs.get("prediction_size")
             if prediction_size is None:
-                raise ValueError(f"Parameter prediction_size is required for {self.__class__} model!")
+                raise ValueError(f"Parameter prediction_size is required for {class_name} model!")
 
             if not isinstance(prediction_size, int) or prediction_size <= 0:
                 raise ValueError(f"Parameter prediction_size should be positive integer!")
@@ -193,7 +195,7 @@ class ForecastAbstractModel(ABC):
             extracted_params = prediction_size
         else:
             if "prediction_size" in kwargs:
-                raise NotImplementedError(f"Model {self.__class__} doesn't support prediction_size parameter!")
+                raise NotImplementedError(f"Model {class_name} doesn't support prediction_size parameter!")
 
         return extracted_params
 
