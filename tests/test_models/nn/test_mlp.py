@@ -75,7 +75,7 @@ def test_mlp_make_samples(simple_df_relevance):
 def test_mlp_step():
     model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
     batch = {
-        "decoder_real": torch.Tensor([[1, 2, 3], [1, 2, 3]]),
+        "decoder_real": torch.Tensor([[1, 2, 3], [1, 2, 3], [1, 2, 3]]),
         "decoder_target": torch.Tensor([1, 2, 3]),
         "segment": "A",
     }
