@@ -51,7 +51,7 @@ def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsd
     """Checks outliers transforms doesn't change structure of dataframe."""
     transform = transform_constructor(in_column=in_column, **constructor_kwargs)
     start_columns = outliers_solid_tsds.columns
-    outliers_solid_tsds.fit_transform(transforms=[transform])
+    outliers_solid_tsds = transform.fit_transform(ts=outliers_solid_tsds)
     assert np.all(start_columns == outliers_solid_tsds.columns)
 
 
@@ -79,7 +79,7 @@ def test_outliers_detection(transform_constructor, constructor_kwargs, method, o
     for segment in outliers_tsds.segments:
         non_nan_index[segment] = outliers_tsds[:, segment, in_column].dropna().index
     # convert to df to ignore different lengths of series
-    transformed_df = transform.fit_transform(outliers_tsds.to_pandas())
+    transformed_df = transform.fit_transform(outliers_tsds).to_pandas()
     for segment in outliers_tsds.segments:
         nan_timestamps = detection_method_results[segment]
         transformed_column = transformed_df.loc[non_nan_index[segment], pd.IndexSlice[segment, in_column]]
@@ -98,13 +98,14 @@ def test_outliers_detection(transform_constructor, constructor_kwargs, method, o
 def test_inverse_transform_train(transform_constructor, constructor_kwargs, outliers_solid_tsds, in_column):
     """Checks that inverse transform returns dataset to its original form."""
     transform = transform_constructor(in_column=in_column, **constructor_kwargs)
-    original_df = outliers_solid_tsds.df.copy()
-    outliers_solid_tsds.fit_transform([transform])
-    outliers_solid_tsds.inverse_transform()
+    original_df = outliers_solid_tsds.to_pandas()
+    outliers_solid_tsds = transform.fit_transform(ts=outliers_solid_tsds)
+    transform.inverse_transform(ts=outliers_solid_tsds)
 
     assert np.all(original_df == outliers_solid_tsds.df)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("in_column", ["target", "regressor_1"])
 @pytest.mark.parametrize(
     "transform_constructor, constructor_kwargs",
@@ -136,7 +137,7 @@ def test_inverse_transform_future(transform_constructor, constructor_kwargs, out
 def test_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
     """Test that transform for one segment raise error when calling transform without being fit."""
     with pytest.raises(ValueError, match="Transform is not fitted!"):
-        _ = transform.transform(df=outliers_solid_tsds.df)
+        _ = transform.transform(ts=outliers_solid_tsds)
 
 
 @pytest.mark.parametrize(
@@ -150,7 +151,7 @@ def test_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
 def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_tsds):
     """Test that transform for one segment raise error when calling inverse_transform without being fit."""
     with pytest.raises(ValueError, match="Transform is not fitted!"):
-        _ = transform.inverse_transform(df=outliers_solid_tsds.df)
+        _ = transform.inverse_transform(ts=outliers_solid_tsds)
 
 
 @pytest.mark.parametrize(
@@ -162,4 +163,4 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
     ),
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
-    ts_diff_endings.fit_transform([transform])
+    _ = transform.fit_transform(ts_diff_endings)
