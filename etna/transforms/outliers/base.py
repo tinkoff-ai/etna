@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.transforms.base import Transform
+from etna.transforms.base import ReversibleTransform
 
 
-class OutliersTransform(Transform, ABC):
+class OutliersTransform(ReversibleTransform, ABC):
     """Finds outliers in specific columns of DataFrame and replaces it with NaNs."""
 
     def __init__(self, in_column: str):
@@ -23,9 +23,20 @@ class OutliersTransform(Transform, ABC):
         in_column:
             name of processed column
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
         self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
 
     def _save_original_values(self, ts: TSDataset):
         """
@@ -44,7 +55,7 @@ class OutliersTransform(Transform, ABC):
             segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
             self.original_values[segment] = segment_values
 
-    def fit(self, df: pd.DataFrame) -> "OutliersTransform":
+    def _fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
         Find outliers using detection method.
 
@@ -64,7 +75,7 @@ class OutliersTransform(Transform, ABC):
 
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Replace found outliers with NaNs.
 
@@ -80,12 +91,11 @@ class OutliersTransform(Transform, ABC):
         """
         if self.outliers_timestamps is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
-        result_df = df.copy()
         for segment in df.columns.get_level_values("segment").unique():
-            result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
-        return result_df
+            df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
+        return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Inverse transformation. Returns back deleted values.
 
@@ -101,11 +111,10 @@ class OutliersTransform(Transform, ABC):
         """
         if self.original_values is None or self.outliers_timestamps is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
-        result = df.copy()
         for segment in self.original_values.keys():
-            segment_ts = result[segment, self.in_column]
+            segment_ts = df[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
-        return result
+        return df
 
     @abstractmethod
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:

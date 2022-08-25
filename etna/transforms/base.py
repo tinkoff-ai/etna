@@ -23,8 +23,8 @@ class FutureMixin:
 class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
-    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
-        self.in_column = in_column
+    def __init__(self, required_features: Union[Literal["all"], List[str]]):
+        self.required_features = required_features
 
     @abstractmethod
     def get_regressors_info(self) -> List[str]:
@@ -36,19 +36,6 @@ class NewTransform(ABC, BaseMixin):
             List with regressors created by the transform.
         """
         pass
-
-    @property
-    def required_features(self) -> Union[Literal["all"], List[str]]:
-        """Get the list of required features."""
-        required_features = self.in_column
-        if isinstance(required_features, list):
-            return required_features
-        elif isinstance(required_features, str):
-            if required_features == "all":
-                return "all"
-            return [required_features]
-        else:
-            raise ValueError("in_column attribute is in incorrect format!")
 
     def _update_dataset(self, ts: TSDataset, columns_before: Set[str], df_transformed: pd.DataFrame) -> TSDataset:
         """Update TSDataset based on the difference between dfs."""
@@ -156,23 +143,7 @@ class NewTransform(ABC, BaseMixin):
         """
         return self.fit(ts=ts).transform(ts=ts)
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Inverse transform dataframe.
-
-        Should be reimplemented in the subclasses where necessary.
-
-        Parameters
-        ----------
-        df:
-            Dataframe to be inverse transformed.
-
-        Returns
-        -------
-        :
-            Dataframe after applying inverse transformation.
-        """
-        return df
-
+    @abstractmethod
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
 
@@ -188,6 +159,76 @@ class NewTransform(ABC, BaseMixin):
         :
             TSDataset after applying inverse transformation.
         """
+        pass
+
+
+class IrreversibleTransform(NewTransform):
+    """Base class to create irreversible transforms."""
+
+    def __init__(self, required_features: Union[Literal["all"], List[str]]):
+        super().__init__(required_features=required_features)
+
+    def inverse_transform(self, ts: TSDataset) -> TSDataset:
+        """Inverse transform TSDataset.
+
+        Do nothing.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to be inverse transformed.
+
+        Returns
+        -------
+        :
+            TSDataset after applying inverse transformation.
+        """
+        return ts
+
+
+class ReversibleTransform(NewTransform):
+    """Base class to create reversible transforms."""
+
+    def __init__(self, required_features: Union[Literal["all"], List[str]]):
+        super().__init__(required_features=required_features)
+
+    @abstractmethod
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform dataframe.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to be inverse transformed.
+
+        Returns
+        -------
+        :
+            Dataframe after applying inverse transformation.
+        """
+        pass
+
+    def inverse_transform(self, ts: TSDataset) -> TSDataset:
+        """Inverse transform TSDataset.
+
+        Apply the _inverse_transform method.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset to be inverse transformed.
+
+        Returns
+        -------
+        :
+            TSDataset after applying inverse transformation.
+        """
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        columns_before = set(df.columns.get_level_values("feature"))
+        df_transformed = self._inverse_transform(df=df)
+        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
 
 class Transform(SaveMixin, AbstractSaveable, BaseMixin):
@@ -308,7 +349,7 @@ class NewPerSegmentWrapper(NewTransform):
     def __init__(self, transform: NewTransform):
         self._base_transform = transform
         self.segment_transforms: Optional[Dict[str, NewTransform]] = None
-        super().__init__(in_column=transform.in_column)
+        super().__init__(required_features=transform.required_features)
 
     def _fit(self, df: pd.DataFrame):
         """Fit transform on each segment."""
@@ -332,10 +373,25 @@ class NewPerSegmentWrapper(NewTransform):
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)
+
         df = pd.concat(results, axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
         return df
+
+
+class IrreversiblePerSegmentWrapper(NewPerSegmentWrapper, IrreversibleTransform):
+    """Class to apply irreversible transform in per segment manner."""
+
+    def __init__(self, transform: IrreversibleTransform):
+        super().__init__(transform=transform)
+
+
+class ReversiblePerSegmentWrapper(NewPerSegmentWrapper, ReversibleTransform):
+    """Class to apply reversible transform in per segment manner."""
+
+    def __init__(self, transform: ReversibleTransform):
+        super().__init__(transform=transform)
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse_transform to each segment."""
@@ -344,13 +400,14 @@ class NewPerSegmentWrapper(NewTransform):
 
         results = []
         for key, value in self.segment_transforms.items():
-            seg_df = value._inverse_transform(df[key])
+            seg_df = value._inverse_transform(df[key])  # type: ignore
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", key)
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)
+
         df = pd.concat(results, axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
