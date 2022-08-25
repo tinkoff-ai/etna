@@ -109,12 +109,6 @@ class Model(ABC, BaseMixin):
 class FitAbstractModel(ABC):
     """Interface for model with fit method."""
 
-    @property
-    @abstractmethod
-    def context_size(self) -> int:
-        """Upper bound to context size of the model."""
-        pass
-
     @abstractmethod
     def fit(self, ts: TSDataset) -> "FitAbstractModel":
         """Fit model.
@@ -151,16 +145,20 @@ class FitAbstractModel(ABC):
         pass
 
 
-class PredictionIntervalInterface(ABC):
+class PredictionIntervalAbstractModel(ABC):
     """Interface that is used to mark classes that support prediction intervals."""
 
     pass
 
 
-class ContextRequiredInterface(ABC):
+class ContextRequiredAbstractModel(ABC):
     """Interface that is used to mark classes that need context for prediction."""
 
-    pass
+    @property
+    @abstractmethod
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
+        pass
 
 
 class ForecastAbstractModel(ABC):
@@ -169,7 +167,7 @@ class ForecastAbstractModel(ABC):
     def _extract_prediction_interval_params(self, **kwargs) -> Dict[str, Any]:
         extracted_params = {}
 
-        if isinstance(self, PredictionIntervalInterface):
+        if isinstance(self, PredictionIntervalAbstractModel):
             prediction_interval = kwargs.get("prediction_interval", False)
             extracted_params["prediction_interval"] = prediction_interval
 
@@ -184,7 +182,7 @@ class ForecastAbstractModel(ABC):
     def _extract_prediction_size_params(self, **kwargs):
         extracted_params = {}
 
-        if isinstance(self, ContextRequiredInterface):
+        if isinstance(self, ContextRequiredAbstractModel):
             prediction_size = kwargs.get("prediction_size")
             if prediction_size is None:
                 raise ValueError(f"Parameter prediction_size is required for {self.__class__} model!")
@@ -595,7 +593,7 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         return loss
 
 
-class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, ContextRequiredInterface, BaseMixin):
+class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, ContextRequiredAbstractModel, BaseMixin):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(

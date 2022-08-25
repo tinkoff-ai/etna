@@ -11,7 +11,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
-from etna.models.base import PredictionIntervalInterface
+from etna.models.base import PredictionIntervalAbstractModel
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
@@ -154,7 +154,7 @@ class _ProphetAdapter(BaseAdapter):
         return self.model
 
 
-class ProphetModel(PerSegmentModel, PredictionIntervalInterface):
+class ProphetModel(PerSegmentModel, PredictionIntervalAbstractModel):
     """Class for holding Prophet model.
 
     Notes
@@ -198,8 +198,6 @@ class ProphetModel(PerSegmentModel, PredictionIntervalInterface):
     2020-04-15      5.00      7.00      4.00      7.00
     2020-04-16      8.00      6.00      2.00      0.00
     """
-
-    context_size = 0
 
     def __init__(
         self,

@@ -75,8 +75,6 @@ class _SklearnAdapter(BaseAdapter):
 class SklearnPerSegmentModel(PerSegmentModel):
     """Class for holding per segment Sklearn model."""
 
-    context_size = 0
-
     def __init__(self, regressor: RegressorMixin):
         """
         Create instance of SklearnPerSegmentModel with given parameters.
@@ -91,8 +89,6 @@ class SklearnPerSegmentModel(PerSegmentModel):
 
 class SklearnMultiSegmentModel(MultiSegmentModel):
     """Class for holding Sklearn model for all segments."""
-
-    context_size = 0
 
     def __init__(self, regressor: RegressorMixin):
         """

@@ -13,7 +13,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.base import FitAbstractModel
 from etna.models.base import ForecastAbstractModel
-from etna.models.base import PredictionIntervalInterface
+from etna.models.base import PredictionIntervalAbstractModel
 from etna.models.base import log_decorator
 from etna.models.nn.utils import _DeepCopyMixin
 from etna.transforms import PytorchForecastingTransform
@@ -27,7 +27,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class DeepARModel(FitAbstractModel, ForecastAbstractModel, PredictionIntervalInterface, BaseMixin, _DeepCopyMixin):
+class DeepARModel(FitAbstractModel, ForecastAbstractModel, PredictionIntervalAbstractModel, BaseMixin, _DeepCopyMixin):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes
@@ -35,8 +35,6 @@ class DeepARModel(FitAbstractModel, ForecastAbstractModel, PredictionIntervalInt
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
-
-    context_size = 0
 
     def __init__(
         self,

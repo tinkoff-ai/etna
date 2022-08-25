@@ -285,8 +285,6 @@ class HoltWintersModel(PerSegmentModel):
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     """
 
-    context_size = 0
-
     def __init__(
         self,
         trend: Optional[str] = None,
@@ -484,8 +482,6 @@ class HoltModel(HoltWintersModel):
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
 
-    context_size = 0
-
     def __init__(
         self,
         exponential: bool = False,
@@ -582,8 +578,6 @@ class SimpleExpSmoothingModel(HoltWintersModel):
     They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
-
-    context_size = 0
 
     def __init__(
         self,

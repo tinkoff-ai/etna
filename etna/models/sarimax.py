@@ -14,7 +14,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
-from etna.models.base import PredictionIntervalInterface
+from etna.models.base import PredictionIntervalAbstractModel
 from etna.models.utils import determine_num_steps
 
 warnings.filterwarnings(
@@ -353,7 +353,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         return result
 
 
-class SARIMAXModel(PerSegmentModel, PredictionIntervalInterface):
+class SARIMAXModel(PerSegmentModel, PredictionIntervalAbstractModel):
     """
     Class for holding Sarimax model.
 
@@ -364,8 +364,6 @@ class SARIMAXModel(PerSegmentModel, PredictionIntervalInterface):
     additional features what is not known in future, and regressors for features we do know in
     future.
     """
-
-    context_size = 0
 
     def __init__(
         self,
