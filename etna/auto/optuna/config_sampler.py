@@ -24,6 +24,8 @@ class ConfigSampler(BaseSampler):
             pool of configs to sample from
         random_generator:
             numpy generator to get reproducible samples
+        retries:
+            number of retries to get new sample from storage
         """
         self.configs = configs
         self.configs_hash = {config_hash(config=config): config for config in self.configs}
