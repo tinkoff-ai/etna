@@ -2,6 +2,7 @@ from typing import Sequence
 
 from etna.datasets import TSDataset
 from etna.models.base import BaseModel
+from etna.models.base import ContextRequiredInterface
 from etna.models.base import DeepBaseModel
 from etna.models.base import PredictionIntervalInterface
 from etna.pipeline.base import BasePipeline
@@ -54,9 +55,14 @@ class Pipeline(BasePipeline):
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
 
-        if isinstance(self.model, DeepBaseModel):
-            future = self.ts.make_future(future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length)
-            predictions = self.model.forecast(ts=future, horizon=self.horizon)
+        if isinstance(self.model, ContextRequiredInterface):
+            if isinstance(self.model, DeepBaseModel):
+                future = self.ts.make_future(
+                    future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length
+                )
+            else:
+                future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
         else:
             future = self.ts.make_future(self.horizon)
             predictions = self.model.forecast(ts=future)
