@@ -85,7 +85,7 @@ def test_mlp_step():
     assert type(decoder_target) == torch.Tensor
     assert torch.all(decoder_target == batch["decoder_target"])
     assert type(output) == torch.Tensor
-    assert output.shape == torch.Size([2, 1])
+    assert output.shape == torch.Size([3, 1])
 
 
 def test_mlp_layers():
