@@ -23,7 +23,8 @@ class OutliersTransform(ReversibleTransform, ABC):
         in_column:
             name of processed column
         """
-        super().__init__(in_column=in_column)
+        super().__init__(required_features=[in_column])
+        self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
         self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
 

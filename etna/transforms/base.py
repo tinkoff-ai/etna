@@ -21,8 +21,8 @@ class FutureMixin:
 class NewTransform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
-    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
-        self.in_column = in_column
+    def __init__(self, required_features: Union[Literal["all"], List[str]]):
+        self.required_features = required_features
 
     @abstractmethod
     def get_regressors_info(self) -> List[str]:
@@ -34,19 +34,6 @@ class NewTransform(ABC, BaseMixin):
             List with regressors created by the transform.
         """
         pass
-
-    @property
-    def required_features(self) -> Union[Literal["all"], List[str]]:
-        """Get the list of required features."""
-        required_features = self.in_column
-        if isinstance(required_features, list):
-            return required_features
-        elif isinstance(required_features, str):
-            if required_features == "all":
-                return "all"
-            return [required_features]
-        else:
-            raise ValueError("in_column attribute is in incorrect format!")
 
     def _update_dataset(self, ts: TSDataset, columns_before: Set[str], df_transformed: pd.DataFrame) -> TSDataset:
         """Update TSDataset based on the difference between dfs."""
@@ -176,8 +163,8 @@ class NewTransform(ABC, BaseMixin):
 class IrreversibleTransform(NewTransform):
     """Base class to create irreversible transforms."""
 
-    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
-        super().__init__(in_column=in_column)
+    def __init__(self, required_features: Union[Literal["all"], List[str]]):
+        super().__init__(required_features=required_features)
 
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
@@ -200,8 +187,8 @@ class IrreversibleTransform(NewTransform):
 class ReversibleTransform(NewTransform):
     """Base class to create reversible transforms."""
 
-    def __init__(self, in_column: Union[Literal["all"], List[str], str] = "target"):
-        super().__init__(in_column=in_column)
+    def __init__(self, required_features: Union[Literal["all"], List[str]]):
+        super().__init__(required_features=required_features)
 
     @abstractmethod
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -361,7 +348,7 @@ class NewPerSegmentWrapper(NewTransform):
     def __init__(self, transform: NewTransform):
         self._base_transform = transform
         self.segment_transforms: Optional[Dict[str, NewTransform]] = None
-        super().__init__(in_column=transform.in_column)
+        super().__init__(required_features=transform.required_features)
 
     def _fit(self, df: pd.DataFrame):
         """Fit transform on each segment."""
