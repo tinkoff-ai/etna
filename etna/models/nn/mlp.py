@@ -44,8 +44,6 @@ class MLPNet(DeepBaseNet):
         ----------
         input_size:
             size of the input feature space: target plus extra features
-        num_layers:
-            number of layers
         hidden_size:
             list of sizes of the hidden states
         lr:
@@ -68,7 +66,7 @@ class MLPNet(DeepBaseNet):
         layers.append(nn.Linear(in_features=hidden_size[-1], out_features=1))
         self.mlp = nn.Sequential(*layers)
 
-    def forward(self, batch):
+    def forward(self, batch: MLPBatch):  # type: ignore
         """Forward pass.
 
         Parameters
@@ -190,12 +188,12 @@ class MLPModel(DeepBaseModel):
         ----------
         input_size:
             size of the input feature space: target plus extra features
-        encoder_length:
-            encoder length
         decoder_length:
             decoder length
         hidden_size:
             List of sizes of the hidden states
+        encoder_length:
+            encoder length
         lr:
             learning rate
         loss:
