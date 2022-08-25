@@ -1,15 +1,43 @@
+from itertools import chain
+from itertools import permutations
+from itertools import product
+
 import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.datasets import duplicate_data
+from etna.datasets import generate_ar_df
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import get_loc_wide
 
 
 @pytest.fixture
 def df_exog_no_segments() -> pd.DataFrame:
     timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
     df = pd.DataFrame({"timestamp": timestamp, "exog_1": 1, "exog_2": 2, "exog_3": 3})
+    return df
+
+
+@pytest.fixture
+def df_wide() -> pd.DataFrame:
+    df = generate_ar_df(periods=5, start_time="2020-01-01", n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+
+    df_exog = df.copy()
+    df_exog = df_exog.rename(columns={"target": "exog_1"})
+    df_exog["exog_1"] = df_exog["exog_1"] + 1
+    df_exog["exog_2"] = df_exog["exog_1"] + 1
+    df_exog["exog_3"] = df_exog["exog_2"] + 1
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+    df = ts.df
+
+    # make some reorderings for checking corner cases
+    df = df.loc[:, pd.IndexSlice[["segment_2", "segment_0", "segment_1"], ["target", "exog_1", "exog_2", "exog_3"]]]
+
     return df
 
 
@@ -67,3 +95,43 @@ def test_torch_dataset():
 
     assert torch_dataset[0] == ts_samples[0]
     assert len(torch_dataset) == 1
+
+
+def _check_get_loc_wide(df_wide, timestamps, segments, features):
+    obtained_df = get_loc_wide(df_wide, timestamps, segments, features)
+
+    if timestamps is None:
+        timestamps = df_wide.index
+
+    if segments is None:
+        segments = df_wide.columns.get_level_values("segment").unique()
+
+    if features is None:
+        features = df_wide.columns.get_level_values("feature").unique()
+
+    expected_df = df_wide.loc[timestamps, pd.IndexSlice[segments, features]]
+
+    try:
+        pd.testing.assert_frame_equal(obtained_df, expected_df)
+    except AssertionError:
+        x = 10
+
+
+def all_subsets(iterable):
+    s = list(iterable)
+    return chain.from_iterable(permutations(s, r) for r in range(1, len(s) + 1))
+
+
+def test_get_loc_wide(df_wide):
+    possible_timestamps = chain(all_subsets(df_wide.index.tolist()), [None])
+    possible_segments = chain(all_subsets(df_wide.columns.get_level_values("segment").unique().tolist()), [None])
+    possible_features = chain(all_subsets(df_wide.columns.get_level_values("feature").unique().tolist()), [None])
+    iterator = product(possible_timestamps, possible_segments, possible_features)
+
+    idx = 0
+
+    for timestamps, segments, features in iterator:
+        _check_get_loc_wide(df_wide, timestamps, segments, features)
+        idx += 1
+
+    x = 10

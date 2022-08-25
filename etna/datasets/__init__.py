@@ -4,3 +4,4 @@ from etna.datasets.datasets_generation import generate_from_patterns_df
 from etna.datasets.datasets_generation import generate_periodic_df
 from etna.datasets.tsdataset import TSDataset
 from etna.datasets.utils import duplicate_data
+from etna.datasets.utils import get_loc_wide

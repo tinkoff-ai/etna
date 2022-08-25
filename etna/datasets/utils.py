@@ -1,7 +1,9 @@
 from enum import Enum
 from typing import List
+from typing import Optional
 from typing import Sequence
 
+import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
@@ -120,3 +122,37 @@ class _TorchDataset(Dataset):
 
     def __len__(self):
         return len(self.ts_samples)
+
+
+# TODO: test this
+# TODO: add checking on duplicates
+def get_loc_wide(
+    df: pd.DataFrame,
+    timestamps: Optional[Sequence[pd.Timestamp]] = None,
+    segments: Optional[Sequence[str]] = None,
+    features: Optional[Sequence[str]] = None,
+) -> pd.DataFrame:
+    if timestamps is None:
+        timestamps = slice(None)
+
+    if segments is None and features is not None:
+        values = df.loc[timestamps, (slice(None), features)]
+        features_obtained = values.columns.get_level_values("feature").unique()
+        segments = values.columns.get_level_values("segment").unique()
+
+        if list(features_obtained) == list(features):
+            return values
+
+        idx_sorted_obtained = np.argsort(features_obtained)
+        idx_sorted_given = np.argsort(features)
+        inv_idx_sorted_given = np.argsort(idx_sorted_given)
+        permutation_features = idx_sorted_obtained[inv_idx_sorted_given]
+        permutation = np.concatenate([permutation_features + i * len(features) for i in range(len(segments))])
+        return values.iloc[:, permutation]
+    else:
+        if segments is None:
+            segments = slice(None)
+        if features is None:
+            features = slice(None)
+
+        return df.loc[timestamps, (segments, features)]
