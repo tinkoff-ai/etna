@@ -31,7 +31,7 @@ class Optuna:
         directions: Optional[Sequence[Union[OptunaDirection, StudyDirection]]] = None,
         load_if_exists: bool = True,
     ):
-        """Init wrapper for Optune.
+        """Init wrapper for Optuna.
 
         Parameters
         ----------
@@ -85,6 +85,8 @@ class Optuna:
             number of trials to run. N.B. in case of parallel runner, this is number of trials per worker
         timeout:
             timeout for optimization. N.B. in case of parallel runner, this is timeout per worker
+        runner:
+            Runner to use for optimization
         kwargs:
             additional arguments to pass to :py:func:`optuna.study.optimize`
         """
