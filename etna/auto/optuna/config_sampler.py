@@ -25,7 +25,7 @@ class ConfigSampler(BaseSampler):
         random_generator:
             numpy generator to get reproducible samples
         retries:
-            number of retries to get new sample from storage
+            number of retries to get new sample from storage. It could be useful if storage is not reliable.
         """
         self.configs = configs
         self.configs_hash = {config_hash(config=config): config for config in self.configs}
