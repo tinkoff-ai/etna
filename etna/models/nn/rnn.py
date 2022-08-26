@@ -2,10 +2,10 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
-from typing import TypedDict
 
 import numpy as np
 import pandas as pd
+from typing_extensions import TypedDict
 
 from etna import SETTINGS
 
