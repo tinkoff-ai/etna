@@ -50,18 +50,11 @@ class Optuna:
         load_if_exists:
             load study from storage if it exists or raise exception if it doesn't
         """
-        self.sampler = sampler
-        self.storage = storage
-        self.study_name = study_name
-        self.direction = direction
-        self.pruner = pruner
-        self.directions = directions
-        self.load_if_exists = load_if_exists
         self._study = optuna.create_study(
-            storage=self.storage,
-            study_name=self.study_name,
-            direction=self.direction,
-            sampler=self.sampler,
+            storage=storage,
+            study_name=study_name,
+            direction=direction,
+            sampler=sampler,
             load_if_exists=load_if_exists,
             pruner=pruner,
             directions=directions,
