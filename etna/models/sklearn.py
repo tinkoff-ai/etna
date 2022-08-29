@@ -7,6 +7,7 @@ from sklearn.base import RegressorMixin
 
 from etna.models.base import BaseAdapter
 from etna.models.base import MultiSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PerSegmentModel
 
 
@@ -72,7 +73,7 @@ class _SklearnAdapter(BaseAdapter):
         return self.model
 
 
-class SklearnPerSegmentModel(PerSegmentModel):
+class SklearnPerSegmentModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
     """Class for holding per segment Sklearn model."""
 
     def __init__(self, regressor: RegressorMixin):
@@ -87,7 +88,7 @@ class SklearnPerSegmentModel(PerSegmentModel):
         super().__init__(base_model=_SklearnAdapter(regressor=regressor))
 
 
-class SklearnMultiSegmentModel(MultiSegmentModel):
+class SklearnMultiSegmentModel(MultiSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
     """Class for holding Sklearn model for all segments."""
 
     def __init__(self, regressor: RegressorMixin):

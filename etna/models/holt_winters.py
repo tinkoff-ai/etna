@@ -13,6 +13,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters import HoltWintersResults
 
 from etna.models.base import BaseAdapter
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PerSegmentModel
 
 
@@ -276,7 +277,7 @@ class _HoltWintersAdapter(BaseAdapter):
         return self._model
 
 
-class HoltWintersModel(PerSegmentModel):
+class HoltWintersModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
     """
     Holt-Winters' etna model.
 

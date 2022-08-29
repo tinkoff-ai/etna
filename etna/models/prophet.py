@@ -11,7 +11,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.models.base import BaseAdapter
 from etna.models.base import PerSegmentModel
-from etna.models.base import PredictionIntervalAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
@@ -154,7 +154,7 @@ class _ProphetAdapter(BaseAdapter):
         return self.model
 
 
-class ProphetModel(PerSegmentModel, PredictionIntervalAbstractModel):
+class ProphetModel(PerSegmentModel, PredictionIntervalContextIgnorantAbstractModel):
     """Class for holding Prophet model.
 
     Notes

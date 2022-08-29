@@ -2,9 +2,10 @@ from typing import Sequence
 
 from etna.datasets import TSDataset
 from etna.models.base import BaseModel
-from etna.models.base import ContextRequiredAbstractModel
 from etna.models.base import DeepBaseModel
-from etna.models.base import PredictionIntervalAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
@@ -55,7 +56,9 @@ class Pipeline(BasePipeline):
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
 
-        if isinstance(self.model, ContextRequiredAbstractModel):
+        if isinstance(self.model, NonPredictionIntervalContextRequiredAbstractModel) or isinstance(
+            self.model, PredictionIntervalContextRequiredAbstractModel
+        ):
             if isinstance(self.model, DeepBaseModel):
                 future = self.ts.make_future(
                     future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length
@@ -95,9 +98,14 @@ class Pipeline(BasePipeline):
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        if prediction_interval and isinstance(self.model, PredictionIntervalAbstractModel):
+        if prediction_interval and isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
             future = self.ts.make_future(self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
+        elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
+            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            predictions = self.model.forecast(
+                ts=future, prediction_size=self.horizon, prediction_interval=prediction_interval, quantiles=quantiles
+            )
         else:
             predictions = super().forecast(
                 prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds

@@ -6,7 +6,7 @@ from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models.base import PerSegmentModel
-from etna.models.base import PredictionIntervalAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.sarimax import _SARIMAXBaseAdapter
 
 warnings.filterwarnings(
@@ -49,7 +49,7 @@ class _AutoARIMAAdapter(_SARIMAXBaseAdapter):
         return model.arima_res_
 
 
-class AutoARIMAModel(PerSegmentModel, PredictionIntervalAbstractModel):
+class AutoARIMAModel(PerSegmentModel, PredictionIntervalContextIgnorantAbstractModel):
     """
     Class for holding auto arima model.
 

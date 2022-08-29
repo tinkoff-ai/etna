@@ -106,11 +106,11 @@ class Model(ABC, BaseMixin):
         return segment_predict
 
 
-class FitAbstractModel(ABC):
+class AbstractModel(ABC, BaseMixin):
     """Interface for model with fit method."""
 
     @abstractmethod
-    def fit(self, ts: TSDataset) -> "FitAbstractModel":
+    def fit(self, ts: TSDataset) -> "AbstractModel":
         """Fit model.
 
         Parameters
@@ -123,6 +123,10 @@ class FitAbstractModel(ABC):
         :
             Model after fit
         """
+        pass
+
+    @abstractmethod
+    def _forecast(self, ts: TSDataset, **kwargs):
         pass
 
     @abstractmethod
@@ -145,14 +149,26 @@ class FitAbstractModel(ABC):
         pass
 
 
-class PredictionIntervalAbstractModel(ABC):
-    """Interface that is used to mark classes that support prediction intervals."""
+class NonPredictionIntervalAbstractModel(AbstractModel):
+    """Interface for models that don't support prediction intervals."""
 
     pass
 
 
-class ContextRequiredAbstractModel(ABC):
-    """Interface that is used to mark classes that need context for prediction."""
+class PredictionIntervalAbstractModel(AbstractModel):
+    """Interface for models that support prediction intervals."""
+
+    pass
+
+
+class ContextIgnorantAbstractModel(AbstractModel):
+    """Interface for models that don't need context for prediction."""
+
+    pass
+
+
+class ContextRequiredAbstractModel(AbstractModel):
+    """Interface for models that need context for prediction."""
 
     @property
     @abstractmethod
@@ -161,46 +177,12 @@ class ContextRequiredAbstractModel(ABC):
         pass
 
 
-class ForecastAbstractModel(ABC):
-    """Interface for model with forecast method."""
+class NonPredictionIntervalContextIgnorantAbstractModel(
+    NonPredictionIntervalAbstractModel, ContextIgnorantAbstractModel
+):
+    """Interface for models that don't support prediction intervals and don't need context for prediction."""
 
-    def _extract_prediction_interval_params(self, **kwargs) -> Dict[str, Any]:
-        extracted_params = {}
-        class_name = self.__class__.__name__
-
-        if isinstance(self, PredictionIntervalAbstractModel):
-            prediction_interval = kwargs.get("prediction_interval", False)
-            extracted_params["prediction_interval"] = prediction_interval
-
-            quantiles = kwargs.get("quantiles", (0.025, 0.975))
-            extracted_params["quantiles"] = quantiles
-        else:
-            if "prediction_interval" in kwargs or "quantiles" in kwargs:
-                raise NotImplementedError(f"Model {class_name} doesn't support prediction intervals!")
-
-        return extracted_params
-
-    def _extract_prediction_size_params(self, **kwargs):
-        extracted_params = {}
-        class_name = self.__class__.__name__
-
-        if isinstance(self, ContextRequiredAbstractModel):
-            prediction_size = kwargs.get("prediction_size")
-            if prediction_size is None:
-                raise ValueError(f"Parameter prediction_size is required for {class_name} model!")
-
-            if not isinstance(prediction_size, int) or prediction_size <= 0:
-                raise ValueError(f"Parameter prediction_size should be positive integer!")
-
-            extracted_params = prediction_size
-        else:
-            if "prediction_size" in kwargs:
-                raise NotImplementedError(f"Model {class_name} doesn't support prediction_size parameter!")
-
-        return extracted_params
-
-    @abstractmethod
-    def forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+    def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -213,15 +195,98 @@ class ForecastAbstractModel(ABC):
         :
             Dataset with predictions
         """
-        pass
+        return self._forecast(ts=ts)
 
 
-class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
+class NonPredictionIntervalContextRequiredAbstractModel(
+    NonPredictionIntervalAbstractModel, ContextRequiredAbstractModel
+):
+    """Interface for models that don't support prediction intervals and need context for prediction."""
+
+    def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._forecast(ts=ts, prediction_size=prediction_size)
+
+
+class PredictionIntervalContextIgnorantAbstractModel(NonPredictionIntervalAbstractModel, ContextIgnorantAbstractModel):
+    """Interface for models that support prediction intervals and don't need context for prediction."""
+
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+
+
+class PredictionIntervalContextRequiredAbstractModel(NonPredictionIntervalAbstractModel, ContextRequiredAbstractModel):
+    """Interface for models that support prediction intervals and need context for prediction."""
+
+    def forecast(
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._forecast(
+            ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
+        )
+
+
+class PerSegmentModel(AbstractModel):
     """Base class for holding specific models for per-segment prediction."""
 
     def __init__(self, base_model: Any):
         """
-        Init PerSegmentBaseModel.
+        Init PerSegmentModel.
 
         Parameters
         ----------
@@ -232,7 +297,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         self._models: Optional[Dict[str, Any]] = None
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "PerSegmentBaseModel":
+    def fit(self, ts: TSDataset) -> "PerSegmentModel":
         """Fit model.
 
         Parameters
@@ -304,23 +369,8 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
         segment_predict["timestamp"] = dates
         return segment_predict
 
-
-class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
-    """Class for holding specific models for per-segment prediction."""
-
-    def __init__(self, base_model: Any):
-        """
-        Init PerSegmentBaseModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        super().__init__(base_model=base_model)
-
     @log_decorator
-    def forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -333,13 +383,9 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
         :
             Dataset with predictions
         """
-        forecast_params = {}
-        forecast_params.update(self._extract_prediction_interval_params(**kwargs))
-        forecast_params.update(self._extract_prediction_size_params(**kwargs))
-
         result_list = list()
         for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts, **forecast_params)
+            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts, **kwargs)
 
             result_list.append(segment_predict)
 
@@ -355,7 +401,7 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
         return ts
 
 
-class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
+class MultiSegmentModel(AbstractModel):
     """Class for holding specific models for per-segment prediction."""
 
     def __init__(self, base_model: Any):
@@ -390,7 +436,7 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         return self
 
     @log_decorator
-    def forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -403,13 +449,9 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         :
             Dataset with predictions
         """
-        forecast_params = {}
-        forecast_params.update(self._extract_prediction_interval_params(**kwargs))
-        forecast_params.update(self._extract_prediction_size_params(**kwargs))
-
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x, **forecast_params).reshape(-1, horizon).T
+        y = self._base_model.predict(x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts
@@ -490,24 +532,6 @@ class DeepAbstractNet(ABC):
 
 class DeepBaseAbstractModel(ABC):
     """Interface for holding class of etna native deep models."""
-
-    @abstractmethod
-    def forecast(self, ts: TSDataset, horizon: int) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features and expected decoder length for context
-        horizon:
-            Horizon to predict for
-
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        pass
 
     @abstractmethod
     def raw_fit(self, torch_dataset: "Dataset") -> "DeepBaseAbstractModel":
@@ -595,7 +619,7 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         return loss
 
 
-class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, ContextRequiredAbstractModel, BaseMixin):
+class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredAbstractModel):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(
@@ -766,7 +790,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, ContextRequiredAbst
         return predictions_dict
 
     @log_decorator
-    def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+    def _forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
         """Make predictions.
 
         Parameters
@@ -809,7 +833,8 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, ContextRequiredAbst
 
 
 BaseModel = Union[
-    PerSegmentModel,
-    MultiSegmentModel,
-    DeepBaseModel,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+    NonPredictionIntervalContextRequiredAbstractModel,
+    PredictionIntervalContextIgnorantAbstractModel,
+    PredictionIntervalContextRequiredAbstractModel,
 ]

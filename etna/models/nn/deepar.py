@@ -8,12 +8,9 @@ from typing import Union
 import pandas as pd
 
 from etna import SETTINGS
-from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
-from etna.models.base import FitAbstractModel
-from etna.models.base import ForecastAbstractModel
-from etna.models.base import PredictionIntervalAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import log_decorator
 from etna.models.nn.utils import _DeepCopyMixin
 from etna.transforms import PytorchForecastingTransform
@@ -27,7 +24,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class DeepARModel(FitAbstractModel, ForecastAbstractModel, PredictionIntervalAbstractModel, BaseMixin, _DeepCopyMixin):
+class DeepARModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes
@@ -173,7 +170,7 @@ class DeepARModel(FitAbstractModel, ForecastAbstractModel, PredictionIntervalAbs
         return self
 
     @log_decorator
-    def forecast(
+    def _forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
         """

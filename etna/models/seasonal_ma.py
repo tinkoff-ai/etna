@@ -5,6 +5,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PerSegmentModel
 
 
@@ -92,7 +93,7 @@ class _SeasonalMovingAverageModel:
         return y_pred
 
 
-class SeasonalMovingAverageModel(PerSegmentModel):
+class SeasonalMovingAverageModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
     """
     Seasonal moving average.
 

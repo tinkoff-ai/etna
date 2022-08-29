@@ -6,6 +6,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PerSegmentModel
 
 
@@ -155,7 +156,7 @@ class _DeadlineMovingAverageModel:
         return cur_value
 
 
-class DeadlineMovingAverageModel(PerSegmentModel):
+class DeadlineMovingAverageModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
     """Moving average model that uses exact previous dates to predict."""
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
