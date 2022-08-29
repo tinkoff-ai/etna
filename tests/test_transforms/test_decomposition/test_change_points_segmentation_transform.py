@@ -48,7 +48,7 @@ def test_fit_one_segment(pre_transformed_df: pd.DataFrame):
     bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
-    bs.fit(df=pre_transformed_df["segment_1"])
+    bs._fit(df=pre_transformed_df["segment_1"])
     assert bs.intervals is not None
 
 
@@ -58,8 +58,8 @@ def test_transform_format_one_segment(pre_transformed_df: pd.DataFrame):
     bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
-    bs.fit(df=pre_transformed_df["segment_1"])
-    transformed = bs.transform(df=pre_transformed_df["segment_1"])
+    bs._fit(df=pre_transformed_df["segment_1"])
+    transformed = bs._transform(df=pre_transformed_df["segment_1"])
     assert set(transformed.columns) == {"target", OUT_COLUMN}
     assert transformed[OUT_COLUMN].dtype == "category"
 
@@ -70,9 +70,9 @@ def test_monotonously_result(pre_transformed_df: pd.DataFrame):
     bs = _OneSegmentChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
-    bs.fit(df=pre_transformed_df["segment_1"])
+    bs._fit(df=pre_transformed_df["segment_1"])
 
-    transformed = bs.transform(df=pre_transformed_df["segment_1"].copy(deep=True))
+    transformed = bs._transform(df=pre_transformed_df["segment_1"].copy(deep=True))
     result = transformed[OUT_COLUMN].astype(int).values
     assert (result[1:] - result[:-1] >= 0).mean() == 1
 
@@ -84,9 +84,10 @@ def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
     with pytest.raises(ValueError, match="Transform is not fitted!"):
-        _ = transform.transform(df=pre_transformed_df["segment_1"])
+        _ = transform._transform(df=pre_transformed_df["segment_1"])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_backtest(simple_ar_ts):
     model = CatBoostModelPerSegment()
     horizon = 3
@@ -105,20 +106,21 @@ def test_future_and_past_filling(simple_ar_ts):
     )
     before, ts = simple_ar_ts.train_test_split(test_start="2021-06-01")
     train, after = ts.train_test_split(test_start="2021-08-01")
-    bs.fit_transform(train.df)
-    before = bs.transform(before.df)
-    after = bs.transform(after.df)
+    bs.fit_transform(ts=train)
+    before = bs.transform(ts=before)
+    after = bs.transform(ts=after)
     for seg in train.segments:
-        assert np.sum(np.abs(before[seg][OUT_COLUMN].astype(int))) == 0
-        assert (after[seg][OUT_COLUMN].astype(int) == 5).all()
+        assert np.sum(np.abs(before.df[seg][OUT_COLUMN].astype(int))) == 0
+        assert (after.df[seg][OUT_COLUMN].astype(int) == 5).all()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_make_future(simple_ar_ts):
     change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
-    simple_ar_ts.fit_transform(transforms=[bs])
+    simple_ar_ts.fit_transform([bs])
     future = simple_ar_ts.make_future(10)
     for seg in simple_ar_ts.segments:
         assert (future.to_pandas()[seg][OUT_COLUMN].astype(int) == 5).all()

@@ -4,13 +4,13 @@ from typing import Optional
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversiblePerSegmentWrapper
+from etna.transforms.base import IrreversibleTransform
 from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 
 
-class _OneSegmentChangePointsSegmentationTransform(Transform):
+class _OneSegmentChangePointsSegmentationTransform(IrreversibleTransform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(self, in_column: str, out_column: str, change_point_model: BaseChangePointsModelAdapter):
@@ -24,10 +24,20 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         change_point_model:
             model to get change points
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model = change_point_model
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
 
     def _fill_per_interval(self, series: pd.Series) -> pd.Series:
         """Fill values in resulting series."""
@@ -41,7 +51,7 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
             result_series[tmp_series.index] = k
         return result_series.astype(int).astype("category")
 
-    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsSegmentationTransform":
+    def _fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsSegmentationTransform":
         """Fit _OneSegmentChangePointsSegmentationTransform: find change points in ``df`` and build intervals.
 
         Parameters
@@ -62,7 +72,7 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals.
 
         Parameters
@@ -81,7 +91,7 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         return df
 
 
-class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
+class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMixin):
     """ChangePointsSegmentationTransform make label encoder to change points.
 
     Warning
@@ -119,3 +129,12 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
                 change_point_model=self.change_point_model,
             )
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
