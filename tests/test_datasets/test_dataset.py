@@ -714,7 +714,6 @@ def test_to_flatten_raise_error_incorrect_literal(df_and_regressors):
         _ = ts.to_flatten(ts.df, features="incorrect")
 
 
-@pytest.mark.xfail(reason="to_flatten")
 @pytest.mark.parametrize(
     "features, expected_columns",
     (
@@ -925,7 +924,6 @@ def test_update_regressors_after_filter(ts_with_regressors, transforms, expected
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize("return_features", [True, False])
 @pytest.mark.parametrize(
     "columns",
@@ -1031,7 +1029,6 @@ def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, 
     pd.testing.assert_frame_equal(ts.df, df_updated_update_column)
 
 
-@pytest.mark.xfail(reason="to_flatten")
 @pytest.mark.parametrize(
     "features, drop_from_exog, df_expected_columns, df_exog_expected_columns",
     (
