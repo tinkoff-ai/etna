@@ -156,7 +156,6 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
             logger=tslogger.pl_loggers,
             max_epochs=self.max_epochs,
             gpus=self.gpus,
-            checkpoint_callback=False,
             gradient_clip_val=self.gradient_clip_val,
         )
         trainer_kwargs.update(self.trainer_kwargs)

@@ -41,10 +41,12 @@ def determine_num_steps(start_timestamp: pd.Timestamp, end_timestamp: pd.Timesta
 
     # make linear probing, because for complex offsets there is a cycle in `pd.date_range`
     cur_value = 1
+    cur_timestamp = start_timestamp
     while True:
-        timestamps = pd.date_range(start=start_timestamp, periods=cur_value + 1, freq=freq)
+        timestamps = pd.date_range(start=cur_timestamp, periods=2, freq=freq)
         if timestamps[-1] == end_timestamp:
             return cur_value
         elif timestamps[-1] > end_timestamp:
             raise ValueError(f"End timestamp isn't reachable with freq: {freq}")
         cur_value += 1
+        cur_timestamp = timestamps[-1]
