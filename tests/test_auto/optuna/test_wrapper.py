@@ -23,8 +23,7 @@ def objective():
     return _objective
 
 
-def test_optuna_with_grid(grid_sampler, objective):
-    expected_best_params = {"x": 0, "y": 0}
+def test_optuna_with_grid(grid_sampler, objective, expected_best_params={"x": 0, "y": 0}):
     opt = Optuna("minimize", sampler=grid_sampler)
     opt.tune(objective, gc_after_trial=True)
     assert opt.study.best_params == expected_best_params
