@@ -163,7 +163,7 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
 
 
 def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
-    ts = TSDataset(multitrend_df_with_nans_in_tails, freq='D')
+    ts = TSDataset(multitrend_df_with_nans_in_tails, freq="D")
 
     transform = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
@@ -175,7 +175,7 @@ def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
-    ts = TSDataset(df_with_nans, freq='D')
+    ts = TSDataset(df_with_nans, freq="H")
     bs = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
