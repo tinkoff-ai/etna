@@ -572,7 +572,6 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
-        columns = df.columns.get_level_values("feature").unique()
         segments = df.columns.get_level_values("segment").unique()
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
@@ -581,6 +580,7 @@ class TSDataset:
                 raise ValueError("The only possible literal is 'all'")
         else:
             df = df.loc[:, pd.IndexSlice[segments, features]].copy()
+        columns = df.columns.get_level_values("feature").unique()
 
         # flatten dataframe
         df_dict = {}
