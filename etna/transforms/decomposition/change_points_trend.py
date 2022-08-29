@@ -10,8 +10,8 @@ import pandas as pd
 from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import ReversiblePerSegmentWrapper
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 from etna.transforms.utils import match_target_quantiles
@@ -19,7 +19,7 @@ from etna.transforms.utils import match_target_quantiles
 TDetrendModel = Type[RegressorMixin]
 
 
-class _OneSegmentChangePointsTrendTransform(Transform):
+class _OneSegmentChangePointsTrendTransform(ReversibleTransform):
     """_OneSegmentChangePointsTransform subtracts multiple linear trend from series."""
 
     def __init__(
@@ -43,6 +43,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_columns = in_column
         self.ruptures_change_point_model = RupturesChangePointsModel(
@@ -53,6 +54,15 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         self.intervals: Optional[List[TTimestampInterval]] = None
         self.change_point_model = change_point_model
         self.change_point_model_predict_params = change_point_model_predict_params
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
 
     def _init_detrend_models(
         self, intervals: List[TTimestampInterval]
@@ -91,7 +101,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
             trend_series[tmp_series.index] = trend
         return trend_series
 
-    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
+    def _fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
         """Fit OneSegmentChangePointsTransform: find trend change points in ``df``, fit detrend models with data from intervals of stable trend.
 
         Parameters
@@ -110,7 +120,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         self._fit_per_interval_model(series=series)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals of stable trend and subtract trend from each one.
 
         Parameters
@@ -129,7 +139,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         df.loc[:, self.in_column] -= trend_series
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals of stable trend according to previous change point detection and add trend to each one.
 
         Parameters
@@ -153,7 +163,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         return df
 
 
-class ChangePointsTrendTransform(PerSegmentWrapper):
+class ChangePointsTrendTransform(ReversiblePerSegmentWrapper):
     """ChangePointsTrendTransform subtracts multiple linear trend from series.
 
     Warning
@@ -195,3 +205,12 @@ class ChangePointsTrendTransform(PerSegmentWrapper):
                 **self.change_point_model_predict_params,
             )
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
