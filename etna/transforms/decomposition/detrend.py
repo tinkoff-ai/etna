@@ -5,13 +5,14 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
+from typing import List
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import ReversiblePerSegmentWrapper
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
 
-class _OneSegmentLinearTrendBaseTransform(Transform):
+class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
     def __init__(self, in_column: str, regressor: RegressorMixin, poly_degree: int = 1):
@@ -27,6 +28,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         poly_degree:
             degree of polynomial to fit trend on
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.poly_degree = poly_degree
         self._pipeline = Pipeline(
@@ -45,7 +47,16 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         x = x.to_numpy().reshape(series_len, 1)
         return x
 
-    def fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
+
+    def _fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":
         """
         Fit regression detrend_model with data from df.
 
@@ -67,7 +78,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         self._pipeline.fit(x, y)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform data from df: subtract linear trend found by regressor.
 
@@ -81,7 +92,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         pd.DataFrame
             residue after trend subtraction
         """
-        result = df.copy()
+        result = df
         x = self._get_x(df)
         x -= self._x_median
         y = df[self.in_column].values
@@ -90,7 +101,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         result[self.in_column] = no_trend_timeseries
         return result
 
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Fit regression detrend_model with data from df and subtract the trend from df.
 
@@ -104,9 +115,9 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         pd.DataFrame
             residue after trend subtraction
         """
-        return self.fit(df).transform(df)
+        return self._fit(df)._transform(df)
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Inverse transformation for trend subtraction: add trend to prediction.
 
@@ -120,7 +131,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         pd.DataFrame
             data with reconstructed trend
         """
-        result = df.copy()
+        result = df
         x = self._get_x(df)
         x -= self._x_median
         y = df[self.in_column].values
@@ -134,7 +145,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         return result
 
 
-class LinearTrendTransform(PerSegmentWrapper):
+class LinearTrendTransform(ReversiblePerSegmentWrapper):
     """
     Transform that uses :py:class:`sklearn.linear_model.LinearRegression` to find linear or polynomial trend in data.
 
@@ -167,8 +178,17 @@ class LinearTrendTransform(PerSegmentWrapper):
             )
         )
 
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
 
-class TheilSenTrendTransform(PerSegmentWrapper):
+
+class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
     """
     Transform that uses :py:class:`sklearn.linear_model.TheilSenRegressor` to find linear or polynomial trend in data.
 
@@ -205,3 +225,12 @@ class TheilSenTrendTransform(PerSegmentWrapper):
                 poly_degree=self.poly_degree,
             )
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
