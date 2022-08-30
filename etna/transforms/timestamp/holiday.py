@@ -24,11 +24,10 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         out_column:
             name of added column. Use ``self.__repr__()`` if not given.
         """
-        super().__init__(required_features="all")
+        super().__init__(required_features=["target"])
         self.iso_code = iso_code
         self.holidays = holidays.CountryHoliday(iso_code)
-        self.out_column = out_column
-        self.out_column = self.out_column if self.out_column is not None else self.__repr__()
+        self.out_column = out_column if out_column is not None else self.__repr__()
 
     def _fit(self, df: pd.DataFrame) -> "HolidayTransform":
         """
@@ -80,4 +79,4 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         :
             List with regressors created by the transform.
         """
-        return [self.out_column]  # type: ignore
+        return [self.out_column]
