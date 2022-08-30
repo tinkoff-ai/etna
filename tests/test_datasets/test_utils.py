@@ -36,7 +36,7 @@ def df_wide() -> pd.DataFrame:
     df = ts.df
 
     # make some reorderings for checking corner cases
-    df = df.loc[:, pd.IndexSlice[["segment_2", "segment_0", "segment_1"], ["target", "exog_1", "exog_2", "exog_3"]]]
+    df = df.loc[:, pd.IndexSlice[["segment_2", "segment_0", "segment_1"], ["target", "exog_3", "exog_2", "exog_1"]]]
 
     return df
 
