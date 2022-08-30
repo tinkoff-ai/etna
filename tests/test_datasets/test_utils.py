@@ -168,7 +168,7 @@ def test_set_columns_wide(
     )
 
     right_value = df_right.loc[timestamps_right_full, pd.IndexSlice[segments_right_full, features_right_full]]
-    df_expected.loc[timestamps_left_full, pd.IndexSlice[segments_left_full, features_left_full]] = right_value
+    df_expected.loc[timestamps_left_full, pd.IndexSlice[segments_left_full, features_left_full]] = right_value.values
 
     df_expected = df_expected.sort_index(axis=1)
 

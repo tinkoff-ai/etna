@@ -172,6 +172,6 @@ def set_columns_wide(
     features_right_index = slice(None) if features_right is None else features_right
 
     right_value = df_right.loc[timestamps_right_index, (segments_right_index, features_right_index)]
-    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value
+    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left

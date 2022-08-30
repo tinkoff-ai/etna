@@ -73,7 +73,8 @@ class WindowStatisticsTransform(Transform, ABC):
         history = self.seasonality * self.window if self.window != -1 else len(df)
         segments = sorted(df.columns.get_level_values("segment").unique())
 
-        x = df.loc[pd.IndexSlice[:], pd.IndexSlice[segments, self.in_column]].values[::-1]
+        df_slice = df.loc[pd.IndexSlice[:], pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
+        x = df_slice.values[::-1]
 
         # Addend NaNs to obtain a window of length "history" for each point
         x = np.append(x, np.empty((history - 1, x.shape[1])) * np.nan, axis=0)

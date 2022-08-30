@@ -4,6 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
+from etna.datasets import set_columns_wide
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
 
@@ -94,10 +95,12 @@ class LambdaTransform(Transform):
         """
         result = df.copy()
         segments = sorted(set(df.columns.get_level_values("segment")))
-        features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+        features = df.loc[:, pd.IndexSlice[:, self.in_column]]
         transformed_features = self.transform_func(features)
         if self.inplace:
-            result.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed_features
+            result = set_columns_wide(
+                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+            )
         else:
             transformed_features.columns = pd.MultiIndex.from_product([segments, [self.change_column]])
             result = pd.concat([result] + [transformed_features], axis=1)

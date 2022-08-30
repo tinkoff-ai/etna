@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.base import TransformerMixin
 
 from etna.core import StringEnumWithRepr
+from etna.datasets import set_columns_wide
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
 
@@ -93,7 +94,7 @@ class SklearnTransform(Transform):
         -------
         :
         """
-        segments = sorted(set(df.columns.get_level_values("segment")))
+        df = df.sort_index(axis=1)
 
         if self.in_column is None:
             self.in_column = sorted(set(df.columns.get_level_values("feature")))
@@ -104,7 +105,7 @@ class SklearnTransform(Transform):
             self.out_columns = [self._get_column_name(column) for column in self.in_column]
 
         if self.mode == TransformMode.per_segment:
-            x = df.loc[:, (segments, self.in_column)].values
+            x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
         elif self.mode == TransformMode.macro:
             x = self._reshape(df)
         else:
@@ -127,9 +128,11 @@ class SklearnTransform(Transform):
         :
             transformed DataFrame.
         """
+        df = df.sort_index(axis=1)
         segments = sorted(set(df.columns.get_level_values("segment")))
+
         if self.mode == TransformMode.per_segment:
-            x = df.loc[:, (segments, self.in_column)].values
+            x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
             transformed = self.transformer.transform(X=x)
 
         elif self.mode == TransformMode.macro:
@@ -139,11 +142,11 @@ class SklearnTransform(Transform):
         else:
             raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
         if self.inplace:
-            df.loc[:, (segments, self.in_column)] = transformed
+            df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         else:
             transformed_features = pd.DataFrame(
-                transformed, columns=df.loc[:, (segments, self.in_column)].columns, index=df.index
-            )
+                transformed, columns=df.loc[:, pd.IndexSlice[:, self.in_column]].columns, index=df.index
+            ).sort_index(axis=1)
             transformed_features.columns = pd.MultiIndex.from_product([segments, self.out_columns])
             df = pd.concat((df, transformed_features), axis=1)
             df = df.sort_index(axis=1)
@@ -164,7 +167,7 @@ class SklearnTransform(Transform):
         :
             transformed DataFrame.
         """
-        segments = sorted(set(df.columns.get_level_values("segment")))
+        df = df.sort_index(axis=1)
         if self.in_column is None:
             raise ValueError("Transform is not fitted yet.")
 
@@ -177,17 +180,18 @@ class SklearnTransform(Transform):
             quantiles_arrays: Dict[str, pd.DataFrame] = dict()
 
             if self.mode == TransformMode.per_segment:
-                x = df.loc[:, (segments, self.in_column)].values
+                x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
                 transformed = self.transformer.inverse_transform(X=x)
 
                 # quantiles inverse transformation
                 for quantile_column_nm in quantiles:
-                    df_slice_copy = df.loc[:, (segments, self.in_column)].copy()
-                    df_slice_copy.loc[:, (segments, "target")] = df.loc[:, (segments, quantile_column_nm)].values
-                    df_slice_copy.loc[:, (segments, self.in_column)] = self.transformer.inverse_transform(
-                        X=df_slice_copy
+                    df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
+                    df_slice_copy = set_columns_wide(
+                        df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
                     )
-                    quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, (segments, "target")].rename(
+                    transformed_quantile = self.transformer.inverse_transform(X=df_slice_copy)
+                    df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_quantile
+                    quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
                         columns={"target": quantile_column_nm}
                     )
 
@@ -198,28 +202,29 @@ class SklearnTransform(Transform):
 
                 # quantiles inverse transformation
                 for quantile_column_nm in quantiles:
-                    df_slice_copy = df.loc[:, (segments, self.in_column)].copy()
-                    df_slice_copy.loc[:, (segments, "target")] = df.loc[:, (segments, quantile_column_nm)].values
-                    df_slice_copy_reshaped_array = self._reshape(df_slice_copy)
-                    transformed_ = self.transformer.inverse_transform(X=df_slice_copy_reshaped_array)
-                    df_slice_copy.loc[:, (segments, self.in_column)] = self._inverse_reshape(
-                        df_slice_copy, transformed_
+                    df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
+                    df_slice_copy = set_columns_wide(
+                        df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
                     )
-                    quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, (segments, "target")].rename(
+                    df_slice_copy_reshaped_array = self._reshape(df_slice_copy)
+                    transformed_quantile = self.transformer.inverse_transform(X=df_slice_copy_reshaped_array)
+                    inverse_reshaped_quantile = self._inverse_reshape(df_slice_copy, transformed_quantile)
+                    df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = inverse_reshaped_quantile
+                    quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
                         columns={"target": quantile_column_nm}
                     )
 
             else:
                 raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
-            df.loc[:, (segments, self.in_column)] = transformed
+            df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
 
             for quantile_column_nm in quantiles:
-                df.loc[:, (segments, quantile_column_nm)] = quantiles_arrays[quantile_column_nm].values
+                df.loc[:, pd.IndexSlice[:, quantile_column_nm]] = quantiles_arrays[quantile_column_nm].values
         return df
 
     def _reshape(self, df: pd.DataFrame) -> np.ndarray:
         segments = sorted(set(df.columns.get_level_values("segment")))
-        x = df.loc[:, (segments, self.in_column)]
+        x = df.loc[:, pd.IndexSlice[:, self.in_column]]
         x = pd.concat([x[segment] for segment in segments]).values
         return x
 
