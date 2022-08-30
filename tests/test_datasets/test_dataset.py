@@ -1029,7 +1029,7 @@ def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, 
     pd.testing.assert_frame_equal(ts.df, df_updated_update_column)
 
 
-@pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in df!")
+@pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in")
 @pytest.mark.parametrize(
     "features, drop_from_exog, df_expected_columns, df_exog_expected_columns",
     (
@@ -1071,7 +1071,7 @@ def test_drop_features_raise_warning_on_unknown_columns(
         ts.drop_features(features=features, drop_from_exog=False)
 
 
-@pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in df!")
+@pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in")
 @pytest.mark.parametrize(
     "features, expected_regressors",
     (
