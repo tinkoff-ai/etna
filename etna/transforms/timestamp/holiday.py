@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 from typing import Optional
 
 import holidays
@@ -6,8 +7,8 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import IrreversibleTransform, IrreversiblePerSegmentWrapper
-from typing import List
+from etna.transforms.base import IrreversibleTransform
+
 
 class HolidayTransform(IrreversibleTransform, FutureMixin):
     """HolidayTransform generates series that indicates holidays in given dataframe."""
@@ -71,6 +72,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         df = df.join(encoded_df)
         df = df.sort_index(axis=1)
         return df
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
         Returns
@@ -78,4 +80,4 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         :
             List with regressors created by the transform.
         """
-        return [self.out_column]
+        return [self.out_column]  # type: ignore
