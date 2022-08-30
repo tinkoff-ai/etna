@@ -3,7 +3,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
-import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
@@ -124,35 +123,55 @@ class _TorchDataset(Dataset):
         return len(self.ts_samples)
 
 
-# TODO: test this
-# TODO: add checking on duplicates
-def get_loc_wide(
-    df: pd.DataFrame,
-    timestamps: Optional[Sequence[pd.Timestamp]] = None,
-    segments: Optional[Sequence[str]] = None,
-    features: Optional[Sequence[str]] = None,
+def set_columns_wide(
+    df_left: pd.DataFrame,
+    df_right: pd.DataFrame,
+    timestamps_left: Optional[Sequence[pd.Timestamp]] = None,
+    timestamps_right: Optional[Sequence[pd.Timestamp]] = None,
+    segments_left: Optional[Sequence[str]] = None,
+    features_right: Optional[Sequence[str]] = None,
+    features_left: Optional[Sequence[str]] = None,
+    segments_right: Optional[Sequence[str]] = None,
 ) -> pd.DataFrame:
-    if timestamps is None:
-        timestamps = slice(None)
+    """Set columns in a left dataframe with values from the right dataframe.
 
-    if segments is None and features is not None:
-        values = df.loc[timestamps, (slice(None), features)]
-        features_obtained = values.columns.get_level_values("feature").unique()
-        segments = values.columns.get_level_values("segment").unique()
+    Parameters
+    ----------
+    df_left:
+        dataframe to set columns in
+    df_right:
+        dataframe to set columns from
+    timestamps_left:
+        timestamps to select in ``df_left``
+    timestamps_right:
+        timestamps to select in ``df_right``
+    segments_left:
+        segments to select in ``df_left``
+    segments_right:
+        segments to select in ``df_right``
+    features_left:
+        features to select in ``df_left``
+    features_right:
+        features to select in ``df_right``
 
-        if list(features_obtained) == list(features):
-            return values
+    Returns
+    -------
+    :
+        a new dataframe with changed columns
+    """
+    # sort columns
+    df_left = df_left.sort_index(axis=1)
+    df_right = df_right.sort_index(axis=1)
 
-        idx_sorted_obtained = np.argsort(features_obtained)
-        idx_sorted_given = np.argsort(features)
-        inv_idx_sorted_given = np.argsort(idx_sorted_given)
-        permutation_features = idx_sorted_obtained[inv_idx_sorted_given]
-        permutation = np.concatenate([permutation_features + i * len(features) for i in range(len(segments))])
-        return values.iloc[:, permutation]
-    else:
-        if segments is None:
-            segments = slice(None)
-        if features is None:
-            features = slice(None)
+    # prepare indexing
+    timestamps_left_index = slice(None) if timestamps_left is None else timestamps_left
+    timestamps_right_index = slice(None) if timestamps_right is None else timestamps_right
+    segments_left_index = slice(None) if segments_left is None else segments_left
+    segments_right_index = slice(None) if segments_right is None else segments_right
+    features_left_index = slice(None) if features_left is None else features_left
+    features_right_index = slice(None) if features_right is None else features_right
 
-        return df.loc[timestamps, (segments, features)]
+    right_value = df_right.loc[timestamps_right_index, (segments_right_index, features_right_index)]
+    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value
+
+    return df_left
