@@ -208,6 +208,7 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: St
 
 
 @pytest.mark.long
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,
