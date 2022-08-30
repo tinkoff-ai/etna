@@ -62,7 +62,7 @@ def ts_range_const():
 )
 def test_save_transform(ts_non_negative, transform_original, transform_function, out_column):
     ts_copy = TSDataset(ts_non_negative.to_pandas(), freq="D")
-    ts_copy.fit_transform([transform_original])
+    ts_copy = transform_original.fit_transform(ts_copy)
     ts = ts_non_negative
     transform = LambdaTransform(
         in_column="target", out_column=out_column, transform_func=transform_function, inplace=False
