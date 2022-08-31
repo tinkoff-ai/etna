@@ -61,11 +61,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E all -vv
-
-      - name: Install Pytest
-        run: |
-          poetry install -E "all tests"
+          poetry install -E "all tests" -vv
 
       - name: PyTest ("not long")
         run: |
@@ -98,16 +94,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E all -vv
-
-      - name: Install Pytest
-        run: |
-          poetry install -E "all tests"
+          poetry install -E "all tests" -vv
 
       - name: PyTest ("long")
         run: |
