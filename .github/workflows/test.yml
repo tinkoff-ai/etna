@@ -65,7 +65,7 @@ jobs:
 
       - name: Install Pytest
         run: |
-          poetry install -E tests
+          poetry install --with tests
 
       - name: PyTest ("not long")
         run: |
@@ -107,7 +107,7 @@ jobs:
 
       - name: Install Pytest
         run: |
-          poetry install -E tests
+          poetry install --with tests
 
       - name: PyTest ("long")
         run: |
