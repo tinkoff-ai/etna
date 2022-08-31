@@ -8,9 +8,10 @@ from catboost import Pool
 from deprecated import deprecated
 
 from etna.models.base import BaseAdapter
-from etna.models.base import MultiSegmentModel
+from etna.models.base import MultiSegmentModelMixin
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import PerSegmentModelMixin
 
 
 class _CatBoostAdapter(BaseAdapter):
@@ -89,7 +90,11 @@ class _CatBoostAdapter(BaseAdapter):
         return self.model
 
 
-class CatBoostPerSegmentModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
+class CatBoostPerSegmentModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class for holding per segment Catboost model.
 
     Examples
@@ -211,7 +216,11 @@ class CatBoostPerSegmentModel(PerSegmentModel, NonPredictionIntervalContextIgnor
         )
 
 
-class CatBoostMultiSegmentModel(MultiSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
+class CatBoostMultiSegmentModel(
+    MultiSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class for holding Catboost model for all segments.
 
     Examples

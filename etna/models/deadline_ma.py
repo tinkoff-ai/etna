@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import PerSegmentModelMixin
 
 
 class SeasonalityMode(Enum):
@@ -156,7 +157,11 @@ class _DeadlineMovingAverageModel:
         return cur_value
 
 
-class DeadlineMovingAverageModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
+class DeadlineMovingAverageModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Moving average model that uses exact previous dates to predict."""
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
@@ -177,7 +182,7 @@ class DeadlineMovingAverageModel(PerSegmentModel, NonPredictionIntervalContextIg
         )
 
     @property
-    def context_size(self) -> int:
+    def context_size(self) -> int:  # type: ignore
         """Upper bound to context size of the model."""
         models = self.get_model()
         model = next(iter(models.values()))

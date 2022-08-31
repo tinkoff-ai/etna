@@ -141,7 +141,7 @@ def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
 def test_deep_base_model_forecast_inverse_transform_call_check(deep_base_model_mock):
     ts = MagicMock()
     horizon = 7
-    DeepBaseModel._forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
+    DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
     ts.tsdataset_idx_slice.return_value.inverse_transform.assert_called_once()
 
 
@@ -156,7 +156,7 @@ def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock):
     ts_after_tsdataset_idx_slice.df = simple_df.df.iloc[-horizon:]
     ts.tsdataset_idx_slice.return_value = ts_after_tsdataset_idx_slice
 
-    future = DeepBaseModel._forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
+    future = DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
     np.testing.assert_allclose(
         future.df.loc[:, pd.IndexSlice["A", "target"]], raw_predict[("A", "target")][:horizon, 0]
     )

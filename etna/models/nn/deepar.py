@@ -24,7 +24,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class DeepARModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin):
+class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes
@@ -32,6 +32,8 @@ class DeepARModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
+
+    context_size = 0
 
     def __init__(
         self,
@@ -170,7 +172,7 @@ class DeepARModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin
         return self
 
     @log_decorator
-    def _forecast(
+    def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
         """

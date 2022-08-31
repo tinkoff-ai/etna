@@ -3,7 +3,7 @@ from etna.models.autoarima import AutoARIMAModel
 from etna.models.base import BaseAdapter
 from etna.models.base import BaseModel
 from etna.models.base import Model
-from etna.models.base import PerSegmentModel
+from etna.models.base import PerSegmentModelMixin
 from etna.models.catboost import CatBoostModelMultiSegment
 from etna.models.catboost import CatBoostModelPerSegment
 from etna.models.catboost import CatBoostMultiSegmentModel

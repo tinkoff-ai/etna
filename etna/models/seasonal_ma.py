@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import PerSegmentModelMixin
 
 
 class _SeasonalMovingAverageModel:
@@ -93,7 +94,11 @@ class _SeasonalMovingAverageModel:
         return y_pred
 
 
-class SeasonalMovingAverageModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
+class SeasonalMovingAverageModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Seasonal moving average.
 
@@ -123,7 +128,7 @@ class SeasonalMovingAverageModel(PerSegmentModel, NonPredictionIntervalContextIg
         )
 
     @property
-    def context_size(self) -> int:
+    def context_size(self) -> int:  # type: ignore
         """Context size of the model."""
         return self.window * self.seasonality
 

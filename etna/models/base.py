@@ -109,6 +109,12 @@ class Model(ABC, BaseMixin):
 class AbstractModel(ABC, BaseMixin):
     """Interface for model with fit method."""
 
+    @property
+    @abstractmethod
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
+        pass
+
     @abstractmethod
     def fit(self, ts: TSDataset) -> "AbstractModel":
         """Fit model.
@@ -123,10 +129,6 @@ class AbstractModel(ABC, BaseMixin):
         :
             Model after fit
         """
-        pass
-
-    @abstractmethod
-    def _forecast(self, ts: TSDataset, **kwargs):
         pass
 
     @abstractmethod
@@ -149,38 +151,122 @@ class AbstractModel(ABC, BaseMixin):
         pass
 
 
-class NonPredictionIntervalAbstractModel(AbstractModel):
-    """Interface for models that don't support prediction intervals."""
+class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
+    """Interface for models that don't support prediction intervals and don't need context for prediction."""
 
-    pass
+    context_size: int = 0
 
-
-class PredictionIntervalAbstractModel(AbstractModel):
-    """Interface for models that support prediction intervals."""
-
-    pass
-
-
-class ContextIgnorantAbstractModel(AbstractModel):
-    """Interface for models that don't need context for prediction."""
-
-    pass
-
-
-class ContextRequiredAbstractModel(AbstractModel):
-    """Interface for models that need context for prediction."""
-
-    @property
     @abstractmethod
-    def context_size(self) -> int:
-        """Context size of the model. Determines how many history points do we ask to pass to the model."""
+    def forecast(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
         pass
 
 
-class NonPredictionIntervalContextIgnorantAbstractModel(
-    NonPredictionIntervalAbstractModel, ContextIgnorantAbstractModel
-):
-    """Interface for models that don't support prediction intervals and don't need context for prediction."""
+class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
+    """Interface for models that don't support prediction intervals and need context for prediction."""
+
+    @abstractmethod
+    def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
+    """Interface for models that support prediction intervals and don't need context for prediction."""
+
+    context_size: int = 0
+
+    @abstractmethod
+    def forecast(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
+    """Interface for models that support prediction intervals and need context for prediction."""
+
+    @abstractmethod
+    def forecast(
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class ModelForecastMixin(ABC):
+    """Base for mixins."""
+
+    @abstractmethod
+    def _forecast(self, **kwargs) -> TSDataset:
+        pass
+
+
+class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastMixin):
+    """Mixin for models that don't support prediction intervals and don't need context for prediction."""
 
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
@@ -198,10 +284,8 @@ class NonPredictionIntervalContextIgnorantAbstractModel(
         return self._forecast(ts=ts)
 
 
-class NonPredictionIntervalContextRequiredAbstractModel(
-    NonPredictionIntervalAbstractModel, ContextRequiredAbstractModel
-):
-    """Interface for models that don't support prediction intervals and need context for prediction."""
+class NonPredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
+    """Mixin for models that don't support prediction intervals and need context for prediction."""
 
     def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
         """Make predictions.
@@ -222,8 +306,8 @@ class NonPredictionIntervalContextRequiredAbstractModel(
         return self._forecast(ts=ts, prediction_size=prediction_size)
 
 
-class PredictionIntervalContextIgnorantAbstractModel(NonPredictionIntervalAbstractModel, ContextIgnorantAbstractModel):
-    """Interface for models that support prediction intervals and don't need context for prediction."""
+class PredictionIntervalContextIgnorantModelMixin(ModelForecastMixin):
+    """Mixin for models that support prediction intervals and don't need context for prediction."""
 
     def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
@@ -247,8 +331,8 @@ class PredictionIntervalContextIgnorantAbstractModel(NonPredictionIntervalAbstra
         return self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
 
 
-class PredictionIntervalContextRequiredAbstractModel(NonPredictionIntervalAbstractModel, ContextRequiredAbstractModel):
-    """Interface for models that support prediction intervals and need context for prediction."""
+class PredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
+    """Mixin for models that support prediction intervals and need context for prediction."""
 
     def forecast(
         self,
@@ -281,12 +365,12 @@ class PredictionIntervalContextRequiredAbstractModel(NonPredictionIntervalAbstra
         )
 
 
-class PerSegmentModel(AbstractModel):
-    """Base class for holding specific models for per-segment prediction."""
+class PerSegmentModelMixin:
+    """Mixin for holding methods for per-segment prediction."""
 
     def __init__(self, base_model: Any):
         """
-        Init PerSegmentModel.
+        Init PerSegmentModelMixin.
 
         Parameters
         ----------
@@ -297,7 +381,7 @@ class PerSegmentModel(AbstractModel):
         self._models: Optional[Dict[str, Any]] = None
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "PerSegmentModel":
+    def fit(self, ts: TSDataset) -> "PerSegmentModelMixin":
         """Fit model.
 
         Parameters
@@ -401,8 +485,8 @@ class PerSegmentModel(AbstractModel):
         return ts
 
 
-class MultiSegmentModel(AbstractModel):
-    """Class for holding specific models for per-segment prediction."""
+class MultiSegmentModelMixin:
+    """Mixin for holding methods for multi-segment prediction."""
 
     def __init__(self, base_model: Any):
         """
@@ -416,7 +500,7 @@ class MultiSegmentModel(AbstractModel):
         self._base_model = base_model
 
     @log_decorator
-    def fit(self, ts: TSDataset) -> "MultiSegmentModel":
+    def fit(self, ts: TSDataset) -> "MultiSegmentModelMixin":
         """Fit model.
 
         Parameters
@@ -790,7 +874,7 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
         return predictions_dict
 
     @log_decorator
-    def _forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+    def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
         """Make predictions.
 
         Parameters

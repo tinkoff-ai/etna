@@ -25,7 +25,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin):
+class TFTModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
     Notes
@@ -33,6 +33,8 @@ class TFTModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin):
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
+
+    context_size = 0
 
     def __init__(
         self,
@@ -88,7 +90,7 @@ class TFTModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin):
         quantiles_kwargs:
             Additional arguments for computing quantiles, look at ``to_quantiles()`` method for your loss.
         """
-        super().__init__()
+        # super().__init__()
         if loss is None:
             loss = QuantileLoss()
         self.max_epochs = max_epochs
@@ -177,7 +179,7 @@ class TFTModel(PredictionIntervalContextIgnorantAbstractModel, _DeepCopyMixin):
         return self
 
     @log_decorator
-    def _forecast(
+    def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
         """

@@ -14,7 +14,8 @@ from statsmodels.tsa.holtwinters import HoltWintersResults
 
 from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import PerSegmentModelMixin
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -277,7 +278,11 @@ class _HoltWintersAdapter(BaseAdapter):
         return self._model
 
 
-class HoltWintersModel(PerSegmentModel, NonPredictionIntervalContextIgnorantAbstractModel):
+class HoltWintersModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Holt-Winters' etna model.
 
