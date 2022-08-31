@@ -19,7 +19,7 @@ from etna.transforms.decomposition import BinsegTrendTransform
 
 def test_binseg_in_pipeline(example_tsds: TSDataset):
     bs = BinsegTrendTransform(in_column="target")
-    example_tsds.fit_transform([bs])
+    example_tsds = bs.fit_transform(ts=example_tsds)
     for segment in example_tsds.segments:
         assert abs(example_tsds[:, segment, "target"].mean()) < 1
 
@@ -31,8 +31,8 @@ def test_binseg_run_with_custom_costs(example_tsds: TSDataset, custom_cost_class
     """Check that binseg trend works with different custom costs."""
     bs = BinsegTrendTransform(in_column="target", custom_cost=custom_cost_class())
     ts = deepcopy(example_tsds)
-    ts.fit_transform([bs])
-    ts.inverse_transform()
+    ts = bs.fit_transform(ts=ts)
+    ts = bs.inverse_transform(ts=ts)
     assert (ts.df == example_tsds.df).all().all()
 
 
@@ -41,8 +41,8 @@ def test_binseg_run_with_model(example_tsds: TSDataset, model: Any):
     """Check that binseg trend works with different models."""
     bs = BinsegTrendTransform(in_column="target", model=model)
     ts = deepcopy(example_tsds)
-    ts.fit_transform([bs])
-    ts.inverse_transform()
+    ts = bs.fit_transform(ts)
+    ts = bs.inverse_transform(ts)
     assert (ts.df == example_tsds.df).all().all()
 
 
@@ -50,20 +50,22 @@ def test_binseg_runs_with_different_series_length(ts_with_different_series_lengt
     """Check that binseg works with datasets with different length series."""
     bs = BinsegTrendTransform(in_column="target")
     ts = deepcopy(ts_with_different_series_length)
-    ts.fit_transform([bs])
-    ts.inverse_transform()
+    ts = bs.fit_transform(ts)
+    ts =bs.inverse_transform(ts)
     np.allclose(ts.df.values, ts_with_different_series_length.df.values, equal_nan=True)
 
 
 def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails):
     transform = BinsegTrendTransform(in_column="target")
-    transformed = transform.fit_transform(df=df_with_nans_in_tails)
-    for segment in transformed.columns.get_level_values("segment").unique():
-        segment_slice = transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
+    ts = TSDataset(df_with_nans_in_tails, freq='H')
+    transformed = transform.fit_transform(ts=ts)
+    for segment in transformed.df.columns.get_level_values("segment").unique():
+        segment_slice = transformed.df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
         assert abs(segment_slice["target"].mean()) < 0.1
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     transform = BinsegTrendTransform(in_column="target")
+    ts = TSDataset(df_with_nans, freq='H')
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = transform.fit_transform(df=df_with_nans)
+        _ = transform.fit_transform(ts=ts)

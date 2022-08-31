@@ -4,9 +4,10 @@ import pandas as pd
 from ruptures import Binseg
 from ruptures.base import BaseCost
 from sklearn.linear_model import LinearRegression
+from typing import List
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import PerSegmentWrapper
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.decomposition.change_points_trend import BaseEstimator
 from etna.transforms.decomposition.change_points_trend import TDetrendModel
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
@@ -46,7 +47,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
             **change_point_model_predict_params,
         )
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add column with trend, got from the detrend_model.
 
         Parameters
@@ -65,7 +66,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         df[self.out_column] = trend_series
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
 
         Parameters
@@ -81,7 +82,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         return df
 
 
-class _TrendTransform(PerSegmentWrapper):
+class _TrendTransform(ReversiblePerSegmentWrapper):
     """_TrendTransform adds trend as a feature. Creates column '<in_column>_trend'."""
 
     def __init__(
@@ -116,6 +117,15 @@ class _TrendTransform(PerSegmentWrapper):
                 **change_point_model_predict_params,
             )
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return []
 
 
 class TrendTransform(_TrendTransform, FutureMixin):

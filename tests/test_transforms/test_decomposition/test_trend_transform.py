@@ -31,7 +31,7 @@ def test_fit_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
         n_bkps=5,
         out_column=out_column,
     )
-    df_one_segment = trend_transform.fit_transform(df_one_segment)
+    df_one_segment = trend_transform._fit(df_one_segment)._transform(df_one_segment)
     assert sorted(df_one_segment.columns) == sorted(["target", "segment", out_column])
     assert (df_one_segment["target"] == df_one_segment_original["target"]).all()
     residue = df_one_segment["target"] - df_one_segment[out_column]
@@ -49,8 +49,8 @@ def test_inverse_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
         n_bkps=5,
         out_column="test",
     )
-    df_one_segment_transformed = trend_transform.fit_transform(df_one_segment)
-    df_one_segment_inverse_transformed = trend_transform.inverse_transform(df_one_segment)
+    df_one_segment_transformed = trend_transform._fit(df_one_segment)._transform(df_one_segment)
+    df_one_segment_inverse_transformed = trend_transform._inverse_transform(df_one_segment)
     assert (df_one_segment_transformed == df_one_segment_inverse_transformed).all().all()
 
 
@@ -66,7 +66,7 @@ def test_fit_transform_many_segments(example_tsds: TSDataset) -> None:
         n_bkps=5,
         out_column=out_column,
     )
-    example_tsds.fit_transform([trend_transform])
+    example_tsds = trend_transform.fit_transform(ts=example_tsds)
     for segment in example_tsds.segments:
         segment_slice = example_tsds[:, segment, :][segment]
         segment_slice_original = example_tsds_original[:, segment, :][segment]
@@ -86,9 +86,9 @@ def test_inverse_transform_many_segments(example_tsds: TSDataset) -> None:
         n_bkps=5,
         out_column="test",
     )
-    example_tsds.fit_transform([trend_transform])
+    example_tsds = trend_transform.fit_transform(example_tsds)
     original_df = example_tsds.df.copy()
-    example_tsds.inverse_transform()
+    example_tsds = trend_transform.inverse_transform(example_tsds)
     assert (original_df == example_tsds.df).all().all()
 
 
@@ -97,9 +97,9 @@ def test_transform_inverse_transform(example_tsds: TSDataset) -> None:
     Test inverse transform of TrendTransform.
     """
     trend_transform = TrendTransform(in_column="target", detrend_model=LinearRegression(), model="rbf")
-    example_tsds.fit_transform([trend_transform])
+    example_tsds = trend_transform.fit_transform(example_tsds)
     original = example_tsds.df.copy()
-    example_tsds.inverse_transform()
+    example_tsds = trend_transform.inverse_transform(example_tsds)
     assert (example_tsds.df == original).all().all()
 
 
@@ -109,7 +109,7 @@ def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
     trend_transform = TrendTransform(
         in_column="target", detrend_model=LinearRegression(), model="rbf", out_column=out_column
     )
-    result = trend_transform.fit_transform(example_tsds.df)
+    result = trend_transform.fit_transform(example_tsds).df
     for seg in result.columns.get_level_values(0).unique():
         assert out_column in result[seg].columns
 
@@ -118,15 +118,16 @@ def test_transform_interface_repr(example_tsds: TSDataset) -> None:
     """Test transform interface without out_column param"""
     trend_transform = TrendTransform(in_column="target", detrend_model=LinearRegression(), model="rbf")
     out_column = f"{trend_transform.__repr__()}"
-    result = trend_transform.fit_transform(example_tsds.df)
+    result = trend_transform.fit_transform(example_tsds).df
     for seg in result.columns.get_level_values(0).unique():
         assert out_column in result[seg].columns
 
 
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
+    ts = TSDataset(df_with_nans_in_tails, freq='H')
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf", out_column="regressor_result")
-    transformed = transform.fit_transform(df=df_with_nans_in_tails)
+    transformed = transform.fit_transform(ts=ts).df
     for segment in transformed.columns.get_level_values("segment").unique():
         segment_slice = transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
         residue = segment_slice["target"] - segment_slice["regressor_result"]
@@ -135,6 +136,7 @@ def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
 
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans, model):
+    ts = TSDataset(df_with_nans, freq='H')
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = transform.fit_transform(df=df_with_nans)
+        _ = transform.fit_transform(ts=ts)

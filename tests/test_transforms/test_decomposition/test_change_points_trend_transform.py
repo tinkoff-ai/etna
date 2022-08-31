@@ -113,7 +113,7 @@ def test_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: p
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs._fit(df=multitrend_df["segment_1"])
-    transformed = bs.transform(pre_multitrend_df["segment_1"])
+    transformed = bs._transform(pre_multitrend_df["segment_1"])
     expected = [x * 0.4 for x in list(range(31, 0, -1))]
     np.testing.assert_array_almost_equal(transformed["target"], expected, decimal=10)
 
@@ -124,7 +124,7 @@ def test_inverse_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitre
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs._fit(df=multitrend_df["segment_1"])
-    inversed = bs.inverse_transform(pre_multitrend_df["segment_1"])
+    inversed = bs._inverse_transform(pre_multitrend_df["segment_1"])
     expected = [x * (-0.4) for x in list(range(31, 0, -1))]
     np.testing.assert_array_almost_equal(inversed["target"], expected, decimal=10)
 
@@ -135,7 +135,7 @@ def test_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df:
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
     )
     bs._fit(df=multitrend_df["segment_1"])
-    transformed = bs.transform(post_multitrend_df["segment_1"])
+    transformed = bs._transform(post_multitrend_df["segment_1"])
     # trend + last point of seen data + trend for offset interval
     expected = [abs(x * (-0.6) - 52.6 - 0.6 * 30) for x in list(range(1, 32))]
     np.testing.assert_array_almost_equal(transformed["target"], expected, decimal=10)

@@ -97,7 +97,7 @@ def _test_unbiased_fit_transform_one_segment(
     comparison_kwargs:
         arguments for numpy.testing.assert_almost_equal function in key-value format
     """
-    residue = trend_transform._fit_transform(df)["target"].mean()
+    residue = trend_transform._fit(df)._transform(df)["target"].mean()
     npt.assert_almost_equal(residue, 0, **comparison_kwargs)
 
 
@@ -134,7 +134,7 @@ def _test_fit_transform_one_segment(
     comparison_kwargs:
         arguments for numpy.testing.assert_allclose function in key-value format
     """
-    residue = trend_transform._fit_transform(df)
+    residue = trend_transform._fit(df)._transform(df)
     residue = residue[~np.isnan(residue)]
     npt.assert_allclose(residue, 0, **comparison_kwargs)
 
