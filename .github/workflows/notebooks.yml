@@ -30,11 +30,7 @@ jobs:
           virtualenvs-in-project: true
       - name: Install dependencies
         run: |
-          poetry install -E all -vv
-      - name: Install Jupyter
-        run: |
-          poetry install -E release
-          poetry install -E jupyter
+          poetry install -E "all release jupyter" -vv
       - name: Notebook runner
         run: |
           poetry run python -m scripts.notebook_runner
