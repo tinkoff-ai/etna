@@ -6,10 +6,10 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.transforms.base import IrreversiblePerSegmentWrapper
-from etna.transforms.base import IrreversiblOneSegmentTransform
+from etna.transforms.base import OneSegmentTransform
 
 
-class _OneSegmentResampleWithDistributionTransform(IrreversiblOneSegmentTransform):
+class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
     """_OneSegmentResampleWithDistributionTransform resamples the given column using the distribution of the other column."""
 
     def __init__(self, in_column: str, distribution_column: str, inplace: bool, out_column: str):
@@ -100,6 +100,10 @@ class _OneSegmentResampleWithDistributionTransform(IrreversiblOneSegmentTransfor
         df = df.reset_index().merge(self.distribution, on="fold").set_index("timestamp").sort_index()
         df[self.out_column] = df[self.in_column].ffill() * df["distribution"]
         df = df.drop(["fold", "distribution"], axis=1)
+        return df
+
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform Dataframe."""
         return df
 
 
