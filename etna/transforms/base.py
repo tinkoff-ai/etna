@@ -412,27 +412,6 @@ class OneSegmentTransform(ABC, BaseMixin):
         pass
 
 
-class IrreversiblOneSegmentTransform(OneSegmentTransform):
-    """Base class to create irreversible one segment transforms."""
-
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Inverse transform Dataframe.
-
-        Should be reimplemented in the subclasses where necessary.
-
-        Parameters
-        ----------
-        df:
-            Dataframe in etna long format to be inverse transformed.
-
-        Returns
-        -------
-        :
-            Dataframe after applying inverse transformation.
-        """
-        return df
-
-
 class NewPerSegmentWrapper(NewTransform):
     """Class to apply transform in per segment manner."""
 
@@ -473,7 +452,7 @@ class NewPerSegmentWrapper(NewTransform):
 class IrreversiblePerSegmentWrapper(NewPerSegmentWrapper, IrreversibleTransform):
     """Class to apply irreversible transform in per segment manner."""
 
-    def __init__(self, transform: IrreversiblOneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
+    def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
         super().__init__(transform=transform, required_features=required_features)
 
 
