@@ -40,6 +40,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Python
+        id: setup-python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
@@ -55,16 +56,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E all -vv
-
-      - name: Install Pytest
-        run: |
-          poetry install -E tests
+          poetry install -E "all tests" -vv
 
       - name: PyTest ("not long")
         run: |
@@ -81,6 +78,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up Python
+        id: setup-python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
@@ -96,16 +94,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E all -vv
-
-      - name: Install Pytest
-        run: |
-          poetry install -E tests
+          poetry install -E "all tests" -vv
 
       - name: PyTest ("long")
         run: |
