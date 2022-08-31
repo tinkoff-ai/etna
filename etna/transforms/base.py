@@ -342,13 +342,83 @@ class PerSegmentWrapper(Transform):
         return df
 
 
+class OneSegmentTransform(ABC, BaseMixin):
+    """Base class to create one segment transforms to apply to data."""
+
+    @abstractmethod
+    def fit(self, df: pd.DataFrame):
+        """Fit the transform.
+
+        Should be implemented by user.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna long format.
+        """
+        pass
+
+    @abstractmethod
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Transform dataframe.
+
+        Should be implemented by user
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna long format.
+
+        Returns
+        -------
+        :
+            Transformed Dataframe in etna long format.
+        """
+        pass
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Fit and transform Dataframe.
+
+        May be reimplemented. But it is not recommended.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna long format to transform.
+
+        Returns
+        -------
+        :
+            Transformed Dataframe.
+        """
+        return self.fit(df=df).transform(df=df)
+
+    @abstractmethod
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform Dataframe.
+
+        Should be reimplemented in the subclasses where necessary.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in etna long format to be inverse transformed.
+
+        Returns
+        -------
+        :
+            Dataframe after applying inverse transformation.
+        """
+        pass
+
+
 class NewPerSegmentWrapper(NewTransform):
     """Class to apply transform in per segment manner."""
 
-    def __init__(self, transform: NewTransform):
+    def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
         self._base_transform = transform
-        self.segment_transforms: Optional[Dict[str, NewTransform]] = None
-        super().__init__(required_features=transform.required_features)
+        self.segment_transforms: Optional[Dict[str, OneSegmentTransform]] = None
+        super().__init__(required_features=required_features)
 
     def _fit(self, df: pd.DataFrame):
         """Fit transform on each segment."""
@@ -356,7 +426,7 @@ class NewPerSegmentWrapper(NewTransform):
         segments = df.columns.get_level_values("segment").unique()
         for segment in segments:
             self.segment_transforms[segment] = deepcopy(self._base_transform)
-            self.segment_transforms[segment]._fit(df[segment])
+            self.segment_transforms[segment].fit(df[segment])
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply transform to each segment separately."""
@@ -364,11 +434,11 @@ class NewPerSegmentWrapper(NewTransform):
             raise ValueError("Transform is not fitted!")
 
         results = []
-        for key, value in self.segment_transforms.items():
-            seg_df = value._transform(df[key])
+        for segment, transform in self.segment_transforms.items():
+            seg_df = transform.transform(df[segment])
 
             _idx = seg_df.columns.to_frame()
-            _idx.insert(0, "segment", key)
+            _idx.insert(0, "segment", segment)
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)
@@ -382,15 +452,15 @@ class NewPerSegmentWrapper(NewTransform):
 class IrreversiblePerSegmentWrapper(NewPerSegmentWrapper, IrreversibleTransform):
     """Class to apply irreversible transform in per segment manner."""
 
-    def __init__(self, transform: IrreversibleTransform):
-        super().__init__(transform=transform)
+    def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
+        super().__init__(transform=transform, required_features=required_features)
 
 
 class ReversiblePerSegmentWrapper(NewPerSegmentWrapper, ReversibleTransform):
     """Class to apply reversible transform in per segment manner."""
 
-    def __init__(self, transform: ReversibleTransform):
-        super().__init__(transform=transform)
+    def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
+        super().__init__(transform=transform, required_features=required_features)
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse_transform to each segment."""
@@ -398,11 +468,11 @@ class ReversiblePerSegmentWrapper(NewPerSegmentWrapper, ReversibleTransform):
             raise ValueError("Transform is not fitted!")
 
         results = []
-        for key, value in self.segment_transforms.items():
-            seg_df = value._inverse_transform(df[key])  # type: ignore
+        for segment, transform in self.segment_transforms.items():
+            seg_df = transform.inverse_transform(df[segment])
 
             _idx = seg_df.columns.to_frame()
-            _idx.insert(0, "segment", key)
+            _idx.insert(0, "segment", segment)
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)
