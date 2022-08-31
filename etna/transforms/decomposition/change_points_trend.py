@@ -10,8 +10,8 @@ import pandas as pd
 from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
-from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 from etna.transforms.utils import match_target_quantiles
@@ -204,7 +204,7 @@ class ChangePointsTrendTransform(ReversiblePerSegmentWrapper):
                 detrend_model=self.detrend_model,
                 **self.change_point_model_predict_params,
             ),
-            required_features=[in_column]
+            required_features=[in_column],
         )
 
     def get_regressors_info(self) -> List[str]:

@@ -51,13 +51,13 @@ def test_binseg_runs_with_different_series_length(ts_with_different_series_lengt
     bs = BinsegTrendTransform(in_column="target")
     ts = deepcopy(ts_with_different_series_length)
     ts = bs.fit_transform(ts)
-    ts =bs.inverse_transform(ts)
+    ts = bs.inverse_transform(ts)
     np.allclose(ts.df.values, ts_with_different_series_length.df.values, equal_nan=True)
 
 
 def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails):
     transform = BinsegTrendTransform(in_column="target")
-    ts = TSDataset(df_with_nans_in_tails, freq='H')
+    ts = TSDataset(df_with_nans_in_tails, freq="H")
     transformed = transform.fit_transform(ts=ts)
     for segment in transformed.df.columns.get_level_values("segment").unique():
         segment_slice = transformed.df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
@@ -66,6 +66,6 @@ def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails):
 
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     transform = BinsegTrendTransform(in_column="target")
-    ts = TSDataset(df_with_nans, freq='H')
+    ts = TSDataset(df_with_nans, freq="H")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = transform.fit_transform(ts=ts)

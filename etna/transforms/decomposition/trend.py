@@ -1,10 +1,10 @@
+from typing import List
 from typing import Optional
 
 import pandas as pd
 from ruptures import Binseg
 from ruptures.base import BaseCost
 from sklearn.linear_model import LinearRegression
-from typing import List
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import ReversiblePerSegmentWrapper
@@ -115,7 +115,8 @@ class _TrendTransform(ReversiblePerSegmentWrapper):
                 change_point_model=change_point_model,
                 detrend_model=detrend_model,
                 **change_point_model_predict_params,
-            )
+            ),
+            required_features=[in_column],
         )
 
     def get_regressors_info(self) -> List[str]:

@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
@@ -5,10 +7,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
-from typing import List
 
-from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -176,7 +177,7 @@ class LinearTrendTransform(ReversiblePerSegmentWrapper):
                 regressor=LinearRegression(**self.regression_params),
                 poly_degree=self.poly_degree,
             ),
-            required_features=[in_column]
+            required_features=[in_column],
         )
 
     def get_regressors_info(self) -> List[str]:
@@ -225,7 +226,7 @@ class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
                 regressor=TheilSenRegressor(**self.regression_params),
                 poly_degree=self.poly_degree,
             ),
-            required_features=[in_column]
+            required_features=[in_column],
         )
 
     def get_regressors_info(self) -> List[str]:

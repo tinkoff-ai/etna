@@ -86,7 +86,8 @@ def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.transform(df=pre_transformed_df["segment_1"])
 
-@pytest.mark.xfail(reason='TSDataset 2.0')
+
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_backtest(simple_ar_ts):
     model = CatBoostModelPerSegment()
     horizon = 3
@@ -112,7 +113,8 @@ def test_future_and_past_filling(simple_ar_ts):
         assert np.sum(np.abs(before[seg][OUT_COLUMN].astype(int))) == 0
         assert (after[seg][OUT_COLUMN].astype(int) == 5).all()
 
-@pytest.mark.xfail(reason='TSDataset 2.0')
+
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_make_future(simple_ar_ts):
     change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(

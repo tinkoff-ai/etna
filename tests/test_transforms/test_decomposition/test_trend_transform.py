@@ -125,7 +125,7 @@ def test_transform_interface_repr(example_tsds: TSDataset) -> None:
 
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
-    ts = TSDataset(df_with_nans_in_tails, freq='H')
+    ts = TSDataset(df_with_nans_in_tails, freq="H")
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf", out_column="regressor_result")
     transformed = transform.fit_transform(ts=ts).df
     for segment in transformed.columns.get_level_values("segment").unique():
@@ -136,7 +136,7 @@ def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
 
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans, model):
-    ts = TSDataset(df_with_nans, freq='H')
+    ts = TSDataset(df_with_nans, freq="H")
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = transform.fit_transform(ts=ts)
