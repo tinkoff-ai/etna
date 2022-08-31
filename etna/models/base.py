@@ -258,7 +258,7 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
 
 
 class ModelForecastMixin(ABC):
-    """Base for mixins."""
+    """Base class for model mixins."""
 
     @abstractmethod
     def _forecast(self, **kwargs) -> TSDataset:
@@ -365,7 +365,7 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
         )
 
 
-class PerSegmentModelMixin:
+class PerSegmentModelMixin(ModelForecastMixin):
     """Mixin for holding methods for per-segment prediction."""
 
     def __init__(self, base_model: Any):
@@ -485,7 +485,7 @@ class PerSegmentModelMixin:
         return ts
 
 
-class MultiSegmentModelMixin:
+class MultiSegmentModelMixin(ModelForecastMixin):
     """Mixin for holding methods for multi-segment prediction."""
 
     def __init__(self, base_model: Any):
