@@ -139,7 +139,7 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     df_inverse_transformed = ts.to_pandas(flatten=True)
     assert df_inverse_transformed["target"].equals(df["target"])
 
-
+@pytest.mark.parametrize(reason='TSDataset 2.0')
 @pytest.mark.parametrize("model_stl", ["arima", "holt"])
 def test_forecast(ts_trend_seasonal, model_stl):
     """Test that transform works correctly in forecast."""

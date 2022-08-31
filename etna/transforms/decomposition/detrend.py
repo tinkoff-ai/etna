@@ -8,11 +8,11 @@ from sklearn.preprocessing import PolynomialFeatures
 from typing import List
 
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.base import ReversibleTransform
+from etna.transforms.base import OneSegmentTransform
 from etna.transforms.utils import match_target_quantiles
 
 
-class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
+class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
     """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
 
     def __init__(self, in_column: str, regressor: RegressorMixin, poly_degree: int = 1):
@@ -28,7 +28,7 @@ class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
         poly_degree:
             degree of polynomial to fit trend on
         """
-        super().__init__(required_features=[in_column])
+        super().__init__()
         self.in_column = in_column
         self.poly_degree = poly_degree
         self._pipeline = Pipeline(
@@ -56,7 +56,7 @@ class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
         """
         return []
 
-    def _fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":
         """
         Fit regression detrend_model with data from df.
 
@@ -78,7 +78,7 @@ class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
         self._pipeline.fit(x, y)
         return self
 
-    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform data from df: subtract linear trend found by regressor.
 
@@ -101,7 +101,7 @@ class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
         result[self.in_column] = no_trend_timeseries
         return result
 
-    def _fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Fit regression detrend_model with data from df and subtract the trend from df.
 
@@ -115,9 +115,9 @@ class _OneSegmentLinearTrendBaseTransform(ReversibleTransform):
         pd.DataFrame
             residue after trend subtraction
         """
-        return self._fit(df)._transform(df)
+        return self.fit(df).transform(df)
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Inverse transformation for trend subtraction: add trend to prediction.
 
@@ -175,7 +175,8 @@ class LinearTrendTransform(ReversiblePerSegmentWrapper):
                 in_column=self.in_column,
                 regressor=LinearRegression(**self.regression_params),
                 poly_degree=self.poly_degree,
-            )
+            ),
+            required_features=[in_column]
         )
 
     def get_regressors_info(self) -> List[str]:
@@ -223,7 +224,8 @@ class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
                 in_column=self.in_column,
                 regressor=TheilSenRegressor(**self.regression_params),
                 poly_degree=self.poly_degree,
-            )
+            ),
+            required_features=[in_column]
         )
 
     def get_regressors_info(self) -> List[str]:

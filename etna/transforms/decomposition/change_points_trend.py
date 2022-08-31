@@ -11,7 +11,7 @@ from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.base import ReversibleTransform
+from etna.transforms.base import OneSegmentTransform
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 from etna.transforms.utils import match_target_quantiles
@@ -19,7 +19,7 @@ from etna.transforms.utils import match_target_quantiles
 TDetrendModel = Type[RegressorMixin]
 
 
-class _OneSegmentChangePointsTrendTransform(ReversibleTransform):
+class _OneSegmentChangePointsTrendTransform(OneSegmentTransform):
     """_OneSegmentChangePointsTransform subtracts multiple linear trend from series."""
 
     def __init__(
@@ -43,7 +43,7 @@ class _OneSegmentChangePointsTrendTransform(ReversibleTransform):
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
-        super().__init__(required_features=[in_column])
+        super().__init__()
         self.in_column = in_column
         self.out_columns = in_column
         self.ruptures_change_point_model = RupturesChangePointsModel(
@@ -101,7 +101,7 @@ class _OneSegmentChangePointsTrendTransform(ReversibleTransform):
             trend_series[tmp_series.index] = trend
         return trend_series
 
-    def _fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTrendTransform":
         """Fit OneSegmentChangePointsTransform: find trend change points in ``df``, fit detrend models with data from intervals of stable trend.
 
         Parameters
@@ -120,7 +120,7 @@ class _OneSegmentChangePointsTrendTransform(ReversibleTransform):
         self._fit_per_interval_model(series=series)
         return self
 
-    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals of stable trend and subtract trend from each one.
 
         Parameters
@@ -139,7 +139,7 @@ class _OneSegmentChangePointsTrendTransform(ReversibleTransform):
         df.loc[:, self.in_column] -= trend_series
         return df
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals of stable trend according to previous change point detection and add trend to each one.
 
         Parameters
@@ -203,7 +203,8 @@ class ChangePointsTrendTransform(ReversiblePerSegmentWrapper):
                 change_point_model=self.change_point_model,
                 detrend_model=self.detrend_model,
                 **self.change_point_model_predict_params,
-            )
+            ),
+            required_features=[in_column]
         )
 
     def get_regressors_info(self) -> List[str]:
