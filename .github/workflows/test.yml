@@ -61,11 +61,11 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install --with all -vv
+          poetry install -E all -vv
 
       - name: Install Pytest
         run: |
-          poetry install --with all,tests
+          poetry install -E "all tests"
 
       - name: PyTest ("not long")
         run: |
@@ -103,11 +103,11 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install --with all -vv
+          poetry install -E all -vv
 
       - name: Install Pytest
         run: |
-          poetry install --with all,tests
+          poetry install -E "all tests"
 
       - name: PyTest ("long")
         run: |
