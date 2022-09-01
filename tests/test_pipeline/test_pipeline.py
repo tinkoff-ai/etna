@@ -2,6 +2,8 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Dict
 from typing import List
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -20,6 +22,11 @@ from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
+from etna.models.base import DeepBaseModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
@@ -74,6 +81,102 @@ def test_fit(example_tsds):
     original_ts.fit_transform(transforms)
     original_ts.inverse_transform()
     assert np.all(original_ts.df.values == pipeline.ts.df.values)
+
+
+@patch("etna.pipeline.pipeline.Pipeline._forecast")
+def test_forecast_without_intervals_calls_private_forecast(private_forecast, example_tsds):
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds)
+    _ = pipeline.forecast()
+
+    private_forecast.assert_called()
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextIgnorantAbstractModel]
+)
+def test_private_forecast_context_ignorant_model(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline._forecast()
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    model.forecast.assert_called_with(ts=ts.make_future())
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextRequiredAbstractModel, PredictionIntervalContextRequiredAbstractModel]
+)
+def test_private_forecast_context_required_model(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline._forecast()
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
+
+
+def test_private_forecast_deep_base_model():
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=DeepBaseModel)
+    model.encoder_length = MagicMock()
+    model.decoder_length = MagicMock()
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline._forecast()
+
+    ts.make_future.assert_called_with(future_steps=model.decoder_length, tail_steps=model.encoder_length)
+    model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
+
+
+def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=PredictionIntervalContextIgnorantAbstractModel)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    model.forecast.assert_called_with(ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975))
+
+
+def test_forecast_with_intervals_prediction_interval_context_required_model():
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=PredictionIntervalContextRequiredAbstractModel)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    model.forecast.assert_called_with(
+        ts=ts.make_future(), prediction_size=pipeline.horizon, prediction_interval=True, quantiles=(0.025, 0.975)
+    )
+
+
+@patch("etna.pipeline.base.BasePipeline.forecast")
+@pytest.mark.parametrize(
+    "model_class",
+    [NonPredictionIntervalContextIgnorantAbstractModel, NonPredictionIntervalContextRequiredAbstractModel],
+)
+def test_forecast_with_intervals_other_model(base_forecast, model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+    base_forecast.assert_called_with(prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
 
 
 def test_forecast(example_tsds):

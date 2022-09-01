@@ -8,6 +8,7 @@ from typing_extensions import get_args
 from etna.datasets import TSDataset
 from etna.models.base import ContextIgnorantModelType
 from etna.models.base import ContextRequiredModelType
+from etna.models.base import DeepBaseModel
 from etna.models.base import ModelType
 from etna.pipeline.base import BasePipeline
 from etna.transforms import Transform
@@ -138,14 +139,19 @@ class AutoRegressivePipeline(BasePipeline):
 
                 if isinstance(self.model, get_args(ContextRequiredModelType)):
                     self.model = cast(ContextRequiredModelType, self.model)
-                    current_ts_forecast = current_ts.make_future(
-                        future_steps=current_step, tail_steps=self.model.context_size
-                    )
-                    current_ts_future = self.model.forecast(current_ts_forecast, prediction_size=current_step)
+                    if isinstance(self.model, DeepBaseModel):
+                        current_ts_forecast = current_ts.make_future(
+                            future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length
+                        )
+                    else:
+                        current_ts_forecast = current_ts.make_future(
+                            future_steps=current_step, tail_steps=self.model.context_size
+                        )
+                    current_ts_future = self.model.forecast(ts=current_ts_forecast, prediction_size=current_step)
                 else:
                     self.model = cast(ContextIgnorantModelType, self.model)
                     current_ts_forecast = current_ts.make_future(future_steps=current_step)
-                    current_ts_future = self.model.forecast(current_ts_forecast)
+                    current_ts_future = self.model.forecast(ts=current_ts_forecast)
 
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 

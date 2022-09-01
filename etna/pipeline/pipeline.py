@@ -71,7 +71,7 @@ class Pipeline(BasePipeline):
             predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
         else:
             self.model = cast(ContextIgnorantModelType, self.model)
-            future = self.ts.make_future(self.horizon)
+            future = self.ts.make_future(future_steps=self.horizon)
             predictions = self.model.forecast(ts=future)
         return predictions
 
@@ -103,7 +103,7 @@ class Pipeline(BasePipeline):
         self._validate_backtest_n_folds(n_folds=n_folds)
 
         if prediction_interval and isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
-            future = self.ts.make_future(self.horizon)
+            future = self.ts.make_future(future_steps=self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
             future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)

@@ -1,4 +1,8 @@
 from copy import deepcopy
+from typing import Optional
+from unittest.mock import ANY
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -10,6 +14,11 @@ from etna.metrics import MetricAggregationMode
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
+from etna.models.base import DeepBaseModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
@@ -24,6 +33,100 @@ def test_fit(example_tsds):
     transforms = [LagTransform(in_column="target", lags=[1]), DateFlagsTransform()]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=5, step=1)
     pipeline.fit(example_tsds)
+
+
+"""
+TODO:
+
+Что надо потестить:
+1. При вызове forecast логика различается для модели с контекстом и модели без контекста
+    * Проверяем модель без контекста
+    * Проверяем модель с контекстом
+    * Проверяем сетки
+"""
+
+
+def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None):
+    df = ts.to_pandas()
+
+    df.loc[:, pd.IndexSlice[:, "target"]] = 0
+    if prediction_size is not None:
+        df = df.iloc[-prediction_size:]
+
+    ts.df = df
+
+    return TSDataset(df=df, freq=ts.freq)
+
+
+def spy_decorator(method_to_decorate):
+    mock = MagicMock()
+
+    def wrapper(self, *args, **kwargs):
+        mock(*args, **kwargs)
+        return method_to_decorate(self, *args, **kwargs)
+
+    wrapper.mock = mock
+    return wrapper
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextIgnorantAbstractModel]
+)
+def test_private_forecast_context_ignorant_model(model_class, example_tsds):
+    # we should do it this way because we want not to change behavior but have ability to introspect calls
+    make_future = spy_decorator(TSDataset.make_future)
+    model = MagicMock(spec=model_class)
+    model.forecast.side_effect = fake_forecast
+
+    with patch.object(TSDataset, "make_future", make_future):
+        pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
+        pipeline.fit(example_tsds)
+        _ = pipeline._forecast()
+
+    assert make_future.mock.call_count == 5
+    make_future.mock.assert_called_with(future_steps=pipeline.step)
+    assert model.forecast.call_count == 5
+    model.forecast.assert_called_with(ts=ANY)
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextRequiredAbstractModel, PredictionIntervalContextRequiredAbstractModel]
+)
+def test_private_forecast_context_required_model(model_class, example_tsds):
+    # we should do it this way because we want not to change behavior but have ability to introspect calls
+    make_future = spy_decorator(TSDataset.make_future)
+    model = MagicMock(spec=model_class)
+    model.context_size = 1
+    model.forecast.side_effect = fake_forecast
+
+    with patch.object(TSDataset, "make_future", make_future):
+        pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
+        pipeline.fit(example_tsds)
+        _ = pipeline._forecast()
+
+    assert make_future.mock.call_count == 5
+    make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
+    assert model.forecast.call_count == 5
+    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
+
+
+def test_private_forecast_deep_base_model(example_tsds):
+    # we should do it this way because we want not to change behavior but have ability to introspect calls
+    make_future = spy_decorator(TSDataset.make_future)
+    model = MagicMock(spec=DeepBaseModel)
+    model.encoder_length = 1
+    model.decoder_length = 1
+    model.forecast.side_effect = fake_forecast
+
+    with patch.object(TSDataset, "make_future", make_future):
+        pipeline = AutoRegressivePipeline(model=model, horizon=5)
+        pipeline.fit(example_tsds)
+        _ = pipeline._forecast()
+
+    assert make_future.mock.call_count == 5
+    make_future.mock.assert_called_with(future_steps=model.decoder_length, tail_steps=model.encoder_length)
+    assert model.forecast.call_count == 5
+    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 
 
 def test_forecast_columns(example_reg_tsds):
