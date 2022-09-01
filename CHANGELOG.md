@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 - Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
-- 
+- `MLPModel`([#860](https://github.com/tinkoff-ai/etna/pull/860))
 - `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
 - CICD: untaged docker image cleaner ([#856](https://github.com/tinkoff-ai/etna/pull/856))
-- 
+- Notebook about forecasting strategies ([#864](https://github.com/tinkoff-ai/etna/pull/863))
 - 
 - 
 - 
@@ -47,7 +47,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix problem with encoding category types in OHE ([#843](https://github.com/tinkoff-ai/etna/pull/843))
 - 
 - Change Docker cuda image version from 11.1 to 11.6.2 ([#838](https://github.com/tinkoff-ai/etna/pull/838))
+- Optimize time complexity of `determine_num_steps`([#864](https://github.com/tinkoff-ai/etna/pull/864))
+- All warning as errors([#880](https://github.com/tinkoff-ai/etna/pull/880))
+- Update .gitignore with .DS_Store and checkpoints ([#883](https://github.com/tinkoff-ai/etna/pull/883))
 - 
+- 
+- 
+- 
+- Fix ci invalid cache ([#896](https://github.com/tinkoff-ai/etna/pull/896))
 - 
 
 ## [1.11.1] - 2022-08-03
