@@ -916,9 +916,19 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
         return self.net
 
 
-BaseModel = Union[
+ModelType = Union[
     NonPredictionIntervalContextIgnorantAbstractModel,
     NonPredictionIntervalContextRequiredAbstractModel,
     PredictionIntervalContextIgnorantAbstractModel,
     PredictionIntervalContextRequiredAbstractModel,
+]
+
+ContextRequiredModelType = Union[
+    NonPredictionIntervalContextRequiredAbstractModel,
+    PredictionIntervalContextRequiredAbstractModel,
+]
+
+ContextIgnorantModelType = Union[
+    NonPredictionIntervalContextIgnorantAbstractModel,
+    PredictionIntervalContextIgnorantAbstractModel,
 ]
