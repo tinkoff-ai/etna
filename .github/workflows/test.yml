@@ -149,8 +149,8 @@ jobs:
 
       - name: PyTest ("tsdataset transforms")
         run: |
-          poetry run pytest tests/test_datasets -v --cov=etna -m "pandas tsdataset" --cov-report=xml
-          poetry run pytest tests/test_transforms -v --cov=etna -m "pandas transforms" --cov-report=xml
+          poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml
+          poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
