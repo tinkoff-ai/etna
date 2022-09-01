@@ -344,7 +344,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         selected_features = [feature[0] for feature in sorted_features][:n]
         return selected_features
 
-    def fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
+    def _fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
         """Fit Gale-Shapley algo and find a pool of ``top_k`` features.
 
         Parameters
