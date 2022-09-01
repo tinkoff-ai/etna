@@ -259,6 +259,7 @@ def ts_for_ohe_sanity():
     return ts
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_ohe_sanity(ts_for_ohe_sanity):
     """Test for correct work in the full forecasting pipeline."""
     horizon = 10
