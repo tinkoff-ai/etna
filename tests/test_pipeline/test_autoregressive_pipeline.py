@@ -35,17 +35,6 @@ def test_fit(example_tsds):
     pipeline.fit(example_tsds)
 
 
-"""
-TODO:
-
-Что надо потестить:
-1. При вызове forecast логика различается для модели с контекстом и модели без контекста
-    * Проверяем модель без контекста
-    * Проверяем модель с контекстом
-    * Проверяем сетки
-"""
-
-
 def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None):
     df = ts.to_pandas()
 
@@ -73,7 +62,8 @@ def spy_decorator(method_to_decorate):
     "model_class", [NonPredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextIgnorantAbstractModel]
 )
 def test_private_forecast_context_ignorant_model(model_class, example_tsds):
-    # we should do it this way because we want not to change behavior but have ability to introspect calls
+    # we should do it this way because we want not to change behavior but have ability to inspect calls
+    # source: https://stackoverflow.com/a/41599695
     make_future = spy_decorator(TSDataset.make_future)
     model = MagicMock(spec=model_class)
     model.forecast.side_effect = fake_forecast
@@ -93,7 +83,8 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
     "model_class", [NonPredictionIntervalContextRequiredAbstractModel, PredictionIntervalContextRequiredAbstractModel]
 )
 def test_private_forecast_context_required_model(model_class, example_tsds):
-    # we should do it this way because we want not to change behavior but have ability to introspect calls
+    # we should do it this way because we want not to change behavior but have ability to inspect calls
+    # source: https://stackoverflow.com/a/41599695
     make_future = spy_decorator(TSDataset.make_future)
     model = MagicMock(spec=model_class)
     model.context_size = 1
@@ -111,7 +102,8 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
 
 
 def test_private_forecast_deep_base_model(example_tsds):
-    # we should do it this way because we want not to change behavior but have ability to introspect calls
+    # we should do it this way because we want not to change behavior but have ability to inspect calls
+    # source: https://stackoverflow.com/a/41599695
     make_future = spy_decorator(TSDataset.make_future)
     model = MagicMock(spec=DeepBaseModel)
     model.encoder_length = 1
