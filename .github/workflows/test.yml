@@ -107,3 +107,50 @@ jobs:
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
+
+  test-pandas-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pandas-version:
+          - ">=1.1,<1.2"
+          - ">=1.2,<1.3"
+          - ">=1.3,<1.4"
+          - ">=1.4"
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry add "pandas${{ matrix.pandas-version }}"
+          poetry install -E "all tests" -vv
+
+      - name: PyTest ("tsdataset transforms")
+        run: |
+          poetry run pytest tests/test_datasets -v --cov=etna -m "pandas tsdataset" --cov-report=xml
+          poetry run pytest tests/test_transforms -v --cov=etna -m "pandas transforms" --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
