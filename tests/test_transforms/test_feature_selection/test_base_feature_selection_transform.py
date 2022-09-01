@@ -70,7 +70,7 @@ def test_transform_save_columns(ts_with_exog, features_to_use, selected_features
         return_features=return_features,
     )
     transform.selected_features = selected_features
-    ts_with_exog = transform.transform(ts_with_exog)
+    transform.transform(ts_with_exog)
     df_saved = transform._df_removed
     if return_features:
         got_columns = set(df_saved.columns.get_level_values("feature"))
@@ -98,8 +98,8 @@ def test_inverse_transform_back_excluded_columns(ts_with_exog, features_to_use, 
         features_to_use=features_to_use,
         return_features=return_features,
     )
-    ts_with_exog = transform.fit_transform(ts_with_exog)
-    ts_with_exog = transform.inverse_transform(ts_with_exog)
+    transform.fit_transform(ts_with_exog)
+    transform.inverse_transform(ts_with_exog)
     columns_inversed = set(ts_with_exog.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
     for column in columns_inversed:

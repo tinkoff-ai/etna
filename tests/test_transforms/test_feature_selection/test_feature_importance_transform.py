@@ -79,7 +79,7 @@ def ts_with_regressors():
 )
 def test_work_with_non_regressors(ts_with_exog, model):
     selector = TreeFeatureSelectionTransform(model=model, top_k=3, features_to_use="all")
-    ts_with_exog = selector.fit_transform(ts_with_exog)
+    selector.fit_transform(ts_with_exog)
 
 
 @pytest.mark.parametrize(
@@ -103,9 +103,9 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     le_encoder = SegmentEncoderTransform()
     ts.fit_transform([le_encoder])
     selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
-    ts_selected = selector.fit_transform(ts)
+    selector.fit_transform(ts)
 
-    selected_regressors = set(ts_selected.columns.get_level_values("feature")).difference({"target"})
+    selected_regressors = set(ts.columns.get_level_values("feature")).difference({"target"})
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
@@ -241,7 +241,7 @@ def test_sanity_model(model, ts_with_regressors):
 )
 def test_fit_transform_with_nans(model, ts_diff_endings):
     selector = TreeFeatureSelectionTransform(model=model, top_k=10)
-    _ = selector.fit_transform(ts_diff_endings)
+    selector.fit_transform(ts_diff_endings)
 
 
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
@@ -251,7 +251,7 @@ def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
     all_regressors = ts_with_regressors.regressors
     ts = ts_with_regressors
     mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
-    df_selected = mrmr.fit_transform(ts)
+    df_selected = mrmr.fit_transform(ts).to_pandas()
 
     selected_regressors = set()
     for column in df_selected.columns.get_level_values("feature"):

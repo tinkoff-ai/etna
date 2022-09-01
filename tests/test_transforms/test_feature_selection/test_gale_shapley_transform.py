@@ -600,11 +600,11 @@ def test_fit_transform_with_nans(regressor_exog_weekend):
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
     )
-    regressor_exog_weekend = transform.fit_transform(regressor_exog_weekend)
+    transform.fit_transform(regressor_exog_weekend)
 
 
 def test_work_with_non_regressors(ts_with_exog):
     selector = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, features_to_use="all"
     )
-    ts_with_exog = selector.fit_transform(ts_with_exog)
+    selector.fit_transform(ts_with_exog)
