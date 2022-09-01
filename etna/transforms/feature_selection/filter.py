@@ -73,14 +73,15 @@ class FilterFeaturesTransform(Transform):
         if self.include is not None:
             if not set(self.include).issubset(features):
                 raise ValueError(f"Features {set(self.include) - set(features)} are not present in the dataset.")
-            segments = sorted(set(df.columns.get_level_values("segment")))
-            result = result.loc[:, pd.IndexSlice[segments, self.include]]
+            result = result.loc[:, pd.IndexSlice[:, self.include]]
         if self.exclude is not None and self.exclude:
             if not set(self.exclude).issubset(features):
                 raise ValueError(f"Features {set(self.exclude) - set(features)} are not present in the dataset.")
             result = result.drop(columns=self.exclude, level="feature")
         if self.return_features:
             self._df_removed = df.drop(result.columns, axis=1)
+
+        result = result.sort_index(axis=1)
         return result
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:

@@ -104,17 +104,23 @@ class AddConstTransform(Transform):
         """
         result = df.copy()
         if self.inplace:
-            segments = sorted(set(df.columns.get_level_values("segment")))
-            features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+            features = df.loc[:, pd.IndexSlice[:, self.in_column]]
             transformed_features = features - self.value
-            result.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed_features
+            result = set_columns_wide(
+                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+            )
             if self.in_column == "target":
                 segment_columns = result.columns.get_level_values("feature").tolist()
                 quantiles = match_target_quantiles(set(segment_columns))
                 for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[segments, quantile_column_nm]]
+                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]]
                     transformed_features = features - self.value
-                    result.loc[:, pd.IndexSlice[segments, quantile_column_nm]] = transformed_features
+                    result = set_columns_wide(
+                        result,
+                        transformed_features,
+                        features_left=[quantile_column_nm],
+                        features_right=[quantile_column_nm],
+                    )
 
         return result
 
