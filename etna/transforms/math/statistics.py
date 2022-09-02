@@ -5,23 +5,16 @@ from typing import Optional
 import bottleneck as bn
 import numpy as np
 import pandas as pd
+from typing import List
+from etna.transforms.base import IrreversibleTransform
 
-from etna.transforms.base import Transform
 
-
-class WindowStatisticsTransform(Transform, ABC):
+class WindowStatisticsTransform(IrreversibleTransform, ABC):
     """WindowStatisticsTransform handles computation of statistical features on windows."""
 
-    def __init__(
-        self,
-        in_column: str,
-        out_column: str,
-        window: int,
-        seasonality: int = 1,
-        min_periods: int = 1,
-        fillna: float = 0,
-        **kwargs,
-    ):
+    def __init__(self, in_column: str, out_column: str, window: int,
+                 seasonality: int = 1, min_periods: int = 1,
+                 fillna: float = 0, **kwargs):
         """Init WindowStatisticsTransform.
 
         Parameters
@@ -40,6 +33,7 @@ class WindowStatisticsTransform(Transform, ABC):
         fillna: float
             value to fill results NaNs with
         """
+        super().__init__(required_features="all")
         self.in_column = in_column
         self.out_column_name = out_column
         self.window = window
@@ -48,7 +42,7 @@ class WindowStatisticsTransform(Transform, ABC):
         self.fillna = fillna
         self.kwargs = kwargs
 
-    def fit(self, *args) -> "WindowStatisticsTransform":
+    def _fit(self, df: pd.DataFrame, *args) -> "WindowStatisticsTransform":
         """Fits transform."""
         return self
 
@@ -57,7 +51,7 @@ class WindowStatisticsTransform(Transform, ABC):
         """Aggregate targets from given series."""
         pass
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
 
         Parameters
@@ -150,7 +144,7 @@ class MeanTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
 
         Parameters
@@ -164,9 +158,9 @@ class MeanTransform(WindowStatisticsTransform):
             dataframe with results
         """
         window = self.window if self.window != -1 else len(df)
-        self._alpha_range = np.array([self.alpha**i for i in range(window)])
+        self._alpha_range = np.array([self.alpha ** i for i in range(window)])
         self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
-        return super().transform(df)
+        return super()._transform(df)
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute weighted average for window series."""
@@ -175,6 +169,15 @@ class MeanTransform(WindowStatisticsTransform):
             # Loop prevents from memory overflow, 3d tensor is materialized after multiplication
             mean[:, segment] = bn.nanmean(series[:, segment] * self._alpha_range, axis=1)
         return mean
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
 
 
 class StdTransform(WindowStatisticsTransform):
@@ -236,6 +239,15 @@ class StdTransform(WindowStatisticsTransform):
         series = bn.nanstd(series, axis=2, ddof=self.ddof)
         return series
 
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
+
 
 class QuantileTransform(WindowStatisticsTransform):
     """QuantileTransform computes quantile value for given window."""
@@ -291,6 +303,14 @@ class QuantileTransform(WindowStatisticsTransform):
         # There is no "nanquantile" in bottleneck, "apply_along_axis" can't be replace with "axis=2"
         series = np.apply_along_axis(np.nanquantile, axis=2, arr=series, q=self.quantile)
         return series
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
 
 
 class MinTransform(WindowStatisticsTransform):
@@ -342,6 +362,14 @@ class MinTransform(WindowStatisticsTransform):
         """Compute min over the series."""
         series = bn.nanmin(series, axis=2)
         return series
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
 
 
 class MaxTransform(WindowStatisticsTransform):
@@ -393,6 +421,14 @@ class MaxTransform(WindowStatisticsTransform):
         """Compute max over the series."""
         series = bn.nanmax(series, axis=2)
         return series
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
 
 
 class MedianTransform(WindowStatisticsTransform):
@@ -444,6 +480,14 @@ class MedianTransform(WindowStatisticsTransform):
         """Compute median over the series."""
         series = bn.nanmedian(series, axis=2)
         return series
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
 
 
 class MADTransform(WindowStatisticsTransform):
@@ -501,6 +545,14 @@ class MADTransform(WindowStatisticsTransform):
             ad = np.abs(series[:, segment] - mean[:, segment])
             mad[:, segment] = bn.nanmean(ad, axis=1)
         return mad
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform.
+        Returns
+        -------
+        :
+            List with regressors created by the transform.
+        """
+        return [self.out_column_name]
 
 
 __all__ = [
