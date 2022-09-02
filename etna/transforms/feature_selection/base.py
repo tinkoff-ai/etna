@@ -25,6 +25,10 @@ class BaseFeatureSelectionTransform(ReversibleTransform, ABC):
         """Return the list with regressors created by the transform."""
         return []
 
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
+
     def _get_features_to_use(self, df: pd.DataFrame) -> List[str]:
         """Get list of features from the dataframe to perform the selection on."""
         features = set(df.columns.get_level_values("feature")) - {"target"}
