@@ -154,7 +154,13 @@ class AbstractModel(ABC, BaseMixin):
 class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     """Interface for models that don't support prediction intervals and don't need context for prediction."""
 
-    context_size: int = 0
+    @property
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model.
+
+        Zero for this model.
+        """
+        return 0
 
     @abstractmethod
     def forecast(self, ts: TSDataset) -> TSDataset:
@@ -199,7 +205,13 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
 class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     """Interface for models that support prediction intervals and don't need context for prediction."""
 
-    context_size: int = 0
+    @property
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model.
+
+        Zero for this model.
+        """
+        return 0
 
     @abstractmethod
     def forecast(

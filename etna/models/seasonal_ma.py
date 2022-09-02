@@ -128,7 +128,7 @@ class SeasonalMovingAverageModel(
         )
 
     @property
-    def context_size(self) -> int:  # type: ignore
+    def context_size(self) -> int:
         """Context size of the model."""
         return self.window * self.seasonality
 

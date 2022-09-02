@@ -182,7 +182,7 @@ class DeadlineMovingAverageModel(
         )
 
     @property
-    def context_size(self) -> int:  # type: ignore
+    def context_size(self) -> int:
         """Upper bound to context size of the model."""
         models = self.get_model()
         model = next(iter(models.values()))
