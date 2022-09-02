@@ -62,11 +62,12 @@ def ts_range_const():
 )
 def test_save_transform(ts_non_negative, transform_original, transform_function, out_column):
     ts_copy = TSDataset(ts_non_negative.to_pandas(), freq="D")
-    ts_copy.fit_transform([transform_original])
+    ts_copy = transform_original.fit_transform(ts_copy)
     ts = ts_non_negative
-    ts.fit_transform(
-        [LambdaTransform(in_column="target", out_column=out_column, transform_func=transform_function, inplace=False)]
+    transform = LambdaTransform(
+        in_column="target", out_column=out_column, transform_func=transform_function, inplace=False
     )
+    ts = transform.fit_transform(ts=ts)
     assert set(ts_copy.columns) == set(ts.columns)
     for column in ts.columns:
         np.testing.assert_allclose(ts_copy[:, :, column], ts[:, :, column], rtol=1e-9)
@@ -75,7 +76,7 @@ def test_save_transform(ts_non_negative, transform_original, transform_function,
 def test_nesessary_inverse_transform(ts_non_negative):
     with pytest.raises(ValueError, match="inverse_transform_func must be defined, when inplace=True"):
         transform = LambdaTransform(in_column="target", inplace=True, transform_func=lambda x: x)
-        ts_non_negative.fit_transform([transform])
+        ts_non_negative = transform.fit_transform(ts_non_negative)
 
 
 def test_interface_inplace(ts_non_negative):
@@ -83,7 +84,7 @@ def test_interface_inplace(ts_non_negative):
         in_column="target", inplace=True, transform_func=lambda x: x, inverse_transform_func=lambda x: x
     )
     original_columns = set(ts_non_negative.columns)
-    ts_non_negative.fit_transform([transform])
+    ts_non_negative = transform.fit_transform(ts_non_negative)
     assert set(ts_non_negative.columns) == original_columns
     ts_non_negative.inverse_transform()
     assert set(ts_non_negative.columns) == original_columns
@@ -93,7 +94,7 @@ def test_interface_not_inplace(ts_non_negative):
     add_column = "target_transformed"
     transform = LambdaTransform(in_column="target", out_column=add_column, transform_func=lambda x: x, inplace=False)
     original_columns = set(ts_non_negative.columns)
-    ts_non_negative.fit_transform([transform])
+    ts_non_negative = transform.fit_transform(ts_non_negative)
     assert set(ts_non_negative.columns) == original_columns.union(
         {(segment, add_column) for segment in ts_non_negative.segments}
     )
@@ -116,7 +117,7 @@ def test_transform(ts_range_const, inplace, check_column, function, inverse_func
         inverse_transform_func=inverse_function,
         out_column=check_column,
     )
-    ts_range_const.fit_transform([transform])
+    ts_range_const = transform.fit_transform(ts_range_const)
     np.testing.assert_allclose(np.array(ts_range_const[:, segment, check_column]), expected_result, rtol=1e-9)
 
 
@@ -129,8 +130,8 @@ def test_inverse_transform(ts_range_const, function, inverse_function):
         in_column="target", transform_func=function, inplace=True, inverse_transform_func=inverse_function
     )
     original_df = ts_range_const.to_pandas()
-    ts_range_const.fit_transform([transform])
-    ts_range_const.inverse_transform()
+    ts_range_const = transform.fit_transform(ts_range_const)
+    ts_range_const = transform.inverse_transform(ts_range_const)
     check_column = "target"
     for segment in ts_range_const.segments:
         np.testing.assert_allclose(

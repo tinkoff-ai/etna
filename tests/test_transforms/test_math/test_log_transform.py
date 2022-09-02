@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms.math import LogTransform
 
@@ -49,57 +50,65 @@ def positive_df_(random_seed) -> pd.DataFrame:
 def test_negative_series_behavior(non_positive_df_: pd.DataFrame):
     """Check LogTransform behavior in case of negative-value series."""
     preprocess = LogTransform(in_column="target")
+    ts = TSDataset(non_positive_df_, freq="D")
     with pytest.raises(ValueError):
-        _ = preprocess.fit_transform(df=non_positive_df_)
+        _ = preprocess.fit_transform(ts=ts)
 
 
 def test_logpreproc_value(positive_df_: pd.DataFrame):
     """Check the value of transform result."""
     preprocess = LogTransform(in_column="target", base=10)
-    value = preprocess.fit_transform(df=positive_df_)
+    ts = TSDataset(positive_df_, freq="D")
+    value = preprocess.fit_transform(ts=ts)
     for segment in ["segment_1", "segment_2"]:
-        np.testing.assert_array_almost_equal(value[segment]["target"], positive_df_[segment]["expected"])
+        np.testing.assert_array_almost_equal(value.df[segment]["target"], positive_df_[segment]["expected"])
 
 
 @pytest.mark.parametrize("out_column", (None, "log_transform"))
 def test_logpreproc_noninplace_interface(positive_df_: pd.DataFrame, out_column: str):
     """Check the column name after non inplace transform."""
     preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
-    value = preprocess.fit_transform(df=positive_df_)
+    ts = TSDataset(positive_df_, freq="D")
+    value = preprocess.fit_transform(ts=ts)
     expected_out_column = out_column if out_column is not None else preprocess.__repr__()
     for segment in ["segment_1", "segment_2"]:
-        assert expected_out_column in value[segment]
+        assert expected_out_column in value.df[segment]
 
 
 def test_logpreproc_value_out_column(positive_df_: pd.DataFrame):
     """Check the value of transform result in case of given out column."""
     out_column = "target_log_10"
     preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
-    value = preprocess.fit_transform(df=positive_df_)
+    ts = TSDataset(positive_df_, freq="D")
+    value = preprocess.fit_transform(ts=ts)
     for segment in ["segment_1", "segment_2"]:
-        np.testing.assert_array_almost_equal(value[segment][out_column], positive_df_[segment]["expected"])
+        np.testing.assert_array_almost_equal(value.df[segment][out_column], positive_df_[segment]["expected"])
 
 
 @pytest.mark.parametrize("base", (5, 10, e))
 def test_inverse_transform(positive_df_: pd.DataFrame, base: int):
     """Check that inverse_transform rolls back transform result."""
     preprocess = LogTransform(in_column="target", base=base)
-    transformed_target = preprocess.fit_transform(df=positive_df_.copy())
-    inversed = preprocess.inverse_transform(df=transformed_target)
+    ts = TSDataset(positive_df_.copy(), freq="D")
+    transformed_target = preprocess.fit_transform(ts=ts)
+    inversed = preprocess.inverse_transform(ts=transformed_target)
     for segment in ["segment_1", "segment_2"]:
-        np.testing.assert_array_almost_equal(inversed[segment]["target"], positive_df_[segment]["target"])
+        np.testing.assert_array_almost_equal(inversed.df[segment]["target"], positive_df_[segment]["target"])
 
 
 def test_inverse_transform_out_column(positive_df_: pd.DataFrame):
     """Check that inverse_transform rolls back transform result in case of given out_column."""
     out_column = "target_log_10"
     preprocess = LogTransform(in_column="target", out_column=out_column, base=10, inplace=False)
-    transformed_target = preprocess.fit_transform(df=positive_df_)
-    inversed = preprocess.inverse_transform(df=transformed_target)
+    ts = TSDataset(positive_df_.copy(), freq="D")
+    transformed_target = preprocess.fit_transform(ts=ts)
+    inversed = preprocess.inverse_transform(ts=transformed_target)
     for segment in ["segment_1", "segment_2"]:
-        assert out_column in inversed[segment]
+        assert out_column in inversed.df[segment]
 
 
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = LogTransform(in_column="target", inplace=True)
-    ts_diff_endings.fit_transform([AddConstTransform(in_column="target", value=100)] + [transform])
+    transform1 = AddConstTransform(in_column="target", value=100)
+    transform1.fit_transform(ts=ts_diff_endings)
+    transform.fit_transform(ts=ts_diff_endings)

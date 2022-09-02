@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Literal
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -11,6 +10,7 @@ import hydra_slayer
 import pandas as pd
 import typer
 from omegaconf import OmegaConf
+from typing_extensions import Literal
 
 from etna.datasets import TSDataset
 from etna.pipeline import Pipeline

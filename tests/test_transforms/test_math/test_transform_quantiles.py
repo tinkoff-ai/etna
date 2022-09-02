@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms import BoxCoxTransform
 from etna.transforms import LogTransform
@@ -44,17 +45,19 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     toy_dataset = toy_dataset_equal_targets_and_quantiles
     shift = 10.0
     add_constant = AddConstTransform(in_column="target", value=shift)
-    toy_dataset_transformed = add_constant.fit_transform(toy_dataset.copy())
+    ts = TSDataset(toy_dataset.copy(), freq="D")
+    toy_dataset_transformed = add_constant.fit_transform(ts)
 
-    np.testing.assert_allclose(toy_dataset_transformed.iloc[:, 0] - shift, toy_dataset.iloc[:, 1])
-    np.testing.assert_allclose(toy_dataset_transformed.iloc[:, 2] - shift, toy_dataset.iloc[:, 3])
+    np.testing.assert_allclose(toy_dataset_transformed.df.iloc[:, 0] - shift, toy_dataset.iloc[:, 1])
+    np.testing.assert_allclose(toy_dataset_transformed.df.iloc[:, 2] - shift, toy_dataset.iloc[:, 3])
 
-    toy_dataset = add_constant.inverse_transform(toy_dataset)
+    toy_inversed = add_constant.inverse_transform(ts)
 
-    np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1])
-    np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
+    np.testing.assert_allclose(toy_inversed.df.iloc[:, 0], toy_dataset.iloc[:, 1])
+    np.testing.assert_allclose(toy_inversed.df.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 @pytest.mark.parametrize(
     "transform",
     (

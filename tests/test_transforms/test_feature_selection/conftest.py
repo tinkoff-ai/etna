@@ -6,7 +6,7 @@ from etna.datasets import generate_ar_df
 
 
 @pytest.fixture
-def ts_with_exog(random_seed) -> pd.DataFrame:
+def ts_with_exog(random_seed) -> TSDataset:
     df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=4)
 
     df_exog_1 = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=4, random_seed=2).rename(
