@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 
 - 
-- 
+- Changed hierarchy of base models, enable passing context into models ([#888](https://github.com/tinkoff-ai/etna/pull/888))
 - 
 - 
 - Teach AutoARIMAModel to work with out-sample predictions ([#830](https://github.com/tinkoff-ai/etna/pull/830))

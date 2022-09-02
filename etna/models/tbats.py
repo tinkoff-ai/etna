@@ -10,7 +10,9 @@ from tbats.tbats import TBATS
 from tbats.tbats.Model import Model
 
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import PerSegmentModelMixin
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
 
 
@@ -72,10 +74,10 @@ class _TBATSAdapter(BaseAdapter):
         return self.model
 
 
-class BATSModel(PerSegmentPredictionIntervalModel):
+class BATSModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """Class for holding segment interval BATS model."""
-
-    context_size = 0
 
     def __init__(
         self,
@@ -141,10 +143,10 @@ class BATSModel(PerSegmentPredictionIntervalModel):
         super().__init__(base_model=_TBATSAdapter(self.model))
 
 
-class TBATSModel(PerSegmentPredictionIntervalModel):
+class TBATSModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """Class for holding segment interval TBATS model."""
-
-    context_size = 0
 
     def __init__(
         self,

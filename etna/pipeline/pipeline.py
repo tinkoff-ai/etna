@@ -1,9 +1,15 @@
 from typing import Sequence
+from typing import cast
+
+from typing_extensions import get_args
 
 from etna.datasets import TSDataset
-from etna.models.base import BaseModel
+from etna.models.base import ContextIgnorantModelType
+from etna.models.base import ContextRequiredModelType
 from etna.models.base import DeepBaseModel
-from etna.models.base import PredictIntervalAbstractModel
+from etna.models.base import ModelType
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
@@ -11,7 +17,7 @@ from etna.transforms.base import Transform
 class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(self, model: BaseModel, transforms: Sequence[Transform] = (), horizon: int = 1):
+    def __init__(self, model: ModelType, transforms: Sequence[Transform] = (), horizon: int = 1):
         """
         Create instance of Pipeline with given parameters.
 
@@ -56,9 +62,14 @@ class Pipeline(BasePipeline):
 
         if isinstance(self.model, DeepBaseModel):
             future = self.ts.make_future(future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length)
-            predictions = self.model.forecast(ts=future, horizon=self.horizon)
+            predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
+        elif isinstance(self.model, get_args(ContextRequiredModelType)):
+            self.model = cast(ContextRequiredModelType, self.model)
+            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
         else:
-            future = self.ts.make_future(self.horizon)
+            self.model = cast(ContextIgnorantModelType, self.model)
+            future = self.ts.make_future(future_steps=self.horizon)
             predictions = self.model.forecast(ts=future)
         return predictions
 
@@ -89,9 +100,14 @@ class Pipeline(BasePipeline):
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        if prediction_interval and isinstance(self.model, PredictIntervalAbstractModel):
-            future = self.ts.make_future(self.horizon)
+        if prediction_interval and isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
+            future = self.ts.make_future(future_steps=self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
+        elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
+            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            predictions = self.model.forecast(
+                ts=future, prediction_size=self.horizon, prediction_interval=prediction_interval, quantiles=quantiles
+            )
         else:
             predictions = super().forecast(
                 prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds

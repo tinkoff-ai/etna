@@ -5,7 +5,9 @@ import pmdarima as pm
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import PerSegmentModelMixin
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantModelMixin
 from etna.models.sarimax import _SARIMAXBaseAdapter
 
 warnings.filterwarnings(
@@ -48,7 +50,9 @@ class _AutoARIMAAdapter(_SARIMAXBaseAdapter):
         return model.arima_res_
 
 
-class AutoARIMAModel(PerSegmentPredictionIntervalModel):
+class AutoARIMAModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """
     Class for holding auto arima model.
 
@@ -56,8 +60,6 @@ class AutoARIMAModel(PerSegmentPredictionIntervalModel):
     -----
     We use :py:class:`pmdarima.arima.arima.ARIMA`.
     """
-
-    context_size = 0
 
     def __init__(
         self,

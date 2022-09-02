@@ -11,7 +11,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
-from etna.models.base import MultiSegmentPredictionIntervalModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import log_decorator
 from etna.models.nn.utils import _DeepCopyMixin
 from etna.transforms import PytorchForecastingTransform
@@ -25,7 +25,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
+class TFTModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
     Notes
@@ -273,3 +273,16 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
 
         ts.inverse_transform()
         return ts
+
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self.model

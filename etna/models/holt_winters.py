@@ -13,7 +13,9 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters import HoltWintersResults
 
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import PerSegmentModelMixin
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -276,7 +278,11 @@ class _HoltWintersAdapter(BaseAdapter):
         return self._model
 
 
-class HoltWintersModel(PerSegmentModel):
+class HoltWintersModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Holt-Winters' etna model.
 
@@ -284,8 +290,6 @@ class HoltWintersModel(PerSegmentModel):
     -----
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     """
-
-    context_size = 0
 
     def __init__(
         self,
@@ -484,8 +488,6 @@ class HoltModel(HoltWintersModel):
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
 
-    context_size = 0
-
     def __init__(
         self,
         exponential: bool = False,
@@ -582,8 +584,6 @@ class SimpleExpSmoothingModel(HoltWintersModel):
     They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
     """
-
-    context_size = 0
 
     def __init__(
         self,

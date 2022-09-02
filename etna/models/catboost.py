@@ -8,8 +8,10 @@ from catboost import Pool
 from deprecated import deprecated
 
 from etna.models.base import BaseAdapter
-from etna.models.base import MultiSegmentModel
-from etna.models.base import PerSegmentModel
+from etna.models.base import MultiSegmentModelMixin
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import PerSegmentModelMixin
 
 
 class _CatBoostAdapter(BaseAdapter):
@@ -88,7 +90,11 @@ class _CatBoostAdapter(BaseAdapter):
         return self.model
 
 
-class CatBoostPerSegmentModel(PerSegmentModel):
+class CatBoostPerSegmentModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class for holding per segment Catboost model.
 
     Examples
@@ -130,8 +136,6 @@ class CatBoostPerSegmentModel(PerSegmentModel):
     2020-04-15      5.00      7.00      4.00      7.00
     2020-04-16      8.00      6.00      2.00      0.00
     """
-
-    context_size = 0
 
     def __init__(
         self,
@@ -212,7 +216,11 @@ class CatBoostPerSegmentModel(PerSegmentModel):
         )
 
 
-class CatBoostMultiSegmentModel(MultiSegmentModel):
+class CatBoostMultiSegmentModel(
+    MultiSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class for holding Catboost model for all segments.
 
     Examples
@@ -254,8 +262,6 @@ class CatBoostMultiSegmentModel(MultiSegmentModel):
     2020-04-15      5.00      7.00      4.00      7.00
     2020-04-16      8.00      6.00      2.00      0.00
     """
-
-    context_size = 0
 
     def __init__(
         self,
@@ -387,8 +393,6 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
-    context_size = 0
-
     def __init__(
         self,
         iterations: Optional[int] = None,
@@ -517,8 +521,6 @@ class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
     2020-04-15      5.00      7.00      4.00      7.00
     2020-04-16      8.00      6.00      2.00      0.00
     """
-
-    context_size = 0
 
     def __init__(
         self,
