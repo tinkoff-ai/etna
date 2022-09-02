@@ -19,11 +19,6 @@ class BaseFeatureSelectionTransform(ReversibleTransform, ABC):
         self.selected_features: List[str] = []
         self.return_features = return_features
         self._df_removed: Optional[pd.DataFrame] = None
-        self.in_column = self.features_to_use
-
-    def get_regressors_info(self) -> List[str]:
-        """Return the list with regressors created by the transform."""
-        return []
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
