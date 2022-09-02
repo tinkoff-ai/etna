@@ -42,7 +42,6 @@ class FilterFeaturesTransform(ReversibleTransform):
             self.exclude = list(set(exclude))
         else:
             raise ValueError("There should be exactly one option set: include or exclude")
-        self.in_column = "all"
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
