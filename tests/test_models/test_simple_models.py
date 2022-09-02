@@ -39,29 +39,45 @@ def df():
 def test_simple_model_forecaster_run(simple_df, model):
     sma_model = model()
     sma_model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = sma_model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    res = sma_model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)
     assert not res.isnull().values.any()
     assert len(res) == 14
+
+
+def test_simple_model_forecaster_fail(simple_df):
+    sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
+    sma_model.fit(simple_df)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = sma_model.forecast(future_ts, prediction_size=7)
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_forecaster_run(simple_df, model):
     model = model(window=1)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)
     assert not res.isnull().values.any()
     assert len(res) == 14
 
 
+def test_sdeadline_model_forecaster_fail(simple_df):
+    model = DeadlineMovingAverageModel(window=1000)
+    model.fit(simple_df)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = model.forecast(future_ts, prediction_size=7)
+
+
 def test_seasonal_moving_average_forecaster_correct(simple_df):
     model = SeasonalMovingAverageModel(window=3, seasonality=7)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -83,8 +99,8 @@ def test_seasonal_moving_average_forecaster_correct(simple_df):
 def test_naive_forecaster_correct(simple_df):
     model = NaiveModel(lag=3)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -107,8 +123,8 @@ def test_naive_forecaster_correct(simple_df):
 def test_moving_average_forecaster_correct(simple_df):
     model = MovingAverageModel(window=5)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -137,8 +153,8 @@ def test_moving_average_forecaster_correct(simple_df):
 def test_deadline_moving_average_forecaster_correct(df):
     model = DeadlineMovingAverageModel(window=3, seasonality="month")
     model.fit(df)
-    future_ts = df.make_future(future_steps=20)
-    res = model.forecast(future_ts)
+    future_ts = df.make_future(future_steps=20, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=20)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -323,8 +339,8 @@ def two_month_ts():
 def test_deadline_model_correct_with_big_horizons(two_month_ts):
     model = DeadlineMovingAverageModel(window=2, seasonality="month")
     model.fit(two_month_ts)
-    future_ts = two_month_ts.make_future(future_steps=90)
-    res = model.forecast(future_ts)
+    future_ts = two_month_ts.make_future(future_steps=90, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=90)
     expected = np.array(
         [
             [16.5],

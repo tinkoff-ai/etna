@@ -462,7 +462,12 @@ class PerSegmentModelMixin(ModelForecastMixin):
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
+
+        prediction_size = kwargs.get("prediction_size")
+        if prediction_size is not None:
+            segment_predict["timestamp"] = dates[-prediction_size:].reset_index(drop=True)
+        else:
+            segment_predict["timestamp"] = dates
         return segment_predict
 
     @log_decorator
@@ -489,11 +494,16 @@ class PerSegmentModelMixin(ModelForecastMixin):
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
         df = df.set_index(["timestamp", "segment"])
+        # TODO: remember that it can be a trouble for in-sample forecasting
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)
         ts.df = df
         ts.inverse_transform()
+
+        prediction_size = kwargs.get("prediction_size")
+        if prediction_size is not None:
+            ts.df = ts.df.iloc[-prediction_size:]
         return ts
 
 
@@ -547,6 +557,7 @@ class MultiSegmentModelMixin(ModelForecastMixin):
         """
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
+        # TODO: we haven't tested working with prediction_size here
         y = self._base_model.predict(x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
