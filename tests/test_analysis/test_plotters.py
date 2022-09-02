@@ -94,6 +94,7 @@ def test_plot_trend(poly_degree, example_tsdf, trend_transform_class):
     plot_trend(ts=example_tsdf, trend_transform=trend_transform_class(in_column="target", poly_degree=poly_degree))
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("detrend_model", (TheilSenRegressor(), LinearRegression()))
 def test_plot_bin_seg(example_tsdf, detrend_model):
     plot_trend(ts=example_tsdf, trend_transform=BinsegTrendTransform(in_column="target", detrend_model=detrend_model))
