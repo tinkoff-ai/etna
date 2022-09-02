@@ -79,7 +79,7 @@ def ts_with_regressors():
 )
 def test_work_with_non_regressors(ts_with_exog, model):
     selector = TreeFeatureSelectionTransform(model=model, top_k=3, features_to_use="all")
-    ts_with_exog.fit_transform([selector])
+    selector.fit_transform(ts_with_exog)
 
 
 @pytest.mark.parametrize(
@@ -96,16 +96,16 @@ def test_work_with_non_regressors(ts_with_exog, model):
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
 def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     """Check that transform selects exactly top_k regressors if where are this much."""
-    df = ts_with_regressors.to_pandas()
-    le_encoder = SegmentEncoderTransform()
-    df_encoded = le_encoder.fit_transform(df)
-    selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
-    df_selected = selector.fit_transform(df_encoded)
-
     all_regressors = ts_with_regressors.regressors
     all_regressors.append("segment_code")
-    selected_regressors = set(df_selected.columns.get_level_values("feature")).difference({"target"})
 
+    ts = ts_with_regressors
+    le_encoder = SegmentEncoderTransform()
+    ts.fit_transform([le_encoder])
+    selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
+    selector.fit_transform(ts)
+
+    selected_regressors = set(ts.columns.get_level_values("feature")).difference({"target"})
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
@@ -123,11 +123,12 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
 def test_retain_values(model, top_k, ts_with_regressors):
     """Check that transform doesn't change values of columns."""
-    df = ts_with_regressors.to_pandas()
+    ts = ts_with_regressors
     le_encoder = SegmentEncoderTransform()
-    df_encoded = le_encoder.fit_transform(df)
+    ts.fit_transform([le_encoder])
+    df_encoded = ts.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
-    df_selected = selector.fit_transform(df_encoded)
+    df_selected = selector.fit_transform(ts).to_pandas()
 
     for segment in ts_with_regressors.segments:
         for column in df_selected.columns.get_level_values("feature").unique():
@@ -169,7 +170,7 @@ def test_warns_no_regressors(model, example_tsds):
     df = example_tsds.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=3)
     with pytest.warns(UserWarning, match="not possible to select features"):
-        df_selected = selector.fit_transform(df)
+        df_selected = selector.fit_transform(example_tsds).to_pandas()
         assert (df == df_selected).all().all()
 
 
@@ -186,17 +187,18 @@ def test_warns_no_regressors(model, example_tsds):
 )
 def test_sanity_selected(model, ts_with_regressors):
     """Check that transform correctly finds meaningful regressors."""
-    df = ts_with_regressors.to_pandas()
+    ts = ts_with_regressors
     le_encoder = SegmentEncoderTransform()
-    df_encoded = le_encoder.fit_transform(df)
+    ts.fit_transform([le_encoder])
     selector = TreeFeatureSelectionTransform(model=model, top_k=8)
-    df_selected = selector.fit_transform(df_encoded)
+    df_selected = selector.fit_transform(ts).to_pandas()
     features_columns = df_selected.columns.get_level_values("feature").unique()
     selected_regressors = [column for column in features_columns if column.startswith("regressor_")]
     useful_regressors = [column for column in selected_regressors if "useful" in column]
     assert len(useful_regressors) == 3
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "model",
     [
@@ -239,17 +241,18 @@ def test_sanity_model(model, ts_with_regressors):
 )
 def test_fit_transform_with_nans(model, ts_diff_endings):
     selector = TreeFeatureSelectionTransform(model=model, top_k=10)
-    ts_diff_endings.fit_transform([selector])
+    selector.fit_transform(ts_diff_endings)
 
 
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
 def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
     """Check that transform selects exactly top_k regressors."""
-    df = ts_with_regressors.to_pandas()
-    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
-    df_selected = mrmr.fit_transform(df)
     all_regressors = ts_with_regressors.regressors
+    ts = ts_with_regressors
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+
     selected_regressors = set()
     for column in df_selected.columns.get_level_values("feature"):
         if column.startswith("regressor"):
@@ -261,9 +264,9 @@ def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
 @pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
 def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
     """Check that transform selects right top_k regressors."""
-    df = ts_with_regressors.to_pandas()
+    ts = ts_with_regressors
     mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=3, model=RandomForestRegressor())
-    df_selected = mrmr.fit_transform(df)
+    df_selected = mrmr.fit_transform(ts).to_pandas()
     selected_regressors = set()
     for column in df_selected.columns.get_level_values("feature"):
         if column.startswith("regressor"):

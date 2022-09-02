@@ -4,13 +4,13 @@ from typing import Optional
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversiblePerSegmentWrapper
+from etna.transforms.base import OneSegmentTransform
 from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 
 
-class _OneSegmentChangePointsSegmentationTransform(Transform):
+class _OneSegmentChangePointsSegmentationTransform(OneSegmentTransform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(self, in_column: str, out_column: str, change_point_model: BaseChangePointsModelAdapter):
@@ -80,8 +80,23 @@ class _OneSegmentChangePointsSegmentationTransform(Transform):
         df.loc[:, self.out_column] = result_series
         return df
 
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform Dataframe.
 
-class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
+        Parameters
+        ----------
+        df:
+            Dataframe in etna long format to be inverse transformed.
+
+        Returns
+        -------
+        :
+            Dataframe after applying inverse transformation.
+        """
+        return df
+
+
+class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMixin):
     """ChangePointsSegmentationTransform make label encoder to change points.
 
     Warning
@@ -117,5 +132,10 @@ class ChangePointsSegmentationTransform(PerSegmentWrapper, FutureMixin):
                 in_column=self.in_column,
                 out_column=self.out_column,
                 change_point_model=self.change_point_model,
-            )
+            ),
+            required_features=[in_column],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []

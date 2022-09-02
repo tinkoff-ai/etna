@@ -2,6 +2,7 @@ from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import IrreversibleTransform
 from etna.transforms.base import NewPerSegmentWrapper
 from etna.transforms.base import NewTransform
+from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.base import ReversibleTransform
