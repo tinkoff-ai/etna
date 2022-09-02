@@ -166,9 +166,10 @@ def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
     transform = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    transformed = transform.fit_transform(df=multitrend_df_with_nans_in_tails)
-    for segment in transformed.columns.get_level_values("segment").unique():
-        segment_slice = transformed.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
+    ts = TSDataset(multitrend_df_with_nans_in_tails, freq="D")
+    transformed = transform.fit_transform(ts=ts)
+    for segment in transformed.df.columns.get_level_values("segment").unique():
+        segment_slice = transformed.df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
         assert abs(segment_slice["target"].mean()) < 0.1
 
 
@@ -176,5 +177,6 @@ def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     bs = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
+    ts = TSDataset(df_with_nans, freq="H")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = bs.fit_transform(df=df_with_nans)
+        _ = bs.fit_transform(ts=ts)
