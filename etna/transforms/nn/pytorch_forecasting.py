@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 if SETTINGS.torch_required:
     from pytorch_forecasting.data import TimeSeriesDataSet
@@ -27,7 +27,7 @@ else:
 NORMALIZER = Union[TorchNormalizer, NaNLabelEncoder, EncoderNormalizer]
 
 
-class PytorchForecastingTransform(Transform):
+class PytorchForecastingTransform(IrreversibleTransform):
     """Transform for models from PytorchForecasting library.
 
     Notes
@@ -63,7 +63,7 @@ class PytorchForecastingTransform(Transform):
 
         Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` object.
         """
-        super().__init__()
+        super().__init__(required_features="all")
         self.max_encoder_length = max_encoder_length
         self.min_encoder_length = min_encoder_length
         self.min_prediction_idx = min_prediction_idx
@@ -90,9 +90,12 @@ class PytorchForecastingTransform(Transform):
         self.lags = lags if lags else {}
         self.scalers = scalers if scalers else {}
         self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
-        self.in_column = "all"
 
-    def fit(self, df: pd.DataFrame) -> "PytorchForecastingTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
+
+    def _fit(self, df: pd.DataFrame) -> "PytorchForecastingTransform":
         """
         Fit TimeSeriesDataSet.
 
@@ -152,7 +155,7 @@ class PytorchForecastingTransform(Transform):
 
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform raw df to TimeSeriesDataSet.
 
