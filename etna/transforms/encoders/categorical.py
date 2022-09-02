@@ -1,4 +1,6 @@
+import warnings
 from enum import Enum
+from typing import List
 from typing import Optional
 
 import numpy as np
@@ -8,7 +10,7 @@ from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
 
 from etna.datasets import TSDataset
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
 class ImputerMode(str, Enum):
@@ -43,7 +45,7 @@ class _LabelEncoder(preprocessing.LabelEncoder):
         return encoded
 
 
-class LabelEncoderTransform(Transform):
+class LabelEncoderTransform(IrreversibleTransform):
     """Encode categorical feature with value between 0 and n_classes-1."""
 
     def __init__(self, in_column: str, out_column: Optional[str] = None, strategy: str = ImputerMode.mean):
@@ -66,12 +68,20 @@ class LabelEncoderTransform(Transform):
             - If "none", then replace missing values with None
 
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
         self.strategy = strategy
         self.le = _LabelEncoder()
+        self.in_column_regressor: Optional[bool] = None
 
-    def fit(self, df: pd.DataFrame) -> "LabelEncoderTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+        return [self._get_column_name()] if self.in_column_regressor else []
+
+    def _fit(self, df: pd.DataFrame) -> "LabelEncoderTransform":
         """
         Fit Label encoder.
 
@@ -88,7 +98,13 @@ class LabelEncoderTransform(Transform):
         self.le.fit(y=y)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, ts: TSDataset) -> "LabelEncoderTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Encode the ``in_column`` by fitted Label encoder.
 
@@ -116,7 +132,7 @@ class LabelEncoderTransform(Transform):
         return self.__repr__()
 
 
-class OneHotEncoderTransform(Transform):
+class OneHotEncoderTransform(IrreversibleTransform):
     """Encode categorical feature as a one-hot numeric features.
 
     If unknown category is encountered during transform, the resulting one-hot
@@ -134,11 +150,19 @@ class OneHotEncoderTransform(Transform):
         out_column:
             Prefix of names of added columns. If not given, use ``self.__repr__()``
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
         self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False, dtype=int)
+        self.in_column_regressor: Optional[bool] = None
 
-    def fit(self, df: pd.DataFrame) -> "OneHotEncoderTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+        return self._get_out_column_names() if self.in_column_regressor else []
+
+    def _fit(self, df: pd.DataFrame) -> "OneHotEncoderTransform":
         """
         Fit One Hot encoder.
 
@@ -155,7 +179,13 @@ class OneHotEncoderTransform(Transform):
         self.ohe.fit(X=x)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, ts: TSDataset) -> "OneHotEncoderTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Encode the `in_column` by fitted One Hot encoder.
 
@@ -169,17 +199,16 @@ class OneHotEncoderTransform(Transform):
         :
             Dataframe with column with encoded values
         """
-        out_column = self._get_column_name()
-        out_columns = [out_column + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]
         result_df = TSDataset.to_flatten(df)
         x = result_df[[self.in_column]]
+        out_columns = self._get_out_column_names()
         result_df[out_columns] = self.ohe.transform(X=x)
         result_df[out_columns] = result_df[out_columns].astype("category")
         result_df = TSDataset.to_dataset(result_df)
         return result_df
 
-    def _get_column_name(self) -> str:
-        """Get the ``out_column`` depending on the transform's parameters."""
-        if self.out_column:
-            return self.out_column
-        return self.__repr__()
+    def _get_out_column_names(self) -> List[str]:
+        """Get the list of ``out_column`` depending on the transform's parameters."""
+        out_column = self.out_column if self.out_column is not None else self.__repr__()
+        out_columns = [out_column + "_" + str(i) for i in range(len(self.ohe.categories_[0]))]
+        return out_columns
