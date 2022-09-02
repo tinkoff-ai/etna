@@ -90,7 +90,6 @@ class PytorchForecastingTransform(IrreversibleTransform):
         self.lags = lags if lags else {}
         self.scalers = scalers if scalers else {}
         self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
-        self.in_column = "all"
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
