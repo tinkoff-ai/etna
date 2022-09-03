@@ -451,6 +451,7 @@ def test_single_backtest_sanity(period, df_nans_with_noise):
     check_backtest_sanity(transform, df_nans_with_noise)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
 def test_full_backtest_sanity(period, order, df_nans_with_noise):

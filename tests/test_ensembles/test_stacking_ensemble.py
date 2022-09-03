@@ -31,6 +31,7 @@ def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipe
         _ = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], n_folds=input_cv)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -65,6 +66,7 @@ def test_features_to_use(
     assert obtained_features == expected_features
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("features_to_use", (["regressor_lag_feature_10"]))
 def test_features_to_use_wrong_format(
     forecasts_ts: TSDataset,
@@ -80,6 +82,7 @@ def test_features_to_use_wrong_format(
         _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("features_to_use", ([["unknown_feature"]]))
 def test_features_to_use_not_found(
     forecasts_ts: TSDataset,
@@ -95,6 +98,7 @@ def test_features_to_use_not_found(
         _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -144,6 +148,7 @@ def test_make_features(
     assert (y == targets).all()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -188,6 +193,7 @@ def test_forecast_interface(
     assert features == expected_features
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble):
     """Check that StackingEnsemble.forecast forecast correct values"""
     train, test = weekly_period_ts
@@ -197,6 +203,7 @@ def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensem
     np.allclose(mae(test, forecast), 0)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: StackingEnsemble):
     """Test the forecast interface with prediction intervals."""
     naive_ensemble.fit(example_tsds)
@@ -230,6 +237,7 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with StackingEnsemble."""
