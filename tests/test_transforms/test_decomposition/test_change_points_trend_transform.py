@@ -20,7 +20,7 @@ def post_multitrend_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def pre_multitrend_df() -> pd.DataFrame:
+def pre_multitrend_df() -> TSDataset:
     """Generate pd.DataFrame with timestamp before multitrend_df."""
     df = pd.DataFrame({"timestamp": pd.date_range("2019-12-01", "2019-12-31")})
     df["target"] = 0
@@ -30,12 +30,13 @@ def pre_multitrend_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def multitrend_df_with_nans_in_tails(multitrend_df):
+def multitrend_ts_with_nans_in_tails(multitrend_df):
     multitrend_df.loc[
         [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],
         pd.IndexSlice["segment_1", "target"],
     ] = None
-    return multitrend_df
+    ts = TSDataset(multitrend_df, freq="D")
+    return ts
 
 
 def test_models_after_fit(multitrend_df: pd.DataFrame):
@@ -162,21 +163,21 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
         _ = transform.transform(df=multitrend_df["segment_1"])
 
 
-def test_fit_transform_with_nans_in_tails(multitrend_df_with_nans_in_tails):
+def test_fit_transform_with_nans_in_tails(multitrend_ts_with_nans_in_tails):
     transform = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    ts = TSDataset(multitrend_df_with_nans_in_tails, freq="D")
-    transformed = transform.fit_transform(ts=ts)
-    for segment in transformed.df.columns.get_level_values("segment").unique():
-        segment_slice = transformed.df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
+    transform.fit_transform(ts=multitrend_ts_with_nans_in_tails)
+    for segment in multitrend_ts_with_nans_in_tails.to_pandas().columns.get_level_values("segment").unique():
+        segment_slice = multitrend_ts_with_nans_in_tails.to_pandas().loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][
+            segment
+        ]
         assert abs(segment_slice["target"].mean()) < 0.1
 
 
-def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     bs = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    ts = TSDataset(df_with_nans, freq="H")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = bs.fit_transform(ts=ts)
+        bs.fit_transform(ts=ts_with_nans)

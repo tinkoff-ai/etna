@@ -180,7 +180,7 @@ def test_fit_transform_with_nans_in_tails(ts_trend_seasonal_nan_tails, model_stl
     np.testing.assert_allclose(ts_trend_seasonal_nan_tails[:, :, "target"].dropna(), 0, atol=0.25)
 
 
-def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     transform = STLTransform(in_column="target", period=7)
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = transform.fit_transform(df_with_nans)
+        _ = transform.fit_transform(ts_with_nans.to_pandas())
