@@ -106,12 +106,12 @@ def test_future_and_past_filling(simple_ar_ts):
     )
     before, ts = simple_ar_ts.train_test_split(test_start="2021-06-01")
     train, after = ts.train_test_split(test_start="2021-08-01")
-    train = bs.fit_transform(ts=train)
-    before = bs.transform(ts=before)
-    after = bs.transform(ts=after)
+    bs.fit_transform(ts=train)
+    bs.transform(ts=before)
+    bs.transform(ts=after)
     for seg in train.segments:
-        assert np.sum(np.abs(before.df[seg][OUT_COLUMN].astype(int))) == 0
-        assert (after.df[seg][OUT_COLUMN].astype(int) == 5).all()
+        assert np.sum(np.abs(before.to_pandas()[seg][OUT_COLUMN].astype(int))) == 0
+        assert (after.to_pandas()[seg][OUT_COLUMN].astype(int) == 5).all()
 
 
 @pytest.mark.xfail(reason="TSDataset 2.0")
@@ -120,7 +120,7 @@ def test_make_future(simple_ar_ts):
     bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
-    simple_ar_ts = bs.fit_transform(ts=simple_ar_ts)
+    bs.fit_transform(ts=simple_ar_ts)
     future = simple_ar_ts.make_future(10)
     for seg in simple_ar_ts.segments:
         assert (future.to_pandas()[seg][OUT_COLUMN].astype(int) == 5).all()
