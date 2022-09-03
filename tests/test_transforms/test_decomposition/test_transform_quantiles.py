@@ -18,7 +18,7 @@ from etna.transforms import TheilSenTrendTransform
 )
 def test_dummy_all(toy_dataset_equal_targets_and_quantiles, transform):
     """This test checks that inverse_transform transforms forecast's quantiles the same way with target itself."""
-    toy_dataset = toy_dataset_equal_targets_and_quantiles
+    toy_dataset = toy_dataset_equal_targets_and_quantiles.to_pandas()
     _ = transform.fit_transform(toy_dataset.copy())
 
     toy_dataset = transform.inverse_transform(toy_dataset)

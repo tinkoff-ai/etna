@@ -1,7 +1,8 @@
+from copy import deepcopy
+
 import numpy as np
 import pytest
 
-from etna.datasets import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms import BoxCoxTransform
 from etna.transforms import LogTransform
@@ -17,7 +18,7 @@ def test_standard_scaler_dummy_mean_shift_for_quantiles_per_segment(toy_dataset_
     This test checks that StandardScalerTransform.fit_transform + StandardScalerTransform.inverse_transform
     does not affect target's quantiles.
     """
-    toy_dataset = toy_dataset_with_mean_shift_in_target
+    toy_dataset = toy_dataset_with_mean_shift_in_target.to_pandas()
     scaler = StandardScalerTransform(in_column="target", with_std=False)
     toy_dataset = scaler.fit_transform(toy_dataset)
     toy_dataset = scaler.inverse_transform(toy_dataset)
@@ -27,7 +28,7 @@ def test_standard_scaler_dummy_mean_shift_for_quantiles_per_segment(toy_dataset_
 
 def test_standard_scaler_dummy_mean_shift_for_quantiles_macro(toy_dataset_with_mean_shift_in_target):
     """This test checks that StandardScalerTransform.inverse_transform works correctly in macro mode."""
-    toy_dataset = toy_dataset_with_mean_shift_in_target
+    toy_dataset = toy_dataset_with_mean_shift_in_target.to_pandas()
     scaler = StandardScalerTransform(in_column="target", with_std=False, mode="macro")
     mean_1 = toy_dataset.iloc[:, 0].mean()
     mean_2 = toy_dataset.iloc[:, 2].mean()
@@ -42,10 +43,10 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     This test checks that inverse_transform transforms forecast's quantiles the same way with target itself and
     transform does not affect quantiles.
     """
-    toy_dataset = toy_dataset_equal_targets_and_quantiles
+    toy_dataset = toy_dataset_equal_targets_and_quantiles.to_pandas()
     shift = 10.0
     add_constant = AddConstTransform(in_column="target", value=shift)
-    ts = TSDataset(toy_dataset.copy(), freq="D")
+    ts = deepcopy(toy_dataset_equal_targets_and_quantiles)
     toy_dataset_transformed = add_constant.fit_transform(ts)
 
     np.testing.assert_allclose(toy_dataset_transformed.df.iloc[:, 0] - shift, toy_dataset.iloc[:, 1])
@@ -73,7 +74,7 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
 )
 def test_dummy_all(toy_dataset_equal_targets_and_quantiles, transform):
     """This test checks that inverse_transform transforms forecast's quantiles the same way with target itself."""
-    toy_dataset = toy_dataset_equal_targets_and_quantiles
+    toy_dataset = toy_dataset_equal_targets_and_quantiles.to_pandas()
     _ = transform.fit_transform(toy_dataset.copy())
     toy_dataset = transform.inverse_transform(toy_dataset)
 

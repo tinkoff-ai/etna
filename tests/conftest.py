@@ -154,7 +154,7 @@ def outliers_df():
 
 
 @pytest.fixture
-def example_df_(random_seed) -> pd.DataFrame:
+def example_ts_(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df1["segment"] = ["segment_1"] * periods
@@ -169,7 +169,8 @@ def example_df_(random_seed) -> pd.DataFrame:
     df = pd.concat((df1, df2))
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    return df
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
@@ -455,7 +456,9 @@ def toy_dataset_equal_targets_and_quantiles():
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
         "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
-    return TSDataset.to_dataset(pd.DataFrame(df))
+    df = TSDataset.to_dataset(pd.DataFrame(df))
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
@@ -475,4 +478,6 @@ def toy_dataset_with_mean_shift_in_target():
         ),
         "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
-    return TSDataset.to_dataset(pd.DataFrame(df))
+    df = TSDataset.to_dataset(pd.DataFrame(df))
+    ts = TSDataset(df, freq="D")
+    return ts
