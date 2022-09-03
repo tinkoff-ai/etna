@@ -444,6 +444,7 @@ def test_full_inverse_transform_inplace_test_quantiles(period, order, df_nans_wi
     check_inverse_transform_inplace_test_quantiles(transform, df_nans_with_noise)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("period", [1, 7])
 def test_single_backtest_sanity(period, df_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly works in backtest."""
