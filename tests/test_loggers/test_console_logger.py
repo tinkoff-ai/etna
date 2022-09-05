@@ -138,7 +138,7 @@ def test_backtest_logging_no_tables(example_tsds: TSDataset):
         assert len(lines) == 0
     tslogger.remove(idx)
 
-
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), LinearMultiSegmentModel()])
 def test_model_logging(example_tsds, model):
     """Check working of logging in fit/forecast of model."""
