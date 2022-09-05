@@ -437,8 +437,8 @@ def ts_with_nans_in_tails(example_df):
 
 
 @pytest.fixture
-def ts_with_nans(df_with_nans_in_tails):
-    df = df_with_nans_in_tails
+def ts_with_nans(ts_with_nans_in_tails):
+    df = ts_with_nans_in_tails.to_pandas()
     df.loc[[df.index[5], df.index[8]], pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df, freq="H")
     return ts
