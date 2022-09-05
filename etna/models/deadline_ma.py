@@ -94,7 +94,7 @@ class _DeadlineMovingAverageModel:
         elif self.seasonality == SeasonalityMode.year:
             first_index = future_timestamps.iloc[0] - pd.DateOffset(years=self.window)
 
-        if first_index < history_timestamps.iloc[0]:
+        if len(history_timestamps) == 0 or first_index < history_timestamps.iloc[0]:
             raise ValueError(
                 "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
             )
