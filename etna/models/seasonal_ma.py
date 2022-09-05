@@ -82,7 +82,7 @@ class _SeasonalMovingAverageModel:
         Raises
         ------
         ValueError:
-            if context isn't big enought
+            if context isn't big enough
         """
         expected_length = prediction_size + self.shift
         if len(df) < expected_length:

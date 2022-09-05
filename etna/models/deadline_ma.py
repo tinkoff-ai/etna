@@ -121,7 +121,7 @@ class _DeadlineMovingAverageModel:
         Raises
         ------
         ValueError:
-            if context isn't big enought
+            if context isn't big enough
         """
         context_beginning = self._get_context_beginning(df=df, prediction_size=prediction_size)
 
