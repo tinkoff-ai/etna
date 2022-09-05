@@ -30,6 +30,11 @@ def pre_multitrend_df() -> TSDataset:
 
 
 @pytest.fixture
+def ts_with_nans(df_with_nans) -> TSDataset:
+    return TSDataset(df_with_nans, freq="H")
+
+
+@pytest.fixture
 def multitrend_ts_with_nans_in_tails(multitrend_df):
     multitrend_df.loc[
         [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],
@@ -173,8 +178,7 @@ def test_fit_transform_with_nans_in_tails(multitrend_ts_with_nans_in_tails):
         assert abs(segment_slice["target"].mean()) < 0.1
 
 
-def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
-    ts_with_nans = TSDataset(df_with_nans, freq="H")
+def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     bs = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
