@@ -93,7 +93,7 @@ class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
     def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
-            init_parameters[feature_name] = self.__dict__[feature_name]
+            init_parameters[feature_name] = getattr(self, feature_name)
             temp_transform = TimeFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
             return repr(temp_transform)
         else:
@@ -110,7 +110,7 @@ class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
             "one_third_day_number",
         ]
         output_columns = [
-            self._get_column_name(feature_name=feature_name) for feature_name in features if self.__dict__[feature_name]
+            self._get_column_name(feature_name=feature_name) for feature_name in features if getattr(self, feature_name)
         ]
         return output_columns
 

@@ -99,7 +99,7 @@ def test_metric_logging(example_tsds: TSDataset, metric: Metric):
     tslogger.remove(idx)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
+@pytest.mark.skip(reason="TSDataset 2.0")
 def test_backtest_logging(example_tsds: TSDataset):
     """Check working of logging inside backtest."""
     file = NamedTemporaryFile()
@@ -120,7 +120,7 @@ def test_backtest_logging(example_tsds: TSDataset):
     tslogger.remove(idx)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
+@pytest.mark.skip(reason="TSDataset 2.0")
 def test_backtest_logging_no_tables(example_tsds: TSDataset):
     """Check working of logging inside backtest with `table=False`."""
     file = NamedTemporaryFile()
@@ -142,7 +142,6 @@ def test_backtest_logging_no_tables(example_tsds: TSDataset):
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), LinearMultiSegmentModel()])
 def test_model_logging(example_tsds, model):
     """Check working of logging in fit/forecast of model."""
-    tslogger.loggers = []
     horizon = 7
     lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, 5 + 1)])
     example_tsds.fit_transform([lags])

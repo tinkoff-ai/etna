@@ -48,7 +48,7 @@ def df_with_specials():
 
 @pytest.fixture()
 def constant_days_two_segments_ts(constant_days_df: pd.DataFrame):
-    """Create pandas dataframe that has two segments with constant columns each."""
+    """Create TSDataset that has two segments with constant columns each."""
     df_1 = constant_days_df.reset_index()
     df_2 = constant_days_df.reset_index()
 
@@ -145,8 +145,10 @@ def test_interface_two_segments_week_month(constant_days_two_segments_ts: TSData
 
 
 def test_interface_two_segments_noweek_nomonth():
-    """This test checks that bad-inited SpecialDaysTransform raises AssertionError during fit_transform."""
-    with pytest.raises(ValueError):
+    """This test checks that bad-inited SpecialDaysTransform raises ValueError on initialisation."""
+    with pytest.raises(
+        ValueError, match="_OneSegmentSpecialDaysTransform feature does nothing with given init args configuration"
+    ):
         _ = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 

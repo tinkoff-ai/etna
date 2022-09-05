@@ -138,7 +138,7 @@ class DateFlagsTransform(IrreversibleTransform, FutureMixin):
     def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
-            init_parameters[feature_name] = self.__dict__[feature_name]
+            init_parameters[feature_name] = getattr(self, feature_name)
             temp_transform = DateFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
             return temp_transform.__repr__()
         else:
@@ -160,7 +160,7 @@ class DateFlagsTransform(IrreversibleTransform, FutureMixin):
             "special_days_in_month",
         ]
         output_columns = [
-            self._get_column_name(feature_name=feature_name) for feature_name in features if self.__dict__[feature_name]
+            self._get_column_name(feature_name=feature_name) for feature_name in features if getattr(self, feature_name)
         ]
         return output_columns
 
