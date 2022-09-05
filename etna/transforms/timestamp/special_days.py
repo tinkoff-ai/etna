@@ -197,11 +197,11 @@ class SpecialDaysTransform(IrreversiblePerSegmentWrapper, FutureMixin):
         ValueError:
             if all the modes are False
         """
-        super().__init__(required_features=["target"])
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
         super().__init__(
-            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day)
+            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day),
+            required_features=["target"],
         )
 
     def get_regressors_info(self) -> List[str]:

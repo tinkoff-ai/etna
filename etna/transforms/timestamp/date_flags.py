@@ -159,10 +159,12 @@ class DateFlagsTransform(IrreversibleTransform, FutureMixin):
             "special_days_in_week",
             "special_days_in_month",
         ]
-        output_columns = [self._get_column_name(feature_name=feature_name) for feature_name in features]
+        output_columns = [
+            self._get_column_name(feature_name=feature_name) for feature_name in features if self.__dict__[feature_name]
+        ]
         return output_columns
 
-    def _fit(self, *args) -> "DateFlagsTransform":
+    def _fit(self, df: pd.DataFrame) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
         return self
 

@@ -109,7 +109,9 @@ class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
             "half_day_number",
             "one_third_day_number",
         ]
-        output_columns = [self._get_column_name(feature_name=feature_name) for feature_name in features]
+        output_columns = [
+            self._get_column_name(feature_name=feature_name) for feature_name in features if self.__dict__[feature_name]
+        ]
         return output_columns
 
     def _fit(self, *args, **kwargs) -> "TimeFlagsTransform":
