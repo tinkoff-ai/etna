@@ -1,20 +1,28 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import List
 from typing import Optional
 
 import bottleneck as bn
 import numpy as np
 import pandas as pd
-from typing import List
+
 from etna.transforms.base import IrreversibleTransform
 
 
 class WindowStatisticsTransform(IrreversibleTransform, ABC):
     """WindowStatisticsTransform handles computation of statistical features on windows."""
 
-    def __init__(self, in_column: str, out_column: str, window: int,
-                 seasonality: int = 1, min_periods: int = 1,
-                 fillna: float = 0, **kwargs):
+    def __init__(
+        self,
+        in_column: str,
+        out_column: str,
+        window: int,
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+        **kwargs,
+    ):
         """Init WindowStatisticsTransform.
 
         Parameters
@@ -303,6 +311,7 @@ class QuantileTransform(WindowStatisticsTransform):
         # There is no "nanquantile" in bottleneck, "apply_along_axis" can't be replace with "axis=2"
         series = np.apply_along_axis(np.nanquantile, axis=2, arr=series, q=self.quantile)
         return series
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
         Returns
@@ -362,6 +371,7 @@ class MinTransform(WindowStatisticsTransform):
         """Compute min over the series."""
         series = bn.nanmin(series, axis=2)
         return series
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
         Returns
@@ -421,6 +431,7 @@ class MaxTransform(WindowStatisticsTransform):
         """Compute max over the series."""
         series = bn.nanmax(series, axis=2)
         return series
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
         Returns
@@ -480,6 +491,7 @@ class MedianTransform(WindowStatisticsTransform):
         """Compute median over the series."""
         series = bn.nanmedian(series, axis=2)
         return series
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
         Returns
@@ -545,6 +557,7 @@ class MADTransform(WindowStatisticsTransform):
             ad = np.abs(series[:, segment] - mean[:, segment])
             mad[:, segment] = bn.nanmean(ad, axis=1)
         return mad
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
         Returns

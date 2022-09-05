@@ -45,7 +45,9 @@ def ts_for_agg_with_nan() -> TSDataset:
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
-'''
+
+
+"""
 (
         (MaxTransform, None),
         (MaxTransform, "test_max"),
@@ -60,12 +62,12 @@ def ts_for_agg_with_nan() -> TSDataset:
         (MADTransform, None),
         (MADTransform, "test_mad"),
     ),
-'''
+"""
 
 
 @pytest.mark.parametrize(
     "class_name,out_column",
-(
+    (
         (MaxTransform, None),
         (MaxTransform, "test_max"),
         (MinTransform, None),
@@ -245,6 +247,7 @@ def test_std_feature(simple_ts_for_agg: TSDataset, window: int, periods: int, fi
     res.df["expected"] = expected
     assert (res.df["expected"] == res[:, "segment_1", "result"]).all()
 
+
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
@@ -288,4 +291,3 @@ def test_mad_transform_with_nans(
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
     transform.fit_transform(ts_diff_endings)
-
