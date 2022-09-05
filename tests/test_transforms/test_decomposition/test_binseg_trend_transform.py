@@ -55,15 +55,17 @@ def test_binseg_runs_with_different_series_length(ts_with_different_series_lengt
     np.allclose(ts.to_pandas().values, ts_with_different_series_length.to_pandas().values, equal_nan=True)
 
 
-def test_fit_transform_with_nans_in_tails(ts_with_nans_in_tails):
+def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails):
+    ts_with_nans_in_tails = TSDataset(df_with_nans_in_tails, freq="H")
     transform = BinsegTrendTransform(in_column="target")
-    transform.fit_transform(ts=ts_with_nans_in_tails)
-    for segment in ts_with_nans_in_tails.to_pandas().columns.get_level_values("segment").unique():
-        segment_slice = ts_with_nans_in_tails.to_pandas().loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
+    transformed_df = transform.fit_transform(ts=ts_with_nans_in_tails).to_pandas()
+    for segment in transformed_df.columns.get_level_values("segment").unique():
+        segment_slice = transformed_df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
         assert abs(segment_slice["target"].mean()) < 0.1
 
 
-def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
+def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+    ts_with_nans = TSDataset(df_with_nans, freq="H")
     transform = BinsegTrendTransform(in_column="target")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         transform.fit_transform(ts=ts_with_nans)

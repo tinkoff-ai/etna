@@ -1127,17 +1127,13 @@ def plot_trend(
     if not isinstance(trend_transform, list):
         trend_transform = [trend_transform]
 
-    ts_detrend = [transform.fit_transform(deepcopy(ts)) for transform in trend_transform]
+    df_detrend = [transform.fit_transform(deepcopy(ts)).to_pandas() for transform in trend_transform]
     labels, linear_coeffs = _get_labels_names(trend_transform, segments)
 
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
-        for label, ts_now in zip(labels, ts_detrend):
-            ax[i].plot(
-                df[segment, "target"] - ts_now.to_pandas()[segment, "target"],
-                label=label + linear_coeffs[segment],
-                lw=3,
-            )
+        for label, df_now in zip(labels, df_detrend):
+            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment], lw=3)
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend()

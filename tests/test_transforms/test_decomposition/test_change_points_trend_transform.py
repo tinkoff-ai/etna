@@ -167,15 +167,14 @@ def test_fit_transform_with_nans_in_tails(multitrend_ts_with_nans_in_tails):
     transform = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )
-    transform.fit_transform(ts=multitrend_ts_with_nans_in_tails)
-    for segment in multitrend_ts_with_nans_in_tails.to_pandas().columns.get_level_values("segment").unique():
-        segment_slice = multitrend_ts_with_nans_in_tails.to_pandas().loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][
-            segment
-        ]
+    transformed_df = transform.fit_transform(ts=multitrend_ts_with_nans_in_tails).to_pandas()
+    for segment in transformed_df.columns.get_level_values("segment").unique():
+        segment_slice = transformed_df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
         assert abs(segment_slice["target"].mean()) < 0.1
 
 
-def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
+def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+    ts_with_nans = TSDataset(df_with_nans, freq="H")
     bs = ChangePointsTrendTransform(
         in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
     )

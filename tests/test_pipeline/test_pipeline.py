@@ -374,9 +374,9 @@ def test_forecast_raise_error_if_not_fitted():
         _ = pipeline.forecast()
 
 
-def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
+def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
-
+    ts_with_nans_in_tails = TSDataset(df_with_nans_in_tails, freq="H")
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
     pipeline.fit(ts_with_nans_in_tails)
     forecast = pipeline.forecast()
