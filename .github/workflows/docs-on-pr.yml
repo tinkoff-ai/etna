@@ -23,16 +23,14 @@ jobs:
          uses: actions/cache@v2
          with:
            path: .venv
-           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
+           key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
        - name: Install dependencies
          if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
          run: |
-           poetry install -E all -vv
-       - name: Install docs dependencies
+           poetry install -E "all docs" -vv
+       - name: Install apt docs dependencies
          run: |
            sudo apt install pandoc
-           poetry install -E docs
        - name: Build docs
          run: |
            cd docs
