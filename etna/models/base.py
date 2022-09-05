@@ -494,7 +494,9 @@ class PerSegmentModelMixin(ModelForecastMixin):
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
         df = df.set_index(["timestamp", "segment"])
-        # TODO: remember that it can be a trouble for in-sample forecasting
+        # clear values to be filled, otherwise during in-sample prediction our values won't be used
+        columns_to_clear = result_df.columns.intersection(df.columns)
+        df.loc[result_df.index, columns_to_clear] = np.NaN
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)
@@ -508,7 +510,10 @@ class PerSegmentModelMixin(ModelForecastMixin):
 
 
 class MultiSegmentModelMixin(ModelForecastMixin):
-    """Mixin for holding methods for multi-segment prediction."""
+    """Mixin for holding methods for multi-segment prediction.
+
+    It currently isn't working with prediction intervals and context.
+    """
 
     def __init__(self, base_model: Any):
         """
@@ -557,7 +562,7 @@ class MultiSegmentModelMixin(ModelForecastMixin):
         """
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        # TODO: we haven't tested working with prediction_size here
+        # TODO: make it work with prediction intervals and context
         y = self._base_model.predict(x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
