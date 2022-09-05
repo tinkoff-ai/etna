@@ -47,24 +47,6 @@ def ts_for_agg_with_nan() -> TSDataset:
     return ts
 
 
-"""
-(
-        (MaxTransform, None),
-        (MaxTransform, "test_max"),
-        (MinTransform, None),
-        (MinTransform, "test_min"),
-        (MedianTransform, None),
-        (MedianTransform, "test_median"),
-        (MeanTransform, None),
-        (MeanTransform, "test_mean"),
-        (StdTransform, None),
-        (StdTransform, "test_std"),
-        (MADTransform, None),
-        (MADTransform, "test_mad"),
-    ),
-"""
-
-
 @pytest.mark.parametrize(
     "class_name,out_column",
     (
@@ -84,17 +66,17 @@ def ts_for_agg_with_nan() -> TSDataset:
 )
 def test_interface_simple(simple_ts_for_agg: TSDataset, class_name: Any, out_column: str):
     transform = class_name(window=3, out_column=out_column, in_column="target")
-    res = transform.fit_transform(simple_ts_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     result_column = out_column if out_column is not None else transform.__repr__()
-    assert sorted(res[:, "segment_1", :].columns.get_level_values(1)) == sorted([result_column] + ["target"])
+    assert sorted(res["segment_1"]) == sorted([result_column] + ["target"])
 
 
 @pytest.mark.parametrize("out_column", (None, "test_q"))
 def test_interface_quantile(simple_ts_for_agg: TSDataset, out_column: str):
     transform = QuantileTransform(quantile=0.7, window=4, out_column=out_column, in_column="target")
-    res = transform.fit_transform(simple_ts_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     result_column = out_column if out_column is not None else transform.__repr__()
-    assert sorted(res[:, "segment_1", :].columns.get_level_values(1)) == sorted([result_column] + ["target"])
+    assert sorted(res["segment_1"]) == sorted([result_column] + ["target"])
 
 
 @pytest.mark.parametrize(
@@ -133,9 +115,9 @@ def test_mean_feature(
         in_column="target",
         out_column="result",
     )
-    res = transform.fit_transform(simple_ts_for_agg)
-    res.df["expected"] = expected
-    assert (res.df["expected"] == res[:, "segment_1", "result"]).all()
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
+    res["expected"] = expected
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -158,9 +140,9 @@ def test_min_feature(
         in_column="target",
         out_column="result",
     )
-    res = transform.fit_transform(simple_ts_for_agg)
-    res.df["expected"] = expected
-    assert (res.df["expected"] == res[:, "segment_1", "result"]).all()
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
+    res["expected"] = expected
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -175,9 +157,9 @@ def test_max_feature(simple_ts_for_agg: TSDataset, window: int, periods: int, fi
     transform = MaxTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_ts_for_agg)
-    res.df["expected"] = expected
-    assert (res.df["expected"] == res[:, "segment_1", "result"]).all()
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
+    res["expected"] = expected
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -191,10 +173,9 @@ def test_median_feature(simple_ts_for_agg: TSDataset, window: int, periods: int,
     transform = MedianTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_ts_for_agg)
-    res.df["expected"] = expected
-    assert (res.df["expected"] == res[:, "segment_1", "result"]).all()
-
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
+    res["expected"] = expected
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
@@ -243,9 +224,9 @@ def test_std_feature(simple_ts_for_agg: TSDataset, window: int, periods: int, fi
     transform = StdTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_ts_for_agg)
-    res.df["expected"] = expected
-    assert (res.df["expected"] == res[:, "segment_1", "result"]).all()
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
+    res["expected"] = expected
+    assert (res["expected"] == res["segment_1"]["result"]).all()
 
 
 @pytest.mark.parametrize(
@@ -260,8 +241,8 @@ def test_mad_transform(ts_for_agg: TSDataset, window: int, periods: int, fill_na
     transform = MADTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(ts_for_agg)
-    np.testing.assert_array_almost_equal(expected, res[:, "segment_1", "result"])
+    res = transform.fit_transform(ts_for_agg).to_pandas()
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
 
 
 @pytest.mark.parametrize(
@@ -274,8 +255,8 @@ def test_mad_transform_with_nans(
     transform = MADTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(ts_for_agg_with_nan)
-    np.testing.assert_array_almost_equal(expected, res[:, "segment_1", "result"])
+    res = transform.fit_transform(ts_for_agg_with_nan).to_pandas()
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
 
 
 @pytest.mark.parametrize(

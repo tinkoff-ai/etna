@@ -12,7 +12,6 @@ from etna.datasets.tsdataset import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
 from etna.transforms import MaxAbsScalerTransform
-from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -21,9 +20,9 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_1["segment"] = "Moscow"
-    df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
+    df_1["target"] = [x ** 2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     df_2["segment"] = "Omsk"
-    df_2["target"] = [x**0.5 + np.random.uniform(-2, 2) for x in list(range(len(df_2)))]
+    df_2["target"] = [x ** 0.5 + np.random.uniform(-2, 2) for x in list(range(len(df_2)))]
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
 
     df = TSDataset.to_dataset(classic_df)
@@ -828,7 +827,6 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
 @pytest.mark.parametrize(
     "transforms, expected_regressors",
     (
-        ([SegmentEncoderTransform()], ["regressor_1", "regressor_2", "segment_code"]),
         (
             [LagTransform(in_column="target", lags=[1, 2], out_column="regressor_lag")],
             ["regressor_1", "regressor_2", "regressor_lag_1", "regressor_lag_2"],
