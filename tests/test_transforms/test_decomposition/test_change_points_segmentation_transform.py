@@ -120,7 +120,7 @@ def test_make_future(simple_ar_ts):
     bs = ChangePointsSegmentationTransform(
         in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
     )
-    bs.fit_transform(ts=simple_ar_ts)
+    simple_ar_ts.fit_transform(transforms=[bs])
     future = simple_ar_ts.make_future(10)
     for seg in simple_ar_ts.segments:
         assert (future.to_pandas()[seg][OUT_COLUMN].astype(int) == 5).all()

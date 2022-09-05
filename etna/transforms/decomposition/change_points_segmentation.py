@@ -81,18 +81,7 @@ class _OneSegmentChangePointsSegmentationTransform(OneSegmentTransform):
         return df
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Inverse transform Dataframe.
-
-        Parameters
-        ----------
-        df:
-            Dataframe in etna long format to be inverse transformed.
-
-        Returns
-        -------
-        :
-            Dataframe after applying inverse transformation.
-        """
+        """Inverse transform Dataframe."""
         return df
 
 
@@ -138,4 +127,4 @@ class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMix
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return []
+        return [self.out_column] if self.out_column is not None else []
