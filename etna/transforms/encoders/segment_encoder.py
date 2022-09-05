@@ -19,6 +19,7 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
     def _fit(self, df: pd.DataFrame) -> "SegmentEncoderTransform":
         """
         Fit encoder on existing segment labels.
+
         Parameters
         ----------
         df:
