@@ -9,7 +9,13 @@ from etna.datasets import generate_const_df
 from etna.datasets.tsdataset import TSDataset
 
 # TODO: Collection of tests to fix in TSDataset 2.0
-collect_ignore = ["test_transforms/test_encoders/test_segment_encoder_transform.py","test_models/nn/test_tft.py", "test_models/nn/test_deepar.py", "test_models/test_inference.py"]
+collect_ignore = [
+    "tests/test_commands/test_backtest.py",
+    "tests/test_commands/test_forecast.py",
+    "test_models/nn/test_tft.py",
+    "test_models/nn/test_deepar.py",
+    "test_models/test_inference.py",
+]
 
 
 @pytest.fixture(autouse=True)

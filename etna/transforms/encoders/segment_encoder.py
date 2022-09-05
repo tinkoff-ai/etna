@@ -19,6 +19,7 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
     def _fit(self, df: pd.DataFrame) -> "SegmentEncoderTransform":
         """
         Fit encoder on existing segment labels.
+
         Parameters
         ----------
         df:
@@ -35,6 +36,7 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Get encoded (categorical) for each segment.
+
         Parameters
         ----------
         df:
@@ -58,6 +60,7 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
+
         Returns
         -------
         :

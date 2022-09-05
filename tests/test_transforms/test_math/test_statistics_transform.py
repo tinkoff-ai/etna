@@ -177,6 +177,7 @@ def test_median_feature(simple_ts_for_agg: TSDataset, window: int, periods: int,
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
+
 @pytest.mark.parametrize(
     "window,periods,fill_na,expected",
     (
