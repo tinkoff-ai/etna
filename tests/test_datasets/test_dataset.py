@@ -10,10 +10,8 @@ from pandas.testing import assert_frame_equal
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import AddConstTransform
-from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import MaxAbsScalerTransform
-from etna.transforms import OneHotEncoderTransform
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
@@ -846,21 +844,6 @@ def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transf
     "transforms, expected_regressors",
     (
         (
-            [OneHotEncoderTransform(in_column="regressor", out_column="regressor_ohe")],
-            ["regressor_ohe_0", "regressor_ohe_1", "regressor"],
-        ),
-        ([OneHotEncoderTransform(in_column="not_regressor")], ["regressor"]),
-    ),
-)
-def test_update_regressors_with_onehotencoder_transform(ts_with_categoricals, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
             [MaxAbsScalerTransform(in_column="regressor_1", inplace=False, out_column="scaled")],
             ["regressor_1", "regressor_2", "scaled_regressor_1"],
         ),
@@ -904,43 +887,6 @@ def test_update_regressors_with_regressor_in_column(ts_with_regressors, transfor
 def test_update_regressors_not_add_not_regressors(ts_with_regressors, transforms, expected_regressors):
     _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [FilterFeaturesTransform(exclude=["regressor_1"])],
-            ["regressor_2"],
-        ),
-        (
-            [FilterFeaturesTransform(exclude=["regressor_1", "regressor_2"])],
-            [],
-        ),
-    ),
-)
-def test_update_regressors_after_filter(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.xfail
-@pytest.mark.parametrize("return_features", [True, False])
-@pytest.mark.parametrize(
-    "columns",
-    [
-        ([]),
-        (["target"]),
-        (["exog_1", "exog_2"]),
-        (["target", "exog_1", "exog_2"]),
-    ],
-)
-def test_inverse_transform_back_included_columns(ts_with_features, columns, return_features):
-    original_regressors = ts_with_features.regressors
-    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
-    ts_with_features.fit_transform([transform])
-    ts_with_features.inverse_transform()
-    assert set(original_regressors) == set(ts_with_features.regressors)
 
 
 def test_to_dataset_not_modify_dataframe():
