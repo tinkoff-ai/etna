@@ -86,9 +86,10 @@ def get_anomalies_prediction_interval(
         deepcopy(ts_inner), prediction_interval=True, quantiles=[lower_p, upper_p]
     )
     for segment in ts_inner.segments:
-        segment_slice = prediction_interval[:, segment, :][segment]
-        anomalies_mask = (segment_slice["target"] > segment_slice[f"target_{upper_p:.4g}"]) | (
-            segment_slice["target"] < segment_slice[f"target_{lower_p:.4g}"]
+        predicted_segment_slice = prediction_interval[:, segment, :][segment]
+        actual_segment_slice = ts_inner[:, segment, :][segment]
+        anomalies_mask = (actual_segment_slice["target"] > predicted_segment_slice[f"target_{upper_p:.4g}"]) | (
+            actual_segment_slice["target"] < predicted_segment_slice[f"target_{lower_p:.4g}"]
         )
         outliers_per_segment[segment] = list(time_points[anomalies_mask])
     return outliers_per_segment
