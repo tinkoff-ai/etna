@@ -12,7 +12,6 @@ from etna.datasets.tsdataset import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
 from etna.transforms import MaxAbsScalerTransform
-from etna.transforms import OneHotEncoderTransform
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
@@ -839,21 +838,6 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
 def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transforms, expected_regressors):
     _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [OneHotEncoderTransform(in_column="regressor", out_column="regressor_ohe")],
-            ["regressor_ohe_0", "regressor_ohe_1", "regressor"],
-        ),
-        ([OneHotEncoderTransform(in_column="not_regressor")], ["regressor"]),
-    ),
-)
-def test_update_regressors_with_onehotencoder_transform(ts_with_categoricals, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
 
 
 @pytest.mark.parametrize(
