@@ -18,6 +18,7 @@ from etna.transforms import LinearTrendTransform
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_fit(example_tsds):
     """Test that AutoRegressivePipeline pipeline makes fit without failing."""
     model = LinearPerSegmentModel()
@@ -26,6 +27,7 @@ def test_fit(example_tsds):
     pipeline.fit(example_tsds)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_columns(example_reg_tsds):
     """Test that AutoRegressivePipeline generates all the columns."""
     original_ts = deepcopy(example_reg_tsds)
