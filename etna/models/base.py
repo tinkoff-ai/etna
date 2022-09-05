@@ -494,7 +494,7 @@ class PerSegmentModelMixin(ModelForecastMixin):
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
         df = df.set_index(["timestamp", "segment"])
-        # clear values to be filled, otherwise during in-sample prediction our values won't be used
+        # clear values to be filled, otherwise during in-sample prediction new values won't be set
         columns_to_clear = result_df.columns.intersection(df.columns)
         df.loc[result_df.index, columns_to_clear] = np.NaN
         df = df.combine_first(result_df).reset_index()
