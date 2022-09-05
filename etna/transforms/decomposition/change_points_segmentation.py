@@ -112,10 +112,8 @@ class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMix
             model to get change points
         """
         self.in_column = in_column
-        self.out_column = out_column
+        self.out_column = out_column if out_column is not None else self.__repr__()
         self.change_point_model = change_point_model
-        if self.out_column is None:
-            self.out_column = repr(self)
         super().__init__(
             transform=_OneSegmentChangePointsSegmentationTransform(
                 in_column=self.in_column,
@@ -127,4 +125,4 @@ class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMix
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return [self.out_column] if self.out_column is not None else []
+        return [self.out_column]
