@@ -46,11 +46,6 @@ def ts_with_feature():
     return ts
 
 
-@pytest.fixture
-def ts_with_nans_in_tails(df_with_nans_in_tails) -> TSDataset:
-    return TSDataset(df_with_nans_in_tails, freq="H")
-
-
 @pytest.mark.parametrize("horizon", ([1]))
 def test_init_pass(horizon):
     """Check that Pipeline initialization works correctly in case of valid parameters."""
