@@ -30,11 +30,6 @@ def pre_multitrend_df() -> TSDataset:
 
 
 @pytest.fixture
-def ts_with_nans(df_with_nans) -> TSDataset:
-    return TSDataset(df_with_nans, freq="H")
-
-
-@pytest.fixture
 def multitrend_ts_with_nans_in_tails(multitrend_df):
     multitrend_df.loc[
         [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],

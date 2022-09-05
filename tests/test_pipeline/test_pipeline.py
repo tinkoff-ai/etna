@@ -379,10 +379,12 @@ def test_forecast_raise_error_if_not_fitted():
         _ = pipeline.forecast()
 
 
-def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
+@pytest.mark.xfail(reason="TSDataset 2.0")
+def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
+
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    pipeline.fit(ts_with_nans_in_tails)
+    pipeline.fit(TSDataset(df_with_nans_in_tails, freq="1H"))
     forecast = pipeline.forecast()
     assert len(forecast.df) == 5
 

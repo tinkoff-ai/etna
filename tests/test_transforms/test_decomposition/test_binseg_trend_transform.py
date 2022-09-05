@@ -17,16 +17,6 @@ from etna.datasets import TSDataset
 from etna.transforms.decomposition import BinsegTrendTransform
 
 
-@pytest.fixture
-def ts_with_nans(df_with_nans) -> TSDataset:
-    return TSDataset(df_with_nans, freq="H")
-
-
-@pytest.fixture
-def ts_with_nans_in_tails(df_with_nans_in_tails) -> TSDataset:
-    return TSDataset(df_with_nans_in_tails, freq="H")
-
-
 def test_binseg_in_pipeline(example_tsds: TSDataset):
     bs = BinsegTrendTransform(in_column="target")
     bs.fit_transform(example_tsds)
