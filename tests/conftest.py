@@ -464,7 +464,9 @@ def toy_dataset_equal_targets_and_quantiles():
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
         "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
-    return TSDataset.to_dataset(pd.DataFrame(df))
+    df = TSDataset.to_dataset(pd.DataFrame(df))
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
