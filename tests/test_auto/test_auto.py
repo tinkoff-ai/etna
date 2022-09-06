@@ -51,11 +51,7 @@ def test_objective(
     callback.assert_called_once()
 
 
-@patch("etna.auto.auto.ConfigSampler", return_value=MagicMock())
-@patch("etna.auto.auto.Optuna", return_value=MagicMock())
 def test_fit(
-    optuna_mock,
-    sampler_mock,
     ts=MagicMock(),
     auto=MagicMock(),
     timeout=4,
@@ -63,6 +59,7 @@ def test_fit(
     initializer=MagicMock(),
     callback=MagicMock(),
 ):
+
     Auto.fit(
         self=auto,
         ts=ts,
@@ -72,11 +69,23 @@ def test_fit(
         callback=callback,
     )
 
+    auto._optuna.tune.assert_called_with(
+        objective=auto.objective.return_value, runner=auto.runner, n_trials=n_trials, timeout=timeout
+    )
+
+
+@patch("etna.auto.auto.ConfigSampler", return_value=MagicMock())
+@patch("etna.auto.auto.Optuna", return_value=MagicMock())
+def test_init_optuna(
+    optuna_mock,
+    sampler_mock,
+    auto=MagicMock(),
+):
+
+    Auto._init_optuna(self=auto)
+
     optuna_mock.assert_called_once_with(
         direction="minimize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock.return_value
-    )
-    optuna_mock.return_value.tune.assert_called_with(
-        objective=auto.objective.return_value, runner=auto.runner, n_trials=n_trials, timeout=timeout
     )
 
 
