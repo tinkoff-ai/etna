@@ -168,6 +168,7 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])
 def test_no_warning_on_categorical_features(example_tsds, model):
     """Check that SklearnModel raises no warning working with dataset with categorical features"""
@@ -209,6 +210,7 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     )
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])
 def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
     """Check that SklearnModel raises error working with dataset with categorical features which can't be converted to numeric"""

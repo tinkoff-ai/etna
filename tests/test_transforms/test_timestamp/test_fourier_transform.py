@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -28,6 +30,13 @@ def get_one_df(period_1, period_2, magnitude_1, magnitude_2):
     target += np.random.normal(scale=0.05, size=timestamp.shape[0])
     df["target"] = target
     return df
+
+
+@pytest.fixture
+def example_ts(example_df):
+    df = TSDataset.to_dataset(example_df)
+    ts = TSDataset(df=df, freq="H")
+    return ts
 
 
 @pytest.fixture
@@ -88,17 +97,16 @@ def test_fail_set_both():
 @pytest.mark.parametrize(
     "period, order, num_columns", [(6, 2, 4), (7, 2, 4), (6, 3, 5), (7, 3, 6), (5.5, 2, 4), (5.5, 3, 5)]
 )
-def test_column_names(example_df, period, order, num_columns):
+def test_column_names(example_ts, period, order, num_columns):
     """Test that transform creates expected number of columns and they can be recreated by its name."""
-    df = TSDataset.to_dataset(example_df)
-    segments = df.columns.get_level_values("segment").unique()
+    segments = example_ts.columns.get_level_values("segment").unique()
     transform = FourierTransform(period=period, order=order)
-    transformed_df = transform.fit_transform(df)
+    transformed_df = transform.fit_transform(deepcopy(example_ts)).to_pandas()
     columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
     assert len(columns) == num_columns
     for column in columns:
         transform_temp = eval(column)
-        df_temp = transform_temp.fit_transform(df)
+        df_temp = transform_temp.fit_transform(deepcopy(example_ts)).to_pandas()
         columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
@@ -109,26 +117,24 @@ def test_column_names(example_df, period, order, num_columns):
         )
 
 
-def test_column_names_out_column(example_df):
+def test_column_names_out_column(example_ts):
     """Test that transform creates expected columns if `out_column` is set"""
-    df = TSDataset.to_dataset(example_df)
     transform = FourierTransform(period=10, order=3, out_column="regressor_fourier")
-    transformed_df = transform.fit_transform(df)
+    transformed_df = transform.fit_transform(example_ts).to_pandas()
     columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
     expected_columns = {f"regressor_fourier_{i}" for i in range(1, 7)}
     assert set(columns) == expected_columns
 
 
 @pytest.mark.parametrize("period, mod", [(24, 1), (24, 2), (24, 9), (24, 20), (24, 23), (7.5, 3), (7.5, 4)])
-def test_column_values(example_df, period, mod):
+def test_column_values(example_ts, period, mod):
     """Test that transform generates correct values."""
-    df = TSDataset.to_dataset(example_df)
     transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier")
-    transformed_df = transform.fit_transform(df)
-    for segment in example_df["segment"].unique():
+    transformed_df = transform.fit_transform(example_ts).to_pandas()
+    for segment in example_ts.segments:
         transform_values = transformed_df.loc[:, pd.IndexSlice[segment, f"regressor_fourier_{mod}"]]
 
-        timestamp = df.index
+        timestamp = example_ts.index
         freq = pd.Timedelta("1H")
         elapsed = (timestamp - timestamp[0]) / (period * freq)
         order = (mod + 1) // 2
@@ -140,6 +146,7 @@ def test_column_values(example_df, period, mod):
         assert np.allclose(transform_values, expected_values, atol=1e-12)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(ts_trend_seasonal):
     """Test that transform works correctly in forecast."""
     transform_1 = FourierTransform(period=7, order=3)

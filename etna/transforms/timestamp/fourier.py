@@ -1,4 +1,5 @@
 import math
+from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -6,10 +7,10 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class FourierTransform(Transform, FutureMixin):
+class FourierTransform(IrreversibleTransform, FutureMixin):
     """Adds fourier features to the dataset.
 
     Notes
@@ -85,8 +86,20 @@ class FourierTransform(Transform, FutureMixin):
             raise ValueError("There should be exactly one option set: order or mods")
         self.order = None
         self.out_column = out_column
+        super().__init__(required_features=["target"])
 
-    def fit(self, df: pd.DataFrame) -> "FourierTransform":
+    def _get_column_name(self, mod: int) -> str:
+        if self.out_column is None:
+            return f"{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
+        else:
+            return f"{self.out_column}_{mod}"
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        output_columns = [self._get_column_name(mod=mod) for mod in self.mods]
+        return output_columns
+
+    def _fit(self, df: pd.DataFrame) -> "FourierTransform":
         """Fit method does nothing and is kept for compatibility.
 
         Parameters
@@ -99,12 +112,6 @@ class FourierTransform(Transform, FutureMixin):
         result: FourierTransform
         """
         return self
-
-    def _get_column_name(self, mod: int) -> str:
-        if self.out_column is None:
-            return f"{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
-        else:
-            return f"{self.out_column}_{mod}"
 
     @staticmethod
     def _construct_answer(df: pd.DataFrame, features: pd.DataFrame) -> pd.DataFrame:
@@ -120,7 +127,7 @@ class FourierTransform(Transform, FutureMixin):
         result.columns.names = ["segment", "feature"]
         return result
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add harmonics to the dataset.
 
         Parameters
