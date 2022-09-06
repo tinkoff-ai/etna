@@ -838,6 +838,7 @@ def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transf
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 @pytest.mark.parametrize(
     "transforms, expected_regressors",
     (
@@ -869,6 +870,7 @@ def test_update_regressors_with_regressor_in_column(ts_with_regressors, transfor
     _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 @pytest.mark.parametrize(
     "transforms, expected_regressors",
     (
