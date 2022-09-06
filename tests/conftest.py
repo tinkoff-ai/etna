@@ -15,6 +15,7 @@ collect_ignore = [
     "test_models/nn/test_tft.py",
     "test_models/nn/test_deepar.py",
     "test_models/test_inference.py",
+    "test_ensembles/test_stacking_ensemble.py",
 ]
 
 
@@ -434,18 +435,20 @@ def ts_diff_endings(example_reg_tsds):
 
 
 @pytest.fixture
-def df_with_nans_in_tails(example_df):
+def ts_with_nans_in_tails(example_df):
     df = TSDataset.to_dataset(example_df)
     df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
     df.loc[-3:, pd.IndexSlice["segment_1", "target"]] = None
-    return df
+    ts = TSDataset(df, freq="H")
+    return ts
 
 
 @pytest.fixture
-def df_with_nans(df_with_nans_in_tails):
-    df = df_with_nans_in_tails
+def ts_with_nans(ts_with_nans_in_tails):
+    df = ts_with_nans_in_tails.to_pandas()
     df.loc[[df.index[5], df.index[8]], pd.IndexSlice["segment_1", "target"]] = None
-    return df
+    ts = TSDataset(df, freq="H")
+    return ts
 
 
 @pytest.fixture

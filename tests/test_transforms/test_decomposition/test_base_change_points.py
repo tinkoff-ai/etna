@@ -12,7 +12,7 @@ N_BKPS = 5
 
 
 @pytest.fixture
-def df_with_nans() -> pd.DataFrame:
+def ts_with_nans() -> TSDataset:
     """Generate pd.DataFrame with timestamp."""
     df = pd.DataFrame({"timestamp": pd.date_range("2019-12-01", "2019-12-31")})
     tmp = np.zeros(31)
@@ -20,7 +20,8 @@ def df_with_nans() -> pd.DataFrame:
     df["target"] = tmp
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df=df)
-    return df["segment_1"]
+    ts = TSDataset(df, freq="H")
+    return ts
 
 
 @pytest.fixture
@@ -30,10 +31,10 @@ def simple_ar_df(random_seed):
     return df_ts_format
 
 
-def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = change_point_model.get_change_points_intervals(df=df_with_nans, in_column="target")
+        _ = change_point_model.get_change_points_intervals(df=ts_with_nans.to_pandas()["segment_1"], in_column="target")
 
 
 def test_build_intervals():
