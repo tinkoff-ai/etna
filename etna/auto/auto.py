@@ -7,6 +7,7 @@ import pandas as pd
 from hydra_slayer import get_from_params
 from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
+from optuna.study import Study
 from optuna.trial import Trial
 from typing_extensions import Protocol
 
@@ -89,7 +90,7 @@ class Auto:
         if str(target_metric) not in [str(metric) for metric in metrics]:
             metrics.append(target_metric)
         self.metrics = metrics
-        self._study = None
+        self._study: Optional[Study] = None
 
     def fit(
         self,
