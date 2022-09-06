@@ -33,6 +33,11 @@ class MAE(Metric):
         """
         super().__init__(mode=mode, metric_fn=mae, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class MSE(Metric):
     """Mean squared error metric with multi-segment computation support.
@@ -57,6 +62,11 @@ class MSE(Metric):
         """
         super().__init__(mode=mode, metric_fn=mse, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class R2(Metric):
     """Coefficient of determination metric with multi-segment computation support.
@@ -79,6 +89,11 @@ class R2(Metric):
             metric's computation arguments
         """
         super().__init__(mode=mode, metric_fn=r2_score, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return True
 
 
 class MAPE(Metric):
@@ -104,6 +119,11 @@ class MAPE(Metric):
         """
         super().__init__(mode=mode, metric_fn=mape, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class SMAPE(Metric):
     """Symmetric mean absolute percentage error metric with multi-segment computation support.
@@ -128,6 +148,11 @@ class SMAPE(Metric):
         """
         super().__init__(mode=mode, metric_fn=smape, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class MedAE(Metric):
     """Median absolute error metric with multi-segment computation support.
@@ -151,6 +176,11 @@ class MedAE(Metric):
             metric's computation arguments
         """
         super().__init__(mode=mode, metric_fn=medae, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
 
 
 class MSLE(Metric):
@@ -177,6 +207,11 @@ class MSLE(Metric):
         """
         super().__init__(mode=mode, metric_fn=msle, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class Sign(Metric):
     """Sign error metric with multi-segment computation support.
@@ -200,6 +235,11 @@ class Sign(Metric):
             metric's computation arguments
         """
         super().__init__(mode=mode, metric_fn=sign, **kwargs)
+
+    @property
+    def greater_is_better(self) -> None:
+        """Whether higher metric value is better."""
+        return None
 
 
 __all__ = ["MAE", "MSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign"]
