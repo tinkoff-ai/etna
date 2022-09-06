@@ -43,9 +43,9 @@ class Auto:
     def __init__(
         self,
         target_metric: Metric,
-        backtest_params: dict,
         horizon: int,
         metric_aggregation: MetricAggregationStatistics = "mean",
+        backtest_params: Optional[dict] = None,
         experiment_folder: Optional[str] = None,
         pool: Union[Pool, List[Pipeline]] = Pool.default,
         runner: Optional[AbstractRunner] = None,
@@ -59,12 +59,12 @@ class Auto:
         ----------
         target_metric:
             metric to optimize
-        backtest_params:
-            custom parameters for backtest instead of default backtest parameters
         horizon:
             horizon to forecast for
         metric_aggregation:
             aggregation method for per-segment metrics
+        backtest_params:
+            custom parameters for backtest instead of default backtest parameters
         experiment_folder:
             folder to store experiment results and name for optuna study
         pool:
@@ -78,7 +78,7 @@ class Auto:
         """
         self.target_metric = target_metric
         self.metric_aggregation = metric_aggregation
-        self.backtest_params = backtest_params
+        self.backtest_params = {} if backtest_params is None else backtest_params
         self.horizon = horizon
         self.experiment_folder = experiment_folder
         self.pool = pool
@@ -89,6 +89,7 @@ class Auto:
         if str(target_metric) not in [str(metric) for metric in metrics]:
             metrics.append(target_metric)
         self.metrics = metrics
+        self._study = None
 
     def fit(
         self,
@@ -130,6 +131,8 @@ class Auto:
             storage=self.storage,
             sampler=ConfigSampler(configs=pool_),
         )
+
+        self._study = optuna.study
         optuna.tune(
             objective=self.objective(
                 ts=ts,
@@ -199,13 +202,3 @@ class Auto:
             return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
 
         return _objective
-
-
-if __name__ == "__main__":
-    ts = pd.read_csv("/Users/marti/Projects/etna/examples/data/example_dataset.csv")
-    ts = TSDataset.to_dataset(ts)
-    ts = TSDataset(ts, freq="D")
-
-    auto = Auto(SMAPE(), experiment_folder="ggwp", metric_aggregation="percentile_95", backtest_params={}, horizon=7)
-
-    print(auto.fit(ts, catch=(Exception,)))
