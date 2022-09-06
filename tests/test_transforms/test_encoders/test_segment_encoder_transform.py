@@ -6,14 +6,14 @@ from etna.transforms import SegmentEncoderTransform
 
 def test_segment_encoder_transform(simple_ts):
     transform = SegmentEncoderTransform()
-    transformed_ts = transform.fit_transform(simple_ts)
+    transformed_df = transform.fit_transform(simple_ts).to_pandas()
     assert (
-        len(transformed_ts.loc[:, pd.IndexSlice[:, "segment_code"]].columns) == 2
+        len(transformed_df.loc[:, pd.IndexSlice[:, "segment_code"]].columns) == 2
     ), "Number of columns not the same as segments"
-    assert len(simple_ts.to_pandas()) == len(transformed_ts.to_pandas()), "Row missing"
+    assert len(simple_ts.to_pandas()) == len(transformed_df), "Row missing"
     codes = set()
     for segment in simple_ts.columns.get_level_values("segment").unique():
-        column = transformed_ts.to_pandas().loc[:, pd.IndexSlice[segment, "segment_code"]]
+        column = transformed_df.loc[:, pd.IndexSlice[segment, "segment_code"]]
         assert column.dtype == "category", "Column type is not category"
         assert np.all(column == column.iloc[0]), "Values are not the same for the whole column"
         codes.add(column.iloc[0])

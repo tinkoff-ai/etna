@@ -24,6 +24,7 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
         ----------
         df:
             dataframe with data to fit label encoder.
+
         Returns
         -------
         :
@@ -41,6 +42,7 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
         ----------
         df:
             dataframe with data to transform.
+
         Returns
         -------
         :
