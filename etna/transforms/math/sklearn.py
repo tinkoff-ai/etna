@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.base import TransformerMixin
 
 from etna.core import StringEnumWithRepr
-from etna.transforms.base import Transform
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -21,7 +21,7 @@ class TransformMode(StringEnumWithRepr):
     per_segment = "per-segment"
 
 
-class SklearnTransform(Transform):
+class SklearnTransform(ReversibleTransform):
     """Base class for different sklearn transforms."""
 
     def __init__(
@@ -57,6 +57,7 @@ class SklearnTransform(Transform):
         ValueError:
             if incorrect mode given
         """
+        super().__init__(required_features="all")
         if inplace and (out_column is not None):
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
@@ -80,7 +81,7 @@ class SklearnTransform(Transform):
         else:
             return f"{self.out_column}_{in_column}"
 
-    def fit(self, df: pd.DataFrame) -> "SklearnTransform":
+    def _fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
         Fit transformer with data from df.
 
@@ -113,7 +114,7 @@ class SklearnTransform(Transform):
         self.transformer.fit(X=x)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform given data with fitted transformer.
 
@@ -150,7 +151,7 @@ class SklearnTransform(Transform):
 
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Apply inverse transformation to DataFrame.
 
@@ -230,3 +231,7 @@ class SklearnTransform(Transform):
             [transformed[i * time_period_len : (i + 1) * time_period_len, :] for i in range(n_segments)], axis=1
         )
         return transformed
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
