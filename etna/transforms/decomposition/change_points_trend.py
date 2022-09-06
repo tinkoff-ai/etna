@@ -10,8 +10,8 @@ import pandas as pd
 from ruptures.base import BaseEstimator
 from sklearn.base import RegressorMixin
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.base_change_points import TTimestampInterval
 from etna.transforms.utils import match_target_quantiles
@@ -19,7 +19,7 @@ from etna.transforms.utils import match_target_quantiles
 TDetrendModel = Type[RegressorMixin]
 
 
-class _OneSegmentChangePointsTrendTransform(Transform):
+class _OneSegmentChangePointsTrendTransform(OneSegmentTransform):
     """_OneSegmentChangePointsTransform subtracts multiple linear trend from series."""
 
     def __init__(
@@ -153,7 +153,7 @@ class _OneSegmentChangePointsTrendTransform(Transform):
         return df
 
 
-class ChangePointsTrendTransform(PerSegmentWrapper):
+class ChangePointsTrendTransform(ReversiblePerSegmentWrapper):
     """ChangePointsTrendTransform subtracts multiple linear trend from series.
 
     Warning
@@ -193,5 +193,10 @@ class ChangePointsTrendTransform(PerSegmentWrapper):
                 change_point_model=self.change_point_model,
                 detrend_model=self.detrend_model,
                 **self.change_point_model_predict_params,
-            )
+            ),
+            required_features=[in_column],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
