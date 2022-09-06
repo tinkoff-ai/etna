@@ -462,7 +462,12 @@ class PerSegmentModelMixin(ModelForecastMixin):
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
+
+        prediction_size = kwargs.get("prediction_size")
+        if prediction_size is not None:
+            segment_predict["timestamp"] = dates[-prediction_size:].reset_index(drop=True)
+        else:
+            segment_predict["timestamp"] = dates
         return segment_predict
 
     @log_decorator
@@ -489,16 +494,26 @@ class PerSegmentModelMixin(ModelForecastMixin):
         result_df = result_df.set_index(["timestamp", "segment"])
         df = ts.to_pandas(flatten=True)
         df = df.set_index(["timestamp", "segment"])
+        # clear values to be filled, otherwise during in-sample prediction new values won't be set
+        columns_to_clear = result_df.columns.intersection(df.columns)
+        df.loc[result_df.index, columns_to_clear] = np.NaN
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)
         ts.df = df
         ts.inverse_transform()
+
+        prediction_size = kwargs.get("prediction_size")
+        if prediction_size is not None:
+            ts.df = ts.df.iloc[-prediction_size:]
         return ts
 
 
 class MultiSegmentModelMixin(ModelForecastMixin):
-    """Mixin for holding methods for multi-segment prediction."""
+    """Mixin for holding methods for multi-segment prediction.
+
+    It currently isn't working with prediction intervals and context.
+    """
 
     def __init__(self, base_model: Any):
         """
@@ -547,6 +562,7 @@ class MultiSegmentModelMixin(ModelForecastMixin):
         """
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
+        # TODO: make it work with prediction intervals and context
         y = self._base_model.predict(x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()

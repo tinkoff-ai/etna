@@ -6,8 +6,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredModelMixin
 from etna.models.base import PerSegmentModelMixin
 
 
@@ -31,7 +31,7 @@ class _DeadlineMovingAverageModel:
         """
         Initialize deadline moving average model.
 
-        Length of remembered tail of series is equal to the number of ``window`` months or years, depending on the ``seasonality``.
+        Length of the context is equal to the number of ``window`` months or years, depending on the ``seasonality``.
 
         Parameters
         ----------
@@ -78,28 +78,64 @@ class _DeadlineMovingAverageModel:
                 message=f"{type(self).__name__} does not work with any exogenous series or features. "
                 f"It uses only target series for predict/\n "
             )
-        targets = df["target"]
-        timestamps = df["timestamp"]
 
-        if self.seasonality == SeasonalityMode.month:
-            first_index = timestamps.iloc[-1] - pd.DateOffset(months=self.window)
-
-        elif self.seasonality == SeasonalityMode.year:
-            first_index = timestamps.iloc[-1] - pd.DateOffset(years=self.window)
-
-        if first_index < timestamps.iloc[0]:
-            raise ValueError(
-                "Given series is too short for chosen shift value. Try lower shift value, or give" "longer series."
-            )
-
-        self.series = targets.loc[timestamps >= first_index]
-        self.timestamps = timestamps.loc[timestamps >= first_index]
-        self.shift = len(self.series)
         self._freq = freq
 
         return self
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    @staticmethod
+    def _get_context_beginning(
+        df: pd.DataFrame, prediction_size: int, seasonality: SeasonalityMode, window: int
+    ) -> pd.Timestamp:
+        """
+        Get timestamp where context begins.
+
+        Parameters
+        ----------
+        df:
+            Time series in a long format.
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        seasonality:
+            Seasonality.
+        window:
+            Number of values taken for forecast of each point.
+
+        Returns
+        -------
+        :
+            Timestamp with beginning of the context.
+
+        Raises
+        ------
+        ValueError:
+            if context isn't big enough
+        """
+        df_history = df.iloc[:-prediction_size]
+        history_timestamps = df_history["timestamp"]
+        future_timestamps = df["timestamp"].iloc[-prediction_size:]
+
+        # if we have len(history_timestamps) == 0, then len(df) <= prediction_size
+        if len(history_timestamps) == 0:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+            )
+
+        if seasonality is SeasonalityMode.month:
+            first_index = future_timestamps.iloc[0] - pd.DateOffset(months=window)
+
+        elif seasonality is SeasonalityMode.year:
+            first_index = future_timestamps.iloc[0] - pd.DateOffset(years=window)
+
+        if first_index < history_timestamps.iloc[0]:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+            )
+
+        return first_index
+
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a DeadlineMovingAverageModel.
 
@@ -107,36 +143,51 @@ class _DeadlineMovingAverageModel:
         ----------
         df: pd.DataFrame
             Used only for getting the horizon of forecast and timestamps.
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
         :
             Array with predictions.
+
+        Raises
+        ------
+        ValueError:
+            if context isn't big enough
         """
-        timestamps = df["timestamp"]
-        index = pd.date_range(start=self.timestamps.iloc[0], end=timestamps.iloc[-1])
-        res = np.append(self.series.values, np.zeros(len(df)))
+        context_beginning = self._get_context_beginning(
+            df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
+        )
+
+        df_history = df.iloc[:-prediction_size]
+        history_targets = df_history["target"]
+        history_timestamps = df_history["timestamp"]
+        history_targets = history_targets.loc[history_timestamps >= context_beginning]
+        history_timestamps = history_timestamps.loc[history_timestamps >= context_beginning]
+        future_timestamps = df["timestamp"].iloc[-prediction_size:]
+
+        index = pd.date_range(start=context_beginning, end=future_timestamps.iloc[-1])
+        res = np.append(history_targets.values, np.zeros(prediction_size))
         res = pd.DataFrame(res)
         res.index = index
-        for i in range(len(self.series), len(res)):
+        for i in range(len(history_targets), len(res)):
             for w in range(1, self.window + 1):
                 if self.seasonality == SeasonalityMode.month:
                     prev_date = res.index[i] - pd.DateOffset(months=w)
-
                 elif self.seasonality == SeasonalityMode.year:
                     prev_date = res.index[i] - pd.DateOffset(years=w)
-                if prev_date <= self.timestamps.iloc[-1]:
-                    res.loc[index[i]] += self.series.loc[self.timestamps == prev_date].values
+
+                if prev_date <= history_timestamps.iloc[-1]:
+                    res.loc[index[i]] += history_targets.loc[history_timestamps == prev_date].values
                 else:
                     res.loc[index[i]] += res.loc[prev_date].values
 
             res.loc[index[i]] = res.loc[index[i]] / self.window
 
-        res = res.values.reshape(
-            len(res),
-        )
-
-        return res[-len(df) :]
+        res = res.values.ravel()[-prediction_size:]
+        return res
 
     @property
     def context_size(self) -> int:
@@ -159,14 +210,16 @@ class _DeadlineMovingAverageModel:
 
 class DeadlineMovingAverageModel(
     PerSegmentModelMixin,
-    NonPredictionIntervalContextIgnorantModelMixin,
-    NonPredictionIntervalContextIgnorantAbstractModel,
+    NonPredictionIntervalContextRequiredModelMixin,
+    NonPredictionIntervalContextRequiredAbstractModel,
 ):
     """Moving average model that uses exact previous dates to predict."""
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
         """
         Initialize deadline moving average model.
+
+        Length of the context is equal to the number of ``window`` months or years, depending on the ``seasonality``.
 
         Parameters
         ----------

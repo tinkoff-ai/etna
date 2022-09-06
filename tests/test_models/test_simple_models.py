@@ -5,6 +5,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.models.deadline_ma import DeadlineMovingAverageModel
+from etna.models.deadline_ma import SeasonalityMode
 from etna.models.deadline_ma import _DeadlineMovingAverageModel
 from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
@@ -39,29 +40,104 @@ def df():
 def test_simple_model_forecaster_run(simple_df, model):
     sma_model = model()
     sma_model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = sma_model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    res = sma_model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)
     assert not res.isnull().values.any()
     assert len(res) == 14
+
+
+def test_simple_model_forecaster_fail_not_enough_context(simple_df):
+    sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
+    sma_model.fit(simple_df)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = sma_model.forecast(future_ts, prediction_size=7)
+
+
+@pytest.mark.parametrize(
+    "freq, periods, start, prediction_size, seasonality, window, expected",
+    [
+        ("D", 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("D", 31 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-02")),
+        ("D", 31 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("D", 31 + 29 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
+        ("D", 31 + 29 + 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
+        ("H", 31 * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("H", 31 * 24 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01 01:00")),
+        ("H", 31 * 24 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("H", (31 + 29) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
+        ("H", (31 + 29 + 31) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-02")),
+        ("D", 366 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 365 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+        ("H", 366 * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("H", 366 * 24 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01 01:00")),
+        ("H", 366 * 24 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("H", (366 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
+        ("H", (366 + 365 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+    ],
+)
+def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size, seasonality, window, expected):
+    df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
+
+    obtained = _DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
+
+    assert obtained == expected
+
+
+@pytest.mark.parametrize(
+    "freq, periods, start, prediction_size, seasonality, window",
+    [
+        ("D", 1, "2020-01-01", 1, SeasonalityMode.month, 1),
+        ("H", 1, "2020-01-01", 1, SeasonalityMode.month, 1),
+        ("D", 1, "2020-01-01", 1, SeasonalityMode.year, 1),
+        ("H", 1, "2020-01-01", 1, SeasonalityMode.year, 1),
+        ("D", 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("H", 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("D", 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        ("H", 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        ("D", 31 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("H", 31 * 24 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("D", 366 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        ("H", 366 * 24 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+    ],
+)
+def test_deadline_get_context_beginning_fail_not_enough_context(
+    freq, periods, start, prediction_size, seasonality, window
+):
+    df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
+
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = _DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_forecaster_run(simple_df, model):
     model = model(window=1)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)
     assert not res.isnull().values.any()
     assert len(res) == 14
 
 
+def test_sdeadline_model_forecaster_fail_not_enough_context(simple_df):
+    model = DeadlineMovingAverageModel(window=1000)
+    model.fit(simple_df)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = model.forecast(future_ts, prediction_size=7)
+
+
 def test_seasonal_moving_average_forecaster_correct(simple_df):
     model = SeasonalMovingAverageModel(window=3, seasonality=7)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -83,8 +159,8 @@ def test_seasonal_moving_average_forecaster_correct(simple_df):
 def test_naive_forecaster_correct(simple_df):
     model = NaiveModel(lag=3)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -107,8 +183,8 @@ def test_naive_forecaster_correct(simple_df):
 def test_moving_average_forecaster_correct(simple_df):
     model = MovingAverageModel(window=5)
     model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7)
-    res = model.forecast(future_ts)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -137,8 +213,8 @@ def test_moving_average_forecaster_correct(simple_df):
 def test_deadline_moving_average_forecaster_correct(df):
     model = DeadlineMovingAverageModel(window=3, seasonality="month")
     model.fit(df)
-    future_ts = df.make_future(future_steps=20)
-    res = model.forecast(future_ts)
+    future_ts = df.make_future(future_steps=20, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=20)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -323,8 +399,8 @@ def two_month_ts():
 def test_deadline_model_correct_with_big_horizons(two_month_ts):
     model = DeadlineMovingAverageModel(window=2, seasonality="month")
     model.fit(two_month_ts)
-    future_ts = two_month_ts.make_future(future_steps=90)
-    res = model.forecast(future_ts)
+    future_ts = two_month_ts.make_future(future_steps=90, tail_steps=model.context_size)
+    res = model.forecast(future_ts, prediction_size=90)
     expected = np.array(
         [
             [16.5],

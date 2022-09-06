@@ -1,14 +1,19 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
+from typing_extensions import get_args
 
 from etna.datasets import TSDataset
 from etna.models import AutoARIMAModel
 from etna.models import BATSModel
 from etna.models import CatBoostModelMultiSegment
 from etna.models import CatBoostModelPerSegment
+from etna.models import ContextRequiredModelType
+from etna.models import DeadlineMovingAverageModel
 from etna.models import ElasticMultiSegmentModel
 from etna.models import ElasticPerSegmentModel
 from etna.models import HoltModel
@@ -39,14 +44,19 @@ def _test_forecast_in_sample_full(ts, model, transforms):
     forecast_ts = TSDataset(df, freq="D")
     forecast_ts.transform(ts.transforms)
     forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-    model.forecast(forecast_ts)
+
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        prediction_size = len(forecast_ts.index)
+        model.forecast(forecast_ts, prediction_size=prediction_size)
+    else:
+        model.forecast(forecast_ts)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
     assert not np.any(forecast_df["target"].isna())
 
 
-def _test_forecast_in_sample_suffix(ts, model, transforms):
+def _test_forecast_in_sample_suffix(ts, model, transforms, num_skip_points):
     df = ts.to_pandas()
 
     # fitting
@@ -56,9 +66,15 @@ def _test_forecast_in_sample_suffix(ts, model, transforms):
     # forecasting
     forecast_ts = TSDataset(df, freq="D")
     forecast_ts.transform(ts.transforms)
-    forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-    forecast_ts.df = forecast_ts.df.iloc[6:]
-    model.forecast(forecast_ts)
+
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        prediction_size = len(forecast_ts.index) - num_skip_points
+        forecast_ts.df.loc[forecast_ts.index[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
+        model.forecast(forecast_ts, prediction_size=prediction_size)
+    else:
+        forecast_ts.df = forecast_ts.df.iloc[num_skip_points:]
+        forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
+        model.forecast(forecast_ts)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -69,21 +85,30 @@ def _test_forecast_out_sample_prefix(ts, model, transforms):
     # fitting
     ts.fit_transform(transforms)
     model.fit(ts)
-    # forecasting full
-    forecast_full_ts = ts.make_future(5)
 
+    # forecasting full
     import torch  # TODO: remove after fix at issue-802
 
     torch.manual_seed(11)
 
-    model.forecast(forecast_full_ts)
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        forecast_full_ts = ts.make_future(future_steps=5, tail_steps=model.context_size)
+        model.forecast(forecast_full_ts, prediction_size=5)
+    else:
+        forecast_full_ts = ts.make_future(future_steps=5)
+        model.forecast(forecast_full_ts)
 
     # forecasting only prefix
-    forecast_prefix_ts = ts.make_future(5)
-    forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-2]
-
     torch.manual_seed(11)  # TODO: remove after fix at issue-802
-    model.forecast(forecast_prefix_ts)
+
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        forecast_prefix_ts = ts.make_future(future_steps=5, tail_steps=model.context_size)
+        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-2]
+        model.forecast(forecast_prefix_ts, prediction_size=3)
+    else:
+        forecast_prefix_ts = ts.make_future(future_steps=5)
+        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-2]
+        model.forecast(forecast_prefix_ts)
 
     # checking
     forecast_full_df = forecast_full_ts.to_pandas()
@@ -97,13 +122,29 @@ def _test_forecast_out_sample_suffix(ts, model, transforms):
     model.fit(ts)
 
     # forecasting full
-    forecast_full_ts = ts.make_future(5)
-    model.forecast(forecast_full_ts)
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        forecast_full_ts = ts.make_future(future_steps=5, tail_steps=model.context_size)
+        model.forecast(forecast_full_ts, prediction_size=5)
+    else:
+        forecast_full_ts = ts.make_future(future_steps=5)
+        model.forecast(forecast_full_ts)
 
     # forecasting only suffix
-    forecast_gap_ts = ts.make_future(5)
-    forecast_gap_ts.df = forecast_gap_ts.df.iloc[2:]
-    model.forecast(forecast_gap_ts)
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        forecast_gap_ts = ts.make_future(future_steps=5, tail_steps=model.context_size)
+
+        # firstly we should forecast prefix to use it as a context
+        forecast_prefix_ts = deepcopy(forecast_gap_ts)
+        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-3]
+        model.forecast(forecast_prefix_ts, prediction_size=2)
+        forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
+
+        # forecast suffix with known context for it
+        model.forecast(forecast_gap_ts, prediction_size=3)
+    else:
+        forecast_gap_ts = ts.make_future(future_steps=5)
+        forecast_gap_ts.df = forecast_gap_ts.df.iloc[2:]
+        model.forecast(forecast_gap_ts)
 
     # checking
     forecast_full_df = forecast_full_ts.to_pandas()
@@ -111,31 +152,35 @@ def _test_forecast_out_sample_suffix(ts, model, transforms):
     assert_frame_equal(forecast_gap_df, forecast_full_df.iloc[2:])
 
 
-def _test_forecast_mixed_in_out_sample(ts, model, transforms):
+def _test_forecast_mixed_in_out_sample(ts, model, transforms, num_skip_points):
+    # skip context required model
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        raise NotImplementedError("Context required model can't pass this test!")
+
     # fitting
     df = ts.to_pandas()
     ts.fit_transform(transforms)
     model.fit(ts)
 
     # forecasting mixed in-sample and out-sample
-    future_ts = ts.make_future(5)
+    future_ts = ts.make_future(future_steps=5)
     future_df = future_ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
     df_full = pd.concat((df, future_df))
     forecast_full_ts = TSDataset(df=df_full, freq=future_ts.freq)
     forecast_full_ts.transform(ts.transforms)
     forecast_full_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-    forecast_full_ts.df = forecast_full_ts.df.iloc[6:]
+    forecast_full_ts.df = forecast_full_ts.df.iloc[num_skip_points:]
     model.forecast(forecast_full_ts)
 
     # forecasting only in sample
     forecast_in_sample_ts = TSDataset(df, freq="D")
     forecast_in_sample_ts.transform(ts.transforms)
     forecast_in_sample_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-    forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[6:]
+    forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[num_skip_points:]
     model.forecast(forecast_in_sample_ts)
 
     # forecasting only out sample
-    forecast_out_sample_ts = ts.make_future(5)
+    forecast_out_sample_ts = ts.make_future(future_steps=5)
     model.forecast(forecast_out_sample_ts)
 
     # checking
@@ -156,9 +201,6 @@ def _test_forecast_mixed_in_out_sample(ts, model, transforms):
         (HoltModel(), []),
         (HoltWintersModel(), []),
         (SimpleExpSmoothingModel(), []),
-        (MovingAverageModel(window=3), []),
-        (NaiveModel(lag=3), []),
-        (SeasonalMovingAverageModel(), []),
     ],
 )
 def test_forecast_in_sample_full(model, transforms, example_tsds):
@@ -178,6 +220,20 @@ def test_forecast_in_sample_full(model, transforms, example_tsds):
 )
 def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
     _test_forecast_in_sample_full(example_tsds, model, transforms)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (MovingAverageModel(window=3), []),
+        (NaiveModel(lag=3), []),
+        (SeasonalMovingAverageModel(), []),
+        (DeadlineMovingAverageModel(window=1), []),
+    ],
+)
+def test_forecast_in_sample_full_failed_not_enough_context(model, transforms, example_tsds):
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _test_forecast_in_sample_full(example_tsds, model, transforms)
 
 
 @pytest.mark.parametrize(
@@ -236,10 +292,11 @@ def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds
         (MovingAverageModel(window=3), []),
         (NaiveModel(lag=3), []),
         (SeasonalMovingAverageModel(), []),
+        (DeadlineMovingAverageModel(window=1), []),
     ],
 )
 def test_forecast_in_sample_suffix(model, transforms, example_tsds):
-    _test_forecast_in_sample_suffix(example_tsds, model, transforms)
+    _test_forecast_in_sample_suffix(example_tsds, model, transforms, num_skip_points=50)
 
 
 @pytest.mark.parametrize(
@@ -277,7 +334,7 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
 )
 def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
     with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-        _test_forecast_in_sample_suffix(example_tsds, model, transforms)
+        _test_forecast_in_sample_suffix(example_tsds, model, transforms, num_skip_points=50)
 
 
 @pytest.mark.parametrize(
@@ -298,6 +355,7 @@ def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_ts
         (MovingAverageModel(window=3), []),
         (SeasonalMovingAverageModel(), []),
         (NaiveModel(lag=3), []),
+        (DeadlineMovingAverageModel(window=1), []),
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
         (
@@ -349,6 +407,10 @@ def test_forecast_out_sample_prefix(model, transforms, example_tsds):
         (SimpleExpSmoothingModel(), []),
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
+        (MovingAverageModel(window=3), []),
+        (SeasonalMovingAverageModel(), []),
+        (NaiveModel(lag=3), []),
+        (DeadlineMovingAverageModel(window=1), []),
     ],
 )
 def test_forecast_out_sample_suffix(model, transforms, example_tsds):
@@ -391,19 +453,6 @@ def test_forecast_out_sample_suffix_not_implemented(model, transforms, example_t
         _test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
-@pytest.mark.xfail(strict=True)
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (MovingAverageModel(window=3), []),
-        (SeasonalMovingAverageModel(), []),
-        (NaiveModel(lag=3), []),
-    ],
-)
-def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
-    _test_forecast_out_sample_suffix(example_tsds, model, transforms)
-
-
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -422,7 +471,7 @@ def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
     ],
 )
 def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
-    _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+    _test_forecast_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)
 
 
 @pytest.mark.parametrize(
@@ -458,6 +507,19 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
         ),
     ],
 )
-def test_forecast_mixed_in_out_sample_not_implemented(model, transforms, example_tsds):
+def test_forecast_mixed_in_out_sample_not_implemented_in_sample(model, transforms, example_tsds):
     with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-        _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+        _test_forecast_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (MovingAverageModel(window=3), []),
+        (SeasonalMovingAverageModel(), []),
+        (NaiveModel(lag=3), []),
+    ],
+)
+def test_forecast_mixed_in_out_sample_not_implemented_context_required(model, transforms, example_tsds):
+    with pytest.raises(NotImplementedError, match="Context required model can't pass this test"):
+        _test_forecast_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)

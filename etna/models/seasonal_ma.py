@@ -5,8 +5,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredModelMixin
 from etna.models.base import PerSegmentModelMixin
 
 
@@ -24,7 +24,7 @@ class _SeasonalMovingAverageModel:
         """
         Initialize seasonal moving average model.
 
-        Length of remembered tail of series is ``window * seasonality``.
+        Length of the context is ``window * seasonality``.
 
         Parameters
         ----------
@@ -33,7 +33,6 @@ class _SeasonalMovingAverageModel:
         seasonality: int
             Lag between values taken for forecast.
         """
-        self.series = None
         self.name = "target"
         self.window = window
         self.seasonality = seasonality
@@ -45,7 +44,7 @@ class _SeasonalMovingAverageModel:
 
         Parameters
         ----------
-        df: pd.DataFrame
+        df:
             Data to fit on
         regressors:
             List of the columns with regressors(ignored in this model)
@@ -60,44 +59,49 @@ class _SeasonalMovingAverageModel:
                 message=f"{type(self).__name__} does not work with any exogenous series or features. "
                 f"It uses only target series for predict/\n "
             )
-        targets = df["target"]
-        if len(targets) < self.shift:
-            raise ValueError(
-                "Given series is too short for chosen shift value. Try lower shift value, or give" "longer series."
-            )
-        self.series = targets[-self.shift :].values
 
-        # ???
-        if targets.name is not None:
-            self.name = targets.name
         return self
 
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a SeasonalMovingAverage model.
 
         Parameters
         ----------
-        df: pd.DataFrame
+        df:
             Used only for getting the horizon of forecast
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
         Returns
         -------
         :
             Array with predictions.
+
+        Raises
+        ------
+        ValueError:
+            if context isn't big enough
         """
-        horizon = len(df)
-        res = np.append(self.series, np.zeros(horizon))
+        expected_length = prediction_size + self.shift
+        if len(df) < expected_length:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+            )
+
+        history = df["target"][-expected_length:-prediction_size]
+        res = np.append(history, np.zeros(prediction_size))
         for i in range(self.shift, len(res)):
             res[i] = res[i - self.shift : i : self.seasonality].mean()
-        y_pred = res[-horizon:]
+        y_pred = res[-prediction_size:]
         return y_pred
 
 
 class SeasonalMovingAverageModel(
     PerSegmentModelMixin,
-    NonPredictionIntervalContextIgnorantModelMixin,
-    NonPredictionIntervalContextIgnorantAbstractModel,
+    NonPredictionIntervalContextRequiredModelMixin,
+    NonPredictionIntervalContextRequiredAbstractModel,
 ):
     """
     Seasonal moving average.
@@ -112,7 +116,7 @@ class SeasonalMovingAverageModel(
         """
         Initialize seasonal moving average model.
 
-        Length of remembered tail of series is ``window * seasonality``.
+        Length of the context is ``window * seasonality``.
 
         Parameters
         ----------
