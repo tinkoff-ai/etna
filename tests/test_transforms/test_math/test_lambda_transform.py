@@ -40,6 +40,7 @@ def ts_range_const():
     return ts
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transform")
 @pytest.mark.parametrize(
     "transform_original, transform_function, out_column",
     [
