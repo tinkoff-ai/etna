@@ -83,18 +83,52 @@ class _DeadlineMovingAverageModel:
 
         return self
 
-    def _get_context_beginning(self, df: pd.DataFrame, prediction_size: int):
+    @staticmethod
+    def _get_context_beginning(
+        df: pd.DataFrame, prediction_size: int, seasonality: SeasonalityMode, window: int
+    ) -> pd.Timestamp:
+        """
+        Get timestamp where context begins.
+
+        Parameters
+        ----------
+        df:
+            Time series in a long format.
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        seasonality:
+            Seasonality.
+        window:
+            Number of values taken for forecast of each point.
+
+        Returns
+        -------
+        :
+            Timestamp with beginning of the context.
+
+        Raises
+        ------
+        ValueError:
+            if context isn't big enough
+        """
         df_history = df.iloc[:-prediction_size]
         history_timestamps = df_history["timestamp"]
         future_timestamps = df["timestamp"].iloc[-prediction_size:]
 
-        if self.seasonality == SeasonalityMode.month:
-            first_index = future_timestamps.iloc[0] - pd.DateOffset(months=self.window)
+        # if we have len(history_timestamps) == 0, then len(df) <= prediction_size
+        if len(history_timestamps) == 0:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+            )
 
-        elif self.seasonality == SeasonalityMode.year:
-            first_index = future_timestamps.iloc[0] - pd.DateOffset(years=self.window)
+        if seasonality is SeasonalityMode.month:
+            first_index = future_timestamps.iloc[0] - pd.DateOffset(months=window)
 
-        if len(history_timestamps) == 0 or first_index < history_timestamps.iloc[0]:
+        elif seasonality is SeasonalityMode.year:
+            first_index = future_timestamps.iloc[0] - pd.DateOffset(years=window)
+
+        if first_index < history_timestamps.iloc[0]:
             raise ValueError(
                 "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
             )
@@ -123,14 +157,16 @@ class _DeadlineMovingAverageModel:
         ValueError:
             if context isn't big enough
         """
-        context_beginning = self._get_context_beginning(df=df, prediction_size=prediction_size)
+        context_beginning = self._get_context_beginning(
+            df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
+        )
 
         df_history = df.iloc[:-prediction_size]
         history_targets = df_history["target"]
         history_timestamps = df_history["timestamp"]
-        future_timestamps = df["timestamp"].iloc[-prediction_size:]
         history_targets = history_targets.loc[history_timestamps >= context_beginning]
         history_timestamps = history_timestamps.loc[history_timestamps >= context_beginning]
+        future_timestamps = df["timestamp"].iloc[-prediction_size:]
 
         index = pd.date_range(start=context_beginning, end=future_timestamps.iloc[-1])
         res = np.append(history_targets.values, np.zeros(prediction_size))

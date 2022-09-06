@@ -5,6 +5,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.models.deadline_ma import DeadlineMovingAverageModel
+from etna.models.deadline_ma import SeasonalityMode
 from etna.models.deadline_ma import _DeadlineMovingAverageModel
 from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
@@ -52,6 +53,63 @@ def test_simple_model_forecaster_fail(simple_df):
     future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
         _ = sma_model.forecast(future_ts, prediction_size=7)
+
+
+@pytest.mark.parametrize(
+    "freq, periods, start, prediction_size, seasonality, window, expected",
+    [
+        ("D", 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("D", 31 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-02")),
+        ("D", 31 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("D", 31 + 29 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
+        ("D", 31 + 29 + 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
+        ("H", 31 * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("H", 31 * 24 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01 01:00")),
+        ("H", 31 * 24 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        ("H", (31 + 29) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
+        ("H", (31 + 29 + 31) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-02")),
+        ("D", 366 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
+        ("D", 366 + 365 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+        ("H", 366 * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("H", 366 * 24 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01 01:00")),
+        ("H", 366 * 24 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        ("H", (366 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
+        ("H", (366 + 365 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+    ],
+)
+def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size, seasonality, window, expected):
+    df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
+
+    obtained = _DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
+
+    assert obtained == expected
+
+
+@pytest.mark.parametrize(
+    "freq, periods, start, prediction_size, seasonality, window",
+    [
+        ("D", 1, "2020-01-01", 1, SeasonalityMode.month, 1),
+        ("H", 1, "2020-01-01", 1, SeasonalityMode.month, 1),
+        ("D", 1, "2020-01-01", 1, SeasonalityMode.year, 1),
+        ("H", 1, "2020-01-01", 1, SeasonalityMode.year, 1),
+        ("D", 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("H", 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("D", 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        ("H", 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        ("D", 31 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("H", 31 * 24 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        ("D", 366 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        ("H", 366 * 24 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+    ],
+)
+def test_deadline_get_context_beginning_fail(freq, periods, start, prediction_size, seasonality, window):
+    df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
+
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = _DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
