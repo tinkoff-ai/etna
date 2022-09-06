@@ -126,6 +126,7 @@ def test_local_file_logger_save_dict():
         assert read_example_dict == example_dict
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_base_file_logger_log_backtest_run(example_tsds: TSDataset):
     """Test that BaseLogger correctly works in log_backtest_run on LocalFileLogger example."""
     with tempfile.TemporaryDirectory() as dirname:
@@ -164,6 +165,7 @@ def test_base_file_logger_log_backtest_run(example_tsds: TSDataset):
     tslogger.remove(idx)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("aggregate_metrics", [True, False])
 def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregate_metrics: bool):
     """Test that BaseFileLogger correctly works in log_backtest_metrics on LocaFileLogger example."""
