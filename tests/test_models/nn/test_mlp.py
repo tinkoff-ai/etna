@@ -14,6 +14,7 @@ from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("horizon", [8, 13])
 def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
 

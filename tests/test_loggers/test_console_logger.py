@@ -99,6 +99,7 @@ def test_metric_logging(example_tsds: TSDataset, metric: Metric):
     tslogger.remove(idx)
 
 
+@pytest.mark.skip(reason="TSDataset 2.0")
 def test_backtest_logging(example_tsds: TSDataset):
     """Check working of logging inside backtest."""
     file = NamedTemporaryFile()
@@ -119,6 +120,7 @@ def test_backtest_logging(example_tsds: TSDataset):
     tslogger.remove(idx)
 
 
+@pytest.mark.skip(reason="TSDataset 2.0")
 def test_backtest_logging_no_tables(example_tsds: TSDataset):
     """Check working of logging inside backtest with `table=False`."""
     file = NamedTemporaryFile()
