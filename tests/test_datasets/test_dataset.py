@@ -12,7 +12,6 @@ from etna.datasets.tsdataset import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
 from etna.transforms import MaxAbsScalerTransform
-from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -828,7 +827,6 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
 @pytest.mark.parametrize(
     "transforms, expected_regressors",
     (
-        ([SegmentEncoderTransform()], ["regressor_1", "regressor_2", "segment_code"]),
         (
             [LagTransform(in_column="target", lags=[1, 2], out_column="regressor_lag")],
             ["regressor_1", "regressor_2", "regressor_lag_1", "regressor_lag_2"],
