@@ -377,6 +377,7 @@ def test_forecast_raise_error_if_not_fitted():
         _ = pipeline.forecast()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
 
