@@ -10,6 +10,8 @@ from etna.datasets.tsdataset import TSDataset
 
 # TODO: Collection of tests to fix in TSDataset 2.0
 collect_ignore = [
+    "test_commands/test_backtest.py",
+    "test_commands/test_forecast.py",
     "test_models/nn/test_tft.py",
     "test_models/nn/test_deepar.py",
     "test_models/test_inference.py",

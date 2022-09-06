@@ -1,15 +1,16 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import List
 from typing import Optional
 
 import bottleneck as bn
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class WindowStatisticsTransform(Transform, ABC):
+class WindowStatisticsTransform(IrreversibleTransform, ABC):
     """WindowStatisticsTransform handles computation of statistical features on windows."""
 
     def __init__(
@@ -40,6 +41,7 @@ class WindowStatisticsTransform(Transform, ABC):
         fillna: float
             value to fill results NaNs with
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column_name = out_column
         self.window = window
@@ -48,7 +50,7 @@ class WindowStatisticsTransform(Transform, ABC):
         self.fillna = fillna
         self.kwargs = kwargs
 
-    def fit(self, *args) -> "WindowStatisticsTransform":
+    def _fit(self, df: pd.DataFrame) -> "WindowStatisticsTransform":
         """Fits transform."""
         return self
 
@@ -57,7 +59,7 @@ class WindowStatisticsTransform(Transform, ABC):
         """Aggregate targets from given series."""
         pass
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
 
         Parameters
@@ -94,6 +96,10 @@ class WindowStatisticsTransform(Transform, ABC):
         )
         result = result.sort_index(axis=1)
         return result
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return [self.out_column_name]
 
 
 class MeanTransform(WindowStatisticsTransform):
@@ -150,7 +156,7 @@ class MeanTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
 
         Parameters
@@ -166,7 +172,7 @@ class MeanTransform(WindowStatisticsTransform):
         window = self.window if self.window != -1 else len(df)
         self._alpha_range = np.array([self.alpha**i for i in range(window)])
         self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
-        return super().transform(df)
+        return super()._transform(df)
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute weighted average for window series."""
