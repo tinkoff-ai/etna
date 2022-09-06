@@ -1131,7 +1131,7 @@ def plot_trend(
     if not isinstance(trend_transform, list):
         trend_transform = [trend_transform]
 
-    df_detrend = [transform.fit_transform(df.copy()) for transform in trend_transform]
+    df_detrend = [transform.fit_transform(deepcopy(ts)).to_pandas() for transform in trend_transform]
     labels, linear_coeffs = _get_labels_names(trend_transform, segments)
 
     for i, segment in enumerate(segments):

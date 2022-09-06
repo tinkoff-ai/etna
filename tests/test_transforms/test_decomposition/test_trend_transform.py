@@ -124,6 +124,7 @@ def test_transform_interface_repr(example_tsds: TSDataset) -> None:
         assert out_column in result[seg].columns
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf", out_column="regressor_result")
@@ -134,6 +135,7 @@ def test_fit_transform_with_nans_in_tails(df_with_nans_in_tails, model):
         assert residue.mean() < 0.13
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", (LinearRegression(), RandomForestRegressor()))
 def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans, model):
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")
