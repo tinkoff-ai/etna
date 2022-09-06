@@ -7,7 +7,6 @@ import pandas as pd
 from hydra_slayer import get_from_params
 from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
-from optuna.study import Study
 from optuna.trial import Trial
 from typing_extensions import Protocol
 
@@ -90,7 +89,7 @@ class Auto:
         if str(target_metric) not in [str(metric) for metric in metrics]:
             metrics.append(target_metric)
         self.metrics = metrics
-        self._study: Optional[Study] = None
+        self._optuna: Optional[Optuna] = None
 
     def fit(
         self,
@@ -119,22 +118,10 @@ class Auto:
         optuna_kwargs:
             additional kwargs for optuna :py:func:`optuna.study.optimize`
         """
-        if isinstance(self.pool, Pool):
-            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
-        else:
-            pool = self.pool
+        if self._optuna is None:
+            self._optuna = self._init_optuna()
 
-        pool_ = [pipeline.to_dict() for pipeline in pool]
-
-        optuna = Optuna(
-            direction="minimize",  # TODO: hardcoded
-            study_name=self.experiment_folder,
-            storage=self.storage,
-            sampler=ConfigSampler(configs=pool_),
-        )
-
-        self._study = optuna.study
-        optuna.tune(
+        self._optuna.tune(
             objective=self.objective(
                 ts=ts,
                 target_metric=self.target_metric,
@@ -150,7 +137,37 @@ class Auto:
             **optuna_kwargs,
         )
 
-        return get_from_params(**optuna.study.best_trial.user_attrs["pipeline"])
+        return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
+
+    def _init_optuna(self):
+        """Initialize optuna."""
+        if isinstance(self.pool, Pool):
+            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
+        else:
+            pool = self.pool
+
+        pool_ = [pipeline.to_dict() for pipeline in pool]
+
+        optuna = Optuna(
+            direction="minimize",  # TODO: hardcoded
+            study_name=self.experiment_folder,
+            storage=self.storage,
+            sampler=ConfigSampler(configs=pool_),
+        )
+        return optuna
+
+    def summary(self) -> pd.DataFrame:
+        """Get Auto trials summary."""
+        if self._optuna is None:
+            self._optuna = self._init_optuna()
+
+        study = self._optuna.study.get_trials()
+
+        study_params = [
+            {**trial.user_attrs, "pipeline": trial.user_attrs["pipeline"], "state": trial.state} for trial in study
+        ]
+
+        return pd.DataFrame(study_params)
 
     @staticmethod
     def objective(
@@ -200,6 +217,21 @@ class Auto:
 
             aggregated_metrics = aggregate_metrics_df(metrics_df)
 
+            for metric in aggregated_metrics:
+                trial.set_user_attr(metric, aggregated_metrics[metric])
+
             return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
 
         return _objective
+
+
+if __name__ == "__main__":
+    ts = pd.read_csv("/Users/marti/Projects/etna/examples/data/example_dataset.csv")
+    ts = TSDataset.to_dataset(ts)
+    ts = TSDataset(ts, freq="D")
+
+    auto = Auto(SMAPE(), experiment_folder="ggw1p", metric_aggregation="percentile_95", backtest_params={}, horizon=7)
+
+    print(auto.fit(ts, catch=(Exception,)))
+
+    print(auto.summary())

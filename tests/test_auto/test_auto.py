@@ -91,4 +91,5 @@ def test_simple_auto_run(example_tsds, optuna_storage):
     )
     auto.fit(ts=example_tsds, n_trials=2)
 
-    assert len(auto._study.trials) == 2
+    assert len(auto._optuna.study.trials) == 2
+    assert len(auto.summary()) == 2
