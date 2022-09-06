@@ -127,7 +127,7 @@ class Auto:
         pool_ = [pipeline.to_dict() for pipeline in pool]
 
         optuna = Optuna(
-            direction="minimize",  # TODO: harcoded
+            direction="minimize",  # TODO: hardcoded
             study_name=self.experiment_folder,
             storage=self.storage,
             sampler=ConfigSampler(configs=pool_),
