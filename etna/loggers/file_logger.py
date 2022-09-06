@@ -17,7 +17,6 @@ import pandas as pd
 from botocore.exceptions import ClientError
 
 from etna.loggers.base import BaseLogger
-from etna.loggers.base import aggregate_metrics_df
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -117,6 +116,7 @@ class BaseFileLogger(BaseLogger):
         If some exception during saving is raised, then it becomes a warning.
         """
         from etna.datasets import TSDataset
+        from etna.metrics.utils import aggregate_metrics_df
 
         columns_name = list(metrics.columns)
         metrics = metrics.reset_index()
@@ -158,6 +158,7 @@ class BaseFileLogger(BaseLogger):
         If some exception during saving is raised, then it becomes a warning.
         """
         from etna.datasets import TSDataset
+        from etna.metrics.utils import aggregate_metrics_df
 
         try:
             self._save_table(metrics_df, "metrics")
