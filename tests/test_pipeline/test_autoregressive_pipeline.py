@@ -31,6 +31,7 @@ from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_fit(example_tsds):
     """Test that AutoRegressivePipeline pipeline makes fit without failing."""
     model = LinearPerSegmentModel()
@@ -105,6 +106,7 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
     model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_columns(example_reg_tsds):
     """Test that AutoRegressivePipeline generates all the columns."""
     original_ts = deepcopy(example_reg_tsds)

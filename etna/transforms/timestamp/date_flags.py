@@ -1,5 +1,6 @@
 from copy import deepcopy
 from math import ceil
+from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -7,10 +8,10 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class DateFlagsTransform(Transform, FutureMixin):
+class DateFlagsTransform(IrreversibleTransform, FutureMixin):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
 
     Notes
@@ -103,7 +104,7 @@ class DateFlagsTransform(Transform, FutureMixin):
                 f"week_number_in_year, month_number_in_year, season_number, year_number, is_weekend should be True or any of "
                 f"special_days_in_week, special_days_in_month should be not empty."
             )
-
+        super().__init__(required_features=["target"])
         self.day_number_in_week = day_number_in_week
         self.day_number_in_month = day_number_in_month
         self.day_number_in_year = day_number_in_year
@@ -137,17 +138,37 @@ class DateFlagsTransform(Transform, FutureMixin):
     def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
-            init_parameters[feature_name] = self.__dict__[feature_name]
+            init_parameters[feature_name] = getattr(self, feature_name)
             temp_transform = DateFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
             return temp_transform.__repr__()
         else:
             return f"{self.out_column}_{feature_name}"
 
-    def fit(self, *args) -> "DateFlagsTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        features = [
+            "day_number_in_week",
+            "day_number_in_month",
+            "day_number_in_year",
+            "week_number_in_month",
+            "week_number_in_year",
+            "month_number_in_year",
+            "season_number",
+            "year_number",
+            "is_weekend",
+            "special_days_in_week",
+            "special_days_in_month",
+        ]
+        output_columns = [
+            self._get_column_name(feature_name=feature_name) for feature_name in features if getattr(self, feature_name)
+        ]
+        return output_columns
+
+    def _fit(self, df: pd.DataFrame) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Get required features from df.
 
         Parameters
