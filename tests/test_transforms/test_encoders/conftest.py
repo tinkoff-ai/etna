@@ -23,7 +23,7 @@ def dummy_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def simple_df() -> pd.DataFrame:
+def simple_ts() -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
     df_1["segment"] = "Moscow"
@@ -34,7 +34,8 @@ def simple_df() -> pd.DataFrame:
     df_2["exog"] = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    return df
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
