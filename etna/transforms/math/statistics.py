@@ -98,13 +98,7 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
         return result
 
     def get_regressors_info(self) -> List[str]:
-        """Return the list with regressors created by the transform.
-
-        Returns
-        -------
-        :
-            List with regressors created by the transform.
-        """
+        """Return the list with regressors created by the transform."""
         return [self.out_column_name]
 
 

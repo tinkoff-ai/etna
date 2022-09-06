@@ -42,11 +42,13 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
     horizon = 5
     model = LinearMultiSegmentModel()
     encoder = MeanSegmentEncoderTransform()
+
     train, test = almost_constant_ts.train_test_split(test_size=horizon)
-    encoder.fit_transform(train)
+    train.fit_transform([encoder])
     model.fit(train)
-    future = train.make_future(horizon)  # мб не работает с новыми трансформами
+    future = train.make_future(horizon)
     pred_mean_segment_encoding = model.forecast(future)
+
     metric = R2(mode="macro")
 
     # R2=0 => model predicts the optimal constant
