@@ -18,33 +18,36 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 
 @pytest.fixture
-def simple_df_for_agg() -> pd.DataFrame:
+def simple_ts_for_agg() -> TSDataset:
     n = 10
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
     df["target"] = list(range(n))
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df)
-    return df
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
-def df_for_agg() -> pd.DataFrame:
+def ts_for_agg() -> TSDataset:
     n = 10
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
     df["target"] = [-1, 1, 3, 2, 4, 9, 8, 5, 6, 0]
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df)
-    return df
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
-def df_for_agg_with_nan() -> pd.DataFrame:
+def ts_for_agg_with_nan() -> TSDataset:
     n = 10
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=n)})
     df["target"] = [-1, 1, 3, None, 4, 9, 8, 5, 6, 0]
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df)
-    return df
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.mark.parametrize(
@@ -68,17 +71,17 @@ def df_for_agg_with_nan() -> pd.DataFrame:
         (SumTransform, "test_sum"),
     ),
 )
-def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_column: str):
+def test_interface_simple(simple_ts_for_agg: TSDataset, class_name: Any, out_column: str):
     transform = class_name(window=3, out_column=out_column, in_column="target")
-    res = transform.fit_transform(df=simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     result_column = out_column if out_column is not None else transform.__repr__()
     assert sorted(res["segment_1"]) == sorted([result_column] + ["target"])
 
 
 @pytest.mark.parametrize("out_column", (None, "test_q"))
-def test_interface_quantile(simple_df_for_agg: pd.DataFrame, out_column: str):
+def test_interface_quantile(simple_ts_for_agg: TSDataset, out_column: str):
     transform = QuantileTransform(quantile=0.7, window=4, out_column=out_column, in_column="target")
-    res = transform.fit_transform(df=simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     result_column = out_column if out_column is not None else transform.__repr__()
     assert sorted(res["segment_1"]) == sorted([result_column] + ["target"])
 
@@ -102,7 +105,7 @@ def test_interface_quantile(simple_df_for_agg: pd.DataFrame, out_column: str):
     ),
 )
 def test_mean_feature(
-    simple_df_for_agg: pd.DataFrame,
+    simple_ts_for_agg: TSDataset,
     window: int,
     seasonality: int,
     alpha: float,
@@ -119,7 +122,7 @@ def test_mean_feature(
         in_column="target",
         out_column="result",
     )
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
@@ -134,7 +137,7 @@ def test_mean_feature(
     ),
 )
 def test_min_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, seasonality: int, periods: int, fill_na: float, expected: np.array
+    simple_ts_for_agg: TSDataset, window: int, seasonality: int, periods: int, fill_na: float, expected: np.array
 ):
     transform = MinTransform(
         window=window,
@@ -144,7 +147,7 @@ def test_min_feature(
         in_column="target",
         out_column="result",
     )
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
@@ -157,11 +160,11 @@ def test_min_feature(
         (3, 2, -17, np.array([-17, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
     ),
 )
-def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
+def test_max_feature(simple_ts_for_agg: TSDataset, window: int, periods: int, fill_na: float, expected: np.array):
     transform = MaxTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
@@ -173,11 +176,11 @@ def test_max_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
         (-1, 1, -17, np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5])),
     ),
 )
-def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
+def test_median_feature(simple_ts_for_agg: TSDataset, window: int, periods: int, fill_na: float, expected: np.array):
     transform = MedianTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
@@ -225,11 +228,11 @@ def test_median_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: i
         ),
     ),
 )
-def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array):
+def test_std_feature(simple_ts_for_agg: TSDataset, window: int, periods: int, fill_na: float, expected: np.array):
     transform = StdTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
@@ -242,11 +245,11 @@ def test_std_feature(simple_df_for_agg: pd.DataFrame, window: int, periods: int,
         (-1, 1, 0, [0, 1, 4 / 3, 1.25, 1.44, 7 / 3, 138 / 49, 2.625, 208 / 81, 27 / 10]),
     ),
 )
-def test_mad_transform(df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray):
+def test_mad_transform(ts_for_agg: TSDataset, window: int, periods: int, fill_na: float, expected: np.ndarray):
     transform = MADTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(df_for_agg)
+    res = transform.fit_transform(ts_for_agg).to_pandas()
     np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
 
 
@@ -255,12 +258,12 @@ def test_mad_transform(df_for_agg: pd.DataFrame, window: int, periods: int, fill
     ((3, 3, -17, [-17, -17, 4 / 3, -17, -17, -17, 2, 14 / 9, 10 / 9, 22 / 9]),),
 )
 def test_mad_transform_with_nans(
-    df_for_agg_with_nan: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.ndarray
+    ts_for_agg_with_nan: TSDataset, window: int, periods: int, fill_na: float, expected: np.ndarray
 ):
     transform = MADTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(df_for_agg_with_nan)
+    res = transform.fit_transform(ts_for_agg_with_nan).to_pandas()
     np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
 
 
@@ -288,7 +291,7 @@ def test_min_max_diff_feature(
     ((10, 1, 0, np.array([-1, 0, 3, 3, 7, 16, 24, 29, 35, 35])),),
 )
 def test_sum_feature_with_nan(
-    df_for_agg_with_nan: pd.DataFrame,
+    ts_for_agg_with_nan: pd.DataFrame,
     window: int,
     periods: int,
     fill_na: float,
@@ -301,7 +304,7 @@ def test_sum_feature_with_nan(
         in_column="target",
         out_column="result",
     )
-    res = transform.fit_transform(df_for_agg_with_nan)
+    res = transform.fit_transform(ts_for_agg_with_nan)
     np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
 
 
@@ -316,7 +319,7 @@ def test_sum_feature_with_nan(
     ),
 )
 def test_sum_feature(
-    simple_df_for_agg: pd.DataFrame,
+    simple_ts_for_agg: TSDataset,
     window: int,
     periods: int,
     fill_na: float,
@@ -330,7 +333,7 @@ def test_sum_feature(
         out_column="result",
     )
 
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg)
     np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
 
 
@@ -348,7 +351,7 @@ def test_sum_feature(
     ),
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
-    ts_diff_endings.fit_transform([transform])
+    transform.fit_transform(ts_diff_endings)
 
 
 @pytest.mark.parametrize(
@@ -363,6 +366,6 @@ def test_fit_transform_with_nans(transform, ts_diff_endings):
         MinMaxDifferenceTransform(in_column="target", window=5),
     ),
 )
-def test_save_load(transform, simple_df_for_agg):
-    ts = TSDataset(df=simple_df_for_agg, freq="D")
+def test_save_load(transform, simple_ts_for_agg):
+    ts = simple_ts_for_agg
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)

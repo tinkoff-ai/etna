@@ -10,16 +10,17 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 
 @pytest.mark.parametrize("expected_global_means", ([[3, 30]]))
-def test_mean_segment_encoder_fit(simple_df, expected_global_means):
+def test_mean_segment_encoder_fit(simple_ts, expected_global_means):
     encoder = MeanSegmentEncoderTransform()
-    encoder.fit(simple_df)
+    encoder.fit(simple_ts)
     assert (encoder.global_means == expected_global_means).all()
 
 
-def test_mean_segment_encoder_transform(simple_df, transformed_simple_df):
+def test_mean_segment_encoder_transform(simple_ts, transformed_simple_df):
     encoder = MeanSegmentEncoderTransform()
-    transformed_df = encoder.fit_transform(simple_df)
-    pd.testing.assert_frame_equal(transformed_df, transformed_simple_df)
+    transformed_df = encoder.fit_transform(simple_ts).to_pandas()
+    transformed_simple_df.index.freq = "D"
+    pd.testing.assert_frame_equal(transformed_simple_df, transformed_df)
 
 
 @pytest.fixture
@@ -35,6 +36,7 @@ def almost_constant_ts(random_seed) -> TSDataset:
     return ts
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_mean_segment_encoder_forecast(almost_constant_ts):
     """Test that MeanSegmentEncoderTransform works correctly in forecast pipeline
     and helps to correctly forecast almost constant series."""
@@ -56,7 +58,7 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
 
 def test_fit_transform_with_nans(ts_diff_endings):
     encoder = MeanSegmentEncoderTransform()
-    ts_diff_endings.fit_transform([encoder])
+    encoder.fit_transform(ts_diff_endings)
 
 
 def test_save_load(almost_constant_ts):

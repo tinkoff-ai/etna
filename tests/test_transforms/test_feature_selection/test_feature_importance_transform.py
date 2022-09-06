@@ -102,7 +102,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
 
     ts = ts_with_regressors
     le_encoder = SegmentEncoderTransform()
-    ts.fit_transform([le_encoder])
+    le_encoder.fit_transform(ts)
     selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
     selector.fit_transform(ts)
 
@@ -126,7 +126,7 @@ def test_retain_values(model, top_k, ts_with_regressors):
     """Check that transform doesn't change values of columns."""
     ts = ts_with_regressors
     le_encoder = SegmentEncoderTransform()
-    ts.fit_transform([le_encoder])
+    le_encoder.fit_transform(ts)
     df_encoded = ts.to_pandas()
     selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
     df_selected = selector.fit_transform(ts).to_pandas()
@@ -190,7 +190,7 @@ def test_sanity_selected(model, ts_with_regressors):
     """Check that transform correctly finds meaningful regressors."""
     ts = ts_with_regressors
     le_encoder = SegmentEncoderTransform()
-    ts.fit_transform([le_encoder])
+    le_encoder.fit_transform(ts)
     selector = TreeFeatureSelectionTransform(model=model, top_k=8)
     df_selected = selector.fit_transform(ts).to_pandas()
     features_columns = df_selected.columns.get_level_values("feature").unique()
