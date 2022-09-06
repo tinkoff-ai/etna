@@ -47,7 +47,7 @@ def test_simple_model_forecaster_run(simple_df, model):
     assert len(res) == 14
 
 
-def test_simple_model_forecaster_fail(simple_df):
+def test_simple_model_forecaster_fail_not_enough_context(simple_df):
     sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
     sma_model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
@@ -105,7 +105,9 @@ def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size
         ("H", 366 * 24 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
     ],
 )
-def test_deadline_get_context_beginning_fail(freq, periods, start, prediction_size, seasonality, window):
+def test_deadline_get_context_beginning_fail_not_enough_context(
+    freq, periods, start, prediction_size, seasonality, window
+):
     df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
 
     with pytest.raises(ValueError, match="Given context isn't big enough"):
@@ -123,7 +125,7 @@ def test_deadline_model_forecaster_run(simple_df, model):
     assert len(res) == 14
 
 
-def test_sdeadline_model_forecaster_fail(simple_df):
+def test_sdeadline_model_forecaster_fail_not_enough_context(simple_df):
     model = DeadlineMovingAverageModel(window=1000)
     model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
