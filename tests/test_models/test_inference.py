@@ -146,6 +146,7 @@ def _test_forecast_mixed_in_out_sample(ts, model, transforms):
     assert_frame_equal(forecast_out_sample_df, forecast_full_df.iloc[-5:])
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -165,6 +166,7 @@ def test_forecast_in_sample_full(model, transforms, example_tsds):
     _test_forecast_in_sample_full(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.xfail(strict=True)
 @pytest.mark.parametrize(
     "model, transforms",
@@ -180,6 +182,7 @@ def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
     _test_forecast_in_sample_full(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -218,6 +221,7 @@ def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds
         _test_forecast_in_sample_full(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -242,6 +246,7 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
     _test_forecast_in_sample_suffix(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -280,6 +285,7 @@ def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_ts
         _test_forecast_in_sample_suffix(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -332,6 +338,7 @@ def test_forecast_out_sample_prefix(model, transforms, example_tsds):
     _test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -355,6 +362,7 @@ def test_forecast_out_sample_suffix(model, transforms, example_tsds):
     _test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -391,6 +399,7 @@ def test_forecast_out_sample_suffix_not_implemented(model, transforms, example_t
         _test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.xfail(strict=True)
 @pytest.mark.parametrize(
     "model, transforms",
@@ -404,6 +413,7 @@ def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
     _test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -425,6 +435,7 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
     _test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
 
+@pytest.mark.long
 @pytest.mark.parametrize(
     "model, transforms",
     [

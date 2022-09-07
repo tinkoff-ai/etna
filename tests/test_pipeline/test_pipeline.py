@@ -530,6 +530,7 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     assert f"target_{quantiles[1]}" in features
 
 
+@pytest.mark.long
 def test_backtest_pass_with_filter_transform(ts_with_feature):
     ts = ts_with_feature
 
