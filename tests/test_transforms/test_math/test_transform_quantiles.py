@@ -55,8 +55,8 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
 
     toy_dataset = add_constant.inverse_transform(toy_dataset).to_pandas()
 
-    np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.to_pandas().iloc[:, 1])
-    np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.to_pandas().iloc[:, 3])
+    np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1])
+    np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
 @pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
