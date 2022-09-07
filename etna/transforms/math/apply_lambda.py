@@ -136,4 +136,9 @@ class LambdaTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return []
+        if self.in_column not in self.regressors:
+            return []
+        elif self.out_column is not None:
+            return [self.out_column]
+        else:
+            return [self.in_column]
