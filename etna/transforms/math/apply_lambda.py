@@ -5,6 +5,7 @@ from typing import Optional
 
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
@@ -79,6 +80,22 @@ class LambdaTransform(ReversibleTransform):
         -------
         result: ``LambdaTransform``
         """
+        return self
+
+    def fit(self, ts: TSDataset) -> "LambdaTransform":
+        """Fit the transform.
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        self.regressors = ts.regressors
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        self._fit(df=df)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
