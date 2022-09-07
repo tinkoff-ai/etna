@@ -119,7 +119,7 @@ class AddConstTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return []
+        return [self._get_column_name()] if self.in_column in self.regressors else []
 
 
 __all__ = ["AddConstTransform"]
