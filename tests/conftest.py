@@ -13,6 +13,7 @@ collect_ignore = [
     "test_models/test_sklearn.py",
     "test_loggers/test_file_logger.py",
     "test_loggers/test_wandb_logger.py",
+    "test_loggers/test_console_logger.py",
     "test_commands/test_backtest.py",
     "test_commands/test_forecast.py",
     "test_models/nn/test_tft.py",
