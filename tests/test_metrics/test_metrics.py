@@ -159,6 +159,24 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
         assert value == true_metric_value
 
 
+@pytest.mark.parametrize(
+    "metric, greater_is_better",
+    (
+        (MAE(), False),
+        (MSE(), False),
+        (MedAE(), False),
+        (MSLE(), False),
+        (MAPE(), False),
+        (SMAPE(), False),
+        (R2(), True),
+        (Sign(), None),
+        (DummyMetric(), False),
+    ),
+)
+def test_metrics_greater_is_better(metric, greater_is_better):
+    assert metric.greater_is_better == greater_is_better
+
+
 def test_multiple_calls():
     """Check that metric works correctly in case of multiple call."""
     timerange = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=10, freq="1D")})
