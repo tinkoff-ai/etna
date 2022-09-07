@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 -
 -
--
+- Make slicing faster in `TSDataset._merge_exog`, `FilterFeaturesTransform`, `AddConstTransform`, `LambdaTransform`, `LagTransform`, `LogTransform`, `SklearnTransform`, `WindowStatisticsTransform`; make CICD test different pandas versions ([#900](https://github.com/tinkoff-ai/etna/pull/900))
 -
 -
 ### Fixed
