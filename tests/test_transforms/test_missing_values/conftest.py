@@ -31,7 +31,7 @@ def all_date_present_df(date_range: pd.Series) -> pd.DataFrame:
 
 @pytest.fixture
 def all_date_present_ts_two_segments(all_date_present_df: pd.Series) -> TSDataset:
-    """Create pd.DataFrame that contains two segments with some targets on given range of dates without gaps."""
+    """Create TSDataset that contains two segments with some targets on given range of dates without gaps."""
     df_1 = all_date_present_df.reset_index()
     df_2 = all_date_present_df.copy().reset_index()
 
@@ -70,7 +70,7 @@ def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd
 def ts_with_missing_range_x_index_two_segments(
     df_with_missing_range_x_index: pd.DataFrame,
 ) -> Tuple[TSDataset, list]:
-    """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
+    """Create TSDataset that contains some target on given range of dates with range of gaps."""
     df_one_segment, rng = df_with_missing_range_x_index
     df_1 = df_one_segment.reset_index()
     df_2 = df_one_segment.copy().reset_index()
@@ -91,7 +91,7 @@ def df_all_missing(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
 
 @pytest.fixture
 def ts_all_missing_two_segments(all_date_present_ts_two_segments: TSDataset) -> TSDataset:
-    """Create pd.DataFrame with all values set to nan."""
+    """Create TSDataset with all values set to nan."""
     all_date_present_ts_two_segments.loc[:, :] = np.NaN
     return all_date_present_ts_two_segments
 
