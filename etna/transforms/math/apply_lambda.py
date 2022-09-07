@@ -4,6 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
+from etna.datasets import set_columns_wide
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
 
@@ -94,10 +95,12 @@ class LambdaTransform(Transform):
         """
         result = df.copy()
         segments = sorted(set(df.columns.get_level_values("segment")))
-        features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+        features = df.loc[:, pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
         transformed_features = self.transform_func(features)
         if self.inplace:
-            result.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed_features
+            result = set_columns_wide(
+                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+            )
         else:
             transformed_features.columns = pd.MultiIndex.from_product([segments, [self.change_column]])
             result = pd.concat([result] + [transformed_features], axis=1)
@@ -119,15 +122,21 @@ class LambdaTransform(Transform):
         """
         result_df = df.copy()
         if self.inverse_transform_func:
-            segments = sorted(set(df.columns.get_level_values("segment")))
-            features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+            features = df.loc[:, pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
             transformed_features = self.inverse_transform_func(features)
-            result_df.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed_features
+            result_df = set_columns_wide(
+                result_df, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+            )
             if self.in_column == "target":
                 segment_columns = result_df.columns.get_level_values("feature").tolist()
                 quantiles = match_target_quantiles(set(segment_columns))
                 for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[segments, quantile_column_nm]]
+                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]].sort_index(axis=1)
                     transformed_features = self.inverse_transform_func(features)
-                    result_df.loc[:, pd.IndexSlice[segments, quantile_column_nm]] = transformed_features
+                    result_df = set_columns_wide(
+                        result_df,
+                        transformed_features,
+                        features_left=[quantile_column_nm],
+                        features_right=[quantile_column_nm],
+                    )
         return result_df
