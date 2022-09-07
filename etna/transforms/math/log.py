@@ -120,7 +120,7 @@ class LogTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return []
+        return [] if self.in_column not in self.regressors else [self._get_column_name()]
 
 
 __all__ = ["LogTransform"]

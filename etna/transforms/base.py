@@ -23,6 +23,7 @@ class NewTransform(ABC, BaseMixin):
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):
         self.required_features = required_features
+        self.regressors: List[str] = []
 
     @abstractmethod
     def get_regressors_info(self) -> List[str]:
@@ -83,6 +84,7 @@ class NewTransform(ABC, BaseMixin):
         :
             The fitted transform instance.
         """
+        self.regressors = ts.regressors
         df = ts.to_pandas(flatten=False, features=self.required_features)
         self._fit(df=df)
         return self

@@ -30,7 +30,7 @@ def non_positive_ts_(random_seed) -> TSDataset:
 
 
 @pytest.fixture
-def positive_ts_(random_seed) -> pd.DataFrame:
+def positive_ts_(random_seed) -> TSDataset:
     """Generate dataset with positive target."""
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
