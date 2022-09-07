@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
@@ -35,6 +36,8 @@ class LogTransform(ReversibleTransform):
         self.base = base
         self.inplace = inplace
         self.out_column = out_column
+        self.regressors: List[str] = []
+
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
@@ -58,6 +61,22 @@ class LogTransform(ReversibleTransform):
         -------
         result: LogTransform
         """
+        return self
+
+    def fit(self, ts: TSDataset) -> "LogTransform":
+        """Fit the transform.
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        self.regressors = ts.regressors
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        self._fit(df=df)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
