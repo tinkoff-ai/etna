@@ -4,6 +4,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from etna.datasets import set_columns_wide
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
 
@@ -72,14 +73,16 @@ class LogTransform(Transform):
             transformed dataframe
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
-        features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+        features = df.loc[:, pd.IndexSlice[:, self.in_column]]
         if (features < 0).any().any():
             raise ValueError("LogPreprocess can be applied only to non-negative series")
 
         result = df.copy()
         transformed_features = np.log1p(features) / np.log(self.base)
         if self.inplace:
-            result.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed_features
+            result = set_columns_wide(
+                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+            )
         else:
             column_name = self._get_column_name()
             transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]])
@@ -102,17 +105,23 @@ class LogTransform(Transform):
         """
         result = df.copy()
         if self.inplace:
-            segments = sorted(set(df.columns.get_level_values("segment")))
-            features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+            features = df.loc[:, pd.IndexSlice[:, self.in_column]]
             transformed_features = np.expm1(features * np.log(self.base))
-            result.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed_features
+            result = set_columns_wide(
+                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+            )
             if self.in_column == "target":
                 segment_columns = result.columns.get_level_values("feature").tolist()
                 quantiles = match_target_quantiles(set(segment_columns))
                 for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[segments, quantile_column_nm]]
+                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]]
                     transformed_features = np.expm1(features * np.log(self.base))
-                    result.loc[:, pd.IndexSlice[segments, quantile_column_nm]] = transformed_features
+                    result = set_columns_wide(
+                        result,
+                        transformed_features,
+                        features_left=[quantile_column_nm],
+                        features_right=[quantile_column_nm],
+                    )
 
         return result
 
