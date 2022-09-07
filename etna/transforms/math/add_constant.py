@@ -4,6 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
@@ -35,6 +36,7 @@ class AddConstTransform(ReversibleTransform):
         self.value = value
         self.inplace = inplace
         self.out_column = out_column
+        self.regressors: List[str] = []
 
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
@@ -59,6 +61,22 @@ class AddConstTransform(ReversibleTransform):
         -------
         result: AddConstTransform
         """
+        return self
+
+    def fit(self, ts: TSDataset) -> "AddConstTransform":
+        """Fit the transform.
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        self.regressors = ts.regressors
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        self._fit(df=df)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
