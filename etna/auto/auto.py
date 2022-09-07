@@ -76,7 +76,10 @@ class Auto:
         metrics:
             list of metrics to compute
         """
+        if target_metric.greater_is_better is None:
+            raise ValueError("target_metric.greater_is_better is None")
         self.target_metric = target_metric
+
         self.metric_aggregation = metric_aggregation
         self.backtest_params = {} if backtest_params is None else backtest_params
         self.horizon = horizon
@@ -149,7 +152,7 @@ class Auto:
         pool_ = [pipeline.to_dict() for pipeline in pool]
 
         optuna = Optuna(
-            direction="minimize",  # TODO: hardcoded
+            direction="maximize" if self.target_metric.greater_is_better else "minimize",
             study_name=self.experiment_folder,
             storage=self.storage,
             sampler=ConfigSampler(configs=pool_),
@@ -164,10 +167,20 @@ class Auto:
         study = self._optuna.study.get_trials()
 
         study_params = [
-            {**trial.user_attrs, "pipeline": trial.user_attrs["pipeline"], "state": trial.state} for trial in study
+            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
+            for trial in study
         ]
 
         return pd.DataFrame(study_params)
+
+    def top_k(self, k: int = 5) -> List[Pipeline]:
+        """Get top k pipelines."""
+        summary = self.summary()
+        df = summary.sort_values(
+            by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
+            ascending=(not self.target_metric.greater_is_better),
+        )
+        return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
 
     @staticmethod
     def objective(
@@ -223,15 +236,3 @@ class Auto:
             return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
 
         return _objective
-
-
-if __name__ == "__main__":
-    ts = pd.read_csv("/Users/marti/Projects/etna/examples/data/example_dataset.csv")
-    ts = TSDataset.to_dataset(ts)
-    ts = TSDataset(ts, freq="D")
-
-    auto = Auto(SMAPE(), experiment_folder="ggw1p", metric_aggregation="percentile_95", backtest_params={}, horizon=7)
-
-    print(auto.fit(ts, catch=(Exception,)))
-
-    print(auto.summary())

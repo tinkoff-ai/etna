@@ -85,16 +85,18 @@ def test_init_optuna(
     Auto._init_optuna(self=auto)
 
     optuna_mock.assert_called_once_with(
-        direction="minimize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock.return_value
+        direction="maximize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock.return_value
     )
 
 
-def test_simple_auto_run(example_tsds, optuna_storage):
+def test_simple_auto_run(
+    example_tsds, optuna_storage, pool=[Pipeline(NaiveModel(1), horizon=7), Pipeline(NaiveModel(50), horizon=7)]
+):
 
     auto = Auto(
         MAE(),
-        pool=[Pipeline(NaiveModel(1), horizon=7), Pipeline(NaiveModel(2), horizon=7)],
-        metric_aggregation="percentile_95",
+        pool=pool,
+        metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
     )
@@ -102,3 +104,6 @@ def test_simple_auto_run(example_tsds, optuna_storage):
 
     assert len(auto._optuna.study.trials) == 2
     assert len(auto.summary()) == 2
+    assert len(auto.top_k()) == 2
+    assert len(auto.top_k(k=1)) == 1
+    assert str(auto.top_k(k=1)[0]) == str(pool[0])
