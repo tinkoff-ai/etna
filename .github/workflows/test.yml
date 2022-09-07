@@ -65,8 +65,8 @@ jobs:
 
       - name: PyTest ("not long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "not long" --cov-report=xml
-          poetry run pytest etna -v --doctest-modules
+          poetry run pytest tests -v --cov=etna -m "not long" --cov-report=xml --durations=10
+          poetry run pytest etna -v --doctest-modules --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
@@ -103,7 +103,7 @@ jobs:
 
       - name: PyTest ("long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "long" --cov-report=xml
+          poetry run pytest tests -v --cov=etna -m "long" --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
@@ -141,8 +141,8 @@ jobs:
 
       - name: PyTest ("tsdataset transforms")
         run: |
-          poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml
-          poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml
+          poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml --durations=10
+          poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
