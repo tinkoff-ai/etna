@@ -1,11 +1,9 @@
-import warnings
 from typing import List
 from typing import Optional
 from typing import Union
 
 import pandas as pd
 
-from etna.datasets import TSDataset
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
@@ -47,7 +45,6 @@ class LagTransform(IrreversibleTransform, FutureMixin):
 
         self.in_column = in_column
         self.out_column = out_column
-        self.in_column_regressor: Optional[bool] = None
 
     def _get_column_name(self, lag: int) -> str:
         if self.out_column is None:
@@ -68,12 +65,6 @@ class LagTransform(IrreversibleTransform, FutureMixin):
         -------
         result: LagTransform
         """
-        return self
-
-    def fit(self, ts: TSDataset) -> "LagTransform":
-        """Fit the transform."""
-        self.in_column_regressor = self.in_column in ts.regressors
-        super().fit(ts)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -104,6 +95,4 @@ class LagTransform(IrreversibleTransform, FutureMixin):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
-        return [self._get_column_name(lag) for lag in self.lags] if self.in_column_regressor else []
+        return [self._get_column_name(lag) for lag in self.lags]

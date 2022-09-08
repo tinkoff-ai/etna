@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List
 from typing import Tuple
 
@@ -9,7 +8,6 @@ from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms import LagTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -821,21 +819,6 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
     ts.fit_transform(transforms)
     regressors = ts.regressors
     assert sorted(regressors) == sorted(expected_regressors)
-
-
-@pytest.mark.xfail(reason="TSDataset 2.0")
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [LagTransform(in_column="target", lags=[1, 2], out_column="regressor_lag")],
-            ["regressor_1", "regressor_2", "regressor_lag_1", "regressor_lag_2"],
-        ),
-    ),
-)
-def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
 
 
 def test_to_dataset_not_modify_dataframe():

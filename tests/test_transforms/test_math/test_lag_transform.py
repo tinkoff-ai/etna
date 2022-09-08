@@ -68,18 +68,16 @@ def test_interface_two_segments_out_column(
 ):
     """Test that transform generates correct column names using out_column parameter."""
     lf = LagTransform(in_column="target", lags=lags, out_column="regressor_lag_feature")
-    lf.fit_transform(ts=int_ts_two_segments)
-    for segment in int_ts_two_segments.to_pandas().columns.get_level_values("segment").unique():
-        lags_df_lags_columns = sorted(
-            filter(lambda x: x.startswith("regressor_lag_feature"), int_ts_two_segments.to_pandas()[segment].columns)
-        )
+    lags_df = lf.fit_transform(int_ts_two_segments).to_pandas()
+    for segment in lags_df.columns.get_level_values("segment").unique():
+        lags_df_lags_columns = sorted(filter(lambda x: x.startswith("regressor_lag_feature"), lags_df[segment].columns))
         assert lags_df_lags_columns == expected_columns
 
 
 @pytest.mark.parametrize("lags", (3, [5, 8]))
 def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_ts_two_segments):
     """Test that transform generates correct column names without setting out_column parameter."""
-    segments = int_ts_two_segments.to_pandas().columns.get_level_values("segment").unique()
+    segments = int_ts_two_segments.segments
     transform = LagTransform(in_column="target", lags=lags)
     transformed_df = transform.fit_transform(ts=deepcopy(int_ts_two_segments)).to_pandas()
     columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
@@ -87,12 +85,12 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_ts_two
     for column in columns:
         # check that a transform can be created from column name and it generates the same results
         transform_temp = eval(column)
-        ts_temp = transform_temp.fit_transform(ts=deepcopy(int_ts_two_segments))
-        columns_temp = ts_temp.df.columns.get_level_values("feature").unique().drop("target")
+        df_temp = transform_temp.fit_transform(ts=deepcopy(int_ts_two_segments)).to_pandas()
+        columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
         assert generated_column == column
-        assert ts_temp.df.loc[:, pd.IndexSlice[segments, generated_column]].equals(
+        assert df_temp.loc[:, pd.IndexSlice[segments, generated_column]].equals(
             transformed_df.loc[:, pd.IndexSlice[segments, column]]
         )
 
@@ -101,15 +99,15 @@ def test_interface_two_segments_repr(lags: Union[int, Sequence[int]], int_ts_two
 def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_ts_two_segments):
     """Test that transform generates correct values."""
     lf = LagTransform(in_column="target", lags=lags, out_column="regressor_lag_feature")
-    lags_ts = lf.fit_transform(ts=deepcopy(int_ts_two_segments)).to_pandas()
+    lags_df = lf.fit_transform(ts=deepcopy(int_ts_two_segments)).to_pandas()
     if isinstance(lags, int):
         lags = list(range(1, lags + 1))
-    for segment in lags_ts.columns.get_level_values("segment").unique():
+    for segment in lags_df.columns.get_level_values("segment").unique():
         for lag in lags:
             true_values = pd.Series(
                 [None] * lag + list(int_ts_two_segments.to_pandas()[segment, "target"].values[:-lag])
             )
-            assert_almost_equal(true_values.values, lags_ts[segment, f"regressor_lag_feature_{lag}"].values)
+            assert_almost_equal(true_values.values, lags_df[segment, f"regressor_lag_feature_{lag}"].values)
 
 
 @pytest.mark.parametrize("lags", (0, -1, (10, 15, -2)))
