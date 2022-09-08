@@ -142,16 +142,8 @@ class LambdaTransform(ReversibleTransform):
                     result_df.loc[:, pd.IndexSlice[segments, quantile_column_nm]] = transformed_features
         return result_df
 
-    def _get_column_name(self) -> str:
-        if self.inplace:
-            return self.in_column
-        elif self.out_column:
-            return self.out_column
-        else:
-            return self.__repr__()
-
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         if self.in_column_regressor is None:
             warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
-        return [self._get_column_name()] if self.in_column_regressor else []
+        return [self.change_column] if self.in_column_regressor else []
