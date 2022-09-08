@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pytest
 
@@ -11,6 +13,7 @@ from etna.transforms import StandardScalerTransform
 from etna.transforms import YeoJohnsonTransform
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 def test_standard_scaler_dummy_mean_shift_for_quantiles_per_segment(toy_dataset_with_mean_shift_in_target):
     """
     This test checks that StandardScalerTransform.fit_transform + StandardScalerTransform.inverse_transform
@@ -24,6 +27,7 @@ def test_standard_scaler_dummy_mean_shift_for_quantiles_per_segment(toy_dataset_
     np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 def test_standard_scaler_dummy_mean_shift_for_quantiles_macro(toy_dataset_with_mean_shift_in_target):
     """This test checks that StandardScalerTransform.inverse_transform works correctly in macro mode."""
     toy_dataset = toy_dataset_with_mean_shift_in_target
@@ -41,20 +45,21 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     This test checks that inverse_transform transforms forecast's quantiles the same way with target itself and
     transform does not affect quantiles.
     """
-    toy_dataset = toy_dataset_equal_targets_and_quantiles
+    toy_dataset = deepcopy(toy_dataset_equal_targets_and_quantiles)
     shift = 10.0
     add_constant = AddConstTransform(in_column="target", value=shift)
-    toy_dataset_transformed = add_constant.fit_transform(toy_dataset.copy())
+    toy_dataset_transformed = add_constant.fit_transform(ts=toy_dataset).to_pandas()
 
-    np.testing.assert_allclose(toy_dataset_transformed.iloc[:, 0] - shift, toy_dataset.iloc[:, 1])
-    np.testing.assert_allclose(toy_dataset_transformed.iloc[:, 2] - shift, toy_dataset.iloc[:, 3])
+    np.testing.assert_allclose(toy_dataset_transformed.iloc[:, 0] - shift, toy_dataset.to_pandas().iloc[:, 1])
+    np.testing.assert_allclose(toy_dataset_transformed.iloc[:, 2] - shift, toy_dataset.to_pandas().iloc[:, 3])
 
-    toy_dataset = add_constant.inverse_transform(toy_dataset)
+    toy_dataset = add_constant.inverse_transform(toy_dataset).to_pandas()
 
     np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1])
     np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 @pytest.mark.parametrize(
     "transform",
     (
