@@ -6,8 +6,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 
 
 class ImputerMode(str, Enum):
@@ -21,7 +21,7 @@ class ImputerMode(str, Enum):
     constant = "constant"
 
 
-class _OneSegmentTimeSeriesImputerTransform(Transform):
+class _OneSegmentTimeSeriesImputerTransform(OneSegmentTransform):
     """One segment version of transform to fill NaNs in series of a given dataframe.
 
     - It is assumed that given series begins with first non NaN value.
@@ -137,7 +137,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         result: pd.DataFrame
             dataframe with in_column series with filled gaps
         """
-        result_df = df.copy()
+        result_df = df
         cur_nans = result_df[result_df[self.in_column].isna()].index
 
         result_df[self.in_column] = self._fill(result_df[self.in_column])
@@ -162,7 +162,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         result: pd.DataFrame
             dataframe with in_column series with initial values
         """
-        result_df = df.copy()
+        result_df = df
         index = result_df.index.intersection(self.nan_timestamps)
         result_df.loc[index, self.in_column] = np.nan
         return result_df
@@ -207,7 +207,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         return df
 
 
-class TimeSeriesImputerTransform(PerSegmentWrapper):
+class TimeSeriesImputerTransform(ReversiblePerSegmentWrapper):
     """Transform to fill NaNs in series of a given dataframe.
 
     - It is assumed that given series begins with first non NaN value.
@@ -286,8 +286,13 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
                 seasonality=self.seasonality,
                 default_value=self.default_value,
                 constant_value=self.constant_value,
-            )
+            ),
+            required_features=[self.in_column],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
 
 
 __all__ = ["TimeSeriesImputerTransform"]
