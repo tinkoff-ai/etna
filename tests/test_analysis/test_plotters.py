@@ -117,7 +117,7 @@ def test_plot_stl(example_tsdf, period):
 )
 def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values, trend_class):
     ln_tr = trend_class(in_column="target", poly_degree=poly_degree)
-    example_tsdf.fit_transform([ln_tr])
+    ln_tr.fit_transform(example_tsdf)
     segments = example_tsdf.segments
     _, linear_coeffs = _get_labels_names([ln_tr], segments)
     if expect_values:
