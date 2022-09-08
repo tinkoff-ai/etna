@@ -34,7 +34,7 @@ def test_wrong_init_one_segment():
         )
 
 
-def test_wrong_init_two_segments(all_date_present_df_two_segments):
+def test_wrong_init_two_segments():
     """Check that imputer for two segments fails to fit_transform with wrong imputing strategy."""
     with pytest.raises(ValueError):
         _ = TimeSeriesImputerTransform(strategy="wrong_strategy")
@@ -53,12 +53,14 @@ def test_all_dates_present_impute(all_date_present_df: pd.DataFrame, fill_strate
 
 @pytest.mark.smoke
 @pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
-def test_all_dates_present_impute_two_segments(all_date_present_df_two_segments: pd.DataFrame, fill_strategy: str):
+def test_all_dates_present_impute_two_segments(all_date_present_ts_two_segments: TSDataset, fill_strategy: str):
     """Check that imputer does nothing with series without gaps."""
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
-    result = imputer.fit_transform(all_date_present_df_two_segments)
+    result = imputer.fit_transform(deepcopy(all_date_present_ts_two_segments)).to_pandas()
     for segment in result.columns.get_level_values("segment"):
-        np.testing.assert_array_equal(all_date_present_df_two_segments[segment]["target"], result[segment]["target"])
+        np.testing.assert_array_equal(
+            all_date_present_ts_two_segments.to_pandas()[segment]["target"], result[segment]["target"]
+        )
 
 
 @pytest.mark.parametrize("fill_strategy", ["constant", "mean", "running_mean", "forward_fill", "seasonal"])
@@ -72,11 +74,11 @@ def test_all_missing_impute_fail(df_all_missing: pd.DataFrame, fill_strategy: st
 
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill", "seasonal"])
-def test_all_missing_impute_fail_two_segments(df_all_missing_two_segments: pd.DataFrame, fill_strategy: str):
+def test_all_missing_impute_fail_two_segments(ts_all_missing_two_segments: TSDataset, fill_strategy: str):
     """Check that imputer can't fill nans if all values are nans."""
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
     with pytest.raises(ValueError, match="Series hasn't non NaN values which means it is empty and can't be filled"):
-        _ = imputer.fit_transform(df_all_missing_two_segments)
+        imputer.fit_transform(ts_all_missing_two_segments)
 
 
 @pytest.mark.parametrize("constant_value", (0, 42))
@@ -285,7 +287,7 @@ def test_missing_values_seasonal(ts_to_fill, window: int, seasonality: int, expe
     imputer = TimeSeriesImputerTransform(
         in_column="target", strategy="seasonal", window=window, seasonality=seasonality, default_value=None
     )
-    ts.fit_transform([imputer])
+    imputer.fit_transform(ts)
     result = ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
 
     np.testing.assert_array_equal(result, expected)
@@ -307,7 +309,7 @@ def test_default_value(ts_to_fill, window: int, seasonality: int, default_value:
     imputer = TimeSeriesImputerTransform(
         in_column="target", strategy="seasonal", window=window, seasonality=seasonality, default_value=default_value
     )
-    ts.fit_transform([imputer])
+    imputer.fit_transform(ts)
     result = ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
 
     np.testing.assert_array_equal(result, expected)
@@ -326,15 +328,17 @@ def test_inverse_transform_one_segment(df_with_missing_range_x_index: pd.DataFra
 
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
-def test_inverse_transform_many_segments(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
+def test_inverse_transform_many_segments(ts_with_missing_range_x_index_two_segments: TSDataset, fill_strategy: str):
     """Check that transform + inverse_transform don't change original df for two segments."""
-    df, rng = df_with_missing_range_x_index_two_segments
+    ts, rng = ts_with_missing_range_x_index_two_segments
+    df = ts.to_pandas()
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
-    transform_result = imputer.fit_transform(df)
-    inverse_transform_result = imputer.inverse_transform(transform_result)
+    imputer.fit_transform(ts)
+    inverse_transform_result = imputer.inverse_transform(ts).to_pandas()
     np.testing.assert_array_equal(df, inverse_transform_result)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
 def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
     """Check that inverse_transform doesn't change anything in forecast."""
@@ -357,8 +361,7 @@ def test_fit_transform_nans_at_the_beginning(fill_strategy, ts_nans_beginning):
     """Check that transform doesn't fill NaNs at the beginning."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
     df_init = ts_nans_beginning.to_pandas()
-    ts_nans_beginning.fit_transform([imputer])
-    df_filled = ts_nans_beginning.to_pandas()
+    df_filled = imputer.fit_transform(ts_nans_beginning).to_pandas()
     for segment in ts_nans_beginning.segments:
         df_segment_init = df_init.loc[:, pd.IndexSlice[segment, "target"]]
         df_segment_filled = df_filled.loc[:, pd.IndexSlice[segment, "target"]]
@@ -371,22 +374,21 @@ def test_fit_transform_nans_at_the_beginning(fill_strategy, ts_nans_beginning):
 def test_fit_transform_nans_at_the_end(fill_strategy, ts_diff_endings):
     """Check that transform correctly works with NaNs at the end."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
-    ts_diff_endings.fit_transform([imputer])
+    imputer.fit_transform(ts_diff_endings)
     assert (ts_diff_endings[:, :, "target"].isna()).sum().sum() == 0
 
 
 @pytest.mark.parametrize("constant_value", (0, 32))
-def test_constant_fill_strategy(df_with_missing_range_x_index_two_segments: pd.DataFrame, constant_value: float):
-    raw_df, rng = df_with_missing_range_x_index_two_segments
-    inferred_freq = pd.infer_freq(raw_df.index[-5:])
-    ts = TSDataset(raw_df, freq=inferred_freq)
+def test_constant_fill_strategy(ts_with_missing_range_x_index_two_segments: TSDataset, constant_value: float):
+    ts, rng = ts_with_missing_range_x_index_two_segments
     imputer = TimeSeriesImputerTransform(
         in_column="target", strategy="constant", constant_value=constant_value, default_value=constant_value - 1
     )
-    ts.fit_transform([imputer])
-    df = ts.to_pandas(flatten=False)
+    df = imputer.fit_transform(ts).to_pandas()
     for segment in ["segment_1", "segment_2"]:
-        np.testing.assert_array_equal(df.loc[rng][segment]["target"].values, [constant_value] * 5)
+        np.testing.assert_array_equal(
+            df.loc[pd.IndexSlice[rng], pd.IndexSlice[segment, "target"]].values, [constant_value] * 5
+        )
 
 
 def test_save_load(ts_to_fill):
