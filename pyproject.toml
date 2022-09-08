@@ -245,7 +245,8 @@ filterwarnings = [
 ]
 markers = [
     "smoke",
-    "long"
+    "long_1",
+    "long_2"
 ]
 
 [tool.mypy]

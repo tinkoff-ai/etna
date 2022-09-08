@@ -45,7 +45,7 @@ def sinusoid_ts():
     "model_class, model_class_repr",
     ((TBATSModel, "TBATSModel"), (BATSModel, "BATSModel")),
 )
-def test_reper(model_class, model_class_repr):
+def test_repr(model_class, model_class_repr):
     kwargs = {
         "use_box_cox": None,
         "box_cox_bounds": None,
@@ -84,6 +84,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
         model.forecast(to_forecast)
 
 
+@pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_format(model, new_format_df):
     df = new_format_df
@@ -96,6 +97,7 @@ def test_format(model, new_format_df):
     assert not future_ts.isnull().values.any()
 
 
+@pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_dummy(model, sinusoid_ts):
     train, test = sinusoid_ts
@@ -107,6 +109,7 @@ def test_dummy(model, sinusoid_ts):
     assert value_metric < 0.33
 
 
+@pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_prediction_interval(model, example_tsds):
     model.fit(example_tsds)
