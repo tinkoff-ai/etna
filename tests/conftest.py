@@ -10,6 +10,10 @@ from etna.datasets.tsdataset import TSDataset
 
 # TODO: Collection of tests to fix in TSDataset 2.0
 collect_ignore = [
+    "test_models/test_sklearn.py",
+    "test_loggers/test_file_logger.py",
+    "test_loggers/test_wandb_logger.py",
+    "test_loggers/test_console_logger.py",
     "test_commands/test_backtest.py",
     "test_commands/test_forecast.py",
     "test_models/nn/test_tft.py",
@@ -464,7 +468,9 @@ def toy_dataset_equal_targets_and_quantiles():
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
         "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
-    return TSDataset.to_dataset(pd.DataFrame(df))
+    df = TSDataset.to_dataset(pd.DataFrame(df))
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
