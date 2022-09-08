@@ -129,7 +129,7 @@ class AddConstTransform(ReversibleTransform):
         """Return the list with regressors created by the transform."""
         if self.in_column_regressor is None:
             warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
-        return [self._get_column_name()] if self.in_column_regressor else []
+        return [self._get_column_name()] if self.in_column_regressor and not self.inplace else []
 
 
 __all__ = ["AddConstTransform"]
