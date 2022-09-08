@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -6,7 +7,7 @@ from ruptures.base import BaseCost
 from sklearn.linear_model import LinearRegression
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import PerSegmentWrapper
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.decomposition.change_points_trend import BaseEstimator
 from etna.transforms.decomposition.change_points_trend import TDetrendModel
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
@@ -81,7 +82,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         return df
 
 
-class _TrendTransform(PerSegmentWrapper):
+class _TrendTransform(ReversiblePerSegmentWrapper):
     """_TrendTransform adds trend as a feature. Creates column '<in_column>_trend'."""
 
     def __init__(
@@ -114,7 +115,8 @@ class _TrendTransform(PerSegmentWrapper):
                 change_point_model=change_point_model,
                 detrend_model=detrend_model,
                 **change_point_model_predict_params,
-            )
+            ),
+            required_features=[in_column],
         )
 
 
@@ -191,3 +193,7 @@ class TrendTransform(_TrendTransform, FutureMixin):
             pen=self.pen,
             epsilon=self.epsilon,
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return [self.out_column if self.out_column is not None else f"{self.__repr__()}"]
