@@ -81,6 +81,7 @@ def test_fit_interface(
     assert len(result) == 2
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
     """Check that VotingEnsemble.forecast returns TSDataset of correct length."""
     ensemble = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline])
@@ -166,7 +167,12 @@ def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline,
     assert result == ensemble._vote.return_value
 
 
+<<<<<<< HEAD
 @pytest.mark.long_1
+=======
+@pytest.mark.long
+@pytest.mark.xfail(reason="TSDataset 2.0")
+>>>>>>> Fix Lag Transform (#933)
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,

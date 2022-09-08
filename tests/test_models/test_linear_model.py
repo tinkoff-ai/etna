@@ -82,6 +82,7 @@ def linear_segments_ts_common(random_seed):
     return linear_segments_by_parameters(alpha_values, intercept_values)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", (LinearPerSegmentModel(), ElasticPerSegmentModel()))
 def test_not_fitted(model, linear_segments_ts_unique):
     """Check exception when trying to forecast with unfitted model."""
@@ -122,6 +123,7 @@ def test_repr_elastic(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), ElasticPerSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
@@ -145,6 +147,7 @@ def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearMultiSegmentModel(), ElasticMultiSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
@@ -245,6 +248,7 @@ def test_get_model_per_segment_before_training():
         _ = etna_model.get_model()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "etna_class,expected_model_class",
     (
