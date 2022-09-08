@@ -1,14 +1,16 @@
 import warnings
 from typing import Callable
+from typing import List
 from typing import Optional
 
 import pandas as pd
 
-from etna.transforms.base import Transform
+from etna.datasets import TSDataset
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
 
-class LambdaTransform(Transform):
+class LambdaTransform(ReversibleTransform):
     """``LambdaTransform`` applies input function for given series."""
 
     def __init__(
@@ -46,11 +48,13 @@ class LambdaTransform(Transform):
         Value error:
             if `inplace=True` and ``inverse_transform_func`` is not defined
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.inplace = inplace
         self.out_column = out_column
         self.transform_func = transform_func
         self.inverse_transform_func = inverse_transform_func
+        self.in_column_regressor: Optional[bool] = None
 
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
@@ -65,7 +69,7 @@ class LambdaTransform(Transform):
         else:
             self.change_column = self.__repr__()
 
-    def fit(self, df: pd.DataFrame) -> "LambdaTransform":
+    def _fit(self, df: pd.DataFrame) -> "LambdaTransform":
         """Fit preprocess method, does nothing in ``LambdaTransform`` case.
 
         Parameters
@@ -79,7 +83,13 @@ class LambdaTransform(Transform):
         """
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, ts: TSDataset) -> "LambdaTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply lambda transformation to series from df.
 
         Parameters
@@ -92,7 +102,7 @@ class LambdaTransform(Transform):
         :
             transformed series
         """
-        result = df.copy()
+        result = df
         segments = sorted(set(df.columns.get_level_values("segment")))
         features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
         transformed_features = self.transform_func(features)
@@ -104,7 +114,7 @@ class LambdaTransform(Transform):
             result = result.sort_index(axis=1)
         return result
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to the series from df.
 
         Parameters
@@ -117,7 +127,7 @@ class LambdaTransform(Transform):
         :
             transformed series
         """
-        result_df = df.copy()
+        result_df = df
         if self.inverse_transform_func:
             segments = sorted(set(df.columns.get_level_values("segment")))
             features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
@@ -131,3 +141,9 @@ class LambdaTransform(Transform):
                     transformed_features = self.inverse_transform_func(features)
                     result_df.loc[:, pd.IndexSlice[segments, quantile_column_nm]] = transformed_features
         return result_df
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+        return [self.change_column] if self.in_column_regressor and not self.inplace else []

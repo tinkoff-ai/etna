@@ -461,6 +461,7 @@ def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
         ts_diff_endings.make_future(10)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_make_future_with_imputer(ts_diff_endings, ts_future):
     imputer = TimeSeriesImputerTransform(in_column="target")
     ts_diff_endings.fit_transform([imputer])
