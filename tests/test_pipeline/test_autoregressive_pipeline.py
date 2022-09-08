@@ -109,6 +109,7 @@ def test_forecast_prediction_interval_interface(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_with_fit_transforms(example_tsds):
     """Test that AutoRegressivePipeline can work with transforms that need fitting."""
     horizon = 5
