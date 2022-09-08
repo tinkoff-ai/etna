@@ -42,7 +42,7 @@ def percentile(n: int):
     def percentile_(x):
         return np.nanpercentile(a=x.values, q=n)
 
-    percentile_.__name__ = "percentile_%s" % n
+    percentile_.__name__ = f"percentile_{n}"
     return percentile_
 
 

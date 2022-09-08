@@ -174,7 +174,14 @@ class Auto:
         return pd.DataFrame(study_params)
 
     def top_k(self, k: int = 5) -> List[Pipeline]:
-        """Get top k pipelines."""
+        """
+        Get top k pipelines.
+
+        Parameters
+        ----------
+        k:
+            number of pipelines to return
+        """
         summary = self.summary()
         df = summary.sort_values(
             by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
