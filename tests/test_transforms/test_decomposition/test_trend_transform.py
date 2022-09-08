@@ -51,7 +51,7 @@ def test_inverse_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     )
     df_one_segment_transformed = trend_transform.fit_transform(df_one_segment)
     df_one_segment_inverse_transformed = trend_transform.inverse_transform(df_one_segment)
-    assert (df_one_segment_transformed == df_one_segment_inverse_transformed).all().all()
+    pd.testing.assert_frame_equal(df_one_segment_transformed, df_one_segment_inverse_transformed)
 
 
 def test_fit_transform_many_segments(example_tsds: TSDataset) -> None:
@@ -89,7 +89,7 @@ def test_inverse_transform_many_segments(example_tsds: TSDataset) -> None:
     trend_transform.fit_transform(example_tsds)
     original_df = example_tsds.to_pandas()
     trend_transform.inverse_transform(example_tsds)
-    assert (original_df == example_tsds.to_pandas()).all().all()
+    pd.testing.assert_frame_equal(original_df, example_tsds.to_pandas())
 
 
 def test_transform_inverse_transform(example_tsds: TSDataset) -> None:
@@ -100,7 +100,7 @@ def test_transform_inverse_transform(example_tsds: TSDataset) -> None:
     trend_transform.fit_transform(example_tsds)
     original_df = example_tsds.to_pandas()
     trend_transform.inverse_transform(example_tsds)
-    assert (original_df == example_tsds.to_pandas()).all().all()
+    pd.testing.assert_frame_equal(original_df, example_tsds.to_pandas())
 
 
 def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
