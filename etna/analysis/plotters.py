@@ -1316,7 +1316,7 @@ def plot_imputation(
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_after = deepcopy(ts)
-    ts_after.fit_transform(transforms=[imputer])
+    imputer.fit_transform(ts_after)
     feature_name = imputer.in_column
 
     for i, segment in enumerate(segments):
