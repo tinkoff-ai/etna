@@ -109,7 +109,7 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -131,7 +131,7 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -159,7 +159,7 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -184,7 +184,7 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -225,7 +225,7 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -255,7 +255,7 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -293,7 +293,7 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -328,7 +328,7 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -374,7 +374,7 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -395,7 +395,7 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -422,7 +422,7 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -446,7 +446,7 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -478,7 +478,7 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -505,7 +505,7 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -542,7 +542,7 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make auto-regressive predictions.
+        * If it is autoregression model, this method will make autoregressive predictions.
 
         To understand how a particular model behaves look at its documentation.
 
@@ -578,7 +578,7 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
 
         * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
 
-        * If it is auto-regression model, this method will make predictions using true values
+        * If it is autoregression model, this method will make predictions using true values
           instead of predicted on a previous step.
           It can be useful for making in-sample forecasts.
 
@@ -1164,7 +1164,7 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
     def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
         """Make predictions.
 
-        This method will make auto-regressive predictions.
+        This method will make autoregressive predictions.
 
         Parameters
         ----------

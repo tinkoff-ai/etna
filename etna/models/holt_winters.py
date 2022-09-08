@@ -286,6 +286,8 @@ class HoltWintersModel(
     """
     Holt-Winters' etna model.
 
+    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
+
     Notes
     -----
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
@@ -481,6 +483,8 @@ class HoltModel(HoltWintersModel):
 
     Restricted version of HoltWinters model.
 
+    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
+
     Notes
     -----
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
@@ -577,6 +581,8 @@ class SimpleExpSmoothingModel(HoltWintersModel):
     Exponential smoothing etna model.
 
     Restricted version of HoltWinters model.
+
+    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
 
     Notes
     -----

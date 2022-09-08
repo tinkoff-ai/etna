@@ -113,6 +113,8 @@ class SeasonalMovingAverageModel(
         y_{t} = \\frac{\\sum_{i=1}^{n} y_{t-is} }{n},
 
     where :math:`s` is seasonality, :math:`n` is window size (how many history values are taken for forecast).
+
+    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
     """
 
     def __init__(self, window: int = 5, seasonality: int = 7):

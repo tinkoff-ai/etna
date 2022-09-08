@@ -27,6 +27,8 @@ if SETTINGS.torch_required:
 class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
+    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
+
     Notes
     -----
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
@@ -177,7 +179,7 @@ class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel
     ) -> TSDataset:
         """Make predictions.
 
-        This method will make auto-regressive predictions.
+        This method will make autoregressive predictions.
 
         Parameters
         ----------

@@ -8,6 +8,8 @@ class MovingAverageModel(SeasonalMovingAverageModel):
         y_{t} = \\frac{\\sum_{i=1}^{n} y_{t-i} }{n},
 
     where :math:`n` is window size.
+
+    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
     """
 
     def __init__(self, window: int = 5):

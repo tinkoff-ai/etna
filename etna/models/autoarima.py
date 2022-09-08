@@ -56,6 +56,8 @@ class AutoARIMAModel(
     """
     Class for holding auto arima model.
 
+    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
+
     Notes
     -----
     We use :py:class:`pmdarima.arima.arima.ARIMA`.

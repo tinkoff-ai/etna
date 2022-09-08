@@ -8,6 +8,8 @@ class NaiveModel(SeasonalMovingAverageModel):
         y_{t} = y_{t-s},
 
     where :math:`s` is lag.
+
+    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
     """
 
     def __init__(self, lag: int = 1):
