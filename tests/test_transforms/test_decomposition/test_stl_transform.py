@@ -109,7 +109,7 @@ def test_transform_multi_segments(ts_name, model, request):
     df_expected = ts.to_pandas(flatten=True)
     df_expected.loc[~df_expected["target"].isna(), "target"] = 0
     transform = STLTransform(in_column="target", period=7, model=model)
-    ts.fit_transform(transforms=[transform])
+    transform.fit_transform(ts=ts)
     df_transformed = ts.to_pandas(flatten=True)
     np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
@@ -134,12 +134,13 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     ts = request.getfixturevalue(ts_name)
     transform = STLTransform(in_column="target", period=7, model=model)
     df = ts.to_pandas(flatten=True)
-    ts.fit_transform(transforms=[transform])
-    ts.inverse_transform()
+    transform.fit_transform(ts)
+    transform.inverse_transform(ts)
     df_inverse_transformed = ts.to_pandas(flatten=True)
     assert df_inverse_transformed["target"].equals(df["target"])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model_stl", ["arima", "holt"])
 def test_forecast(ts_trend_seasonal, model_stl):
     """Test that transform works correctly in forecast."""
@@ -150,7 +151,7 @@ def test_forecast(ts_trend_seasonal, model_stl):
         ts_trend_seasonal.index[-3],
         ts_trend_seasonal.index[-1],
     )
-    ts_train.fit_transform(transforms=[transform])
+    transform.fit_transform(ts_train)
     model = NaiveModel()
     model.fit(ts_train)
     ts_future = ts_train.make_future(3)
@@ -176,12 +177,11 @@ def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segme
 @pytest.mark.parametrize("model_stl", ["arima", "holt"])
 def test_fit_transform_with_nans_in_tails(ts_trend_seasonal_nan_tails, model_stl):
     transform = STLTransform(in_column="target", period=7, model=model_stl)
-    ts_trend_seasonal_nan_tails.fit_transform(transforms=[transform])
+    transform.fit_transform(ts=ts_trend_seasonal_nan_tails)
     np.testing.assert_allclose(ts_trend_seasonal_nan_tails[:, :, "target"].dropna(), 0, atol=0.25)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
-def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
+def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     transform = STLTransform(in_column="target", period=7)
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
-        _ = transform.fit_transform(df_with_nans)
+        _ = transform.fit_transform(ts_with_nans)
