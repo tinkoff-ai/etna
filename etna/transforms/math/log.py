@@ -36,7 +36,6 @@ class LogTransform(ReversibleTransform):
         self.base = base
         self.inplace = inplace
         self.out_column = out_column
-        self.regressors: List[str] = []
         self.in_column_regressor: Optional[bool] = None
 
         if self.inplace and out_column:
