@@ -71,6 +71,7 @@ def test_get_residuals_not_matching_segments(residuals):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_plot_residuals_fails_unkown_feature(example_tsdf):
     """Test that plot_residuals fails if meet unknown feature."""
     pipeline = Pipeline(

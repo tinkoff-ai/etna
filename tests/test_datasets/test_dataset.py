@@ -823,6 +823,7 @@ def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
     assert sorted(regressors) == sorted(expected_regressors)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "transforms, expected_regressors",
     (

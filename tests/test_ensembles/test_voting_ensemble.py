@@ -77,6 +77,7 @@ def test_fit_interface(
     assert len(result) == 2
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
     """Check that VotingEnsemble.forecast returns TSDataset of correct length."""
     ensemble = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline])
@@ -138,6 +139,7 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with VotingEnsemble."""
