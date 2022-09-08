@@ -5,10 +5,10 @@ from typing import Union
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class LagTransform(Transform, FutureMixin):
+class LagTransform(IrreversibleTransform, FutureMixin):
     """Generates series of lags from given dataframe."""
 
     def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
@@ -33,6 +33,7 @@ class LagTransform(Transform, FutureMixin):
         ValueError:
             if lags value contains non-positive values
         """
+        super().__init__(required_features=[in_column])
         if isinstance(lags, int):
             if lags < 1:
                 raise ValueError(f"{type(self).__name__} works only with positive lags values, {lags} given")
@@ -52,7 +53,7 @@ class LagTransform(Transform, FutureMixin):
         else:
             return f"{self.out_column}_{lag}"
 
-    def fit(self, df: pd.DataFrame) -> "LagTransform":
+    def _fit(self, df: pd.DataFrame) -> "LagTransform":
         """Fit method does nothing and is kept for compatibility.
 
         Parameters
@@ -66,7 +67,7 @@ class LagTransform(Transform, FutureMixin):
         """
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add lags to the dataset.
 
         Parameters
@@ -91,3 +92,7 @@ class LagTransform(Transform, FutureMixin):
         result = pd.concat([result] + all_transformed_features, axis=1)
         result = result.sort_index(axis=1)
         return result
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return [self._get_column_name(lag) for lag in self.lags]
