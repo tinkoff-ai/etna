@@ -98,6 +98,7 @@ def test_output_pipelines(models, transforms, horizons, expected_len):
     for pipeline in pipelines:
         assert isinstance(pipeline, Pipeline)
 
+
 @pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "models, transforms, horizons, expected_transforms_lens",
@@ -138,6 +139,7 @@ def test_different_objects():
     pipelines = assemble_pipelines(models, transforms, horizons)
     assert len({id(pipeline.model) for pipeline in pipelines}) == len(pipelines)
     assert len({id(pipeline.horizon) for pipeline in pipelines}) == len(pipelines)
+
 
 @pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
