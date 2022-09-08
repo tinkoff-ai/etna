@@ -176,7 +176,7 @@ def test_unbiased_fit_transform_theil_sen_trend_two_segments(ts_two_segments: TS
     This test checks that TheilSenRegressor predicts unbiased trend on two segments of slightly noised data.
     """
     trend_transform = TheilSenTrendTransform(
-        in_column="target", n_subsamples=int(len(ts_two_segments.to_pandas()) / 2), max_iter=3000, tol=1e-4
+        in_column="target", n_subsamples=int(len(ts_two_segments.index) / 2), max_iter=3000, tol=1e-4
     )
     _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments, decimal=0)
 
@@ -187,7 +187,7 @@ def test_unbiased_fit_transform_theil_sen_trend_all_data_two_segments(ts_two_seg
     using all the data to train model.
     """
     # Note that it is a corner case: we use all the data to predict trend
-    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(ts_two_segments.to_pandas()))
+    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(ts_two_segments.index))
     _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments)
 
 
@@ -253,7 +253,7 @@ def test_fit_transform_theil_sen_trend_two_segments(ts_fixture, poly_degree, req
     """
     ts = request.getfixturevalue(ts_fixture)
     trend_transform = TheilSenTrendTransform(
-        in_column="target", poly_degree=poly_degree, n_subsamples=int(len(ts.to_pandas()) / 2), max_iter=3000, tol=1e-4
+        in_column="target", poly_degree=poly_degree, n_subsamples=int(len(ts.index) / 2), max_iter=3000, tol=1e-4
     )
     _test_fit_transform_many_segments(trend_transform=trend_transform, ts=ts, atol=1e-5)
 
@@ -267,9 +267,7 @@ def test_fit_transform_theil_sen_trend_all_data_two_segments(ts_fixture, poly_de
     """
     ts = request.getfixturevalue(ts_fixture)
     # Note that it is a corner case: we use all the data to predict trend
-    trend_transform = TheilSenTrendTransform(
-        in_column="target", poly_degree=poly_degree, n_subsamples=len(ts.to_pandas())
-    )
+    trend_transform = TheilSenTrendTransform(in_column="target", poly_degree=poly_degree, n_subsamples=len(ts.index))
     _test_fit_transform_many_segments(trend_transform=trend_transform, ts=ts, atol=1e-5)
 
 
@@ -278,15 +276,6 @@ def _test_inverse_transform_one_segment(
 ) -> None:
     """
     Test that trend_transform can correctly make inverse_transform in one segment.
-
-    Parameters
-    ----------
-    trend_transform:
-        instance of LinearTrendBaseTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_allclose function in key-value format
     """
     df_transformed = trend_transform.fit_transform(df)
     df_inverse_transformed = trend_transform.inverse_transform(df_transformed)
@@ -342,7 +331,7 @@ def test_inverse_transform_theil_sen_trend_two_segments(ts_two_segments: TSDatas
     Test that TheilSenRegressor can correctly make inverse_transform for two segments.
     """
     trend_transform = TheilSenTrendTransform(
-        in_column="target", poly_degree=poly_degree, n_subsamples=len(ts_two_segments.to_pandas())
+        in_column="target", poly_degree=poly_degree, n_subsamples=len(ts_two_segments.index)
     )
     _test_inverse_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments)
 
