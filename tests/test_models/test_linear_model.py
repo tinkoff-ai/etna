@@ -247,6 +247,7 @@ def test_get_model_per_segment_before_training():
         _ = etna_model.get_model()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "etna_class,expected_model_class",
     (
