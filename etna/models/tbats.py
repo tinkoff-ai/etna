@@ -35,7 +35,7 @@ class _TBATSAdapter(BaseAdapter):
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+    def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
@@ -69,6 +69,9 @@ class _TBATSAdapter(BaseAdapter):
         y_pred = y_pred.iloc[steps_to_skip:].reset_index(drop=True)
 
         return y_pred
+
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+        raise NotImplementedError("Method predict isn't currently implemented!")
 
     def get_model(self) -> Estimator:
         return self.model

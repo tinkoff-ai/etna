@@ -67,9 +67,9 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+    def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
         """
-        Compute predictions from a SARIMAX model.
+        Compute dynamic predictions from a SARIMAX model.
 
         Parameters
         ----------
@@ -131,6 +131,26 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         }
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
+
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute non-dynamic predictions from a SARIMAX model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        prediction_interval:
+             If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        return self.forecast(df=df, prediction_interval=prediction_interval, quantiles=quantiles)
 
     @abstractmethod
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:

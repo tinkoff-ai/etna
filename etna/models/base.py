@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import Iterable
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Sized
@@ -46,64 +45,6 @@ def log_decorator(f):
         return result
 
     return wrapper
-
-
-class Model(ABC, BaseMixin):
-    """Class for holding specific models - autoregression and simple regressions."""
-
-    def __init__(self):
-        self._models = None
-
-    @abstractmethod
-    def fit(self, ts: TSDataset) -> "Model":
-        """Fit model.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-
-        Returns
-        -------
-        :
-            Model after fit
-        """
-        pass
-
-    @abstractmethod
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-
-        Returns
-        -------
-        TSDataset
-            Models result
-        """
-        pass
-
-    @staticmethod
-    def _forecast_segment(model, segment: Union[str, List[str]], ts: TSDataset) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features)
-        segment_predict = pd.DataFrame({"target": segment_predict})
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
 
 
 class AbstractModel(ABC, BaseMixin):
@@ -166,6 +107,36 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
         Parameters
         ----------
         ts:
@@ -185,6 +156,39 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
     @abstractmethod
     def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
         """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+        """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
 
         Parameters
         ----------
@@ -219,6 +223,44 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     ) -> TSDataset:
         """Make predictions.
 
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+    @abstractmethod
+    def predict(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
         Parameters
         ----------
         ts:
@@ -249,6 +291,49 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
     ) -> TSDataset:
         """Make predictions.
 
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+    @abstractmethod
+    def predict(
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
         Parameters
         ----------
         ts:
@@ -269,19 +354,29 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
         pass
 
 
-class ModelForecastMixin(ABC):
+class ModelForecastingMixin(ABC):
     """Base class for model mixins."""
 
     @abstractmethod
     def _forecast(self, **kwargs) -> TSDataset:
         pass
 
+    @abstractmethod
+    def _predict(self, **kwargs) -> TSDataset:
+        pass
 
-class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastMixin):
+
+class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     """Mixin for models that don't support prediction intervals and don't need context for prediction."""
 
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
 
         Parameters
         ----------
@@ -295,12 +390,41 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastMixin):
         """
         return self._forecast(ts=ts)
 
+    def predict(self, ts: TSDataset) -> TSDataset:
+        """Make predictions.
 
-class NonPredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._predict(ts=ts)
+
+
+class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
     """Mixin for models that don't support prediction intervals and need context for prediction."""
 
     def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
         """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
 
         Parameters
         ----------
@@ -317,14 +441,46 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
         """
         return self._forecast(ts=ts, prediction_size=prediction_size)
 
+    def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+        """Make predictions.
 
-class PredictionIntervalContextIgnorantModelMixin(ModelForecastMixin):
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._predict(ts=ts, prediction_size=prediction_size)
+
+
+class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     """Mixin for models that support prediction intervals and don't need context for prediction."""
 
     def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
         """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
 
         Parameters
         ----------
@@ -342,8 +498,37 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastMixin):
         """
         return self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
 
+    def predict(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
 
-class PredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+
+
+class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
     """Mixin for models that support prediction intervals and need context for prediction."""
 
     def forecast(
@@ -354,6 +539,12 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
         quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
         """Make predictions.
+
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make auto-regressive predictions.
+
+        To understand how a particular model behaves look at its documentation.
 
         Parameters
         ----------
@@ -376,8 +567,46 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastMixin):
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
 
+    def predict(
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """Make predictions.
 
-class PerSegmentModelMixin(ModelForecastMixin):
+        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
+
+        * If it is auto-regression model, this method will make predictions using true values
+          instead of predicted on a previous step.
+          It can be useful for making in-sample forecasts.
+
+        To understand how a particular model behaves look at its documentation.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        return self._predict(
+            ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
+        )
+
+
+class PerSegmentModelMixin(ModelForecastingMixin):
     """Mixin for holding methods for per-segment prediction."""
 
     def __init__(self, base_model: Any):
@@ -451,14 +680,17 @@ class PerSegmentModelMixin(ModelForecastMixin):
         return internal_models
 
     @staticmethod
-    def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
+    def _make_predictions_segment(
+        model: Any, segment: str, ts: TSDataset, method_name: str, *args, **kwargs
+    ) -> pd.DataFrame:
         """Make predictions for one segment."""
         segment_features = ts[:, segment, :]
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features, *args, **kwargs)
+        method = getattr(model, method_name)
+        segment_predict = method(df=segment_features, *args, **kwargs)
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
@@ -471,13 +703,15 @@ class PerSegmentModelMixin(ModelForecastMixin):
         return segment_predict
 
     @log_decorator
-    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, method_name: str, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataframe with features
+        method_name:
+            Name of the method to make predictions
 
         Returns
         -------
@@ -486,7 +720,9 @@ class PerSegmentModelMixin(ModelForecastMixin):
         """
         result_list = list()
         for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts, **kwargs)
+            segment_predict = self._make_predictions_segment(
+                model=model, segment=segment, ts=ts, method_name=method_name, **kwargs
+            )
 
             result_list.append(segment_predict)
 
@@ -508,8 +744,18 @@ class PerSegmentModelMixin(ModelForecastMixin):
             ts.df = ts.df.iloc[-prediction_size:]
         return ts
 
+    @log_decorator
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+        if hasattr(self._base_model, "forecast"):
+            return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
+        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
 
-class MultiSegmentModelMixin(ModelForecastMixin):
+    @log_decorator
+    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
+        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
+
+
+class MultiSegmentModelMixin(ModelForecastingMixin):
     """Mixin for holding methods for multi-segment prediction.
 
     It currently isn't working with prediction intervals and context.
@@ -547,13 +793,15 @@ class MultiSegmentModelMixin(ModelForecastMixin):
         return self
 
     @log_decorator
-    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, method_name: str, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
+        method_name:
+            Name of the method to make predictions
 
         Returns
         -------
@@ -563,10 +811,21 @@ class MultiSegmentModelMixin(ModelForecastMixin):
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         # TODO: make it work with prediction intervals and context
-        y = self._base_model.predict(x, **kwargs).reshape(-1, horizon).T
+        method = getattr(self._base_model, method_name)
+        y = method(x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts
+
+    @log_decorator
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+        if hasattr(self._base_model, "forecast"):
+            return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
+        return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
+
+    @log_decorator
+    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
+        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
 
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.
@@ -905,6 +1164,8 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
     def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
         """Make predictions.
 
+        This method will make auto-regressive predictions.
+
         Parameters
         ----------
         ts:
@@ -932,6 +1193,28 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
         future_ts.inverse_transform()
 
         return future_ts
+
+    @log_decorator
+    def predict(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+        """Make predictions.
+
+        This method will make predictions using true values instead of predicted on a previous step.
+        It can be useful for making in-sample forecasts.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        raise NotImplementedError("It is currently not implemented!")
 
     def get_model(self) -> "DeepBaseNet":
         """Get model.
