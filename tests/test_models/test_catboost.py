@@ -10,6 +10,7 @@ from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
 def test_run(catboostmodel, new_format_df):
     df = new_format_df
@@ -29,6 +30,7 @@ def test_run(catboostmodel, new_format_df):
         assert False
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
@@ -69,6 +71,7 @@ def constant_ts(size=40) -> TSDataset:
     return train, test
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_catboost_multi_segment_forecast(constant_ts):
     train, test = constant_ts
     horizon = len(test.df)
@@ -97,6 +100,7 @@ def test_get_model_per_segment_before_training():
         _ = etna_model.get_model()
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_get_model_per_segment_after_training(example_tsds):
     pipeline = Pipeline(model=CatBoostPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
     pipeline.fit(ts=example_tsds)

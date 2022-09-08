@@ -84,6 +84,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
         model.forecast(to_forecast)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_format(model, new_format_df):
     df = new_format_df

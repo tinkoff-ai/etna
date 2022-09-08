@@ -54,6 +54,7 @@ def test_forecast_columns(example_reg_tsds):
     )
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_one_step(example_tsds):
     """Test that AutoRegressivePipeline gets predictions one by one if step is equal to 1."""
     original_ts = deepcopy(example_tsds)
@@ -84,6 +85,7 @@ def test_forecast_one_step(example_tsds):
     assert np.all(forecast_pipeline[:, :, "target"] == forecast_manual[:, :, "target"])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("horizon, step", ((1, 1), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (20, 1), (20, 2), (20, 3)))
 def test_forecast_multi_step(example_tsds, horizon, step):
     """Test that AutoRegressivePipeline gets correct number of predictions if step is more than 1."""
@@ -96,6 +98,7 @@ def test_forecast_multi_step(example_tsds, horizon, step):
     assert forecast_pipeline.df.shape[0] == horizon
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast_prediction_interval_interface(example_tsds):
     """Test the forecast interface with prediction intervals."""
     pipeline = AutoRegressivePipeline(
@@ -129,6 +132,7 @@ def test_forecast_raise_error_if_not_fitted():
 
 
 @pytest.mark.long
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     """Check that AutoRegressivePipeline.backtest gives the same results in case of single and multiple jobs modes."""
     # create a pipeline
