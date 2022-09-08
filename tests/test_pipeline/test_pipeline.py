@@ -349,6 +349,7 @@ def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf
 
 
 @pytest.mark.long
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_backtest_with_n_jobs(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that Pipeline.backtest gives the same results in case of single and multiple jobs modes."""
     ts1 = deepcopy(big_example_tsdf)
