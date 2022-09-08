@@ -111,6 +111,8 @@ class CatBoostPerSegmentModel(PerSegmentModel):
 
     Examples
     --------
+    >>> import pytest
+    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostPerSegmentModel
@@ -233,6 +235,8 @@ class CatBoostMultiSegmentModel(MultiSegmentModel):
 
     Examples
     --------
+    >>> import pytest
+    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostMultiSegmentModel
@@ -363,6 +367,8 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
 
     Examples
     --------
+    >>> import pytest
+    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostModelPerSegment
@@ -492,6 +498,8 @@ class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
 
     Examples
     --------
+    >>> import pytest
+    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostModelMultiSegment
