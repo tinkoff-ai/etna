@@ -36,7 +36,7 @@ class AddConstTransform(ReversibleTransform):
         self.value = value
         self.inplace = inplace
         self.out_column = out_column
-        self.regressors: List[str] = []
+        self.in_column_regressor: Optional[bool] = None
 
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
@@ -64,19 +64,9 @@ class AddConstTransform(ReversibleTransform):
         return self
 
     def fit(self, ts: TSDataset) -> "AddConstTransform":
-        """Fit the transform.
-        Parameters
-        ----------
-        ts:
-            Dataset to fit the transform on.
-        Returns
-        -------
-        :
-            The fitted transform instance.
-        """
-        self.regressors = ts.regressors
-        df = ts.to_pandas(flatten=False, features=self.required_features)
-        self._fit(df=df)
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -137,7 +127,9 @@ class AddConstTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return [self._get_column_name()] if self.in_column in self.regressors else []
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+        return [self._get_column_name()] if self.in_column_regressor else []
 
 
 __all__ = ["AddConstTransform"]
