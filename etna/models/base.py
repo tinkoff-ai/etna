@@ -702,7 +702,6 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             segment_predict["timestamp"] = dates
         return segment_predict
 
-    @log_decorator
     def _make_predictions(self, ts: TSDataset, method_name: str, **kwargs) -> TSDataset:
         """Make predictions.
 
@@ -792,7 +791,6 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         self._base_model.fit(df=df, regressors=ts.regressors)
         return self
 
-    @log_decorator
     def _make_predictions(self, ts: TSDataset, method_name: str, **kwargs) -> TSDataset:
         """Make predictions.
 
