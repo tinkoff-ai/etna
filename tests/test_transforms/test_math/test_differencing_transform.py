@@ -40,7 +40,7 @@ def df_nans() -> pd.DataFrame:
 
 @pytest.fixture
 def ts_nans(df_nans) -> TSDataset:
-    """Create DataFrame with nans at the beginning of one segment."""
+    """Create TSDataset with nans at the beginning of one segment."""
     ts = TSDataset(df=df_nans, freq="D")
     return ts
 
@@ -59,9 +59,8 @@ def df_regressors() -> pd.DataFrame:
 
 
 @pytest.fixture
-def ts_nans_with_noise(ts_nans, random_seed) -> TSDataset:
+def ts_nans_with_noise(df_nans, random_seed) -> TSDataset:
     """Create noised version of df_nans."""
-    df_nans = ts_nans.to_pandas()
     df_nans.loc[:, pd.IndexSlice["1", "target"]] += np.random.normal(scale=0.03, size=df_nans.shape[0])
     df_nans.loc[df_nans.index[5] :, pd.IndexSlice["2", "target"]] += np.random.normal(
         scale=0.05, size=df_nans.shape[0] - 5
@@ -113,7 +112,7 @@ def check_inverse_transform_not_inplace(transform: GeneralDifferencingTransform,
     """Check that differencing transform does nothing during inverse_transform in non-inplace mode."""
     transformed_df = transform.fit_transform(ts).to_pandas()
     inverse_transformed_df = transform.inverse_transform(ts).to_pandas()
-    assert transformed_df.equals(inverse_transformed_df)
+    pd.testing.assert_frame_equal(transformed_df, inverse_transformed_df)
 
 
 def check_inverse_transform_inplace_train(transform: GeneralDifferencingTransform, ts: TSDataset):
@@ -121,7 +120,7 @@ def check_inverse_transform_inplace_train(transform: GeneralDifferencingTransfor
     df = ts.to_pandas()
     transform.fit_transform(ts)
     inverse_transformed_df = transform.inverse_transform(ts).to_pandas()
-    assert inverse_transformed_df.equals(df)
+    pd.testing.assert_frame_equal(inverse_transformed_df, df)
 
 
 def check_inverse_transform_inplace_test(
@@ -273,7 +272,7 @@ def test_general_transform_not_inplace(transform, ts_nans):
     transformed_df = transform.fit_transform(ts_nans).to_pandas()
 
     transformed_df_compare = transformed_df[df_nans.columns]
-    assert df_nans.equals(transformed_df_compare)
+    pd.testing.assert_frame_equal(df_nans, transformed_df_compare)
 
 
 @pytest.mark.parametrize(
