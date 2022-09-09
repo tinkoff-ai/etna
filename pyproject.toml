@@ -247,6 +247,7 @@ filterwarnings = [
     "ignore: The 'check_less_precise' keyword in testing",
     "ignore: Feature names only support names that are all strings",
     "ignore: Given top_k=.* is less than n_segments. Algo will filter data without Gale-Shapley run.",
+    "ignore: Call to deprecated create function", # protobuf warning
 ]
 markers = [
     "smoke",
