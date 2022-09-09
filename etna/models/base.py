@@ -821,7 +821,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         if hasattr(self._base_model, "forecast"):
             return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
-        return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
+        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
 
     @log_decorator
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
