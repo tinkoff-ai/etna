@@ -4,6 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Iterable
 from typing import Optional
@@ -681,7 +682,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
 
     @staticmethod
     def _make_predictions_segment(
-        model: Any, segment: str, ts: TSDataset, method_name: str, *args, **kwargs
+        model: Any, segment: str, ts: TSDataset, prediction_method: Callable, *args, **kwargs
     ) -> pd.DataFrame:
         """Make predictions for one segment."""
         segment_features = ts[:, segment, :]
@@ -689,8 +690,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
-        method = getattr(model, method_name)
-        segment_predict = method(df=segment_features, *args, **kwargs)
+        segment_predict = prediction_method(self=model, df=segment_features, *args, **kwargs)
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
@@ -702,15 +702,15 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             segment_predict["timestamp"] = dates
         return segment_predict
 
-    def _make_predictions(self, ts: TSDataset, method_name: str, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataframe with features
-        method_name:
-            Name of the method to make predictions
+        prediction_method:
+            Method for making predictions
 
         Returns
         -------
@@ -720,7 +720,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         result_list = list()
         for segment, model in self._get_model().items():
             segment_predict = self._make_predictions_segment(
-                model=model, segment=segment, ts=ts, method_name=method_name, **kwargs
+                model=model, segment=segment, ts=ts, prediction_method=prediction_method, **kwargs
             )
 
             result_list.append(segment_predict)
@@ -746,12 +746,12 @@ class PerSegmentModelMixin(ModelForecastingMixin):
     @log_decorator
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         if hasattr(self._base_model, "forecast"):
-            return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
-        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
+            return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.forecast, **kwargs)
+        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
 
     @log_decorator
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
-        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
+        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
 
 
 class MultiSegmentModelMixin(ModelForecastingMixin):
@@ -791,15 +791,15 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         self._base_model.fit(df=df, regressors=ts.regressors)
         return self
 
-    def _make_predictions(self, ts: TSDataset, method_name: str, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
-        method_name:
-            Name of the method to make predictions
+        prediction_method:
+            Method for making predictions
 
         Returns
         -------
@@ -809,8 +809,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         # TODO: make it work with prediction intervals and context
-        method = getattr(self._base_model, method_name)
-        y = method(x, **kwargs).reshape(-1, horizon).T
+        y = prediction_method(self=self._base_model, ts=x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts
@@ -818,12 +817,12 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
     @log_decorator
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         if hasattr(self._base_model, "forecast"):
-            return self._make_predictions(ts=ts, method_name="forecast", **kwargs)
-        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
+            return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.forecast, **kwargs)
+        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
 
     @log_decorator
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
-        return self._make_predictions(ts=ts, method_name="predict", **kwargs)
+        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
 
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.

@@ -15,14 +15,21 @@ from etna.models.base import PerSegmentModelMixin
 
 @pytest.fixture()
 def regression_base_model_mock():
+    cls = MagicMock()
+    del cls.forecast
+
     model = MagicMock()
+    model.__class__ = cls
     del model.forecast
     return model
 
 
 @pytest.fixture()
 def autoregression_base_model_mock():
+    cls = MagicMock()
+
     model = MagicMock()
+    model.__class__ = cls
     return model
 
 
@@ -45,7 +52,9 @@ def test_calling_private_prediction(
     mixin._make_predictions = MagicMock()
     to_call = getattr(mixin, called_method_name)
     to_call(ts=ts)
-    mixin._make_predictions.assert_called_once_with(ts=ts, method_name=expected_method_name)
+    mixin._make_predictions.assert_called_once_with(
+        ts=ts, prediction_method=getattr(base_model.__class__, expected_method_name)
+    )
 
 
 @pytest.fixture()
