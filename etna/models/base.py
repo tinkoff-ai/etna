@@ -809,7 +809,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         horizon = len(ts.df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         # TODO: make it work with prediction intervals and context
-        y = prediction_method(self=self._base_model, ts=x, **kwargs).reshape(-1, horizon).T
+        y = prediction_method(self=self._base_model, df=x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         ts.inverse_transform()
         return ts
