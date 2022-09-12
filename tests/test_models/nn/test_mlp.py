@@ -14,7 +14,14 @@ from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
 
 
-@pytest.mark.parametrize("horizon", [8, 13])
+@pytest.mark.parametrize(
+    "horizon",
+    [
+        8,
+        13,
+        15,
+    ],
+)
 def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
 
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
@@ -31,7 +38,7 @@ def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
         decoder_length=decoder_length,
         trainer_params=dict(max_epochs=100),
     )
-    future = ts_train.make_future(decoder_length)
+    future = ts_train.make_future(horizon)
     model.fit(ts_train)
     future = model.forecast(future, horizon=horizon)
 
