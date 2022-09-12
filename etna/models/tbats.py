@@ -80,10 +80,7 @@ class _TBATSAdapter(BaseAdapter):
 class BATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
-    """Class for holding segment interval BATS model.
-
-    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Class for holding segment interval BATS model."""
 
     def __init__(
         self,
@@ -152,10 +149,7 @@ class BATSModel(
 class TBATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
-    """Class for holding segment interval TBATS model.
-
-    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Class for holding segment interval TBATS model."""
 
     def __init__(
         self,

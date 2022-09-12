@@ -79,10 +79,7 @@ class SklearnPerSegmentModel(
     NonPredictionIntervalContextIgnorantModelMixin,
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
-    """Class for holding per segment Sklearn model.
-
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Class for holding per segment Sklearn model."""
 
     def __init__(self, regressor: RegressorMixin):
         """
@@ -101,10 +98,7 @@ class SklearnMultiSegmentModel(
     NonPredictionIntervalContextIgnorantModelMixin,
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
-    """Class for holding Sklearn model for all segments.
-
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Class for holding Sklearn model for all segments."""
 
     def __init__(self, regressor: RegressorMixin):
         """

@@ -28,10 +28,7 @@ class RNNBatch(TypedDict):
 
 
 class RNNNet(DeepBaseNet):
-    """RNN based Lightning module with LSTM cell.
-
-    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """RNN based Lightning module with LSTM cell."""
 
     def __init__(
         self,

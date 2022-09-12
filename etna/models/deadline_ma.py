@@ -216,10 +216,7 @@ class DeadlineMovingAverageModel(
     NonPredictionIntervalContextRequiredModelMixin,
     NonPredictionIntervalContextRequiredAbstractModel,
 ):
-    """Moving average model that uses exact previous dates to predict.
-
-    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Moving average model that uses exact previous dates to predict."""
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
         """

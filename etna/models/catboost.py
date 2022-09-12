@@ -97,8 +97,6 @@ class CatBoostPerSegmentModel(
 ):
     """Class for holding per segment Catboost model.
 
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
@@ -225,8 +223,6 @@ class CatBoostMultiSegmentModel(
 ):
     """Class for holding Catboost model for all segments.
 
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
@@ -351,8 +347,6 @@ class CatBoostMultiSegmentModel(
 )
 class CatBoostModelPerSegment(CatBoostPerSegmentModel):
     """Class for holding per segment Catboost model.
-
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
 
     Warnings
     --------
@@ -482,8 +476,6 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
 )
 class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
     """Class for holding Catboost model for all segments.
-
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
 
     Warnings
     --------

@@ -65,10 +65,7 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
 
 
 class LinearMultiSegmentModel(SklearnMultiSegmentModel):
-    """Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments.
-
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments."""
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
         """
@@ -86,10 +83,7 @@ class LinearMultiSegmentModel(SklearnMultiSegmentModel):
 
 
 class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
-    """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments.
-
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-    """
+    """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments."""
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """

@@ -160,8 +160,6 @@ class ProphetModel(
 ):
     """Class for holding Prophet model.
 
-    This is regression model, take this into account using ``forecast`` and ``predict`` methods.
-
     Notes
     -----
     Original Prophet can use features 'cap' and 'floor',

@@ -380,8 +380,6 @@ class SARIMAXModel(
     """
     Class for holding Sarimax model.
 
-    This is autoregression model, take this into account using ``forecast`` and ``predict`` methods.
-
     Notes
     -----
     We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for

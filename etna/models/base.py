@@ -108,12 +108,6 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -128,15 +122,7 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
     @abstractmethod
     def predict(self, ts: TSDataset) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -158,12 +144,6 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
     def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -181,15 +161,7 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
 
     @abstractmethod
     def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -224,14 +196,6 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     ) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -252,15 +216,7 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
     def predict(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -292,12 +248,6 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
     ) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -325,15 +275,7 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -373,12 +315,6 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     def forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -392,15 +328,7 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         return self._forecast(ts=ts)
 
     def predict(self, ts: TSDataset) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -421,12 +349,6 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
     def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -443,15 +365,7 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         return self._forecast(ts=ts, prediction_size=prediction_size)
 
     def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -477,12 +391,6 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     ) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -502,15 +410,7 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     def predict(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -541,12 +441,6 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
     ) -> TSDataset:
         """Make predictions.
 
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make autoregressive predictions.
-
-        To understand how a particular model behaves look at its documentation.
-
         Parameters
         ----------
         ts:
@@ -575,15 +469,7 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
-        """Make predictions.
-
-        * If it is regression model, the results of ``forecast`` and ``predict`` are the same.
-
-        * If it is autoregression model, this method will make predictions using true values
-          instead of predicted on a previous step.
-          It can be useful for making in-sample forecasts.
-
-        To understand how a particular model behaves look at its documentation.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
