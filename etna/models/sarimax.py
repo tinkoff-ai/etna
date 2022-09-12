@@ -141,7 +141,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         df:
             Features dataframe
         prediction_interval:
-             If True returns prediction interval for forecast
+            If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution
 
