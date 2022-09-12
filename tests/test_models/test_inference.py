@@ -33,29 +33,6 @@ from etna.transforms import LagTransform
 from etna.transforms import PytorchForecastingTransform
 
 
-def _test_forecast_in_sample_full_no_target(ts, model, transforms):
-    df = ts.to_pandas()
-
-    # fitting
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting
-    forecast_ts = TSDataset(df, freq="D")
-    forecast_ts.transform(ts.transforms)
-    forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        prediction_size = len(forecast_ts.index)
-        model.forecast(forecast_ts, prediction_size=prediction_size)
-    else:
-        model.forecast(forecast_ts)
-
-    # checking
-    forecast_df = forecast_ts.to_pandas(flatten=True)
-    assert not np.any(forecast_df["target"].isna())
-
-
 def _test_prediction_in_sample_full(ts, model, transforms, method_name):
     df = ts.to_pandas()
     method = getattr(model, method_name)
@@ -73,31 +50,6 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
         method(forecast_ts, prediction_size=prediction_size)
     else:
         method(forecast_ts)
-
-    # checking
-    forecast_df = forecast_ts.to_pandas(flatten=True)
-    assert not np.any(forecast_df["target"].isna())
-
-
-def _test_forecast_in_sample_suffix_no_target(ts, model, transforms, num_skip_points):
-    df = ts.to_pandas()
-
-    # fitting
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting
-    forecast_ts = TSDataset(df, freq="D")
-    forecast_ts.transform(ts.transforms)
-
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        prediction_size = len(forecast_ts.index) - num_skip_points
-        forecast_ts.df.loc[forecast_ts.index[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
-        model.forecast(forecast_ts, prediction_size=prediction_size)
-    else:
-        forecast_ts.df = forecast_ts.df.iloc[num_skip_points:]
-        forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-        model.forecast(forecast_ts)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -128,191 +80,34 @@ def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_sk
     assert not np.any(forecast_df["target"].isna())
 
 
-def _test_forecast_out_sample_prefix(ts, model, transforms):
-    full_prediction_size = 5
-    prefix_prediction_size = 3
-    prediction_size_diff = full_prediction_size - prefix_prediction_size
-
-    # fitting
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting full
-    import torch  # TODO: remove after fix at issue-802
-
-    torch.manual_seed(11)
-
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        forecast_full_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
-        model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
-    else:
-        forecast_full_ts = ts.make_future(future_steps=full_prediction_size)
-        model.forecast(forecast_full_ts)
-
-    # forecasting only prefix
-    torch.manual_seed(11)  # TODO: remove after fix at issue-802
-
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        forecast_prefix_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
-        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-prediction_size_diff]
-        model.forecast(forecast_prefix_ts, prediction_size=prefix_prediction_size)
-    else:
-        forecast_prefix_ts = ts.make_future(future_steps=full_prediction_size)
-        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-prediction_size_diff]
-        model.forecast(forecast_prefix_ts)
-
-    # checking
-    forecast_full_df = forecast_full_ts.to_pandas()
-    forecast_prefix_df = forecast_prefix_ts.to_pandas()
-    assert_frame_equal(forecast_prefix_df, forecast_full_df.iloc[:prefix_prediction_size])
-
-
-def _test_forecast_out_sample_suffix(ts, model, transforms):
-    full_prediction_size = 5
-    suffix_prediction_size = 3
-    prediction_size_diff = full_prediction_size - suffix_prediction_size
-
-    # fitting
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting full
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        forecast_full_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
-        model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
-    else:
-        forecast_full_ts = ts.make_future(future_steps=full_prediction_size)
-        model.forecast(forecast_full_ts)
-
-    # forecasting only suffix
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        forecast_gap_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
-
-        # firstly we should forecast prefix to use it as a context
-        forecast_prefix_ts = deepcopy(forecast_gap_ts)
-        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-suffix_prediction_size]
-        model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
-        forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
-
-        # forecast suffix with known context for it
-        model.forecast(forecast_gap_ts, prediction_size=suffix_prediction_size)
-    else:
-        forecast_gap_ts = ts.make_future(future_steps=full_prediction_size)
-        forecast_gap_ts.df = forecast_gap_ts.df.iloc[prediction_size_diff:]
-        model.forecast(forecast_gap_ts)
-
-    # checking
-    forecast_full_df = forecast_full_ts.to_pandas()
-    forecast_gap_df = forecast_gap_ts.to_pandas()
-    assert_frame_equal(forecast_gap_df, forecast_full_df.iloc[prediction_size_diff:])
-
-
-def _test_predict_out_sample(ts, model, transforms):
-    prediction_size = 5
-
-    # fitting
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        forecast_ts = ts.make_future(future_steps=prediction_size, tail_steps=model.context_size)
-        model.predict(forecast_ts, prediction_size=prediction_size)
-    else:
-        forecast_ts = ts.make_future(future_steps=prediction_size)
-        model.predict(forecast_ts)
-
-    # checking
-    forecast_df = forecast_ts.to_pandas(flatten=True)
-    assert not np.any(forecast_df["target"].isna())
-
-
-def _test_forecast_mixed_in_out_sample(ts, model, transforms, num_skip_points):
-    prediction_size = 5
-
-    # fitting
-    df = ts.to_pandas()
-    ts.fit_transform(transforms)
-    model.fit(ts)
-
-    # forecasting mixed in-sample and out-sample
-    future_ts = ts.make_future(future_steps=prediction_size)
-    future_df = future_ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
-    df_full = pd.concat((df, future_df))
-    forecast_full_ts = TSDataset(df=df_full, freq=ts.freq)
-    forecast_full_ts.transform(ts.transforms)
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        to_skip = num_skip_points - model.context_size
-        forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
-        prediction_size = len(forecast_full_ts.index) - model.context_size
-        model.forecast(forecast_full_ts, prediction_size=prediction_size)
-    else:
-        forecast_full_ts.df = forecast_full_ts.df.iloc[num_skip_points:]
-        model.forecast(forecast_full_ts)
-
-    # checking
-    forecast_full_df = forecast_full_ts.to_pandas(flatten=True)
-    assert not np.any(forecast_full_df["target"].isna())
-
-
-def _test_predict_mixed_in_out_sample(ts, model, transforms, num_skip_points):
-    prediction_size = 5
-
-    train_ts, future_ts = ts.train_test_split(test_size=prediction_size)
-    train_df = train_ts.to_pandas()
-    future_df = future_ts.to_pandas()
-    train_ts.fit_transform(transforms)
-    model.fit(train_ts)
-
-    # predicting mixed in-sample and out-sample
-    df_full = pd.concat((train_df, future_df))
-    forecast_full_ts = TSDataset(df=df_full, freq=ts.freq)
-    forecast_full_ts.transform(train_ts.transforms)
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        to_skip = num_skip_points - model.context_size
-        forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
-        prediction_size = len(forecast_full_ts.index) - model.context_size
-        model.predict(forecast_full_ts, prediction_size=prediction_size)
-    else:
-        forecast_full_ts.df = forecast_full_ts.df.iloc[num_skip_points:]
-        model.predict(forecast_full_ts)
-
-    # predicting only in sample
-    forecast_in_sample_ts = TSDataset(train_df, freq=ts.freq)
-    forecast_in_sample_ts.transform(train_ts.transforms)
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        to_skip = num_skip_points - model.context_size
-        forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
-        prediction_size = len(forecast_in_sample_ts.index) - model.context_size
-        model.predict(forecast_in_sample_ts, prediction_size=prediction_size)
-    else:
-        forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[num_skip_points:]
-        model.predict(forecast_in_sample_ts)
-
-    # predicting only out sample
-    forecast_out_sample_ts = TSDataset(df=df_full, freq=ts.freq)
-    forecast_out_sample_ts.transform(train_ts.transforms)
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        to_remain = model.context_size + prediction_size
-        forecast_out_sample_ts.df = forecast_out_sample_ts.df.iloc[-to_remain:]
-        model.predict(forecast_out_sample_ts, prediction_size=prediction_size)
-    else:
-        forecast_out_sample_ts.df = forecast_out_sample_ts.df.iloc[-prediction_size:]
-        model.predict(forecast_out_sample_ts)
-
-    # checking
-    forecast_full_df = forecast_full_ts.to_pandas()
-    forecast_in_sample_df = forecast_in_sample_ts.to_pandas()
-    forecast_out_sample_df = forecast_out_sample_ts.to_pandas()
-    assert_frame_equal(forecast_in_sample_df, forecast_full_df.iloc[:-prediction_size])
-    assert_frame_equal(forecast_out_sample_df, forecast_full_df.iloc[-prediction_size:])
-
-
 class TestForecastInSampleFullNoTarget:
     """Test forecast on full train dataset with filling target with NaNs.
 
     Expected that NaNs are filled after prediction.
     """
+
+    @staticmethod
+    def _test_forecast_in_sample_full_no_target(ts, model, transforms):
+        df = ts.to_pandas()
+
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting
+        forecast_ts = TSDataset(df, freq="D")
+        forecast_ts.transform(ts.transforms)
+        forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
+
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            prediction_size = len(forecast_ts.index)
+            model.forecast(forecast_ts, prediction_size=prediction_size)
+        else:
+            model.forecast(forecast_ts)
+
+        # checking
+        forecast_df = forecast_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -327,7 +122,7 @@ class TestForecastInSampleFullNoTarget:
         ],
     )
     def test_forecast_in_sample_full_no_target(self, model, transforms, example_tsds):
-        _test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.xfail(strict=True)
     @pytest.mark.parametrize(
@@ -341,7 +136,7 @@ class TestForecastInSampleFullNoTarget:
         ],
     )
     def test_forecast_in_sample_full_no_target_failed(self, model, transforms, example_tsds):
-        _test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -354,7 +149,7 @@ class TestForecastInSampleFullNoTarget:
     )
     def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Given context isn't big enough"):
-            _test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -391,7 +186,7 @@ class TestForecastInSampleFullNoTarget:
     )
     def test_forecast_in_sample_full_no_target_not_implemented_in_sample(self, model, transforms, example_tsds):
         with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
 
 class TestForecastInSampleFull:
@@ -579,6 +374,31 @@ class TestForecastInSampleSuffixNoTarget:
     Expected that NaNs are filled after prediction.
     """
 
+    @staticmethod
+    def _test_forecast_in_sample_suffix_no_target(ts, model, transforms, num_skip_points):
+        df = ts.to_pandas()
+
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting
+        forecast_ts = TSDataset(df, freq="D")
+        forecast_ts.transform(ts.transforms)
+
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            prediction_size = len(forecast_ts.index) - num_skip_points
+            forecast_ts.df.loc[forecast_ts.index[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
+            model.forecast(forecast_ts, prediction_size=prediction_size)
+        else:
+            forecast_ts.df = forecast_ts.df.iloc[num_skip_points:]
+            forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
+            model.forecast(forecast_ts)
+
+        # checking
+        forecast_df = forecast_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_df["target"].isna())
+
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -601,7 +421,7 @@ class TestForecastInSampleSuffixNoTarget:
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
-        _test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
+        self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -640,7 +460,7 @@ class TestForecastInSampleSuffixNoTarget:
         self, model, transforms, example_tsds
     ):
         with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
+            self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
 
 
 class TestForecastInSampleSuffix:
@@ -799,6 +619,43 @@ class TestForecastOutSamplePrefix:
     Expected that predictions on prefix match prefix of predictions on full future dataset.
     """
 
+    @staticmethod
+    def _test_forecast_out_sample_prefix(ts, model, transforms, full_prediction_size=5, prefix_prediction_size=3):
+        prediction_size_diff = full_prediction_size - prefix_prediction_size
+
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting full
+        import torch  # TODO: remove after fix at issue-802
+
+        torch.manual_seed(11)
+
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            forecast_full_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
+            model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
+        else:
+            forecast_full_ts = ts.make_future(future_steps=full_prediction_size)
+            model.forecast(forecast_full_ts)
+
+        # forecasting only prefix
+        torch.manual_seed(11)  # TODO: remove after fix at issue-802
+
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            forecast_prefix_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
+            forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-prediction_size_diff]
+            model.forecast(forecast_prefix_ts, prediction_size=prefix_prediction_size)
+        else:
+            forecast_prefix_ts = ts.make_future(future_steps=full_prediction_size)
+            forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-prediction_size_diff]
+            model.forecast(forecast_prefix_ts)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_prefix_df = forecast_prefix_ts.to_pandas()
+        assert_frame_equal(forecast_prefix_df, forecast_full_df.iloc[:prefix_prediction_size])
+
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -849,7 +706,7 @@ class TestForecastOutSamplePrefix:
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
-        _test_forecast_out_sample_prefix(example_tsds, model, transforms)
+        self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
 
 class TestForecastOutSampleSuffix:
@@ -857,6 +714,44 @@ class TestForecastOutSampleSuffix:
 
     Expected that predictions on suffix match suffix of predictions on full future dataset.
     """
+
+    @staticmethod
+    def _test_forecast_out_sample_suffix(ts, model, transforms, full_prediction_size=5, suffix_prediction_size=3):
+        prediction_size_diff = full_prediction_size - suffix_prediction_size
+
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting full
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            forecast_full_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
+            model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
+        else:
+            forecast_full_ts = ts.make_future(future_steps=full_prediction_size)
+            model.forecast(forecast_full_ts)
+
+        # forecasting only suffix
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            forecast_gap_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
+
+            # firstly we should forecast prefix to use it as a context
+            forecast_prefix_ts = deepcopy(forecast_gap_ts)
+            forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-suffix_prediction_size]
+            model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
+            forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
+
+            # forecast suffix with known context for it
+            model.forecast(forecast_gap_ts, prediction_size=suffix_prediction_size)
+        else:
+            forecast_gap_ts = ts.make_future(future_steps=full_prediction_size)
+            forecast_gap_ts.df = forecast_gap_ts.df.iloc[prediction_size_diff:]
+            model.forecast(forecast_gap_ts)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_gap_df = forecast_gap_ts.to_pandas()
+        assert_frame_equal(forecast_gap_df, forecast_full_df.iloc[prediction_size_diff:])
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -882,7 +777,7 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
-        _test_forecast_out_sample_suffix(example_tsds, model, transforms)
+        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -917,7 +812,7 @@ class TestForecastOutSampleSuffix:
     )
     def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, example_tsds):
         with pytest.raises(NotImplementedError, match="You can only forecast from the next point after the last one"):
-            _test_forecast_out_sample_suffix(example_tsds, model, transforms)
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
 class TestPredictOutSample:
@@ -925,6 +820,24 @@ class TestPredictOutSample:
 
     Expected that target values are filled after prediction.
     """
+
+    @staticmethod
+    def _test_predict_out_sample(ts, model, transforms, prediction_size=5):
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            forecast_ts = ts.make_future(future_steps=prediction_size, tail_steps=model.context_size)
+            model.predict(forecast_ts, prediction_size=prediction_size)
+        else:
+            forecast_ts = ts.make_future(future_steps=prediction_size)
+            model.predict(forecast_ts)
+
+        # checking
+        forecast_df = forecast_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -944,7 +857,7 @@ class TestPredictOutSample:
         ],
     )
     def test_predict_out_sample(self, model, transforms, example_tsds):
-        _test_predict_out_sample(example_tsds, model, transforms)
+        self._test_predict_out_sample(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -985,7 +898,7 @@ class TestPredictOutSample:
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
         with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented"):
-            _test_predict_out_sample(example_tsds, model, transforms)
+            self._test_predict_out_sample(example_tsds, model, transforms)
 
 
 class TestForecastMixedInOutSample:
@@ -993,6 +906,32 @@ class TestForecastMixedInOutSample:
 
     Expected that target values are filled after prediction.
     """
+
+    @staticmethod
+    def _test_forecast_mixed_in_out_sample(ts, model, transforms, num_skip_points=50, prediction_size=5):
+        # fitting
+        df = ts.to_pandas()
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting mixed in-sample and out-sample
+        future_ts = ts.make_future(future_steps=prediction_size)
+        future_df = future_ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
+        df_full = pd.concat((df, future_df))
+        forecast_full_ts = TSDataset(df=df_full, freq=ts.freq)
+        forecast_full_ts.transform(ts.transforms)
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            to_skip = num_skip_points - model.context_size
+            forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
+            prediction_size = len(forecast_full_ts.index) - model.context_size
+            model.forecast(forecast_full_ts, prediction_size=prediction_size)
+        else:
+            forecast_full_ts.df = forecast_full_ts.df.iloc[num_skip_points:]
+            model.forecast(forecast_full_ts)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_full_df["target"].isna())
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -1016,7 +955,7 @@ class TestForecastMixedInOutSample:
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
-        _test_forecast_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)
+        self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -1053,7 +992,7 @@ class TestForecastMixedInOutSample:
     )
     def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
         with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_forecast_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)
+            self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
 
 class TestPredictMixedInOutSample:
@@ -1061,6 +1000,57 @@ class TestPredictMixedInOutSample:
 
     Expected that predictions on in-sample and out-sample separately match predictions on full mixed dataset.
     """
+
+    @staticmethod
+    def _test_predict_mixed_in_out_sample(ts, model, transforms, num_skip_points=50, prediction_size=5):
+        train_ts, future_ts = ts.train_test_split(test_size=prediction_size)
+        train_df = train_ts.to_pandas()
+        future_df = future_ts.to_pandas()
+        train_ts.fit_transform(transforms)
+        model.fit(train_ts)
+
+        # predicting mixed in-sample and out-sample
+        df_full = pd.concat((train_df, future_df))
+        forecast_full_ts = TSDataset(df=df_full, freq=ts.freq)
+        forecast_full_ts.transform(train_ts.transforms)
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            to_skip = num_skip_points - model.context_size
+            forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
+            prediction_size = len(forecast_full_ts.index) - model.context_size
+            model.predict(forecast_full_ts, prediction_size=prediction_size)
+        else:
+            forecast_full_ts.df = forecast_full_ts.df.iloc[num_skip_points:]
+            model.predict(forecast_full_ts)
+
+        # predicting only in sample
+        forecast_in_sample_ts = TSDataset(train_df, freq=ts.freq)
+        forecast_in_sample_ts.transform(train_ts.transforms)
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            to_skip = num_skip_points - model.context_size
+            forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
+            prediction_size = len(forecast_in_sample_ts.index) - model.context_size
+            model.predict(forecast_in_sample_ts, prediction_size=prediction_size)
+        else:
+            forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[num_skip_points:]
+            model.predict(forecast_in_sample_ts)
+
+        # predicting only out sample
+        forecast_out_sample_ts = TSDataset(df=df_full, freq=ts.freq)
+        forecast_out_sample_ts.transform(train_ts.transforms)
+        if isinstance(model, get_args(ContextRequiredModelType)):
+            to_remain = model.context_size + prediction_size
+            forecast_out_sample_ts.df = forecast_out_sample_ts.df.iloc[-to_remain:]
+            model.predict(forecast_out_sample_ts, prediction_size=prediction_size)
+        else:
+            forecast_out_sample_ts.df = forecast_out_sample_ts.df.iloc[-prediction_size:]
+            model.predict(forecast_out_sample_ts)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_in_sample_df = forecast_in_sample_ts.to_pandas()
+        forecast_out_sample_df = forecast_out_sample_ts.to_pandas()
+        assert_frame_equal(forecast_in_sample_df, forecast_full_df.iloc[:-prediction_size])
+        assert_frame_equal(forecast_out_sample_df, forecast_full_df.iloc[-prediction_size:])
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -1080,7 +1070,7 @@ class TestPredictMixedInOutSample:
         ],
     )
     def test_predict_mixed_in_out_sample(self, model, transforms, example_tsds):
-        _test_predict_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)
+        self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -1121,4 +1111,4 @@ class TestPredictMixedInOutSample:
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
         with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented"):
-            _test_predict_mixed_in_out_sample(example_tsds, model, transforms, num_skip_points=50)
+            self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
