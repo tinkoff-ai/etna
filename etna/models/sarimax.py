@@ -69,7 +69,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
     def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
         """
-        Compute dynamic predictions from a SARIMAX model.
+        Compute autoregressive predictions from a SARIMAX model.
 
         Parameters
         ----------
@@ -134,7 +134,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
         """
-        Compute non-dynamic predictions from a SARIMAX model.
+        Compute predictions from a SARIMAX model and use true in-sample data as lags if possible.
 
         Parameters
         ----------
