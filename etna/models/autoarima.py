@@ -56,6 +56,9 @@ class AutoARIMAModel(
     """
     Class for holding auto arima model.
 
+    Method ``predict`` can use true target values only on train data on future data autoregression
+    forecasting will be made even if targets are known.
+
     Notes
     -----
     We use :py:class:`pmdarima.arima.arima.ARIMA`.

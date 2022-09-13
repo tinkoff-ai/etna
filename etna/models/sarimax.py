@@ -380,6 +380,9 @@ class SARIMAXModel(
     """
     Class for holding Sarimax model.
 
+    Method ``predict`` can use true target values only on train data on future data autoregression
+    forecasting will be made even if targets are known.
+
     Notes
     -----
     We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
