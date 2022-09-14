@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 - Fix native networks to work with generated future equals to horizon ([#936](https://github.com/tinkoff-ai/etna/pull/936))
--
+- Fix to_dict with function as parameter ([#941](https://github.com/tinkoff-ai/etna/pull/941))
 -
 
 ## [1.12.0] - 2022-09-05
