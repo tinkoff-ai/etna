@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
-from etna.models.base import NonPredictionIntervalContextRequiredModelMixin
-from etna.models.base import PerSegmentModelMixin
+from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
+from etna.models.mixins import PerSegmentModelMixin
 
 
 class _SeasonalMovingAverageModel:

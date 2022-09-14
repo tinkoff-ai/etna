@@ -10,9 +10,9 @@ from tbats.tbats import TBATS
 from tbats.tbats.Model import Model
 
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentModelMixin
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
 
 

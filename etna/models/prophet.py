@@ -10,9 +10,9 @@ import pandas as pd
 
 from etna import SETTINGS
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentModelMixin
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 
 if SETTINGS.prophet_required:
     from prophet import Prophet

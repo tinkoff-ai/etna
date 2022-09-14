@@ -13,9 +13,9 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentModelMixin
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
-from etna.models.base import PredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
 
 warnings.filterwarnings(
