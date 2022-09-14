@@ -18,6 +18,7 @@ from etna.models.nn import DeepARModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import ChangePointsTrendTransform
+from etna.transforms import DensityOutliersTransform
 from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
 
@@ -54,6 +55,12 @@ def ensemble_samples():
             in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
         ),
         pytest.param(
+            DensityOutliersTransform("target", distance_coef=6),
+            marks=pytest.mark.xfail(
+                reason="partial function after initialization instead of original function, dumps return different results"
+            ),
+        ),
+        pytest.param(
             LambdaTransform(in_column="target", transform_func=lambda x: x - 2, inverse_transform_func=lambda x: x + 2),
             marks=pytest.mark.xfail(reason="some bug"),
         ),
@@ -64,6 +71,22 @@ def test_to_dict_transforms(target_object):
     transformed_object = hydra_slayer.get_from_params(**dict_object)
     assert json.loads(json.dumps(dict_object)) == dict_object
     assert pickle.dumps(transformed_object) == pickle.dumps(target_object)
+
+
+# fmt: off
+@pytest.mark.parametrize(
+    "target_object, expected",
+    [
+        (
+            DensityOutliersTransform("target", distance_coef=6),
+            {'in_column': 'target', 'window_size': 15, 'distance_coef': 6, 'n_neighbors': 3, 'distance_func': {'_target_': 'etna.analysis.outliers.density_outliers.absolute_difference_distance'}, '_target_': 'etna.transforms.outliers.point_outliers.DensityOutliersTransform'}  # noqa: E501
+        )
+    ],
+)
+def test_to_dict_transforms_with_expected(target_object, expected):
+    dict_object = target_object.to_dict()
+    assert dict_object == expected
+# fmt: on
 
 
 @pytest.mark.parametrize(
