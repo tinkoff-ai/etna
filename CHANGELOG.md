@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 -
+-
+-
+-
+-
+-
+-
+-
 ### Changed
 -
 -
@@ -22,11 +29,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Mark some tests as long ([#929](https://github.com/tinkoff-ai/etna/pull/929))
 -
-### Fixed
 -
+-
+-
+-
+-
+### Fixed
+- Fix to_dict with function as parameter ([#941](https://github.com/tinkoff-ai/etna/pull/941))
 -
 - Fix native networks to work with generated future equals to horizon ([#936](https://github.com/tinkoff-ai/etna/pull/936))
-- Fix to_dict with function as parameter ([#941](https://github.com/tinkoff-ai/etna/pull/941))
+- Fix `SARIMAXModel` to work with exogenous data on `pmdarima>=2.0` ([#940](https://github.com/tinkoff-ai/etna/pull/940))
+-
+-
+-
+-
+-
+-
 -
 
 ## [1.12.0] - 2022-09-05

@@ -324,7 +324,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         super().__init__()
 
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame):
-        # make it a numpy array for forgetting about indices, it is necessary for _seasonal_prediction_with_confidence
+        # make it a numpy array for forgetting about indices, it is necessary for seasonal_prediction_with_confidence
         endog_np = endog.values
         model = SARIMAX(
             endog=endog_np,

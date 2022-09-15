@@ -21,16 +21,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-# Note: Copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
 
 import numpy as np
 import numpy.polynomial.polynomial as np_polynomial
-from sklearn.utils.validation import check_array
 from pmdarima.utils import diff
 from pmdarima.utils import diff_inv
-from pmdarima.utils import check_endog
+from sklearn.utils.validation import check_array, column_or_1d
+
+DTYPE = np.float64
 
 
+# Note: Copied from pmdarima package (https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/utils/array.py)
+def check_endog(y, dtype=DTYPE, copy=True, force_all_finite=False):
+    """Wrapper for ``check_array`` and ``column_or_1d`` from sklearn
+
+    Parameters
+    ----------
+    y : array-like, shape=(n_samples,)
+        The 1d endogenous array.
+
+    dtype : string, type or None (default=np.float64)
+        Data type of result. If None, the dtype of the input is preserved.
+        If "numeric", dtype is preserved unless array.dtype is object.
+
+    copy : bool, optional (default=False)
+        Whether a forced copy will be triggered. If copy=False, a copy might
+        still be triggered by a conversion.
+
+    force_all_finite : bool, optional (default=False)
+        Whether to raise an error on np.inf and np.nan in an array. The
+        possibilities are:
+
+        - True: Force all values of array to be finite.
+        - False: accept both np.inf and np.nan in array.
+
+    Returns
+    -------
+    y : np.ndarray, shape=(n_samples,)
+        A 1d numpy ndarray
+    """
+    return column_or_1d(
+        check_array(y, ensure_2d=False, force_all_finite=force_all_finite,
+                    copy=copy, dtype=dtype))  # type: np.ndarray
+
+
+# Note: Copied from pmdarima package (https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
 def ARMAtoMA(ar, ma, max_deg):
     r"""
     Convert ARMA coefficients to infinite MA coefficients.
@@ -92,7 +127,7 @@ def ARMAtoMA(ar, ma, max_deg):
     return ema
 
 
-# Note: Originally copied from pmdarima package (https://github.com/blue-yonder/tsfresh/blob/https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
+# Note: Copied from pmdarima package (https://github.com/alkaline-ml/pmdarima/blob/v1.8.5/pmdarima/arima/arima.py)
 def seasonal_prediction_with_confidence(arima_res,
                                         start,
                                         end,
