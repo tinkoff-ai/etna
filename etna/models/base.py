@@ -796,7 +796,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         """
         test_dataset = ts.to_torch_dataset(
             make_samples=functools.partial(
-                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
+                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=horizon
             ),
             dropna=False,
         )
