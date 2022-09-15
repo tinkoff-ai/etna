@@ -62,7 +62,7 @@ def ensemble_samples():
         ),
         pytest.param(
             LambdaTransform(in_column="target", transform_func=lambda x: x - 2, inverse_transform_func=lambda x: x + 2),
-            marks=pytest.mark.xfail(reason="some bug"),
+            marks=pytest.mark.xfail(reason="lambdas in class attributes"),
         ),
     ],
 )
