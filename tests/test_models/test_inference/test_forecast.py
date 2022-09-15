@@ -31,9 +31,9 @@ from etna.models.nn import DeepARModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
 from etna.transforms import PytorchForecastingTransform
-from tests.test_models.test_inference.common import ToBeFixedError
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
+from tests.test_models.test_inference.common import to_be_fixed
 
 
 class TestForecastInSampleFullNoTarget:
@@ -80,7 +80,7 @@ class TestForecastInSampleFullNoTarget:
     def test_forecast_in_sample_full_no_target(self, model, transforms, example_tsds):
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
-    @pytest.mark.xfail(strict=True, reason="Should be fixed in the future")
+    @to_be_fixed(raises=AssertionError)
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -116,7 +116,7 @@ class TestForecastInSampleFullNoTarget:
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -151,9 +151,7 @@ class TestForecastInSampleFullNoTarget:
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
-        raise ToBeFixedError()
+        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
 
 class TestForecastInSampleFull:
@@ -204,7 +202,7 @@ class TestForecastInSampleFull:
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -239,9 +237,7 @@ class TestForecastInSampleFull:
         ],
     )
     def test_forecast_in_sample_full_not_implemented(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
-        raise ToBeFixedError()
+        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
 
 class TestForecastInSampleSuffixNoTarget:
@@ -298,7 +294,7 @@ class TestForecastInSampleSuffixNoTarget:
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
         self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -335,9 +331,7 @@ class TestForecastInSampleSuffixNoTarget:
     def test_forecast_in_sample_suffix_no_target_failed_not_implemented_in_sample(
         self, model, transforms, example_tsds
     ):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
-        raise ToBeFixedError()
+        self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
 
 
 class TestForecastInSampleSuffix:
@@ -370,7 +364,7 @@ class TestForecastInSampleSuffix:
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
         _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -405,11 +399,7 @@ class TestForecastInSampleSuffix:
         ],
     )
     def test_forecast_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_prediction_in_sample_suffix(
-                example_tsds, model, transforms, method_name="forecast", num_skip_points=50
-            )
-        raise ToBeFixedError()
+        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
 
 
 class TestForecastOutSamplePrefix:
@@ -572,7 +562,7 @@ class TestForecastOutSampleSuffix:
     def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="You can only forecast from the next point after the last one")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -605,9 +595,7 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="You can only forecast from the next point after the last one"):
-            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
-        raise ToBeFixedError()
+        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
 class TestForecastMixedInOutSample:
@@ -665,7 +653,7 @@ class TestForecastMixedInOutSample:
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
         self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -700,6 +688,4 @@ class TestForecastMixedInOutSample:
         ],
     )
     def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
-        raise ToBeFixedError()
+        self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)

@@ -1,12 +1,23 @@
+import functools
+
 import numpy as np
+import pytest
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
 from etna.models import ContextRequiredModelType
 
 
-class ToBeFixedError(Exception):
-    """Exception for marking tests cases to be fixed in the future."""
+def to_be_fixed(raises, match=None):
+    def to_be_fixed_concrete(func):
+        @functools.wraps(func)
+        def wrapped_test(*args, **kwargs):
+            with pytest.raises(raises, match=match):
+                return func(*args, **kwargs)
+
+        return wrapped_test
+
+    return to_be_fixed_concrete
 
 
 def _test_prediction_in_sample_full(ts, model, transforms, method_name):

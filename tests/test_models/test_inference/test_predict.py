@@ -29,9 +29,9 @@ from etna.models.nn import DeepARModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
 from etna.transforms import PytorchForecastingTransform
-from tests.test_models.test_inference.common import ToBeFixedError
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
+from tests.test_models.test_inference.common import to_be_fixed
 
 
 class TestPredictInSampleFull:
@@ -77,7 +77,7 @@ class TestPredictInSampleFull:
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="predict")
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -116,19 +116,15 @@ class TestPredictInSampleFull:
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented"):
-            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="predict")
-        raise ToBeFixedError()
+        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="predict")
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [],
     )
     def test_predict_in_sample_full_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="predict")
-        raise ToBeFixedError()
+        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="predict")
 
 
 class TestPredictInSampleSuffix:
@@ -157,7 +153,7 @@ class TestPredictInSampleSuffix:
     def test_predict_in_sample_suffix(self, model, transforms, example_tsds):
         _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="predict", num_skip_points=50)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -196,23 +192,15 @@ class TestPredictInSampleSuffix:
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented"):
-            _test_prediction_in_sample_suffix(
-                example_tsds, model, transforms, method_name="predict", num_skip_points=50
-            )
-        raise ToBeFixedError()
+        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="predict", num_skip_points=50)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
         [],
     )
     def test_predict_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="It is not possible to make in-sample predictions"):
-            _test_prediction_in_sample_suffix(
-                example_tsds, model, transforms, method_name="predict", num_skip_points=50
-            )
-        raise ToBeFixedError()
+        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="predict", num_skip_points=50)
 
 
 class TestPredictOutSample:
@@ -258,7 +246,7 @@ class TestPredictOutSample:
     def test_predict_out_sample(self, model, transforms, example_tsds):
         self._test_predict_out_sample(example_tsds, model, transforms)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -297,9 +285,7 @@ class TestPredictOutSample:
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented"):
-            self._test_predict_out_sample(example_tsds, model, transforms)
-        raise ToBeFixedError()
+        self._test_predict_out_sample(example_tsds, model, transforms)
 
 
 class TestPredictMixedInOutSample:
@@ -376,7 +362,7 @@ class TestPredictMixedInOutSample:
     def test_predict_mixed_in_out_sample(self, model, transforms, example_tsds):
         self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
 
-    @pytest.mark.xfail(strict=True, raises=ToBeFixedError, reason="Should be fixed in the future")
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -415,6 +401,4 @@ class TestPredictMixedInOutSample:
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
-        with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented"):
-            self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
-        raise ToBeFixedError()
+        self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
