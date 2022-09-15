@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
-from etna.models.base import NonPredictionIntervalContextRequiredModelMixin
-from etna.models.base import PerSegmentModelMixin
+from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
+from etna.models.mixins import PerSegmentModelMixin
 
 
 class _SeasonalMovingAverageModel:
@@ -62,7 +62,7 @@ class _SeasonalMovingAverageModel:
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
+    def forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a SeasonalMovingAverage model.
 
@@ -96,6 +96,9 @@ class _SeasonalMovingAverageModel:
             res[i] = res[i - self.shift : i : self.seasonality].mean()
         y_pred = res[-prediction_size:]
         return y_pred
+
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+        raise NotImplementedError("Method predict isn't currently implemented!")
 
 
 class SeasonalMovingAverageModel(

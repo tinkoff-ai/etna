@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
-from etna.models.base import NonPredictionIntervalContextRequiredModelMixin
-from etna.models.base import PerSegmentModelMixin
+from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
+from etna.models.mixins import PerSegmentModelMixin
 
 
 class SeasonalityMode(Enum):
@@ -135,7 +135,7 @@ class _DeadlineMovingAverageModel:
 
         return first_index
 
-    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
+    def forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """
         Compute predictions from a DeadlineMovingAverageModel.
 
@@ -188,6 +188,9 @@ class _DeadlineMovingAverageModel:
 
         res = res.values.ravel()[-prediction_size:]
         return res
+
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+        raise NotImplementedError("Method predict isn't currently implemented!")
 
     @property
     def context_size(self) -> int:

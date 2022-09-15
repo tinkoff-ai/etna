@@ -175,8 +175,9 @@ class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel
     def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
-        """
-        Predict future.
+        """Make predictions.
+
+        This method will make autoregressive predictions.
 
         Parameters
         ----------
@@ -241,6 +242,31 @@ class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel
 
         ts.inverse_transform()
         return ts
+
+    @log_decorator
+    def predict(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        This method will make predictions using true values instead of predicted on a previous step.
+        It can be useful for making in-sample forecasts.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        TSDataset
+            TSDataset with predictions.
+        """
+        raise NotImplementedError("Method predict isn't currently implemented!")
 
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.
