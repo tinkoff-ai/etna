@@ -40,7 +40,7 @@ class BaseMixin:
 
     @staticmethod
     def _get_target_from_function(value: Callable):
-        return str(value.__module__) + "." + str(value.__name__)
+        return str(value.__module__) + "." + str(value. __qualname__)
 
     @staticmethod
     def _parse_value(value: Any) -> Any:
