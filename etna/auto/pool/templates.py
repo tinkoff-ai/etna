@@ -16,7 +16,7 @@ DEFAULT = [
 
     {'_target_': 'etna.pipeline.Pipeline', 'horizon': '${__aux__.horizon}', 'model': {'_target_': 'etna.models.AutoARIMAModel'}},
 
-    {'_target_': 'etna.pipeline.Pipeline', 'horizon': '${__aux__.horizon}', 'model': {'_target_': 'etna.models.TBATSModel'}},
+    # {'_target_': 'etna.pipeline.Pipeline', 'horizon': '${__aux__.horizon}', 'model': {'_target_': 'etna.models.TBATSModel'}},
 
     {'_target_': 'etna.pipeline.Pipeline', 'horizon': '${__aux__.horizon}', 'model': {'_target_': 'etna.models.LinearPerSegmentModel'}, 'transforms': [{'_target_': 'etna.transforms.StandardScalerTransform', 'in_column': 'target'}, {'_target_': 'etna.transforms.LagTransform', 'in_column': 'target', 'lags': '${shift:${horizon},[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}'}]},
     {'_target_': 'etna.pipeline.Pipeline', 'horizon': '${__aux__.horizon}', 'model': {'_target_': 'etna.models.LinearMultiSegmentModel'}, 'transforms': [{'_target_': 'etna.transforms.StandardScalerTransform', 'in_column': 'target', 'mode': 'macro'}, {'_target_': 'etna.transforms.LagTransform', 'in_column': 'target', 'lags': '${shift:${horizon},[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]}'}]},
