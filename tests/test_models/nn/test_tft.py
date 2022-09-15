@@ -30,7 +30,7 @@ def test_fit_wrong_order_transform(weekly_period_df):
         model.fit(ts)
 
 
-@pytest.mark.long
+@pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8, 21])
 def test_tft_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon, horizon):
     """
@@ -64,7 +64,7 @@ def test_tft_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon, h
     assert mae(ts_test, ts_pred) < 0.24
 
 
-@pytest.mark.long
+@pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8])
 def test_tft_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
     """

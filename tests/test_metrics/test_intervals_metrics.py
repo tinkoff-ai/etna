@@ -70,3 +70,10 @@ def test_using_not_presented_quantiles(metric, tsdataset_with_zero_width_quantil
     ts_train, ts_test = tsdataset_with_zero_width_quantiles
     with pytest.raises(AssertionError, match="Quantile .* is not presented in tsdataset."):
         _ = metric(ts_train, ts_test)
+
+
+@pytest.mark.parametrize(
+    "metric, greater_is_better", ((Coverage(quantiles=(0.1, 0.3)), None), (Width(quantiles=(0.1, 0.3)), False))
+)
+def test_metrics_greater_is_better(metric, greater_is_better):
+    assert metric.greater_is_better == greater_is_better

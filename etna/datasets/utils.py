@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+from typing import Optional
 from typing import Sequence
 
 import pandas as pd
@@ -120,3 +121,57 @@ class _TorchDataset(Dataset):
 
     def __len__(self):
         return len(self.ts_samples)
+
+
+def set_columns_wide(
+    df_left: pd.DataFrame,
+    df_right: pd.DataFrame,
+    timestamps_left: Optional[Sequence[pd.Timestamp]] = None,
+    timestamps_right: Optional[Sequence[pd.Timestamp]] = None,
+    segments_left: Optional[Sequence[str]] = None,
+    features_right: Optional[Sequence[str]] = None,
+    features_left: Optional[Sequence[str]] = None,
+    segments_right: Optional[Sequence[str]] = None,
+) -> pd.DataFrame:
+    """Set columns in a left dataframe with values from the right dataframe.
+
+    Parameters
+    ----------
+    df_left:
+        dataframe to set columns in
+    df_right:
+        dataframe to set columns from
+    timestamps_left:
+        timestamps to select in ``df_left``
+    timestamps_right:
+        timestamps to select in ``df_right``
+    segments_left:
+        segments to select in ``df_left``
+    segments_right:
+        segments to select in ``df_right``
+    features_left:
+        features to select in ``df_left``
+    features_right:
+        features to select in ``df_right``
+
+    Returns
+    -------
+    :
+        a new dataframe with changed columns
+    """
+    # sort columns
+    df_left = df_left.sort_index(axis=1)
+    df_right = df_right.sort_index(axis=1)
+
+    # prepare indexing
+    timestamps_left_index = slice(None) if timestamps_left is None else timestamps_left
+    timestamps_right_index = slice(None) if timestamps_right is None else timestamps_right
+    segments_left_index = slice(None) if segments_left is None else segments_left
+    segments_right_index = slice(None) if segments_right is None else segments_right
+    features_left_index = slice(None) if features_left is None else features_left
+    features_right_index = slice(None) if features_right is None else features_right
+
+    right_value = df_right.loc[timestamps_right_index, (segments_right_index, features_right_index)]
+    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
+
+    return df_left

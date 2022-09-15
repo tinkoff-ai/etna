@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "1.11.1"
+version = "1.12.0"
 repository = "https://github.com/tinkoff-ai/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -245,7 +245,8 @@ filterwarnings = [
 ]
 markers = [
     "smoke",
-    "long"
+    "long_1",
+    "long_2"
 ]
 
 [tool.mypy]

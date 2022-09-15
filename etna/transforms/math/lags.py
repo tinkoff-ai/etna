@@ -82,7 +82,7 @@ class LagTransform(Transform, FutureMixin):
         result = df.copy()
         segments = sorted(set(df.columns.get_level_values("segment")))
         all_transformed_features = []
-        features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
+        features = df.loc[:, pd.IndexSlice[:, self.in_column]]
         for lag in self.lags:
             column_name = self._get_column_name(lag)
             transformed_features = features.shift(lag)
