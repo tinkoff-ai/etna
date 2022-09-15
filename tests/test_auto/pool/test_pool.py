@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import pytest
+
 from etna.auto.pool import Pool
 from etna.auto.pool.templates import DEFAULT
 from etna.datasets import TSDataset
@@ -11,6 +13,7 @@ def test_generate_config():
     assert len(pipelines) == len(DEFAULT)
 
 
+@pytest.mark.long_2
 def test_default_pool_fit_predict(example_reg_tsds):
     horizon = 7
     pipelines = Pool.default.value.generate(horizon=horizon)
