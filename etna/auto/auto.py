@@ -119,7 +119,7 @@ class Auto:
         callback:
             is called after each pipeline backtest, can be used to log extra metrics
         optuna_kwargs:
-            additional kwargs for optuna :py:func:`optuna.study.optimize`
+            additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`
         """
         if self._optuna is None:
             self._optuna = self._init_optuna()

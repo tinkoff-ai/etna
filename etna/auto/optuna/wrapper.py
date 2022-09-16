@@ -79,7 +79,7 @@ class Optuna:
         timeout:
             timeout for optimization. N.B. in case of parallel runner, this is timeout per worker
         kwargs:
-            additional arguments to pass to :py:func:`optuna.study.optimize`
+            additional arguments to pass to :py:meth:`optuna.study.Study.optimize`
         """
         if runner is None:
             runner = LocalRunner()
