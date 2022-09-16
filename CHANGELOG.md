@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Add `greater_is_better` property for Metric ([#921](https://github.com/tinkoff-ai/etna/pull/921))
--
+- `etna.auto` for greedy search, `etna.auto.pool` with default pipelines, `etna.auto.optuna` wrapper for optuna ([#895](https://github.com/tinkoff-ai/etna/pull/895))
 -
 -
 -
