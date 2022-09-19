@@ -8,6 +8,17 @@ from typing import List
 
 from sklearn.base import BaseEstimator
 
+try:
+    from pytorch_lightning.callbacks import Callback
+
+    _Callback = Callback  # type: ignore
+except ImportError:
+
+    class _Dummy:
+        pass
+
+    _Callback = _Dummy  # type: ignore
+
 
 class BaseMixin:
     """Base mixin for etna classes."""
@@ -52,6 +63,8 @@ class BaseMixin:
             model_parameters = value.get_params()
             answer.update(model_parameters)
             return answer
+        elif isinstance(value, _Callback):
+            return BaseMixin._unsafe_to_dict(value)
         elif isinstance(value, (str, float, int)):
             return value
         elif isinstance(value, List):
@@ -78,6 +91,22 @@ class BaseMixin:
                 continue
             params[arg] = BaseMixin._parse_value(value=value)
         params["_target_"] = BaseMixin._get_target_from_class(self)
+        return params
+
+    @staticmethod
+    def _unsafe_to_dict(value: Any) -> Dict[str, Any]:
+        """Collect all information about etna object in dict."""
+        init_args = inspect.signature(value.__init__).parameters
+        params = {}
+        for arg in init_args.keys():
+            try:
+                value = value.__dict__[arg]
+                if value is None:
+                    continue
+                params[arg] = BaseMixin._parse_value(value=value)
+            except KeyError:
+                pass
+        params["_target_"] = BaseMixin._get_target_from_class(value)
         return params
 
 

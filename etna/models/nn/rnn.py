@@ -213,25 +213,6 @@ class RNNModel(DeepBaseModel):
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
     ):
-        super().__init__(
-            net=RNNNet(
-                input_size=input_size,
-                num_layers=num_layers,
-                hidden_size=hidden_size,
-                lr=lr,
-                loss=nn.MSELoss() if loss is None else loss,
-                optimizer_params=optimizer_params,
-            ),
-            decoder_length=decoder_length,
-            encoder_length=encoder_length,
-            train_batch_size=train_batch_size,
-            test_batch_size=test_batch_size,
-            train_dataloader_params=train_dataloader_params,
-            test_dataloader_params=test_dataloader_params,
-            val_dataloader_params=val_dataloader_params,
-            trainer_params=trainer_params,
-            split_params=split_params,
-        )
         """Init RNN model based on LSTM cell.
 
         Parameters
@@ -272,3 +253,28 @@ class RNNModel(DeepBaseModel):
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
+        self.input_size = input_size
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+        self.lr = lr
+        self.loss = loss
+        self.optimizer_params = optimizer_params
+        super().__init__(
+            net=RNNNet(
+                input_size=input_size,
+                num_layers=num_layers,
+                hidden_size=hidden_size,
+                lr=lr,
+                loss=nn.MSELoss() if loss is None else loss,
+                optimizer_params=optimizer_params,
+            ),
+            decoder_length=decoder_length,
+            encoder_length=encoder_length,
+            train_batch_size=train_batch_size,
+            test_batch_size=test_batch_size,
+            train_dataloader_params=train_dataloader_params,
+            test_dataloader_params=test_dataloader_params,
+            val_dataloader_params=val_dataloader_params,
+            trainer_params=trainer_params,
+            split_params=split_params,
+        )
