@@ -100,10 +100,10 @@ class BaseMixin:
         params = {}
         for arg in init_args.keys():
             try:
-                value = value.__dict__[arg]
-                if value is None:
+                arg_value = value.__dict__[arg]
+                if arg_value is None:
                     continue
-                params[arg] = BaseMixin._parse_value(value=value)
+                params[arg] = BaseMixin._parse_value(value=arg_value)
             except KeyError:
                 pass
         params["_target_"] = BaseMixin._get_target_from_class(value)
