@@ -71,7 +71,12 @@ class TestPredictInSampleFull:
 
     @pytest.mark.parametrize(
         "model, transforms",
-        [],
+        [
+            (MovingAverageModel(window=3), []),
+            (NaiveModel(lag=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (DeadlineMovingAverageModel(window=1), []),
+        ],
     )
     def test_predict_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Given context isn't big enough"):
@@ -81,10 +86,6 @@ class TestPredictInSampleFull:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
@@ -148,6 +149,10 @@ class TestPredictInSampleSuffix:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (NaiveModel(lag=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (DeadlineMovingAverageModel(window=1), []),
         ],
     )
     def test_predict_in_sample_suffix(self, model, transforms, example_tsds):
@@ -157,10 +162,6 @@ class TestPredictInSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
@@ -204,19 +205,24 @@ class TestPredictInSampleSuffix:
 
 
 class TestPredictOutSample:
-    """Test predict on prefix of future dataset.
+    """Test predict on future dataset.
 
     Expected that target values are filled after prediction.
     """
 
     @staticmethod
     def _test_predict_out_sample(ts, model, transforms, prediction_size=5):
+        train_ts, future_ts = ts.train_test_split(test_size=prediction_size)
+        forecast_ts = TSDataset(df=ts.df, freq=ts.freq)
+
         # fitting
-        ts.fit_transform(transforms)
-        model.fit(ts)
+        train_ts.fit_transform(transforms)
+        model.fit(train_ts)
 
         # forecasting
-        forecast_ts = ts.make_future(future_steps=prediction_size, tail_steps=model.context_size)
+        forecast_ts.transform(train_ts.transforms)
+        to_remain = model.context_size + prediction_size
+        forecast_ts.df = forecast_ts.df.iloc[-to_remain:]
         if isinstance(model, get_args(ContextRequiredModelType)):
             model.predict(forecast_ts, prediction_size=prediction_size)
         else:
@@ -241,6 +247,10 @@ class TestPredictOutSample:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
         ],
     )
     def test_predict_out_sample(self, model, transforms, example_tsds):
@@ -250,10 +260,6 @@ class TestPredictOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
@@ -309,8 +315,8 @@ class TestPredictMixedInOutSample:
         to_skip = num_skip_points - model.context_size
         forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
         if isinstance(model, get_args(ContextRequiredModelType)):
-            prediction_size = len(forecast_full_ts.index) - model.context_size
-            model.predict(forecast_full_ts, prediction_size=prediction_size)
+            cur_prediction_size = len(forecast_full_ts.index) - model.context_size
+            model.predict(forecast_full_ts, prediction_size=cur_prediction_size)
         else:
             model.predict(forecast_full_ts)
 
@@ -320,8 +326,8 @@ class TestPredictMixedInOutSample:
         to_skip = num_skip_points - model.context_size
         forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
         if isinstance(model, get_args(ContextRequiredModelType)):
-            prediction_size = len(forecast_in_sample_ts.index) - model.context_size
-            model.predict(forecast_in_sample_ts, prediction_size=prediction_size)
+            cur_prediction_size = len(forecast_in_sample_ts.index) - model.context_size
+            model.predict(forecast_in_sample_ts, prediction_size=cur_prediction_size)
         else:
             model.predict(forecast_in_sample_ts)
 
@@ -357,6 +363,10 @@ class TestPredictMixedInOutSample:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
         ],
     )
     def test_predict_mixed_in_out_sample(self, model, transforms, example_tsds):
@@ -366,10 +376,6 @@ class TestPredictMixedInOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (

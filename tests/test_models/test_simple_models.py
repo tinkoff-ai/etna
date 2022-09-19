@@ -37,7 +37,7 @@ def df():
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
-def test_simple_model_forecaster_run(simple_df, model):
+def test_sma_model_forecast(simple_df, model):
     sma_model = model()
     sma_model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
@@ -47,12 +47,46 @@ def test_simple_model_forecaster_run(simple_df, model):
     assert len(res) == 14
 
 
-def test_simple_model_forecaster_fail_not_enough_context(simple_df):
+@pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
+def test_sma_model_predict(simple_df, model):
+    sma_model = model()
+    sma_model.fit(simple_df)
+    res = sma_model.predict(simple_df, prediction_size=7)
+    res = res.to_pandas(flatten=True)
+    assert not res.isnull().values.any()
+    assert len(res) == len(simple_df.index) * 2
+
+
+def test_sma_model_forecast_fail_not_enough_context(simple_df):
     sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
     sma_model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
         _ = sma_model.forecast(future_ts, prediction_size=7)
+
+
+def test_sma_model_predict_fail_not_enough_context(simple_df):
+    sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
+    sma_model.fit(simple_df)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = sma_model.predict(simple_df, prediction_size=7)
+
+
+def test_sma_model_forecast_fail_nans_in_context(simple_df):
+    sma_model = SeasonalMovingAverageModel(window=2, seasonality=2)
+    sma_model.fit(simple_df)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    future_ts.df.iloc[1, 0] = np.NaN
+    with pytest.raises(ValueError, match="There are NaNs in a forecast context"):
+        _ = sma_model.forecast(future_ts, prediction_size=7)
+
+
+def test_sma_model_predict_fail_nans_in_context(simple_df):
+    sma_model = SeasonalMovingAverageModel(window=2, seasonality=7)
+    sma_model.fit(simple_df)
+    simple_df.df.iloc[-1, 0] = np.NaN
+    with pytest.raises(ValueError, match="There are NaNs in a target column"):
+        _ = sma_model.predict(simple_df, prediction_size=7)
 
 
 @pytest.mark.parametrize(
@@ -115,7 +149,7 @@ def test_deadline_get_context_beginning_fail_not_enough_context(
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
-def test_deadline_model_forecaster_run(simple_df, model):
+def test_deadline_model_forecast(simple_df, model):
     model = model(window=1)
     model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
@@ -125,7 +159,17 @@ def test_deadline_model_forecaster_run(simple_df, model):
     assert len(res) == 14
 
 
-def test_sdeadline_model_forecaster_fail_not_enough_context(simple_df):
+@pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
+def test_deadline_model_predict(simple_df, model):
+    model = model(window=1)
+    model.fit(simple_df)
+    res = model.forecast(simple_df, prediction_size=7)
+    res = res.to_pandas(flatten=True)
+    assert not res.isnull().values.any()
+    assert len(res) == len(simple_df.index) * 2
+
+
+def test_deadline_model_forecast_fail_not_enough_context(simple_df):
     model = DeadlineMovingAverageModel(window=1000)
     model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
@@ -133,7 +177,31 @@ def test_sdeadline_model_forecaster_fail_not_enough_context(simple_df):
         _ = model.forecast(future_ts, prediction_size=7)
 
 
-def test_seasonal_moving_average_forecaster_correct(simple_df):
+def test_deadline_model_predict_fail_not_enough_context(simple_df):
+    model = DeadlineMovingAverageModel(window=1000)
+    model.fit(simple_df)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = model.forecast(simple_df, prediction_size=7)
+
+
+def test_deadline_model_forecast_fail_nans_in_context(simple_df):
+    model = DeadlineMovingAverageModel(window=1)
+    model.fit(simple_df)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    future_ts.df.iloc[1, 0] = np.NaN
+    with pytest.raises(ValueError, match="There are NaNs in a forecast context"):
+        _ = model.forecast(future_ts, prediction_size=7)
+
+
+def test_deadline_model_predict_fail_nans_in_context(simple_df):
+    model = DeadlineMovingAverageModel(window=1)
+    model.fit(simple_df)
+    simple_df.df.iloc[-1, 0] = np.NaN
+    with pytest.raises(ValueError, match="There are NaNs in a target column"):
+        _ = model.predict(simple_df, prediction_size=7)
+
+
+def test_seasonal_moving_average_forecast_correct(simple_df):
     model = SeasonalMovingAverageModel(window=3, seasonality=7)
     model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
@@ -156,7 +224,7 @@ def test_seasonal_moving_average_forecaster_correct(simple_df):
     assert np.all(res.values == answer.values)
 
 
-def test_naive_forecaster_correct(simple_df):
+def test_naive_forecast_correct(simple_df):
     model = NaiveModel(lag=3)
     model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
@@ -180,7 +248,7 @@ def test_naive_forecaster_correct(simple_df):
     assert np.all(res.values == answer.values)
 
 
-def test_moving_average_forecaster_correct(simple_df):
+def test_moving_average_forecast_correct(simple_df):
     model = MovingAverageModel(window=5)
     model.fit(simple_df)
     future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
@@ -210,7 +278,7 @@ def test_moving_average_forecaster_correct(simple_df):
     assert np.all(res.values == answer.values)
 
 
-def test_deadline_moving_average_forecaster_correct(df):
+def test_deadline_moving_average_forecast_correct(df):
     model = DeadlineMovingAverageModel(window=3, seasonality="month")
     model.fit(df)
     future_ts = df.make_future(future_steps=20, tail_steps=model.context_size)
@@ -272,6 +340,142 @@ def test_deadline_moving_average_forecaster_correct(df):
     )
     df2["segment"] = "B"
     df2["timestamp"] = pd.date_range(start="2020-05-20", periods=20)
+
+    answer = pd.concat([df2, df1], axis=0, ignore_index=True)
+    res = res.sort_values(by=["segment", "timestamp"])
+    answer = answer.sort_values(by=["segment", "timestamp"])
+    assert np.all(res.values == answer.values)
+
+
+def test_seasonal_moving_average_predict_correct(simple_df):
+    model = SeasonalMovingAverageModel(window=2, seasonality=2)
+    model.fit(simple_df)
+    res = model.predict(simple_df, prediction_size=7)
+    res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.arange(39, 46)
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
+
+    df2 = pd.DataFrame()
+    df2["target"] = [8, 10, 5, 7, 2, 4, 6]
+    df2["segment"] = "B"
+    df2["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
+
+    answer = pd.concat([df2, df1], axis=0, ignore_index=True)
+    res = res.sort_values(by=["segment", "timestamp"])
+    answer = answer.sort_values(by=["segment", "timestamp"])
+    assert np.all(res.values == answer.values)
+
+
+def test_naive_predict_correct(simple_df):
+    model = NaiveModel(lag=3)
+    model.fit(simple_df)
+    res = model.predict(simple_df, prediction_size=7)
+    res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.arange(39, 46)
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
+
+    df2 = pd.DataFrame()
+    df2["target"] = [8, 10, 12, 0, 2, 4, 6]
+    df2["segment"] = "B"
+    df2["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
+
+    answer = pd.concat([df2, df1], axis=0, ignore_index=True)
+    res = res.sort_values(by=["segment", "timestamp"])
+    answer = answer.sort_values(by=["segment", "timestamp"])
+
+    assert np.all(res.values == answer.values)
+
+
+def test_moving_average_predict_correct(simple_df):
+    model = MovingAverageModel(window=5)
+    model.fit(simple_df)
+    res = model.predict(simple_df, prediction_size=7)
+    res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.arange(39, 46)
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
+
+    df2 = pd.DataFrame()
+    df2["target"] = [8, 7.2, 6.4, 5.6, 4.8, 4.0, 6.0]
+    df2["segment"] = "B"
+    df2["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
+
+    answer = pd.concat([df2, df1], axis=0, ignore_index=True)
+    res = res.sort_values(by=["segment", "timestamp"])
+    answer = answer.sort_values(by=["segment", "timestamp"])
+
+    assert np.all(res.values == answer.values)
+
+
+def test_deadline_moving_average_predict_correct(df):
+    model = DeadlineMovingAverageModel(window=3, seasonality="month")
+    model.fit(df)
+    res = model.predict(df, prediction_size=20)
+    res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.array(
+        [
+            59,
+            60 + 2 / 3,
+            61 + 2 / 3,
+            62 + 2 / 3,
+            63 + 2 / 3,
+            64 + 2 / 3,
+            65 + 2 / 3,
+            66 + 2 / 3,
+            67 + 2 / 3,
+            68 + 2 / 3,
+            69 + 2 / 3,
+            70 + 2 / 3,
+            71 + 2 / 3,
+            72 + 2 / 3,
+            73 + 2 / 3,
+            74 + 2 / 3,
+            75 + 2 / 3,
+            76 + 2 / 3,
+            77 + 2 / 3,
+            78 + 2 / 3,
+        ]
+    )
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-04-30", periods=20)
+
+    df2 = pd.DataFrame()
+    df2["target"] = np.array(
+        [
+            6,
+            4 + 2 / 3,
+            6 + 2 / 3,
+            8 + 2 / 3,
+            6,
+            3 + 1 / 3,
+            5 + 1 / 3,
+            7 + 1 / 3,
+            4 + 2 / 3,
+            6 + 2 / 3,
+            8 + 2 / 3,
+            6,
+            3 + 1 / 3,
+            5 + 1 / 3,
+            7 + 1 / 3,
+            4 + 2 / 3,
+            6 + 2 / 3,
+            8 + 2 / 3,
+            6,
+            3 + 1 / 3,
+        ]
+    )
+    df2["segment"] = "B"
+    df2["timestamp"] = pd.date_range(start="2020-04-30", periods=20)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
     res = res.sort_values(by=["segment", "timestamp"])
@@ -396,7 +600,7 @@ def two_month_ts():
     return tsds
 
 
-def test_deadline_model_correct_with_big_horizons(two_month_ts):
+def test_deadline_model_forecast_correct_with_big_horizons(two_month_ts):
     model = DeadlineMovingAverageModel(window=2, seasonality="month")
     model.fit(two_month_ts)
     future_ts = two_month_ts.make_future(future_steps=90, tail_steps=model.context_size)
