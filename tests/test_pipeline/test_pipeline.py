@@ -22,6 +22,7 @@ from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
+from etna.transforms import TimeSeriesImputerTransform
 from etna.models.base import DeepBaseModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
@@ -479,8 +480,7 @@ def test_forecast_raise_error_if_not_fitted():
 
 def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
-
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
     pipeline.fit(TSDataset(df_with_nans_in_tails, freq="1H"))
     forecast = pipeline.forecast()
     assert len(forecast.df) == 5
