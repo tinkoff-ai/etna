@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
@@ -5,17 +7,9 @@ from etna.models import AutoARIMAModel
 from etna.pipeline import Pipeline
 
 
-def test_autoarima_forecaster_run(example_tsds):
-    """
-    Given: I have dataframe with 2 segments
-    When:
-    Then: I get 7 periods per dataset as a forecast
-    """
-
-    horizon = 7
-    model = AutoARIMAModel()
-    model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=horizon)
+def _check_forecast(ts, model, horizon):
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
     res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
@@ -23,14 +17,28 @@ def test_autoarima_forecaster_run(example_tsds):
     assert len(res) == 14
 
 
-def test_autoarima_save_regressors_on_fit(example_reg_tsds):
+def _check_predict(ts, model):
+    model.fit(ts)
+    res = model.forecast(ts)
+    res = res.to_pandas(flatten=True)
+
+    assert not res.isnull().values.any()
+    assert len(res) == len(ts.index) * 2
+
+
+def test_prediction(example_tsds):
+    _check_forecast(ts=deepcopy(example_tsds), model=AutoARIMAModel(), horizon=7)
+    _check_predict(ts=deepcopy(example_tsds), model=AutoARIMAModel())
+
+
+def test_save_regressors_on_fit(example_reg_tsds):
     model = AutoARIMAModel()
     model.fit(ts=example_reg_tsds)
     for segment_model in model._models.values():
         assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
 
 
-def test_autoarima_select_regressors_correctly(example_reg_tsds):
+def test_select_regressors_correctly(example_reg_tsds):
     model = AutoARIMAModel()
     model.fit(ts=example_reg_tsds)
     for segment, segment_model in model._models.items():
@@ -40,29 +48,12 @@ def test_autoarima_select_regressors_correctly(example_reg_tsds):
         assert (segment_regressors == segment_regressors_expected).all().all()
 
 
-def test_autoarima_forecaster_run_with_reg(example_reg_tsds):
-    """
-    Given: I have dataframe with 2 segments
-    When:
-    Then: I get 7 periods per dataset as a forecast
-    """
-    horizon = 7
-    model = AutoARIMAModel()
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+def test_prediction_with_reg(example_reg_tsds):
+    _check_forecast(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel(), horizon=7)
+    _check_predict(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel())
 
 
-def test_autoarima_forececaster_run_with_params(example_reg_tsds):
-    """
-    Given: I have dataframe with 2 segments
-    When: AutoARIMAModel have non default params
-    Then: I get 7 periods per dataset as a forecast
-    """
+def test_prediction_with_params(example_reg_tsds):
     horizon = 7
     model = AutoARIMAModel(
         start_p=3,
@@ -79,19 +70,16 @@ def test_autoarima_forececaster_run_with_params(example_reg_tsds):
         m=2,
         seasonal=True,
     )
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+    _check_forecast(ts=deepcopy(example_reg_tsds), model=deepcopy(model), horizon=horizon)
+    _check_predict(ts=deepcopy(example_reg_tsds), model=deepcopy(model))
 
 
-def test_prediction_interval_run_insample_autoarima(example_tsds):
+@pytest.mark.parametrize("method_name", ["forecast", "predict"])
+def test_prediction_interval_insample(example_tsds, method_name):
     model = AutoARIMAModel()
     model.fit(example_tsds)
-    forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+    method = getattr(model, method_name)
+    forecast = method(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
@@ -101,7 +89,7 @@ def test_prediction_interval_run_insample_autoarima(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-def test_prediction_interval_run_infuture_autoarima(example_tsds):
+def test_forecast_prediction_interval_infuture(example_tsds):
     model = AutoARIMAModel()
     model.fit(example_tsds)
     future = example_tsds.make_future(10)
@@ -114,11 +102,13 @@ def test_prediction_interval_run_infuture_autoarima(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-def test_forecast_raise_error_if_not_fitted_autoarima(example_tsds):
-    """Test that AutoARIMA raise error when calling forecast without being fit."""
+@pytest.mark.parametrize("method_name", ["forecast", "predict"])
+def test_prediction_raise_error_if_not_fitted_autoarima(example_tsds, method_name):
+    """Test that AutoARIMA raise error when calling prediction without being fit."""
     model = AutoARIMAModel()
     with pytest.raises(ValueError, match="model is not fitted!"):
-        _ = model.forecast(ts=example_tsds)
+        method = getattr(model, method_name)
+        _ = method(ts=example_tsds)
 
 
 def test_get_model_before_training_autoarima():
@@ -138,7 +128,7 @@ def test_get_model_after_training(example_tsds):
         assert isinstance(models_dict[segment], SARIMAXResultsWrapper)
 
 
-def test_autoarima_forecast_1_point(example_tsds):
+def test_forecast_1_point(example_tsds):
     """Check that AutoARIMA work with 1 point forecast."""
     horizon = 1
     model = AutoARIMAModel()
