@@ -20,22 +20,27 @@ def test_standard_scaler_dummy_mean_shift_for_quantiles_per_segment(toy_dataset_
     scaler = StandardScalerTransform(in_column="target", with_std=False)
     toy_dataset = scaler.fit_transform(toy_dataset)
     toy_dataset = scaler.inverse_transform(toy_dataset)
-    np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1])
-    np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
+    np.testing.assert_allclose(toy_dataset.to_pandas().iloc[:, 0], toy_dataset.to_pandas().iloc[:, 1])
+    np.testing.assert_allclose(toy_dataset.to_pandas().iloc[:, 2], toy_dataset.to_pandas().iloc[:, 3])
 
 
 def test_standard_scaler_dummy_mean_shift_for_quantiles_macro(toy_dataset_with_mean_shift_in_target):
     """This test checks that StandardScalerTransform.inverse_transform works correctly in macro mode."""
     toy_dataset = toy_dataset_with_mean_shift_in_target
     scaler = StandardScalerTransform(in_column="target", with_std=False, mode="macro")
-    mean_1 = toy_dataset.iloc[:, 0].mean()
-    mean_2 = toy_dataset.iloc[:, 2].mean()
+    mean_1 = toy_dataset.to_pandas().iloc[:, 0].mean()
+    mean_2 = toy_dataset.to_pandas().iloc[:, 2].mean()
     toy_dataset = scaler.fit_transform(toy_dataset)
     toy_dataset = scaler.inverse_transform(toy_dataset)
-    np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1] - (mean_1 + mean_2) / 2 + mean_1)
-    np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3] - (mean_1 + mean_2) / 2 + mean_2)
+    np.testing.assert_allclose(
+        toy_dataset.to_pandas().iloc[:, 0], toy_dataset.to_pandas().iloc[:, 1] - (mean_1 + mean_2) / 2 + mean_1
+    )
+    np.testing.assert_allclose(
+        toy_dataset.to_pandas().iloc[:, 2], toy_dataset.to_pandas().iloc[:, 3] - (mean_1 + mean_2) / 2 + mean_2
+    )
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     """
     This test checks that inverse_transform transforms forecast's quantiles the same way with target itself and
@@ -55,6 +60,7 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 @pytest.mark.parametrize(
     "transform",
     (
@@ -71,7 +77,7 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
 def test_dummy_all(toy_dataset_equal_targets_and_quantiles, transform):
     """This test checks that inverse_transform transforms forecast's quantiles the same way with target itself."""
     toy_dataset = toy_dataset_equal_targets_and_quantiles
-    _ = transform.fit_transform(toy_dataset.copy())
+    _ = transform.fit_transform(toy_dataset)
     toy_dataset = transform.inverse_transform(toy_dataset)
 
     np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1])

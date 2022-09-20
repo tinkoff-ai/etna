@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List
 from typing import Optional
 from typing import Union
@@ -79,9 +78,10 @@ def normal_distributed_ts() -> TSDataset:
 def test_dummy_inverse_transform_all_columns(normal_distributed_ts, scaler, mode):
     """Check that `inverse_transform(transform(df)) == df` for all columns."""
     scaler.mode = TransformMode(mode)
-    feature_df = scaler.fit_transform(ts=deepcopy(normal_distributed_ts))
-    inversed_df = scaler.inverse_transform(ts=deepcopy(feature_df)).to_pandas()
-    npt.assert_array_almost_equal(normal_distributed_ts.to_pandas().values, inversed_df.values)
+    original_df = normal_distributed_ts.to_pandas()
+    feature_ts = scaler.fit_transform(ts=normal_distributed_ts)
+    inversed_df = scaler.inverse_transform(ts=feature_ts).to_pandas()
+    npt.assert_array_almost_equal(original_df.values, inversed_df.values)
 
 
 @pytest.mark.parametrize(
@@ -101,9 +101,10 @@ def test_dummy_inverse_transform_all_columns(normal_distributed_ts, scaler, mode
 def test_dummy_inverse_transform_one_column(normal_distributed_ts, scaler, mode):
     """Check that `inverse_transform(transform(df)) == df` for one column."""
     scaler.mode = TransformMode(mode)
+    original_df = normal_distributed_ts.to_pandas()
     feature_ts = scaler.fit_transform(ts=normal_distributed_ts)
     inversed_df = scaler.inverse_transform(ts=feature_ts).to_pandas()
-    npt.assert_array_almost_equal(normal_distributed_ts.to_pandas().values, inversed_df.values)
+    npt.assert_array_almost_equal(original_df.values, inversed_df.values)
 
 
 @pytest.mark.parametrize(
@@ -124,9 +125,10 @@ def test_inverse_transform_not_inplace(normal_distributed_ts, scaler, mode):
     """Check that inversed values the same for not inplace version."""
     not_inplace_scaler = scaler(inplace=False, mode=mode)
     columns_to_compare = normal_distributed_ts.columns
-    transformed_ts = not_inplace_scaler.fit_transform(ts=deepcopy(normal_distributed_ts))
+    original_df = normal_distributed_ts.to_pandas()
+    transformed_ts = not_inplace_scaler.fit_transform(ts=normal_distributed_ts)
     inverse_transformed_df = not_inplace_scaler.inverse_transform(transformed_ts).to_pandas()
-    assert np.all(inverse_transformed_df[columns_to_compare] == normal_distributed_ts.to_pandas())
+    assert np.all(inverse_transformed_df[columns_to_compare] == original_df)
 
 
 @pytest.mark.parametrize(

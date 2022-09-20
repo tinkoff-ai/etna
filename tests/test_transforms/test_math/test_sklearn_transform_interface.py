@@ -103,7 +103,7 @@ def test_inplace_no_new_columns(transform_constructor, in_column, multicolumn_ts
     """Test that transform in inplace mode doesn't generate new columns."""
     transform = transform_constructor(in_column=in_column, inplace=True)
     initial_df = multicolumn_ts.to_pandas()
-    transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
+    transformed_df = transform.fit_transform(multicolumn_ts).to_pandas()
 
     # check new columns
     new_columns = extract_new_features_columns(transformed_df, initial_df)
@@ -138,7 +138,7 @@ def test_creating_columns(transform_constructor, in_column, multicolumn_ts):
     """Test that transform creates new columns according to out_column parameter."""
     transform = transform_constructor(in_column=in_column, out_column="new_exog", inplace=False)
     initial_df = multicolumn_ts.to_pandas()
-    transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
+    transformed_df = transform.fit_transform(multicolumn_ts).to_pandas()
 
     # check new columns
     new_columns = set(extract_new_features_columns(transformed_df, initial_df))
@@ -178,18 +178,16 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
     """Test that transform generates names for the columns correctly."""
     transform = transform_constructor(in_column=in_column, out_column=None, inplace=False)
     initial_df = multicolumn_ts.to_pandas()
-    transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
+    transformed_df = transform.fit_transform(multicolumn_ts).to_pandas()
     segments = sorted(multicolumn_ts.segments)
 
     new_columns = extract_new_features_columns(transformed_df, initial_df)
-
     # check new columns
     for column in new_columns:
         # create transform from column
         transform_temp = eval(column)
-        df_temp = transform_temp.fit_transform(multicolumn_ts.to_pandas())
+        df_temp = transform_temp.fit_transform(multicolumn_ts).to_pandas()
         columns_temp = extract_new_features_columns(df_temp, initial_df)
-
         # compare column names and column values
         assert len(columns_temp) == 1
         column_temp = columns_temp[0]
@@ -223,7 +221,7 @@ def test_all_columns(transform_constructor, multicolumn_ts):
     """Test that transform can process all columns using None value for in_column."""
     transform = transform_constructor(in_column=None, out_column=None, inplace=False)
     initial_df = multicolumn_ts.df.copy()
-    transformed_df = transform.fit_transform(multicolumn_ts.df)
+    transformed_df = transform.fit_transform(multicolumn_ts).to_pandas()
 
     new_columns = extract_new_features_columns(transformed_df, initial_df)
     assert len(new_columns) == initial_df.columns.get_level_values("feature").nunique()
@@ -261,11 +259,11 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
     ]
 
     segments = sorted(multicolumn_ts.segments)
-    transformed_df = transform.fit_transform(multicolumn_ts.to_pandas())
+    transformed_df = transform.fit_transform(multicolumn_ts).to_pandas()
 
     transformed_dfs_one_column = []
     for transform_one_column in transforms_one_column:
-        transformed_dfs_one_column.append(transform_one_column.fit_transform(multicolumn_ts.to_pandas()))
+        transformed_dfs_one_column.append(transform_one_column.fit_transform(multicolumn_ts))
 
     in_to_out_columns = {key: value for key, value in zip(transform.in_column, transform.out_columns)}
     for i, column in enumerate(in_column):
@@ -277,4 +275,4 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
 
         df_multi = transformed_df.loc[:, pd.IndexSlice[segments, column_multi]]
         df_single = transformed_dfs_one_column[i].loc[:, pd.IndexSlice[segments, column_single]]
-        assert np.all(df_multi == df_single)
+        assert np.all(df_multi.values == df_single.values)

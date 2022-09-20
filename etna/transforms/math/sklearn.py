@@ -2,6 +2,7 @@ import warnings
 from copy import deepcopy
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Optional
 from typing import Union
 
@@ -10,6 +11,7 @@ import pandas as pd
 from sklearn.base import TransformerMixin
 
 from etna.core import StringEnumWithRepr
+from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
@@ -57,21 +59,25 @@ class SklearnTransform(ReversibleTransform):
         ValueError:
             if incorrect mode given
         """
-        super().__init__(required_features="all")
+        required_features: Union[Literal["all"], List[str]] = "all"
+
+        if in_column is not None:
+            if isinstance(in_column, str):
+                in_column = [in_column]
+            required_features = in_column
+        print(required_features)
+        super().__init__(required_features=required_features)
         if inplace and (out_column is not None):
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
         self.transformer = transformer
-
-        if isinstance(in_column, str):
-            in_column = [in_column]
         self.in_column = in_column if in_column is None else sorted(in_column)
-
         self.inplace = inplace
         self.mode = TransformMode(mode)
         self.out_column = out_column
 
         self.out_columns: Optional[List[str]] = None
+        self.in_column_regressor: Optional[bool] = None
 
     def _get_column_name(self, in_column: str) -> str:
         if self.out_column is None:
@@ -112,6 +118,12 @@ class SklearnTransform(ReversibleTransform):
             raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
 
         self.transformer.fit(X=x)
+        return self
+
+    def fit(self, ts: TSDataset) -> "SklearnTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -234,4 +246,7 @@ class SklearnTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return []
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+
+        return self.out_columns if self.in_column_regressor and not self.inplace else []
