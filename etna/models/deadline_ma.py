@@ -140,8 +140,8 @@ class _DeadlineMovingAverageModel:
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Used only for getting the horizon of forecast and timestamps.
+        df:
+            Features dataframe.
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
@@ -191,8 +191,8 @@ class _DeadlineMovingAverageModel:
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Used only for getting the horizon of forecast and timestamps.
+        df:
+            Features dataframe.
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.

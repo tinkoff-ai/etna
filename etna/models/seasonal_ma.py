@@ -68,7 +68,7 @@ class _SeasonalMovingAverageModel:
         Parameters
         ----------
         df:
-            Used only for getting the horizon of forecast
+            Features dataframe.
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
@@ -107,7 +107,7 @@ class _SeasonalMovingAverageModel:
         Parameters
         ----------
         df:
-            Used only for getting the horizon of forecast
+            Features dataframe.
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
