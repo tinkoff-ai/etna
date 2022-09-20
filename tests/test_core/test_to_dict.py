@@ -3,13 +3,13 @@ import pickle
 
 import hydra_slayer
 import pytest
-from pytorch_lightning.callbacks import EarlyStopping
 from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.core import BaseMixin
 from etna.ensembles import StackingEnsemble
 from etna.ensembles import VotingEnsemble
+from etna.libs.pytorch_lightning.callbacks import EarlyStopping
 from etna.metrics import MAE
 from etna.metrics import SMAPE
 from etna.models import AutoARIMAModel
@@ -85,7 +85,7 @@ def test_to_dict_transforms(target_object):
         ),
         (
             MLPModel(decoder_length=1, hidden_size=[64, 64], input_size=1, trainer_params={"max_epochs": 100, "callbacks": [EarlyStopping(monitor="val_loss", patience=3)]}, lr=0.01, train_batch_size=32, split_params=dict(train_size=0.75)),  # noqa: E501
-            {'input_size': 1, 'decoder_length': 1, 'hidden_size': [64, 64], 'encoder_length': 0, 'lr': 0.01, 'train_batch_size': 32, 'test_batch_size': 16, 'trainer_params': {'max_epochs': 100, 'callbacks': [{'monitor': 'val_loss', 'min_delta': -0.0, 'patience': 3, 'verbose': False, 'mode': 'min', 'strict': True, 'check_finite': True, '_target_': 'pytorch_lightning.callbacks.early_stopping.EarlyStopping'}]}, 'train_dataloader_params': {}, 'test_dataloader_params': {}, 'val_dataloader_params': {}, 'split_params': {'train_size': 0.75}, '_target_': 'etna.models.nn.mlp.MLPModel'}  # noqa: E501
+            {'input_size': 1, 'decoder_length': 1, 'hidden_size': [64, 64], 'encoder_length': 0, 'lr': 0.01, 'train_batch_size': 32, 'test_batch_size': 16, 'trainer_params': {'max_epochs': 100, 'callbacks': [{'monitor': 'val_loss', 'patience': 3, '_target_': 'etna.libs.pytorch_lightning.callbacks.EarlyStopping'}]}, 'train_dataloader_params': {}, 'test_dataloader_params': {}, 'val_dataloader_params': {}, 'split_params': {'train_size': 0.75}, '_target_': 'etna.models.nn.mlp.MLPModel'}  # noqa: E501
         )
     ],
 )
