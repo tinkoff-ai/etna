@@ -135,6 +135,25 @@ class _DeadlineMovingAverageModel:
 
         return first_index
 
+    def _make_predictions(self, result_template: pd.Series, context: pd.Series, prediction_size: int) -> np.ndarray:
+        """Make predictions using ``result_template`` as a base and ``context`` as a context."""
+        index = result_template.index
+        start_idx = len(result_template) - prediction_size
+        end_idx = len(result_template)
+        for i in range(start_idx, end_idx):
+            for w in range(1, self.window + 1):
+                if self.seasonality == SeasonalityMode.month:
+                    prev_date = result_template.index[i] - pd.DateOffset(months=w)
+                elif self.seasonality == SeasonalityMode.year:
+                    prev_date = result_template.index[i] - pd.DateOffset(years=w)
+
+                result_template.loc[index[i]] += context.loc[prev_date]
+
+            result_template.loc[index[i]] = result_template.loc[index[i]] / self.window
+
+        result_values = result_template.values[-prediction_size:]
+        return result_values
+
     def forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """Compute autoregressive forecasts.
 
@@ -170,21 +189,12 @@ class _DeadlineMovingAverageModel:
             raise ValueError("There are NaNs in a forecast context, forecast method required context to filled!")
 
         index = pd.date_range(start=context_beginning, end=df.index[-1], freq=self._freq)
-        res = np.append(history.values, np.zeros(prediction_size))
-        res = pd.Series(res, index=index)
-        for i in range(len(history), len(res)):
-            for w in range(1, self.window + 1):
-                if self.seasonality == SeasonalityMode.month:
-                    prev_date = res.index[i] - pd.DateOffset(months=w)
-                elif self.seasonality == SeasonalityMode.year:
-                    prev_date = res.index[i] - pd.DateOffset(years=w)
-
-                res.loc[index[i]] += res.loc[prev_date]
-
-            res.loc[index[i]] = res.loc[index[i]] / self.window
-
-        res = res.values.ravel()[-prediction_size:]
-        return res
+        result_template = np.append(history.values, np.zeros(prediction_size))
+        result_template = pd.Series(result_template, index=index)
+        result_values = self._make_predictions(
+            result_template=result_template, context=result_template, prediction_size=prediction_size
+        )
+        return result_values
 
     def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """Compute predictions using true target data as context.
@@ -220,20 +230,11 @@ class _DeadlineMovingAverageModel:
             raise ValueError("There are NaNs in a target column, predict method requires target to be filled!")
 
         index = pd.date_range(start=df.index[-prediction_size], end=df.index[-1], freq=self._freq)
-        res = pd.Series(np.zeros(prediction_size), index=index)
-        for i in range(prediction_size):
-            for w in range(1, self.window + 1):
-                if self.seasonality == SeasonalityMode.month:
-                    prev_date = res.index[i] - pd.DateOffset(months=w)
-                elif self.seasonality == SeasonalityMode.year:
-                    prev_date = res.index[i] - pd.DateOffset(years=w)
-
-                res.loc[index[i]] += context.loc[prev_date]
-
-            res.loc[index[i]] = res.loc[index[i]] / self.window
-
-        res = res.values
-        return res
+        result_template = pd.Series(np.zeros(prediction_size), index=index)
+        result_values = self._make_predictions(
+            result_template=result_template, context=context, prediction_size=prediction_size
+        )
+        return result_values
 
     @property
     def context_size(self) -> int:
