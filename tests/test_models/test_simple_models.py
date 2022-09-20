@@ -14,6 +14,25 @@ from etna.models.seasonal_ma import _SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
 
 
+def _check_forecast(ts, model, horizon):
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon, tail_steps=model.context_size)
+    res = model.forecast(ts=future_ts, prediction_size=horizon)
+    res = res.to_pandas(flatten=True)
+
+    assert not res.isnull().values.any()
+    assert len(res) == horizon * 2
+
+
+def _check_predict(ts, model, prediction_size):
+    model.fit(ts)
+    res = model.predict(ts, prediction_size=prediction_size)
+    res = res.to_pandas(flatten=True)
+
+    assert not res.isnull().values.any()
+    assert len(res) == prediction_size * 2
+
+
 @pytest.fixture()
 def df():
     """Generate dataset with simple values without any noise"""
@@ -38,23 +57,25 @@ def df():
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_forecast(simple_df, model):
-    sma_model = model()
-    sma_model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
-    res = sma_model.forecast(future_ts, prediction_size=7)
-    res = res.to_pandas(flatten=True)
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+    _check_forecast(ts=simple_df, model=model(), horizon=7)
+    # sma_model = model()
+    # sma_model.fit(simple_df)
+    # future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    # res = sma_model.forecast(future_ts, prediction_size=7)
+    # res = res.to_pandas(flatten=True)
+    # assert not res.isnull().values.any()
+    # assert len(res) == 14
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_predict(simple_df, model):
-    sma_model = model()
-    sma_model.fit(simple_df)
-    res = sma_model.predict(simple_df, prediction_size=7)
-    res = res.to_pandas(flatten=True)
-    assert not res.isnull().values.any()
-    assert len(res) == len(simple_df.index) * 2
+    _check_predict(ts=simple_df, model=model(), prediction_size=7)
+    # sma_model = model()
+    # sma_model.fit(simple_df)
+    # res = sma_model.predict(simple_df, prediction_size=7)
+    # res = res.to_pandas(flatten=True)
+    # assert not res.isnull().values.any()
+    # assert len(res) == len(simple_df.index) * 2
 
 
 def test_sma_model_forecast_fail_not_enough_context(simple_df):
@@ -150,23 +171,25 @@ def test_deadline_get_context_beginning_fail_not_enough_context(
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_forecast(simple_df, model):
-    model = model(window=1)
-    model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
-    res = model.forecast(future_ts, prediction_size=7)
-    res = res.to_pandas(flatten=True)
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+    _check_forecast(ts=simple_df, model=model(window=1), horizon=7)
+    # model = model(window=1)
+    # model.fit(simple_df)
+    # future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    # res = model.forecast(future_ts, prediction_size=7)
+    # res = res.to_pandas(flatten=True)
+    # assert not res.isnull().values.any()
+    # assert len(res) == 14
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_predict(simple_df, model):
-    model = model(window=1)
-    model.fit(simple_df)
-    res = model.forecast(simple_df, prediction_size=7)
-    res = res.to_pandas(flatten=True)
-    assert not res.isnull().values.any()
-    assert len(res) == len(simple_df.index) * 2
+    _check_predict(ts=simple_df, model=model(window=1), prediction_size=7)
+    # model = model(window=1)
+    # model.fit(simple_df)
+    # res = model.forecast(simple_df, prediction_size=7)
+    # res = res.to_pandas(flatten=True)
+    # assert not res.isnull().values.any()
+    # assert len(res) == len(simple_df.index) * 2
 
 
 def test_deadline_model_forecast_fail_not_enough_context(simple_df):

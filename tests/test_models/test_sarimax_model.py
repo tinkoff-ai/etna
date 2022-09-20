@@ -14,12 +14,12 @@ def _check_forecast(ts, model, horizon):
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
-    assert len(res) == 14
+    assert len(res) == horizon * 2
 
 
 def _check_predict(ts, model):
     model.fit(ts)
-    res = model.forecast(ts)
+    res = model.predict(ts)
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
