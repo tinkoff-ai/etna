@@ -71,6 +71,7 @@ def test_get_residuals_not_matching_segments(residuals):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_plot_residuals_fails_unkown_feature(example_tsdf):
     """Test that plot_residuals fails if meet unknown feature."""
     pipeline = Pipeline(
@@ -117,7 +118,7 @@ def test_plot_stl(example_tsdf, period):
 )
 def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values, trend_class):
     ln_tr = trend_class(in_column="target", poly_degree=poly_degree)
-    example_tsdf.fit_transform([ln_tr])
+    ln_tr.fit_transform(example_tsdf)
     segments = example_tsdf.segments
     _, linear_coeffs = _get_labels_names([ln_tr], segments)
     if expect_values:

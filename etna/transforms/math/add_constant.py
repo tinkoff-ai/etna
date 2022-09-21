@@ -1,13 +1,15 @@
 import warnings
+from typing import List
 from typing import Optional
 
 import pandas as pd
 
-from etna.transforms.base import Transform
+from etna.datasets import TSDataset
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
 
-class AddConstTransform(Transform):
+class AddConstTransform(ReversibleTransform):
     """AddConstTransform add constant for given series."""
 
     def __init__(self, in_column: str, value: float, inplace: bool = True, out_column: Optional[str] = None):
@@ -29,10 +31,12 @@ class AddConstTransform(Transform):
         out_column:
             name of added column. If not given, use ``self.__repr__()``
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.value = value
         self.inplace = inplace
         self.out_column = out_column
+        self.in_column_regressor: Optional[bool] = None
 
         if self.inplace and out_column:
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
@@ -45,7 +49,7 @@ class AddConstTransform(Transform):
         else:
             return self.__repr__()
 
-    def fit(self, df: pd.DataFrame) -> "AddConstTransform":
+    def _fit(self, df: pd.DataFrame) -> "AddConstTransform":
         """Fit method does nothing and is kept for compatibility.
 
         Parameters
@@ -59,7 +63,13 @@ class AddConstTransform(Transform):
         """
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, ts: TSDataset) -> "AddConstTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply adding constant to the dataset.
 
         Parameters
@@ -74,7 +84,7 @@ class AddConstTransform(Transform):
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
 
-        result = df.copy()
+        result = df
         features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
         transformed_features = features + self.value
         if self.inplace:
@@ -86,7 +96,7 @@ class AddConstTransform(Transform):
             result = result.sort_index(axis=1)
         return result
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to the dataset.
 
         Parameters
@@ -99,7 +109,7 @@ class AddConstTransform(Transform):
         result: pd.DataFrame
             transformed series
         """
-        result = df.copy()
+        result = df
         if self.inplace:
             segments = sorted(set(df.columns.get_level_values("segment")))
             features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
@@ -114,6 +124,12 @@ class AddConstTransform(Transform):
                     result.loc[:, pd.IndexSlice[segments, quantile_column_nm]] = transformed_features
 
         return result
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+        return [self._get_column_name()] if self.in_column_regressor and not self.inplace else []
 
 
 __all__ = ["AddConstTransform"]
