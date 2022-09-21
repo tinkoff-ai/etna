@@ -58,24 +58,11 @@ def df():
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_forecast(simple_df, model):
     _check_forecast(ts=simple_df, model=model(), horizon=7)
-    # sma_model = model()
-    # sma_model.fit(simple_df)
-    # future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
-    # res = sma_model.forecast(future_ts, prediction_size=7)
-    # res = res.to_pandas(flatten=True)
-    # assert not res.isnull().values.any()
-    # assert len(res) == 14
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_predict(simple_df, model):
     _check_predict(ts=simple_df, model=model(), prediction_size=7)
-    # sma_model = model()
-    # sma_model.fit(simple_df)
-    # res = sma_model.predict(simple_df, prediction_size=7)
-    # res = res.to_pandas(flatten=True)
-    # assert not res.isnull().values.any()
-    # assert len(res) == len(simple_df.index) * 2
 
 
 def test_sma_model_forecast_fail_not_enough_context(simple_df):
@@ -172,24 +159,11 @@ def test_deadline_get_context_beginning_fail_not_enough_context(
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_forecast(simple_df, model):
     _check_forecast(ts=simple_df, model=model(window=1), horizon=7)
-    # model = model(window=1)
-    # model.fit(simple_df)
-    # future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
-    # res = model.forecast(future_ts, prediction_size=7)
-    # res = res.to_pandas(flatten=True)
-    # assert not res.isnull().values.any()
-    # assert len(res) == 14
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_predict(simple_df, model):
     _check_predict(ts=simple_df, model=model(window=1), prediction_size=7)
-    # model = model(window=1)
-    # model.fit(simple_df)
-    # res = model.forecast(simple_df, prediction_size=7)
-    # res = res.to_pandas(flatten=True)
-    # assert not res.isnull().values.any()
-    # assert len(res) == len(simple_df.index) * 2
 
 
 def test_deadline_model_forecast_fail_not_enough_context(simple_df):

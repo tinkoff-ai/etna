@@ -70,7 +70,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
     def _make_prediction(
         self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float], dynamic: bool
     ) -> pd.DataFrame:
-        """Make predictions depending on parameters."""
+        """Make predictions taking into account ``dynamic`` parameter."""
         if self._fit_results is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
