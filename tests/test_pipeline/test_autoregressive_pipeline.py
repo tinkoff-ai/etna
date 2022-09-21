@@ -14,7 +14,6 @@ from etna.metrics import MetricAggregationMode
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
-from etna.models.base import DeepBaseModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -97,26 +96,6 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
 
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
-    assert model.forecast.call_count == 5
-    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
-
-
-def test_private_forecast_deep_base_model(example_tsds):
-    # we should do it this way because we want not to change behavior but have ability to inspect calls
-    # source: https://stackoverflow.com/a/41599695
-    make_future = spy_decorator(TSDataset.make_future)
-    model = MagicMock(spec=DeepBaseModel)
-    model.encoder_length = 1
-    model.decoder_length = 1
-    model.forecast.side_effect = fake_forecast
-
-    with patch.object(TSDataset, "make_future", make_future):
-        pipeline = AutoRegressivePipeline(model=model, horizon=5)
-        pipeline.fit(example_tsds)
-        _ = pipeline._forecast()
-
-    assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=model.decoder_length, tail_steps=model.encoder_length)
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 
