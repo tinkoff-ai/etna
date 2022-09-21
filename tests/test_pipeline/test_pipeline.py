@@ -33,6 +33,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LogTransform
+from etna.transforms import TimeSeriesImputerTransform
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -479,8 +480,7 @@ def test_forecast_raise_error_if_not_fitted():
 
 def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
-
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
     pipeline.fit(TSDataset(df_with_nans_in_tails, freq="1H"))
     forecast = pipeline.forecast()
     assert len(forecast.df) == 5

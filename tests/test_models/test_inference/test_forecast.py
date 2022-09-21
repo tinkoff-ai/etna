@@ -620,8 +620,8 @@ class TestForecastMixedInOutSample:
         to_skip = num_skip_points - model.context_size
         forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
         if isinstance(model, get_args(ContextRequiredModelType)):
-            prediction_size = len(forecast_full_ts.index) - model.context_size
-            model.forecast(forecast_full_ts, prediction_size=prediction_size)
+            cur_prediction_size = len(forecast_full_ts.index) - model.context_size
+            model.forecast(forecast_full_ts, prediction_size=cur_prediction_size)
         else:
             model.forecast(forecast_full_ts)
 

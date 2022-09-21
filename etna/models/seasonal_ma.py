@@ -63,13 +63,12 @@ class _SeasonalMovingAverageModel:
         return self
 
     def forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
-        """
-        Compute predictions from a SeasonalMovingAverage model.
+        """Compute autoregressive forecasts.
 
         Parameters
         ----------
         df:
-            Used only for getting the horizon of forecast
+            Features dataframe.
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
@@ -83,6 +82,8 @@ class _SeasonalMovingAverageModel:
         ------
         ValueError:
             if context isn't big enough
+        ValueError:
+            if forecast context contains NaNs
         """
         expected_length = prediction_size + self.shift
         if len(df) < expected_length:
@@ -91,14 +92,52 @@ class _SeasonalMovingAverageModel:
             )
 
         history = df["target"][-expected_length:-prediction_size]
+        if np.any(history.isnull()):
+            raise ValueError("There are NaNs in a forecast context, forecast method required context to filled!")
+
         res = np.append(history, np.zeros(prediction_size))
         for i in range(self.shift, len(res)):
             res[i] = res[i - self.shift : i : self.seasonality].mean()
         y_pred = res[-prediction_size:]
         return y_pred
 
-    def predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
-        raise NotImplementedError("Method predict isn't currently implemented!")
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
+        """Compute predictions using true target data as context.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe.
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Array with predictions.
+
+        Raises
+        ------
+        ValueError:
+            if context isn't big enough
+        ValueError:
+            if there are NaNs in a target column on timestamps that are required to make predictions
+        """
+        expected_length = prediction_size + self.shift
+        if len(df) < expected_length:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+            )
+
+        context = df["target"][-expected_length:].values
+        if np.any(np.isnan(context)):
+            raise ValueError("There are NaNs in a target column, predict method requires target to be filled!")
+
+        res = np.zeros(prediction_size)
+        for res_idx, context_idx in enumerate(range(self.shift, len(context))):
+            res[res_idx] = context[context_idx - self.shift : context_idx : self.seasonality].mean()
+        return res
 
 
 class SeasonalMovingAverageModel(

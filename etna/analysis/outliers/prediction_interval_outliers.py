@@ -82,7 +82,7 @@ def get_anomalies_prediction_interval(
     model_instance = model(**model_params)
     model_instance.fit(ts_inner)
     lower_p, upper_p = [(1 - interval_width) / 2, (1 + interval_width) / 2]
-    prediction_interval = model_instance.forecast(
+    prediction_interval = model_instance.predict(
         deepcopy(ts_inner), prediction_interval=True, quantiles=[lower_p, upper_p]
     )
     for segment in ts_inner.segments:

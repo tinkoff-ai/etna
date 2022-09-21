@@ -135,14 +135,32 @@ class _DeadlineMovingAverageModel:
 
         return first_index
 
+    def _make_predictions(self, result_template: pd.Series, context: pd.Series, prediction_size: int) -> np.ndarray:
+        """Make predictions using ``result_template`` as a base and ``context`` as a context."""
+        index = result_template.index
+        start_idx = len(result_template) - prediction_size
+        end_idx = len(result_template)
+        for i in range(start_idx, end_idx):
+            for w in range(1, self.window + 1):
+                if self.seasonality == SeasonalityMode.month:
+                    prev_date = result_template.index[i] - pd.DateOffset(months=w)
+                elif self.seasonality == SeasonalityMode.year:
+                    prev_date = result_template.index[i] - pd.DateOffset(years=w)
+
+                result_template.loc[index[i]] += context.loc[prev_date]
+
+            result_template.loc[index[i]] = result_template.loc[index[i]] / self.window
+
+        result_values = result_template.values[-prediction_size:]
+        return result_values
+
     def forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
-        """
-        Compute predictions from a DeadlineMovingAverageModel.
+        """Compute autoregressive forecasts.
 
         Parameters
         ----------
-        df: pd.DataFrame
-            Used only for getting the horizon of forecast and timestamps.
+        df:
+            Features dataframe.
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
@@ -156,41 +174,67 @@ class _DeadlineMovingAverageModel:
         ------
         ValueError:
             if context isn't big enough
+        ValueError:
+            if forecast context contains NaNs
         """
         context_beginning = self._get_context_beginning(
             df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
         )
 
+        df = df.set_index("timestamp")
         df_history = df.iloc[:-prediction_size]
-        history_targets = df_history["target"]
-        history_timestamps = df_history["timestamp"]
-        history_targets = history_targets.loc[history_timestamps >= context_beginning]
-        history_timestamps = history_timestamps.loc[history_timestamps >= context_beginning]
-        future_timestamps = df["timestamp"].iloc[-prediction_size:]
+        history = df_history["target"]
+        history = history[history.index >= context_beginning]
+        if np.any(history.isnull()):
+            raise ValueError("There are NaNs in a forecast context, forecast method required context to filled!")
 
-        index = pd.date_range(start=context_beginning, end=future_timestamps.iloc[-1])
-        res = np.append(history_targets.values, np.zeros(prediction_size))
-        res = pd.DataFrame(res)
-        res.index = index
-        for i in range(len(history_targets), len(res)):
-            for w in range(1, self.window + 1):
-                if self.seasonality == SeasonalityMode.month:
-                    prev_date = res.index[i] - pd.DateOffset(months=w)
-                elif self.seasonality == SeasonalityMode.year:
-                    prev_date = res.index[i] - pd.DateOffset(years=w)
+        index = pd.date_range(start=context_beginning, end=df.index[-1], freq=self._freq)
+        result_template = np.append(history.values, np.zeros(prediction_size))
+        result_template = pd.Series(result_template, index=index)
+        result_values = self._make_predictions(
+            result_template=result_template, context=result_template, prediction_size=prediction_size
+        )
+        return result_values
 
-                if prev_date <= history_timestamps.iloc[-1]:
-                    res.loc[index[i]] += history_targets.loc[history_timestamps == prev_date].values
-                else:
-                    res.loc[index[i]] += res.loc[prev_date].values
+    def predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
+        """Compute predictions using true target data as context.
 
-            res.loc[index[i]] = res.loc[index[i]] / self.window
+        Parameters
+        ----------
+        df:
+            Features dataframe.
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
 
-        res = res.values.ravel()[-prediction_size:]
-        return res
+        Returns
+        -------
+        :
+            Array with predictions.
 
-    def predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
-        raise NotImplementedError("Method predict isn't currently implemented!")
+        Raises
+        ------
+        ValueError:
+            if context isn't big enough
+        ValueError:
+            if there are NaNs in a target column on timestamps that are required to make predictions
+        """
+        context_beginning = self._get_context_beginning(
+            df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
+        )
+
+        df = df.set_index("timestamp")
+        context = df["target"]
+        context = context[context.index >= context_beginning]
+        if np.any(np.isnan(context)):
+            raise ValueError("There are NaNs in a target column, predict method requires target to be filled!")
+
+        index = pd.date_range(start=df.index[-prediction_size], end=df.index[-1], freq=self._freq)
+        result_template = pd.Series(np.zeros(prediction_size), index=index)
+        result_values = self._make_predictions(
+            result_template=result_template, context=context, prediction_size=prediction_size
+        )
+        return result_values
 
     @property
     def context_size(self) -> int:
