@@ -9,11 +9,7 @@ generated_classes = []
 for class_name in pl_callbacks:
     
     class_ = deepcopy(getattr(__import__('pytorch_lightning.callbacks', fromlist=[class_name]), class_name))
-    # exec(f"{class_name} = type('{class_name}', class_.__bases__, dict(class_.__dict__))")
-    # exec(f"{class_name} = new_class('{class_name}', (class_,))")
-    # exec(f"class {class_name}(class_): pass")
-    
-    new_class = type('{class_name}', class_.__bases__, dict(class_.__dict__))
+    new_class = type(f'{class_name}', (class_,), {**dict(class_.__dict__), "__module__": __name__})
     
     globals()[class_name] = new_class
     if hasattr(class_, '__init__'):
