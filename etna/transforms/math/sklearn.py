@@ -63,15 +63,17 @@ class SklearnTransform(ReversibleTransform):
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
         self.transformer = transformer
+
         if isinstance(in_column, str):
             in_column = [in_column]
         self.in_column = in_column if in_column is None else sorted(in_column)
+
         self.inplace = inplace
         self.mode = TransformMode(mode)
         self.out_column = out_column
 
         self.out_columns: Optional[List[str]] = None
-        self.in_column_regressor: Optional[bool] = None
+        self.in_column_regressor: Optional[List[bool]] = None
 
     def _get_column_name(self, in_column: str) -> str:
         if self.out_column is None:
@@ -116,8 +118,8 @@ class SklearnTransform(ReversibleTransform):
 
     def fit(self, ts: TSDataset) -> "SklearnTransform":
         """Fit the transform."""
-        self.in_column_regressor = self.in_column in ts.regressors
         super().fit(ts)
+        self.in_column_regressor = [True if col in ts.regressors else False for col in self.in_column]  # type: ignore
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -243,4 +245,13 @@ class SklearnTransform(ReversibleTransform):
         if self.in_column_regressor is None:
             warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
 
-        return self.out_columns if self.in_column_regressor and not self.inplace else []  # type: ignore
+        info = []
+
+        if self.out_columns is not None and self.in_column_regressor is not None:
+            for i in range(len(self.out_columns)):
+                if self.in_column_regressor[i]:
+                    info.append(self.out_columns[i])
+        if not self.inplace:
+            return info
+        else:
+            return []
