@@ -6,7 +6,6 @@ from typing_extensions import get_args
 from etna.datasets import TSDataset
 from etna.models.base import ContextIgnorantModelType
 from etna.models.base import ContextRequiredModelType
-from etna.models.base import DeepBaseModel
 from etna.models.base import ModelType
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
@@ -60,10 +59,7 @@ class Pipeline(BasePipeline):
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
 
-        if isinstance(self.model, DeepBaseModel):
-            future = self.ts.make_future(future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length)
-            predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
-        elif isinstance(self.model, get_args(ContextRequiredModelType)):
+        if isinstance(self.model, get_args(ContextRequiredModelType)):
             self.model = cast(ContextRequiredModelType, self.model)
             future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
             predictions = self.model.forecast(ts=future, prediction_size=self.horizon)

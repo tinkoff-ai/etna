@@ -8,7 +8,6 @@ from typing_extensions import get_args
 from etna.datasets import TSDataset
 from etna.models.base import ContextIgnorantModelType
 from etna.models.base import ContextRequiredModelType
-from etna.models.base import DeepBaseModel
 from etna.models.base import ModelType
 from etna.pipeline.base import BasePipeline
 from etna.transforms import Transform
@@ -137,12 +136,7 @@ class AutoRegressivePipeline(BasePipeline):
                     action="ignore",
                 )
 
-                if isinstance(self.model, DeepBaseModel):
-                    current_ts_forecast = current_ts.make_future(
-                        future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length
-                    )
-                    current_ts_future = self.model.forecast(ts=current_ts_forecast, prediction_size=current_step)
-                elif isinstance(self.model, get_args(ContextRequiredModelType)):
+                if isinstance(self.model, get_args(ContextRequiredModelType)):
                     self.model = cast(ContextRequiredModelType, self.model)
                     current_ts_forecast = current_ts.make_future(
                         future_steps=current_step, tail_steps=self.model.context_size

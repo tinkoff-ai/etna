@@ -22,7 +22,6 @@ from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
-from etna.models.base import DeepBaseModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -122,20 +121,6 @@ def test_private_forecast_context_required_model(model_class):
     _ = pipeline._forecast()
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
-    model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
-
-
-def test_private_forecast_deep_base_model():
-    ts = MagicMock(spec=TSDataset)
-    model = MagicMock(spec=DeepBaseModel)
-    model.encoder_length = MagicMock()
-    model.decoder_length = MagicMock()
-
-    pipeline = Pipeline(model=model, horizon=5)
-    pipeline.fit(ts)
-    _ = pipeline._forecast()
-
-    ts.make_future.assert_called_with(future_steps=model.decoder_length, tail_steps=model.encoder_length)
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
 
 
