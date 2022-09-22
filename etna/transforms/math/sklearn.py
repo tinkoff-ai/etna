@@ -120,6 +120,11 @@ class SklearnTransform(ReversibleTransform):
         """Fit the transform."""
         super().fit(ts)
         self.in_column_regressor = [True if col in ts.regressors else False for col in self.in_column]  # type: ignore
+        self.out_column_regresors = [
+            self._get_column_name(in_column)
+            for in_column in self.in_column  # type: ignore
+            if in_column in ts.regressors
+        ]
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -245,13 +250,7 @@ class SklearnTransform(ReversibleTransform):
         if self.in_column_regressor is None:
             warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
 
-        info = []
-
-        if self.out_columns is not None and self.in_column_regressor is not None:
-            for i in range(len(self.out_columns)):
-                if self.in_column_regressor[i]:
-                    info.append(self.out_columns[i])
         if not self.inplace:
-            return info
+            return self.out_column_regresors
         else:
             return []
