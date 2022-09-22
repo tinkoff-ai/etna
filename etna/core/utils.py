@@ -25,3 +25,15 @@ def init_collector(init: Callable) -> Callable:
         return init(self, *args, **kwargs)
 
     return wrapper
+
+
+def create_type_with_init_collector(type_: type) -> type:
+    """Create type with init decorated with init_collector."""
+    previous_frame = inspect.stack()[1]
+    module = inspect.getmodule(previous_frame[0])
+    if module is None:
+        return type_
+    new_type = type(type_.__name__, (type_,), {"__module__": module.__name__})
+    if hasattr(type_, "__init__"):
+        new_type.__init__ = init_collector(new_type.__init__)  # type: ignore
+    return new_type
