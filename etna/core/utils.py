@@ -5,7 +5,10 @@ from typing import Callable
 
 
 def init_collector(init: Callable) -> Callable:
-    """Make decorator for collecting init parameters."""
+    """
+    Make decorator for collecting init parameters.
+    N.B. if init method has positional only parameters, they will be ignored.
+    """
 
     @wraps(init)
     def wrapper(*args, **kwargs):
