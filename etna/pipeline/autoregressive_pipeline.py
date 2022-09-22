@@ -136,11 +136,6 @@ class AutoRegressivePipeline(BasePipeline):
                     action="ignore",
                 )
 
-                # if isinstance(self.model, DeepBaseModel):
-                #     current_ts_forecast = current_ts.make_future(
-                #         future_steps=self.model.decoder_length, tail_steps=self.model.encoder_length
-                #     )
-                #     current_ts_future = self.model.forecast(ts=current_ts_forecast, prediction_size=current_step)
                 if isinstance(self.model, get_args(ContextRequiredModelType)):
                     self.model = cast(ContextRequiredModelType, self.model)
                     current_ts_forecast = current_ts.make_future(
