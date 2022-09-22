@@ -1,10 +1,11 @@
 import inspect
 from copy import deepcopy
 from functools import wraps
+from typing import Callable
 
 
-def init_collector(init):
-    """42."""
+def init_collector(init: Callable) -> Callable:
+    """Make decorator for collecting init parameters."""
 
     @wraps(init)
     def wrapper(*args, **kwargs):
