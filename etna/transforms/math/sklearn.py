@@ -73,7 +73,7 @@ class SklearnTransform(ReversibleTransform):
         self.out_column = out_column
 
         self.out_columns: Optional[List[str]] = None
-        self.in_column_regressor: Optional[List[bool]] = None
+        self.out_column_regressors: Optional[List[str]] = None
 
     def _get_column_name(self, in_column: str) -> str:
         if self.out_column is None:
@@ -119,11 +119,10 @@ class SklearnTransform(ReversibleTransform):
     def fit(self, ts: TSDataset) -> "SklearnTransform":
         """Fit the transform."""
         super().fit(ts)
-        self.in_column_regressor = [True if col in ts.regressors else False for col in self.in_column]  # type: ignore
-        self.out_column_regresors = [
-            self._get_column_name(in_column)
-            for in_column in self.in_column  # type: ignore
-            if in_column in ts.regressors
+        if self.in_column is None:
+            raise ValueError("Something went wrong during the fit, cat not recognize in_column!")
+        self.out_column_regressors = [
+            self._get_column_name(in_column) for in_column in self.in_column if in_column in ts.regressors
         ]
         return self
 
@@ -247,10 +246,9 @@ class SklearnTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
-
-        if not self.inplace:
-            return self.out_column_regresors
-        else:
+        if self.inplace:
             return []
+        if self.out_column_regressors is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            return []
+        return self.out_column_regressors
