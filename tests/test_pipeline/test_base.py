@@ -48,7 +48,7 @@ class DummyPipeline(BasePipeline):
     ],
 )
 @pytest.mark.parametrize(
-    "ts", [TSDataset(df=TSDataset.to_dataset(generate_ar_df(start_time="2020-01-01", periods=5)), freq="D")]
+    "ts", [TSDataset(df=TSDataset.to_dataset(generate_ar_df(start_time="2020-01-01", periods=50)), freq="D")]
 )
 def test_predict_pass_params(ts, start_timestamp, end_timestamp, prediction_interval, quantiles):
     pipeline = DummyPipeline(horizon=5)
