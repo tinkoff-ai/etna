@@ -45,7 +45,7 @@ class DummyTransform(SklearnTransform):
 
 
 @pytest.fixture
-def normal_distributed_df() -> pd.DataFrame:
+def normal_distributed_ts() -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
     generator = np.random.RandomState(seed=1)
@@ -56,7 +56,9 @@ def normal_distributed_df() -> pd.DataFrame:
     df_2["target"] = generator.normal(loc=5, scale=1, size=len(df_2))
     df_2["exog"] = generator.normal(loc=3, scale=1, size=len(df_2))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    return TSDataset.to_dataset(classic_df)
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df, freq="1d")
+    return ts
 
 
 @pytest.mark.parametrize(
@@ -73,12 +75,13 @@ def normal_distributed_df() -> pd.DataFrame:
     ),
 )
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler, mode):
+def test_dummy_inverse_transform_all_columns(normal_distributed_ts, scaler, mode):
     """Check that `inverse_transform(transform(df)) == df` for all columns."""
     scaler.mode = TransformMode(mode)
-    feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
-    inversed_df = scaler.inverse_transform(df=feature_df.copy())
-    npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
+    original_df = normal_distributed_ts.to_pandas()
+    feature_ts = scaler.fit_transform(ts=normal_distributed_ts)
+    inversed_df = scaler.inverse_transform(ts=feature_ts).to_pandas()
+    npt.assert_array_almost_equal(original_df.values, inversed_df.values)
 
 
 @pytest.mark.parametrize(
@@ -95,12 +98,13 @@ def test_dummy_inverse_transform_all_columns(normal_distributed_df, scaler, mode
     ),
 )
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler, mode):
+def test_dummy_inverse_transform_one_column(normal_distributed_ts, scaler, mode):
     """Check that `inverse_transform(transform(df)) == df` for one column."""
     scaler.mode = TransformMode(mode)
-    feature_df = scaler.fit_transform(df=normal_distributed_df.copy())
-    inversed_df = scaler.inverse_transform(df=feature_df)
-    npt.assert_array_almost_equal(normal_distributed_df.values, inversed_df.values)
+    original_df = normal_distributed_ts.to_pandas()
+    feature_ts = scaler.fit_transform(ts=normal_distributed_ts)
+    inversed_df = scaler.inverse_transform(ts=feature_ts).to_pandas()
+    npt.assert_array_almost_equal(original_df.values, inversed_df.values)
 
 
 @pytest.mark.parametrize(
@@ -117,13 +121,14 @@ def test_dummy_inverse_transform_one_column(normal_distributed_df, scaler, mode)
     ),
 )
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
+def test_inverse_transform_not_inplace(normal_distributed_ts, scaler, mode):
     """Check that inversed values the same for not inplace version."""
     not_inplace_scaler = scaler(inplace=False, mode=mode)
-    columns_to_compare = normal_distributed_df.columns
-    transformed_df = not_inplace_scaler.fit_transform(df=normal_distributed_df.copy())
-    inverse_transformed_df = not_inplace_scaler.inverse_transform(transformed_df)
-    assert np.all(inverse_transformed_df[columns_to_compare] == normal_distributed_df)
+    columns_to_compare = normal_distributed_ts.columns
+    original_df = normal_distributed_ts.to_pandas()
+    transformed_ts = not_inplace_scaler.fit_transform(ts=normal_distributed_ts)
+    inverse_transformed_df = not_inplace_scaler.inverse_transform(transformed_ts).to_pandas()
+    assert np.all(inverse_transformed_df[columns_to_compare] == original_df)
 
 
 @pytest.mark.parametrize(
@@ -142,4 +147,4 @@ def test_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
 def test_fit_transform_with_nans(scaler, mode, ts_diff_endings):
     preprocess = scaler(in_column="target", mode=mode)
-    ts_diff_endings.fit_transform([preprocess])
+    preprocess.fit_transform(ts_diff_endings)

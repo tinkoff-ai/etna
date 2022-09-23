@@ -11,7 +11,8 @@ from sklearn.base import TransformerMixin
 
 from etna.core import StringEnumWithRepr
 from etna.datasets import set_columns_wide
-from etna.transforms.base import Transform
+from etna.datasets import TSDataset
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -22,7 +23,7 @@ class TransformMode(StringEnumWithRepr):
     per_segment = "per-segment"
 
 
-class SklearnTransform(Transform):
+class SklearnTransform(ReversibleTransform):
     """Base class for different sklearn transforms."""
 
     def __init__(
@@ -58,6 +59,7 @@ class SklearnTransform(Transform):
         ValueError:
             if incorrect mode given
         """
+        super().__init__(required_features="all")
         if inplace and (out_column is not None):
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
 
@@ -72,6 +74,7 @@ class SklearnTransform(Transform):
         self.out_column = out_column
 
         self.out_columns: Optional[List[str]] = None
+        self.out_column_regressors: Optional[List[str]] = None
 
     def _get_column_name(self, in_column: str) -> str:
         if self.out_column is None:
@@ -81,7 +84,7 @@ class SklearnTransform(Transform):
         else:
             return f"{self.out_column}_{in_column}"
 
-    def fit(self, df: pd.DataFrame) -> "SklearnTransform":
+    def _fit(self, df: pd.DataFrame) -> "SklearnTransform":
         """
         Fit transformer with data from df.
 
@@ -114,7 +117,17 @@ class SklearnTransform(Transform):
         self.transformer.fit(X=x)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def fit(self, ts: TSDataset) -> "SklearnTransform":
+        """Fit the transform."""
+        super().fit(ts)
+        if self.in_column is None:
+            raise ValueError("Something went wrong during the fit, cat not recognize in_column!")
+        self.out_column_regressors = [
+            self._get_column_name(in_column) for in_column in self.in_column if in_column in ts.regressors
+        ]
+        return self
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform given data with fitted transformer.
 
@@ -153,7 +166,7 @@ class SklearnTransform(Transform):
 
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Apply inverse transformation to DataFrame.
 
@@ -235,3 +248,12 @@ class SklearnTransform(Transform):
             [transformed[i * time_period_len : (i + 1) * time_period_len, :] for i in range(n_segments)], axis=1
         )
         return transformed
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.inplace:
+            return []
+        if self.out_column_regressors is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            return []
+        return self.out_column_regressors
