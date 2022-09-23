@@ -52,6 +52,8 @@ class BaseMixin:
             model_parameters = value.get_params()
             answer.update(model_parameters)
             return answer
+        elif hasattr(value, "_init_params"):
+            return {"_target_": BaseMixin._get_target_from_class(value), **value._init_params}
         elif isinstance(value, (str, float, int)):
             return value
         elif isinstance(value, List):

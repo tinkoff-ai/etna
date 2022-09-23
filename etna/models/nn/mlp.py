@@ -57,7 +57,7 @@ class MLPNet(DeepBaseNet):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.lr = lr
-        self.loss = nn.MSELoss() if loss is None else loss
+        self.loss = loss
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
         layers = [nn.Linear(in_features=input_size, out_features=hidden_size[0]), nn.ReLU()]
         for i in range(1, len(hidden_size)):
@@ -165,24 +165,6 @@ class MLPModel(DeepBaseModel):
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
     ):
-        super().__init__(
-            net=MLPNet(
-                input_size=input_size,
-                hidden_size=hidden_size,
-                lr=lr,
-                loss=loss,  # type: ignore
-                optimizer_params=optimizer_params,
-            ),
-            encoder_length=encoder_length,
-            decoder_length=decoder_length,
-            train_batch_size=train_batch_size,
-            test_batch_size=test_batch_size,
-            train_dataloader_params=train_dataloader_params,
-            test_dataloader_params=test_dataloader_params,
-            val_dataloader_params=val_dataloader_params,
-            trainer_params=trainer_params,
-            split_params=split_params,
-        )
         """Init MLP model.
         Parameters
         ----------
@@ -218,3 +200,26 @@ class MLPModel(DeepBaseModel):
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.lr = lr
+        self.loss = loss
+        self.optimizer_params = optimizer_params
+        super().__init__(
+            net=MLPNet(
+                input_size=input_size,
+                hidden_size=hidden_size,
+                lr=lr,
+                loss=nn.MSELoss() if loss is None else loss,
+                optimizer_params=optimizer_params,
+            ),
+            encoder_length=encoder_length,
+            decoder_length=decoder_length,
+            train_batch_size=train_batch_size,
+            test_batch_size=test_batch_size,
+            train_dataloader_params=train_dataloader_params,
+            test_dataloader_params=test_dataloader_params,
+            val_dataloader_params=val_dataloader_params,
+            trainer_params=trainer_params,
+            split_params=split_params,
+        )
