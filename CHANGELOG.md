@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
 - `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
 - 
-- 
+- Add `predict` method to pipelines ([#954](https://github.com/tinkoff-ai/etna/pull/954))
 - Implement predict method in `SARIMAXModel`, `AutoARIMAModel`, `SeasonalMovingAverageModel`, `DeadlineMovingAverageModel` ([#948](https://github.com/tinkoff-ai/etna/pull/948))
 - Make `SeasonalMovingAverageModel` and `DeadlineMovingAverageModel` to work with context ([#917](https://github.com/tinkoff-ai/etna/pull/917))
 - 
