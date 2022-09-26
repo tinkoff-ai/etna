@@ -246,7 +246,7 @@ class TSDataset:
                             f"NaN-s will be used for missing values"
                         )
 
-        # Here only df if required, other metadata is not necessary to build the dataset
+        # Here only df is required, other metadata is not necessary to build the dataset
         ts = TSDataset(df=df, freq=self.freq)
         for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
