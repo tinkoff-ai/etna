@@ -1,9 +1,7 @@
 import warnings
 from typing import Sequence
-from typing import cast
 
 import pandas as pd
-from typing_extensions import get_args
 
 from etna.datasets import TSDataset
 from etna.models.base import ContextIgnorantModelType
@@ -95,7 +93,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         self.ts = ts
         ts.fit_transform(self.transforms)
         self.model.fit(ts)
-        self.ts.inverse_transform()
+        self.ts.inverse_transform(self.transforms)
         return self
 
     def _create_predictions_template(self) -> pd.DataFrame:
@@ -127,9 +125,6 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
                 df_exog=self.ts.df_exog,
                 known_future=self.ts.known_future,
             )
-            # manually set transforms in current_ts, otherwise make_future won't know about them
-            current_ts.transforms = self.transforms
-
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     message="TSDataset freq can't be inferred",
@@ -143,12 +138,12 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
                 if isinstance(self.model, get_args(ContextRequiredModelType)):
                     self.model = cast(ContextRequiredModelType, self.model)
                     current_ts_forecast = current_ts.make_future(
-                        future_steps=current_step, tail_steps=self.model.context_size
+                        future_steps=current_step, tail_steps=self.model.context_size, transforms=self.transforms
                     )
                     current_ts_future = self.model.forecast(ts=current_ts_forecast, prediction_size=current_step)
                 else:
                     self.model = cast(ContextIgnorantModelType, self.model)
-                    current_ts_forecast = current_ts.make_future(future_steps=current_step)
+                    current_ts_forecast = current_ts.make_future(future_steps=current_step, transforms=self.transforms)
                     current_ts_future = self.model.forecast(ts=current_ts_forecast)
 
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
@@ -158,7 +153,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
             df=prediction_df, freq=self.ts.freq, df_exog=self.ts.df_exog, known_future=self.ts.known_future
         )
         prediction_ts.transform(self.transforms)
-        prediction_ts.inverse_transform()
+        prediction_ts.inverse_transform(self.transforms)
         # cut only last timestamps from result dataset
         prediction_ts.df = prediction_ts.df.tail(self.horizon)
         prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)

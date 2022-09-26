@@ -82,7 +82,6 @@ def linear_segments_ts_common(random_seed):
     return linear_segments_by_parameters(alpha_values, intercept_values)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", (LinearPerSegmentModel(), ElasticPerSegmentModel()))
 def test_not_fitted(model, linear_segments_ts_unique):
     """Check exception when trying to forecast with unfitted model."""
@@ -90,7 +89,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
     lags = LagTransform(in_column="target", lags=[3, 4, 5])
     train.fit_transform([lags])
 
-    to_forecast = train.make_future(3)
+    to_forecast = train.make_future(3, transforms=[lags])
     with pytest.raises(ValueError, match="model is not fitted!"):
         model.forecast(to_forecast)
 
@@ -123,7 +122,6 @@ def test_repr_elastic(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), ElasticPerSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
@@ -140,14 +138,14 @@ def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
 
     model.fit(train)
 
-    to_forecast = train.make_future(horizon)
+    to_forecast = train.make_future(horizon, transforms=[lags])
     res = model.forecast(to_forecast)
+    res.inverse_transform([lags])
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearMultiSegmentModel(), ElasticMultiSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
@@ -164,14 +162,14 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
 
     model.fit(train)
 
-    to_forecast = train.make_future(horizon)
+    to_forecast = train.make_future(horizon, transforms=[lags])
     res = model.forecast(to_forecast)
+    res.inverse_transform([lags])
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])
 def test_no_warning_on_categorical_features(example_tsds, model):
     """Check that SklearnModel raises no warning working with dataset with categorical features"""
@@ -196,7 +194,7 @@ def test_no_warning_on_categorical_features(example_tsds, model):
         == 0
     )
 
-    to_forecast = example_tsds.make_future(horizon)
+    to_forecast = example_tsds.make_future(horizon, transforms=[lags, dateflags])
     with pytest.warns(None) as record:
         _ = model.forecast(to_forecast)
     assert (
@@ -213,7 +211,6 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     )
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])
 def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
     """Check that SklearnModel raises error working with dataset with categorical features which can't be converted to numeric"""
@@ -248,7 +245,6 @@ def test_get_model_per_segment_before_training():
         _ = etna_model.get_model()
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "etna_class,expected_model_class",
     (

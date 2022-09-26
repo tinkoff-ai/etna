@@ -75,7 +75,6 @@ def test_init_fail(horizon):
         )
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_fit(example_tsds):
     """Test that Pipeline correctly transforms dataset on fit stage."""
     original_ts = deepcopy(example_tsds)
@@ -84,7 +83,7 @@ def test_fit(example_tsds):
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
     pipeline.fit(example_tsds)
     original_ts.fit_transform(transforms)
-    original_ts.inverse_transform()
+    original_ts.inverse_transform(transforms)
     assert np.all(original_ts.df.values == pipeline.ts.df.values)
 
 
@@ -125,7 +124,7 @@ def test_private_forecast_context_required_model(model_class):
     pipeline.fit(ts)
     _ = pipeline._forecast()
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=[], tail_steps=model.context_size)
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
 
 
@@ -137,7 +136,7 @@ def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=[])
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975))
 
 
@@ -149,7 +148,7 @@ def test_forecast_with_intervals_prediction_interval_context_required_model():
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=[], tail_steps=model.context_size)
     model.forecast.assert_called_with(
         ts=ts.make_future(), prediction_size=pipeline.horizon, prediction_interval=True, quantiles=(0.025, 0.975)
     )
@@ -182,13 +181,13 @@ def test_forecast(example_tsds):
 
     original_ts.fit_transform(transforms)
     model.fit(original_ts)
-    future = original_ts.make_future(5)
+    future = original_ts.make_future(5, transforms=transforms)
     forecast_manual = model.forecast(future)
+    forecast_manual.inverse_transform(transforms)
 
     assert np.all(forecast_pipeline.df.values == forecast_manual.df.values)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "quantiles,prediction_interval_cv,error_msg",
     (
@@ -222,7 +221,6 @@ def test_forecast_prediction_interval_builtin(example_tsds, model):
     assert forecast_model.df.equals(forecast_pipeline.df)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_interface(example_tsds, model):
     """Test the forecast interface for the models without built-in prediction intervals."""
@@ -384,7 +382,6 @@ def test_generate_constant_timeranges_hours():
             assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "aggregate_metrics,expected_columns",
     (
@@ -410,7 +407,6 @@ def test_get_metrics_interface(
     assert sorted(expected_columns) == sorted(metrics_df.columns)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_get_forecasts_interface_daily(catboost_pipeline: Pipeline, big_daily_example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns forecasts in correct format."""
     _, forecast, _ = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
@@ -420,7 +416,6 @@ def test_get_forecasts_interface_daily(catboost_pipeline: Pipeline, big_daily_ex
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_get_forecasts_interface_hours(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns forecasts in correct format with non-daily seasonality."""
     _, forecast, _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
@@ -430,7 +425,6 @@ def test_get_forecasts_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_get_fold_info_interface_daily(catboost_pipeline: Pipeline, big_daily_example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe in correct format."""
     _, _, info_df = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
@@ -438,7 +432,6 @@ def test_get_fold_info_interface_daily(catboost_pipeline: Pipeline, big_daily_ex
     assert expected_columns == sorted(info_df.columns)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe in correct format with non-daily seasonality."""
     _, _, info_df = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
@@ -474,11 +467,10 @@ def test_forecast_raise_error_if_not_fitted():
         _ = pipeline.forecast()
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
-def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
+def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
     pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
-    pipeline.fit(TSDataset(df_with_nans_in_tails, freq="1H"))
+    pipeline.fit(ts_with_nans_in_tails)
     forecast = pipeline.forecast()
     assert len(forecast.df) == 5
 
@@ -631,7 +623,6 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
 
 
 @pytest.mark.long_1
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_backtest_pass_with_filter_transform(ts_with_feature):
     ts = ts_with_feature
 
