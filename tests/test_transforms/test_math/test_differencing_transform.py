@@ -125,15 +125,14 @@ def check_inverse_transform_inplace_train(transform: GeneralDifferencingTransfor
 
 
 def check_inverse_transform_inplace_test(
-    transform: GeneralDifferencingTransform, period: int, order: int, df: pd.DataFrame
+    transform: GeneralDifferencingTransform, period: int, order: int, ts: TSDataset
 ):
     """Check that differencing transform correctly makes inverse_transform on test data in inplace mode."""
-    ts = TSDataset(df, freq="D")
     ts_train, ts_test = ts.train_test_split(test_size=20)
     ts_train.fit_transform(transforms=[transform])
 
     # make predictions by hand taking into account the nature of df_nans
-    future_ts = ts_train.make_future(20)
+    future_ts = ts_train.make_future(20, transforms=[transform])
     if order == 1:
         future_ts.df.loc[:, pd.IndexSlice["1", "target"]] = 1 * period
         future_ts.df.loc[:, pd.IndexSlice["2", "target"]] = 2 * period
@@ -144,21 +143,21 @@ def check_inverse_transform_inplace_test(
         raise ValueError("Wrong order")
 
     # check values from inverse_transform
-    future_ts.inverse_transform()
+    future_ts.inverse_transform([transform])
     assert np.all(future_ts.to_pandas() == ts_test.to_pandas())
 
 
-def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencingTransform, df: pd.DataFrame):
+def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencingTransform, ts: TSDataset):
     """Check that differencing transform correctly makes inverse_transform on test data with quantiles."""
-    ts = TSDataset(df, freq="D")
     ts_train, ts_test = ts.train_test_split(test_size=20)
     ts_train.fit_transform(transforms=[transform])
     model = ProphetModel()
     model.fit(ts_train)
 
     # make predictions by Prophet with prediction interval
-    future_ts = ts_train.make_future(20)
+    future_ts = ts_train.make_future(20, transforms=[transform])
     predict_ts = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+    predict_ts.inverse_transform([transform])
 
     # check that predicted value is within the interval
     for segment in predict_ts.segments:
@@ -166,10 +165,9 @@ def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencin
         assert np.all(predict_ts[:, segment, "target"] <= predict_ts[:, segment, "target_0.975"])
 
 
-def check_backtest_sanity(transform: GeneralDifferencingTransform, df: pd.DataFrame):
+def check_backtest_sanity(transform: GeneralDifferencingTransform, ts: TSDataset):
     """Check that differencing transform correctly works in backtest."""
     # create pipeline with linear model
-    ts = TSDataset(df, freq="D")
     model = LinearPerSegmentModel()
     pipeline = Pipeline(
         model=model, transforms=[LagTransform(in_column="target", lags=[7, 8, 9]), transform], horizon=7
@@ -353,7 +351,6 @@ def test_general_inverse_transform_fail_not_all_test(transform, ts_nans):
         transform.inverse_transform(ts_nans)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "transform",
     [
@@ -361,16 +358,16 @@ def test_general_inverse_transform_fail_not_all_test(transform, ts_nans):
         DifferencingTransform(in_column="target", period=1, order=1, inplace=True),
     ],
 )
-def test_general_inverse_transform_fail_test_not_right_after_train(transform, df_nans):
+def test_general_inverse_transform_fail_test_not_right_after_train(transform, ts_nans):
     """Test that differencing transform fails to make inverse_transform on not adjacent test data."""
-    ts = TSDataset(df_nans, freq="D")
+    ts = ts_nans
     ts_train, ts_test = ts.train_test_split(test_size=10)
     ts_train.fit_transform(transforms=[transform])
-    future_ts = ts_train.make_future(10)
-    future_df = future_ts.to_pandas()
+    future_ts = ts_train.make_future(10, transforms=[transform])
+    future_ts_cropped = TSDataset(future_ts.to_pandas().iloc[1:], freq=future_ts.freq)
 
     with pytest.raises(ValueError, match="Test should go after the train without gaps"):
-        _ = transform.inverse_transform(future_df.iloc[1:])
+        _ = transform.inverse_transform(future_ts_cropped)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -403,7 +400,6 @@ def test_full_inverse_transform_inplace_train(period, order, ts_nans):
     check_inverse_transform_inplace_train(transform, ts_nans)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "transform",
     [
@@ -411,76 +407,72 @@ def test_full_inverse_transform_inplace_train(period, order, ts_nans):
         DifferencingTransform(in_column="target", period=1, order=1, inplace=True),
     ],
 )
-def test_general_inverse_transform_inplace_test_fail_nans(transform, df_nans):
+def test_general_inverse_transform_inplace_test_fail_nans(transform, ts_nans):
     """Test that differencing transform fails to make inverse_transform on test data if there are NaNs."""
-    ts = TSDataset(df_nans, freq="D")
+    ts = ts_nans
     ts_train, ts_test = ts.train_test_split(test_size=20)
 
     ts_train.fit_transform(transforms=[transform])
 
     # make predictions by hand only on one segment
-    future_ts = ts_train.make_future(20)
+    future_ts = ts_train.make_future(20, transforms=[transform])
     future_ts.df.loc[:, pd.IndexSlice["1", "target"]] = np.NaN
     future_ts.df.loc[:, pd.IndexSlice["2", "target"]] = 2
 
     # check fail on inverse_transform
     with pytest.raises(ValueError, match="There should be no NaNs inside the segments"):
-        future_ts.inverse_transform()
+        future_ts.inverse_transform([transform])
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_inverse_transform_inplace_test(period, df_nans):
+def test_single_inverse_transform_inplace_test(period, ts_nans):
     """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data in inplace mode."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_inverse_transform_inplace_test(transform, period, 1, df_nans)
+    check_inverse_transform_inplace_test(transform, period, 1, ts_nans)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
-def test_full_inverse_transform_inplace_test(period, order, df_nans):
+def test_full_inverse_transform_inplace_test(period, order, ts_nans):
     """Test that DifferencingTransform correctly makes inverse_transform on test data in inplace mode."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
-    check_inverse_transform_inplace_test(transform, period, order, df_nans)
+    check_inverse_transform_inplace_test(transform, period, order, ts_nans)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_inverse_transform_inplace_test_quantiles(period, df_nans_with_noise):
+def test_single_inverse_transform_inplace_test_quantiles(period, ts_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data with quantiles."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_inverse_transform_inplace_test_quantiles(transform, df_nans_with_noise)
+    check_inverse_transform_inplace_test_quantiles(transform, ts_nans_with_noise)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
-def test_full_inverse_transform_inplace_test_quantiles(period, order, df_nans_with_noise):
+def test_full_inverse_transform_inplace_test_quantiles(period, order, ts_nans_with_noise):
     """Test that DifferencingTransform correctly makes inverse_transform on test data with quantiles."""
     transform = DifferencingTransform(in_column="target", period=period, order=2, inplace=True)
-    check_inverse_transform_inplace_test_quantiles(transform, df_nans_with_noise)
+    check_inverse_transform_inplace_test_quantiles(transform, ts_nans_with_noise)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_backtest_sanity(period, df_nans_with_noise):
+def test_single_backtest_sanity(period, ts_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly works in backtest."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_backtest_sanity(transform, df_nans_with_noise)
+    check_backtest_sanity(transform, ts_nans_with_noise)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
-def test_full_backtest_sanity(period, order, df_nans_with_noise):
+def test_full_backtest_sanity(period, order, ts_nans_with_noise):
     """Test that DifferencingTransform correctly works in backtest."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
-    check_backtest_sanity(transform, df_nans_with_noise)
+    check_backtest_sanity(transform, ts_nans_with_noise)
 
 
 @pytest.mark.parametrize("inplace", [False, True])
-def test_save_load(inplace, df_nans):
-    ts = TSDataset(df=df_nans, freq="D")
+def test_save_load(inplace, ts_nans):
+    ts = ts_nans
     transform = DifferencingTransform(in_column="target", inplace=inplace)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)

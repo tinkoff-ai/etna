@@ -633,8 +633,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :]
 
-        future_ts.inverse_transform()
-
         return future_ts
 
     @log_decorator

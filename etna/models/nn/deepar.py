@@ -129,8 +129,9 @@ class DeepARModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorant
     @staticmethod
     def _get_pf_transform(ts: TSDataset) -> PytorchForecastingTransform:
         """Get PytorchForecastingTransform from ts.transforms or raise exception if not found."""
-        if ts.transforms is not None and isinstance(ts.transforms[-1], PytorchForecastingTransform):
-            return ts.transforms[-1]
+        # TODO: TSDataset does not have "transform" attribute anymore
+        if ts.transforms is not None and isinstance(ts.transforms[-1], PytorchForecastingTransform):  # type: ignore
+            return ts.transforms[-1]  # type: ignore
         else:
             raise ValueError(
                 "Not valid usage of transforms, please add PytorchForecastingTransform at the end of transforms"
@@ -240,7 +241,6 @@ class DeepARModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorant
             df = df.sort_index(axis=1)
             ts.df = df
 
-        ts.inverse_transform()
         return ts
 
     @log_decorator

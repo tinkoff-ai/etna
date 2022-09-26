@@ -141,7 +141,6 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     assert df_inverse_transformed["target"].equals(df["target"])
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model_stl", ["arima", "holt"])
 def test_forecast(ts_trend_seasonal, model_stl):
     """Test that transform works correctly in forecast."""
@@ -155,8 +154,9 @@ def test_forecast(ts_trend_seasonal, model_stl):
     transform.fit_transform(ts_train)
     model = NaiveModel()
     model.fit(ts_train)
-    ts_future = ts_train.make_future(future_steps=3, tail_steps=model.context_size)
+    ts_future = ts_train.make_future(future_steps=3, transforms=[transform], tail_steps=model.context_size)
     ts_forecast = model.forecast(ts_future, prediction_size=3)
+    ts_forecast.inverse_transform([transform])
     for segment in ts_forecast.segments:
         np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.1)
 
