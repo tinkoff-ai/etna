@@ -178,7 +178,9 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0) -> "TSDataset":
+    def make_future(
+        self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
+    ) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
@@ -244,6 +246,7 @@ class TSDataset:
                             f"NaN-s will be used for missing values"
                         )
 
+        # Here only df if required, other metadata is not necessary to build the dataset
         ts = TSDataset(df=df, freq=self.freq)
         for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
