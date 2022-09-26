@@ -14,6 +14,7 @@ from etna.transforms.math.statistics import MADTransform
 from etna.transforms.math.statistics import MaxTransform
 from etna.transforms.math.statistics import MeanTransform
 from etna.transforms.math.statistics import MedianTransform
+from etna.transforms.math.statistics import MinMaxDifferenceTransform
 from etna.transforms.math.statistics import MinTransform
 from etna.transforms.math.statistics import QuantileTransform
 from etna.transforms.math.statistics import StdTransform
