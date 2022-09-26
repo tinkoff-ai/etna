@@ -7,12 +7,12 @@ from typing import Union
 
 from etna.models.base import BaseModel
 from etna.pipeline.pipeline import Pipeline
-from etna.transforms import Transform
+from etna.transforms import NewTransform
 
 
 def assemble_pipelines(
     models: Union[BaseModel, Sequence[BaseModel]],
-    transforms: Sequence[Union[Transform, Sequence[Optional[Transform]]]],
+    transforms: Sequence[Union[NewTransform, Sequence[Optional[NewTransform]]]],
     horizons: Union[int, Sequence[int]],
 ) -> List[Pipeline]:
     """Create pipelines with broadcasting from models, transforms and horizons.
@@ -93,7 +93,7 @@ def assemble_pipelines(
         for transform in transforms:
             if isinstance(transform, Sequence) and transform[i] is not None:
                 transfoms_pipelines[-1].append(transform[i])
-            elif isinstance(transform, Transform) and transform is not None:
+            elif isinstance(transform, NewTransform) and transform is not None:
                 transfoms_pipelines[-1].append(transform)
 
     return [
