@@ -459,12 +459,11 @@ def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
         ts_diff_endings.make_future(10)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_make_future_with_imputer(ts_diff_endings, ts_future):
     imputer = TimeSeriesImputerTransform(in_column="target")
     ts_diff_endings.fit_transform([imputer])
-    future = ts_diff_endings.make_future(10)
-    assert_frame_equal(future.df, ts_future.df)
+    future = ts_diff_endings.make_future(10, transforms=[imputer])
+    assert_frame_equal(future.to_pandas(), ts_future.to_pandas())
 
 
 def test_make_future():
@@ -834,7 +833,6 @@ def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
     assert ts_slice.known_future == tsdf_with_exog.known_future
     assert ts_slice.regressors == tsdf_with_exog.regressors
-    assert ts_slice.transforms == tsdf_with_exog.transforms
     pd.testing.assert_frame_equal(ts_slice.df, tsdf_with_exog.df.iloc[start_idx:end_idx])
     pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
 
