@@ -1,20 +1,12 @@
 from typing import Sequence
 from unittest.mock import MagicMock
 
-import numpy as np
 import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.pipeline.base import BasePipeline
-
-
-@pytest.fixture
-def ts_with_different_beginnings(example_tsds):
-    df = example_tsds.to_pandas()
-    df.iloc[:5, 0] = np.NaN
-    return TSDataset(df=df, freq="D")
 
 
 class DummyPipeline(BasePipeline):
@@ -77,7 +69,7 @@ def test_predict_fail_not_fitted():
         _ = pipeline.predict()
 
 
-@pytest.mark.parametrize("ts_name", ["example_tsds", "ts_with_different_beginnings"])
+@pytest.mark.parametrize("ts_name", ["example_tsds", "ts_with_different_series_length"])
 def test_predict_use_ts_timestamps(ts_name, request):
     ts = request.getfixturevalue(ts_name)
     pipeline = DummyPipeline(horizon=5)
