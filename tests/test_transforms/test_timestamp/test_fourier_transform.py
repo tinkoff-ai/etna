@@ -146,17 +146,18 @@ def test_column_values(example_ts, period, mod):
         assert np.allclose(transform_values, expected_values, atol=1e-12)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(ts_trend_seasonal):
     """Test that transform works correctly in forecast."""
     transform_1 = FourierTransform(period=7, order=3)
     transform_2 = FourierTransform(period=30.4, order=5)
+    transforms = [transform_1, transform_2]
     ts_train, ts_test = ts_trend_seasonal.train_test_split(test_size=10)
-    ts_train.fit_transform(transforms=[transform_1, transform_2])
+    ts_train.fit_transform(transforms=transforms)
     model = LinearPerSegmentModel()
     model.fit(ts_train)
-    ts_future = ts_train.make_future(10)
+    ts_future = ts_train.make_future(10, transforms=transforms)
     ts_forecast = model.forecast(ts_future)
+    ts_forecast.inverse_transform(transforms)
     metric = R2("macro")
     r2 = metric(ts_test, ts_forecast)
     assert r2 > 0.95

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -41,7 +43,6 @@ def ts_range_const():
     return ts
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transforms")
 @pytest.mark.parametrize(
     "transform_original, transform_function, out_column",
     [
@@ -63,7 +64,7 @@ def ts_range_const():
     ],
 )
 def test_save_transform(ts_non_negative, transform_original, transform_function, out_column):
-    ts_copy = TSDataset(ts_non_negative.to_pandas(), freq="D")
+    ts_copy = deepcopy(ts_non_negative)
     ts_copy.fit_transform([transform_original])
     ts = ts_non_negative
     ts.fit_transform(

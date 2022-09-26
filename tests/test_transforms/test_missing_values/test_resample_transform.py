@@ -53,7 +53,6 @@ def test_transform(daily_exog_ts, inplace, out_column, expected_resampled_ts, re
     assert resampled_df.equals(expected_resampled_df)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize(
     "inplace,out_column,expected_resampled_ts",
     (
@@ -70,7 +69,7 @@ def test_transform_future(daily_exog_ts, inplace, out_column, expected_resampled
         in_column="regressor_exog", inplace=inplace, distribution_column="target", out_column=out_column
     )
     daily_exog_ts.fit_transform([resampler])
-    future = daily_exog_ts.make_future(3)
+    future = daily_exog_ts.make_future(3, transforms=[resampler])
     expected_future = expected_resampled_ts.make_future(3)
     assert future.df.equals(expected_future.df)
 
