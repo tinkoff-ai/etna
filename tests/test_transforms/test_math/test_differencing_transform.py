@@ -438,7 +438,7 @@ def test_full_inverse_transform_inplace_test(period, order, ts_nans):
     check_inverse_transform_inplace_test(transform, period, order, ts_nans)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features wit quantiles")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize("period", [1, 7])
 def test_single_inverse_transform_inplace_test_quantiles(period, ts_nans_with_noise):
     """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data with quantiles."""
@@ -446,7 +446,7 @@ def test_single_inverse_transform_inplace_test_quantiles(period, ts_nans_with_no
     check_inverse_transform_inplace_test_quantiles(transform, ts_nans_with_noise)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features wit quantiles")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
 def test_full_inverse_transform_inplace_test_quantiles(period, order, ts_nans_with_noise):

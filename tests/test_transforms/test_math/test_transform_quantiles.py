@@ -42,7 +42,7 @@ def test_standard_scaler_dummy_mean_shift_for_quantiles_macro(toy_dataset_with_m
     )
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features wit quantiles")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     """
     This test checks that inverse_transform transforms forecast's quantiles the same way with target itself and
@@ -66,7 +66,7 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features wit quantiles")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize(
     "transform",
     (

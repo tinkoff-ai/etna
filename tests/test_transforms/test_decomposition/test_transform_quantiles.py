@@ -7,7 +7,7 @@ from etna.transforms import STLTransform
 from etna.transforms import TheilSenTrendTransform
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features wit quantiles")
+@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize(
     "transform",
     (
