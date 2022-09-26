@@ -71,7 +71,6 @@ def test_get_residuals_not_matching_segments(residuals):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_plot_residuals_fails_unkown_feature(example_tsdf):
     """Test that plot_residuals fails if meet unknown feature."""
     pipeline = Pipeline(
@@ -82,7 +81,6 @@ def test_plot_residuals_fails_unkown_feature(example_tsdf):
         plot_residuals(forecast_df=forecast_df, ts=example_tsdf, feature="unkown_feature")
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transform")
 @pytest.mark.parametrize(
     "poly_degree, trend_transform_class",
     (
@@ -101,7 +99,6 @@ def test_plot_bin_seg(example_tsdf, detrend_model):
     plot_trend(ts=example_tsdf, trend_transform=BinsegTrendTransform(in_column="target", detrend_model=detrend_model))
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transform")
 @pytest.mark.parametrize("period", (7, 30))
 def test_plot_stl(example_tsdf, period):
     plot_trend(ts=example_tsdf, trend_transform=STLTransform(in_column="target", period=period))

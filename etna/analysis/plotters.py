@@ -983,7 +983,6 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     new_ts = TSDataset(df=true_df, freq=ts.freq)
     new_ts.known_future = ts.known_future
     new_ts._regressors = ts.regressors
-    new_ts.transforms = ts.transforms
     new_ts.df_exog = ts.df_exog
     return new_ts
 

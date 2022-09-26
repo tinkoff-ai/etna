@@ -11,7 +11,6 @@ from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -137,29 +136,19 @@ class TSDataset:
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.df = self._merge_exog(self.df)
 
-        self.transforms: Optional[Sequence["Transform"]] = None
-
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings(warning=True)
-        self.transforms = transforms
-        for transform in self.transforms:
+        for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-            columns_before = set(self.columns.get_level_values("feature"))
-            self.df = transform.transform(self.df)
-            columns_after = set(self.columns.get_level_values("feature"))
-            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+            transform.transform(self)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings(warning=True)
-        self.transforms = transforms
-        for transform in self.transforms:
+        for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-            columns_before = set(self.columns.get_level_values("feature"))
-            self.df = transform.fit_transform(self.df)
-            columns_after = set(self.columns.get_level_values("feature"))
-            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+            transform.fit_transform(self)
 
     @staticmethod
     def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -169,60 +158,6 @@ class TSDataset:
         columns_frame["segment"] = columns_frame["segment"].astype(str)
         df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
         return df_copy
-
-    def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
-        from etna.transforms import OneHotEncoderTransform
-        from etna.transforms.base import FutureMixin
-
-        # intersect list of regressors with columns after the transform
-        self._regressors = list(set(self._regressors).intersection(columns_after))
-
-        unseen_columns = list(columns_after - columns_before)
-
-        if len(unseen_columns) == 0:
-            return
-
-        new_regressors = []
-
-        if isinstance(transform, FutureMixin):
-            # Every column from FutureMixin is regressor
-            out_columns = list(columns_after - columns_before)
-            new_regressors = out_columns
-        elif isinstance(transform, OneHotEncoderTransform):
-            # Only the columns created with OneHotEncoderTransform from regressor are regressors
-            in_column = transform.in_column
-            out_columns = list(columns_after - columns_before)
-            if in_column in self.regressors:
-                new_regressors = out_columns
-        elif hasattr(transform, "in_column"):
-            # Only the columns created with the other transforms from regressors are regressors
-            in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
-            if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
-                # User defined out_columns in sklearn
-                # TODO: remove this case after fixing the out_column attribute in SklearnTransform
-                out_columns = transform.out_columns  # type: ignore
-                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
-                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
-            elif hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
-                # User defined out_columns
-                out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
-                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
-                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
-            else:
-                # Default out_columns
-                out_columns = list(columns_after - columns_before)
-                regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
-                new_regressors = [
-                    out_column
-                    for out_column in out_columns
-                    if np.any([regressor in out_column for regressor in regressors_in_column])
-                ]
-
-        else:
-            raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
-
-        new_regressors = [regressor for regressor in new_regressors if regressor not in self.regressors]
-        self._regressors.extend(new_regressors)
 
     def __repr__(self):
         return self.df.__repr__()
@@ -243,13 +178,17 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int, tail_steps: int = 0) -> "TSDataset":
+    def make_future(
+        self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
+    ) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
         ----------
         future_steps:
             number of timestamp in the future to build features for.
+        transforms:
+            sequence of transforms to be applied.
         tail_steps:
             number of timestamp for context to build features for.
 
@@ -307,10 +246,12 @@ class TSDataset:
                             f"NaN-s will be used for missing values"
                         )
 
-        if self.transforms is not None:
-            for transform in self.transforms:
-                tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-                df = transform.transform(df)
+        # Here only df is required, other metadata is not necessary to build the dataset
+        ts = TSDataset(df=df, freq=self.freq)
+        for transform in transforms:
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
+            transform.transform(ts)
+        df = ts.to_pandas()
 
         future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
 
@@ -318,9 +259,8 @@ class TSDataset:
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts.known_future = self.known_future
-        future_ts._regressors = self.regressors
-        future_ts.transforms = self.transforms
+        future_ts.known_future = deepcopy(self.known_future)
+        future_ts._regressors = deepcopy(self.regressors)
         future_ts.df_exog = self.df_exog
         return future_ts
 
@@ -344,7 +284,6 @@ class TSDataset:
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
-        tsdataset_slice.transforms = deepcopy(self.transforms)
         tsdataset_slice.df_exog = self.df_exog
         return tsdataset_slice
 
@@ -424,16 +363,14 @@ class TSDataset:
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
-    def inverse_transform(self):
+    def inverse_transform(self, transforms: Sequence["Transform"]):
         """Apply inverse transform method of transforms to the data.
 
         Applied in reversed order.
         """
-        # TODO: return regressors after inverse_transform
-        if self.transforms is not None:
-            for transform in reversed(self.transforms):
-                tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
-                self.df = transform.inverse_transform(self.df)
+        for transform in reversed(transforms):
+            tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
+            transform.inverse_transform(self)
 
     @property
     def segments(self) -> List[str]:

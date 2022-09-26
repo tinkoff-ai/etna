@@ -46,7 +46,7 @@ class Pipeline(BasePipeline):
         self.ts = ts
         self.ts.fit_transform(self.transforms)
         self.model.fit(self.ts)
-        self.ts.inverse_transform()
+        self.ts.inverse_transform(self.transforms)
         return self
 
     def _forecast(self) -> TSDataset:
@@ -55,10 +55,12 @@ class Pipeline(BasePipeline):
             raise ValueError("Something went wrong, ts is None!")
 
         if isinstance(self.model, DeepBaseModel):
-            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.encoder_length)
+            future = self.ts.make_future(
+                future_steps=self.model.decoder_length, transforms=self.transforms, tail_steps=self.model.encoder_length
+            )
             predictions = self.model.forecast(ts=future, horizon=self.horizon)
         else:
-            future = self.ts.make_future(self.horizon)
+            future = self.ts.make_future(self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future)
         return predictions
 
@@ -90,10 +92,11 @@ class Pipeline(BasePipeline):
         self._validate_backtest_n_folds(n_folds=n_folds)
 
         if prediction_interval and isinstance(self.model, PredictIntervalAbstractModel):
-            future = self.ts.make_future(self.horizon)
+            future = self.ts.make_future(self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         else:
             predictions = super().forecast(
                 prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
             )
+        predictions.inverse_transform(self.transforms)
         return predictions

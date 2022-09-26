@@ -107,7 +107,6 @@ def test_inverse_transform_out_column(positive_ts_: TSDataset):
         assert out_column in inversed[segment]
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: blocked by another transform")
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = LogTransform(in_column="target", inplace=True)
     ts_diff_endings.fit_transform([AddConstTransform(in_column="target", value=100)] + [transform])

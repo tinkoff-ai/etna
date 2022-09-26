@@ -92,8 +92,9 @@ def test_format(model, new_format_df):
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
     ts.fit_transform([lags])
     model.fit(ts)
-    future_ts = ts.make_future(3)
+    future_ts = ts.make_future(3, transforms=[lags])
     model.forecast(future_ts)
+    future_ts.inverse_transform([lags])
     assert not future_ts.isnull().values.any()
 
 
