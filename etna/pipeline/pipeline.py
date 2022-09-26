@@ -5,13 +5,13 @@ from etna.models.base import BaseModel
 from etna.models.base import DeepBaseModel
 from etna.models.base import PredictIntervalAbstractModel
 from etna.pipeline.base import BasePipeline
-from etna.transforms.base import NewTransform
+from etna.transforms.base import Transform
 
 
 class Pipeline(BasePipeline):
     """Pipeline of transforms with a final estimator."""
 
-    def __init__(self, model: BaseModel, transforms: Sequence[NewTransform] = (), horizon: int = 1):
+    def __init__(self, model: BaseModel, transforms: Sequence[Transform] = (), horizon: int = 1):
         """
         Create instance of Pipeline with given parameters.
 
@@ -60,7 +60,7 @@ class Pipeline(BasePipeline):
             )
             predictions = self.model.forecast(ts=future, horizon=self.horizon)
         else:
-            future = self.ts.make_future(self.horizon)
+            future = self.ts.make_future(self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future)
         return predictions
 

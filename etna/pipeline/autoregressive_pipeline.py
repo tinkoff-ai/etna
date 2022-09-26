@@ -6,7 +6,7 @@ import pandas as pd
 from etna.datasets import TSDataset
 from etna.models.base import BaseModel
 from etna.pipeline.base import BasePipeline
-from etna.transforms import NewTransform
+from etna.transforms import Transform
 
 
 class AutoRegressivePipeline(BasePipeline):
@@ -51,7 +51,7 @@ class AutoRegressivePipeline(BasePipeline):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
-    def __init__(self, model: BaseModel, horizon: int, transforms: Sequence[NewTransform] = (), step: int = 1):
+    def __init__(self, model: BaseModel, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
         """
         Create instance of AutoRegressivePipeline with given parameters.
 

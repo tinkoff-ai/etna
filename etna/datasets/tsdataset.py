@@ -24,7 +24,7 @@ from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
-    from etna.transforms.base import NewTransform
+    from etna.transforms.base import Transform
 
 if SETTINGS.torch_required:
     from torch.utils.data import Dataset
@@ -136,14 +136,14 @@ class TSDataset:
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.df = self._merge_exog(self.df)
 
-    def transform(self, transforms: Sequence["NewTransform"]):
+    def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings(warning=True)
         for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
             transform.transform(self)
 
-    def fit_transform(self, transforms: Sequence["NewTransform"]):
+    def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings(warning=True)
         for transform in transforms:
@@ -178,9 +178,7 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(
-        self, future_steps: int, transforms: Sequence["NewTransform"] = (), tail_steps: int = 0
-    ) -> "TSDataset":
+    def make_future(self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
@@ -363,7 +361,7 @@ class TSDataset:
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
-    def inverse_transform(self, transforms: Sequence["NewTransform"]):
+    def inverse_transform(self, transforms: Sequence["Transform"]):
         """Apply inverse transform method of transforms to the data.
 
         Applied in reversed order.

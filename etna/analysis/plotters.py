@@ -31,7 +31,7 @@ from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
 from etna.analysis.utils import prepare_axes
-from etna.transforms import NewTransform
+from etna.transforms import Transform
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -991,7 +991,7 @@ def plot_residuals(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
     feature: Union[str, Literal["timestamp"]] = "timestamp",
-    transforms: Sequence[NewTransform] = (),
+    transforms: Sequence[Transform] = (),
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),

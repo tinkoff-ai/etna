@@ -18,7 +18,7 @@ class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-class NewTransform(ABC, BaseMixin):
+class Transform(ABC, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):
@@ -70,7 +70,7 @@ class NewTransform(ABC, BaseMixin):
         """
         pass
 
-    def fit(self, ts: TSDataset) -> "NewTransform":
+    def fit(self, ts: TSDataset) -> "Transform":
         """Fit the transform.
 
         Parameters
@@ -160,7 +160,7 @@ class NewTransform(ABC, BaseMixin):
         pass
 
 
-class IrreversibleTransform(NewTransform):
+class IrreversibleTransform(Transform):
     """Base class to create irreversible transforms."""
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):
@@ -184,7 +184,7 @@ class IrreversibleTransform(NewTransform):
         return ts
 
 
-class ReversibleTransform(NewTransform):
+class ReversibleTransform(Transform):
     """Base class to create reversible transforms."""
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):
@@ -228,118 +228,6 @@ class ReversibleTransform(NewTransform):
         df_transformed = self._inverse_transform(df=df)
         ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
-
-
-class Transform(ABC, BaseMixin):
-    """Base class to create any transforms to apply to data."""
-
-    @abstractmethod
-    def fit(self, df: pd.DataFrame) -> "Transform":
-        """Fit feature model.
-
-        Should be implemented by user.
-
-        Parameters
-        ----------
-        df
-
-        Returns
-        -------
-        :
-        """
-        pass
-
-    @abstractmethod
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform dataframe.
-
-        Should be implemented by user
-
-        Parameters
-        ----------
-        df
-
-        Returns
-        -------
-        :
-        """
-        pass
-
-    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        May be reimplemented. But it is not recommended.
-
-        Parameters
-        ----------
-        df
-
-        Returns
-        -------
-        :
-        """
-        return self.fit(df).transform(df)
-
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Inverse transforms dataframe.
-
-        Parameters
-        ----------
-        df
-
-        Returns
-        -------
-        :
-        """
-        return df
-
-
-class PerSegmentWrapper(Transform):
-    """Class to apply transform in per segment manner."""
-
-    def __init__(self, transform):
-        self._base_transform = transform
-        self.segment_transforms = {}
-        self.segments = None
-
-    def fit(self, df: pd.DataFrame) -> "PerSegmentWrapper":
-        """Fit transform on each segment."""
-        self.segments = df.columns.get_level_values(0).unique()
-        for segment in self.segments:
-            self.segment_transforms[segment] = deepcopy(self._base_transform)
-            self.segment_transforms[segment].fit(df[segment])
-        return self
-
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply transform to each segment separately."""
-        results = []
-        for key, value in self.segment_transforms.items():
-            seg_df = value.transform(df[key])
-
-            _idx = seg_df.columns.to_frame()
-            _idx.insert(0, "segment", key)
-            seg_df.columns = pd.MultiIndex.from_frame(_idx)
-
-            results.append(seg_df)
-        df = pd.concat(results, axis=1)
-        df = df.sort_index(axis=1)
-        df.columns.names = ["segment", "feature"]
-        return df
-
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply inverse_transform to each segment."""
-        results = []
-        for key, value in self.segment_transforms.items():
-            seg_df = value.inverse_transform(df[key])
-
-            _idx = seg_df.columns.to_frame()
-            _idx.insert(0, "segment", key)
-            seg_df.columns = pd.MultiIndex.from_frame(_idx)
-
-            results.append(seg_df)
-        df = pd.concat(results, axis=1)
-        df = df.sort_index(axis=1)
-        df.columns.names = ["segment", "feature"]
-        return df
 
 
 class OneSegmentTransform(ABC, BaseMixin):
@@ -412,7 +300,7 @@ class OneSegmentTransform(ABC, BaseMixin):
         pass
 
 
-class NewPerSegmentWrapper(NewTransform):
+class PerSegmentWrapper(Transform):
     """Class to apply transform in per segment manner."""
 
     def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
@@ -449,14 +337,14 @@ class NewPerSegmentWrapper(NewTransform):
         return df
 
 
-class IrreversiblePerSegmentWrapper(NewPerSegmentWrapper, IrreversibleTransform):
+class IrreversiblePerSegmentWrapper(PerSegmentWrapper, IrreversibleTransform):
     """Class to apply irreversible transform in per segment manner."""
 
     def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
         super().__init__(transform=transform, required_features=required_features)
 
 
-class ReversiblePerSegmentWrapper(NewPerSegmentWrapper, ReversibleTransform):
+class ReversiblePerSegmentWrapper(PerSegmentWrapper, ReversibleTransform):
     """Class to apply reversible transform in per segment manner."""
 
     def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):

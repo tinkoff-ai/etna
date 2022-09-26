@@ -268,5 +268,4 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
                 df = df.sort_index(axis=1)
                 ts.df = df
 
-        ts.inverse_transform()
         return ts
