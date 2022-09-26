@@ -105,7 +105,6 @@ def test_inverse_transform_train(transform_constructor, constructor_kwargs, outl
     assert np.all(original_df == outliers_solid_tsds.df)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("in_column", ["target", "regressor_1"])
 @pytest.mark.parametrize(
     "transform_constructor, constructor_kwargs",
@@ -119,9 +118,9 @@ def test_inverse_transform_future(transform_constructor, constructor_kwargs, out
     """Checks that inverse transform does not change the future."""
     transform = transform_constructor(in_column=in_column, **constructor_kwargs)
     outliers_solid_tsds.fit_transform([transform])
-    future = outliers_solid_tsds.make_future(future_steps=10)
-    original_future_df = future.df.copy()
-    future.inverse_transform()
+    future = outliers_solid_tsds.make_future(future_steps=10, transforms=[transform])
+    original_future_df = future.to_pandas()
+    future.inverse_transform([transform])
     # check equals and has nans in the same places
     assert np.all((future.df == original_future_df) | (future.df.isna() & original_future_df.isna()))
 

@@ -807,19 +807,6 @@ def ts_with_regressors(df_and_regressors):
     return ts
 
 
-def _test_update_regressors_transform(ts, transforms, expected_regressors):
-    fitted_transforms = [transform.fit(ts.df) for transform in transforms]
-    ts.transform(fitted_transforms)
-    regressors = ts.regressors
-    assert sorted(regressors) == sorted(expected_regressors)
-
-
-def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
-    ts.fit_transform(transforms)
-    regressors = ts.regressors
-    assert sorted(regressors) == sorted(expected_regressors)
-
-
 def test_to_dataset_not_modify_dataframe():
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": 1})

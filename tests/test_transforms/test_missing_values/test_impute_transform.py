@@ -337,19 +337,18 @@ def test_inverse_transform_many_segments(ts_with_missing_range_x_index_two_segme
     np.testing.assert_array_equal(df, inverse_transform_result)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
-def test_inverse_transform_in_forecast(df_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
+def test_inverse_transform_in_forecast(ts_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
     """Check that inverse_transform doesn't change anything in forecast."""
-    df, rng = df_with_missing_range_x_index_two_segments
-    ts = TSDataset(df, freq=pd.infer_freq(df.index))
+    ts, rng = ts_with_missing_range_x_index_two_segments
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
     model = NaiveModel()
     ts.fit_transform(transforms=[imputer])
     model.fit(ts)
-    ts_test = ts.make_future(3)
+    ts_test = ts.make_future(3, transforms=[imputer])
     assert np.all(ts_test[:, :, "target"].isna())
     ts_forecast = model.forecast(ts_test)
+    ts_forecast.inverse_transform([imputer])
     for segment in ts.segments:
         true_value = ts[:, segment, "target"].values[-1]
         assert np.all(ts_forecast[:, segment, "target"] == true_value)

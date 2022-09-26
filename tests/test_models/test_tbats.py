@@ -84,7 +84,6 @@ def test_not_fitted(model, linear_segments_ts_unique):
         model.forecast(to_forecast)
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_format(model, new_format_df):
     df = new_format_df
@@ -92,8 +91,9 @@ def test_format(model, new_format_df):
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
     ts.fit_transform([lags])
     model.fit(ts)
-    future_ts = ts.make_future(3)
+    future_ts = ts.make_future(3, transforms=[lags])
     model.forecast(future_ts)
+    future_ts.inverse_transform([lags])
     assert not future_ts.isnull().values.any()
 
 

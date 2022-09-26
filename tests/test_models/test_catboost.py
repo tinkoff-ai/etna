@@ -10,7 +10,6 @@ from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
 def test_run(catboostmodel, new_format_df):
     df = new_format_df
@@ -22,15 +21,15 @@ def test_run(catboostmodel, new_format_df):
 
     model = catboostmodel()
     model.fit(ts)
-    future_ts = ts.make_future(3)
+    future_ts = ts.make_future(3, transforms=[lags])
     model.forecast(future_ts)
+    future_ts.inverse_transform([lags])
     if not future_ts.isnull().values.any():
         assert True
     else:
         assert False
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
@@ -41,13 +40,14 @@ def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
 
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
     lags_exog = LagTransform(lags=[3, 4, 5, 6], in_column="regressor_exog")
-
-    ts.fit_transform([lags, lags_exog])
+    transforms = [lags, lags_exog]
+    ts.fit_transform(transforms)
 
     model = catboostmodel()
     model.fit(ts)
-    future_ts = ts.make_future(3)
+    future_ts = ts.make_future(3, transforms=transforms)
     model.forecast(future_ts)
+    future_ts.inverse_transform(transforms)
     if not future_ts.isnull().values.any():
         assert True
     else:
@@ -71,18 +71,18 @@ def constant_ts(size=40) -> TSDataset:
     return train, test
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_catboost_multi_segment_forecast(constant_ts):
     train, test = constant_ts
     horizon = len(test.df)
 
     lags = LagTransform(in_column="target", lags=[10, 11, 12])
     train.fit_transform([lags])
-    future = train.make_future(horizon)
+    future = train.make_future(horizon, transforms=[lags])
 
     model = CatBoostMultiSegmentModel()
     model.fit(train)
     forecast = model.forecast(future)
+    forecast.inverse_transform([lags])
 
     for segment in forecast.segments:
         assert np.allclose(test[:, segment, "target"], forecast[:, segment, "target"])
@@ -100,7 +100,6 @@ def test_get_model_per_segment_before_training():
         _ = etna_model.get_model()
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_get_model_per_segment_after_training(example_tsds):
     pipeline = Pipeline(model=CatBoostPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=[2, 3])])
     pipeline.fit(ts=example_tsds)
