@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,7 +10,6 @@ from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
 from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
-from copy import deepcopy
 
 
 @pytest.fixture

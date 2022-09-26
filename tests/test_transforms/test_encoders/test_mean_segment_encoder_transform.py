@@ -45,7 +45,7 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
     train, test = almost_constant_ts.train_test_split(test_size=horizon)
     train.fit_transform([encoder])
     model.fit(train)
-    future = train.make_future(horizon,transforms=[encoder])
+    future = train.make_future(horizon, transforms=[encoder])
     pred_mean_segment_encoding = model.forecast(future)
     pred_mean_segment_encoding.inverse_transform([encoder])
 
