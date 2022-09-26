@@ -9,6 +9,7 @@ from etna.transforms.math import MADTransform
 from etna.transforms.math import MaxTransform
 from etna.transforms.math import MeanTransform
 from etna.transforms.math import MedianTransform
+from etna.transforms.math import MinMaxDifferenceTransform
 from etna.transforms.math import MinTransform
 from etna.transforms.math import QuantileTransform
 from etna.transforms.math import StdTransform
@@ -59,6 +60,8 @@ def df_for_agg_with_nan() -> pd.DataFrame:
         (StdTransform, "test_std"),
         (MADTransform, None),
         (MADTransform, "test_mad"),
+        (MinMaxDifferenceTransform, None),
+        (MinMaxDifferenceTransform, "test_min_max_diff"),
     ),
 )
 def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_column: str):
@@ -258,6 +261,25 @@ def test_mad_transform_with_nans(
 
 
 @pytest.mark.parametrize(
+    "window,periods,fill_na,expected",
+    (
+        (10, 1, 0, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+        (-1, 1, 0, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+        (3, 2, -17, np.array([-17, 1, 2, 2, 2, 2, 2, 2, 2, 2])),
+    ),
+)
+def test_min_max_diff_feature(
+    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
+):
+    transform = MinMaxDifferenceTransform(
+        window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
+    )
+    res = transform.fit_transform(simple_df_for_agg)
+    res["expected"] = expected
+    assert (res["expected"] == res["segment_1"]["result"]).all()
+
+
+@pytest.mark.parametrize(
     "transform",
     (
         MaxTransform(in_column="target", window=5),
@@ -266,6 +288,7 @@ def test_mad_transform_with_nans(
         MeanTransform(in_column="target", window=5),
         StdTransform(in_column="target", window=5),
         MADTransform(in_column="target", window=5),
+        MinMaxDifferenceTransform(in_column="target", window=5),
     ),
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
