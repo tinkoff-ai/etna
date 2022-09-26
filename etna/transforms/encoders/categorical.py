@@ -136,7 +136,7 @@ class OneHotEncoderTransform(Transform):
         """
         self.in_column = in_column
         self.out_column = out_column
-        self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False)
+        self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False, dtype=int)
 
     def fit(self, df: pd.DataFrame) -> "OneHotEncoderTransform":
         """

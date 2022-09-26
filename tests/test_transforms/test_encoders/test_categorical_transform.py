@@ -60,19 +60,19 @@ def get_df_for_ohe_encoding(dtype: str = "int"):
     tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors)
 
     answer_on_regressor_0 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_0["test_0"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(int(x) == 5))
-    answer_on_regressor_0["test_1"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(int(x) == 8))
+    answer_on_regressor_0["test_0"] = answer_on_regressor_0["regressor_0"].apply(lambda x: int(int(x) == 5))
+    answer_on_regressor_0["test_1"] = answer_on_regressor_0["regressor_0"].apply(lambda x: int(int(x) == 8))
     answer_on_regressor_0["test_0"] = answer_on_regressor_0["test_0"].astype("category")
     answer_on_regressor_0["test_1"] = answer_on_regressor_0["test_1"].astype("category")
 
     answer_on_regressor_1 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_1["test_0"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(int(x) == 5))
-    answer_on_regressor_1["test_1"] = answer_on_regressor_1["regressor_1"].apply(lambda x: float(int(x) == 9))
+    answer_on_regressor_1["test_0"] = answer_on_regressor_1["regressor_1"].apply(lambda x: int(int(x) == 5))
+    answer_on_regressor_1["test_1"] = answer_on_regressor_1["regressor_1"].apply(lambda x: int(int(x) == 9))
     answer_on_regressor_1["test_0"] = answer_on_regressor_1["test_0"].astype("category")
     answer_on_regressor_1["test_1"] = answer_on_regressor_1["test_1"].astype("category")
 
     answer_on_regressor_2 = tsdataset.df.copy()["segment_0"]
-    answer_on_regressor_2["test_0"] = answer_on_regressor_2["regressor_2"].apply(lambda x: float(int(x) == 0))
+    answer_on_regressor_2["test_0"] = answer_on_regressor_2["regressor_2"].apply(lambda x: int(int(x) == 0))
     answer_on_regressor_2["test_0"] = answer_on_regressor_2["test_0"].astype("category")
 
     return tsdataset.df, (answer_on_regressor_0, answer_on_regressor_1, answer_on_regressor_2)
