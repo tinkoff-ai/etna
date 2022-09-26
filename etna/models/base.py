@@ -320,7 +320,6 @@ class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
 
         df = TSDataset.to_dataset(df)
         ts.df = df
-        ts.inverse_transform()
         return ts
 
 
@@ -373,7 +372,6 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
 
         df = TSDataset.to_dataset(df)
         ts.df = df
-        ts.inverse_transform()
         return ts
 
 
@@ -429,7 +427,6 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         y = self._base_model.predict(x).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
         return ts
 
     def get_model(self) -> Any:
@@ -804,8 +801,6 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
-
-        future_ts.inverse_transform()
 
         return future_ts
 
