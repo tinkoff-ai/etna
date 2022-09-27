@@ -345,6 +345,7 @@ def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
     assert expected_columns == sorted(info_df.columns)
 
+
 @pytest.mark.long_1
 def test_backtest_with_n_jobs(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that Pipeline.backtest gives the same results in case of single and multiple jobs modes."""
