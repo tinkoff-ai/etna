@@ -5,8 +5,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from etna.datasets import set_columns_wide
 from etna.datasets import TSDataset
+from etna.datasets import set_columns_wide
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import match_target_quantiles
 
