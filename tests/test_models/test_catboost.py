@@ -126,4 +126,4 @@ def test_encoder_catboost(encoder):
     transforms = [DateFlagsTransform(week_number_in_month=True, out_column="date_flag"), encoder]
     model = CatBoostMultiSegmentModel(iterations=100)
     pipeline = Pipeline(model=model, transforms=transforms, horizon=1)
-    _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)
+    _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2)

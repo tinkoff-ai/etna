@@ -37,7 +37,6 @@ class _CatBoostAdapter(BaseAdapter):
 
     def _prepare_float_category_columns(self, df: pd.DataFrame):
         df[self._float_category_columns] = df[self._float_category_columns].astype(str).astype("category")
-        return df
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_CatBoostAdapter":
         """
