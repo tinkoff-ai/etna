@@ -26,6 +26,7 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
 from etna.transforms import PytorchForecastingTransform
@@ -114,6 +115,7 @@ class TestPredictInSampleFull:
                     )
                 ],
             ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -190,6 +192,7 @@ class TestPredictInSampleSuffix:
                     )
                 ],
             ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -224,9 +227,9 @@ class TestPredictOutSample:
         to_remain = model.context_size + prediction_size
         forecast_ts.df = forecast_ts.df.iloc[-to_remain:]
         if isinstance(model, get_args(ContextRequiredModelType)):
-            model.predict(forecast_ts, prediction_size=prediction_size)
+            forecast_ts = model.predict(forecast_ts, prediction_size=prediction_size)
         else:
-            model.predict(forecast_ts)
+            forecast_ts = model.predict(forecast_ts)
 
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -288,6 +291,7 @@ class TestPredictOutSample:
                     )
                 ],
             ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -316,9 +320,9 @@ class TestPredictMixedInOutSample:
         forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
         if isinstance(model, get_args(ContextRequiredModelType)):
             cur_prediction_size = len(forecast_full_ts.index) - model.context_size
-            model.predict(forecast_full_ts, prediction_size=cur_prediction_size)
+            forecast_full_ts = model.predict(forecast_full_ts, prediction_size=cur_prediction_size)
         else:
-            model.predict(forecast_full_ts)
+            forecast_full_ts = model.predict(forecast_full_ts)
 
         # predicting only in sample
         forecast_in_sample_ts = TSDataset(train_df, freq=ts.freq)
@@ -327,9 +331,9 @@ class TestPredictMixedInOutSample:
         forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
         if isinstance(model, get_args(ContextRequiredModelType)):
             cur_prediction_size = len(forecast_in_sample_ts.index) - model.context_size
-            model.predict(forecast_in_sample_ts, prediction_size=cur_prediction_size)
+            forecast_in_sample_ts = model.predict(forecast_in_sample_ts, prediction_size=cur_prediction_size)
         else:
-            model.predict(forecast_in_sample_ts)
+            forecast_in_sample_ts = model.predict(forecast_in_sample_ts)
 
         # predicting only out sample
         forecast_out_sample_ts = TSDataset(df=df_full, freq=ts.freq)
@@ -337,9 +341,9 @@ class TestPredictMixedInOutSample:
         to_remain = model.context_size + prediction_size
         forecast_out_sample_ts.df = forecast_out_sample_ts.df.iloc[-to_remain:]
         if isinstance(model, get_args(ContextRequiredModelType)):
-            model.predict(forecast_out_sample_ts, prediction_size=prediction_size)
+            forecast_out_sample_ts = model.predict(forecast_out_sample_ts, prediction_size=prediction_size)
         else:
-            model.predict(forecast_out_sample_ts)
+            forecast_out_sample_ts = model.predict(forecast_out_sample_ts)
 
         # checking
         forecast_full_df = forecast_full_ts.to_pandas()
@@ -404,6 +408,7 @@ class TestPredictMixedInOutSample:
                     )
                 ],
             ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):

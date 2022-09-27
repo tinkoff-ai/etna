@@ -34,9 +34,9 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
 
     if isinstance(model, get_args(ContextRequiredModelType)):
         prediction_size = len(forecast_ts.index)
-        method(forecast_ts, prediction_size=prediction_size)
+        forecast_ts = method(forecast_ts, prediction_size=prediction_size)
     else:
-        method(forecast_ts)
+        forecast_ts = method(forecast_ts)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -57,10 +57,10 @@ def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_sk
 
     if isinstance(model, get_args(ContextRequiredModelType)):
         prediction_size = len(forecast_ts.index) - num_skip_points
-        method(forecast_ts, prediction_size=prediction_size)
+        forecast_ts = method(forecast_ts, prediction_size=prediction_size)
     else:
         forecast_ts.df = forecast_ts.df.iloc[num_skip_points:]
-        method(forecast_ts)
+        forecast_ts = method(forecast_ts)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)

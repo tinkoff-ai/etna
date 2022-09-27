@@ -28,6 +28,7 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
 from etna.transforms import PytorchForecastingTransform
@@ -57,9 +58,9 @@ class TestForecastInSampleFullNoTarget:
 
         if isinstance(model, get_args(ContextRequiredModelType)):
             prediction_size = len(forecast_ts.index)
-            model.forecast(forecast_ts, prediction_size=prediction_size)
+            forecast_ts = model.forecast(forecast_ts, prediction_size=prediction_size)
         else:
-            model.forecast(forecast_ts)
+            forecast_ts = model.forecast(forecast_ts)
 
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -85,6 +86,7 @@ class TestForecastInSampleFullNoTarget:
         "model, transforms",
         [
             (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed(self, model, transforms, example_tsds):
@@ -171,6 +173,7 @@ class TestForecastInSampleFull:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full(self, model, transforms, example_tsds):
@@ -261,10 +264,10 @@ class TestForecastInSampleSuffixNoTarget:
 
         if isinstance(model, get_args(ContextRequiredModelType)):
             prediction_size = len(forecast_ts.index) - num_skip_points
-            model.forecast(forecast_ts, prediction_size=prediction_size)
+            forecast_ts = model.forecast(forecast_ts, prediction_size=prediction_size)
         else:
             forecast_ts.df = forecast_ts.df.iloc[num_skip_points:]
-            model.forecast(forecast_ts)
+            forecast_ts = model.forecast(forecast_ts)
 
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -289,6 +292,7 @@ class TestForecastInSampleSuffixNoTarget:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
@@ -359,6 +363,7 @@ class TestForecastInSampleSuffix:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
@@ -423,9 +428,9 @@ class TestForecastOutSamplePrefix:
 
         forecast_full_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
         if isinstance(model, get_args(ContextRequiredModelType)):
-            model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
+            forecast_full_ts = model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
         else:
-            model.forecast(forecast_full_ts)
+            forecast_full_ts = model.forecast(forecast_full_ts)
 
         # forecasting only prefix
         torch.manual_seed(11)  # TODO: remove after fix at issue-802
@@ -433,9 +438,9 @@ class TestForecastOutSamplePrefix:
         forecast_prefix_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
         forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-prediction_size_diff]
         if isinstance(model, get_args(ContextRequiredModelType)):
-            model.forecast(forecast_prefix_ts, prediction_size=prefix_prediction_size)
+            forecast_prefix_ts = model.forecast(forecast_prefix_ts, prediction_size=prefix_prediction_size)
         else:
-            model.forecast(forecast_prefix_ts)
+            forecast_prefix_ts = model.forecast(forecast_prefix_ts)
 
         # checking
         forecast_full_df = forecast_full_ts.to_pandas()
@@ -489,6 +494,7 @@ class TestForecastOutSamplePrefix:
                     )
                 ],
             ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
@@ -512,9 +518,9 @@ class TestForecastOutSampleSuffix:
         # forecasting full
         forecast_full_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
         if isinstance(model, get_args(ContextRequiredModelType)):
-            model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
+            forecast_full_ts = model.forecast(forecast_full_ts, prediction_size=full_prediction_size)
         else:
-            model.forecast(forecast_full_ts)
+            forecast_full_ts = model.forecast(forecast_full_ts)
 
         # forecasting only suffix
         forecast_gap_ts = ts.make_future(future_steps=full_prediction_size, tail_steps=model.context_size)
@@ -526,10 +532,10 @@ class TestForecastOutSampleSuffix:
             forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
 
             # forecast suffix with known context for it
-            model.forecast(forecast_gap_ts, prediction_size=suffix_prediction_size)
+            forecast_gap_ts = model.forecast(forecast_gap_ts, prediction_size=suffix_prediction_size)
         else:
             forecast_gap_ts.df = forecast_gap_ts.df.iloc[prediction_size_diff:]
-            model.forecast(forecast_gap_ts)
+            forecast_gap_ts = model.forecast(forecast_gap_ts)
 
         # checking
         forecast_full_df = forecast_full_ts.to_pandas()
@@ -560,6 +566,16 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
+        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=AssertionError)
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="You can only forecast from the next point after the last one")
@@ -621,9 +637,9 @@ class TestForecastMixedInOutSample:
         forecast_full_ts.df = forecast_full_ts.df.iloc[to_skip:]
         if isinstance(model, get_args(ContextRequiredModelType)):
             cur_prediction_size = len(forecast_full_ts.index) - model.context_size
-            model.forecast(forecast_full_ts, prediction_size=cur_prediction_size)
+            forecast_full_ts = model.forecast(forecast_full_ts, prediction_size=cur_prediction_size)
         else:
-            model.forecast(forecast_full_ts)
+            forecast_full_ts = model.forecast(forecast_full_ts)
 
         # checking
         forecast_full_df = forecast_full_ts.to_pandas(flatten=True)
@@ -648,6 +664,7 @@ class TestForecastMixedInOutSample:
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
