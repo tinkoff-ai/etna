@@ -35,6 +35,9 @@ class _CatBoostAdapter(BaseAdapter):
         )
         self._categorical = None
 
+    def _prepare_float_category_columns(self, df: pd.DataFrame):
+        df[self._float_category_columns] = df[self._float_category_columns].astype(str).astype("category")
+
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_CatBoostAdapter":
         """
         Fit Catboost model.
@@ -53,7 +56,21 @@ class _CatBoostAdapter(BaseAdapter):
         """
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
-        self._categorical = features.select_dtypes(include=["category"]).columns.to_list()
+        columns_dtypes = features.dtypes
+        category_columns_dtypes = columns_dtypes[columns_dtypes == "category"]
+        self._categorical = category_columns_dtypes.index.tolist()
+
+        # select only columns with float categories
+        float_category_columns_dtypes_indices = [
+            idx
+            for idx, x in enumerate(category_columns_dtypes)
+            if issubclass(x.categories.dtype.type, (float, np.floating))
+        ]
+        float_category_columns_dtypes = category_columns_dtypes.iloc[float_category_columns_dtypes_indices]
+        float_category_columns = float_category_columns_dtypes.index
+        self._float_category_columns = float_category_columns
+        self._prepare_float_category_columns(features)
+
         train_pool = Pool(features, target.values, cat_features=self._categorical)
         self.model.fit(train_pool)
         return self
@@ -73,6 +90,7 @@ class _CatBoostAdapter(BaseAdapter):
             Array with predictions
         """
         features = df.drop(columns=["timestamp", "target"])
+        self._prepare_float_category_columns(features)
         predict_pool = Pool(features, cat_features=self._categorical)
         pred = self.model.predict(predict_pool)
         return pred
