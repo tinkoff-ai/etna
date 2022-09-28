@@ -56,7 +56,7 @@ class Pipeline(BasePipeline):
 
         if isinstance(self.model, DeepBaseModel):
             future = self.ts.make_future(
-                future_steps=self.model.decoder_length, transforms=self.transforms, tail_steps=self.model.encoder_length
+                future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.encoder_length
             )
             predictions = self.model.forecast(ts=future, horizon=self.horizon)
         else:
