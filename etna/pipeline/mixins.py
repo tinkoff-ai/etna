@@ -62,7 +62,7 @@ class PipelineModelPredictMixin:
         ts.transform(transforms=self.transforms)
 
         if prediction_interval and isinstance(self.model, get_args(NonPredictionIntervalModelType)):
-            raise NotImplementedError(f"Model {self.model.__class__.__name__} doesnt support prediction intervals!")
+            raise NotImplementedError(f"Model {self.model.__class__.__name__} doesn't support prediction intervals!")
 
         if isinstance(self.model, NonPredictionIntervalContextIgnorantAbstractModel):
             results = self.model.predict(ts=ts)

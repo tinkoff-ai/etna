@@ -131,7 +131,7 @@ def test_predict_fail_doesnt_support_prediction_interval(model_class):
     mixin = make_mixin(model=model)
 
     with pytest.raises(
-        NotImplementedError, match=f"Model {model.__class__.__name__} doesnt support prediction intervals"
+        NotImplementedError, match=f"Model {model.__class__.__name__} doesn't support prediction intervals"
     ):
         _ = mixin._predict(
             start_timestamp=pd.Timestamp("2020-01-01"),
