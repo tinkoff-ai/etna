@@ -14,8 +14,6 @@ class AutoRegressivePipeline(BasePipeline):
 
     Examples
     --------
-    >>> import pytest
-    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import LinearPerSegmentModel
