@@ -10,7 +10,7 @@ from etna.transforms import IrreversibleTransform
 from etna.transforms import ReversibleTransform
 
 
-class NewTransformMock(IrreversibleTransform):
+class TransformMock(IrreversibleTransform):
     def get_regressors_info(self) -> List[str]:
         return ["regressor_test"]
 
@@ -52,7 +52,7 @@ def remove_columns_df():
     [("all", "all"), (["target", "segment"], ["target", "segment"])],
 )
 def test_required_features(required_features, expected_features):
-    transform = NewTransformMock(required_features=required_features)
+    transform = TransformMock(required_features=required_features)
     assert transform.required_features == expected_features
 
 
@@ -64,7 +64,7 @@ def test_update_dataset_remove_columns(remove_columns_df):
     expected_features_to_remove = list(
         set(df.columns.get_level_values("feature")) - set(df_transformed.columns.get_level_values("feature"))
     )
-    transform = NewTransformMock(required_features=["target"])
+    transform = TransformMock(required_features=["target"])
 
     transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
     ts.drop_features.assert_called_with(features=expected_features_to_remove, drop_from_exog=False)
@@ -75,7 +75,7 @@ def test_update_dataset_update_columns(remove_columns_df):
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.update_columns_from_pandas = Mock()
-    transform = NewTransformMock(required_features=["target"])
+    transform = TransformMock(required_features=["target"])
 
     transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
     ts.update_columns_from_pandas.assert_called()
@@ -86,7 +86,7 @@ def test_update_dataset_add_columns(remove_columns_df):
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.add_columns_from_pandas = Mock()
-    transform = NewTransformMock(required_features=["target"])
+    transform = TransformMock(required_features=["target"])
 
     transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
     ts.add_columns_from_pandas.assert_called()
@@ -98,7 +98,7 @@ def test_update_dataset_add_columns(remove_columns_df):
 )
 def test_fit_request_correct_columns(required_features):
     ts = Mock()
-    transform = NewTransformMock(required_features=required_features)
+    transform = TransformMock(required_features=required_features)
 
     transform.fit(ts=ts)
     ts.to_pandas.assert_called_with(flatten=False, features=required_features)
@@ -113,7 +113,7 @@ def test_transform_request_correct_columns(remove_columns_df, required_features)
     ts = TSDataset(df=df, freq="D")
     ts.to_pandas = Mock(return_value=df)
 
-    transform = NewTransformMock(required_features=required_features)
+    transform = TransformMock(required_features=required_features)
     transform._update_dataset = Mock()
 
     transform.transform(ts=ts)
@@ -130,7 +130,7 @@ def test_transform_request_update_dataset(remove_columns_df, required_features):
     ts = TSDataset(df=df, freq="D")
     ts.to_pandas = Mock(return_value=df)
 
-    transform = NewTransformMock(required_features=required_features)
+    transform = TransformMock(required_features=required_features)
     transform._update_dataset = Mock()
 
     transform.transform(ts=ts)

@@ -227,7 +227,7 @@ class ReversibleTransform(Transform):
         required_features = self.required_features
         if isinstance(required_features, list) and "target" in self.required_features:
             features = set(ts.columns.get_level_values("feature").tolist())
-            required_features += list(match_target_quantiles(features))
+            required_features = list(set(required_features) | match_target_quantiles(features))
         df = ts.to_pandas(flatten=False, features=required_features)
         columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._inverse_transform(df=df)

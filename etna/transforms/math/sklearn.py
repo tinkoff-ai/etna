@@ -61,7 +61,8 @@ class SklearnTransform(ReversibleTransform):
         """
         if isinstance(in_column, str):
             in_column = [in_column]
-        super().__init__(required_features=sorted(in_column) if in_column is not None else "all")
+        required_features = sorted(in_column) if in_column is not None else "all"
+        super().__init__(required_features=required_features)  # type: ignore
 
         if inplace and (out_column is not None):
             warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
