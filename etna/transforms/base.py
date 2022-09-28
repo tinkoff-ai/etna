@@ -12,6 +12,7 @@ from typing_extensions import Literal
 
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.transforms.utils import match_target_quantiles
 
 
 class FutureMixin:
@@ -223,7 +224,11 @@ class ReversibleTransform(Transform):
         :
             TSDataset after applying inverse transformation.
         """
-        df = ts.to_pandas(flatten=False, features=self.required_features)
+        required_features = self.required_features
+        if isinstance(required_features, list) and "target" in self.required_features:
+            features = set(ts.columns.get_level_values("feature").tolist())
+            required_features += list(match_target_quantiles(features))
+        df = ts.to_pandas(flatten=False, features=required_features)
         columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._inverse_transform(df=df)
         ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
