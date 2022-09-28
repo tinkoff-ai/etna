@@ -7,6 +7,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.transforms import IrreversibleTransform
+from etna.transforms import ReversibleTransform
 
 
 class NewTransformMock(IrreversibleTransform):
@@ -20,10 +21,25 @@ class NewTransformMock(IrreversibleTransform):
         return df
 
 
+class ReversibleTransformMock(ReversibleTransform):
+    def get_regressors_info(self) -> List[str]:
+        return ["regressor_test"]
+
+    def _fit(self, df: pd.DataFrame):
+        pass
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
+
 @pytest.fixture
 def remove_columns_df():
     df = generate_ar_df(periods=10, n_segments=3, start_time="2000-01-01")
     df["exog_1"] = 1
+    df["target_0.01"] = 2
     df = TSDataset.to_dataset(df)
 
     df_transformed = generate_ar_df(periods=10, n_segments=3, start_time="2000-01-01")
@@ -119,3 +135,17 @@ def test_transform_request_update_dataset(remove_columns_df, required_features):
 
     transform.transform(ts=ts)
     transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=df)
+
+
+@pytest.mark.parametrize(
+    "in_column, expected_required_features",
+    [(["target"], ["target", "target_0.01"]), (["exog_1"], ["exog_1"])],
+)
+def test_inverse_transform_add_target_quantiles(remove_columns_df, in_column, expected_required_features):
+    df, _ = remove_columns_df
+    ts = TSDataset(df=df, freq="D")
+    ts.to_pandas = Mock(return_value=df)
+
+    transform = ReversibleTransformMock(required_features=in_column)
+    transform.inverse_transform(ts=ts)
+    ts.to_pandas.assert_called_with(flatten=False, features=expected_required_features)
