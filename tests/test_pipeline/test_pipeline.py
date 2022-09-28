@@ -17,11 +17,13 @@ from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics import Width
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
+from etna.models import SeasonalMovingAverageModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -31,6 +33,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.utils import DummyMetric
@@ -679,3 +682,33 @@ def test_pipeline_with_deepmodel(example_tsds):
         horizon=2,
     )
     _ = pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_predict(model, transforms, example_tsds):
+    ts = example_tsds
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=7)
+    pipeline.fit(ts)
+
+    start_idx = 50
+    end_idx = 70
+    start_timestamp = ts.index[start_idx]
+    end_timestamp = ts.index[end_idx]
+    num_points = end_idx - start_idx + 1
+
+    result_ts = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    result_df = result_ts.to_pandas(flatten=True)
+
+    assert not np.any(result_df["target"].isna())
+    assert len(result_df) == len(example_tsds.segments) * num_points

@@ -11,9 +11,13 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.metrics import MetricAggregationMode
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
+from etna.models import SeasonalMovingAverageModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -230,3 +234,33 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
     assert np.all(forecast_df == expected_forecast_df)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_predict(model, transforms, example_tsds):
+    ts = example_tsds
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=7)
+    pipeline.fit(ts)
+
+    start_idx = 50
+    end_idx = 70
+    start_timestamp = ts.index[start_idx]
+    end_timestamp = ts.index[end_idx]
+    num_points = end_idx - start_idx + 1
+
+    result_ts = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    result_df = result_ts.to_pandas(flatten=True)
+
+    assert not np.any(result_df["target"].isna())
+    assert len(result_df) == len(example_tsds.segments) * num_points

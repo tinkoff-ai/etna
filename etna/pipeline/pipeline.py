@@ -10,10 +10,11 @@ from etna.models.base import ModelType
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline.base import BasePipeline
+from etna.pipeline.mixins import PipelineModelPredictMixin
 from etna.transforms.base import Transform
 
 
-class Pipeline(BasePipeline):
+class Pipeline(PipelineModelPredictMixin, BasePipeline):
     """Pipeline of transforms with a final estimator."""
 
     def __init__(self, model: ModelType, transforms: Sequence[Transform] = (), horizon: int = 1):

@@ -10,10 +10,11 @@ from etna.models.base import ContextIgnorantModelType
 from etna.models.base import ContextRequiredModelType
 from etna.models.base import ModelType
 from etna.pipeline.base import BasePipeline
+from etna.pipeline.mixins import PipelineModelPredictMixin
 from etna.transforms import Transform
 
 
-class AutoRegressivePipeline(BasePipeline):
+class AutoRegressivePipeline(PipelineModelPredictMixin, BasePipeline):
     """Pipeline that make regressive models autoregressive.
 
     Examples

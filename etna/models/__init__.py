@@ -6,8 +6,10 @@ from etna.models.base import ContextRequiredModelType
 from etna.models.base import ModelType
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import NonPredictionIntervalModelType
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalModelType
 from etna.models.catboost import CatBoostModelMultiSegment
 from etna.models.catboost import CatBoostModelPerSegment
 from etna.models.catboost import CatBoostMultiSegmentModel
