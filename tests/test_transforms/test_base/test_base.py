@@ -144,8 +144,7 @@ def test_transform_request_update_dataset(remove_columns_df, required_features):
 def test_inverse_transform_add_target_quantiles(remove_columns_df, in_column, expected_required_features):
     df, _ = remove_columns_df
     ts = TSDataset(df=df, freq="D")
-    ts.to_pandas = Mock(return_value=df)
 
     transform = ReversibleTransformMock(required_features=in_column)
-    transform.inverse_transform(ts=ts)
-    ts.to_pandas.assert_called_with(flatten=False, features=expected_required_features)
+    required_features = transform._get_inverse_transform_required_features(ts)
+    assert sorted(required_features) == sorted(expected_required_features)

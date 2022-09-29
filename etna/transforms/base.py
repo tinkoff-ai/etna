@@ -209,6 +209,14 @@ class ReversibleTransform(Transform):
         """
         pass
 
+    def _get_inverse_transform_required_features(self, ts) -> Union[List[str], Literal["all"]]:
+        """Add the target quantiles for the list with required features if necessary."""
+        required_features = self.required_features
+        if isinstance(required_features, list) and "target" in self.required_features:
+            features = set(ts.columns.get_level_values("feature").tolist())
+            required_features = list(set(required_features) | match_target_quantiles(features))
+        return required_features
+
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
         """Inverse transform TSDataset.
 
@@ -224,11 +232,7 @@ class ReversibleTransform(Transform):
         :
             TSDataset after applying inverse transformation.
         """
-        required_features = self.required_features
-        if isinstance(required_features, list) and "target" in self.required_features:
-            features = set(ts.columns.get_level_values("feature").tolist())
-            required_features = list(set(required_features) | match_target_quantiles(features))
-        df = ts.to_pandas(flatten=False, features=required_features)
+        df = ts.to_pandas(flatten=False, features=self._get_inverse_transform_required_features(ts))
         columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._inverse_transform(df=df)
         ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
