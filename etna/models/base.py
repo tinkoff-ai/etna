@@ -652,7 +652,7 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
         :
             Dataset with predictions
         """
-        raise NotImplementedError("It is currently not implemented!")
+        raise NotImplementedError("Method predict isn't currently implemented!")
 
     def get_model(self) -> "DeepBaseNet":
         """Get model.

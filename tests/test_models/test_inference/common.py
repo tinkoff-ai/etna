@@ -20,9 +20,17 @@ def to_be_fixed(raises, match=None):
     return to_be_fixed_concrete
 
 
+def make_prediction(model, ts, prediction_size, method_name) -> TSDataset:
+    method = getattr(model, method_name)
+    if isinstance(model, get_args(ContextRequiredModelType)):
+        ts = method(ts, prediction_size=prediction_size)
+    else:
+        ts = method(ts)
+    return ts
+
+
 def _test_prediction_in_sample_full(ts, model, transforms, method_name):
     df = ts.to_pandas()
-    method = getattr(model, method_name)
 
     # fitting
     ts.fit_transform(transforms)
@@ -31,12 +39,8 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
     # forecasting
     forecast_ts = TSDataset(df, freq="D")
     forecast_ts.transform(ts.transforms)
-
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        prediction_size = len(forecast_ts.index)
-        method(forecast_ts, prediction_size=prediction_size)
-    else:
-        method(forecast_ts)
+    prediction_size = len(forecast_ts.index)
+    forecast_ts = make_prediction(model=model, ts=forecast_ts, prediction_size=prediction_size, method_name=method_name)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -45,7 +49,6 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
 
 def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_skip_points):
     df = ts.to_pandas()
-    method = getattr(model, method_name)
 
     # fitting
     ts.fit_transform(transforms)
@@ -54,13 +57,9 @@ def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_sk
     # forecasting
     forecast_ts = TSDataset(df, freq="D")
     forecast_ts.transform(ts.transforms)
-
-    if isinstance(model, get_args(ContextRequiredModelType)):
-        prediction_size = len(forecast_ts.index) - num_skip_points
-        method(forecast_ts, prediction_size=prediction_size)
-    else:
-        forecast_ts.df = forecast_ts.df.iloc[num_skip_points:]
-        method(forecast_ts)
+    forecast_ts.df = forecast_ts.df.iloc[(num_skip_points - model.context_size) :]
+    prediction_size = len(forecast_ts.index) - num_skip_points
+    forecast_ts = make_prediction(model=model, ts=forecast_ts, prediction_size=prediction_size, method_name=method_name)
 
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
