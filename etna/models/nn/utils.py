@@ -10,6 +10,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
 from etna import SETTINGS
+from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.base import log_decorator
@@ -45,7 +46,7 @@ class _DeepCopyMixin:
         return obj
 
 
-class PytorchForecastingDatasetBuilder:
+class PytorchForecastingDatasetBuilder(BaseMixin):
     """Builder for PytorchForecasting dataset."""
 
     def __init__(

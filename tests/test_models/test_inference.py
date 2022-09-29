@@ -250,6 +250,7 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
         ),
         pytest.param(
             TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
             marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
         ),
     ],
