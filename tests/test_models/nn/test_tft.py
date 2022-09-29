@@ -23,11 +23,10 @@ def test_fit_wrong_order_transform(weekly_period_df):
         target_normalizer=None,
     )
 
-    ts.fit_transform([pft, add_const])
+    ts.fit_transform([])
 
-    model = TFTModel(max_epochs=300, learning_rate=[0.1])
-    with pytest.raises(ValueError, match="add PytorchForecastingTransform"):
-        model.fit(ts)
+    model = TFTModel(pft, max_epochs=300, learning_rate=[0.1])
+    model.fit(ts)
 
 
 @pytest.mark.long_2
@@ -41,24 +40,24 @@ def test_tft_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon, h
 
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
 
-    dft = DateFlagsTransform(day_number_in_week=True, day_number_in_month=False, out_column="regressor_dateflag")
+    dft = DateFlagsTransform(day_number_in_week=True, day_number_in_month=False, out_column="dateflag")
     pft = PytorchForecastingTransform(
         max_encoder_length=21,
         min_encoder_length=21,
         max_prediction_length=horizon,
         time_varying_known_reals=["time_idx"],
-        time_varying_known_categoricals=["regressor_dateflag_day_number_in_week"],
+        time_varying_known_categoricals=["dateflag_day_number_in_week"],
         time_varying_unknown_reals=["target"],
         static_categoricals=["segment"],
         target_normalizer=None,
     )
 
-    ts_train.fit_transform([dft, pft])
+    ts_train.fit_transform([dft])
 
-    model = TFTModel(max_epochs=300, learning_rate=[0.1])
-    ts_pred = ts_train.make_future(horizon)
+    model = TFTModel(transform=pft, max_epochs=300, learning_rate=[0.1])
+    ts_pred = ts_train.make_future(horizon, transforms=[dft], tail_steps=21)
     model.fit(ts_train)
-    ts_pred = model.forecast(ts_pred)
+    ts_pred = model.forecast(ts_pred, horizon=horizon)
 
     mae = MAE("macro")
     assert mae(ts_test, ts_pred) < 0.24
@@ -88,13 +87,13 @@ def test_tft_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
         target_normalizer=None,
     )
 
-    ts_train.fit_transform([std, dft, pft])
+    ts_train.fit_transform([std, dft])
 
-    model = TFTModel(max_epochs=300, learning_rate=[0.1])
-    ts_pred = ts_train.make_future(horizon)
+    model = TFTModel(pft, max_epochs=300, learning_rate=[0.1])
+    ts_pred = ts_train.make_future(horizon, [std, dft], 21)
     model.fit(ts_train)
-    ts_pred = model.forecast(ts_pred)
-
+    ts_pred = model.forecast(ts_pred, horizon=horizon)
+    ts_pred.inverse_transform([std, dft])
     mae = MAE("macro")
     assert mae(ts_test, ts_pred) < 0.24
 
@@ -111,13 +110,13 @@ def test_forecast_without_make_future(weekly_period_df):
         target_normalizer=None,
     )
 
-    ts.fit_transform([pft])
+    ts.fit_transform([])
 
-    model = TFTModel(max_epochs=1)
+    model = TFTModel(pft, max_epochs=1)
     model.fit(ts)
     ts.df.index = ts.df.index + pd.Timedelta(days=len(ts.df))
     with pytest.raises(ValueError, match="The future is not generated!"):
-        _ = model.forecast(ts=ts)
+        _ = model.forecast(ts=ts, horizon=1)
 
 
 def _get_default_transform(horizon: int):
@@ -135,11 +134,11 @@ def _get_default_transform(horizon: int):
 def test_prediction_interval_run_infuture(example_tsds):
     horizon = 10
     transform = _get_default_transform(horizon)
-    example_tsds.fit_transform([transform])
-    model = TFTModel(max_epochs=8, learning_rate=[0.1], gpus=0, batch_size=64)
+    example_tsds.fit_transform([])
+    model = TFTModel(transform, max_epochs=8, learning_rate=[0.1], gpus=0, batch_size=64)
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon)
-    forecast = model.forecast(future, prediction_interval=True, quantiles=[0.02, 0.98])
+    future = example_tsds.make_future(horizon, [], transform.max_encoder_length)
+    forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.02, 0.98])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
@@ -151,12 +150,12 @@ def test_prediction_interval_run_infuture(example_tsds):
 def test_prediction_interval_run_infuture_warning_not_found_quantiles(example_tsds):
     horizon = 10
     transform = _get_default_transform(horizon)
-    example_tsds.fit_transform([transform])
-    model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64)
+    example_tsds.fit_transform([])
+    model = TFTModel(transform, max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64)
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon)
+    future = example_tsds.make_future(horizon, [], transform.max_encoder_length)
     with pytest.warns(UserWarning, match="Quantiles: \[0.4\] can't be computed"):
-        forecast = model.forecast(future, prediction_interval=True, quantiles=[0.02, 0.4, 0.98])
+        forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.02, 0.4, 0.98])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
@@ -168,12 +167,12 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
 
     horizon = 10
     transform = _get_default_transform(horizon)
-    example_tsds.fit_transform([transform])
-    model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64, loss=MAEPF())
+    example_tsds.fit_transform([])
+    model = TFTModel(transform, max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64, loss=MAEPF())
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon)
+    future = example_tsds.make_future(horizon, [], transform.max_encoder_length)
     with pytest.warns(UserWarning, match="Quantiles can't be computed"):
-        forecast = model.forecast(future, prediction_interval=True, quantiles=[0.02, 0.98])
+        forecast = model.forecast(future, horizon, prediction_interval=True, quantiles=[0.02, 0.98])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target"}.issubset(segment_slice.columns)

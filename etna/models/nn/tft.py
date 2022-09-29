@@ -36,6 +36,7 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
 
     def __init__(
         self,
+        transform: PytorchForecastingTransform,
         max_epochs: int = 10,
         gpus: Union[int, List[int]] = 0,
         gradient_clip_val: float = 0.1,
@@ -91,6 +92,9 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         super().__init__()
         if loss is None:
             loss = QuantileLoss()
+        self.encoder_length = transform.max_encoder_length
+        self.decoder_length = transform.max_prediction_length
+        self.transform = transform
         self.max_epochs = max_epochs
         self.gpus = gpus
         self.gradient_clip_val = gradient_clip_val
@@ -157,8 +161,9 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         """
         self._last_train_timestamp = ts.df.index[-1]
         self._freq = ts.freq
-        pf_transform = self._get_pf_transform(ts)
-        self.model = self._from_dataset(pf_transform.pf_dataset_train)
+        self.transform.fit(ts)
+        self.transform.transform(ts)
+        self.model = self._from_dataset(self.transform.pf_dataset_train)
 
         trainer_kwargs = dict(
             logger=tslogger.pl_loggers,
@@ -169,8 +174,8 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         trainer_kwargs.update(self.trainer_kwargs)
 
         self.trainer = pl.Trainer(**trainer_kwargs)
-
-        train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
+        pf_dataset_train = self.transform.create_train_dataset(ts)
+        train_dataloader = pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 
         self.trainer.fit(self.model, train_dataloader)
 
@@ -178,7 +183,11 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
 
     @log_decorator
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        horizon: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
         """
         Predict future.
@@ -197,31 +206,27 @@ class TFTModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
         TSDataset
             TSDataset with predictions.
         """
-        if ts.index[0] <= self._last_train_timestamp:
-            raise NotImplementedError(
-                "It is not possible to make in-sample predictions with TFT model! "
-                "In-sample predictions aren't supported by current implementation."
-            )
-        elif ts.index[0] != pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]:
-            raise NotImplementedError(
-                "You can only forecast from the next point after the last one in the training dataset: "
-                f"last train timestamp: {self._last_train_timestamp}, first test timestamp is {ts.index[0]}"
-            )
-        else:
-            pass
+        # if ts.index[0] <= self._last_train_timestamp:
+        #     raise NotImplementedError(
+        #         "It is not possible to make in-sample predictions with TFT model! "
+        #         "In-sample predictions aren't supported by current implementation."
+        #     )
+        # elif ts.index[0] != pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]:
+        #     raise NotImplementedError(
+        #         "You can only forecast from the next point after the last one in the training dataset: "
+        #         f"last train timestamp: {self._last_train_timestamp}, first test timestamp is {ts.index[0]}"
+        #     )
+        # else:
+        #     pass
 
-        pf_transform = self._get_pf_transform(ts)
-        if pf_transform.pf_dataset_predict is None:
-            raise ValueError(
-                "The future is not generated! Generate future using TSDataset make_future before calling forecast method!"
-            )
-        prediction_dataloader = pf_transform.pf_dataset_predict.to_dataloader(
-            train=False, batch_size=self.batch_size * 2
-        )
+        pf_dataset_inference = self.transform.create_inference_dataset(ts)
+
+        prediction_dataloader = pf_dataset_inference.to_dataloader(train=False, batch_size=self.batch_size * 2)
 
         predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
         # shape (segments, encoder_length)
-        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[: len(ts.df)]
+        ts.df = ts.df.iloc[-horizon:]
+        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
 
         if prediction_interval:
             if not isinstance(self.loss, QuantileLoss):

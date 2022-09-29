@@ -201,3 +201,91 @@ class PytorchForecastingTransform(IrreversibleTransform):
         for idx, value in enumerate(sorted(values)):
             encoded_unix_times[value] = idx
         return encoded_unix_times
+
+    def create_train_dataset(self, ts: TSDataset) -> TimeSeriesDataSet:
+        """_summary_.
+
+        Parameters
+        ----------
+        ts : TSDataset
+            _description_
+
+        Returns
+        -------
+        TimeSeriesDataSet
+            _description_
+        """
+        df_flat = ts.to_pandas(flatten=True)
+        df_flat = df_flat.dropna()
+        self.min_timestamp = df_flat.timestamp.min()
+
+        if self.time_varying_known_categoricals:
+            for feature_name in self.time_varying_known_categoricals:
+                df_flat[feature_name] = df_flat[feature_name].astype(str)
+
+        # making time_idx feature.
+        # it's needed for pytorch-forecasting for proper train-test split.
+        # it should be incremented by 1 for every new timestamp.
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
+        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
+        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
+
+        pf_dataset = TimeSeriesDataSet(
+            df_flat,
+            time_idx="time_idx",
+            target="target",
+            group_ids=["segment"],
+            time_varying_known_reals=self.time_varying_known_reals,
+            time_varying_known_categoricals=self.time_varying_known_categoricals,
+            time_varying_unknown_reals=self.time_varying_unknown_reals,
+            max_encoder_length=self.max_encoder_length,
+            max_prediction_length=self.max_prediction_length,
+            min_encoder_length=self.min_encoder_length,
+            min_prediction_length=self.min_prediction_length,
+            add_relative_time_idx=self.add_relative_time_idx,
+            add_target_scales=self.add_target_scales,
+            add_encoder_length=self.add_encoder_length,
+            allow_missing_timesteps=self.allow_missing_timesteps,
+            target_normalizer=self.target_normalizer,
+            static_categoricals=self.static_categoricals,
+            min_prediction_idx=self.min_prediction_idx,
+            variable_groups=self.variable_groups,
+            constant_fill_strategy=self.constant_fill_strategy,
+            lags=self.lags,
+            categorical_encoders=self.categorical_encoders,
+            scalers=self.scalers,
+        )
+
+        self.pf_dataset_params = pf_dataset.get_parameters()
+
+        return pf_dataset
+
+    def create_inference_dataset(self, ts: TSDataset) -> TimeSeriesDataSet:
+        """_summary_.
+
+        Parameters
+        ----------
+        ts : TSDataset
+            _description_
+
+        Returns
+        -------
+        TimeSeriesDataSet
+            _description_
+        """
+        df_flat = ts.to_pandas(flatten=True)
+        df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
+        df_flat["target"] = df_flat["target"].fillna(0)
+
+        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
+        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
+        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
+
+        if self.time_varying_known_categoricals:
+            for feature_name in self.time_varying_known_categoricals:
+                df_flat[feature_name] = df_flat[feature_name].astype(str)
+
+        pf_dataset_predict = TimeSeriesDataSet.from_parameters(
+            self.pf_dataset_params, df_flat, predict=True, stop_randomization=True
+        )
+        return pf_dataset_predict
