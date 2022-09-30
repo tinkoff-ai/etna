@@ -100,8 +100,6 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        if prediction_interval and isinstance(self.model, PredictIntervalAbstractModel):
-            future = self.ts.make_future(future_steps=self.horizon, transforms=self.transforms)
         if prediction_interval and isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
             future = self.ts.make_future(future_steps=self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)

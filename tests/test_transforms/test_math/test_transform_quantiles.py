@@ -42,7 +42,6 @@ def test_standard_scaler_dummy_mean_shift_for_quantiles_macro(toy_dataset_with_m
     )
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     """
     This test checks that inverse_transform transforms forecast's quantiles the same way with target itself and
@@ -66,7 +65,6 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
     np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0: bug in required_features with quantiles")
 @pytest.mark.parametrize(
     "transform",
     (
@@ -83,8 +81,8 @@ def test_add_constant_dummy(toy_dataset_equal_targets_and_quantiles):
 def test_dummy_all(toy_dataset_equal_targets_and_quantiles, transform):
     """This test checks that inverse_transform transforms forecast's quantiles the same way with target itself."""
     toy_dataset = toy_dataset_equal_targets_and_quantiles
-    _ = transform.fit_transform(deepcopy(toy_dataset))
-    toy_dataset = transform.inverse_transform(toy_dataset).to_pandas()
+    transform.fit_transform(deepcopy(toy_dataset))
+    toy_dataset_df = transform.inverse_transform(toy_dataset).to_pandas()
 
-    np.testing.assert_allclose(toy_dataset.iloc[:, 0], toy_dataset.iloc[:, 1])
-    np.testing.assert_allclose(toy_dataset.iloc[:, 2], toy_dataset.iloc[:, 3])
+    np.testing.assert_allclose(toy_dataset_df.iloc[:, 0], toy_dataset_df.iloc[:, 1])
+    np.testing.assert_allclose(toy_dataset_df.iloc[:, 2], toy_dataset_df.iloc[:, 3])

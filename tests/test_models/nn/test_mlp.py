@@ -40,7 +40,7 @@ def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
         decoder_length=decoder_length,
         trainer_params=dict(max_epochs=100),
     )
-    future = ts_train.make_future(decoder_length, transforms=transforms)
+    future = ts_train.make_future(horizon, transforms=transforms)
     model.fit(ts_train)
     future = model.forecast(future, prediction_size=horizon)
     future.inverse_transform(transforms)

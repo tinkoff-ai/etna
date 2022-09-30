@@ -117,8 +117,6 @@ class CatBoostPerSegmentModel(
 
     Examples
     --------
-    >>> import pytest
-    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostPerSegmentModel
@@ -137,12 +135,13 @@ class CatBoostPerSegmentModel(
     ...     LagTransform(in_column="target", lags=[horizon, horizon+1, horizon+2])
     ... ]
     >>> ts.fit_transform(transforms=transforms)
-    >>> future = ts.make_future(horizon)
+    >>> future = ts.make_future(horizon, transforms=transforms)
     >>> model = CatBoostPerSegmentModel()
     >>> model.fit(ts=ts)
     CatBoostPerSegmentModel(iterations = None, depth = None, learning_rate = None,
     logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
     >>> forecast = model.forecast(future)
+    >>> forecast.inverse_transform(transforms)
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
@@ -245,8 +244,6 @@ class CatBoostMultiSegmentModel(
 
     Examples
     --------
-    >>> import pytest
-    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostMultiSegmentModel
@@ -265,12 +262,13 @@ class CatBoostMultiSegmentModel(
     ...     LagTransform(in_column="target", lags=[horizon, horizon+1, horizon+2])
     ... ]
     >>> ts.fit_transform(transforms=transforms)
-    >>> future = ts.make_future(horizon)
+    >>> future = ts.make_future(horizon, transforms=transforms)
     >>> model = CatBoostMultiSegmentModel()
     >>> model.fit(ts=ts)
     CatBoostMultiSegmentModel(iterations = None, depth = None, learning_rate = None,
     logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
     >>> forecast = model.forecast(future)
+    >>> forecast.inverse_transform(transforms)
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> forecast[:, :, "target"].round()
     segment    segment_0 segment_1 segment_2 segment_3
@@ -377,8 +375,6 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
 
     Examples
     --------
-    >>> import pytest
-    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostModelPerSegment
@@ -397,12 +393,13 @@ class CatBoostModelPerSegment(CatBoostPerSegmentModel):
     ...     LagTransform(in_column="target", lags=[horizon, horizon+1, horizon+2])
     ... ]
     >>> ts.fit_transform(transforms=transforms)
-    >>> future = ts.make_future(horizon)
+    >>> future = ts.make_future(horizon, transforms=transforms)
     >>> model = CatBoostModelPerSegment()
     >>> model.fit(ts=ts)
     CatBoostModelPerSegment(iterations = None, depth = None, learning_rate = None,
     logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
     >>> forecast = model.forecast(future)
+    >>> forecast.inverse_transform(transforms)
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
@@ -508,8 +505,6 @@ class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
 
     Examples
     --------
-    >>> import pytest
-    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostModelMultiSegment
@@ -528,12 +523,13 @@ class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
     ...     LagTransform(in_column="target", lags=[horizon, horizon+1, horizon+2])
     ... ]
     >>> ts.fit_transform(transforms=transforms)
-    >>> future = ts.make_future(horizon)
+    >>> future = ts.make_future(horizon, transforms=transforms)
     >>> model = CatBoostModelMultiSegment()
     >>> model.fit(ts=ts)
     CatBoostModelMultiSegment(iterations = None, depth = None, learning_rate = None,
     logging_level = 'Silent', l2_leaf_reg = None, thread_count = None, )
     >>> forecast = model.forecast(future)
+    >>> forecast.inverse_transform(transforms)
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> forecast[:, :, "target"].round()
     segment    segment_0 segment_1 segment_2 segment_3
