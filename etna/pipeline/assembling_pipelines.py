@@ -49,8 +49,6 @@ def assemble_pipelines(
 
     Examples
     --------
-    >>> import pytest
-    >>> pytest.xfail(reason="TSDataset 2.0")
     >>> from etna.pipeline import assemble_pipelines
     >>> from etna.models import LinearPerSegmentModel, NaiveModel
     >>> from etna.transforms import TrendTransform, AddConstTransform, LagTransform
