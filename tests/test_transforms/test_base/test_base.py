@@ -150,18 +150,18 @@ def test_inverse_transform_add_target_quantiles(remove_columns_df, in_column, ex
     assert sorted(required_features) == sorted(expected_required_features)
 
 
-@pytest.mark.parametrize(
-    "required_features",
-    [("all"), (["target", "segment"])],
-)
-def test_inverse_transform_request_update_dataset(remove_columns_df, required_features):
+def test_inverse_transform_request_update_dataset(remove_columns_df):
     df, _ = remove_columns_df
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.to_pandas = Mock(return_value=df)
 
-    transform = ReversibleTransformMock(required_features=required_features)
+    transform = ReversibleTransformMock(required_features="all")
+    transform._inverse_transform = Mock()
     transform._update_dataset = Mock()
 
     transform.inverse_transform(ts=ts)
-    transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=df)
+    expected_df_transformed = transform._inverse_transform.return_value
+    transform._update_dataset.assert_called_with(
+        ts=ts, columns_before=columns_before, df_transformed=expected_df_transformed
+    )
