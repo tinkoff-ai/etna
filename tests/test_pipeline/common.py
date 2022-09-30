@@ -22,7 +22,7 @@ def check_predict_calls_validate_timestamps(pipeline_constructor, start_timestam
     _ = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
     pipeline._validate_predict_timestamps.assert_called_once_with(
-        start_timestamp=start_timestamp, end_timestamp=end_timestamp
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
     )
 
 
