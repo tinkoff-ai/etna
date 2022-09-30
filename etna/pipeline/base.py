@@ -171,7 +171,7 @@ class AbstractPipeline(ABC):
             if isn't set the first timestamp where each segment began is taken.
         end_timestamp:
             Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is <= ``self.ts``.
+            Expected that value is less or equal to the last timestamp in ``self.ts``.
         prediction_interval:
             If True returns prediction interval for forecast.
         quantiles:
@@ -363,7 +363,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             if isn't set the first timestamp where each segment began is taken.
         end_timestamp:
             Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is <= ``self.ts``.
+            Expected that value is less or equal to the last timestamp in ``self.ts``.
         prediction_interval:
             If True returns prediction interval for forecast.
         quantiles:
