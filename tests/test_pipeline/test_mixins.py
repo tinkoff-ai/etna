@@ -31,7 +31,15 @@ def make_mixin(ts=None, model=None, transforms=(), mock_recreate_ts=True, mock_d
 
 
 @pytest.mark.parametrize("context_size", [0, 3])
-@pytest.mark.parametrize("start_idx, end_idx", [(0, 0), (0, 1), (0, 10), (5, 10)])
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+    ],
+)
 @pytest.mark.parametrize(
     "transforms",
     [
@@ -40,7 +48,7 @@ def make_mixin(ts=None, model=None, transforms=(), mock_recreate_ts=True, mock_d
         [DateFlagsTransform(), FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
     ],
 )
-def test_prepare_ts(context_size, start_idx, end_idx, transforms, example_reg_tsds):
+def test_prepare_ts(context_size, start_timestamp, end_timestamp, transforms, example_reg_tsds):
     ts = example_reg_tsds
     initial_ts = deepcopy(ts)
     model = MagicMock()
@@ -48,37 +56,45 @@ def test_prepare_ts(context_size, start_idx, end_idx, transforms, example_reg_ts
     mixin = make_mixin(ts=ts, transforms=transforms, model=model, mock_recreate_ts=False)
 
     ts.fit_transform(transforms)
-
-    start_timestamp = ts.index[start_idx]
-    end_timestamp = ts.index[end_idx]
     recreated_ts = mixin._recreate_ts(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
-    expected_start_timestamp = ts.index[max(0, start_idx - model.context_size)]
+    expected_start_timestamp = max(example_reg_tsds.index[0], start_timestamp - pd.Timedelta(days=model.context_size))
     assert recreated_ts.index[0] == expected_start_timestamp
     assert recreated_ts.index[-1] == end_timestamp
     assert recreated_ts.regressors == initial_ts.regressors
     pd.testing.assert_frame_equal(recreated_ts.df, initial_ts.df[expected_start_timestamp:end_timestamp])
 
 
-@pytest.mark.parametrize("start_idx, end_idx", [(0, 0), (0, 1), (0, 10), (5, 10)])
-def test_determine_prediction_size(start_idx, end_idx, example_tsds):
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp, expected_prediction_size",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), 1),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02"), 2),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10"), 10),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10"), 6),
+    ],
+)
+def test_determine_prediction_size(start_timestamp, end_timestamp, expected_prediction_size, example_tsds):
     ts = example_tsds
     mixin = make_mixin(ts=ts, mock_determine_prediction_size=False)
 
-    start_timestamp = ts.index[start_idx]
-    end_timestamp = ts.index[end_idx]
     prediction_size = mixin._determine_prediction_size(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
-    expected_prediction_size = end_idx - start_idx + 1
     assert prediction_size == expected_prediction_size
 
 
-@pytest.mark.parametrize("start_idx, end_idx", [(0, 0), (0, 1), (0, 10), (5, 10)])
-def test_predict_recreate_ts_called(start_idx, end_idx, example_tsds):
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+    ],
+)
+def test_predict_recreate_ts_called(start_timestamp, end_timestamp, example_tsds):
     mixin = make_mixin()
 
-    start_timestamp = mixin.ts.index[start_idx]
-    end_timestamp = mixin.ts.index[end_idx]
     _ = mixin._predict(
         start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
     )
@@ -86,12 +102,18 @@ def test_predict_recreate_ts_called(start_idx, end_idx, example_tsds):
     mixin._recreate_ts.assert_called_once_with(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
 
-@pytest.mark.parametrize("start_idx, end_idx", [(0, 0), (0, 1), (0, 10), (5, 10)])
-def test_predict_determine_prediction_size_called(start_idx, end_idx, example_tsds):
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+    ],
+)
+def test_predict_determine_prediction_size_called(start_timestamp, end_timestamp, example_tsds):
     mixin = make_mixin()
 
-    start_timestamp = mixin.ts.index[start_idx]
-    end_timestamp = mixin.ts.index[end_idx]
     _ = mixin._predict(
         start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
     )
