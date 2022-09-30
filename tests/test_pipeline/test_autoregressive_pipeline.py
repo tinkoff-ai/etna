@@ -26,6 +26,10 @@ from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
+from tests.test_pipeline.common import check_predict_calls_private_predict
+from tests.test_pipeline.common import check_predict_calls_validate_quantiles
+from tests.test_pipeline.common import check_predict_calls_validate_timestamps
+from tests.test_pipeline.common import check_predict_fail_not_fitted
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -234,6 +238,47 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
     assert np.all(forecast_df == expected_forecast_df)
+
+
+def test_predict_fail_not_fitted():
+    check_predict_fail_not_fitted(pipeline_constructor=AutoRegressivePipeline)
+
+
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (None, None),
+        (pd.Timestamp("2020-01-02"), None),
+        (None, pd.Timestamp("2020-02-01")),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-02-01")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-02-03")),
+    ],
+)
+def test_predict_calls_validate_timestamps(start_timestamp, end_timestamp, example_tsds):
+    check_predict_calls_validate_timestamps(
+        pipeline_constructor=AutoRegressivePipeline,
+        start_timestamp=start_timestamp,
+        end_timestamp=end_timestamp,
+        ts=example_tsds,
+    )
+
+
+@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
+def test_predict_calls_validate_quantiles(quantiles, example_tsds):
+    check_predict_calls_validate_quantiles(
+        pipeline_constructor=AutoRegressivePipeline, quantiles=quantiles, ts=example_tsds
+    )
+
+
+@pytest.mark.parametrize("prediction_interval", [False, True])
+@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
+def test_predict_calls_private_predict(prediction_interval, quantiles, example_tsds):
+    check_predict_calls_private_predict(
+        pipeline_constructor=AutoRegressivePipeline,
+        prediction_interval=prediction_interval,
+        quantiles=quantiles,
+        ts=example_tsds,
+    )
 
 
 @pytest.mark.parametrize(

@@ -8,7 +8,7 @@ from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
-from etna.pipeline.mixins import PipelineModelPredictMixin
+from etna.pipeline.mixins import ModelPipelinePredictMixin
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 
@@ -19,7 +19,7 @@ def make_mixin(ts=None, model=None, transforms=(), mock_recreate_ts=True, mock_d
     if model is None:
         model = MagicMock(spec=NonPredictionIntervalContextIgnorantAbstractModel)
 
-    mixin = PipelineModelPredictMixin()
+    mixin = ModelPipelinePredictMixin()
     mixin.ts = ts
     mixin.transforms = transforms
     mixin.model = model

@@ -17,7 +17,7 @@ from etna.models import PredictionIntervalContextRequiredAbstractModel
 from etna.transforms import Transform
 
 
-class PipelineModelPredictMixin:
+class ModelPipelinePredictMixin:
     """Mixin for pipelines with model inside with implementation of ``_predict`` method."""
 
     ts: Optional[TSDataset]

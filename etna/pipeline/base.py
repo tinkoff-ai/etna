@@ -319,67 +319,14 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             )
         return predictions
 
-    def _predict(
-        self,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-    ) -> TSDataset:
-        raise NotImplementedError()
-
-    def predict(
-        self,
+    @staticmethod
+    def _validate_predict_timestamps(
+        ts: TSDataset,
         start_timestamp: Optional[pd.Timestamp] = None,
         end_timestamp: Optional[pd.Timestamp] = None,
-        prediction_interval: bool = False,
-        quantiles: Sequence[float] = (0.025, 0.975),
-    ) -> TSDataset:
-        """Make in-sample predictions in a given range.
-
-        Currently, in situation when segments start with different timestamps
-        we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
-
-        Parameters
-        ----------
-        start_timestamp:
-            First timestamp of prediction range to return, should be >= than first timestamp in ``self.ts``;
-            expected that beginning of each segment <= ``start_timestamp``;
-            if isn't set the first timestamp where each segment began is taken.
-        end_timestamp:
-            Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is <= ``self.ts``.
-        prediction_interval:
-            If True returns prediction interval for forecast.
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval.
-
-        Returns
-        -------
-        :
-            Dataset with predictions in ``[start_timestamp, end_timestamp]`` range.
-
-        Raises
-        ------
-        ValueError:
-            Pipeline wasn't fitted.
-        ValueError:
-            Value of ``end_timestamp`` is less than ``start_timestamp``.
-        ValueError:
-            Value of ``start_timestamp`` goes before point where each segment started.
-        ValueError:
-            Value of ``end_timestamp`` goes after the last timestamp.
-        """
-        # check presence dataset
-        if self.ts is None:
-            raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                f"before calling predict method."
-            )
-
-        # check timestamps
-        min_timestamp = self.ts.describe()["start_timestamp"].max()
-        max_timestamp = self.ts.index[-1]
+    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        min_timestamp = ts.describe()["start_timestamp"].max()
+        max_timestamp = ts.index[-1]
 
         if start_timestamp is None:
             start_timestamp = min_timestamp
@@ -394,17 +341,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         if start_timestamp > end_timestamp:
             raise ValueError("Value of end_timestamp is less than start_timestamp!")
 
-        # check quantiles
-        self._validate_quantiles(quantiles=quantiles)
-
-        # make prediction
-        prediction = self._predict(
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-            prediction_interval=prediction_interval,
-            quantiles=quantiles,
-        )
-        return prediction
+        return start_timestamp, end_timestamp
 
     def _init_backtest(self):
         self._folds: Optional[Dict[int, Any]] = None
