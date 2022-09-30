@@ -59,15 +59,15 @@ class SklearnTransform(ReversibleTransform):
         ValueError:
             if incorrect mode given
         """
-        super().__init__(required_features="all")
-        if inplace and (out_column is not None):
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
-
-        self.transformer = transformer
-
         if isinstance(in_column, str):
             in_column = [in_column]
+        required_features = sorted(in_column) if in_column is not None else "all"
+        super().__init__(required_features=required_features)  # type: ignore
+
+        if inplace and (out_column is not None):
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
         self.in_column = in_column if in_column is None else sorted(in_column)
+        self.transformer = transformer
 
         self.inplace = inplace
         self.mode = TransformMode(mode)

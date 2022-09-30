@@ -276,12 +276,12 @@ def test_mad_transform_with_nans(
     ),
 )
 def test_min_max_diff_feature(
-    simple_df_for_agg: pd.DataFrame, window: int, periods: int, fill_na: float, expected: np.array
+    simple_ts_for_agg: TSDataset, window: int, periods: int, fill_na: float, expected: np.array
 ):
     transform = MinMaxDifferenceTransform(
         window=window, min_periods=periods, fillna=fill_na, in_column="target", out_column="result"
     )
-    res = transform.fit_transform(simple_df_for_agg)
+    res = transform.fit_transform(simple_ts_for_agg).to_pandas()
     res["expected"] = expected
     assert (res["expected"] == res["segment_1"]["result"]).all()
 
