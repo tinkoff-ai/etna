@@ -167,19 +167,7 @@ class DeepARModel(PytorchForecastingMixin, MultiSegmentPredictionIntervalModel, 
         TSDataset
             TSDataset with predictions.
         """
-        assert (
-            len(ts.df) == horizon + self.encoder_length
-        ), "Length of dataset must be equal to horizon + max_encoder_length"
-
-        pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts)
-
-        prediction_dataloader = pf_dataset_inference.to_dataloader(train=False, batch_size=self.test_batch_size)
-
-        # shape (segments, encoder_length)
-        predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
-
-        ts.df = ts.df.iloc[-horizon:]
-        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
+        ts, prediction_dataloader = self._make_target_prediction(ts, horizon)
 
         if prediction_interval:
             quantiles_predicts = self.model.predict(  # type: ignore

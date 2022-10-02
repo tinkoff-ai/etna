@@ -14,6 +14,7 @@ from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.base import log_decorator
+from etna.models.utils import determine_num_steps
 
 if SETTINGS.torch_required:
     import pytorch_lightning as pl
@@ -21,6 +22,8 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.data.encoders import EncoderNormalizer
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
     from pytorch_forecasting.data.encoders import TorchNormalizer
+    from torch.utils.data import DataLoader
+
 else:
     TimeSeriesDataSet = None  # type: ignore
     EncoderNormalizer = None  # type: ignore
@@ -129,9 +132,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         # making time_idx feature.
         # it's needed for pytorch-forecasting for proper train-test split.
         # it should be incremented by 1 for every new timestamp.
-        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
-        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
-        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
+        df_flat["time_idx"] = df_flat["timestamp"].apply(lambda x: determine_num_steps(self.min_timestamp, x, ts.freq))
 
         pf_dataset = TimeSeriesDataSet(
             df_flat,
@@ -175,9 +176,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
         df_flat["target"] = df_flat["target"].fillna(0)
 
-        df_flat["time_idx"] = (df_flat["timestamp"] - self.min_timestamp) // pd.Timedelta("1s")
-        encoded_unix_times = self._time_encoder(list(df_flat.time_idx.unique()))
-        df_flat["time_idx"] = df_flat["time_idx"].apply(lambda x: encoded_unix_times[x])
+        df_flat["time_idx"] = df_flat["timestamp"].apply(lambda x: determine_num_steps(self.min_timestamp, x, ts.freq))
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
@@ -227,3 +226,19 @@ class PytorchForecastingMixin:
         else:
             raise ValueError("Trainer or model is None")
         return self
+
+    def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
+        assert (
+            len(ts.df) == horizon + self.encoder_length  # type: ignore
+        ), "Length of dataset must be equal to horizon + max_encoder_length"
+
+        pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts)  # type: ignore
+
+        prediction_dataloader: DataLoader = pf_dataset_inference.to_dataloader(train=False, batch_size=self.test_batch_size)  # type: ignore
+
+        # shape (segments, encoder_length)
+        predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
+
+        ts.df = ts.df.iloc[-horizon:]
+        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
+        return ts, prediction_dataloader
