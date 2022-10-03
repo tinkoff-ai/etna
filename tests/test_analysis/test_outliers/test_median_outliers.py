@@ -6,7 +6,7 @@ from etna.analysis.outliers import get_anomalies_median
 
 def test_const_ts(const_ts_anomal):
     anomal = get_anomalies_median(const_ts_anomal)
-    assert set(["segment_0", "segment_1"]) == set(anomal.keys())
+    assert {"segment_0", "segment_1"} == set(anomal.keys())
     for seg in anomal.keys():
         assert len(anomal[seg]) == 0
 
@@ -34,7 +34,7 @@ def test_median_outliers(window_size, alpha, right_anomal, outliers_tsds):
 def test_interface_correct_args(true_params, outliers_tsds):
     d = get_anomalies_median(ts=outliers_tsds, window_size=10, alpha=2)
     assert isinstance(d, dict)
-    assert sorted(list(d.keys())) == sorted(true_params)
+    assert sorted(d.keys()) == sorted(true_params)
     for i in d.keys():
         for j in d[i]:
             assert isinstance(j, np.datetime64)

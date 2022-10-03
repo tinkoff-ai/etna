@@ -39,6 +39,18 @@ def ts_trend_seasonal(random_seed) -> TSDataset:
     return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
 
 
+@pytest.mark.parametrize("order, mods, repr_mods", [(None, [1, 2, 3, 4], [1, 2, 3, 4]), (2, None, [1, 2, 3, 4])])
+def test_repr(order, mods, repr_mods):
+    transform = FourierTransform(
+        period=10,
+        order=order,
+        mods=mods,
+    )
+    transform_repr = transform.__repr__()
+    true_repr = f"FourierTransform(period = 10, order = None, mods = {repr_mods}, out_column = None, )"
+    assert transform_repr == true_repr
+
+
 @pytest.mark.parametrize("period", [-1, 0, 1, 1.5])
 def test_fail_period(period):
     """Test that transform is not created with wrong period."""

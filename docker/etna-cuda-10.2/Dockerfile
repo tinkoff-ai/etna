@@ -1,11 +1,15 @@
 ARG BASE_IMAGE=nvidia/cuda:10.2-cudnn7-runtime-ubuntu18.04
+ARG DISTRO_ARCH=ubuntu1804/x86_64
 ARG CUDA_VERSION_FOR_TORCH=cu102
 
 FROM ${BASE_IMAGE}
 
 ARG CUDA_VERSION_FOR_TORCH
+ARG DISTRO_ARCH
 
-RUN apt-get -y update \
+RUN apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/$DISTRO_ARCH/3bf863cc.pub \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/$DISTRO_ARCH/7fa2af80.pub \
+    && apt-get -y update \
     && apt-get install --no-install-recommends  -y software-properties-common curl git openssh-client \
     && add-apt-repository ppa:deadsnakes/ppa -y \
     && apt-get -y update \
@@ -21,7 +25,9 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && rm get-pip.py
 
 COPY requirements.txt /
-RUN pip install --no-cache-dir -r requirements.txt -f https://download.pytorch.org/whl/${CUDA_VERSION_FOR_TORCH}/torch_stable.html
+RUN pip install --no-cache-dir -r requirements.txt -f https://download.pytorch.org/whl/${CUDA_VERSION_FOR_TORCH}/torch_stable.html \
+    && pip install --no-cache-dir prophet \
+    && rm -rf ~/.cache
 WORKDIR /code
 
 CMD [ "bash" ]

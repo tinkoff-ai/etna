@@ -118,6 +118,13 @@ config.env
 
 # tensorboard
 /runs
+lightning_logs
+
+# pytorch lightning
+checkpoints/
+
+# macOS
+.DS_Store
 
 *.html
 .devcontainer

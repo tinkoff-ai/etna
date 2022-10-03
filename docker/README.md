@@ -4,7 +4,7 @@
 
 - `ghcr.io/tinkoff-ai/etna/etna-cpu:<tag>`
 - `ghcr.io/tinkoff-ai/etna/etna-cuda-10.2:<tag>`
-- `ghcr.io/tinkoff-ai/etna/etna-cuda-11.1:<tag>`
+- `ghcr.io/tinkoff-ai/etna/etna-cuda-11.6.2:<tag>`
 
 ## Use cases
 

@@ -134,7 +134,7 @@ class TrendTransform(_TrendTransform, FutureMixin):
         self,
         in_column: str,
         out_column: Optional[str] = None,
-        detrend_model: TDetrendModel = LinearRegression(),
+        detrend_model: Optional[TDetrendModel] = None,
         model: str = "ar",
         custom_cost: Optional[BaseCost] = None,
         min_size: int = 2,
@@ -172,7 +172,7 @@ class TrendTransform(_TrendTransform, FutureMixin):
         """
         self.in_column = in_column
         self.out_column = out_column
-        self.detrend_model = detrend_model
+        self.detrend_model = LinearRegression() if detrend_model is None else detrend_model
         self.model = model
         self.custom_cost = custom_cost
         self.min_size = min_size

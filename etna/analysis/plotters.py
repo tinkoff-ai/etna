@@ -3,6 +3,7 @@ import math
 import warnings
 from copy import deepcopy
 from enum import Enum
+from functools import singledispatch
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
@@ -12,7 +13,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Tuple
-from typing import Type
 from typing import Union
 
 import holidays as holidays_lib
@@ -27,6 +27,7 @@ from scipy.signal import periodogram
 from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
+from etna.analysis.feature_relevance import StatisticsRelevanceTable
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
 from etna.analysis.utils import prepare_axes
@@ -39,6 +40,24 @@ if TYPE_CHECKING:
     from etna.transforms.decomposition.detrend import LinearTrendTransform
     from etna.transforms.decomposition.detrend import TheilSenTrendTransform
     from etna.transforms.decomposition.stl import STLTransform
+
+
+def _get_borders_ts(ts: "TSDataset", start: Optional[str], end: Optional[str]) -> Tuple[str, str]:
+    """Get start and end parameters according to given TSDataset."""
+    if start is not None:
+        start_idx = ts.df.index.get_loc(start)
+    else:
+        start_idx = 0
+
+    if end is not None:
+        end_idx = ts.df.index.get_loc(end)
+    else:
+        end_idx = len(ts.df.index) - 1
+
+    if start_idx >= end_idx:
+        raise ValueError("Parameter 'end' must be greater than 'start'!")
+
+    return ts.df.index[start_idx], ts.df.index[end_idx]
 
 
 def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:
@@ -56,12 +75,12 @@ def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optio
     intersection_quantiles_set = set.intersection(
         *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
     )
-    intersection_quantiles = sorted(list(intersection_quantiles_set))
+    intersection_quantiles = sorted(intersection_quantiles_set)
 
     if quantiles is None:
         selected_quantiles = intersection_quantiles
     else:
-        selected_quantiles = sorted(list(set(quantiles) & intersection_quantiles_set))
+        selected_quantiles = sorted(set(quantiles) & intersection_quantiles_set)
         non_existent = set(quantiles) - intersection_quantiles_set
         if non_existent:
             warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
@@ -142,7 +161,7 @@ def plot_forecast(
             unique_segments.update(forecast.segments)
         segments = list(unique_segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     if prediction_intervals:
         quantiles = _select_quantiles(forecast_results, quantiles)
@@ -177,7 +196,7 @@ def plot_forecast(
 
         # plot forecast plot for each of given forecasts
         quantile_prefix = "target_"
-        for j, (forecast_name, forecast) in enumerate(forecast_results.items()):
+        for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
             segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
@@ -245,16 +264,32 @@ def plot_forecast(
         ax[i].legend(loc="upper left")
 
 
+def _validate_intersecting_segments(fold_numbers: pd.Series):
+    """Validate if segments aren't intersecting."""
+    fold_info = []
+    for fold_number in fold_numbers.unique():
+        fold_start = fold_numbers[fold_numbers == fold_number].index.min()
+        fold_end = fold_numbers[fold_numbers == fold_number].index.max()
+        fold_info.append({"fold_start": fold_start, "fold_end": fold_end})
+
+    fold_info.sort(key=lambda x: x["fold_start"])
+
+    for fold_info_1, fold_info_2 in zip(fold_info[:-1], fold_info[1:]):
+        if fold_info_2["fold_start"] <= fold_info_1["fold_end"]:
+            raise ValueError("Folds are intersecting")
+
+
 def plot_backtest(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
-    folds: Optional[List[int]] = None,
     columns_num: int = 2,
-    history_len: int = 0,
+    history_len: Union[int, Literal["all"]] = 0,
     figsize: Tuple[int, int] = (10, 5),
 ):
     """Plot targets and forecast for backtest pipeline.
+
+    This function doesn't support intersecting folds.
 
     Parameters
     ----------
@@ -264,53 +299,99 @@ def plot_backtest(
         dataframe of timeseries that was used for backtest
     segments:
         segments to plot
-    folds:
-        folds to plot
     columns_num:
         number of subplots columns
     history_len:
-        length of pre-backtest history to plot
+        length of pre-backtest history to plot, if value is "all" then plot all the history
     figsize:
         size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        if ``history_len`` is negative
+    ValueError:
+        if folds are intersecting
     """
+    if history_len != "all" and history_len < 0:
+        raise ValueError("Parameter history_len should be non-negative or 'all'")
+
     if segments is None:
         segments = sorted(ts.segments)
+
+    fold_numbers = forecast_df[segments[0]]["fold_number"]
+    _validate_intersecting_segments(fold_numbers)
+    folds = sorted(set(fold_numbers))
+
+    # prepare dataframes
     df = ts.df
-
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
-
-    if not folds:
-        folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
-
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
+    freq_timedelta = df.index[1] - df.index[0]
+
+    # prepare colors
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    color_cycle = itertools.cycle(default_colors)
+    lines_colors = {line_name: next(color_cycle) for line_name in ["history", "test", "forecast"]}
+
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     for i, segment in enumerate(segments):
         segment_backtest_df = backtest_df[segment]
         segment_history_df = history_df[segment]
+        segment_forecast_df = forecast_df[segment]
+        is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
 
-        if history_len:
-            plot_df = segment_history_df.tail(history_len)
+        # plot history
+        if history_len == "all":
+            plot_df = pd.concat((segment_history_df, segment_backtest_df))
+        elif history_len > 0:
+            plot_df = pd.concat((segment_history_df.tail(history_len), segment_backtest_df))
         else:
             plot_df = segment_backtest_df
+        ax[i].plot(plot_df.index, plot_df.target, color=lines_colors["history"])
 
-        ax[i].plot(plot_df.index, plot_df.target, label="history")
-        ax[i].plot(segment_backtest_df.index, segment_backtest_df.target, label="test")
-
-        segment_forecast_df = forecast_df[segment]
         for fold_number in folds:
-            forecast_df_slice_fold = segment_forecast_df[segment_forecast_df.fold_number == fold_number]
+            start_fold = fold_numbers[fold_numbers == fold_number].index.min()
+            end_fold = fold_numbers[fold_numbers == fold_number].index.max()
+            end_fold_exclusive = end_fold + freq_timedelta
+
+            # draw test
+            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            ax[i].plot(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
+
+            if is_full_folds:
+                # draw forecast
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                ax[i].plot(forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"])
+            else:
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
+
+                # draw points on test
+                ax[i].scatter(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
+
+                # draw forecast
+                ax[i].scatter(
+                    forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"]
+                )
+
+            # draw borders of current fold
+            opacity = 0.075 * ((fold_number + 1) % 2) + 0.075
             ax[i].axvspan(
-                forecast_df_slice_fold.index.min(),
-                forecast_df_slice_fold.index.max(),
-                alpha=0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2),
+                start_fold,
+                end_fold_exclusive,
+                alpha=opacity,
                 color="skyblue",
             )
 
-        ax[i].plot(segment_forecast_df.index, segment_forecast_df.target, label="forecast")
+        # plot legend
+        legend_handles = [
+            Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
+        ]
+        ax[i].legend(handles=legend_handles)
 
         ax[i].set_title(segment)
-        ax[i].legend()
         ax[i].tick_params("x", rotation=45)
 
 
@@ -318,8 +399,7 @@ def plot_backtest_interactive(
     forecast_df: pd.DataFrame,
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
-    folds: Optional[List[int]] = None,
-    history_len: int = 0,
+    history_len: Union[int, Literal["all"]] = 0,
     figsize: Tuple[int, int] = (900, 600),
 ) -> go.Figure:
     """Plot targets and forecast for backtest pipeline using plotly.
@@ -332,10 +412,8 @@ def plot_backtest_interactive(
         dataframe of timeseries that was used for backtest
     segments:
         segments to plot
-    folds:
-        folds to plot
     history_len:
-        length of pre-backtest history to plot
+        length of pre-backtest history to plot, if value is "all" then plot all the history
     figsize:
         size of the figure in pixels
 
@@ -343,82 +421,135 @@ def plot_backtest_interactive(
     -------
     go.Figure:
         result of plotting
+
+    Raises
+    ------
+    ValueError:
+        if ``history_len`` is negative
+    ValueError:
+        if folds are intersecting
     """
+    if history_len != "all" and history_len < 0:
+        raise ValueError("Parameter history_len should be non-negative or 'all'")
+
     if segments is None:
         segments = sorted(ts.segments)
+
+    fold_numbers = forecast_df[segments[0]]["fold_number"]
+    _validate_intersecting_segments(fold_numbers)
+    folds = sorted(set(fold_numbers))
+
+    # prepare dataframes
     df = ts.df
-
-    if not folds:
-        folds = sorted(set(forecast_df[segments[0]]["fold_number"]))
-
-    fig = go.Figure()
-    colors = plotly.colors.qualitative.Dark24
-
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
+    freq_timedelta = df.index[1] - df.index[0]
 
+    # prepare colors
+    colors = plotly.colors.qualitative.Dark24
+
+    fig = go.Figure()
     for i, segment in enumerate(segments):
         segment_backtest_df = backtest_df[segment]
         segment_history_df = history_df[segment]
+        segment_forecast_df = forecast_df[segment]
+        is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
 
-        if history_len:
-            plot_df = segment_history_df.tail(history_len)
+        # plot history
+        if history_len == "all":
+            plot_df = segment_history_df.append(segment_backtest_df)
+        elif history_len > 0:
+            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
         else:
             plot_df = segment_backtest_df
-
-        # history
         fig.add_trace(
             go.Scattergl(
                 x=plot_df.index,
                 y=plot_df.target,
                 legendgroup=f"{segment}",
                 name=f"{segment}",
+                mode="lines",
                 marker_color=colors[i % len(colors)],
                 showlegend=True,
-                line=dict(width=2, dash="solid"),
+                line=dict(width=2, dash="dash"),
             )
         )
 
-        # test
-        fig.add_trace(
-            go.Scattergl(
-                x=segment_backtest_df.index,
-                y=segment_backtest_df.target,
-                legendgroup=f"{segment}",
-                name=f"Test: {segment}",
-                marker_color=colors[i % len(colors)],
-                showlegend=False,
-                line=dict(width=2, dash="dot"),
-            )
-        )
+        for fold_number in folds:
+            start_fold = fold_numbers[fold_numbers == fold_number].index.min()
+            end_fold = fold_numbers[fold_numbers == fold_number].index.max()
+            end_fold_exclusive = end_fold + freq_timedelta
 
-        # folds
-        segment_forecast_df = forecast_df[segment]
-        if i == 0:
-            for fold_number in folds:
-                forecast_df_slice_fold = segment_forecast_df[segment_forecast_df.fold_number == fold_number]
-                opacity = 0.15 * (int(forecast_df_slice_fold.fold_number.max() + 1) % 2)
+            # draw test
+            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            fig.add_trace(
+                go.Scattergl(
+                    x=backtest_df_slice_fold.index,
+                    y=backtest_df_slice_fold.target,
+                    legendgroup=f"{segment}",
+                    name=f"Test: {segment}",
+                    mode="lines",
+                    marker_color=colors[i % len(colors)],
+                    showlegend=False,
+                    line=dict(width=2, dash="solid"),
+                )
+            )
+
+            if is_full_folds:
+                # draw forecast
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                fig.add_trace(
+                    go.Scattergl(
+                        x=forecast_df_slice_fold.index,
+                        y=forecast_df_slice_fold.target,
+                        legendgroup=f"{segment}",
+                        name=f"Forecast: {segment}",
+                        mode="lines",
+                        marker_color=colors[i % len(colors)],
+                        showlegend=False,
+                        line=dict(width=2, dash="dot"),
+                    )
+                )
+            else:
+                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
+
+                # draw points on test
+                fig.add_trace(
+                    go.Scattergl(
+                        x=backtest_df_slice_fold.index,
+                        y=backtest_df_slice_fold.target,
+                        legendgroup=f"{segment}",
+                        name=f"Test: {segment}",
+                        mode="markers",
+                        marker_color=colors[i % len(colors)],
+                        showlegend=False,
+                    )
+                )
+
+                # draw forecast
+                fig.add_trace(
+                    go.Scattergl(
+                        x=forecast_df_slice_fold.index,
+                        y=forecast_df_slice_fold.target,
+                        legendgroup=f"{segment}",
+                        name=f"Forecast: {segment}",
+                        mode="markers",
+                        marker_color=colors[i % len(colors)],
+                        showlegend=False,
+                    )
+                )
+
+            if i == 0:
+                opacity = 0.075 * ((fold_number + 1) % 2) + 0.075
                 fig.add_vrect(
-                    x0=forecast_df_slice_fold.index.min(),
-                    x1=forecast_df_slice_fold.index.max(),
+                    x0=start_fold,
+                    x1=end_fold_exclusive,
                     line_width=0,
                     fillcolor="blue",
                     opacity=opacity,
                 )
-
-        # forecast
-        fig.add_trace(
-            go.Scattergl(
-                x=segment_forecast_df.index,
-                y=segment_forecast_df.target,
-                legendgroup=f"{segment}",
-                name=f"Forecast: {segment}",
-                marker_color=colors[i % len(colors)],
-                showlegend=False,
-                line=dict(width=2, dash="dash"),
-            )
-        )
 
     fig.update_layout(
         height=figsize[1],
@@ -457,6 +588,8 @@ def plot_anomalies(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -475,27 +608,36 @@ def plot_anomalies(
         number of subplots columns
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
-        segment_df = ts[:, segment, :][segment]
+        segment_df = ts[start:end, segment, :][segment]  # type: ignore
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
-        ax[i].plot(segment_df.index.values, segment_df[in_column].values, c="b")
+        ax[i].plot(segment_df.index.values, segment_df[in_column].values)
 
-        anomaly = sorted(anomaly)  # type: ignore
+        anomaly = [i for i in sorted(anomaly) if i in segment_df.index]  # type: ignore
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
 
 
 def get_correlation_matrix(
-    ts: "TSDataset", segments: Optional[List[str]] = None, method: str = "pearson"
+    ts: "TSDataset",
+    columns: Optional[List[str]] = None,
+    segments: Optional[List[str]] = None,
+    method: str = "pearson",
 ) -> np.ndarray:
     """Compute pairwise correlation of timeseries for selected segments.
 
@@ -503,6 +645,8 @@ def get_correlation_matrix(
     ----------
     ts:
         TSDataset with timeseries data
+    columns:
+        Columns to use, if None use all columns
     segments:
         Segments to use
     method:
@@ -521,16 +665,23 @@ def get_correlation_matrix(
     """
     if method not in ["pearson", "kendall", "spearman"]:
         raise ValueError(f"'{method}' is not a valid method of correlation.")
+
     if segments is None:
         segments = sorted(ts.segments)
-    correlation_matrix = ts[:, segments, :].corr(method=method).values
+    if columns is None:
+        columns = list(set(ts.df.columns.get_level_values("feature")))
+
+    correlation_matrix = ts[:, segments, columns].corr(method=method).values
     return correlation_matrix
 
 
 def plot_correlation_matrix(
     ts: "TSDataset",
+    columns: Optional[List[str]] = None,
     segments: Optional[List[str]] = None,
     method: str = "pearson",
+    mode: str = "macro",
+    columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 10),
     **heatmap_kwargs,
 ):
@@ -540,6 +691,8 @@ def plot_correlation_matrix(
     ----------
     ts:
         TSDataset with timeseries data
+    columns:
+        Columns to use, if None use all columns
     segments:
         Segments to use
     method:
@@ -551,23 +704,48 @@ def plot_correlation_matrix(
 
         * spearman: Spearman rank correlation
 
+    mode: 'macro' or 'per-segment'
+        Aggregation mode
+    columns_num:
+        Number of subplots columns
     figsize:
         size of the figure in inches
     """
     if segments is None:
         segments = sorted(ts.segments)
+    if columns is None:
+        columns = list(set(ts.df.columns.get_level_values("feature")))
     if "vmin" not in heatmap_kwargs:
         heatmap_kwargs["vmin"] = -1
     if "vmax" not in heatmap_kwargs:
         heatmap_kwargs["vmax"] = 1
 
-    correlation_matrix = get_correlation_matrix(ts, segments, method)
-    fig, ax = plt.subplots(figsize=figsize)
-    ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
-    labels = list(ts[:, segments, :].columns.values)
-    ax.set_xticklabels(labels, rotation=45, horizontalalignment="right")
-    ax.set_yticklabels(labels, rotation=0, horizontalalignment="right")
-    ax.set_title("Correlation Heatmap")
+    if mode not in ["macro", "per-segment"]:
+        raise ValueError(f"'{mode}' is not a valid method of mode.")
+
+    if mode == "macro":
+        fig, ax = plt.subplots(figsize=figsize)
+        correlation_matrix = get_correlation_matrix(ts, columns, segments, method)
+        labels = list(ts[:, segments, columns].columns.values)
+        ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
+        ax.set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
+        ax.set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+        ax.set_title("Correlation Heatmap")
+
+    if mode == "per-segment":
+        fig, ax = prepare_axes(len(segments), columns_num=columns_num, figsize=figsize)
+
+        for i, segment in enumerate(segments):
+            correlation_matrix = get_correlation_matrix(ts, columns, [segment], method)
+            labels = list(ts[:, segment, columns].columns.values)
+            ax[i] = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax[i], **heatmap_kwargs)
+            ax[i].set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
+            ax[i].set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
+            plt.setp(ax[i].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+            plt.setp(ax[i].get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
+            ax[i].set_title("Correlation Heatmap" + " " + segment)
 
 
 def plot_anomalies_interactive(
@@ -577,6 +755,8 @@ def plot_anomalies_interactive(
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
     in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -597,6 +777,10 @@ def plot_anomalies_interactive(
         column to plot
     figsize:
         size of the figure in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
 
     Notes
     -----
@@ -621,7 +805,9 @@ def plot_anomalies_interactive(
 
     from etna.datasets import TSDataset
 
-    df = ts[:, segment, in_column]
+    start, end = _get_borders_ts(ts, start, end)
+
+    df = ts[start:end, segment, in_column]  # type: ignore
     ts = TSDataset(ts[:, segment, :], ts.freq)
     x, y = df.index.values, df.values
     cache = {}
@@ -639,7 +825,7 @@ def plot_anomalies_interactive(
         key = "_".join([str(val) for val in kwargs.values()])
         if key not in cache:
             anomalies = method(ts, **kwargs)[segment]
-            anomalies = sorted(anomalies)
+            anomalies = [i for i in sorted(anomalies) if i in df.index]
             cache[key] = anomalies
         else:
             anomalies = cache[key]
@@ -648,6 +834,7 @@ def plot_anomalies_interactive(
         plt.plot(x, y)
         plt.scatter(anomalies, y[pd.to_datetime(x).isin(anomalies)], c="r")
         plt.xticks(rotation=45)
+        plt.grid()
         plt.show()
 
     interact(update, **sliders)
@@ -676,25 +863,25 @@ def plot_clusters(
         size of the figure per subplot with one segment in inches
     """
     unique_clusters = sorted(set(segment2cluster.values()))
-    rows_num = math.ceil(len(unique_clusters) / columns_num)
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, axs = plt.subplots(rows_num, columns_num, constrained_layout=True, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(unique_clusters), columns_num=columns_num, figsize=figsize)
+
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    segment_color = default_colors[0]
     for i, cluster in enumerate(unique_clusters):
         segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
-        h, w = i // columns_num, i % columns_num
         for segment in segments:
             segment_slice = ts[:, segment, "target"]
-            axs[h][w].plot(
+            ax[i].plot(
                 segment_slice.index.values,
                 segment_slice.values,
                 alpha=1 / math.sqrt(len(segments)),
-                c="blue",
+                c=segment_color,
             )
-        axs[h][w].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
+        ax[i].set_title(f"cluster={cluster}\n{len(segments)} segments in cluster")
         if centroids_df is not None:
             centroid = centroids_df[cluster, "target"]
-            axs[h][w].plot(centroid.index.values, centroid.values, c="red", label="centroid")
-        axs[h][w].legend()
+            ax[i].plot(centroid.index.values, centroid.values, c="red", label="centroid")
+        ax[i].legend()
 
 
 def plot_time_series_with_change_points(
@@ -703,6 +890,8 @@ def plot_time_series_with_change_points(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot segments with their trend change points.
 
@@ -719,19 +908,28 @@ def plot_time_series_with_change_points(
         number of subplots columns
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
-        segment_df = ts[:, segment, :][segment]
+        segment_df = ts[start:end, segment, :][segment]  # type: ignore
         change_points_segment = change_points[segment]
 
         # plot each part of segment separately
         timestamp = segment_df.index.values
         target = segment_df["target"].values
+        change_points_segment = [
+            i for i in change_points_segment if pd.Timestamp(timestamp[0]) < i < pd.Timestamp(timestamp[-1])
+        ]
         all_change_points_segment = [pd.Timestamp(timestamp[0])] + change_points_segment + [pd.Timestamp(timestamp[-1])]
         for idx in range(len(all_change_points_segment) - 1):
             start_time = all_change_points_segment[idx]
@@ -831,7 +1029,7 @@ def plot_residuals(
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
@@ -923,7 +1121,7 @@ def plot_trend(
     if segments is None:
         segments = ts.segments
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     df = ts.df
 
     if not isinstance(trend_transform, list):
@@ -935,10 +1133,35 @@ def plot_trend(
     for i, segment in enumerate(segments):
         ax[i].plot(df[segment]["target"], label="Initial series")
         for label, df_now in zip(labels, df_detrend):
-            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment])
+            ax[i].plot(df[segment, "target"] - df_now[segment, "target"], label=label + linear_coeffs[segment], lw=3)
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend()
+
+
+def _get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
+    """
+    Convert p-values into fictitious variables, with function f(x) = 1 - x.
+
+    Also converts alpha into fictitious variable.
+
+    Parameters
+    ----------
+    pvalues:
+        dataFrame with pvalues
+    alpha:
+        significance level, default alpha = 0.05
+
+    Returns
+    -------
+    pvalues:
+        array with fictitious relevances
+    new_alpha:
+        adjusted significance level
+    """
+    pvalues = 1 - pvalues
+    new_alpha = 1 - alpha
+    return pvalues, new_alpha
 
 
 def plot_feature_relevance(
@@ -948,6 +1171,7 @@ def plot_feature_relevance(
     relevance_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
     relevance_params: Optional[Dict[str, Any]] = None,
     top_k: Optional[int] = None,
+    alpha: float = 0.05,
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
@@ -957,12 +1181,23 @@ def plot_feature_relevance(
 
     The most important features are at the top, the least important are at the bottom.
 
+    For :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable` also plot vertical line: transformed significance level.
+
+    * Values that lie to the right of this line have p-value < alpha.
+
+    * And the values that lie to the left have p-value > alpha.
+
     Parameters
     ----------
     ts:
         TSDataset with timeseries data
     relevance_table:
-        method to evaluate the feature relevance
+        method to evaluate the feature relevance;
+
+        * if :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable` table is used then relevances are normalized p-values
+
+        * if :py:class:`~etna.analysis.feature_relevance.relevance.ModelRelevanceTable` table is used then relevances are importances from some model
+
     normalized:
         whether obtained relevances should be normalized to sum up to 1
     relevance_aggregation_mode:
@@ -974,6 +1209,8 @@ def plot_feature_relevance(
         :py:class:`~etna.analysis.feature_relevance.relevance.RelevanceTable`
     top_k:
         number of best features to plot, if None plot all the features
+    alpha:
+        significance level, default alpha = 0.05, only for :py:class:`~etna.analysis.feature_relevance.relevance.StatisticsRelevanceTable`
     segments:
         segments to use
     columns_num:
@@ -985,42 +1222,62 @@ def plot_feature_relevance(
         relevance_params = {}
     if segments is None:
         segments = sorted(ts.segments)
-
-    is_ascending = not relevance_table.greater_is_better
+    border_value = None
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
-    relevance_df = relevance_table(df=ts[:, :, "target"], df_exog=ts[:, :, features], **relevance_params).loc[segments]
-
+    relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
     if relevance_aggregation_mode == "per-segment":
-        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
-            relevance = relevance_df.loc[segment].sort_values(ascending=is_ascending)
+            relevance = relevance_df.loc[segment]
+            if isinstance(relevance_table, StatisticsRelevanceTable):
+                relevance, border_value = _get_fictitious_relevances(
+                    relevance,
+                    alpha,
+                )
             # warning about NaNs
             if relevance.isna().any():
                 na_relevance_features = relevance[relevance.isna()].index.tolist()
                 warnings.warn(
                     f"Relevances on segment: {segment} of features: {na_relevance_features} can't be calculated."
                 )
+            relevance = relevance.sort_values(ascending=False)
             relevance = relevance.dropna()[:top_k]
             if normalized:
+                if border_value is not None:
+                    border_value = border_value / relevance.sum()
                 relevance = relevance / relevance.sum()
+
             sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
+            if border_value is not None:
+                ax[i].axvline(border_value)
             ax[i].set_title(f"Feature relevance: {segment}")
 
     else:
         relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
         relevance = relevance_df.apply(lambda x: relevance_aggregation_fn(x[~x.isna()]))  # type: ignore
-        relevance = relevance.sort_values(ascending=is_ascending)
+        if isinstance(relevance_table, StatisticsRelevanceTable):
+            relevance, border_value = _get_fictitious_relevances(
+                relevance,
+                alpha,
+            )
         # warning about NaNs
         if relevance.isna().any():
             na_relevance_features = relevance[relevance.isna()].index.tolist()
             warnings.warn(f"Relevances of features: {na_relevance_features} can't be calculated.")
         # if top_k == None, all the values are selected
+        relevance = relevance.sort_values(ascending=False)
         relevance = relevance.dropna()[:top_k]
         if normalized:
+            if border_value is not None:
+                border_value = border_value / relevance.sum()
             relevance = relevance / relevance.sum()
+
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
+        if border_value is not None:
+            ax.axvline(border_value)  # type: ignore
         ax.set_title("Feature relevance")  # type: ignore
+        ax.grid()  # type: ignore
 
 
 def plot_imputation(
@@ -1029,6 +1286,8 @@ def plot_imputation(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
 ):
     """Plot the result of imputation by a given imputer.
 
@@ -1044,11 +1303,17 @@ def plot_imputation(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_after = deepcopy(ts)
     ts_after.fit_transform(transforms=[imputer])
@@ -1056,8 +1321,8 @@ def plot_imputation(
 
     for i, segment in enumerate(segments):
         # we want to capture nans at the beginning, so don't use `ts[:, segment, :]`
-        segment_before_df = ts.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
-        segment_after_df = ts_after.to_pandas().loc[:, pd.IndexSlice[segment, feature_name]]
+        segment_before_df = ts.to_pandas().loc[start:end, pd.IndexSlice[segment, feature_name]]  # type: ignore
+        segment_after_df = ts_after.to_pandas().loc[start:end, pd.IndexSlice[segment, feature_name]]  # type: ignore
 
         # plot result after imputation
         ax[i].plot(segment_after_df.index, segment_after_df)
@@ -1081,6 +1346,7 @@ def plot_periodogram(
     amplitude_aggregation_mode: Union[str, Literal["per-segment"]] = AggregationMode.mean,
     periodogram_params: Optional[Dict[str, Any]] = None,
     segments: Optional[List[str]] = None,
+    xticks: Optional[List[Any]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
 ):
@@ -1104,6 +1370,8 @@ def plot_periodogram(
         additional keyword arguments for periodogram, :py:func:`scipy.signal.periodogram` is used
     segments:
         segments to use
+    xticks:
+        list of tick locations of the x-axis, useful to highlight specific reference periodicities
     columns_num:
         if ``amplitude_aggregation_mode="per-segment"`` number of columns in subplots, otherwise the value is ignored
     figsize:
@@ -1131,17 +1399,21 @@ def plot_periodogram(
 
     # plot periodograms
     if amplitude_aggregation_mode == "per-segment":
-        ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+        _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
             segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
             if segment_df.isna().any():
                 raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
+            spectrum = spectrum[frequencies >= 1]
+            frequencies = frequencies[frequencies >= 1]
             ax[i].step(frequencies, spectrum)
             ax[i].set_xscale("log")
             ax[i].set_xlabel("Frequency")
             ax[i].set_ylabel("Power spectral density")
+            if xticks is not None:
+                ax[i].set_xticks(ticks=xticks, labels=xticks)
             ax[i].set_title(f"Periodogram: {segment}")
     else:
         # find length of each segment
@@ -1167,15 +1439,30 @@ def plot_periodogram(
         frequencies = frequencies_segments[0]
         amplitude_aggregation_fn = AGGREGATION_FN[AggregationMode(amplitude_aggregation_mode)]
         spectrum = amplitude_aggregation_fn(spectrums_segments, axis=0)  # type: ignore
+        spectrum = spectrum[frequencies >= 1]
+        frequencies = frequencies[frequencies >= 1]
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         ax.step(frequencies, spectrum)  # type: ignore
         ax.set_xscale("log")  # type: ignore
         ax.set_xlabel("Frequency")  # type: ignore
         ax.set_ylabel("Power spectral density")  # type: ignore
+        if xticks is not None:
+            ax.set_xticks(ticks=xticks, labels=xticks)  # type: ignore
         ax.set_title("Periodogram")  # type: ignore
+        ax.grid()  # type: ignore
 
 
-def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], timestamp: List[pd.Timestamp]):
+@singledispatch
+def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex, as_is: bool) -> pd.DataFrame:
+    raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+
+
+@_create_holidays_df.register
+def _create_holidays_df_str(holidays: str, index, as_is):
+    if as_is:
+        raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
+    timestamp = index.tolist()
+    country_holidays = holidays_lib.country_holidays(country=holidays)
     holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
     holiday_names = holiday_names.difference({None})
 
@@ -1189,12 +1476,53 @@ def _create_holidays_df(country_holidays: Type["holidays_lib.HolidayBase"], time
     return holidays_df
 
 
+@_create_holidays_df.register
+def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
+    if holidays.empty:
+        raise ValueError("Got empty `holiday` pd.DataFrame.")
+
+    if as_is:
+        holidays_df = pd.DataFrame(index=index, columns=holidays.columns, data=False)
+        dt = holidays_df.index.intersection(holidays.index)
+        holidays_df.loc[dt, :] = holidays.loc[dt, :]
+        return holidays_df
+
+    holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)
+    for name in holidays["holiday"].unique():
+        freq = pd.infer_freq(index)
+        ds = holidays[holidays["holiday"] == name]["ds"]
+        dt = [ds]
+        if "upper_window" in holidays.columns:
+            periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0]
+            if periods < 0:
+                raise ValueError("Upper windows should be non-negative.")
+            ds_upper_bound = pd.timedelta_range(start=0, periods=periods + 1, freq=freq)
+            for bound in ds_upper_bound:
+                ds_add = ds + bound
+                dt.append(ds_add)
+        if "lower_window" in holidays.columns:
+            periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0]
+            if periods > 0:
+                raise ValueError("Lower windows should be non-positive.")
+            ds_lower_bound = pd.timedelta_range(start=0, periods=abs(periods) + 1, freq=freq)
+            for bound in ds_lower_bound:
+                ds_add = ds - bound
+                dt.append(ds_add)
+        dt = pd.concat(dt)
+        dt = holidays_df.index.intersection(dt)
+        holidays_df.loc[dt, name] = True
+    return holidays_df
+
+
 def plot_holidays(
     ts: "TSDataset",
     holidays: Union[str, pd.DataFrame],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    as_is: bool = False,
 ):
     """Plot holidays for segments.
 
@@ -1213,8 +1541,7 @@ def plot_holidays(
 
         * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
 
-        * | if DataFrame, then dataframe with holidays is expected to have timestamp index with holiday names columns.
-          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+        * if DataFrame, then dataframe is expected to be in prophet`s holiday format;
 
     segments:
         segments to use
@@ -1222,25 +1549,37 @@ def plot_holidays(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+    as_is:
+        * | Use this option if DataFrame is represented as a dataframe with a timestamp index and holiday names columns.
+          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        * Holiday nor pd.DataFrame or String.
+        * Holiday is an empty pd.DataFrame.
+        * `as_is=True` while holiday is String.
+        * If upper_window is negative.
+        * If lower_window is positive.
+
     """
+    start, end = _get_borders_ts(ts, start, end)
+
     if segments is None:
         segments = sorted(ts.segments)
 
-    if isinstance(holidays, str):
-        holidays_df = _create_holidays_df(
-            country_holidays=holidays_lib.CountryHoliday(country=holidays), timestamp=ts.index.tolist()
-        )
-    elif isinstance(holidays, pd.DataFrame):
-        holidays_df = holidays
-    else:
-        raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
+    holidays_df = _create_holidays_df(holidays, index=ts.index, as_is=as_is)
 
-    ax = prepare_axes(segments=segments, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     df = ts.to_pandas()
 
     for i, segment in enumerate(segments):
-        segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+        segment_df = df.loc[start:end, pd.IndexSlice[segment, "target"]]  # type: ignore
         segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
 
         # plot target on segment
@@ -1374,6 +1713,7 @@ def plot_metric_per_segment(
     plt.title("Metric per-segment plot")
     plt.xlabel("Segment")
     plt.ylabel(metric_name)
+    plt.grid()
 
 
 class MetricPlotType(str, Enum):
@@ -1478,3 +1818,4 @@ def metric_per_segment_distribution_plot(
             plot_function(data=metrics_df, y=metric_name, **seaborn_params)
 
     plt.title("Metric per-segment distribution plot")
+    plt.grid()

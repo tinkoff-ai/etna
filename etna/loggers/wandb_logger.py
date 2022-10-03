@@ -11,7 +11,6 @@ import pandas as pd
 
 from etna import SETTINGS
 from etna.loggers.base import BaseLogger
-from etna.loggers.base import aggregate_metrics_df
 
 if TYPE_CHECKING:
     from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
@@ -101,10 +100,10 @@ class WandbLogger(BaseLogger):
 
         Notes
         -----
-        We log nothing via current method in wandb case.
-        Currently you could call ``wandb.log`` by hand if you need this.
+        We log dictionary to wandb only.
         """
-        pass
+        if isinstance(msg, dict):
+            self.experiment.log(msg)
 
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
@@ -125,6 +124,7 @@ class WandbLogger(BaseLogger):
         """
         from etna.analysis import plot_backtest_interactive
         from etna.datasets import TSDataset
+        from etna.metrics.utils import aggregate_metrics_df
 
         summary: Dict[str, Any] = dict()
         if self.table:
@@ -154,6 +154,7 @@ class WandbLogger(BaseLogger):
             Dataframe with ground truth
         """
         from etna.datasets import TSDataset
+        from etna.metrics.utils import aggregate_metrics_df
 
         columns_name = list(metrics.columns)
         metrics = metrics.reset_index()

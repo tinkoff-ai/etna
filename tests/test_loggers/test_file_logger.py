@@ -258,6 +258,38 @@ def test_local_file_logger_with_stacking_ensemble(example_df):
         tslogger.remove(idx)
 
 
+def test_local_file_logger_with_empirical_prediction_interval(example_df):
+    """Test that LocalFileLogger correctly works in with empirical predicition intervals via backtest."""
+    with tempfile.TemporaryDirectory() as dirname:
+        cur_dir = pathlib.Path(dirname)
+        logger = LocalFileLogger(experiments_folder=dirname, gzip=False)
+
+        idx = tslogger.add(logger)
+        example_df = TSDataset.to_dataset(example_df)
+        example_df = TSDataset(example_df, freq="1H")
+        pipe = Pipeline(model=NaiveModel(), transforms=[], horizon=2)
+        n_folds = 5
+
+        _ = pipe.backtest(
+            example_df,
+            metrics=[MAE()],
+            n_jobs=4,
+            n_folds=n_folds,
+            forecast_params={"prediction_interval": True},
+        )
+
+        assert len(list(cur_dir.iterdir())) == 1, "we've run one experiment"
+
+        current_experiment_dir = list(cur_dir.iterdir())[0]
+        assert len(list(current_experiment_dir.iterdir())) == 2, "crossval and crossval_results folders"
+
+        assert (
+            len(list((current_experiment_dir / "crossval").iterdir())) == n_folds
+        ), "crossval should have `n_folds` runs"
+
+        tslogger.remove(idx)
+
+
 def test_s3_file_logger_fail_init_endpoint_url(monkeypatch):
     """Test that S3FileLogger can't be created without setting 'endpoint_url' environment variable."""
     monkeypatch.delenv("endpoint_url", raising=False)

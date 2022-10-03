@@ -30,7 +30,7 @@ def test_fit_wrong_order_transform(weekly_period_df):
         model.fit(ts)
 
 
-@pytest.mark.long
+@pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8, 21])
 def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon):
     """
@@ -69,23 +69,17 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon):
     assert mae(ts_test, ts_pred) < 0.2207
 
 
-@pytest.mark.long
+@pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8])
-def test_deepar_model_run_weekly_overfit_with_scaler(weekly_period_df, horizon):
+def test_deepar_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
     """
     Given: I have dataframe with 2 segments with weekly seasonality with known future
     When: I use scale transformations
     Then: I get {horizon} periods per dataset as a forecast and they "the same" as past
     """
 
-    ts_start = sorted(set(weekly_period_df.timestamp))[-horizon]
-    train, test = (
-        weekly_period_df[lambda x: x.timestamp < ts_start],
-        weekly_period_df[lambda x: x.timestamp >= ts_start],
-    )
+    ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
 
-    ts_train = TSDataset(TSDataset.to_dataset(train), "D")
-    ts_test = TSDataset(TSDataset.to_dataset(test), "D")
     std = StandardScalerTransform(in_column="target")
     dft = DateFlagsTransform(day_number_in_week=True, day_number_in_month=False, out_column="regressor_dateflags")
     pft = PytorchForecastingTransform(
@@ -125,6 +119,7 @@ def test_forecast_without_make_future(weekly_period_df):
 
     model = DeepARModel(max_epochs=1)
     model.fit(ts)
+    ts.df.index = ts.df.index + pd.Timedelta(days=len(ts.df))
     with pytest.raises(ValueError, match="The future is not generated!"):
         _ = model.forecast(ts=ts)
 
@@ -152,3 +147,25 @@ def test_forecast_with_different_freq(weekly_period_df, freq):
 
     assert len(forecast.df) == horizon
     assert pd.infer_freq(forecast.df.index) in {freq, freq[1:]}
+
+
+def test_prediction_interval_run_infuture(example_tsds):
+    horizon = 10
+    transform = PytorchForecastingTransform(
+        max_encoder_length=horizon,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        target_normalizer=GroupNormalizer(groups=["segment"]),
+    )
+    example_tsds.fit_transform([transform])
+    model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
+    model.fit(example_tsds)
+    future = example_tsds.make_future(horizon)
+    forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
+    for segment in forecast.segments:
+        segment_slice = forecast[:, segment, :][segment]
+        assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+        assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
+        assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()

@@ -83,7 +83,7 @@ class FourierTransform(Transform, FutureMixin):
             self.mods = mods
         else:
             raise ValueError("There should be exactly one option set: order or mods")
-
+        self.order = None
         self.out_column = out_column
 
     def fit(self, df: pd.DataFrame) -> "FourierTransform":

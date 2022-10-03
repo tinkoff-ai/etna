@@ -4,6 +4,7 @@ from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
+from etna.metrics import sign
 from etna.metrics import smape
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
@@ -32,6 +33,11 @@ class MAE(Metric):
         """
         super().__init__(mode=mode, metric_fn=mae, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class MSE(Metric):
     """Mean squared error metric with multi-segment computation support.
@@ -56,13 +62,17 @@ class MSE(Metric):
         """
         super().__init__(mode=mode, metric_fn=mse, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class R2(Metric):
     """Coefficient of determination metric with multi-segment computation support.
 
     .. math::
         R^2(y\_true, y\_pred) = 1 - \\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{\\sum_{i=0}^{n-1}{(y\_true_i - \\overline{y\_true})^2}}
-
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
@@ -79,6 +89,11 @@ class R2(Metric):
             metric's computation arguments
         """
         super().__init__(mode=mode, metric_fn=r2_score, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return True
 
 
 class MAPE(Metric):
@@ -104,6 +119,11 @@ class MAPE(Metric):
         """
         super().__init__(mode=mode, metric_fn=mape, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class SMAPE(Metric):
     """Symmetric mean absolute percentage error metric with multi-segment computation support.
@@ -128,6 +148,11 @@ class SMAPE(Metric):
         """
         super().__init__(mode=mode, metric_fn=smape, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
 
 class MedAE(Metric):
     """Median absolute error metric with multi-segment computation support.
@@ -151,6 +176,11 @@ class MedAE(Metric):
             metric's computation arguments
         """
         super().__init__(mode=mode, metric_fn=medae, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
 
 
 class MSLE(Metric):
@@ -177,5 +207,39 @@ class MSLE(Metric):
         """
         super().__init__(mode=mode, metric_fn=msle, **kwargs)
 
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
 
-__all__ = ["MAE", "MSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE"]
+
+class Sign(Metric):
+    """Sign error metric with multi-segment computation support.
+
+    .. math::
+        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=0}^{n - 1}{sign(y\_true_i - y\_pred_i)}
+
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
+    """
+
+    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+        """Init metric.
+
+        Parameters
+        ----------
+        mode: 'macro' or 'per-segment'
+            metrics aggregation mode
+        kwargs:
+            metric's computation arguments
+        """
+        super().__init__(mode=mode, metric_fn=sign, **kwargs)
+
+    @property
+    def greater_is_better(self) -> None:
+        """Whether higher metric value is better."""
+        return None
+
+
+__all__ = ["MAE", "MSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign"]

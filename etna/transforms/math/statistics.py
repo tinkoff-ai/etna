@@ -73,7 +73,8 @@ class WindowStatisticsTransform(Transform, ABC):
         history = self.seasonality * self.window if self.window != -1 else len(df)
         segments = sorted(df.columns.get_level_values("segment").unique())
 
-        x = df.loc[pd.IndexSlice[:], pd.IndexSlice[segments, self.in_column]].values[::-1]
+        df_slice = df.loc[:, pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
+        x = df_slice.values[::-1]
 
         # Addend NaNs to obtain a window of length "history" for each point
         x = np.append(x, np.empty((history - 1, x.shape[1])) * np.nan, axis=0)
@@ -164,7 +165,7 @@ class MeanTransform(WindowStatisticsTransform):
             dataframe with results
         """
         window = self.window if self.window != -1 else len(df)
-        self._alpha_range = np.array([self.alpha ** i for i in range(window)])
+        self._alpha_range = np.array([self.alpha**i for i in range(window)])
         self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
         return super().transform(df)
 
@@ -503,6 +504,59 @@ class MADTransform(WindowStatisticsTransform):
         return mad
 
 
+class MinMaxDifferenceTransform(WindowStatisticsTransform):
+    """MinMaxDifferenceTransform computes difference between max and min values for given window."""
+
+    def __init__(
+        self,
+        in_column: str,
+        window: int,
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+        out_column: Optional[str] = None,
+    ):
+        """Init MaxTransform.
+
+        Parameters
+        ----------
+        in_column: str
+            name of processed column
+        window: int
+            size of window to aggregate
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation;
+            if there is less than ``min_periods`` number of targets return None
+        fillna: float
+            value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use ``self.__repr__()``
+        """
+        self.in_column = in_column
+        self.window = window
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        self.out_column = out_column
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
+
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
+        """Compute max over the series."""
+        max_values = bn.nanmax(series, axis=2)
+        min_values = bn.nanmin(series, axis=2)
+        result = max_values - min_values
+        return result
+
+
 __all__ = [
     "MedianTransform",
     "MaxTransform",
@@ -512,4 +566,5 @@ __all__ = [
     "MeanTransform",
     "WindowStatisticsTransform",
     "MADTransform",
+    "MinMaxDifferenceTransform",
 ]

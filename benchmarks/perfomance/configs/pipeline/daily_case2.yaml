@@ -1,7 +1,7 @@
 _target_: etna.pipeline.Pipeline
 horizon: 14
 model:
-  _target_: etna.models.CatBoostModelPerSegment
+  _target_: etna.models.CatBoostPerSegmentModel
 transforms:
 - _target_: etna.transforms.TimeSeriesImputerTransform
   in_column: target

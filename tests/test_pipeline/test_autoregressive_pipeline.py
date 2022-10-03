@@ -7,7 +7,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.metrics import MetricAggregationMode
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
 from etna.pipeline import AutoRegressivePipeline
@@ -125,12 +125,12 @@ def test_forecast_raise_error_if_not_fitted():
         _ = pipeline.forecast()
 
 
-@pytest.mark.long
+@pytest.mark.long_1
 def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     """Check that AutoRegressivePipeline.backtest gives the same results in case of single and multiple jobs modes."""
     # create a pipeline
     pipeline = AutoRegressivePipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[1, 2, 3, 4, 5], out_column="regressor_lag_feature")],
         horizon=7,
         step=1,

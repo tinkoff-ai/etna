@@ -7,7 +7,7 @@ Basic ``forecast`` usage:
 .. code-block:: console
 
         Usage: etna forecast [OPTIONS] CONFIG_PATH TARGET_PATH FREQ OUTPUT_PATH [EXOG_PATH]
-                             [FORECAST_CONFIG_PATH] [RAW_OUTPUT]
+                             [FORECAST_CONFIG_PATH] [RAW_OUTPUT] [KNOWN_FUTURE]
 
         Command to make forecast with etna without coding.
 
@@ -19,6 +19,7 @@ Basic ``forecast`` usage:
             [EXOG_PATH]             path to csv with exog data
             [FORECAST_CONFIG_PATH]  path to yaml config with forecast params
             [RAW_OUTPUT]            by default we return only forecast without features [default: False]
+            [KNOWN_FUTURE]          list of all known_future columns (regressor columns). If not specified then all exog_columns considered known_future [default: None]
 
 **How to create config?**
 
@@ -29,7 +30,7 @@ Example of pipeline's config:
     _target_: etna.pipeline.Pipeline
     horizon: 4
     model:
-      _target_: etna.models.CatBoostModelMultiSegment
+      _target_: etna.models.CatBoostMultiSegmentModel
     transforms:
       - _target_: etna.transforms.LinearTrendTransform
         in_column: target
@@ -81,7 +82,7 @@ Basic ``backtest`` usage:
 
 .. code-block:: console
 
-        Usage: etna backtest [OPTIONS] CONFIG_PATH BACKTEST_CONFIG_PATH TARGET_PATH FREQ OUTPUT_PATH [EXOG_PATH]
+        Usage: etna backtest [OPTIONS] CONFIG_PATH BACKTEST_CONFIG_PATH TARGET_PATH FREQ OUTPUT_PATH [EXOG_PATH] [KNOWN_FUTURE]
 
         Command to run backtest with etna without coding.
 
@@ -92,6 +93,7 @@ Basic ``backtest`` usage:
             FREQ                    frequency of timestamp in files in pandas format  [required]
             OUTPUT_PATH             where to save forecast  [required]
             [EXOG_PATH]             path to csv with exog data
+            [KNOWN_FUTURE]          list of all known_future columns (regressor columns). If not specified then all exog_columns considered known_future [default: None]
 
 
 **How to create configs?**
@@ -103,7 +105,7 @@ Example of pipeline's config:
     _target_: etna.pipeline.Pipeline
     horizon: 4
     model:
-      _target_: etna.models.CatBoostModelMultiSegment
+      _target_: etna.models.CatBoostMultiSegmentModel
     transforms:
       - _target_: etna.transforms.LinearTrendTransform
         in_column: target

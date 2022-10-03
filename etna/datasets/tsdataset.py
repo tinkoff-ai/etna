@@ -1,9 +1,13 @@
 import math
 import warnings
 from copy import copy
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 from typing import Dict
+from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -16,10 +20,15 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
+from etna import SETTINGS
+from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
+
+if SETTINGS.torch_required:
+    from torch.utils.data import Dataset
 
 TTimestamp = Union[str, pd.Timestamp]
 
@@ -234,13 +243,15 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int) -> "TSDataset":
+    def make_future(self, future_steps: int, tail_steps: int = 0) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
         ----------
         future_steps:
             number of timestamp in the future to build features for.
+        tail_steps:
+            number of timestamp for context to build features for.
 
         Returns
         -------
@@ -301,7 +312,8 @@ class TSDataset:
                 tslogger.log(f"Transform {repr(transform)} is applied to dataset")
                 df = transform.transform(df)
 
-        future_dataset = df.tail(future_steps).copy(deep=True)
+        future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
+
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
@@ -311,6 +323,30 @@ class TSDataset:
         future_ts.transforms = self.transforms
         future_ts.df_exog = self.df_exog
         return future_ts
+
+    def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
+        """Return new TSDataset with integer-location based indexing.
+
+        Parameters
+        ----------
+        start_idx:
+            starting index of the slice.
+        end_idx:
+            last index of the slice.
+
+        Returns
+        -------
+        :
+            TSDataset based on indexing slice.
+        """
+        df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
+        tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
+        # can't put known_future into constructor, _check_known_future fails with df_exog=None
+        tsdataset_slice.known_future = deepcopy(self.known_future)
+        tsdataset_slice._regressors = deepcopy(self.regressors)
+        tsdataset_slice.transforms = deepcopy(self.transforms)
+        tsdataset_slice.df_exog = self.df_exog
+        return tsdataset_slice
 
     @staticmethod
     def _check_known_future(
@@ -324,7 +360,7 @@ class TSDataset:
 
         if isinstance(known_future, str):
             if known_future == "all":
-                return sorted(list(exog_columns))
+                return sorted(exog_columns)
             else:
                 raise ValueError("The only possible literal is 'all'")
         else:
@@ -335,7 +371,7 @@ class TSDataset:
                     f"{known_future_unique.difference(exog_columns)}"
                 )
             else:
-                return sorted(list(known_future_unique))
+                return sorted(known_future_unique)
 
     @staticmethod
     def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
@@ -370,8 +406,7 @@ class TSDataset:
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.df_exog is None:
             raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
-        segments = sorted(set(df.columns.get_level_values("segment")))
-        df_regressors = self.df_exog.loc[:, pd.IndexSlice[segments, self.known_future]]
+        df_regressors = self.df_exog.loc[:, pd.IndexSlice[:, self.known_future]]
         self._check_regressors(df=df, df_regressors=df_regressors)
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
@@ -394,6 +429,7 @@ class TSDataset:
 
         Applied in reversed order.
         """
+        # TODO: return regressors after inverse_transform
         if self.transforms is not None:
             for transform in reversed(self.transforms):
                 tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
@@ -493,8 +529,7 @@ class TSDataset:
             df_slice = self[start:end, segment, column]  # type: ignore
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
-
-        plt.show()
+            ax[i].grid()
 
     @staticmethod
     def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
@@ -533,20 +568,24 @@ class TSDataset:
         3 2021-06-04     1.0  segment_0
         4 2021-06-05     1.0  segment_0
         """
-        # flatten dataframe
-        aggregator_list = []
-        segments = df.columns.get_level_values("segment").unique().tolist()
-        for segment in segments:
-            aggregator_list.append(df[segment].copy())
-            aggregator_list[-1]["segment"] = segment
-        df_flat = pd.concat(aggregator_list)
-        df_flat = df_flat.reset_index()
-        df_flat.columns.name = None
-
-        # mark category as category
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
-        df_flat[category_columns] = df_flat[category_columns].astype("category")
+
+        # flatten dataframe
+        columns = df.columns.get_level_values("feature").unique()
+        segments = df.columns.get_level_values("segment").unique()
+        df_dict = {}
+        df_dict["timestamp"] = np.tile(df.index, len(segments))
+        for column in columns:
+            df_cur = df.loc[:, pd.IndexSlice[:, column]]
+            if column in category_columns:
+                df_dict[column] = pd.api.types.union_categoricals([df_cur[col] for col in df_cur.columns])
+            else:
+                stacked = df_cur.values.T.ravel()
+                # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
+                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
+        df_dict["segment"] = np.repeat(segments, len(df.index))
+        df_flat = pd.DataFrame(df_dict)
 
         return df_flat
 
@@ -657,16 +696,17 @@ class TSDataset:
         2021-01-04           3           8
         2021-01-05           4           9
         """
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df["segment"] = df["segment"].astype(str)
-        feature_columns = df.columns.tolist()
+        df_copy = df.copy(deep=True)
+        df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
+        df_copy["segment"] = df_copy["segment"].astype(str)
+        feature_columns = df_copy.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")
-        df = df.pivot(index="timestamp", columns="segment")
-        df = df.reorder_levels([1, 0], axis=1)
-        df.columns.names = ["segment", "feature"]
-        df = df.sort_index(axis=1, level=(0, 1))
-        return df
+        df_copy = df_copy.pivot(index="timestamp", columns="segment")
+        df_copy = df_copy.reorder_levels([1, 0], axis=1)
+        df_copy.columns.names = ["segment", "feature"]
+        df_copy = df_copy.sort_index(axis=1, level=(0, 1))
+        return df_copy
 
     def _find_all_borders(
         self,
@@ -1122,3 +1162,29 @@ class TSDataset:
         # print the results
         result_string = "\n".join(lines)
         print(result_string)
+
+    def to_torch_dataset(
+        self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True
+    ) -> "Dataset":
+        """Convert the TSDataset to a :py:class:`torch.Dataset`.
+
+        Parameters
+        ----------
+        make_samples:
+            function that takes per segment DataFrame and returns iterabale of samples
+        dropna:
+            if ``True``, missing rows are dropped
+
+        Returns
+        -------
+        :
+            :py:class:`torch.Dataset` with with train or test samples to infer on
+        """
+        df = self.to_pandas(flatten=True)
+        if dropna:
+            df = df.dropna()  # TODO: Fix this
+
+        ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
+        ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
+
+        return _TorchDataset(ts_samples=ts_samples)

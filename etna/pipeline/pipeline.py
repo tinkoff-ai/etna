@@ -2,7 +2,8 @@ from typing import Sequence
 
 from etna.datasets import TSDataset
 from etna.models.base import BaseModel
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import DeepBaseModel
+from etna.models.base import PredictIntervalAbstractModel
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
@@ -53,8 +54,12 @@ class Pipeline(BasePipeline):
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
 
-        future = self.ts.make_future(self.horizon)
-        predictions = self.model.forecast(ts=future)
+        if isinstance(self.model, DeepBaseModel):
+            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.encoder_length)
+            predictions = self.model.forecast(ts=future, horizon=self.horizon)
+        else:
+            future = self.ts.make_future(self.horizon)
+            predictions = self.model.forecast(ts=future)
         return predictions
 
     def forecast(
@@ -84,7 +89,7 @@ class Pipeline(BasePipeline):
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        if prediction_interval and isinstance(self.model, PerSegmentPredictionIntervalModel):
+        if prediction_interval and isinstance(self.model, PredictIntervalAbstractModel):
             future = self.ts.make_future(self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         else:

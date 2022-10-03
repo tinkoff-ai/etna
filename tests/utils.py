@@ -24,3 +24,7 @@ class DummyMetric(Metric):
     @property
     def name(self) -> str:
         return self.__repr__()
+
+    @property
+    def greater_is_better(self) -> bool:
+        return False

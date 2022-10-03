@@ -1,6 +1,7 @@
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import Transform
 from etna.transforms.decomposition import BinsegTrendTransform
+from etna.transforms.decomposition import ChangePointsSegmentationTransform
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import STLTransform
@@ -18,6 +19,7 @@ from etna.transforms.math import AddConstTransform
 from etna.transforms.math import BoxCoxTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math import LagTransform
+from etna.transforms.math import LambdaTransform
 from etna.transforms.math import LogTransform
 from etna.transforms.math import MADTransform
 from etna.transforms.math import MaxAbsScalerTransform
