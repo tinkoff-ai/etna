@@ -2,10 +2,13 @@ from copy import deepcopy
 from typing import List
 from typing import Optional
 from typing import Union
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
 import pytest
+from joblib import Parallel
+from joblib import delayed
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
@@ -86,24 +89,6 @@ def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline
     assert len(forecast.df) == HORIZON
 
 
-def test_forecast_values_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
-    """Check that VotingEnsemble gets average."""
-    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
-    ensemble.fit(ts=simple_df)
-    forecast = ensemble.forecast()
-    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
-    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [11, 12, 11, 12, 11, 12, 11])
-
-
-def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
-    """Check that VotingEnsemble gets average."""
-    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
-    ensemble.fit(ts=simple_df)
-    forecast = ensemble.forecast()
-    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
-    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
-
-
 def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):
     """Test the forecast interface with prediction intervals."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
@@ -113,6 +98,70 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, 
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+
+def test_predict_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
+    """Check that VotingEnsemble.predict returns TSDataset of correct length."""
+    ensemble = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline])
+    ensemble.fit(ts=example_tsds)
+    start_idx = 20
+    end_idx = 30
+    prediction = ensemble.predict(
+        start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+    )
+    assert isinstance(prediction, TSDataset)
+    assert len(prediction.df) == end_idx - start_idx + 1
+
+
+def test_vote_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    """Check that VotingEnsemble gets average during vote."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(ts=simple_df)
+    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline) for pipeline in ensemble.pipelines
+    )
+    forecast = ensemble._vote(forecasts=forecasts)
+    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
+    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [11, 12, 11, 12, 11, 12, 11])
+
+
+def test_vote_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    """Check that VotingEnsemble gets average during vote."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
+    ensemble.fit(ts=simple_df)
+    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline) for pipeline in ensemble.pipelines
+    )
+    forecast = ensemble._vote(forecasts=forecasts)
+    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
+    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
+
+
+def test_forecast_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(ts=example_tsds)
+    ensemble._vote = MagicMock()
+
+    result = ensemble._forecast()
+
+    ensemble._vote.assert_called_once()
+    assert result == ensemble._vote.return_value
+
+
+def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(ts=example_tsds)
+    ensemble._vote = MagicMock()
+
+    result = ensemble._predict(
+        start_timestamp=example_tsds.index[20],
+        end_timestamp=example_tsds.index[30],
+        prediction_interval=False,
+        quantiles=(),
+    )
+
+    ensemble._vote.assert_called_once()
+    assert result == ensemble._vote.return_value
 
 
 @pytest.mark.long

@@ -4,9 +4,11 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -211,22 +213,12 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         else:
             return x, None
 
-    def _forecast(self) -> TSDataset:
-        """Make predictions.
-
-        Compute the combination of pipelines' forecasts using ``final_model``
-        """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
-
-        # Get forecast
-        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
-        )
+    def _process_forecasts(self, forecasts: List[TSDataset]) -> TSDataset:
         x, _ = self._make_features(forecasts=forecasts, train=False)
         y = self.final_model.predict(x).reshape(-1, self.horizon).T
 
         # Format the forecast into TSDataset
+        self.ts = cast(TSDataset, self.ts)
         segment_col = [segment for segment in self.ts.segments for _ in range(self.horizon)]
         x.loc[:, "segment"] = segment_col
         x.loc[:, "timestamp"] = x.index.values
@@ -235,6 +227,39 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         df = forecasts[0][:, :, "target"].copy()
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
 
-        forecast = TSDataset(df=df, freq=self.ts.freq, df_exog=df_exog)
-        forecast.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
+        result = TSDataset(df=df, freq=self.ts.freq, df_exog=df_exog)
+        result.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
+        return result
+
+    def _forecast(self) -> TSDataset:
+        """Make predictions.
+
+        Compute the combination of pipelines' forecasts using ``final_model``
+        """
+        if self.ts is None:
+            raise ValueError("Something went wrong, ts is None!")
+        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
+        )
+        forecast = self._process_forecasts(forecasts=forecasts)
         return forecast
+
+    def _predict(
+        self,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+    ) -> TSDataset:
+        if prediction_interval:
+            raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+
+        self.ts = cast(TSDataset, self.ts)
+        predictions = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+            delayed(self._predict_pipeline)(
+                pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+            )
+            for pipeline in self.pipelines
+        )
+        prediction = self._process_forecasts(forecasts=predictions)
+        return prediction
