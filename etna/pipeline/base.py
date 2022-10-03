@@ -320,7 +320,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return predictions
 
     @staticmethod
-    def _validate_predict_timestamps(
+    def _make_predict_timestamps(
         ts: TSDataset,
         start_timestamp: Optional[pd.Timestamp] = None,
         end_timestamp: Optional[pd.Timestamp] = None,

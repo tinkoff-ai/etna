@@ -161,7 +161,7 @@ class Pipeline(BasePipeline, ModelPipelinePredictMixin):
                 f"before calling predict method."
             )
 
-        start_timestamp, end_timestamp = self._validate_predict_timestamps(
+        start_timestamp, end_timestamp = self._make_predict_timestamps(
             ts=self.ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
         )
         self._validate_quantiles(quantiles=quantiles)
