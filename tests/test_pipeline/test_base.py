@@ -1,6 +1,9 @@
+from unittest.mock import MagicMock
+
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.pipeline.base import BasePipeline
 
 
@@ -39,3 +42,72 @@ def test_make_predict_timestamps_fail_start_later_than_end(example_tsds):
         _ = BasePipeline._make_predict_timestamps(
             ts=example_tsds, start_timestamp=start_timestamp, end_timestamp=end_timestamp
         )
+
+
+class DummyPipeline(BasePipeline):
+    def fit(self, ts: TSDataset):
+        self.ts = ts
+        return self
+
+    def _forecast(self) -> TSDataset:
+        return self.ts
+
+
+def test_predict_fail_not_fitted():
+    pipeline = DummyPipeline(horizon=1)
+    with pytest.raises(ValueError, match="DummyPipeline is not fitted"):
+        _ = pipeline.predict()
+
+
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (None, None),
+        (pd.Timestamp("2020-01-02"), None),
+        (None, pd.Timestamp("2020-02-01")),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-02-01")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-02-03")),
+    ],
+)
+def test_predict_calls_make_timestamps(start_timestamp, end_timestamp, example_tsds):
+    pipeline = DummyPipeline(horizon=1)
+    pipeline.fit(example_tsds)
+
+    pipeline._make_predict_timestamps = MagicMock(return_value=(MagicMock(), MagicMock()))
+    pipeline._validate_quantiles = MagicMock()
+    pipeline._predict = MagicMock()
+
+    _ = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+
+    pipeline._make_predict_timestamps.assert_called_once_with(
+        ts=example_tsds, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+    )
+
+
+@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
+def test_predict_calls_validate_quantiles(quantiles, example_tsds):
+    pipeline = DummyPipeline(horizon=1)
+    pipeline.fit(example_tsds)
+
+    pipeline._make_predict_timestamps = MagicMock(return_value=(MagicMock(), MagicMock()))
+    pipeline._validate_quantiles = MagicMock()
+    pipeline._predict = MagicMock()
+
+    _ = pipeline.predict(quantiles=quantiles)
+
+    pipeline._validate_quantiles.assert_called_once_with(quantiles=quantiles)
+
+
+@pytest.mark.parametrize("prediction_interval", [False, True])
+@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
+def test_predict_calls_private_predict(prediction_interval, quantiles, example_tsds):
+    pipeline = DummyPipeline(horizon=1)
+    pipeline.fit(example_tsds)
+
+    pipeline._make_predict_timestamps = MagicMock(return_value=(MagicMock(), MagicMock()))
+    pipeline._validate_quantiles = MagicMock()
+    pipeline._predict = MagicMock()
+
+    _ = pipeline.predict(quantiles=quantiles)
+
+    pipeline._validate_quantiles.assert_called_once_with(quantiles=quantiles)

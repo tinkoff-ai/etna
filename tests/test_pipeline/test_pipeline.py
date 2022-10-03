@@ -36,10 +36,6 @@ from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
-from tests.test_pipeline.common import check_predict_calls_private_predict
-from tests.test_pipeline.common import check_predict_calls_validate_quantiles
-from tests.test_pipeline.common import check_predict_calls_validate_timestamps
-from tests.test_pipeline.common import check_predict_fail_not_fitted
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -688,44 +684,15 @@ def test_pipeline_with_deepmodel(example_tsds):
     _ = pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
 
 
-def test_predict_fail_not_fitted():
-    check_predict_fail_not_fitted(pipeline_constructor=Pipeline)
-
-
-@pytest.mark.parametrize(
-    "start_timestamp, end_timestamp",
-    [
-        (None, None),
-        (pd.Timestamp("2020-01-02"), None),
-        (None, pd.Timestamp("2020-02-01")),
-        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-02-01")),
-        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-02-03")),
-    ],
-)
-def test_predict_calls_validate_timestamps(start_timestamp, end_timestamp, example_tsds):
-    check_predict_calls_validate_timestamps(
-        pipeline_constructor=Pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp, ts=example_tsds
-    )
-
-
-@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
-def test_predict_calls_validate_quantiles(quantiles, example_tsds):
-    check_predict_calls_validate_quantiles(pipeline_constructor=Pipeline, quantiles=quantiles, ts=example_tsds)
-
-
-@pytest.mark.parametrize("prediction_interval", [False, True])
-@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
-def test_predict_calls_private_predict(prediction_interval, quantiles, example_tsds):
-    check_predict_calls_private_predict(
-        pipeline_constructor=Pipeline, prediction_interval=prediction_interval, quantiles=quantiles, ts=example_tsds
-    )
-
-
 @pytest.mark.parametrize(
     "model, transforms",
     [
         (
             CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (
+            LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
         ),
         (SeasonalMovingAverageModel(window=2, seasonality=7), []),

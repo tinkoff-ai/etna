@@ -215,11 +215,14 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
     def _process_forecasts(self, forecasts: List[TSDataset]) -> TSDataset:
         x, _ = self._make_features(forecasts=forecasts, train=False)
-        y = self.final_model.predict(x).reshape(-1, self.horizon).T
+        self.ts = cast(TSDataset, self.ts)
+        y = self.final_model.predict(x)
+        num_segments = len(forecasts[0].segments)
+        y = y.reshape(num_segments, -1).T
+        num_timestamps = y.shape[0]
 
         # Format the forecast into TSDataset
-        self.ts = cast(TSDataset, self.ts)
-        segment_col = [segment for segment in self.ts.segments for _ in range(self.horizon)]
+        segment_col = [segment for segment in self.ts.segments for _ in range(num_timestamps)]
         x.loc[:, "segment"] = segment_col
         x.loc[:, "timestamp"] = x.index.values
         df_exog = TSDataset.to_dataset(x)

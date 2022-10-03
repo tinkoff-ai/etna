@@ -1,4 +1,3 @@
-from copy import deepcopy
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -24,7 +23,7 @@ def make_mixin(ts=None, model=None, transforms=(), mock_recreate_ts=True, mock_d
     mixin.transforms = transforms
     mixin.model = model
     if mock_recreate_ts:
-        mixin._recreate_ts = MagicMock()
+        mixin._create_ts = MagicMock()
     if mock_determine_prediction_size:
         mixin._determine_prediction_size = MagicMock()
     return mixin
@@ -48,21 +47,21 @@ def make_mixin(ts=None, model=None, transforms=(), mock_recreate_ts=True, mock_d
         [DateFlagsTransform(), FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
     ],
 )
-def test_prepare_ts(context_size, start_timestamp, end_timestamp, transforms, example_reg_tsds):
+def test_create_ts(context_size, start_timestamp, end_timestamp, transforms, example_reg_tsds):
     ts = example_reg_tsds
-    initial_ts = deepcopy(ts)
     model = MagicMock()
     model.context_size = context_size
     mixin = make_mixin(ts=ts, transforms=transforms, model=model, mock_recreate_ts=False)
 
     ts.fit_transform(transforms)
-    recreated_ts = mixin._recreate_ts(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    created_ts = mixin._create_ts(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
     expected_start_timestamp = max(example_reg_tsds.index[0], start_timestamp - pd.Timedelta(days=model.context_size))
-    assert recreated_ts.index[0] == expected_start_timestamp
-    assert recreated_ts.index[-1] == end_timestamp
-    assert recreated_ts.regressors == initial_ts.regressors
-    pd.testing.assert_frame_equal(recreated_ts.df, initial_ts.df[expected_start_timestamp:end_timestamp])
+    assert created_ts.index[0] == expected_start_timestamp
+    assert created_ts.index[-1] == end_timestamp
+    assert created_ts.regressors == ts.regressors
+    expected_df = ts.df[expected_start_timestamp:end_timestamp]
+    pd.testing.assert_frame_equal(created_ts.df, expected_df, check_categorical=False)
 
 
 @pytest.mark.parametrize(
@@ -92,14 +91,14 @@ def test_determine_prediction_size(start_timestamp, end_timestamp, expected_pred
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
     ],
 )
-def test_predict_recreate_ts_called(start_timestamp, end_timestamp, example_tsds):
+def test_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
     mixin = make_mixin()
 
     _ = mixin._predict(
         start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
     )
 
-    mixin._recreate_ts.assert_called_once_with(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    mixin._create_ts.assert_called_once_with(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
 
 @pytest.mark.parametrize(
@@ -121,27 +120,6 @@ def test_predict_determine_prediction_size_called(start_timestamp, end_timestamp
     mixin._determine_prediction_size.assert_called_once_with(
         start_timestamp=start_timestamp, end_timestamp=end_timestamp
     )
-
-
-@pytest.mark.parametrize(
-    "transforms",
-    [
-        [DateFlagsTransform()],
-        [FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
-    ],
-)
-def test_predict_apply_transforms(transforms):
-    mixin = make_mixin(transforms=transforms)
-
-    _ = mixin._predict(
-        start_timestamp=pd.Timestamp("2020-01-01"),
-        end_timestamp=pd.Timestamp("2020-01-02"),
-        prediction_interval=False,
-        quantiles=[],
-    )
-
-    expected_ts = mixin._recreate_ts.return_value
-    expected_ts.transform.assert_called_once_with(transforms=transforms)
 
 
 @pytest.mark.parametrize(
@@ -174,7 +152,7 @@ def _check_predict_called(spec, prediction_interval, quantiles, check_keys):
         quantiles=quantiles,
     )
 
-    expected_ts = mixin._recreate_ts.return_value
+    expected_ts = mixin._create_ts.return_value
     expected_prediction_size = mixin._determine_prediction_size.return_value
     called_with_full = dict(
         ts=expected_ts,
