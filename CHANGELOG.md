@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make `SeasonalMovingAverageModel` and `DeadlineMovingAverageModel` to work with context ([#917](https://github.com/tinkoff-ai/etna/pull/917))
 - 
 - Add `predict` method to models ([#935](https://github.com/tinkoff-ai/etna/pull/935))
-- 
+- Implement `predict` in ensembles ([#972](https://github.com/tinkoff-ai/etna/pull/972))
 - Implement `predict` in `Pipeline`, `AutoRegressivePipeline` ([#970](https://github.com/tinkoff-ai/etna/pull/970))
 ### Changed
 - 
