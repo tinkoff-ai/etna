@@ -17,11 +17,13 @@ from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics import Width
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
+from etna.models import SeasonalMovingAverageModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -31,8 +33,13 @@ from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
+from tests.test_pipeline.common import check_predict_calls_private_predict
+from tests.test_pipeline.common import check_predict_calls_validate_quantiles
+from tests.test_pipeline.common import check_predict_calls_validate_timestamps
+from tests.test_pipeline.common import check_predict_fail_not_fitted
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -679,3 +686,66 @@ def test_pipeline_with_deepmodel(example_tsds):
         horizon=2,
     )
     _ = pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
+
+
+def test_predict_fail_not_fitted():
+    check_predict_fail_not_fitted(pipeline_constructor=Pipeline)
+
+
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (None, None),
+        (pd.Timestamp("2020-01-02"), None),
+        (None, pd.Timestamp("2020-02-01")),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-02-01")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-02-03")),
+    ],
+)
+def test_predict_calls_validate_timestamps(start_timestamp, end_timestamp, example_tsds):
+    check_predict_calls_validate_timestamps(
+        pipeline_constructor=Pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp, ts=example_tsds
+    )
+
+
+@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
+def test_predict_calls_validate_quantiles(quantiles, example_tsds):
+    check_predict_calls_validate_quantiles(pipeline_constructor=Pipeline, quantiles=quantiles, ts=example_tsds)
+
+
+@pytest.mark.parametrize("prediction_interval", [False, True])
+@pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
+def test_predict_calls_private_predict(prediction_interval, quantiles, example_tsds):
+    check_predict_calls_private_predict(
+        pipeline_constructor=Pipeline, prediction_interval=prediction_interval, quantiles=quantiles, ts=example_tsds
+    )
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_predict(model, transforms, example_tsds):
+    ts = example_tsds
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=7)
+    pipeline.fit(ts)
+
+    start_idx = 50
+    end_idx = 70
+    start_timestamp = ts.index[start_idx]
+    end_timestamp = ts.index[end_idx]
+    num_points = end_idx - start_idx + 1
+
+    result_ts = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    result_df = result_ts.to_pandas(flatten=True)
+
+    assert not np.any(result_df["target"].isna())
+    assert len(result_df) == len(example_tsds.segments) * num_points

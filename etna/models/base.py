@@ -681,3 +681,11 @@ ContextIgnorantModelType = Union[
     NonPredictionIntervalContextIgnorantAbstractModel,
     PredictionIntervalContextIgnorantAbstractModel,
 ]
+
+PredictionIntervalModelType = Union[
+    PredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextRequiredAbstractModel
+]
+
+NonPredictionIntervalModelType = Union[
+    NonPredictionIntervalContextIgnorantAbstractModel, NonPredictionIntervalContextRequiredAbstractModel
+]

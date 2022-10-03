@@ -171,7 +171,7 @@ class AbstractPipeline(ABC):
             if isn't set the first timestamp where each segment began is taken.
         end_timestamp:
             Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is <= ``self.ts``.
+            Expected that value is less or equal to the last timestamp in ``self.ts``.
         prediction_interval:
             If True returns prediction interval for forecast.
         quantiles:
@@ -319,14 +319,29 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             )
         return predictions
 
-    def _predict(
-        self,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-    ) -> TSDataset:
-        raise NotImplementedError()
+    @staticmethod
+    def _make_predict_timestamps(
+        ts: TSDataset,
+        start_timestamp: Optional[pd.Timestamp] = None,
+        end_timestamp: Optional[pd.Timestamp] = None,
+    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        min_timestamp = ts.describe()["start_timestamp"].max()
+        max_timestamp = ts.index[-1]
+
+        if start_timestamp is None:
+            start_timestamp = min_timestamp
+        if end_timestamp is None:
+            end_timestamp = max_timestamp
+
+        if start_timestamp < min_timestamp:
+            raise ValueError("Value of start_timestamp is less than beginning of some segments!")
+        if end_timestamp > max_timestamp:
+            raise ValueError("Value of end_timestamp is more than ending of dataset!")
+
+        if start_timestamp > end_timestamp:
+            raise ValueError("Value of end_timestamp is less than start_timestamp!")
+
+        return start_timestamp, end_timestamp
 
     def predict(
         self,
@@ -348,7 +363,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             if isn't set the first timestamp where each segment began is taken.
         end_timestamp:
             Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is <= ``self.ts``.
+            Expected that value is less or equal to the last timestamp in ``self.ts``.
         prediction_interval:
             If True returns prediction interval for forecast.
         quantiles:
@@ -362,49 +377,13 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         Raises
         ------
         ValueError:
-            Pipeline wasn't fitted.
-        ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
             Value of ``start_timestamp`` goes before point where each segment started.
         ValueError:
             Value of ``end_timestamp`` goes after the last timestamp.
         """
-        # check presence dataset
-        if self.ts is None:
-            raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                f"before calling predict method."
-            )
-
-        # check timestamps
-        min_timestamp = self.ts.describe()["start_timestamp"].max()
-        max_timestamp = self.ts.index[-1]
-
-        if start_timestamp is None:
-            start_timestamp = min_timestamp
-        if end_timestamp is None:
-            end_timestamp = max_timestamp
-
-        if start_timestamp < min_timestamp:
-            raise ValueError("Value of start_timestamp is less than beginning of some segments!")
-        if end_timestamp > max_timestamp:
-            raise ValueError("Value of end_timestamp is more than ending of dataset!")
-
-        if start_timestamp > end_timestamp:
-            raise ValueError("Value of end_timestamp is less than start_timestamp!")
-
-        # check quantiles
-        self._validate_quantiles(quantiles=quantiles)
-
-        # make prediction
-        prediction = self._predict(
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-            prediction_interval=prediction_interval,
-            quantiles=quantiles,
-        )
-        return prediction
+        raise NotImplementedError("Predict method isn't implemented!")
 
     def _init_backtest(self):
         self._folds: Optional[Dict[int, Any]] = None
