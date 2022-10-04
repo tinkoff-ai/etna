@@ -195,16 +195,8 @@ def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(encoder_length=21, decoder_length=21, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
+        (DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01), []),
+        (TFTModel(encoder_length=21, decoder_length=21, trainer_params=dict(max_epochs=1), lr=0.01), []),
     ],
 )
 def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds):
@@ -243,16 +235,8 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
+        (DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01)),
+        (TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01)),
     ],
 )
 def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
@@ -281,16 +265,8 @@ def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_ts
         (NaiveModel(lag=3), []),
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
+        (DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01), []),
+        (TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01), []),
     ],
 )
 def test_forecast_out_sample_prefix(model, transforms, example_tsds):
@@ -325,16 +301,8 @@ def test_forecast_out_sample_suffix(model, transforms, example_tsds):
 @pytest.mark.parametrize(
     "model, transforms",
     [
-        pytest.param(
-            DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
+        (DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01), []),
+        (TFTModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01), []),
     ],
 )
 def test_forecast_out_sample_suffix_not_implemented(model, transforms, example_tsds):
@@ -384,15 +352,10 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
-            [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
+        (DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01), []),
+        (
             TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
             [],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
         ),
     ],
 )

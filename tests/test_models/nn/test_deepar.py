@@ -108,10 +108,9 @@ def test_forecast_with_different_freq(weekly_period_df, freq):
 
 def test_prediction_interval_run_infuture(example_tsds):
     horizon = 10
-    example_tsds.fit_transform([])
     model = DeepARModel(encoder_length=horizon, decoder_length=horizon, trainer_params=dict(max_epochs=2), lr=0.01)
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon, [], horizon)
+    future = example_tsds.make_future(horizon, tail_steps=horizon)
     forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]

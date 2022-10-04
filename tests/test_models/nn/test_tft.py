@@ -91,10 +91,9 @@ def _get_default_dataset_builder(horizon: int):
 def test_prediction_interval_run_infuture(example_tsds):
     horizon = 10
     pfdb = _get_default_dataset_builder(horizon)
-    example_tsds.fit_transform([])
     model = TFTModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=8), lr=0.1)
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon, [], pfdb.max_encoder_length)
+    future = example_tsds.make_future(horizon, tail_steps=pfdb.max_encoder_length)
     forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.02, 0.98])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
@@ -124,10 +123,9 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
 
     horizon = 10
     pfdb = _get_default_dataset_builder(horizon)
-    example_tsds.fit_transform([])
     model = TFTModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=2), lr=0.1, loss=MAEPF())
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon, [], pfdb.max_encoder_length)
+    future = example_tsds.make_future(horizon, tail_steps=pfdb.max_encoder_length)
     with pytest.warns(UserWarning, match="Quantiles can't be computed"):
         forecast = model.forecast(future, horizon, prediction_interval=True, quantiles=[0.02, 0.98])
     for segment in forecast.segments:
