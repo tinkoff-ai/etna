@@ -21,6 +21,9 @@ from etna.transforms import LagTransform
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms import StandardScalerTransform
 
+app = typer.Typer()
+
+
 SEED = 11
 
 
@@ -70,7 +73,7 @@ def objective(trial: optuna.Trial, metric_name: str, ts: TSDataset, horizon: int
     return metrics[metric_name].mean()
 
 
-@typer.c
+@app.command()
 def run_optuna(
     horizon: int = 14,
     metric_name: str = "MAE",
@@ -81,6 +84,9 @@ def run_optuna(
     direction: str = "minimize",
     freq: str = "D",
 ):
+    """
+    Run optuna optimization for CatBoostModelMultiSegment.
+    """
     ts = dataloader(file_path, freq=freq)
 
     study = optuna.create_study(
