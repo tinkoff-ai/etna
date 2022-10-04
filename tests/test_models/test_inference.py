@@ -235,8 +235,8 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        (DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01)),
-        (TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01)),
+        (DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01), []),
+        (TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01), []),
     ],
 )
 def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
