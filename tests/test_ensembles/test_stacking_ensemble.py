@@ -247,8 +247,7 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: St
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-def test_forecast_calls_vote(example_tsds: TSDataset, naive_ensemble):
-    naive_ensemble.fit(example_tsds)
+def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble):
     naive_ensemble.fit(ts=example_tsds)
     naive_ensemble._process_forecasts = MagicMock()
 
@@ -258,8 +257,7 @@ def test_forecast_calls_vote(example_tsds: TSDataset, naive_ensemble):
     assert result == naive_ensemble._process_forecasts.return_value
 
 
-def test_predict_calls_vote(example_tsds: TSDataset, naive_ensemble):
-    naive_ensemble.fit(example_tsds)
+def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble):
     naive_ensemble.fit(ts=example_tsds)
     naive_ensemble._process_forecasts = MagicMock()
 
