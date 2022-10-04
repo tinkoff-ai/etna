@@ -1,4 +1,6 @@
+from collections.abc import Callable
 from copy import deepcopy
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -191,6 +193,13 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
 class PytorchForecastingMixin:
     """Mixin for Pytorch Forecasting models."""
 
+    trainer_params: Dict[str, Any]
+    dataset_builder: PytorchForecastingDatasetBuilder
+    _from_dataset: Callable
+    train_batch_size: int
+    test_batch_size: int
+    encoder_length: int
+
     @log_decorator
     def fit(self, ts: TSDataset):
         """
@@ -206,21 +215,21 @@ class PytorchForecastingMixin:
         :
             model
         """
-        self._last_train_timestamp = ts.df.index[-1]  # type: ignore
+        self._last_train_timestamp = ts.df.index[-1]
         self._freq = ts.freq
 
         trainer_params = dict()
-        if "logger" not in self.trainer_params:  # type: ignore
-            self.trainer_params["logger"] = tslogger.pl_loggers  # type: ignore
+        if "logger" not in self.trainer_params:
+            self.trainer_params["logger"] = tslogger.pl_loggers
         else:
-            self.trainer_params["logger"] += tslogger.pl_loggers  # type: ignore
+            self.trainer_params["logger"] += tslogger.pl_loggers
 
-        trainer_params.update(self.trainer_params)  # type: ignore
+        trainer_params.update(self.trainer_params)
 
         self.trainer = pl.Trainer(**trainer_params)
-        pf_dataset_train = self.dataset_builder.create_train_dataset(ts)  # type: ignore
-        train_dataloader = pf_dataset_train.to_dataloader(train=True, batch_size=self.train_batch_size)  # type: ignore
-        self.model = self._from_dataset(pf_dataset_train)  # type: ignore
+        pf_dataset_train = self.dataset_builder.create_train_dataset(ts)
+        train_dataloader = pf_dataset_train.to_dataloader(train=True, batch_size=self.train_batch_size)
+        self.model = self._from_dataset(pf_dataset_train)
         if self.trainer is not None and self.model is not None:
             self.trainer.fit(self.model, train_dataloader)
         else:
@@ -229,15 +238,17 @@ class PytorchForecastingMixin:
 
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
         assert (
-            len(ts.df) == horizon + self.encoder_length  # type: ignore
+            len(ts.df) == horizon + self.encoder_length
         ), "Length of dataset must be equal to horizon + max_encoder_length"
 
-        pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts)  # type: ignore
+        pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts)
 
-        prediction_dataloader: DataLoader = pf_dataset_inference.to_dataloader(train=False, batch_size=self.test_batch_size)  # type: ignore
+        prediction_dataloader: DataLoader = pf_dataset_inference.to_dataloader(
+            train=False, batch_size=self.test_batch_size
+        )
 
         # shape (segments, encoder_length)
-        predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
+        predicts = self.model.predict(prediction_dataloader).numpy()
 
         ts.df = ts.df.iloc[-horizon:]
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]

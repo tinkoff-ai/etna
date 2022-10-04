@@ -15,7 +15,6 @@ from etna.models.nn.utils import PytorchForecastingMixin
 from etna.models.nn.utils import _DeepCopyMixin
 
 if SETTINGS.torch_required:
-    import pytorch_lightning as pl
     from pytorch_forecasting.data import GroupNormalizer
     from pytorch_forecasting.data import TimeSeriesDataSet
     from pytorch_forecasting.metrics import DistributionLoss
@@ -116,10 +115,8 @@ class DeepARModel(PytorchForecastingMixin, MultiSegmentPredictionIntervalModel, 
         self.loss = loss
         self.trainer_params = trainer_params if trainer_params is not None else dict()
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
-        self.model: Optional[Union[LightningModule, DeepAR]] = None  # type: ignore
-        self.trainer: Optional[pl.Trainer] = None  # type: ignore
+        self.model: Optional[Union[LightningModule, DeepAR]] = None
         self._last_train_timestamp = None
-        self._freq = None  # type: ignore
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
