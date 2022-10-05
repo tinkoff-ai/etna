@@ -343,6 +343,15 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         return start_timestamp, end_timestamp
 
+    def _predict(
+        self,
+        start_timestamp: Optional[pd.Timestamp],
+        end_timestamp: Optional[pd.Timestamp],
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+    ) -> TSDataset:
+        raise NotImplementedError("Predict method isn't implemented!")
+
     def predict(
         self,
         start_timestamp: Optional[pd.Timestamp] = None,
@@ -383,7 +392,23 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         ValueError:
             Value of ``end_timestamp`` goes after the last timestamp.
         """
-        raise NotImplementedError("Predict method isn't implemented!")
+        if self.ts is None:
+            raise ValueError(
+                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
+                f"before calling predict method."
+            )
+
+        start_timestamp, end_timestamp = self._make_predict_timestamps(
+            ts=self.ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+        )
+        self._validate_quantiles(quantiles=quantiles)
+        result = self._predict(
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+        )
+        return result
 
     def _init_backtest(self):
         self._folds: Optional[Dict[int, Any]] = None
