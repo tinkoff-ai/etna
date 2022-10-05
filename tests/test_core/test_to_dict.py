@@ -98,7 +98,7 @@ def test_to_dict_transforms_with_expected(target_object, expected):
 @pytest.mark.parametrize(
     "target_model",
     [
-        pytest.param(DeepARModel(), marks=pytest.mark.xfail(reason="some bug")),
+        pytest.param(DeepARModel(decoder_length=21, encoder_length=21), marks=pytest.mark.xfail(reason="some bug")),
         LinearPerSegmentModel(),
         CatBoostModelPerSegment(),
         AutoARIMAModel(),

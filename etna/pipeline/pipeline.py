@@ -4,6 +4,7 @@ from etna.datasets import TSDataset
 from etna.models.base import BaseModel
 from etna.models.base import DeepBaseModel
 from etna.models.base import PredictIntervalAbstractModel
+from etna.models.nn.utils import PytorchForecastingMixin
 from etna.pipeline.base import BasePipeline
 from etna.transforms.base import Transform
 
@@ -54,7 +55,7 @@ class Pipeline(BasePipeline):
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
 
-        if isinstance(self.model, DeepBaseModel):
+        if isinstance(self.model, (DeepBaseModel, PytorchForecastingMixin)):
             future = self.ts.make_future(
                 future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.encoder_length
             )

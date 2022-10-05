@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets import TSDataset
 from etna.models import AutoARIMAModel
@@ -25,7 +24,6 @@ from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
-from etna.transforms import PytorchForecastingTransform
 
 
 def _test_forecast_in_sample_full(ts, model, transforms):
@@ -185,6 +183,16 @@ def test_forecast_in_sample_full(model, transforms, example_tsds):
         (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+        pytest.param(
+            DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
+        pytest.param(
+            TFTModel(encoder_length=21, decoder_length=21, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
     ],
 )
 def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
@@ -197,34 +205,6 @@ def test_forecast_in_sample_full_failed(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=1,
-                    max_prediction_length=1,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    target_normalizer=GroupNormalizer(groups=["segment"]),
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=21,
-                    min_encoder_length=21,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    static_categoricals=["segment"],
-                    target_normalizer=None,
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
     ],
 )
 def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds):
@@ -251,6 +231,16 @@ def test_forecast_in_sample_full_not_implemented(model, transforms, example_tsds
         (MovingAverageModel(window=3), []),
         (NaiveModel(lag=3), []),
         (SeasonalMovingAverageModel(), []),
+        pytest.param(
+            DeepARModel(encoder_length=1, decoder_length=1, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
+        pytest.param(
+            TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
     ],
 )
 def test_forecast_in_sample_suffix(model, transforms, example_tsds):
@@ -263,34 +253,6 @@ def test_forecast_in_sample_suffix(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=1,
-                    max_prediction_length=1,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    target_normalizer=GroupNormalizer(groups=["segment"]),
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=21,
-                    min_encoder_length=21,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    static_categoricals=["segment"],
-                    target_normalizer=None,
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
     ],
 )
 def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_tsds):
@@ -320,32 +282,14 @@ def test_forecast_in_sample_suffix_not_implemented(model, transforms, example_ts
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
         pytest.param(
-            DeepARModel(max_epochs=5, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=5,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    target_normalizer=GroupNormalizer(groups=["segment"]),
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
+            DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
         ),
         pytest.param(
-            TFTModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=21,
-                    min_encoder_length=21,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    static_categoricals=["segment"],
-                    target_normalizer=None,
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
+            TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
         ),
     ],
 )
@@ -371,49 +315,20 @@ def test_forecast_out_sample_prefix(model, transforms, example_tsds):
         (SimpleExpSmoothingModel(), []),
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
+        pytest.param(
+            DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
+        pytest.param(
+            TFTModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
     ],
 )
 def test_forecast_out_sample_suffix(model, transforms, example_tsds):
     _test_forecast_out_sample_suffix(example_tsds, model, transforms)
-
-
-@pytest.mark.long_1
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        pytest.param(
-            TFTModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=21,
-                    min_encoder_length=21,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    static_categoricals=["segment"],
-                    target_normalizer=None,
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            DeepARModel(max_epochs=5, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=5,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    target_normalizer=GroupNormalizer(groups=["segment"]),
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-    ],
-)
-def test_forecast_out_sample_suffix_not_implemented(model, transforms, example_tsds):
-    with pytest.raises(NotImplementedError, match="You can only forecast from the next point after the last one"):
-        _test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
 @pytest.mark.long_1
@@ -446,6 +361,16 @@ def test_forecast_out_sample_suffix_failed(model, transforms, example_tsds):
         (HoltModel(), []),
         (HoltWintersModel(), []),
         (SimpleExpSmoothingModel(), []),
+        pytest.param(
+            DeepARModel(encoder_length=5, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
+        pytest.param(
+            TFTModel(encoder_length=21, decoder_length=5, trainer_params=dict(max_epochs=1), lr=0.01),
+            [],
+            marks=pytest.mark.xfail(reason="PytorchForecasting nets need context and horizon in forecast", strict=True),
+        ),
     ],
 )
 def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
@@ -458,34 +383,6 @@ def test_forecast_mixed_in_out_sample(model, transforms, example_tsds):
     [
         (BATSModel(use_trend=True), []),
         (TBATSModel(use_trend=True), []),
-        pytest.param(
-            DeepARModel(max_epochs=5, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=5,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    target_normalizer=GroupNormalizer(groups=["segment"]),
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
-        pytest.param(
-            TFTModel(max_epochs=1, learning_rate=[0.01]),
-            [
-                PytorchForecastingTransform(
-                    max_encoder_length=21,
-                    min_encoder_length=21,
-                    max_prediction_length=5,
-                    time_varying_known_reals=["time_idx"],
-                    time_varying_unknown_reals=["target"],
-                    static_categoricals=["segment"],
-                    target_normalizer=None,
-                )
-            ],
-            marks=pytest.mark.xfail(reason="TSDataset 2: PytorchForecasting nets"),
-        ),
     ],
 )
 def test_forecast_mixed_in_out_sample_not_implemented(model, transforms, example_tsds):
