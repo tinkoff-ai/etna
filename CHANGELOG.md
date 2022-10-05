@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
 - 
 - Fix bug with context size in new nns ([#951](https://github.com/tinkoff-ai/etna/pull/951))
-- 
+- Fix notebooks `get_started`, `custom_transform_and_model` to work with new classes ([#974](https://github.com/tinkoff-ai/etna/pull/974))
 - ProphetModel doesn't work with cap and floor regressors ([#842](https://github.com/tinkoff-ai/etna/pull/842))
 - Fix problem with encoding category types in OHE ([#843](https://github.com/tinkoff-ai/etna/pull/843))
 - 
