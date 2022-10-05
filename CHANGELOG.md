@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 - 
 - 
-- 
+- pf breacking changes ([#971](https://github.com/tinkoff-ai/etna/pull/971))
 - 
 
 ## Unreleased

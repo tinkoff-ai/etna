@@ -237,9 +237,8 @@ class PytorchForecastingMixin:
         return self
 
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
-        assert (
-            len(ts.df) == horizon + self.encoder_length
-        ), "Length of dataset must be equal to horizon + max_encoder_length"
+        if len(ts.df) == horizon + self.encoder_length:
+            raise ValueError("Length of dataset must be equal to horizon + max_encoder_length")
 
         pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts)
 
