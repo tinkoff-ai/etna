@@ -1,6 +1,6 @@
 # Optuna TPE hyperparameter tuning example
 
-Define your pipeline and hyperparameters in `optuna_example.py`, in the example we will optimize number of iterations `iterations` and `depth` and number of `lags`.
+Define your pipeline and hyperparameters in `optuna_example.py`, in the example we will optimize number of `iterations`, `depth` and number of `lags` for `CatBoostModelMultiSegment`
 
 Run optimization:
 
