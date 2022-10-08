@@ -12,7 +12,7 @@ parameters:
     max: 12  
   lags:
     distribution: int_uniform
-    min: 2
+    min: 1
     max: 24
 metric:
   name: MAE_mean

@@ -8,35 +8,32 @@ import pandas as pd
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
 
+from pathlib import Path
+
 from etna.datasets import TSDataset
-from etna.datasets import generate_ar_df
 from etna.loggers import WandbLogger
 from etna.loggers import tslogger
 from etna.pipeline import Pipeline
 
 OmegaConf.register_new_resolver("range", lambda x, y: list(range(x, y)))
+OmegaConf.register_new_resolver("sum", lambda x, y: x + y)
 
-SEED = 11
 
+FILE_PATH = Path(__file__)
 
 def set_seed(seed: int = 42):
     random.seed(seed)
     np.random.seed(seed)
 
 
-def init_logger(config):
+def init_logger(config: dict, project: str = "wandb-sweeps", tags: Optional[list] = ["test", "sweeps"]):
     tslogger.loggers = []
-    wblogger = WandbLogger(project="test-wandb-sweeps", tags=["test", "sweeps"], config=config)
+    wblogger = WandbLogger(project=project, tags=tags, config=config)
     tslogger.add(wblogger)
 
 
-def dataloader(file_path: Optional[str] = None, freq: str = "D") -> TSDataset:
-    if file_path is not None:
-        df = pd.read_csv(file_path)
-    else:
-        df = generate_ar_df(periods=300, start_time="2021-01-02", n_segments=10)
-        df.target = df.target + 100
-
+def dataloader(file_path: Path, freq: str) -> TSDataset:
+    df = pd.read_csv(file_path)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq=freq)
     return ts
@@ -45,19 +42,24 @@ def dataloader(file_path: Optional[str] = None, freq: str = "D") -> TSDataset:
 @hydra.main(config_name="config.yaml")
 def objective(cfg: DictConfig):
     config = OmegaConf.to_container(cfg, resolve=True)
+    
+    # Set seed for reproducibility
+    set_seed(cfg.seed)
 
-    pipeline = config["pipeline"]
-    backtest = config["backtest"]
-
+    # Load data
     ts = dataloader(file_path=cfg.dataset.file_path, freq=cfg.dataset.freq)
 
-    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline)
-    backtest_configs = hydra_slayer.get_from_params(**backtest)
+    # Init pipeline
+    pipeline: Pipeline = hydra_slayer.get_from_params(**config["pipeline"])
+    
+    # Init backtest parameters like metrics and e.t.c.
+    backtest_params = hydra_slayer.get_from_params(**config["backtest"])
 
+    # Init WandB logger
     init_logger(pipeline.to_dict())
 
-    metrics, _, _ = pipeline.backtest(ts, **backtest_configs)
-    return metrics["MAE"].mean()
+    # Run backtest
+    _, _, _ = pipeline.backtest(ts, **backtest_params)
 
 
 if __name__ == "__main__":

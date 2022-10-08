@@ -5,7 +5,9 @@
 
 ## Steps to start
 
-- Define your pipeline and hyperparameters in `config.yaml`, in example we will optimize number of iterations `iterations` and `depth` and number of `lags`
+- We will use [Hydra](https://hydra.cc/) to manage our command-line application.
+
+- Define your pipeline and hyperparameters in `config.yaml`, in example we will optimize number of iterations `iterations`, `depth` and number of `lags` for `CatBoostMultiSegmentModel`
 
 - Define WandB sweeps config `sweep.yaml` and push it to cloud:
 

@@ -19,13 +19,14 @@ pipeline:
     - _target_: etna.transforms.SegmentEncoderTransform
     - _target_: etna.transforms.LagTransform
       in_column: target
-      lags: ${range:1,${lags}}
+      lags: ${range:${pipeline.horizon},${sum:${pipeline.horizon},${lags}}}
 
 dataset:
-  file_path: null
+  file_path: ${oc.env:PWD}/../../data/example_dataset.csv
   freq: D
-
 
 iterations: ???
 depth: ???
 lags: ???
+
+seed: 11
