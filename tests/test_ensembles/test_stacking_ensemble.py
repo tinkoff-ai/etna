@@ -281,7 +281,7 @@ def test_forecast_sanity(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naiv
     np.allclose(mae(test, forecast), 0)
 
 
-@pytest.mark.long
+@pytest.mark.long_1
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,
