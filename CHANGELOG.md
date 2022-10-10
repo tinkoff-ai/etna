@@ -8,45 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `greater_is_better` property for Metric ([#921](https://github.com/tinkoff-ai/etna/pull/921))
-- `etna.auto` for greedy search, `etna.auto.pool` with default pipelines, `etna.auto.optuna` wrapper for optuna ([#895](https://github.com/tinkoff-ai/etna/pull/895))
 -
 -
 -
-- Add `MinMaxDifferenceTransform` ([#955](https://github.com/tinkoff-ai/etna/pull/955))
 -
 -
 -
-- Add wandb sweeps and optuna examples ([#338](https://github.com/tinkoff-ai/etna/pull/338))
 -
 -
 ### Changed
 -
 -
-- Make slicing faster in `TSDataset._merge_exog`, `FilterFeaturesTransform`, `AddConstTransform`, `LambdaTransform`, `LagTransform`, `LogTransform`, `SklearnTransform`, `WindowStatisticsTransform`; make CICD test different pandas versions ([#900](https://github.com/tinkoff-ai/etna/pull/900))
 - 
 - 
 - 
-- Mark some tests as long ([#929](https://github.com/tinkoff-ai/etna/pull/929))
-- Fix to_dict with nn models and add unsafe conversion for callbacks ([#949](https://github.com/tinkoff-ai/etna/pull/949))
--
--
 -
 -
 -
 ### Fixed
-- Fix to_dict with function as parameter ([#941](https://github.com/tinkoff-ai/etna/pull/941))
 -
+-
+-
+-
+-
+-
+-
+## [1.13.0] - 2022-10-10
+### Added
+- Add `greater_is_better` property for Metric ([#921](https://github.com/tinkoff-ai/etna/pull/921))
+- `etna.auto` for greedy search, `etna.auto.pool` with default pipelines, `etna.auto.optuna` wrapper for optuna ([#895](https://github.com/tinkoff-ai/etna/pull/895))
+- Add `MinMaxDifferenceTransform` ([#955](https://github.com/tinkoff-ai/etna/pull/955))
+- Add wandb sweeps and optuna examples ([#338](https://github.com/tinkoff-ai/etna/pull/338))
+### Changed
+- Make slicing faster in `TSDataset._merge_exog`, `FilterFeaturesTransform`, `AddConstTransform`, `LambdaTransform`, `LagTransform`, `LogTransform`, `SklearnTransform`, `WindowStatisticsTransform`; make CICD test different pandas versions ([#900](https://github.com/tinkoff-ai/etna/pull/900))
+- Mark some tests as long ([#929](https://github.com/tinkoff-ai/etna/pull/929))
+- Fix to_dict with nn models and add unsafe conversion for callbacks ([#949](https://github.com/tinkoff-ai/etna/pull/949))
+### Fixed
+- Fix `to_dict` with function as parameter ([#941](https://github.com/tinkoff-ai/etna/pull/941))
 - Fix native networks to work with generated future equals to horizon ([#936](https://github.com/tinkoff-ai/etna/pull/936))
 - Fix `SARIMAXModel` to work with exogenous data on `pmdarima>=2.0` ([#940](https://github.com/tinkoff-ai/etna/pull/940))
--
--
--
--
 - Teach catboost to work with encoders ([#957](https://github.com/tinkoff-ai/etna/pull/957))
--
--
-
 ## [1.12.0] - 2022-09-05
 ### Added
 - Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
