@@ -46,7 +46,8 @@ class _AutoARIMAAdapter(_SARIMAXBaseAdapter):
         super().__init__()
 
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
-        model = pm.auto_arima(endog, X=exog, **self.kwargs)
+        endog_np = endog.values
+        model = pm.auto_arima(endog_np, X=exog, **self.kwargs)
         return model.arima_res_
 
 

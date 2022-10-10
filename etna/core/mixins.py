@@ -2,6 +2,7 @@ import inspect
 import warnings
 from enum import Enum
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 
@@ -38,6 +39,10 @@ class BaseMixin:
         return str(value.__module__) + "." + str(value.__class__.__name__)
 
     @staticmethod
+    def _get_target_from_function(value: Callable):
+        return str(value.__module__) + "." + str(value.__qualname__)
+
+    @staticmethod
     def _parse_value(value: Any) -> Any:
         if isinstance(value, BaseMixin):
             return value.to_dict()
@@ -47,6 +52,8 @@ class BaseMixin:
             model_parameters = value.get_params()
             answer.update(model_parameters)
             return answer
+        elif hasattr(value, "_init_params"):
+            return {"_target_": BaseMixin._get_target_from_class(value), **value._init_params}
         elif isinstance(value, (str, float, int)):
             return value
         elif isinstance(value, List):
@@ -55,6 +62,8 @@ class BaseMixin:
             return tuple([BaseMixin._parse_value(elem) for elem in value])
         elif isinstance(value, Dict):
             return {key: BaseMixin._parse_value(item) for key, item in value.items()}
+        elif inspect.isfunction(value):
+            return {"_target_": BaseMixin._get_target_from_function(value)}
         else:
             answer = {}
             answer["_target_"] = BaseMixin._get_target_from_class(value)

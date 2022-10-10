@@ -9,7 +9,15 @@ from etna.models.nn.rnn import RNNNet
 from etna.transforms import StandardScalerTransform
 
 
-@pytest.mark.parametrize("horizon", [8, 13, 15])
+@pytest.mark.long_2
+@pytest.mark.parametrize(
+    "horizon",
+    [
+        8,
+        13,
+        15,
+    ],
+)
 def test_rnn_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
     """
     Given: I have dataframe with 2 segments with weekly seasonality with known future

@@ -15,6 +15,7 @@ API
    ensembles
    pipeline
    analysis
+   auto
    clustering
    loggers
    commands

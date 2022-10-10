@@ -3,10 +3,15 @@ import pandas as pd
 import pytest
 from catboost import CatBoostRegressor
 
-from etna.datasets.tsdataset import TSDataset
+from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
+from etna.metrics import MAE
 from etna.models import CatBoostMultiSegmentModel
 from etna.models import CatBoostPerSegmentModel
 from etna.pipeline import Pipeline
+from etna.transforms import DateFlagsTransform
+from etna.transforms import LabelEncoderTransform
+from etna.transforms import OneHotEncoderTransform
 from etna.transforms.math import LagTransform
 
 
@@ -104,3 +109,21 @@ def test_get_model_per_segment_after_training(example_tsds):
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], CatBoostRegressor)
+
+
+@pytest.mark.parametrize(
+    "encoder",
+    [
+        LabelEncoderTransform(in_column="date_flag_day_number_in_month"),
+        OneHotEncoderTransform(in_column="date_flag_day_number_in_month"),
+    ],
+)
+def test_encoder_catboost(encoder):
+    df = generate_ar_df(start_time="2021-01-01", periods=20, n_segments=2)
+    ts = TSDataset.to_dataset(df)
+    ts = TSDataset(ts, freq="D")
+
+    transforms = [DateFlagsTransform(week_number_in_month=True, out_column="date_flag"), encoder]
+    model = CatBoostMultiSegmentModel(iterations=100)
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=1)
+    _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=1)

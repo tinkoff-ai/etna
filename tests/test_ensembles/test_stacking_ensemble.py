@@ -303,6 +303,7 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
+@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with StackingEnsemble."""

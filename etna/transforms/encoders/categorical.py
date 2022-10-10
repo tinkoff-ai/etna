@@ -23,9 +23,12 @@ class _LabelEncoder(preprocessing.LabelEncoder):
     def transform(self, y: pd.Series, strategy: str):
         diff = _check_unknown(y, known_values=self.classes_)
 
-        index = np.where(np.isin(y, diff))[0]
+        is_new_index = np.isin(y, diff)
 
-        encoded = _encode(y, uniques=self.classes_, check_unknown=False).astype(float)
+        encoded = np.zeros(y.shape[0], dtype=float)
+        encoded[~is_new_index] = _encode(y.iloc[~is_new_index], uniques=self.classes_, check_unknown=False).astype(
+            float
+        )
 
         if strategy == ImputerMode.none:
             filling_value = None
@@ -36,7 +39,7 @@ class _LabelEncoder(preprocessing.LabelEncoder):
         else:
             raise ValueError(f"The strategy '{strategy}' doesn't exist")
 
-        encoded[index] = filling_value
+        encoded[is_new_index] = filling_value
         return encoded
 
 
@@ -133,7 +136,7 @@ class OneHotEncoderTransform(Transform):
         """
         self.in_column = in_column
         self.out_column = out_column
-        self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False)
+        self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False, dtype=int)
 
     def fit(self, df: pd.DataFrame) -> "OneHotEncoderTransform":
         """

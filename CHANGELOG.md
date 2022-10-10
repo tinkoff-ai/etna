@@ -8,49 +8,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- 
-- Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
-- 
-- `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
-- `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
-- 
+-
 - Add `predict` method to pipelines ([#954](https://github.com/tinkoff-ai/etna/pull/954))
 - Implement predict method in `SARIMAXModel`, `AutoARIMAModel`, `SeasonalMovingAverageModel`, `DeadlineMovingAverageModel` ([#948](https://github.com/tinkoff-ai/etna/pull/948))
 - Make `SeasonalMovingAverageModel` and `DeadlineMovingAverageModel` to work with context ([#917](https://github.com/tinkoff-ai/etna/pull/917))
-- 
 - Add `predict` method to models ([#935](https://github.com/tinkoff-ai/etna/pull/935))
 - Implement `predict` in ensembles ([#972](https://github.com/tinkoff-ai/etna/pull/972))
 - Implement `predict` in `Pipeline`, `AutoRegressivePipeline` ([#970](https://github.com/tinkoff-ai/etna/pull/970))
+-
+-
 ### Changed
-- 
-- 
+-
+-
 - Changed hierarchy of base models, enable passing context into models ([#888](https://github.com/tinkoff-ai/etna/pull/888))
-- 
-- 
-- Teach AutoARIMAModel to work with out-sample predictions ([#830](https://github.com/tinkoff-ai/etna/pull/830))
-- 
-- 
-- 
-- Make TSDataset.to_flatten faster for big datasets ([#848](https://github.com/tinkoff-ai/etna/pull/848))
 - Add `RNNModel` into `test_inference` ([#966](https://github.com/tinkoff-ai/etna/pull/966))
 - 
+- 
+-
+-
+-
 ### Fixed
-- Type hints for `Pipeline.model` match `models.nn`([#768](https://github.com/tinkoff-ai/etna/pull/840))
-- 
-- 
-- Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
-- 
+-
+-
 - Fix bug with context size in new nns ([#951](https://github.com/tinkoff-ai/etna/pull/951))
 - Fix notebooks `get_started`, `custom_transform_and_model` to work with new classes ([#974](https://github.com/tinkoff-ai/etna/pull/974))
+-
+-
+-
+## [1.13.0] - 2022-10-10
+### Added
+- Add `greater_is_better` property for Metric ([#921](https://github.com/tinkoff-ai/etna/pull/921))
+- `etna.auto` for greedy search, `etna.auto.pool` with default pipelines, `etna.auto.optuna` wrapper for optuna ([#895](https://github.com/tinkoff-ai/etna/pull/895))
+- Add `MinMaxDifferenceTransform` ([#955](https://github.com/tinkoff-ai/etna/pull/955))
+- Add wandb sweeps and optuna examples ([#338](https://github.com/tinkoff-ai/etna/pull/338))
+### Changed
+- Make slicing faster in `TSDataset._merge_exog`, `FilterFeaturesTransform`, `AddConstTransform`, `LambdaTransform`, `LagTransform`, `LogTransform`, `SklearnTransform`, `WindowStatisticsTransform`; make CICD test different pandas versions ([#900](https://github.com/tinkoff-ai/etna/pull/900))
+- Mark some tests as long ([#929](https://github.com/tinkoff-ai/etna/pull/929))
+- Fix to_dict with nn models and add unsafe conversion for callbacks ([#949](https://github.com/tinkoff-ai/etna/pull/949))
+### Fixed
+- Fix `to_dict` with function as parameter ([#941](https://github.com/tinkoff-ai/etna/pull/941))
+- Fix native networks to work with generated future equals to horizon ([#936](https://github.com/tinkoff-ai/etna/pull/936))
+- Fix `SARIMAXModel` to work with exogenous data on `pmdarima>=2.0` ([#940](https://github.com/tinkoff-ai/etna/pull/940))
+- Teach catboost to work with encoders ([#957](https://github.com/tinkoff-ai/etna/pull/957))
+## [1.12.0] - 2022-09-05
+### Added
+- Function to transform etna objects to dict([#818](https://github.com/tinkoff-ai/etna/issues/818))
+- `MLPModel`([#860](https://github.com/tinkoff-ai/etna/pull/860))
+- `DeadlineMovingAverageModel` ([#827](https://github.com/tinkoff-ai/etna/pull/827))
+- `DirectEnsemble` ([#824](https://github.com/tinkoff-ai/etna/pull/824))
+- CICD: untaged docker image cleaner ([#856](https://github.com/tinkoff-ai/etna/pull/856))
+- Notebook about forecasting strategies ([#864](https://github.com/tinkoff-ai/etna/pull/863))
+- Add `ChangePointSegmentationTransform`, `RupturesChangePointsModel` ([#821](https://github.com/tinkoff-ai/etna/issues/821))
+### Changed
+- Teach AutoARIMAModel to work with out-sample predictions ([#830](https://github.com/tinkoff-ai/etna/pull/830))
+- Make TSDataset.to_flatten faster for big datasets ([#848](https://github.com/tinkoff-ai/etna/pull/848))
+### Fixed
+- Type hints for external users by [PEP 561](https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-library-stubs-or-py-typed-marker) ([#868](https://github.com/tinkoff-ai/etna/pull/868))
+- Type hints for `Pipeline.model` match `models.nn`([#768](https://github.com/tinkoff-ai/etna/pull/840))
+- Fix behavior of SARIMAXModel if simple_differencing=True is set ([#837](https://github.com/tinkoff-ai/etna/pull/837))
+- Bug python3.7 and TypedDict import ([867](https://github.com/tinkoff-ai/etna/pull/867))
+- Fix deprecated  pytorch lightning trainer flags ([#866](https://github.com/tinkoff-ai/etna/pull/866))
 - ProphetModel doesn't work with cap and floor regressors ([#842](https://github.com/tinkoff-ai/etna/pull/842))
 - Fix problem with encoding category types in OHE ([#843](https://github.com/tinkoff-ai/etna/pull/843))
-- 
 - Change Docker cuda image version from 11.1 to 11.6.2 ([#838](https://github.com/tinkoff-ai/etna/pull/838))
+- Optimize time complexity of `determine_num_steps`([#864](https://github.com/tinkoff-ai/etna/pull/864))
+- All warning as errors([#880](https://github.com/tinkoff-ai/etna/pull/880))
 - Update .gitignore with .DS_Store and checkpoints ([#883](https://github.com/tinkoff-ai/etna/pull/883))
-- 
-- 
+- Delete ROADMAP.md ([#904]https://github.com/tinkoff-ai/etna/pull/904)
 - Fix ci invalid cache ([#896](https://github.com/tinkoff-ai/etna/pull/896))
-- 
 
 ## [1.11.1] - 2022-08-03
 ### Fixed

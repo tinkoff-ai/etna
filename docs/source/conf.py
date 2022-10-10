@@ -73,6 +73,7 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
     "pytorch_lightning": ("https://pytorch-lightning.readthedocs.io/en/stable/", None),
+    "optuna": ("https://optuna.readthedocs.io/en/stable/", None)
 }
 
 autodoc_typehints = "both"

@@ -203,7 +203,7 @@ def test_forecast_raise_error_if_not_fitted():
         _ = pipeline.forecast()
 
 
-@pytest.mark.long
+@pytest.mark.long_1
 def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     """Check that AutoRegressivePipeline.backtest gives the same results in case of single and multiple jobs modes."""
     # create a pipeline

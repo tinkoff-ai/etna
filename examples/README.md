@@ -46,3 +46,10 @@ We have prepared a set of tutorials for an easy introduction:
 #### 07. [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/ensembles.ipynb)
 - VotingEnsemble
 - StackingEnsemble
+
+#### 08. [Auto](https://github.com/tinkoff-ai/etna/tree/master/examples/auto.py)
+- Auto pipeline search
+
+#### 09. Hyperparameter search
+- [Optuna](https://github.com/tinkoff-ai/etna/tree/master/examples/optuna)
+- [WandB sweeps](https://github.com/tinkoff-ai/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)
