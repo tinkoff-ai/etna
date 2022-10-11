@@ -165,18 +165,50 @@ class TSDataset:
     def _repr_html_(self):
         return self.df._repr_html_()
 
-    def __getitem__(self, item):
-        if isinstance(item, slice) or isinstance(item, str):
-            df = self.df.loc[self.idx[item]]
-        elif len(item) == 2 and item[0] is Ellipsis:
-            df = self.df.loc[self.idx[:], self.idx[:, item[1]]]
-        elif len(item) == 2 and item[1] is Ellipsis:
-            df = self.df.loc[self.idx[item[0]]]
+    def __getitem__(self, item) -> "TSDataset":
+        def to_time_index(item):
+            if isinstance(item, slice):
+                int_slice = isinstance(item.start, int) or isinstance(item.stop, int)
+                if int_slice:
+                    start = None if item.start is None else self.index[item.start]
+                    stop = None if item.stop is None else self.index[item.stop]
+                    item = slice(start, stop, item.step)
+            elif isinstance(item, int):
+                item = [self.index[item]]
+            else:
+                item = [item]
+            return item
+
+        df_exog = self.df_exog.copy()
+        if isinstance(item, slice) or isinstance(item, int) or isinstance(item, str):
+            time_idx = to_time_index(item)
+            df = self.df.loc[self.idx[time_idx]]
+        elif isinstance(item, tuple):
+            time_idx = to_time_index(item[0])
+            if len(item) == 2:
+                df = self.df.loc[self.idx[time_idx], self.idx[:, item[1]]]
+            elif len(item) == 3:
+                segments = [item[1]] if isinstance(item[2], str) else item[1]
+                features = [item[2]] if isinstance(item[2], str) else item[2]
+                df = self.df.loc[self.idx[time_idx], self.idx[segments, features]]
+                df_exog = self.df_exog.loc[self.idx[:], self.idx[segments, :]]
+            else:
+                raise ValueError("Unsupported indexing format!")
         else:
-            df = self.df.loc[self.idx[item[0]], self.idx[item[1], item[2]]]
-        first_valid_idx = df.first_valid_index()
-        df = df.loc[first_valid_idx:]
-        return df
+            raise ValueError("Unsupported indexing format!")
+        ts = TSDataset(df=df, freq=self.freq)
+        ts.known_future = deepcopy(self.known_future)
+        ts._regressors = deepcopy(self.regressors)
+        ts.df_exog = df_exog
+        return ts
+
+    def __eq__(self, other):
+        return (
+            sorted(self.known_future) == sorted(other.known_future)
+            and sorted(self.regressors) == sorted(other.regressors)
+            and (self.df == other.df).all().all()
+            and (self.df_exog == other.df_exog).all().all()
+        )
 
     def make_future(
         self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
