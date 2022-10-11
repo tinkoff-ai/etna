@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -139,6 +138,7 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
 
     def _predict(
         self,
+        ts: TSDataset,
         start_timestamp: pd.Timestamp,
         end_timestamp: pd.Timestamp,
         prediction_interval: bool,
@@ -147,10 +147,9 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
         if prediction_interval:
             raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
 
-        self.ts = cast(TSDataset, self.ts)
         horizons = [pipeline.horizon for pipeline in self.pipelines]
         pipeline = self.pipelines[np.argmin(horizons)]
         prediction = self._predict_pipeline(
-            pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+            ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
         )
         return prediction

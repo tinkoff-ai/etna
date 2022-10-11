@@ -58,8 +58,10 @@ def test_predict(simple_ts_train):
     smallest_pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1)
     ensemble.fit(simple_ts_train)
     smallest_pipeline.fit(simple_ts_train)
-    prediction = ensemble.predict(start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2])
+    prediction = ensemble.predict(
+        ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
+    )
     expected_prediction = smallest_pipeline.predict(
-        start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
+        ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
     )
     pd.testing.assert_frame_equal(prediction.to_pandas(), expected_prediction.to_pandas())

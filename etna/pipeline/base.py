@@ -153,25 +153,28 @@ class AbstractPipeline(ABC):
     @abstractmethod
     def predict(
         self,
+        ts: TSDataset,
         start_timestamp: Optional[pd.Timestamp] = None,
         end_timestamp: Optional[pd.Timestamp] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
-        """Make in-sample predictions in a given range.
+        """Make in-sample predictions on dataset in a given range.
 
         Currently, in situation when segments start with different timestamps
         we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
 
         Parameters
         ----------
+        ts:
+            Dataset to make predictions on.
         start_timestamp:
-            First timestamp of prediction range to return, should be >= than first timestamp in ``self.ts``;
+            First timestamp of prediction range to return, should be >= than first timestamp in ``ts``;
             expected that beginning of each segment <= ``start_timestamp``;
             if isn't set the first timestamp where each segment began is taken.
         end_timestamp:
-            Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is less or equal to the last timestamp in ``self.ts``.
+            Last timestamp of prediction range to return; if isn't set the last timestamp of ``ts`` is taken.
+            Expected that value is less or equal to the last timestamp in ``ts``.
         prediction_interval:
             If True returns prediction interval for forecast.
         quantiles:
@@ -345,6 +348,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
     def _predict(
         self,
+        ts: TSDataset,
         start_timestamp: Optional[pd.Timestamp],
         end_timestamp: Optional[pd.Timestamp],
         prediction_interval: bool,
@@ -354,25 +358,28 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
     def predict(
         self,
+        ts: TSDataset,
         start_timestamp: Optional[pd.Timestamp] = None,
         end_timestamp: Optional[pd.Timestamp] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
-        """Make in-sample predictions in a given range.
+        """Make in-sample predictions on dataset in a given range.
 
         Currently, in situation when segments start with different timestamps
         we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
 
         Parameters
         ----------
+        ts:
+            Dataset to make predictions on.
         start_timestamp:
-            First timestamp of prediction range to return, should be >= than first timestamp in ``self.ts``;
+            First timestamp of prediction range to return, should be >= than first timestamp in ``ts``;
             expected that beginning of each segment <= ``start_timestamp``;
             if isn't set the first timestamp where each segment began is taken.
         end_timestamp:
-            Last timestamp of prediction range to return; if isn't set the last timestamp of ``self.ts`` is taken.
-            Expected that value is less or equal to the last timestamp in ``self.ts``.
+            Last timestamp of prediction range to return; if isn't set the last timestamp of ``ts`` is taken.
+            Expected that value is less or equal to the last timestamp in ``ts``.
         prediction_interval:
             If True returns prediction interval for forecast.
         quantiles:
@@ -392,17 +399,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         ValueError:
             Value of ``end_timestamp`` goes after the last timestamp.
         """
-        if self.ts is None:
-            raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                f"before calling predict method."
-            )
-
         start_timestamp, end_timestamp = self._make_predict_timestamps(
-            ts=self.ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+            ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
         )
         self._validate_quantiles(quantiles=quantiles)
         result = self._predict(
+            ts=ts,
             start_timestamp=start_timestamp,
             end_timestamp=end_timestamp,
             prediction_interval=prediction_interval,

@@ -263,7 +263,7 @@ def test_predict(model, transforms, example_tsds):
     end_timestamp = ts.index[end_idx]
     num_points = end_idx - start_idx + 1
 
-    result_ts = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    result_ts = pipeline.predict(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
     result_df = result_ts.to_pandas(flatten=True)
 
     assert not np.any(result_df["target"].isna())
