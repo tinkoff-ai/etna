@@ -296,29 +296,6 @@ class TSDataset:
         future_ts.df_exog = self.df_exog
         return future_ts
 
-    def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
-        """Return new TSDataset with integer-location based indexing.
-
-        Parameters
-        ----------
-        start_idx:
-            starting index of the slice.
-        end_idx:
-            last index of the slice.
-
-        Returns
-        -------
-        :
-            TSDataset based on indexing slice.
-        """
-        df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
-        tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
-        # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        tsdataset_slice.known_future = deepcopy(self.known_future)
-        tsdataset_slice._regressors = deepcopy(self.regressors)
-        tsdataset_slice.df_exog = self.df_exog
-        return tsdataset_slice
-
     @staticmethod
     def _check_known_future(
         known_future: Union[Literal["all"], Sequence], df_exog: Optional[pd.DataFrame]

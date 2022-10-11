@@ -798,7 +798,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
+        future_ts = ts[self.encoder_length : self.encoder_length + horizon]
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
 
