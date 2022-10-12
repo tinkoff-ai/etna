@@ -179,24 +179,28 @@ class TSDataset:
                 item = [item]
             return item
 
-        df_exog = self.df_exog.copy()
+        df_exog = self.df_exog
         if isinstance(item, slice) or isinstance(item, int) or isinstance(item, str):
             time_idx = to_time_index(item)
             df = self.df.loc[self.idx[time_idx]]
+            raw_df = self.raw_df.loc[self.idx[time_idx]]
         elif isinstance(item, tuple):
             time_idx = to_time_index(item[0])
             if len(item) == 2:
                 df = self.df.loc[self.idx[time_idx], self.idx[:, item[1]]]
+                raw_df = self.raw_df.loc[self.idx[time_idx]]
             elif len(item) == 3:
-                segments = [item[1]] if isinstance(item[2], str) else item[1]
-                features = [item[2]] if isinstance(item[2], str) else item[2]
+                segments = (item[1]) if isinstance(item[1], str) else tuple(item[1])
+                features = (item[2]) if isinstance(item[2], str) else tuple(item[2])
                 df = self.df.loc[self.idx[time_idx], self.idx[segments, features]]
-                df_exog = self.df_exog.loc[self.idx[:], self.idx[segments, :]]
+                df_exog = None if self.df_exog is None else self.df_exog.loc[self.idx[:], self.idx[segments, :]]
+                raw_df = self.raw_df.loc[self.idx[time_idx], self.idx[segments, :]]
             else:
                 raise ValueError("Unsupported indexing format!")
         else:
             raise ValueError("Unsupported indexing format!")
         ts = TSDataset(df=df, freq=self.freq)
+        ts.raw_df = raw_df
         ts.known_future = deepcopy(self.known_future)
         ts._regressors = deepcopy(self.regressors)
         ts.df_exog = df_exog
@@ -910,17 +914,6 @@ class TSDataset:
         """
         return self.df.columns
 
-    @property
-    def loc(self) -> pd.core.indexing._LocIndexer:
-        """Return self.df.loc method.
-
-        Returns
-        -------
-        pd.core.indexing._LocIndexer
-            dataframe with self.df.loc[...]
-        """
-        return self.df.loc
-
     def isnull(self) -> pd.DataFrame:
         """Return dataframe with flag that means if the correspondent object in ``self.df`` is null.
 
@@ -931,8 +924,8 @@ class TSDataset:
         """
         return self.df.isnull()
 
-    def head(self, n_rows: int = 5) -> pd.DataFrame:
-        """Return the first ``n_rows`` rows.
+    def head(self, n_rows: int = 5) -> "TSDataset":
+        """Return TSDataset with the first ``n_rows`` rows.
 
         Mimics pandas method.
 
@@ -950,13 +943,13 @@ class TSDataset:
 
         Returns
         -------
-        pd.DataFrame
+        :
             the first ``n_rows`` rows or 5 by default.
         """
-        return self.df.head(n_rows)
+        return self[: n_rows - 1]
 
-    def tail(self, n_rows: int = 5) -> pd.DataFrame:
-        """Return the last ``n_rows`` rows.
+    def tail(self, n_rows: int = 5) -> "TSDataset":
+        """Return TSDataset with the last ``n_rows`` rows.
 
         Mimics pandas method.
 
@@ -974,11 +967,11 @@ class TSDataset:
 
         Returns
         -------
-        pd.DataFrame
+        :
             the last ``n_rows`` rows or 5 by default.
 
         """
-        return self.df.tail(n_rows)
+        return self[-n_rows:]
 
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
