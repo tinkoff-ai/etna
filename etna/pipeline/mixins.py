@@ -23,11 +23,10 @@ class ModelPipelinePredictMixin:
 
     def _create_ts(self, ts: TSDataset, start_timestamp: pd.Timestamp, end_timestamp: pd.Timestamp) -> TSDataset:
         """Create ``TSDataset`` to make predictions on."""
-        df = ts.raw_df.copy()
-        # we make it through deepcopy to handle df_exog=None
+        df = deepcopy(ts.raw_df)
         df_exog = deepcopy(ts.df_exog)
-        freq = ts.freq
-        known_future = ts.known_future
+        freq = deepcopy(ts.freq)
+        known_future = deepcopy(ts.known_future)
 
         df_to_transform = df[:end_timestamp]
         cur_ts = TSDataset(df=df_to_transform, df_exog=df_exog, freq=freq, known_future=known_future)
