@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 - Changed hierarchy of base models, enable passing context into models ([#888](https://github.com/tinkoff-ai/etna/pull/888))
 - Add `RNNModel` into `test_inference` ([#966](https://github.com/tinkoff-ai/etna/pull/966))
-- 
+- Make `ts` required parameter for `predict` ([#981](https://github.com/tinkoff-ai/etna/pull/981))
 - 
 -
 -

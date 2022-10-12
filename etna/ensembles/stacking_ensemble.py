@@ -249,6 +249,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
     def _predict(
         self,
+        ts: TSDataset,
         start_timestamp: pd.Timestamp,
         end_timestamp: pd.Timestamp,
         prediction_interval: bool,
@@ -257,10 +258,9 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         if prediction_interval:
             raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
 
-        self.ts = cast(TSDataset, self.ts)
         predictions = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._predict_pipeline)(
-                pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+                ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
             )
             for pipeline in self.pipelines
         )

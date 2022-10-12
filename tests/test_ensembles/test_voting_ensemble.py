@@ -107,7 +107,7 @@ def test_predict_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline,
     start_idx = 20
     end_idx = 30
     prediction = ensemble.predict(
-        start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
     )
     assert isinstance(prediction, TSDataset)
     assert len(prediction.df) == end_idx - start_idx + 1
@@ -154,6 +154,7 @@ def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline,
     ensemble._vote = MagicMock()
 
     result = ensemble._predict(
+        ts=example_tsds,
         start_timestamp=example_tsds.index[20],
         end_timestamp=example_tsds.index[30],
         prediction_interval=False,

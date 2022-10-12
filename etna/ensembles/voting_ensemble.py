@@ -214,6 +214,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
 
     def _predict(
         self,
+        ts: TSDataset,
         start_timestamp: pd.Timestamp,
         end_timestamp: pd.Timestamp,
         prediction_interval: bool,
@@ -225,7 +226,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         self.ts = cast(TSDataset, self.ts)
         predictions = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._predict_pipeline)(
-                pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+                ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
             )
             for pipeline in self.pipelines
         )

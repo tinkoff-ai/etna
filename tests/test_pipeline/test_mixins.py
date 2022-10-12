@@ -12,14 +12,11 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 
 
-def make_mixin(ts=None, model=None, transforms=(), mock_recreate_ts=True, mock_determine_prediction_size=True):
-    if ts is None:
-        ts = MagicMock()
+def make_mixin(model=None, transforms=(), mock_recreate_ts=True, mock_determine_prediction_size=True):
     if model is None:
         model = MagicMock(spec=NonPredictionIntervalContextIgnorantAbstractModel)
 
     mixin = ModelPipelinePredictMixin()
-    mixin.ts = ts
     mixin.transforms = transforms
     mixin.model = model
     if mock_recreate_ts:
@@ -51,10 +48,10 @@ def test_create_ts(context_size, start_timestamp, end_timestamp, transforms, exa
     ts = example_reg_tsds
     model = MagicMock()
     model.context_size = context_size
-    mixin = make_mixin(ts=ts, transforms=transforms, model=model, mock_recreate_ts=False)
+    mixin = make_mixin(transforms=transforms, model=model, mock_recreate_ts=False)
 
     ts.fit_transform(transforms)
-    created_ts = mixin._create_ts(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    created_ts = mixin._create_ts(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
     expected_start_timestamp = max(example_reg_tsds.index[0], start_timestamp - pd.Timedelta(days=model.context_size))
     assert created_ts.index[0] == expected_start_timestamp
@@ -75,9 +72,11 @@ def test_create_ts(context_size, start_timestamp, end_timestamp, transforms, exa
 )
 def test_determine_prediction_size(start_timestamp, end_timestamp, expected_prediction_size, example_tsds):
     ts = example_tsds
-    mixin = make_mixin(ts=ts, mock_determine_prediction_size=False)
+    mixin = make_mixin(mock_determine_prediction_size=False)
 
-    prediction_size = mixin._determine_prediction_size(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    prediction_size = mixin._determine_prediction_size(
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+    )
 
     assert prediction_size == expected_prediction_size
 
@@ -92,13 +91,14 @@ def test_determine_prediction_size(start_timestamp, end_timestamp, expected_pred
     ],
 )
 def test_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
+    ts = MagicMock()
     mixin = make_mixin()
 
     _ = mixin._predict(
-        start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
     )
 
-    mixin._create_ts.assert_called_once_with(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    mixin._create_ts.assert_called_once_with(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
 
 @pytest.mark.parametrize(
@@ -111,14 +111,15 @@ def test_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
     ],
 )
 def test_predict_determine_prediction_size_called(start_timestamp, end_timestamp, example_tsds):
+    ts = MagicMock()
     mixin = make_mixin()
 
     _ = mixin._predict(
-        start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
     )
 
     mixin._determine_prediction_size.assert_called_once_with(
-        start_timestamp=start_timestamp, end_timestamp=end_timestamp
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
     )
 
 
@@ -127,6 +128,7 @@ def test_predict_determine_prediction_size_called(start_timestamp, end_timestamp
     [NonPredictionIntervalContextIgnorantAbstractModel, NonPredictionIntervalContextRequiredAbstractModel],
 )
 def test_predict_fail_doesnt_support_prediction_interval(model_class):
+    ts = MagicMock()
     model = MagicMock(spec=model_class)
     mixin = make_mixin(model=model)
 
@@ -134,6 +136,7 @@ def test_predict_fail_doesnt_support_prediction_interval(model_class):
         NotImplementedError, match=f"Model {model.__class__.__name__} doesn't support prediction intervals"
     ):
         _ = mixin._predict(
+            ts=ts,
             start_timestamp=pd.Timestamp("2020-01-01"),
             end_timestamp=pd.Timestamp("2020-01-02"),
             prediction_interval=True,
@@ -142,10 +145,12 @@ def test_predict_fail_doesnt_support_prediction_interval(model_class):
 
 
 def _check_predict_called(spec, prediction_interval, quantiles, check_keys):
+    ts = MagicMock()
     model = MagicMock(spec=spec)
     mixin = make_mixin(model=model)
 
     result = mixin._predict(
+        ts=ts,
         start_timestamp=pd.Timestamp("2020-01-01"),
         end_timestamp=pd.Timestamp("2020-01-02"),
         prediction_interval=prediction_interval,

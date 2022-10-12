@@ -43,10 +43,13 @@ class EnsembleMixin:
 
     @staticmethod
     def _predict_pipeline(
-        pipeline: BasePipeline, start_timestamp: Optional[pd.Timestamp], end_timestamp: Optional[pd.Timestamp]
+        ts: TSDataset,
+        pipeline: BasePipeline,
+        start_timestamp: Optional[pd.Timestamp],
+        end_timestamp: Optional[pd.Timestamp],
     ) -> TSDataset:
         """Make predict with given pipeline."""
         tslogger.log(msg=f"Start prediction with {pipeline}.")
-        prediction = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+        prediction = pipeline.predict(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
         tslogger.log(msg=f"Prediction is done with {pipeline}.")
         return prediction

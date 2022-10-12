@@ -53,12 +53,6 @@ class DummyPipeline(BasePipeline):
         return self.ts
 
 
-def test_predict_fail_not_fitted():
-    pipeline = DummyPipeline(horizon=1)
-    with pytest.raises(ValueError, match="DummyPipeline is not fitted"):
-        _ = pipeline.predict()
-
-
 @pytest.mark.parametrize(
     "start_timestamp, end_timestamp",
     [
@@ -71,13 +65,12 @@ def test_predict_fail_not_fitted():
 )
 def test_predict_calls_make_timestamps(start_timestamp, end_timestamp, example_tsds):
     pipeline = DummyPipeline(horizon=1)
-    pipeline.fit(example_tsds)
 
     pipeline._make_predict_timestamps = MagicMock(return_value=(MagicMock(), MagicMock()))
     pipeline._validate_quantiles = MagicMock()
     pipeline._predict = MagicMock()
 
-    _ = pipeline.predict(start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    _ = pipeline.predict(ts=example_tsds, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
     pipeline._make_predict_timestamps.assert_called_once_with(
         ts=example_tsds, start_timestamp=start_timestamp, end_timestamp=end_timestamp
@@ -87,13 +80,12 @@ def test_predict_calls_make_timestamps(start_timestamp, end_timestamp, example_t
 @pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
 def test_predict_calls_validate_quantiles(quantiles, example_tsds):
     pipeline = DummyPipeline(horizon=1)
-    pipeline.fit(example_tsds)
 
     pipeline._make_predict_timestamps = MagicMock(return_value=(MagicMock(), MagicMock()))
     pipeline._validate_quantiles = MagicMock()
     pipeline._predict = MagicMock()
 
-    _ = pipeline.predict(quantiles=quantiles)
+    _ = pipeline.predict(ts=example_tsds, quantiles=quantiles)
 
     pipeline._validate_quantiles.assert_called_once_with(quantiles=quantiles)
 
@@ -102,12 +94,19 @@ def test_predict_calls_validate_quantiles(quantiles, example_tsds):
 @pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,)])
 def test_predict_calls_private_predict(prediction_interval, quantiles, example_tsds):
     pipeline = DummyPipeline(horizon=1)
-    pipeline.fit(example_tsds)
 
-    pipeline._make_predict_timestamps = MagicMock(return_value=(MagicMock(), MagicMock()))
+    start_timestamp = MagicMock()
+    end_timestamp = MagicMock()
+    pipeline._make_predict_timestamps = MagicMock(return_value=(start_timestamp, end_timestamp))
     pipeline._validate_quantiles = MagicMock()
     pipeline._predict = MagicMock()
 
-    _ = pipeline.predict(quantiles=quantiles)
+    _ = pipeline.predict(ts=example_tsds, prediction_interval=prediction_interval, quantiles=quantiles)
 
-    pipeline._validate_quantiles.assert_called_once_with(quantiles=quantiles)
+    pipeline._predict.assert_called_once_with(
+        ts=example_tsds,
+        start_timestamp=start_timestamp,
+        end_timestamp=end_timestamp,
+        prediction_interval=prediction_interval,
+        quantiles=quantiles,
+    )
