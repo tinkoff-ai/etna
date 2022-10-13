@@ -1,0 +1,30 @@
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
+from tsfresh.feature_extraction.settings import MinimalFCParameters
+
+from etna.experimental.classification.feature_extraction.tsfresh import TSFreshFeatureExtractor
+from etna.experimental.classification.predictability import PredictabilityAnalyzer
+
+
+def test_get_series_from_dataset(many_time_series, many_time_series_ts):
+    ts, _ = many_time_series_ts
+    x = PredictabilityAnalyzer.get_series_from_dataset(ts=ts)
+    x_expected, _ = many_time_series
+    for row, row_expected in zip(x, x_expected):
+        np.testing.assert_array_equal(row, row_expected)
+
+
+def test_analyze(many_time_series, many_time_series_ts):
+    x, y = many_time_series
+    analyzer = PredictabilityAnalyzer(
+        feature_extractor=TSFreshFeatureExtractor(default_fc_parameters=MinimalFCParameters()),
+        classifier=KNeighborsClassifier(n_neighbors=1),
+    )
+    analyzer.fit(x=x, y=y)
+
+    ts, ts_y = many_time_series_ts
+    result = analyzer.analyze_predictability(ts=ts)
+    assert isinstance(result, dict)
+    assert sorted(result.keys()) == sorted(ts.segments)
+    for segment in ts.segments:
+        assert result[segment] == ts_y[segment]
