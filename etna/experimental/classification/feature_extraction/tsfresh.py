@@ -1,4 +1,3 @@
-from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -17,7 +16,7 @@ class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
     tsfresh should be installed separately using `pip install tsfresh`.
     """
 
-    def __init__(self, default_fc_parameters: Dict, n_jobs: int = 1, **kwargs):
+    def __init__(self, default_fc_parameters: dict, n_jobs: int = 1, **kwargs):
         """Init TSFreshFeatureExtractor with given parameters.
 
         Parameters

@@ -1,1 +1,2 @@
 from etna.experimental.classification.classification import TimeSeriesBinaryClassifier
+from etna.experimental.classification.predictability import PredictabilityAnalyzer

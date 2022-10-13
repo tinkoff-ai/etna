@@ -23,9 +23,11 @@ class TimeSeriesBinaryClassifier(PickleSerializable):
         Parameters
         ----------
         feature_extractor:
-           Instance of time series feature extractor.
+            Instance of time series feature extractor.
         classifier:
-           Instance of classifier with sklearn interface.
+            Instance of classifier with sklearn interface.
+        threshold:
+            Positive class probability threshold.
         """
         self.feature_extractor = feature_extractor
         self.classifier = classifier
