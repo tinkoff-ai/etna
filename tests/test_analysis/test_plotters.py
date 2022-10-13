@@ -35,11 +35,11 @@ def residuals():
     df_wide = TSDataset.to_dataset(df)
     ts = TSDataset(df=df_wide, freq="D")
 
-    forecast_df = ts[timestamp[10:], :, :]
+    forecast_df = ts[timestamp[10] :].to_pandas()
     forecast_df.loc[:, pd.IndexSlice["segment_0", "target"]] = -1
     forecast_df.loc[:, pd.IndexSlice["segment_1", "target"]] = 1
 
-    residuals_df = ts[timestamp[10:], :, :]
+    residuals_df = ts[timestamp[10] :].to_pandas()
     residuals_df.loc[:, pd.IndexSlice["segment_0", "target"]] += 1
     residuals_df.loc[:, pd.IndexSlice["segment_1", "target"]] -= 1
 
@@ -56,7 +56,7 @@ def test_get_residuals(residuals):
 def test_get_residuals_not_matching_lengths(residuals):
     """Test that get_residuals fails to find residuals correctly if ts hasn't answers."""
     residuals_df, forecast_df, ts = residuals
-    ts = TSDataset(df=ts[ts.index[:-10], :, :], freq="D")
+    ts = ts[: ts.index[-10]]
     with pytest.raises(KeyError):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 

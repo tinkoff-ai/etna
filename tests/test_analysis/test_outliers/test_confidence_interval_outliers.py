@@ -22,11 +22,11 @@ def test_create_ts_by_column_retain_column(outliers_tsds, column):
     """Test that `create_ts_column` selects correct data in selected columns."""
     new_ts = create_ts_by_column(outliers_tsds, column)
     for segment in new_ts.segments:
-        new_series = new_ts[:, segment, "target"]
-        original_series = outliers_tsds[:, segment, column]
-        new_series = new_series[~new_series.isna()]
-        original_series = original_series[~original_series.isna()]
-        assert np.all(new_series == original_series)
+        new_series = new_ts[:, segment, "target"].to_pandas()[segment]
+        original_series = outliers_tsds[:, segment, column].to_pandas()[segment]
+        new_series = new_series.dropna()
+        original_series = original_series.dropna()
+        assert np.all(new_series.values == original_series.values)
 
 
 @pytest.mark.parametrize("in_column", ["target", "exog"])

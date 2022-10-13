@@ -572,38 +572,6 @@ def test_check_regressors_pass_empty(df_and_regressors):
     _ = TSDataset._check_regressors(df=df, df_regressors=pd.DataFrame())
 
 
-def test_getitem_only_date(tsdf_with_exog):
-    df_date_only = tsdf_with_exog["2021-02-01"]
-    assert df_date_only.name == pd.Timestamp("2021-02-01")
-    pd.testing.assert_series_equal(tsdf_with_exog.df.loc["2021-02-01"], df_date_only)
-
-
-def test_getitem_slice_date(tsdf_with_exog):
-    df_slice = tsdf_with_exog["2021-02-01":"2021-02-03"]
-    expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
-    pd.testing.assert_index_equal(df_slice.index, expected_index)
-    pd.testing.assert_frame_equal(tsdf_with_exog.df.loc["2021-02-01":"2021-02-03"], df_slice)
-
-
-def test_getitem_second_ellipsis(tsdf_with_exog):
-    df_slice = tsdf_with_exog["2021-02-01":"2021-02-03", ...]
-    expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
-    pd.testing.assert_index_equal(df_slice.index, expected_index)
-    pd.testing.assert_frame_equal(tsdf_with_exog.df.loc["2021-02-01":"2021-02-03"], df_slice)
-
-
-def test_getitem_first_ellipsis(tsdf_with_exog):
-    df_slice = tsdf_with_exog[..., "target"]
-    df_expected = tsdf_with_exog.df.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
-    pd.testing.assert_frame_equal(df_expected, df_slice)
-
-
-def test_getitem_all_indexes(tsdf_with_exog):
-    df_slice = tsdf_with_exog[:, :, :]
-    df_expected = tsdf_with_exog.df
-    pd.testing.assert_frame_equal(df_expected, df_slice)
-
-
 def test_finding_regressors_marked(df_and_regressors):
     """Check that ts.regressors property works correctly when regressors set."""
     df, df_exog, known_future = df_and_regressors
@@ -616,14 +584,6 @@ def test_finding_regressors_unmarked(df_and_regressors):
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
     assert sorted(ts.regressors) == []
-
-
-def test_head_default(tsdf_with_exog):
-    assert np.all(tsdf_with_exog.head() == tsdf_with_exog.df.head())
-
-
-def test_tail_default(tsdf_with_exog):
-    np.all(tsdf_with_exog.tail() == tsdf_with_exog.df.tail())
 
 
 def test_right_format_sorting():
@@ -813,15 +773,6 @@ def test_to_dataset_not_modify_dataframe():
     df_copy = df_original.copy(deep=True)
     df_mod = TSDataset.to_dataset(df_original)
     pd.testing.assert_frame_equal(df_original, df_copy)
-
-
-@pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])
-def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
-    ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
-    assert ts_slice.known_future == tsdf_with_exog.known_future
-    assert ts_slice.regressors == tsdf_with_exog.regressors
-    pd.testing.assert_frame_equal(ts_slice.df, tsdf_with_exog.df.iloc[start_idx:end_idx])
-    pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
 
 
 def test_to_torch_dataset_without_drop(tsdf_with_exog):

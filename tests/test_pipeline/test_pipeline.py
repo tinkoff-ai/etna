@@ -135,7 +135,7 @@ def test_forecast_prediction_interval_interface(example_tsds, model):
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
@@ -156,14 +156,16 @@ def test_forecast_prediction_interval_size(example_tsds, quantiles_narrow, quant
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles_narrow)
     narrow_interval_length = (
-        forecast[:, :, f"target_{quantiles_narrow[1]}"].values - forecast[:, :, f"target_{quantiles_narrow[0]}"].values
+        forecast[:, f"target_{quantiles_narrow[1]}"].to_pandas().values
+        - forecast[:, f"target_{quantiles_narrow[0]}"].to_pandas().values
     )
 
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles_wide)
     wide_interval_length = (
-        forecast[:, :, f"target_{quantiles_wide[1]}"].values - forecast[:, :, f"target_{quantiles_wide[0]}"].values
+        forecast[:, f"target_{quantiles_wide[1]}"].to_pandas().values
+        - forecast[:, f"target_{quantiles_wide[0]}"].to_pandas().values
     )
 
     assert (narrow_interval_length <= wide_interval_length).all()
@@ -174,12 +176,16 @@ def test_forecast_prediction_interval_noise(constant_ts, constant_noisy_ts):
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(constant_ts)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
-    constant_interval_length = forecast[:, :, "target_0.975"].values - forecast[:, :, "target_0.025"].values
+    constant_interval_length = (
+        forecast[:, "target_0.975"].to_pandas().values - forecast[:, "target_0.025"].to_pandas().values
+    )
 
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(constant_noisy_ts)
     forecast = pipeline.forecast(prediction_interval=True)
-    noisy_interval_length = forecast[:, :, "target_0.975"].values - forecast[:, :, "target_0.025"].values
+    noisy_interval_length = (
+        forecast[:, "target_0.975"].to_pandas().values - forecast[:, "target_0.025"].to_pandas().values
+    )
 
     assert (constant_interval_length <= noisy_interval_length).all()
 

@@ -1,53 +1,67 @@
 from copy import deepcopy
-from typing import Tuple
 
-import numpy as np
 import pandas as pd
 import pytest
 
-from etna.datasets.tsdataset import TSDataset
 
-@pytest.fixture
-def ts() -> TSDataset:
-    periods = 10
-    df1 = pd.DataFrame({"timestamp": pd.date_range("2000-01-01", periods=periods)})
-    df1["segment"] = "segment_1"
-    df1["target"] = 1
-
-    df2 = pd.DataFrame({"timestamp": pd.date_range("2000-01-01", periods=periods)})
-    df2["segment"] = "segment_2"
-    df2["target"] = 10
-
-    exog_weekend_1 = pd.DataFrame({"timestamp": pd.date_range("2000-01-01", periods=periods + 7)})
-    exog_weekend_1["segment"] = "segment_1"
-    exog_weekend_1["exog"] = 100
-
-    exog_weekend_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods + 7)})
-    exog_weekend_2["segment"] = "segment_2"
-    exog_weekend_2["exog"] = 1000
-
-    df = pd.concat([df1, df2]).reset_index(drop=True)
-    exog = pd.concat([exog_weekend_1, exog_weekend_2]).reset_index(drop=True)
-
-    df = TSDataset.to_dataset(df)
-    exog = TSDataset.to_dataset(exog)
-
-    tsds = TSDataset(df, freq="D", df_exog=exog, known_future="all")
-
-    return tsds
+def expected_ts(ts, df_idx, exog_idx):
+    expected_slice = deepcopy(ts)
+    expected_slice.df = expected_slice.df.loc[df_idx]
+    expected_slice.df_exog = expected_slice.df_exog.loc[exog_idx]
+    return expected_slice
 
 
-@pytest.mark.parametrize("idx, expected_dataset", [(0), ("2000-01-01"), (slice(None)), (slice(start="2000-01-01", stop="2000-01-02"))])
-def test_time_index_slice(ts, idx, expected_dataset):
-    dataset_slice = ts[idx]
-    assert dataset_slice == expected_dataset
+@pytest.mark.parametrize("idx", [(1), ("2020-01-02")])
+def test_one_point_slice(example_reg_tsds, idx):
+    expected_slice = expected_ts(example_reg_tsds, df_idx=["2020-01-02"], exog_idx=slice(None))
+    ts_slice = example_reg_tsds[idx]
+    assert ts_slice == expected_slice
 
-@pytest.mark.parametrize("idx, expected_dataset", [(slice(start="2000-01-01", stop="2000-01-02"), "target")])
-def test_time_feature_index_slice(ts, idx, expected_dataset):
-    dataset_slice = ts[idx]
-    assert dataset_slice == expected_dataset
 
-@pytest.mark.parametrize("idx, expected_dataset", [(slice(start="2000-01-01", stop="2000-01-02"), "segment_1", "target")])
-def test_time_segment_feature_index_slice(ts, idx, expected_dataset):
-    dataset_slice = ts[idx]
-    assert dataset_slice == expected_dataset
+@pytest.mark.parametrize("idx", [(slice(1, 2)), (slice("2020-01-02", "2020-01-03"))])
+def test_two_points_slice(example_reg_tsds, idx):
+    expected_slice = expected_ts(example_reg_tsds, df_idx=slice("2020-01-02", "2020-01-03"), exog_idx=slice(None))
+    ts_slice = example_reg_tsds[idx]
+    assert ts_slice == expected_slice
+
+
+@pytest.mark.parametrize("idx", [(slice(1, 2)), (slice("2020-01-02", "2020-01-03"))])
+def test_two_points_feature_slice(example_reg_tsds, idx, feature="target"):
+    expected_slice = expected_ts(
+        example_reg_tsds,
+        df_idx=(pd.IndexSlice["2020-01-02":"2020-01-03"], pd.IndexSlice[:, feature]),
+        exog_idx=slice(None),
+    )
+    ts_slice = example_reg_tsds[idx, feature]
+    assert ts_slice == expected_slice
+
+
+@pytest.mark.parametrize("idx", [(slice(1, 2)), (slice("2020-01-02", "2020-01-03"))])
+def test_two_points_segment_feature_slice(example_reg_tsds, idx, segment="segment_1", feature="target"):
+    expected_slice = expected_ts(
+        example_reg_tsds,
+        df_idx=(pd.IndexSlice["2020-01-02":"2020-01-03"], pd.IndexSlice[[segment], [feature]]),
+        exog_idx=(pd.IndexSlice[:], pd.IndexSlice[segment, :]),
+    )
+    ts_slice = example_reg_tsds[idx, segment, feature]
+    assert ts_slice == expected_slice
+
+
+def test_head_default(example_reg_tsds):
+    expected_slice = expected_ts(
+        example_reg_tsds,
+        df_idx=slice("2020-01-01", "2020-01-05"),
+        exog_idx=slice(None),
+    )
+    ts_slice = example_reg_tsds.head()
+    assert ts_slice == expected_slice
+
+
+def test_tail_default(example_reg_tsds):
+    expected_slice = expected_ts(
+        example_reg_tsds,
+        df_idx=slice("2020-04-05", "2020-04-09"),
+        exog_idx=slice(None),
+    )
+    ts_slice = example_reg_tsds.tail()
+    assert ts_slice == expected_slice
