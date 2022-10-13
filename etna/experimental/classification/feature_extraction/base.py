@@ -5,8 +5,10 @@ from typing import Optional
 
 import numpy as np
 
+from etna.experimental.classification.base import PickleSerializable
 
-class BaseTimeSeriesFeatureExtractor(ABC):
+
+class BaseTimeSeriesFeatureExtractor(ABC, PickleSerializable):
     """Base class for time series feature extractor."""
 
     @abstractmethod
