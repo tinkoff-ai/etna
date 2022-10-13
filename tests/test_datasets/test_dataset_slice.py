@@ -11,13 +11,6 @@ def expected_ts(ts, df_idx, exog_idx):
     return expected_slice
 
 
-@pytest.mark.parametrize("idx", [(1), ("2020-01-02")])
-def test_one_point_slice(example_reg_tsds, idx):
-    expected_slice = expected_ts(example_reg_tsds, df_idx=["2020-01-02"], exog_idx=slice(None))
-    ts_slice = example_reg_tsds[idx]
-    assert ts_slice == expected_slice
-
-
 @pytest.mark.parametrize("idx", [(slice(1, 2)), (slice("2020-01-02", "2020-01-03"))])
 def test_two_points_slice(example_reg_tsds, idx):
     expected_slice = expected_ts(example_reg_tsds, df_idx=slice("2020-01-02", "2020-01-03"), exog_idx=slice(None))
