@@ -206,7 +206,7 @@ def sample_acf_plot(
     ax = ax.ravel()
     fig.suptitle("Autocorrelation", fontsize=16)
     for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
-        df_slice = ts[:, name, :][name]
+        df_slice = ts[:, name, :].to_pandas()[name]
         plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)
         ax[i].set_title(name)
         ax[i].grid()
@@ -252,7 +252,7 @@ def sample_pacf_plot(
     ax = ax.ravel()
     fig.suptitle("Partial Autocorrelation", fontsize=16)
     for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
-        df_slice = ts[:, name, :][name]
+        df_slice = ts[:, name, :].to_pandas()[name]
         plot_pacf(x=df_slice["target"].values, ax=ax[i], lags=lags)
         ax[i].set_title(name)
         ax[i].grid()
