@@ -94,7 +94,7 @@ class Model(ABC, BaseMixin):
 
     @staticmethod
     def _forecast_segment(model, segment: Union[str, List[str]], ts: TSDataset) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
+        segment_features = ts[:, segment, :].to_pandas()
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
@@ -225,7 +225,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
             self._models[segment] = deepcopy(self._base_model)
 
         for segment, model in self._models.items():
-            segment_features = ts[:, segment, :]
+            segment_features = ts[:, segment, :].to_pandas()
             segment_features = segment_features.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
             segment_features = segment_features.droplevel("segment", axis=1)
             segment_features = segment_features.reset_index()
@@ -267,7 +267,7 @@ class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
     @staticmethod
     def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
         """Make predictions for one segment."""
-        segment_features = ts[:, segment, :]
+        segment_features = ts[:, segment, :].to_pandas()
         segment_features = segment_features.droplevel("segment", axis=1)
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
@@ -423,10 +423,12 @@ class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
         :
             Dataset with predictions
         """
-        horizon = len(ts.df)
+        df_forecast = ts.to_pandas()
+        horizon = len(df_forecast)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         y = self._base_model.predict(x).reshape(-1, horizon).T
-        ts.loc[:, pd.IndexSlice[:, "target"]] = y
+        df_forecast.loc[:, pd.IndexSlice[:, "target"]] = y
+        ts.update_columns_from_pandas(df_update=df_forecast)
         return ts
 
     def get_model(self) -> Any:
@@ -798,7 +800,7 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts[self.encoder_length : self.encoder_length + horizon]
+        future_ts = ts[self.encoder_length : self.encoder_length + horizon - 1]
         for (segment, feature_nm), value in predictions.items():
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
 

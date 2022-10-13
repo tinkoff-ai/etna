@@ -191,7 +191,10 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
             raise ValueError("Ensemble is not fitted! Fit the ensemble before calling the forecast!")
 
         forecast_df = sum(
-            [forecast[:, :, "target"] * weight for forecast, weight in zip(forecasts, self.processed_weights)]
+            [
+                forecast.to_pandas(features=["target"]) * weight
+                for forecast, weight in zip(forecasts, self.processed_weights)
+            ]
         )
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset

@@ -73,12 +73,18 @@ class Coverage(Metric, _QuantileMetricMixin):
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
         for segment in segments:
+            y_true_segment_slice = y_true[:, segment, "target"].to_pandas()
+            y_pred_segment_slice = y_pred[:, segment, "target"].to_pandas()
             self._validate_timestamp_columns(
-                timestamp_true=y_true[:, segment, "target"].dropna().index,
-                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
+                timestamp_true=y_true_segment_slice.dropna().index,
+                timestamp_pred=y_pred_segment_slice.dropna().index,
             )
-            upper_quantile_flag = y_true[:, segment, "target"] <= y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"]
-            lower_quantile_flag = y_true[:, segment, "target"] >= y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"]
+            upper_quantile_flag = (
+                y_true_segment_slice <= y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"].to_pandas()
+            )
+            lower_quantile_flag = (
+                y_true_segment_slice >= y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"].to_pandas()
+            )
 
             metrics_per_segment[segment] = np.mean(upper_quantile_flag * lower_quantile_flag)
         metrics = self._aggregate_metrics(metrics_per_segment)
@@ -141,12 +147,14 @@ class Width(Metric, _QuantileMetricMixin):
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
         for segment in segments:
+            y_true_segment_slice = y_true[:, segment, "target"].to_pandas()
+            y_pred_segment_slice = y_pred[:, segment, "target"].to_pandas()
             self._validate_timestamp_columns(
-                timestamp_true=y_true[:, segment, "target"].dropna().index,
-                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
+                timestamp_true=y_true_segment_slice.dropna().index,
+                timestamp_pred=y_pred_segment_slice.dropna().index,
             )
-            upper_quantile = y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"]
-            lower_quantile = y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"]
+            upper_quantile = y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"].to_pandas()
+            lower_quantile = y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"].to_pandas()
 
             metrics_per_segment[segment] = np.abs(lower_quantile - upper_quantile).mean()
 

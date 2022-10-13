@@ -167,20 +167,15 @@ class TSDataset:
 
     def __getitem__(self, item) -> "TSDataset":
         def to_time_index(item):
-            if isinstance(item, slice):
-                int_slice = isinstance(item.start, int) or isinstance(item.stop, int)
-                if int_slice:
-                    start = None if item.start is None else self.index[item.start]
-                    stop = None if item.stop is None else self.index[item.stop]
-                    item = slice(start, stop, item.step)
-            elif isinstance(item, int):
-                item = [self.index[item]]
-            else:
-                item = [item]
+            int_slice = isinstance(item.start, int) or isinstance(item.stop, int)
+            if int_slice:
+                start = None if item.start is None else self.index[item.start]
+                stop = None if item.stop is None else self.index[item.stop]
+                item = slice(start, stop, item.step)
             return item
 
         df_exog = self.df_exog
-        if isinstance(item, slice) or isinstance(item, int) or isinstance(item, str):
+        if isinstance(item, slice):
             time_idx = to_time_index(item)
             df = self.df.loc[self.idx[time_idx]]
             raw_df = self.raw_df.loc[self.idx[time_idx]]
@@ -190,8 +185,11 @@ class TSDataset:
                 df = self.df.loc[self.idx[time_idx], self.idx[:, item[1]]]
                 raw_df = self.raw_df.loc[self.idx[time_idx]]
             elif len(item) == 3:
-                segments = (item[1]) if isinstance(item[1], str) else tuple(item[1])
-                features = (item[2]) if isinstance(item[2], str) else tuple(item[2])
+                segments = [item[1]] if isinstance(item[1], str) else item[1]
+                segments = tuple(segments)
+                features = [item[2]] if isinstance(item[2], str) else item[2]
+                if not isinstance(features, slice):
+                    features = tuple(features)
                 df = self.df.loc[self.idx[time_idx], self.idx[segments, features]]
                 df_exog = None if self.df_exog is None else self.df_exog.loc[self.idx[:], self.idx[segments, :]]
                 raw_df = self.raw_df.loc[self.idx[time_idx], self.idx[segments, :]]
@@ -476,7 +474,7 @@ class TSDataset:
         ax = ax.ravel()
         rnd_state = np.random.RandomState(seed)
         for i, segment in enumerate(sorted(rnd_state.choice(segments, size=k, replace=False))):
-            df_slice = self[start:end, segment, column]  # type: ignore
+            df_slice = self[start:end, segment, column].to_pandas()  # type: ignore
             ax[i].plot(df_slice.index, df_slice.values)
             ax[i].set_title(segment)
             ax[i].grid()
@@ -996,7 +994,7 @@ class TSDataset:
         }
 
         for segment in segments:
-            segment_series = self[:, segment, "target"]
+            segment_series = self[:, segment, "target"].to_pandas()
             first_index = segment_series.first_valid_index()
             last_index = segment_series.last_valid_index()
             segment_series = segment_series.loc[first_index:last_index]

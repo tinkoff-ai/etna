@@ -173,12 +173,12 @@ def plot_forecast(
 
     for i, segment in enumerate(segments):
         if train_ts is not None:
-            segment_train_df = train_ts[:, segment, :][segment]
+            segment_train_df = train_ts[:, segment, :].to_pandas()[segment]
         else:
             segment_train_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
         if test_ts is not None:
-            segment_test_df = test_ts[:, segment, :][segment]
+            segment_test_df = test_ts[:, segment, :].to_pandas()[segment]
         else:
             segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
@@ -199,7 +199,7 @@ def plot_forecast(
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
-            segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
+            segment_forecast_df = forecast[:, segment, :].to_pandas()[segment].sort_values(by="timestamp")
             line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
@@ -621,13 +621,13 @@ def plot_anomalies(
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
-        segment_df = ts[start:end, segment, :][segment]  # type: ignore
+        segment_df = ts[start:end, segment, :].to_pandas()[segment]  # type: ignore
         anomaly = anomaly_dict[segment]
 
         ax[i].set_title(segment)
         ax[i].plot(segment_df.index.values, segment_df[in_column].values)
 
-        anomaly = [i for i in sorted(anomaly) if i in segment_df.index]  # type: ignore
+        anomaly = [i for i in sorted(anomaly) if i in segment_df.index]
         ax[i].scatter(anomaly, segment_df[segment_df.index.isin(anomaly)][in_column].values, c="r")
 
         ax[i].tick_params("x", rotation=45)
@@ -671,7 +671,7 @@ def get_correlation_matrix(
     if columns is None:
         columns = list(set(ts.df.columns.get_level_values("feature")))
 
-    correlation_matrix = ts[:, segments, columns].corr(method=method).values
+    correlation_matrix = ts[:, segments, columns].to_pandas().corr(method=method).values
     return correlation_matrix
 
 
@@ -803,13 +803,10 @@ def plot_anomalies_interactive(
     from ipywidgets import IntSlider
     from ipywidgets import interact
 
-    from etna.datasets import TSDataset
-
     start, end = _get_borders_ts(ts, start, end)
 
-    df = ts[start:end, segment, in_column]  # type: ignore
-    ts = TSDataset(ts[:, segment, :], ts.freq)
-    x, y = df.index.values, df.values
+    ts = ts[start:end, segment, in_column]  # type: ignore
+    x, y = ts.index.values, ts.to_pandas().values
     cache = {}
 
     sliders = dict()
@@ -870,7 +867,7 @@ def plot_clusters(
     for i, cluster in enumerate(unique_clusters):
         segments = [segment for segment in segment2cluster if segment2cluster[segment] == cluster]
         for segment in segments:
-            segment_slice = ts[:, segment, "target"]
+            segment_slice = ts[:, segment, "target"].to_pandas()
             ax[i].plot(
                 segment_slice.index.values,
                 segment_slice.values,
@@ -921,7 +918,7 @@ def plot_time_series_with_change_points(
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     for i, segment in enumerate(segments):
-        segment_df = ts[start:end, segment, :][segment]  # type: ignore
+        segment_df = ts[start:end, segment, :].to_pandas()[segment]  # type: ignore
         change_points_segment = change_points[segment]
 
         # plot each part of segment separately
@@ -974,7 +971,7 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     from etna.datasets import TSDataset
 
     # find the residuals
-    true_df = ts[forecast_df.index, :, :]
+    true_df = ts[forecast_df.index.min() : forecast_df.index.max()].to_pandas()
     if set(ts.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
         raise KeyError("Segments of `ts` and `forecast_df` should be the same")
     true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[:, pd.IndexSlice[ts.segments, "target"]]
@@ -1223,7 +1220,9 @@ def plot_feature_relevance(
         segments = sorted(ts.segments)
     border_value = None
     features = list(set(ts.columns.get_level_values("feature")) - {"target"})
-    relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
+    relevance_df = relevance_table(
+        df=ts[:, segments, "target"].to_pandas(), df_exog=ts[:, segments, features].to_pandas(), **relevance_params
+    )
     if relevance_aggregation_mode == "per-segment":
         _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):

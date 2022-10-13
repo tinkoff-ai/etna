@@ -8,7 +8,6 @@ from typing import Set
 from typing import Tuple
 from typing import Union
 
-import numpy as np
 import pandas as pd
 from joblib import Parallel
 from joblib import delayed
@@ -175,7 +174,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
         # Stack targets from the forecasts
         targets = [
-            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
+            forecast.to_pandas(features=["target"]).rename({"target": f"regressor_target_{i}"}, axis=1)
             for i, forecast in enumerate(forecasts)
         ]
         targets = pd.concat(targets, axis=1)
@@ -192,7 +191,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
                 for forecast in forecasts
             ]
             features = pd.concat(
-                [forecast[:, :, features_in_forecasts[i]] for i, forecast in enumerate(forecasts)], axis=1
+                [forecast.to_pandas(features=features_in_forecasts[i]) for i, forecast in enumerate(forecasts)], axis=1
             )
             features = features.loc[:, ~features.columns.duplicated()]
         features_df = pd.concat([features, targets], axis=1)
@@ -202,7 +201,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         if train:
             y = pd.concat(
                 [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
+                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"].to_pandas()
                     for segment in self.ts.segments
                 ],
                 axis=0,
@@ -233,8 +232,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         df_exog = TSDataset.to_dataset(x)
 
         df = forecasts[0][:, :, "target"].copy()
-        df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
+        df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
 
         forecast = TSDataset(df=df, freq=self.ts.freq, df_exog=df_exog)
-        forecast.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
         return forecast

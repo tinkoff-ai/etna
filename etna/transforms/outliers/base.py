@@ -51,7 +51,7 @@ class OutliersTransform(ReversibleTransform, ABC):
             raise ValueError("Something went wrong during outliers detection stage! Check the transform parameters.")
         self.original_values = dict()
         for segment, timestamps in self.outliers_timestamps.items():
-            segment_ts = ts[:, segment, :]
+            segment_ts = ts[:, segment, :].to_pandas()
             segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
             self.original_values[segment] = segment_values
 

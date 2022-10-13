@@ -249,6 +249,8 @@ class PytorchForecastingMixin:
         # shape (segments, encoder_length)
         predicts = self.model.predict(prediction_dataloader).numpy()
 
-        ts.df = ts.df.iloc[-horizon:]
-        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
+        ts = ts[-horizon:]
+        forecast_df = ts.to_pandas()
+        forecast_df.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
+        ts.update_columns_from_pandas(df_update=forecast_df)
         return ts, prediction_dataloader

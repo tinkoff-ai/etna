@@ -227,15 +227,16 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
         forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
         residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
+            forecasts.to_pandas(features=["target"])
+            - self.ts[forecasts.index.min() : forecasts.index.max(), "target"].to_pandas()
         )
 
         sigma = np.std(residuals.values, axis=0)
         borders = []
+        predictions_target = predictions.to_pandas(features=["target"])
         for quantile in quantiles:
             z_q = norm.ppf(q=quantile)
-            border = predictions[:, :, "target"] + sigma * z_q
+            border = predictions_target + sigma * z_q
             border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
             borders.append(border)
 
@@ -293,7 +294,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         min_required_length = horizon * n_folds
         segments = set(ts.df.columns.get_level_values("segment"))
         for segment in segments:
-            segment_target = ts[:, segment, "target"]
+            segment_target = ts[:, segment, "target"].to_pandas()
             if len(segment_target) < min_required_length:
                 raise ValueError(
                     f"All the series from feature dataframe should contain at least "

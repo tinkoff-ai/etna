@@ -96,7 +96,7 @@ class AutoRegressivePipeline(BasePipeline):
             raise ValueError(
                 "AutoRegressivePipeline is not fitted! Fit the AutoRegressivePipeline before calling forecast method."
             )
-        prediction_df = self.ts[:, :, "target"]
+        prediction_df = self.ts.to_pandas(features=["target"])
         future_dates = pd.date_range(
             start=prediction_df.index.max(), periods=self.horizon + 1, freq=self.ts.freq, closed="right"
         )

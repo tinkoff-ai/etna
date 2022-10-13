@@ -119,7 +119,7 @@ class DTWDistance(Distance):
         """Get the longest series from the list."""
         series_list: List[pd.Series] = []
         for segment in ts.segments:
-            series = ts[:, segment, "target"].dropna()
+            series = ts[:, segment, "target"].to_pandas().dropna()
             series_list.append(series)
         longest_series = max(series_list, key=len)
         return longest_series
@@ -129,7 +129,7 @@ class DTWDistance(Distance):
         """Get series from the TSDataset."""
         series_list = []
         for segment in ts.segments:
-            series = ts[:, segment, "target"].dropna().values
+            series = ts[:, segment, "target"].to_pandas().dropna().values
             series_list.append(series)
         return series_list
 

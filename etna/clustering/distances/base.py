@@ -78,7 +78,7 @@ class Distance(ABC, BaseMixin):
     def _validate_dataset(ts: "TSDataset"):
         """Check that dataset does not contain NaNs."""
         for segment in ts.segments:
-            series = ts[:, segment, "target"]
+            series = ts[:, segment, "target"].to_pandas()
             first_valid_index = 0
             last_valid_index = series.reset_index(drop=True).last_valid_index()
             series_length = last_valid_index - first_valid_index + 1
