@@ -127,7 +127,7 @@ def get_anomalies_density(
     for seg in segments:
         # TODO: dropna() now is responsible for removing nan-s at the end of the sequence and in the middle of it
         #   May be error or warning should be raised in this case
-        segment_df = ts[:, seg, :][seg].dropna().reset_index()
+        segment_df = ts[:, seg, :].to_pandas()[seg].dropna().reset_index()
         series = segment_df[in_column].values
         timestamps = segment_df["timestamp"].values
         series_std = np.std(series)

@@ -31,7 +31,7 @@ def create_ts_by_column(ts: "TSDataset", column: str) -> "TSDataset":
     """
     from etna.datasets import TSDataset
 
-    new_df = ts[:, :, [column]]
+    new_df = ts.to_pandas(features=[column])
     new_columns_tuples = [(x[0], "target") for x in new_df.columns.tolist()]
     new_df.columns = pd.MultiIndex.from_tuples(new_columns_tuples, names=new_df.columns.names)
     return TSDataset(new_df, freq=ts.freq)
@@ -86,7 +86,7 @@ def get_anomalies_prediction_interval(
         deepcopy(ts_inner), prediction_interval=True, quantiles=[lower_p, upper_p]
     )
     for segment in ts_inner.segments:
-        segment_slice = prediction_interval[:, segment, :][segment]
+        segment_slice = prediction_interval[:, segment, :].to_pandas()[segment]
         anomalies_mask = (segment_slice["target"] > segment_slice[f"target_{upper_p:.4g}"]) | (
             segment_slice["target"] < segment_slice[f"target_{lower_p:.4g}"]
         )
