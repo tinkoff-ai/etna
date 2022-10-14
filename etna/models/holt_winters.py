@@ -265,15 +265,15 @@ class _HoltWintersAdapter(BaseAdapter):
                 f"{columns_not_used} will be dropped"
             )
 
-    def get_model(self) -> ExponentialSmoothing:
-        """Get internal :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model that is used inside etna class.
+    def get_model(self) -> HoltWintersResults:
+        """Get :py:class:`statsmodels.tsa.holtwinters.HoltWintersResults` model that was fitted inside etna class.
 
         Returns
         -------
         :
            Internal model
         """
-        return self._model
+        return self._result
 
 
 class HoltWintersModel(PerSegmentModel):
