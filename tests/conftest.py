@@ -86,7 +86,7 @@ def two_dfs_with_different_segments_sets(random_seed):
 
 
 @pytest.fixture
-def train_test_dfs(random_seed):
+def train_test_ts(random_seed):
     """Generate two dataframes with the same segments and the same timestamps"""
 
     def generate_df():
@@ -103,10 +103,10 @@ def train_test_dfs(random_seed):
         df.columns.names = ["segment", "feature"]
         return TSDataset(df, freq="1D")
 
-    df1 = generate_df()
-    df2 = generate_df()
+    ts1 = generate_df()
+    ts2 = generate_df()
 
-    return df1, df2
+    return ts1, ts2
 
 
 @pytest.fixture
@@ -420,7 +420,9 @@ def const_ts_anomal() -> TSDataset:
 @pytest.fixture
 def ts_diff_endings(example_reg_tsds):
     ts = deepcopy(example_reg_tsds)
-    ts.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    df = ts.to_pandas()
+    df.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    ts.update_columns_from_pandas(df_update=df)
     return ts
 
 

@@ -160,8 +160,14 @@ def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencin
 
     # check that predicted value is within the interval
     for segment in predict_ts.segments:
-        assert np.all(predict_ts[:, segment, "target_0.025"] <= predict_ts[:, segment, "target"])
-        assert np.all(predict_ts[:, segment, "target"] <= predict_ts[:, segment, "target_0.975"])
+        assert np.all(
+            predict_ts[:, segment, "target_0.025"].to_pandas().values
+            <= predict_ts[:, segment, "target"].to_pandas().values
+        )
+        assert np.all(
+            predict_ts[:, segment, "target"].to_pandas().values
+            <= predict_ts[:, segment, "target_0.975"].to_pandas().values
+        )
 
 
 def check_backtest_sanity(transform: GeneralDifferencingTransform, ts: TSDataset):

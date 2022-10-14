@@ -275,5 +275,5 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
         column_single = transforms_one_column[i].out_columns[0]
 
         df_multi = transformed_df.loc[:, pd.IndexSlice[segments, column_multi]]
-        df_single = transformed_dfs_one_column[i].loc[:, pd.IndexSlice[segments, column_single]]
+        df_single = transformed_dfs_one_column[i].to_pandas().loc[:, pd.IndexSlice[segments, column_single]]
         assert np.all(df_multi.values == df_single.values)

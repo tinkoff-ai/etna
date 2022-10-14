@@ -21,7 +21,7 @@ def test_binseg_in_pipeline(example_tsds: TSDataset):
     bs = BinsegTrendTransform(in_column="target")
     bs.fit_transform(example_tsds)
     for segment in example_tsds.segments:
-        assert abs(example_tsds[:, segment, "target"].mean()) < 1
+        assert abs(example_tsds[:, segment, "target"].to_pandas().mean()) < 1
 
 
 @pytest.mark.parametrize(

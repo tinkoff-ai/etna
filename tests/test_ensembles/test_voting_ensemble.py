@@ -91,8 +91,10 @@ def test_forecast_values_default_weights(simple_df: TSDataset, naive_pipeline_1:
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
     ensemble.fit(ts=simple_df)
     forecast = ensemble.forecast()
-    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
-    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [11, 12, 11, 12, 11, 12, 11])
+    np.testing.assert_array_equal(
+        forecast[:, "A", "target"].to_pandas().values.ravel(), [47.5, 48, 47.5, 48, 47.5, 48, 47.5]
+    )
+    np.testing.assert_array_equal(forecast[:, "B", "target"].to_pandas().values.ravel(), [11, 12, 11, 12, 11, 12, 11])
 
 
 def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
@@ -100,8 +102,12 @@ def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: 
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
     ensemble.fit(ts=simple_df)
     forecast = ensemble.forecast()
-    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
-    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
+    np.testing.assert_array_equal(
+        forecast[:, "A", "target"].to_pandas().values.ravel(), [47.25, 48, 47.25, 48, 47.25, 48, 47.25]
+    )
+    np.testing.assert_array_equal(
+        forecast[:, "B", "target"].to_pandas().values.ravel(), [10.5, 12, 10.5, 12, 10.5, 12, 10.5]
+    )
 
 
 def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):
@@ -110,7 +116,7 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, 
     ensemble.fit(example_tsds)
     forecast = ensemble.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 

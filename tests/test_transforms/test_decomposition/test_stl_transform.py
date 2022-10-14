@@ -157,7 +157,9 @@ def test_forecast(ts_trend_seasonal, model_stl):
     ts_forecast = model.forecast(ts_future)
     ts_forecast.inverse_transform([transform])
     for segment in ts_forecast.segments:
-        np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.1)
+        np.testing.assert_allclose(
+            ts_forecast[:, segment, "target"].to_pandas(), ts_test[:, segment, "target"].to_pandas(), atol=0.1
+        )
 
 
 def test_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segment):
@@ -178,7 +180,7 @@ def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segme
 def test_fit_transform_with_nans_in_tails(ts_trend_seasonal_nan_tails, model_stl):
     transform = STLTransform(in_column="target", period=7, model=model_stl)
     transform.fit_transform(ts=ts_trend_seasonal_nan_tails)
-    np.testing.assert_allclose(ts_trend_seasonal_nan_tails[:, :, "target"].dropna(), 0, atol=0.25)
+    np.testing.assert_allclose(ts_trend_seasonal_nan_tails.to_pandas(features=["target"]).dropna(), 0, atol=0.25)
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):

@@ -75,22 +75,22 @@ def test_name_repr(metric_class):
 
 
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign))
-def test_metrics_macro(metric_class, train_test_dfs):
+def test_metrics_macro(metric_class, train_test_ts):
     """Check metrics interface in 'macro' mode"""
-    forecast_df, true_df = train_test_dfs
+    forecast_ts, true_ts = train_test_ts
     metric = metric_class(mode=MetricAggregationMode.macro)
-    value = metric(y_true=true_df, y_pred=forecast_df)
+    value = metric(y_true=true_ts, y_pred=forecast_ts)
     assert isinstance(value, float)
 
 
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, DummyMetric))
-def test_metrics_per_segment(metric_class, train_test_dfs):
+def test_metrics_per_segment(metric_class, train_test_ts):
     """Check metrics interface in 'per-segment' mode"""
-    forecast_df, true_df = train_test_dfs
+    forecast_ts, true_ts = train_test_ts
     metric = metric_class(mode=MetricAggregationMode.per_segment)
-    value = metric(y_true=true_df, y_pred=forecast_df)
+    value = metric(y_true=true_ts, y_pred=forecast_ts)
     assert isinstance(value, dict)
-    for segment in forecast_df.df.columns.get_level_values("segment").unique():
+    for segment in forecast_ts.df.columns.get_level_values("segment").unique():
         assert segment in value
 
 
@@ -104,29 +104,29 @@ def test_metrics_invalid_aggregation(metric_class):
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, DummyMetric))
 def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
     """Check metrics behavior in case of invalid timeranges"""
-    forecast_df, true_df = two_dfs_with_different_timestamps
+    forecast_ts, true_ts = two_dfs_with_different_timestamps
     metric = metric_class()
     with pytest.raises(ValueError):
-        _ = metric(y_true=true_df, y_pred=forecast_df)
+        _ = metric(y_true=true_ts, y_pred=forecast_ts)
 
 
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, DummyMetric))
 def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
-    forecast_df, true_df = two_dfs_with_different_segments_sets
+    forecast_ts, true_ts = two_dfs_with_different_segments_sets
     metric = metric_class()
     with pytest.raises(ValueError):
-        _ = metric(y_true=true_df, y_pred=forecast_df)
+        _ = metric(y_true=true_ts, y_pred=forecast_ts)
 
 
 @pytest.mark.parametrize("metric_class", (MAE, MSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, DummyMetric))
-def test_invalid_segments_target(metric_class, train_test_dfs):
+def test_invalid_segments_target(metric_class, train_test_ts):
     """Check metrics behavior in case of no target column in segment"""
-    forecast_df, true_df = train_test_dfs
-    forecast_df.df.drop(columns=[("segment_1", "target")], inplace=True)
+    forecast_ts, true_ts = train_test_ts
+    forecast_ts.df.drop(columns=[("segment_1", "target")], inplace=True)
     metric = metric_class()
     with pytest.raises(ValueError):
-        _ = metric(y_true=true_df, y_pred=forecast_df)
+        _ = metric(y_true=true_ts, y_pred=forecast_ts)
 
 
 @pytest.mark.parametrize(
@@ -143,18 +143,18 @@ def test_invalid_segments_target(metric_class, train_test_dfs):
         (DummyMetric, create_dummy_functional_metric()),
     ),
 )
-def test_metrics_values(metric_class, metric_fn, train_test_dfs):
+def test_metrics_values(metric_class, metric_fn, train_test_ts):
     """
     Check that all the segments' metrics values in per-segments mode are equal to the same
     metric for segments' series.
     """
-    forecast_df, true_df = train_test_dfs
+    forecast_ts, true_ts = train_test_ts
     metric = metric_class(mode="per-segment")
-    metric_values = metric(y_pred=forecast_df, y_true=true_df)
+    metric_values = metric(y_pred=forecast_ts, y_true=true_ts)
     for segment, value in metric_values.items():
         true_metric_value = metric_fn(
-            y_true=true_df.loc[:, pd.IndexSlice[segment, "target"]],
-            y_pred=forecast_df.loc[:, pd.IndexSlice[segment, "target"]],
+            y_true=true_ts[:, segment, "target"].to_pandas(),
+            y_pred=forecast_ts[:, segment, "target"].to_pandas(),
         )
         assert value == true_metric_value
 

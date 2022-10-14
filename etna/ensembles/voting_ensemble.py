@@ -142,7 +142,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
 
             x = pd.concat(
                 [
-                    forecast[:, :, "target"].rename({"target": f"target_{i}"}, axis=1)
+                    forecast.to_pandas(features=["target"]).rename({"target": f"target_{i}"}, axis=1)
                     for i, forecast in enumerate(forecasts)
                 ],
                 axis=1,
@@ -151,7 +151,7 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
 
             y = pd.concat(
                 [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
+                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"].to_pandas()
                     for segment in self.ts.segments
                 ],
                 axis=0,

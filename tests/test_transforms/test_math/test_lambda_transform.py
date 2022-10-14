@@ -71,7 +71,7 @@ def test_save_transform(ts_non_negative, transform_original, transform_function,
     )
     assert set(ts_copy.columns) == set(ts.columns)
     for column in ts.columns:
-        np.testing.assert_allclose(ts_copy[:, :, column], ts[:, :, column], rtol=1e-9)
+        np.testing.assert_allclose(ts_copy[:, column].to_pandas(), ts[:, column].to_pandas(), rtol=1e-9)
 
 
 def test_nesessary_inverse_transform(ts_non_negative):
@@ -119,7 +119,9 @@ def test_transform(ts_range_const, inplace, check_column, function, inverse_func
         out_column=check_column,
     )
     transform.fit_transform(ts_range_const)
-    np.testing.assert_allclose(np.array(ts_range_const[:, segment, check_column]), expected_result, rtol=1e-9)
+    np.testing.assert_allclose(
+        ts_range_const[:, segment, check_column].to_pandas().values.ravel(), expected_result, rtol=1e-9
+    )
 
 
 @pytest.mark.parametrize(
@@ -136,5 +138,7 @@ def test_inverse_transform(ts_range_const, function, inverse_function):
     check_column = "target"
     for segment in ts_range_const.segments:
         np.testing.assert_allclose(
-            ts_range_const[:, segment, check_column], original_df[(segment, check_column)], rtol=1e-9
+            ts_range_const[:, segment, check_column].to_pandas().values.ravel(),
+            original_df[(segment, check_column)],
+            rtol=1e-9,
         )

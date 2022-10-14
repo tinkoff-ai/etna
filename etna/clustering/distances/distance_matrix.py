@@ -56,7 +56,7 @@ class DistanceMatrix(BaseMixin):
         for i, segment in enumerate(ts.segments):
             self.segment2idx[segment] = i
             self.idx2segment[i] = segment
-            series = ts[:, segment, "target"].to_pandas().dropna()
+            series = ts[:, segment, "target"].to_pandas().dropna().squeeze()
             series_list.append(series)
 
         self.series_number = len(series_list)

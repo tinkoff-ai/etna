@@ -103,4 +103,4 @@ def test_inverse_transform_back_excluded_columns(ts_with_exog, features_to_use, 
     columns_inversed = set(ts_with_exog.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
     for column in columns_inversed:
-        assert np.all(ts_with_exog[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
+        assert np.all(ts_with_exog.to_pandas(features=[column]) == original_df.loc[:, pd.IndexSlice[:, column]])

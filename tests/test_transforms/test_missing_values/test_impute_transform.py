@@ -14,14 +14,15 @@ from etna.transforms.missing_values.imputation import _OneSegmentTimeSeriesImput
 def ts_nans_beginning(example_reg_tsds):
     """Example dataset with NaNs at the beginning."""
     ts = deepcopy(example_reg_tsds)
-
+    df = ts.to_pandas()
     # nans at the beginning (shouldn't be filled)
-    ts.loc[ts.index[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    df.loc[ts.index[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
 
     # nans in the middle (should be filled)
-    ts.loc[ts.index[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
-    ts.loc[ts.index[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
-    ts.loc[ts.index[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    df.loc[ts.index[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    df.loc[ts.index[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    df.loc[ts.index[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    ts.update_columns_from_pandas(df_update=df)
     return ts
 
 
@@ -346,12 +347,12 @@ def test_inverse_transform_in_forecast(ts_with_missing_range_x_index_two_segment
     ts.fit_transform(transforms=[imputer])
     model.fit(ts)
     ts_test = ts.make_future(3, transforms=[imputer])
-    assert np.all(ts_test[:, :, "target"].isna())
+    assert np.all(ts_test[:, "target"].to_pandas().isna())
     ts_forecast = model.forecast(ts_test)
     ts_forecast.inverse_transform([imputer])
     for segment in ts.segments:
-        true_value = ts[:, segment, "target"].values[-1]
-        assert np.all(ts_forecast[:, segment, "target"] == true_value)
+        true_value = ts[:, segment, "target"].to_pandas().values[-1]
+        assert np.all(ts_forecast[:, segment, "target"].to_pandas() == true_value)
 
 
 @pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
@@ -373,7 +374,7 @@ def test_fit_transform_nans_at_the_end(fill_strategy, ts_diff_endings):
     """Check that transform correctly works with NaNs at the end."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
     imputer.fit_transform(ts_diff_endings)
-    assert (ts_diff_endings[:, :, "target"].isna()).sum().sum() == 0
+    assert (ts_diff_endings.to_pandas(features=["target"]).isna()).sum().sum() == 0
 
 
 @pytest.mark.parametrize("constant_value", (0, 32))

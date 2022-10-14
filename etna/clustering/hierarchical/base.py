@@ -114,7 +114,7 @@ class HierarchicalClustering(Clustering):
                 "HierarchicalClustering is not fitted! Fit the HierarchicalClustering before calling get_centroids!"
             )
         segments_in_cluster = [segment for segment in self.ts.segments if self.segment2cluster[segment] == cluster]
-        cluster_ts = TSDataset(df=self.ts[:, segments_in_cluster, "target"], freq=self.ts.freq)
+        cluster_ts = self.ts[:, segments_in_cluster, "target"]
         return cluster_ts
 
     def _get_centroid_of_cluster(self, cluster: int, **averaging_kwargs) -> pd.DataFrame:

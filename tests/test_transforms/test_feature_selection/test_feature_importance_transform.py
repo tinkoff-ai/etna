@@ -221,8 +221,8 @@ def test_sanity_model(model, ts_with_regressors):
     ts_forecast = pipeline.forecast()
 
     for segment in ts_forecast.segments:
-        test_target = ts_test[:, segment, "target"]
-        forecasted_target = ts_forecast[:, segment, "target"]
+        test_target = ts_test[:, segment, "target"].to_pandas()
+        forecasted_target = ts_forecast[:, segment, "target"].to_pandas()
         r2 = r2_score(forecasted_target, test_target)
         assert r2 > 0.99
 

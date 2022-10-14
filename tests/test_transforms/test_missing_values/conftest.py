@@ -92,7 +92,9 @@ def df_all_missing(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
 @pytest.fixture
 def ts_all_missing_two_segments(all_date_present_ts_two_segments: TSDataset) -> TSDataset:
     """Create TSDataset with all values set to nan."""
-    all_date_present_ts_two_segments.loc[:, :] = np.NaN
+    df = all_date_present_ts_two_segments.to_pandas()
+    df.loc[:, :] = np.NaN
+    all_date_present_ts_two_segments.update_columns_from_pandas(df_update=df)
     return all_date_present_ts_two_segments
 
 

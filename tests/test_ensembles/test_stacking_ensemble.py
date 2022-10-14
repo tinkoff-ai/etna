@@ -202,7 +202,7 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: St
     naive_ensemble.fit(example_tsds)
     forecast = naive_ensemble.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
