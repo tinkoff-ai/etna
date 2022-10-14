@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Changed
 -
+- Change returned model in get_model of BATSModel, TBATSModel ([#987](https://github.com/tinkoff-ai/etna/pull/987))
+- 
 -
 - Change returned model in `get_model` of `HoltWintersModel`, `HoltModel`, `SimpleExpSmoothingModel` ([#986](https://github.com/tinkoff-ai/etna/pull/986))
 - 
@@ -28,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -
 -
--
+- Fix release docs and docker images cron job ([#982](https://github.com/tinkoff-ai/etna/pull/982))
 -
 -
 -

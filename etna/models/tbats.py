@@ -16,7 +16,7 @@ from etna.models.utils import determine_num_steps
 
 class _TBATSAdapter(BaseAdapter):
     def __init__(self, model: Estimator):
-        self.model = model
+        self._model = model
         self._fitted_model: Optional[Model] = None
         self._last_train_timestamp = None
         self._freq = None
@@ -27,7 +27,7 @@ class _TBATSAdapter(BaseAdapter):
             raise ValueError("Can't determine frequency of a given dataframe")
 
         target = df["target"]
-        self._fitted_model = self.model.fit(target)
+        self._fitted_model = self._model.fit(target)
         self._last_train_timestamp = df["timestamp"].max()
         self._freq = freq
 
@@ -68,8 +68,15 @@ class _TBATSAdapter(BaseAdapter):
 
         return y_pred
 
-    def get_model(self) -> Estimator:
-        return self.model
+    def get_model(self) -> Model:
+        """Get internal :py:class:`tbats.tbats.Model` model that was fitted inside etna class.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self._fitted_model
 
 
 class BATSModel(PerSegmentPredictionIntervalModel):
