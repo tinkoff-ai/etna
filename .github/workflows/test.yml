@@ -174,11 +174,11 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
+          pip install tsfresh
 
       - name: PyTest ("experimental")
         run: |
           poetry run pytest tests/test_experimental -v --cov=etna --cov-report=xml
-          pip install tsfresh
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
