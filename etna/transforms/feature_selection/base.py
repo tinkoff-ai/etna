@@ -1,5 +1,4 @@
 import warnings
-from abc import ABC
 from typing import List
 from typing import Optional
 from typing import Union
@@ -10,7 +9,7 @@ from typing_extensions import Literal
 from etna.transforms import Transform
 
 
-class BaseFeatureSelectionTransform(Transform, ABC):
+class BaseFeatureSelectionTransform(Transform):
     """Base class for feature selection transforms."""
 
     def __init__(self, features_to_use: Union[List[str], Literal["all"]] = "all", return_features: bool = False):
