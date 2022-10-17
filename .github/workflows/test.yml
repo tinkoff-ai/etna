@@ -103,7 +103,7 @@ jobs:
 
       - name: PyTest ("long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "long_1" --cov-report=xml --durations=10
+          poetry run pytest tests -v --cov=etna -m "long_1" --ignore "tests/test_experimental" --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
@@ -140,7 +140,7 @@ jobs:
 
       - name: PyTest ("long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "long_2" --cov-report=xml --durations=10
+          poetry run pytest tests -v --cov=etna -m "long_2" --ignore "tests/test_experimental" --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
@@ -167,7 +167,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
-          poetry run pip install tsfresh
+          poetry run pip install tsfresh protobuf==3.19.6
 
       - name: PyTest ("experimental")
         run: |
