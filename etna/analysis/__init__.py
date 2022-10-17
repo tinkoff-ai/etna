@@ -28,6 +28,7 @@ from etna.analysis.plotters import plot_anomalies
 from etna.analysis.plotters import plot_anomalies_interactive
 from etna.analysis.plotters import plot_backtest
 from etna.analysis.plotters import plot_backtest_interactive
+from etna.analysis.plotters import plot_change_points_interactive
 from etna.analysis.plotters import plot_clusters
 from etna.analysis.plotters import plot_correlation_matrix
 from etna.analysis.plotters import plot_feature_relevance
