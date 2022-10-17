@@ -4,30 +4,33 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from tsfresh import extract_features
+from tsfresh.feature_extraction.settings import MinimalFCParameters
 
 from etna.experimental.classification.feature_extraction.base import BaseTimeSeriesFeatureExtractor
 
 
 class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
-    """Сlass to hold tsfresh features extraction from tsfresh.
+    """Class to hold tsfresh features extraction from tsfresh.
 
     Notes
     -----
-    tsfresh should be installed separately using `pip install tsfresh`.
+    `tsfresh` should be installed separately using `pip install tsfresh`.
     """
 
-    def __init__(self, default_fc_parameters: dict, n_jobs: int = 1, **kwargs):
+    def __init__(self, default_fc_parameters: Optional[dict] = None, n_jobs: int = 1, **kwargs):
         """Init TSFreshFeatureExtractor with given parameters.
 
         Parameters
         ----------
-        default_fc_parametrs:
+        default_fc_parameters:
             Dict with names of features.
             .. Examples: https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py
         n_jobs:
             The number of processes to use for parallelization.
         """
-        self.default_fc_parameters = default_fc_parameters
+        self.default_fc_parameters = (
+            default_fc_parameters if default_fc_parameters is not None else MinimalFCParameters()
+        )
         self.n_jobs = n_jobs
         self.kwargs = kwargs
 

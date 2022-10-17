@@ -21,10 +21,10 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
         Parameters
         ----------
         feature_extractor:
-           Instance of time series feature extractor.
+            Instance of time series feature extractor.
         classifier:
-           Instance of classifier with sklearn interface.
-         threshold:
+            Instance of classifier with sklearn interface.
+        threshold:
             Positive class probability threshold.
         """
         super().__init__(feature_extractor=feature_extractor, classifier=classifier, threshold=threshold)

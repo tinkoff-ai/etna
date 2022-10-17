@@ -7,12 +7,13 @@ import numpy as np
 from sklearn.base import ClassifierMixin
 from sklearn.metrics import roc_auc_score
 
+from etna.core import BaseMixin
 from etna.experimental.classification.base import PickleSerializable
 from etna.experimental.classification.feature_extraction.base import BaseTimeSeriesFeatureExtractor
 from etna.loggers import tslogger
 
 
-class TimeSeriesBinaryClassifier(PickleSerializable):
+class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
     """Class for holding time series binary classification."""
 
     def __init__(

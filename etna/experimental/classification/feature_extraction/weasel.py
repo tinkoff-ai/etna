@@ -42,7 +42,6 @@ class CustomWEASEL(WEASEL):
     ):
         """Init CustomWEASEL with given parameters.
 
-
         Parameters
         ----------
         padding_value:
@@ -50,6 +49,8 @@ class CustomWEASEL(WEASEL):
             the series is used.
         word_size:
             Size of each word.
+        ngram_range:
+            The lower and upper boundary of the range of ngrams.
         n_bins:
             The number of bins to produce. It must be between 2 and 26.
         window_sizes:
@@ -283,6 +284,8 @@ class WEASELFeatureExtractor(BaseTimeSeriesFeatureExtractor):
             the series is used.
         word_size:
             Size of each word.
+        ngram_range:
+            The lower and upper boundary of the range of ngrams.
         n_bins:
             The number of bins to produce. It must be between 2 and 26.
         window_sizes:
