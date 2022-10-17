@@ -3,8 +3,12 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from tsfresh import extract_features
-from tsfresh.feature_extraction.settings import MinimalFCParameters
+
+from etna import SETTINGS
+
+if SETTINGS.tsfresh_required:
+    from tsfresh import extract_features
+    from tsfresh.feature_extraction.settings import MinimalFCParameters
 
 from etna.experimental.classification.feature_extraction.base import BaseTimeSeriesFeatureExtractor
 
