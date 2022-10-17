@@ -1879,13 +1879,13 @@ def plot_change_points_interactive(
     --------
     >>> from etna.datasets import TSDataset
     >>> from etna.datasets import generate_ar_df
-    >>> from etna.analysis import plot_changepoints_interactive
+    >>> from etna.analysis import plot_change_points_interactive
     >>> from ruptures.detection import Binseg
     >>> classic_df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
     >>> df = TSDataset.to_dataset(classic_df)
     >>> ts = TSDataset(df, "D")
     >>> params_bounds = {"n_bkps": [0, 5, 1], "min_size":[1,10,3]}
-    >>> plot_changepoints_interactive(ts=ts, change_point_model=Binseg, model="l2", params_bounds=params_bounds, model_params=["min_size"], predict_params=["n_bkps"], figsize=(20, 10)) # doctest: +SKIP
+    >>> plot_change_points_interactive(ts=ts, change_point_model=Binseg, model="l2", params_bounds=params_bounds, model_params=["min_size"], predict_params=["n_bkps"], figsize=(20, 10)) # doctest: +SKIP
     """
     from ipywidgets import FloatSlider
     from ipywidgets import IntSlider
