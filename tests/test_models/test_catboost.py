@@ -90,7 +90,7 @@ def test_catboost_multi_segment_forecast(constant_ts):
     forecast.inverse_transform([lags])
 
     for segment in forecast.segments:
-        assert np.allclose(test[:, segment, "target"], forecast[:, segment, "target"])
+        assert np.allclose(test[:, segment, "target"].to_pandas(), forecast[:, segment, "target"].to_pandas())
 
 
 def test_get_model_multi():

@@ -68,8 +68,8 @@ def test_fit_transform_many_segments(example_tsds: TSDataset) -> None:
     )
     trend_transform.fit_transform(example_tsds)
     for segment in example_tsds.segments:
-        segment_slice = example_tsds[:, segment, :][segment]
-        segment_slice_original = example_tsds_original[:, segment, :][segment]
+        segment_slice = example_tsds[:, segment, :].to_pandas()[segment]
+        segment_slice_original = example_tsds_original[:, segment, :].to_pandas()[segment]
         assert sorted(segment_slice.columns) == sorted(["target", out_column])
         assert (segment_slice["target"] == segment_slice_original["target"]).all()
         residue = segment_slice_original["target"] - segment_slice[out_column]

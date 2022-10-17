@@ -111,10 +111,10 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
         horizons = [pipeline.horizon for pipeline in self.pipelines]
         pipelines_order = np.argsort(horizons)[::-1]
         # TODO: Fix slicing with explicit passing the segments in issue #775
-        forecast_df = forecasts[pipelines_order[0]][:, segments, "target"]
+        forecast_df = forecasts[pipelines_order[0]][:, segments, "target"].to_pandas()
         for idx in pipelines_order:
             # TODO: Fix slicing with explicit passing the segments in issue #775
-            horizon, forecast = horizons[idx], forecasts[idx][:, segments, "target"]
+            horizon, forecast = horizons[idx], forecasts[idx][:, segments, "target"].to_pandas()
             forecast_df.iloc[:horizon] = forecast
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset

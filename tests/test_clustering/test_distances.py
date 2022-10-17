@@ -142,6 +142,6 @@ def test_dtw_get_average(dtw_ts: TSDataset):
     centroid = dtw.get_average(dtw_ts)
     percentiles = np.linspace(0, 1, 19)
     for segment in dtw_ts.segments:
-        tmp = dtw_ts[:, segment, :][segment].dropna()
+        tmp = dtw_ts[:, segment, :].to_pandas()[segment].dropna()
         for p in percentiles:
             assert abs(np.percentile(centroid["target"].values, p) - np.percentile(tmp["target"].values, p)) < 0.3

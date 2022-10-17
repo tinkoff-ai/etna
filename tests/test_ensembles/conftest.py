@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import List
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
 from joblib import Parallel
@@ -107,10 +108,12 @@ def forecasts_ts(
 
 
 @pytest.fixture
-def targets(example_tsds: "TSDataset", forecasts_ts: List["TSDataset"]) -> pd.Series:
-    y = pd.concat(
+def targets(example_tsds: "TSDataset", forecasts_ts: List["TSDataset"]) -> np.ndarray:
+    y = np.concatenate(
         [
-            example_tsds[forecasts_ts[0].index.min() : forecasts_ts[0].index.max(), segment, "target"].to_pandas()
+            example_tsds[forecasts_ts[0].index.min() : forecasts_ts[0].index.max(), segment, "target"]
+            .to_pandas()
+            .values
             for segment in example_tsds.segments
         ],
         axis=0,

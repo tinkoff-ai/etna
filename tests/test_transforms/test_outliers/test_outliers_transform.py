@@ -77,7 +77,7 @@ def test_outliers_detection(transform_constructor, constructor_kwargs, method, o
     # save for each segment index without existing nans
     non_nan_index = {}
     for segment in outliers_tsds.segments:
-        non_nan_index[segment] = outliers_tsds[:, segment, in_column].dropna().index
+        non_nan_index[segment] = outliers_tsds[:, segment, in_column].to_pandas().dropna().index
     # convert to df to ignore different lengths of series
     transformed_df = transform.fit_transform(outliers_tsds).to_pandas()
     for segment in outliers_tsds.segments:

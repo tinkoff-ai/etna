@@ -139,7 +139,7 @@ def test_make_features(
     x, y = ensemble._make_features(forecasts_ts, train=True)
     features = set(x.columns.get_level_values("feature"))
     assert isinstance(x, pd.DataFrame)
-    assert isinstance(y, pd.Series)
+    assert isinstance(y, np.ndarray)
     assert features == expected_features
     assert (y == targets).all()
 

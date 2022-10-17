@@ -486,7 +486,7 @@ def test_make_future_small_horizon():
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
-    train = TSDataset(ts[: ts.index[10], :, :], freq="D")
+    train = ts[: ts.index[10]]
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
         assert len(train.make_future(1).df) == 1
 

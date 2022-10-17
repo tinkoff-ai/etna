@@ -35,7 +35,7 @@ def test_sarimax_select_regressors_correctly(example_reg_tsds):
     model = SARIMAXModel()
     model.fit(ts=example_reg_tsds)
     for segment, segment_model in model._models.items():
-        segment_features = example_reg_tsds[:, segment, :].droplevel("segment", axis=1)
+        segment_features = example_reg_tsds[:, segment, :].to_pandas().droplevel("segment", axis=1)
         segment_regressors_expected = segment_features[example_reg_tsds.regressors]
         segment_regressors = segment_model._select_regressors(df=segment_features.reset_index())
         assert (segment_regressors == segment_regressors_expected).all().all()
@@ -73,7 +73,7 @@ def test_prediction_interval_run_insample(example_tsds):
     model.fit(example_tsds)
     forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         # N.B. inplace forecast will not change target values, because `combine_first` in `SARIMAXModel.forecast` only fill nan values
         # assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
@@ -87,7 +87,7 @@ def test_prediction_interval_run_infuture(example_tsds):
     future = example_tsds.make_future(10)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()

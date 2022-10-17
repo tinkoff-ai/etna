@@ -971,6 +971,8 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     from etna.datasets import TSDataset
 
     # find the residuals
+    if len(forecast_df.index.difference(ts.index)) != 0:
+        raise KeyError("Timestamps of `ts` should contain all the timestamps from `forecast_df`")
     true_df = ts[forecast_df.index.min() : forecast_df.index.max()].to_pandas()
     if set(ts.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
         raise KeyError("Segments of `ts` and `forecast_df` should be the same")

@@ -142,7 +142,7 @@ def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
     res.inverse_transform([lags])
 
     for segment in res.segments:
-        assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
+        assert np.allclose(test[:, segment, "target"].to_pandas(), res[:, segment, "target"].to_pandas(), atol=1)
 
 
 @pytest.mark.parametrize("model", [LinearMultiSegmentModel(), ElasticMultiSegmentModel()])
@@ -166,7 +166,7 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
     res.inverse_transform([lags])
 
     for segment in res.segments:
-        assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
+        assert np.allclose(test[:, segment, "target"].to_pandas(), res[:, segment, "target"].to_pandas(), atol=1)
 
 
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])

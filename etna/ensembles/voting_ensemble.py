@@ -5,6 +5,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from joblib import Parallel
 from joblib import delayed
@@ -149,13 +150,13 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
             )
             x = pd.concat([x.loc[:, segment] for segment in self.ts.segments], axis=0)
 
-            y = pd.concat(
+            y = np.concatenate(
                 [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"].to_pandas()
+                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"].to_pandas().values
                     for segment in self.ts.segments
                 ],
                 axis=0,
-            )
+            ).ravel()
 
             self.regressor.fit(x, y)
             weights = self.regressor.feature_importances_

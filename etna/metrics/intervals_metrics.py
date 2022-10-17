@@ -80,10 +80,10 @@ class Coverage(Metric, _QuantileMetricMixin):
                 timestamp_pred=y_pred_segment_slice.dropna().index,
             )
             upper_quantile_flag = (
-                y_true_segment_slice <= y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"].to_pandas()
+                y_true_segment_slice.values <= y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"].to_pandas().values
             )
             lower_quantile_flag = (
-                y_true_segment_slice >= y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"].to_pandas()
+                y_true_segment_slice.values >= y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"].to_pandas().values
             )
 
             metrics_per_segment[segment] = np.mean(upper_quantile_flag * lower_quantile_flag)
@@ -153,8 +153,8 @@ class Width(Metric, _QuantileMetricMixin):
                 timestamp_true=y_true_segment_slice.dropna().index,
                 timestamp_pred=y_pred_segment_slice.dropna().index,
             )
-            upper_quantile = y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"].to_pandas()
-            lower_quantile = y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"].to_pandas()
+            upper_quantile = y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"].to_pandas().values
+            lower_quantile = y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"].to_pandas().values
 
             metrics_per_segment[segment] = np.abs(lower_quantile - upper_quantile).mean()
 

@@ -197,6 +197,9 @@ class TSDataset:
                 raise ValueError("Unsupported indexing format!")
         else:
             raise ValueError("Unsupported indexing format!")
+
+        first_valid_idx = df.first_valid_index()
+        df = df.loc[first_valid_idx:]
         ts = TSDataset(df=df, freq=self.freq)
         ts.raw_df = raw_df
         ts.known_future = deepcopy(self.known_future)
@@ -994,7 +997,7 @@ class TSDataset:
         }
 
         for segment in segments:
-            segment_series = self[:, segment, "target"].to_pandas()
+            segment_series = self[:, segment, "target"].to_pandas()[segment]["target"]
             first_index = segment_series.first_valid_index()
             last_index = segment_series.last_valid_index()
             segment_series = segment_series.loc[first_index:last_index]

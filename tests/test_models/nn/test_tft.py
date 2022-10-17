@@ -96,7 +96,7 @@ def test_prediction_interval_run_infuture(example_tsds):
     future = example_tsds.make_future(horizon, tail_steps=pfdb.max_encoder_length)
     forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.02, 0.98])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.98"] - segment_slice["target_0.02"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.02"] >= 0).all()

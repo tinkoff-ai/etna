@@ -153,7 +153,9 @@ def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
 @pytest.fixture()
 def daily_exog_ts_diff_endings(daily_exog_ts):
     ts = daily_exog_ts["ts"]
-    ts.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    df = ts.to_pandas()
+    df.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    ts.update_columns_from_pandas(df_update=df)
     return ts
 
 

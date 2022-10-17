@@ -57,7 +57,7 @@ def test_get_residuals_not_matching_lengths(residuals):
     """Test that get_residuals fails to find residuals correctly if ts hasn't answers."""
     residuals_df, forecast_df, ts = residuals
     ts = ts[: ts.index[-10]]
-    with pytest.raises(KeyError):
+    with pytest.raises(KeyError, match="Timestamps of `ts` should contain all the timestamps from `forecast_df`"):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 
 

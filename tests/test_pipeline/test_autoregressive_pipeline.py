@@ -47,8 +47,10 @@ def test_forecast_columns(example_reg_tsds):
     assert forecast_pipeline.to_pandas().isna().sum().sum() == 0
 
     # check regressor values
-    assert forecast_pipeline[:, :, "regressor_exog_weekend"].equals(
-        original_ts.df_exog.loc[forecast_pipeline.index, pd.IndexSlice[:, "regressor_exog_weekend"]]
+    assert (
+        forecast_pipeline[:, "regressor_exog_weekend"]
+        .to_pandas()
+        .equals(original_ts.df_exog.loc[forecast_pipeline.index, pd.IndexSlice[:, "regressor_exog_weekend"]])
     )
 
 
@@ -80,7 +82,7 @@ def test_forecast_one_step(example_tsds):
         df = pd.concat([df, to_add_df[df.columns]])
 
     forecast_manual = TSDataset(df.tail(horizon), freq=original_ts.freq)
-    assert np.all(forecast_pipeline[:, :, "target"] == forecast_manual[:, :, "target"])
+    assert np.all(forecast_pipeline[:, "target"].to_pandas() == forecast_manual[:, "target"].to_pandas())
 
 
 @pytest.mark.parametrize("horizon, step", ((1, 1), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (20, 1), (20, 2), (20, 3)))
@@ -103,7 +105,7 @@ def test_forecast_prediction_interval_interface(example_tsds):
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 

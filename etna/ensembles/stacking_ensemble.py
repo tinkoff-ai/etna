@@ -8,6 +8,7 @@ from typing import Set
 from typing import Tuple
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from joblib import Parallel
 from joblib import delayed
@@ -167,7 +168,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
     def _make_features(
         self, forecasts: List[TSDataset], train: bool = False
-    ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
+    ) -> Tuple[pd.DataFrame, Optional[np.ndarray]]:
         """Prepare features for the ``final_model``."""
         if self.ts is None:
             raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
@@ -199,9 +200,9 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         # Flatten the features to fit the sklearn interface
         x = pd.concat([features_df.loc[:, segment] for segment in self.ts.segments], axis=0)
         if train:
-            y = pd.concat(
+            y = np.concatenate(
                 [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"].to_pandas()
+                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"].to_pandas().values
                     for segment in self.ts.segments
                 ],
                 axis=0,
@@ -231,7 +232,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         x.loc[:, "timestamp"] = x.index.values
         df_exog = TSDataset.to_dataset(x)
 
-        df = forecasts[0][:, :, "target"].copy()
+        df = forecasts[0].to_pandas(features=["target"])
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
 
         forecast = TSDataset(df=df, freq=self.ts.freq, df_exog=df_exog)

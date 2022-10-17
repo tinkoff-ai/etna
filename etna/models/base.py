@@ -801,9 +801,10 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         )
         predictions = self.raw_predict(test_dataset)
         future_ts = ts[self.encoder_length : self.encoder_length + horizon - 1]
+        future_df = future_ts.to_pandas()
         for (segment, feature_nm), value in predictions.items():
-            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
-
+            future_df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
+        future_ts.update_columns_from_pandas(df_update=future_df)
         return future_ts
 
     def get_model(self) -> "DeepBaseNet":

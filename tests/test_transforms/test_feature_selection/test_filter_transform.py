@@ -161,8 +161,8 @@ def test_inverse_transform_back_excluded_columns(ts_with_features, columns, retu
     transform.inverse_transform(ts_with_features)
     columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
-    for column in ts_with_features.columns:
-        assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
+    for column in ts_with_features.columns.get_level_values("feature"):
+        assert np.all(ts_with_features.to_pandas(features=[column]) == original_df.loc[:, pd.IndexSlice[:, column]])
 
 
 @pytest.mark.parametrize(
