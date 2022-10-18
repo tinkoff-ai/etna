@@ -1918,7 +1918,6 @@ def plot_change_points_interactive(
             cache[key] = {}
         else:
             is_fitted = True
-            bkps = cache[key]
 
         for i, segment in enumerate(segments):
             ax[i].cla()
@@ -1931,26 +1930,23 @@ def plot_change_points_interactive(
                     algo = change_point_model(model=model, **m_params).fit(signal=target)
                     bkps = algo.predict(**p_params)
                     cache[key][segment] = bkps
+                    cache[key][segment].insert(0, 1)
                 except BadSegmentationParameters:
                     cache[key][segment] = None
 
-            if cache[key][segment] is not None:
-                end_time = timestamp[cache[key][segment][0] - 1]
-                selected_indices = timestamp <= end_time
-                cur_timestamp = timestamp[selected_indices]
-                cur_target = target[selected_indices]
-                ax[i].plot(cur_timestamp, cur_target)
+            segment_bkps = cache[key][segment]
 
-                for idx in range(len(cache[key][segment][:-1])):
-                    bkp = cache[key][segment][idx] - 1
+            if segment_bkps is not None:
+                for idx in range(len(segment_bkps[:-1])):
+                    bkp = segment_bkps[idx] - 1
                     start_time = timestamp[bkp]
-                    end_time = timestamp[cache[key][segment][idx + 1] - 1]
+                    end_time = timestamp[segment_bkps[idx + 1] - 1]
                     selected_indices = (timestamp >= start_time) & (timestamp <= end_time)
                     cur_timestamp = timestamp[selected_indices]
                     cur_target = target[selected_indices]
                     ax[i].plot(cur_timestamp, cur_target)
-
-                    ax[i].axvline(timestamp[bkp], linestyle="dashed", c="grey")
+                    if bkp != 0:
+                        ax[i].axvline(timestamp[bkp], linestyle="dashed", c="grey")
 
             else:
                 box = {"facecolor": "grey", "edgecolor": "red", "boxstyle": "round"}
