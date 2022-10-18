@@ -253,7 +253,7 @@ filterwarnings = [
     "ignore: Given top_k=.* is less than n_segments. Algo will filter data without Gale-Shapley run.",
     "ignore: Call to deprecated create function", # protobuf warning
     "ignore: `tsfresh` is not available, to install it, run `pip install tsfresh`.",
-    "ignore: Setting `Trainer(gpus=0)` is deprecated in v1.7 and will be removed in v2.0. Please use `Trainer(accelerator='gpu', devices=0)` instead."
+    "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning"
 ]
 markers = [
     "smoke",
