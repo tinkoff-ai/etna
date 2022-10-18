@@ -260,7 +260,7 @@ class CatBoostMultiSegmentModel(MultiSegmentModel):
     >>> forecast = model.forecast(future)
     >>> forecast.inverse_transform(transforms)
     >>> pd.options.display.float_format = '{:,.2f}'.format
-    >>> forecast[:, :, "target"].round()
+    >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
     feature       target    target    target    target
     timestamp
@@ -521,7 +521,7 @@ class CatBoostModelMultiSegment(CatBoostMultiSegmentModel):
     >>> forecast = model.forecast(future)
     >>> forecast.inverse_transform(transforms)
     >>> pd.options.display.float_format = '{:,.2f}'.format
-    >>> forecast[:, :, "target"].round()
+    >>> forecast[:, :, "target"]
     segment    segment_0 segment_1 segment_2 segment_3
     feature       target    target    target    target
     timestamp

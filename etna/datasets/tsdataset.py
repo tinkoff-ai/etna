@@ -52,15 +52,16 @@ class TSDataset:
     >>> df_ts_format = TSDataset.to_dataset(df)
     >>> ts = TSDataset(df_ts_format, "D")
     >>> ts["2021-06-01":"2021-06-07", "segment_0", "target"]
+    segment    segment_0
+    feature       target
     timestamp
-    2021-06-01    1.0
-    2021-06-02    1.0
-    2021-06-03    1.0
-    2021-06-04    1.0
-    2021-06-05    1.0
-    2021-06-06    1.0
-    2021-06-07    1.0
-    Freq: D, Name: (segment_0, target), dtype: float64
+    2021-06-01       1.0
+    2021-06-02       1.0
+    2021-06-03       1.0
+    2021-06-04       1.0
+    2021-06-05       1.0
+    2021-06-06       1.0
+    2021-06-07       1.0
 
     >>> from etna.datasets import generate_ar_df
     >>> pd.options.display.float_format = '{:,.2f}'.format
