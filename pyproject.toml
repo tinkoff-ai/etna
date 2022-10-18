@@ -132,7 +132,7 @@ all = [
     "torch", "pytorch-forecasting",
     "wandb",
     "optuna",
-    "classification"
+    "pyts"
 ]
 
 all-dev = [
@@ -145,7 +145,8 @@ all-dev = [
     "pytest-cov", "coverage", "pytest",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions",
     "click", "semver",
-    "jupyter", "nbconvert"
+    "jupyter", "nbconvert",
+    "pyts"
 ]
 
 [tool.poetry.scripts]
