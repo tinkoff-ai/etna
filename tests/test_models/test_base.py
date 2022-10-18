@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import torch
 
+from etna.datasets import TSDataset
 from etna.models.base import DeepBaseModel
 
 
@@ -138,16 +139,18 @@ def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
 
 
 def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock):
-    ts = MagicMock()
-    ts_after_tsdataset_idx_slice = MagicMock()
     horizon = 7
+    ts = MagicMock()
+    ts_after_tsdataset_idx_slice = TSDataset(df=simple_df.df.iloc[-horizon:], freq="D")
+    ts.__getitem__.return_value = ts_after_tsdataset_idx_slice
 
     raw_predict = {("A", "target"): np.arange(10).reshape(-1, 1), ("B", "target"): -np.arange(10).reshape(-1, 1)}
     deep_base_model_mock.raw_predict.return_value = raw_predict
 
-    ts_after_tsdataset_idx_slice.to_pandas = Mock(return_value=simple_df.df.iloc[-horizon:])
-    ts.__getitem__.return_value = ts_after_tsdataset_idx_slice
-
     future = DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, horizon=horizon)
-    np.testing.assert_allclose(future[:, "A", "target"].to_pandas(), raw_predict[("A", "target")][:horizon, 0])
-    np.testing.assert_allclose(future[:, "B", "target"].to_pandas(), raw_predict[("B", "target")][:horizon, 0])
+    np.testing.assert_allclose(
+        future[:, "A", "target"].to_pandas().values.ravel(), raw_predict[("A", "target")][:horizon, 0]
+    )
+    np.testing.assert_allclose(
+        future[:, "B", "target"].to_pandas().values.ravel(), raw_predict[("B", "target")][:horizon, 0]
+    )

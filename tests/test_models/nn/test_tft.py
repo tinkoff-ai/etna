@@ -113,7 +113,7 @@ def test_prediction_interval_run_infuture_warning_not_found_quantiles(example_ts
     with pytest.warns(UserWarning, match="Quantiles: \[0.4\] can't be computed"):
         forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.02, 0.4, 0.98])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
         assert {"target_0.4"}.isdisjoint(segment_slice.columns)
 
@@ -129,6 +129,6 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
     with pytest.warns(UserWarning, match="Quantiles can't be computed"):
         forecast = model.forecast(future, horizon, prediction_interval=True, quantiles=[0.02, 0.98])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target"}.issubset(segment_slice.columns)
         assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.columns)

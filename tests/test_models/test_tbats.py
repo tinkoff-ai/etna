@@ -117,6 +117,6 @@ def test_prediction_interval(model, example_tsds):
     future_ts = example_tsds.make_future(3)
     forecast = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
-        segment_slice = forecast[:, segment, :][segment]
+        segment_slice = forecast[:, segment, :].to_pandas()[segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()

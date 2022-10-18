@@ -174,7 +174,8 @@ class TSDataset:
                 item = slice(start, stop, item.step)
             return item
 
-        df_exog = self.df_exog
+        df_exog = deepcopy(self.df_exog)
+
         if isinstance(item, slice):
             time_idx = to_time_index(item)
             df = self.df.loc[self.idx[time_idx]]
@@ -182,16 +183,20 @@ class TSDataset:
         elif isinstance(item, tuple):
             time_idx = to_time_index(item[0])
             if len(item) == 2:
-                df = self.df.loc[self.idx[time_idx], self.idx[:, item[1]]]
+                features = [item[2]] if isinstance(item[2], str) else item[2]
+                if not isinstance(features, slice):
+                    features = tuple(features)
+                df = self.df.loc[self.idx[time_idx], self.idx[:, features]]
                 raw_df = self.raw_df.loc[self.idx[time_idx]]
             elif len(item) == 3:
                 segments = [item[1]] if isinstance(item[1], str) else item[1]
-                segments = tuple(segments)
+                if not isinstance(segments, slice):
+                    segments = tuple(segments)
                 features = [item[2]] if isinstance(item[2], str) else item[2]
                 if not isinstance(features, slice):
                     features = tuple(features)
                 df = self.df.loc[self.idx[time_idx], self.idx[segments, features]]
-                df_exog = None if self.df_exog is None else self.df_exog.loc[self.idx[:], self.idx[segments, :]]
+                df_exog = None if df_exog is None else df_exog.loc[self.idx[:], self.idx[segments, :]]
                 raw_df = self.raw_df.loc[self.idx[time_idx], self.idx[segments, :]]
             else:
                 raise ValueError("Unsupported indexing format!")
@@ -202,9 +207,9 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         ts = TSDataset(df=df, freq=self.freq)
         ts.raw_df = raw_df
+        ts.df_exog = df_exog
         ts.known_future = deepcopy(self.known_future)
         ts._regressors = deepcopy(self.regressors)
-        ts.df_exog = df_exog
         return ts
 
     def __eq__(self, other):
