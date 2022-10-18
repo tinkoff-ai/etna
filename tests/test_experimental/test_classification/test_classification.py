@@ -50,8 +50,9 @@ def test_masked_crossval_score(many_time_series, folds=np.array([0, 0, 0, 1, 1, 
         feature_extractor=TSFreshFeatureExtractor(default_fc_parameters=MinimalFCParameters()),
         classifier=KNeighborsClassifier(n_neighbors=1),
     )
-    score = clf.masked_crossval_score(x=x, y=y, mask=folds)
-    assert score == expected_score
+    scores = clf.masked_crossval_score(x=x, y=y, mask=folds)
+    for score in scores.values():
+        assert np.mean(score) == expected_score
 
 
 def test_dump_load_pipeline(x_y, tmp_path):

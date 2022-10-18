@@ -1,10 +1,12 @@
 from itertools import compress
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
 
 import numpy as np
 from sklearn.base import ClassifierMixin
+from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import roc_auc_score
 
 from etna.core import BaseMixin
@@ -94,8 +96,8 @@ class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
             y_probs = 1 - y_probs
         return y_probs
 
-    def masked_crossval_score(self, x: List[np.ndarray], y: np.ndarray, mask: np.ndarray) -> float:
-        """Calculate roc-auc on cross-validation.
+    def masked_crossval_score(self, x: List[np.ndarray], y: np.ndarray, mask: np.ndarray) -> Dict[str, list]:
+        """Calculate classification metrics on cross-validation.
 
         Parameters
         ----------
@@ -109,21 +111,30 @@ class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
         Returns
         -------
         :
-            Mean roc-auc score.
+            Classification metrics for each fold
         """
-        cv_scores = []
+        roc_auc_scores = []
+        other_metrics = []
         for fold in np.unique(mask):
             x_train, y_train = list(compress(data=x, selectors=mask != fold)), y[mask != fold]
             x_test, y_test = list(compress(data=x, selectors=mask == fold)), y[mask == fold]
 
             self.fit(x_train, y_train)
-            y_pred = self.predict_proba(x_test)
-            score = roc_auc_score(y_true=y_test, y_score=y_pred)
-            cv_scores.append(score)
+            y_prob_pred = self.predict_proba(x_test)
+            y_pred = (y_prob_pred > self.threshold).astype(int)
+            roc_auc_scores.append(roc_auc_score(y_true=y_test, y_score=y_prob_pred))
+            other_metrics.append(precision_recall_fscore_support(y_true=y_test, y_pred=y_pred, average="macro")[:-1])
 
-        mean_score = float(np.mean(cv_scores))
+        per_fold_metrics: Dict[str, list] = {metric: [] for metric in ["precision", "recall", "fscore"]}
+        for fold_metrics in other_metrics:
+            for i, metric in enumerate(["precision", "recall", "fscore"]):
+                per_fold_metrics[metric].append(fold_metrics[i])
+        per_fold_metrics["AUC"] = roc_auc_scores
+        mean_metrics = {metric: float(np.mean(values)) for metric, values in per_fold_metrics.items()}
+
         tslogger.start_experiment(job_type="metrics", group="all")
-        tslogger.log({"AUC": mean_score})
+        for metric, value in mean_metrics.items():
+            tslogger.log({metric: value})
         tslogger.finish_experiment()
 
-        return mean_score
+        return per_fold_metrics

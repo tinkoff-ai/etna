@@ -1,8 +1,11 @@
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.neighbors import KNeighborsClassifier
 from tsfresh.feature_extraction.settings import MinimalFCParameters
 
+from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.experimental.classification.feature_extraction.tsfresh import TSFreshFeatureExtractor
 from etna.experimental.classification.predictability import PredictabilityAnalyzer
 

@@ -4,7 +4,8 @@ import pytest
 
 @pytest.fixture()
 def x_y():
-    x = np.random.random((5, 7))
+    np.random.seed(42)
+    x = np.random.uniform(low=0, high=10, size=(5, 7))
     y = np.array([1, 0, 0, 1, 0])
     return x, y
 
