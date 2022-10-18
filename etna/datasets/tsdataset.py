@@ -183,7 +183,7 @@ class TSDataset:
         elif isinstance(item, tuple):
             time_idx = to_time_index(item[0])
             if len(item) == 2:
-                features = [item[2]] if isinstance(item[2], str) else item[2]
+                features = [item[1]] if isinstance(item[1], str) else item[1]
                 if not isinstance(features, slice):
                     features = tuple(features)
                 df = self.df.loc[self.idx[time_idx], self.idx[:, features]]
