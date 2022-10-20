@@ -18,6 +18,9 @@ from etna.loggers import tslogger
 class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
     """Class for holding time series binary classification."""
 
+    NEGATIVE_CLASS = 0
+    POSITIVE_CLASS = 1
+
     def __init__(
         self, feature_extractor: BaseTimeSeriesFeatureExtractor, classifier: ClassifierMixin, threshold: float = 0.5
     ):
@@ -52,7 +55,10 @@ class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
         :
             Fitted instance of classifier.
         """
-        self._classes = set(map(int, y))
+        self._classes = set(y)
+        if len(self._classes - {0, 1}) != 0:
+            raise ValueError("Only the 0 - negative and 1 - positive are possible values for the class labels!")
+
         x_tr = self.feature_extractor.fit_transform(x, y)
         self.classifier.fit(x_tr, y)
         return self
@@ -91,10 +97,12 @@ class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
             raise ValueError("Classifier is not fitted!")
 
         x_tr = self.feature_extractor.transform(x)
-        y_probs = self.classifier.predict_proba(x_tr)[:, 0]
-        if 0 in self._classes:
-            y_probs = 1 - y_probs
-        return y_probs
+        y_probs = self.classifier.predict_proba(x_tr)
+        if self.NEGATIVE_CLASS in self._classes and self.POSITIVE_CLASS in self._classes:
+            return y_probs[:, 1]
+        elif self.NEGATIVE_CLASS in self._classes:
+            return 1 - y_probs[:, 0]
+        return y_probs[:, 0]
 
     def masked_crossval_score(self, x: List[np.ndarray], y: np.ndarray, mask: np.ndarray) -> Dict[str, list]:
         """Calculate classification metrics on cross-validation.
