@@ -133,8 +133,7 @@ class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
         mean_metrics = {metric: float(np.mean(values)) for metric, values in per_fold_metrics.items()}
 
         tslogger.start_experiment(job_type="metrics", group="all")
-        for metric, value in mean_metrics.items():
-            tslogger.log({metric: value})
+        tslogger.log(mean_metrics)
         tslogger.finish_experiment()
 
         return per_fold_metrics

@@ -21,7 +21,9 @@ class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
     `tsfresh` should be installed separately using `pip install tsfresh`.
     """
 
-    def __init__(self, default_fc_parameters: Optional[dict] = None, n_jobs: int = 1, **kwargs):
+    def __init__(
+        self, default_fc_parameters: Optional[dict] = None, fill_na_value: float = -100, n_jobs: int = 1, **kwargs
+    ):
         """Init TSFreshFeatureExtractor with given parameters.
 
         Parameters
@@ -29,12 +31,15 @@ class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
         default_fc_parameters:
             Dict with names of features.
             .. Examples: https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py
+        fill_na_value:
+            Value to fill the NaNs in the resulting dataframe.
         n_jobs:
             The number of processes to use for parallelization.
         """
         self.default_fc_parameters = (
             default_fc_parameters if default_fc_parameters is not None else MinimalFCParameters()
         )
+        self.fill_na_value = fill_na_value
         self.n_jobs = n_jobs
         self.kwargs = kwargs
 
@@ -64,6 +69,6 @@ class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
             n_jobs=self.n_jobs,
             **self.kwargs,
         )
-        # TODO: there might be different number of features for train/test set
-        df_features.dropna(axis=1, inplace=True)
+        # TODO: there might be different number of features for train/test set, there might be NaNs in features
+        df_features.fillna(value=self.fill_na_value, inplace=True)
         return df_features.values
