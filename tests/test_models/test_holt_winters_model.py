@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_const_df
@@ -100,9 +100,9 @@ def test_get_model_before_training(etna_model_class):
 @pytest.mark.parametrize(
     "etna_model_class,expected_class",
     (
-        (HoltModel, ExponentialSmoothing),
-        (HoltWintersModel, ExponentialSmoothing),
-        (SimpleExpSmoothingModel, ExponentialSmoothing),
+        (HoltModel, HoltWintersResultsWrapper),
+        (HoltWintersModel, HoltWintersResultsWrapper),
+        (SimpleExpSmoothingModel, HoltWintersResultsWrapper),
     ),
 )
 def test_get_model_after_training(example_tsds, etna_model_class, expected_class):
