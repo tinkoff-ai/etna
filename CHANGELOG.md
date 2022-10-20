@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
--
--
+- 
+- 
 - Add `plot_change_points_interactive` ([#988](https://github.com/tinkoff-ai/etna/pull/988))
--
--
--
--
+- Add `experimental` module with `TimeSeriesBinaryClassifier` and `PredictabilityAnalyzer` ([#985](https://github.com/tinkoff-ai/etna/pull/985))
+- 
+- 
+- 
 ### Changed
 -
 - Change returned model in get_model of BATSModel, TBATSModel ([#987](https://github.com/tinkoff-ai/etna/pull/987))
