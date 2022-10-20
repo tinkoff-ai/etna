@@ -166,7 +166,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install -E "all tests" -vv
-          poetry run pip install tsfresh protobuf==3.19.6
+          poetry run pip install tsfresh==0.19.0 protobuf==3.19.6
 
       - name: PyTest ("experimental")
         run: |

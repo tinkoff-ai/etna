@@ -58,7 +58,7 @@ def _is_tsfresh_available():
     if _module_available("tsfresh"):
         return True
     else:
-        warnings.warn("`tsfresh` is not available, to install it, run `pip install tsfresh`.")
+        warnings.warn("`tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 protobuf==3.19.6.")
         return False
 
 
@@ -102,7 +102,7 @@ class Settings:
         self.tsfresh_required: bool = _get_optional_value(
             tsfresh_required,
             _is_tsfresh_available,
-            "`tsfresh` is not available, to install it, run `pip install tsfresh`.",
+            "`tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 protobuf==3.19.6`.",
         )
 
     @staticmethod
