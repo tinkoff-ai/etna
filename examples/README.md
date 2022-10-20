@@ -21,6 +21,9 @@ We have prepared a set of tutorials for an easy introduction:
 - Outliers
      - Median method
      - Density method
+- Change Points
+     - Change points plot
+     - Interactive change points plot
 #### 04. [Outliers](https://github.com/tinkoff-ai/etna/tree/master/examples/outliers.ipynb) 
 - Point outliers
     - Median method
