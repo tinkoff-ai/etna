@@ -110,6 +110,7 @@ ipywidgets = {version = "^7.6.5", optional = true}
 
 jupyter = {version = "*", optional = true}
 nbconvert = {version = "*", optional = true}
+pyts = {version = "^0.12.0", optional = true}
 
 
 [tool.poetry.extras]
@@ -118,6 +119,7 @@ prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
 wandb = ["wandb"]
 auto = ["optuna"]
+classification = ["pyts"]
 # dev deps
 release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
@@ -130,6 +132,7 @@ all = [
     "torch", "pytorch-forecasting",
     "wandb",
     "optuna",
+    "pyts"
 ]
 
 all-dev = [
@@ -142,7 +145,8 @@ all-dev = [
     "pytest-cov", "coverage", "pytest",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions",
     "click", "semver",
-    "jupyter", "nbconvert"
+    "jupyter", "nbconvert",
+    "pyts"
 ]
 
 [tool.poetry.scripts]
@@ -248,6 +252,8 @@ filterwarnings = [
     "ignore: Feature names only support names that are all strings",
     "ignore: Given top_k=.* is less than n_segments. Algo will filter data without Gale-Shapley run.",
     "ignore: Call to deprecated create function", # protobuf warning
+    "ignore: `tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 && pip install protobuf==3.20.1`",
+    "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning"
 ]
 markers = [
     "smoke",

@@ -65,7 +65,7 @@ jobs:
 
       - name: PyTest ("not long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "not long_1 and not long_2" --cov-report=xml --durations=10
+          poetry run pytest tests -v --cov=etna -m "not long_1 and not long_2" --ignore=tests/test_experimental --cov-report=xml --durations=10
           poetry run pytest etna -v --doctest-modules --ignore=etna/libs --durations=10
 
       - name: Upload coverage
@@ -103,7 +103,7 @@ jobs:
 
       - name: PyTest ("long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "long_1" --cov-report=xml --durations=10
+          poetry run pytest tests -v --cov=etna -m "long_1" --ignore=tests/test_experimental --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
@@ -140,7 +140,38 @@ jobs:
 
       - name: PyTest ("long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "long_2" --cov-report=xml --durations=10
+          poetry run pytest tests -v --cov=etna -m "long_2" --ignore=tests/test_experimental --cov-report=xml --durations=10
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+
+  experimental-test:
+      runs-on: ubuntu-latest
+
+      steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: |
+          poetry install -E "all tests" -vv
+          poetry run pip install tsfresh==0.19.0
+          poetry run pip install protobuf==3.20.1
+
+      - name: PyTest ("experimental")
+        run: |
+          poetry run pytest tests/test_experimental -v --cov=etna --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
