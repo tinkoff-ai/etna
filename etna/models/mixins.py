@@ -285,7 +285,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
 
     @staticmethod
     def _make_predictions_segment(
-        model: Any, segment: str, ts: TSDataset, prediction_method: Callable, *args, **kwargs
+        model: Any, segment: str, ts: TSDataset, prediction_method: Callable, **kwargs
     ) -> pd.DataFrame:
         """Make predictions for one segment."""
         segment_features = ts[:, segment, :]
@@ -293,7 +293,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
-        segment_predict = prediction_method(self=model, df=segment_features, *args, **kwargs)
+        segment_predict = prediction_method(self=model, df=segment_features, **kwargs)
         if isinstance(segment_predict, np.ndarray):
             segment_predict = pd.DataFrame({"target": segment_predict})
         segment_predict["segment"] = segment
