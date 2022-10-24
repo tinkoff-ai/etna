@@ -10,7 +10,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
-from statsmodels.tsa.holtwinters import HoltWintersResults
+from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
 from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
@@ -189,7 +189,7 @@ class _HoltWintersAdapter(BaseAdapter):
         self.fit_kwargs = fit_kwargs
 
         self._model: Optional[ExponentialSmoothing] = None
-        self._result: Optional[HoltWintersResults] = None
+        self._result: Optional[HoltWintersResultsWrapper] = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
         """
@@ -267,15 +267,15 @@ class _HoltWintersAdapter(BaseAdapter):
                 f"{columns_not_used} will be dropped"
             )
 
-    def get_model(self) -> ExponentialSmoothing:
-        """Get internal :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model that is used inside etna class.
+    def get_model(self) -> HoltWintersResultsWrapper:
+        """Get :py:class:`statsmodels.tsa.holtwinters.results.HoltWintersResultsWrapper` model that was fitted inside etna class.
 
         Returns
         -------
         :
            Internal model
         """
-        return self._model
+        return self._result
 
 
 class HoltWintersModel(

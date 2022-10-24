@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 -
+- 
+- 
+- Add `plot_change_points_interactive` ([#988](https://github.com/tinkoff-ai/etna/pull/988))
+- Add `experimental` module with `TimeSeriesBinaryClassifier` and `PredictabilityAnalyzer` ([#985](https://github.com/tinkoff-ai/etna/pull/985))
+- 
+- 
+- 
 - Add `predict` method to pipelines ([#954](https://github.com/tinkoff-ai/etna/pull/954))
 - Implement predict method in `SARIMAXModel`, `AutoARIMAModel`, `SeasonalMovingAverageModel`, `DeadlineMovingAverageModel` ([#948](https://github.com/tinkoff-ai/etna/pull/948))
 - Make `SeasonalMovingAverageModel` and `DeadlineMovingAverageModel` to work with context ([#917](https://github.com/tinkoff-ai/etna/pull/917))
@@ -19,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Changed
 -
+- Change returned model in get_model of BATSModel, TBATSModel ([#987](https://github.com/tinkoff-ai/etna/pull/987))
+- 
+-
+- Change returned model in `get_model` of `HoltWintersModel`, `HoltModel`, `SimpleExpSmoothingModel` ([#986](https://github.com/tinkoff-ai/etna/pull/986))
+- 
 -
 - Changed hierarchy of base models, enable passing context into models ([#888](https://github.com/tinkoff-ai/etna/pull/888))
 - Add `RNNModel` into `test_inference` ([#966](https://github.com/tinkoff-ai/etna/pull/966))
@@ -29,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Fixed
 -
+-
+- Fix release docs and docker images cron job ([#982](https://github.com/tinkoff-ai/etna/pull/982))
 -
 - Fix bug with context size in new nns ([#951](https://github.com/tinkoff-ai/etna/pull/951))
 - Fix notebooks `get_started`, `custom_transform_and_model` to work with new classes ([#974](https://github.com/tinkoff-ai/etna/pull/974))
