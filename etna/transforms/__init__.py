@@ -5,8 +5,8 @@ from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.base import Transform
-from etna.transforms.decomposition import BinsegTrendTransform
 from etna.transforms.decomposition import ChangePointsSegmentationTransform
+from etna.transforms.decomposition import ChangePointsTransform
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import STLTransform

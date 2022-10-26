@@ -5,12 +5,13 @@ import pandas as pd
 
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversiblePerSegmentWrapper
-from etna.transforms.base import OneSegmentTransform
-from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.base_change_points import TTimestampInterval
+from etna.transforms.decomposition.changepoints_based.base import ChangePointsTransform
+from etna.transforms.decomposition.changepoints_based.base import OneSegmentChangePointsTransform
+from etna.transforms.decomposition.changepoints_based.change_points_models import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.changepoints_based.per_interval_models import ConstantPerIntervalModel
 
 
-class _OneSegmentChangePointsSegmentationTransform(OneSegmentTransform):
+class _OneSegmentChangePointsSegmentationTransform(OneSegmentChangePointsTransform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
     def __init__(self, in_column: str, out_column: str, change_point_model: BaseChangePointsModelAdapter):
@@ -24,68 +25,29 @@ class _OneSegmentChangePointsSegmentationTransform(OneSegmentTransform):
         change_point_model:
             model to get change points
         """
-        self.in_column = in_column
         self.out_column = out_column
-        self.intervals: Optional[List[TTimestampInterval]] = None
-        self.change_point_model = change_point_model
+        super().__init__(
+            in_column=in_column,
+            change_point_model=change_point_model,
+            per_interval_model=ConstantPerIntervalModel(),
+        )
 
-    def _fill_per_interval(self, series: pd.Series) -> pd.Series:
-        """Fill values in resulting series."""
-        if self.intervals is None:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
-        result_series = pd.Series(index=series.index)
+    def _fit_per_interval_models(self, series: pd.Series):
+        """Fit per-interval models with corresponding data from series."""
+        if self.intervals is None or self.per_interval_models is None:
+            raise ValueError("Something went wrong on fit! Check the parameters of the transform.")
         for k, interval in enumerate(self.intervals):
-            tmp_series = series[interval[0] : interval[1]]
-            if tmp_series.empty:
-                continue
-            result_series[tmp_series.index] = k
-        return result_series.astype(int).astype("category")
+            self.per_interval_models[interval].fit(value=k)
 
-    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsSegmentationTransform":
-        """Fit _OneSegmentChangePointsSegmentationTransform: find change points in ``df`` and build intervals.
-
-        Parameters
-        ----------
-        df:
-            one segment dataframe indexed with timestamp
-
-        Returns
-        -------
-        :
-            instance with trained change points
-
-        Raises
-        ------
-        ValueError
-            If series contains NaNs in the middle
-        """
-        self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
-        return self
-
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Split df to intervals.
-
-        Parameters
-        ----------
-        df:
-            one segment dataframe
-
-        Returns
-        -------
-        df:
-            df with new column
-        """
-        series = df[self.in_column]
-        result_series = self._fill_per_interval(series=series)
-        df.loc[:, self.out_column] = result_series
+    def _apply_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
+        df.loc[:, self.out_column] = transformed_series.astype(int).astype("category")
         return df
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Inverse transform Dataframe."""
         return df
 
 
-class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMixin):
+class ChangePointsSegmentationTransform(ChangePointsTransform, IrreversiblePerSegmentWrapper, FutureMixin):
     """ChangePointsSegmentationTransform make label encoder to change points.
 
     Warning
@@ -102,7 +64,7 @@ class ChangePointsSegmentationTransform(IrreversiblePerSegmentWrapper, FutureMix
     ):
         """Init ChangePointsSegmentationTransform.
 
-        Parameterss
+        Parameters
         ----------
         in_column:
             name of column to fit change point model

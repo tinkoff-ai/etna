@@ -5,8 +5,8 @@ from ruptures import Binseg
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
-from etna.transforms.decomposition.base_change_points import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+from etna.transforms.decomposition.changepoints_based.change_points_models import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.changepoints_based.change_points_models import RupturesChangePointsModel
 
 N_BKPS = 5
 

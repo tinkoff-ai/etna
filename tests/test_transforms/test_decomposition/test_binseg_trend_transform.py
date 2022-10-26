@@ -4,6 +4,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pytest
+from ruptures import Binseg
 from ruptures.costs import CostAR
 from ruptures.costs import CostL1
 from ruptures.costs import CostL2
@@ -14,11 +15,12 @@ from ruptures.costs import CostRank
 from ruptures.costs import CostRbf
 
 from etna.datasets import TSDataset
-from etna.transforms.decomposition import BinsegTrendTransform
+from etna.transforms.decomposition import ChangePointsTrendTransform
+from etna.transforms.decomposition import RupturesChangePointsModel
 
 
 def test_binseg_in_pipeline(example_tsds: TSDataset):
-    bs = BinsegTrendTransform(in_column="target")
+    bs = ChangePointsTrendTransform(in_column="target")
     bs.fit_transform(example_tsds)
     for segment in example_tsds.segments:
         assert abs(example_tsds[:, segment, "target"].mean()) < 1
@@ -29,7 +31,13 @@ def test_binseg_in_pipeline(example_tsds: TSDataset):
 )
 def test_binseg_run_with_custom_costs(example_tsds: TSDataset, custom_cost_class: Any):
     """Check that binseg trend works with different custom costs."""
-    bs = BinsegTrendTransform(in_column="target", custom_cost=custom_cost_class())
+    bs = ChangePointsTrendTransform(
+        in_column="target",
+        change_point_model=RupturesChangePointsModel(
+            change_point_model=Binseg(custom_cost=custom_cost_class()),
+            n_bkps=5,
+        ),
+    )
     ts = deepcopy(example_tsds)
     bs.fit_transform(ts)
     bs.inverse_transform(ts)
@@ -39,7 +47,13 @@ def test_binseg_run_with_custom_costs(example_tsds: TSDataset, custom_cost_class
 @pytest.mark.parametrize("model", ("l1", "l2", "normal", "rbf", "linear", "ar", "mahalanobis", "rank"))
 def test_binseg_run_with_model(example_tsds: TSDataset, model: Any):
     """Check that binseg trend works with different models."""
-    bs = BinsegTrendTransform(in_column="target", model=model)
+    bs = ChangePointsTrendTransform(
+        in_column="target",
+        change_point_model=RupturesChangePointsModel(
+            change_point_model=Binseg(model=model),
+            n_bkps=5,
+        ),
+    )
     ts = deepcopy(example_tsds)
     bs.fit_transform(ts)
     bs.inverse_transform(ts)
@@ -48,7 +62,7 @@ def test_binseg_run_with_model(example_tsds: TSDataset, model: Any):
 
 def test_binseg_runs_with_different_series_length(ts_with_different_series_length: TSDataset):
     """Check that binseg works with datasets with different length series."""
-    bs = BinsegTrendTransform(in_column="target")
+    bs = ChangePointsTrendTransform(in_column="target")
     ts = deepcopy(ts_with_different_series_length)
     bs.fit_transform(ts)
     bs.inverse_transform(ts)
@@ -56,7 +70,7 @@ def test_binseg_runs_with_different_series_length(ts_with_different_series_lengt
 
 
 def test_fit_transform_with_nans_in_tails(ts_with_nans_in_tails):
-    transform = BinsegTrendTransform(in_column="target")
+    transform = ChangePointsTrendTransform(in_column="target")
     transformed_df = transform.fit_transform(ts=ts_with_nans_in_tails).to_pandas()
     for segment in transformed_df.columns.get_level_values("segment").unique():
         segment_slice = transformed_df.loc[pd.IndexSlice[:], pd.IndexSlice[segment, :]][segment]
@@ -64,6 +78,6 @@ def test_fit_transform_with_nans_in_tails(ts_with_nans_in_tails):
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
-    transform = BinsegTrendTransform(in_column="target")
+    transform = ChangePointsTrendTransform(in_column="target")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         transform.fit_transform(ts=ts_with_nans)
