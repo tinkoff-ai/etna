@@ -3,8 +3,10 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 import numpy as np
+import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 
@@ -133,3 +135,21 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
         )
         forecast = self._merge(forecasts=forecasts)
         return forecast
+
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+    ) -> TSDataset:
+        if prediction_interval:
+            raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+
+        horizons = [pipeline.horizon for pipeline in self.pipelines]
+        pipeline = self.pipelines[np.argmin(horizons)]
+        prediction = self._predict_pipeline(
+            ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+        )
+        return prediction

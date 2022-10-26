@@ -1,15 +1,20 @@
 import warnings
 from typing import Sequence
+from typing import cast
 
 import pandas as pd
+from typing_extensions import get_args
 
 from etna.datasets import TSDataset
-from etna.models.base import BaseModel
+from etna.models.base import ContextIgnorantModelType
+from etna.models.base import ContextRequiredModelType
+from etna.models.base import ModelType
 from etna.pipeline.base import BasePipeline
+from etna.pipeline.mixins import ModelPipelinePredictMixin
 from etna.transforms import Transform
 
 
-class AutoRegressivePipeline(BasePipeline):
+class AutoRegressivePipeline(ModelPipelinePredictMixin, BasePipeline):
     """Pipeline that make regressive models autoregressive.
 
     Examples
@@ -49,7 +54,7 @@ class AutoRegressivePipeline(BasePipeline):
     2020-04-16      8.00      6.00      2.00      0.00
     """
 
-    def __init__(self, model: BaseModel, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
+    def __init__(self, model: ModelType, horizon: int, transforms: Sequence[Transform] = (), step: int = 1):
         """
         Create instance of AutoRegressivePipeline with given parameters.
 
@@ -121,6 +126,7 @@ class AutoRegressivePipeline(BasePipeline):
             )
             # manually set transforms in current_ts, otherwise make_future won't know about them
             current_ts.transforms = self.transforms
+
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     message="TSDataset freq can't be inferred",
@@ -130,8 +136,18 @@ class AutoRegressivePipeline(BasePipeline):
                     message="You probably set wrong freq.",
                     action="ignore",
                 )
-                current_ts_forecast = current_ts.make_future(current_step)
-            current_ts_future = self.model.forecast(current_ts_forecast)
+
+                if isinstance(self.model, get_args(ContextRequiredModelType)):
+                    self.model = cast(ContextRequiredModelType, self.model)
+                    current_ts_forecast = current_ts.make_future(
+                        future_steps=current_step, tail_steps=self.model.context_size
+                    )
+                    current_ts_future = self.model.forecast(ts=current_ts_forecast, prediction_size=current_step)
+                else:
+                    self.model = cast(ContextIgnorantModelType, self.model)
+                    current_ts_forecast = current_ts.make_future(future_steps=current_step)
+                    current_ts_future = self.model.forecast(ts=current_ts_forecast)
+
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features

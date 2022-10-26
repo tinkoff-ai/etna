@@ -46,3 +46,22 @@ def test_forecast(simple_ts_train, simple_ts_forecast):
     ensemble.fit(simple_ts_train)
     forecast = ensemble.forecast()
     pd.testing.assert_frame_equal(forecast.to_pandas(), simple_ts_forecast.to_pandas())
+
+
+def test_predict(simple_ts_train):
+    ensemble = DirectEnsemble(
+        pipelines=[
+            Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1),
+            Pipeline(model=NaiveModel(lag=3), transforms=[], horizon=2),
+        ]
+    )
+    smallest_pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1)
+    ensemble.fit(simple_ts_train)
+    smallest_pipeline.fit(simple_ts_train)
+    prediction = ensemble.predict(
+        ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
+    )
+    expected_prediction = smallest_pipeline.predict(
+        ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
+    )
+    pd.testing.assert_frame_equal(prediction.to_pandas(), expected_prediction.to_pandas())

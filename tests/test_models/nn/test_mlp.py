@@ -40,7 +40,7 @@ def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
     )
     future = ts_train.make_future(horizon)
     model.fit(ts_train)
-    future = model.forecast(future, horizon=horizon)
+    future = model.forecast(future, prediction_size=horizon)
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 0.05

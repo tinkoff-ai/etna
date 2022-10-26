@@ -3,7 +3,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
+from typing import cast
 
 import pandas as pd
 from joblib import Parallel
@@ -209,3 +211,24 @@ class VotingEnsemble(BasePipeline, EnsembleMixin):
         )
         forecast = self._vote(forecasts=forecasts)
         return forecast
+
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+    ) -> TSDataset:
+        if prediction_interval:
+            raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+
+        self.ts = cast(TSDataset, self.ts)
+        predictions = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
+            delayed(self._predict_pipeline)(
+                ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+            )
+            for pipeline in self.pipelines
+        )
+        predictions = self._vote(forecasts=predictions)
+        return predictions
