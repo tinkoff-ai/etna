@@ -3,6 +3,7 @@ from typing import List
 from typing import Set
 from typing import Tuple
 from typing import Union
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
@@ -188,13 +189,52 @@ def test_forecast_interface(
     assert features == expected_features
 
 
-def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble):
-    """Check that StackingEnsemble.forecast forecast correct values"""
-    train, test = weekly_period_ts
-    ensemble = naive_ensemble.fit(train)
-    forecast = ensemble.forecast()
-    mae = MAE("macro")
-    np.allclose(mae(test, forecast), 0)
+@pytest.mark.parametrize(
+    "features_to_use,expected_features",
+    (
+        (None, {"regressor_target_0", "regressor_target_1"}),
+        (
+            "all",
+            {
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_month",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_dateflag_is_weekend",
+                "regressor_target_0",
+                "regressor_target_1",
+            },
+        ),
+        (
+            ["regressor_lag_feature_10", "regressor_dateflag_day_number_in_week", "unknown"],
+            {
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_target_0",
+                "regressor_target_1",
+            },
+        ),
+    ),
+)
+def test_predict_interface(
+    example_tsds,
+    naive_featured_pipeline_1: Pipeline,
+    naive_featured_pipeline_2: Pipeline,
+    features_to_use: Union[None, Literal[all], List[str]],
+    expected_features: Set[str],
+):
+    """Check that StackingEnsemble.predict returns TSDataset of correct length, containing all the expected columns"""
+    ensemble = StackingEnsemble(
+        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
+    ).fit(example_tsds)
+    start_idx = 20
+    end_idx = 30
+    prediction = ensemble.predict(
+        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+    )
+    features = set(prediction.columns.get_level_values("feature")) - {"target"}
+    assert isinstance(prediction, TSDataset)
+    assert len(prediction.df) == end_idx - start_idx + 1
+    assert features == expected_features
 
 
 def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: StackingEnsemble):
@@ -205,6 +245,41 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: St
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+
+def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble):
+    naive_ensemble.fit(ts=example_tsds)
+    naive_ensemble._process_forecasts = MagicMock()
+
+    result = naive_ensemble._forecast()
+
+    naive_ensemble._process_forecasts.assert_called_once()
+    assert result == naive_ensemble._process_forecasts.return_value
+
+
+def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble):
+    naive_ensemble.fit(ts=example_tsds)
+    naive_ensemble._process_forecasts = MagicMock()
+
+    result = naive_ensemble._predict(
+        ts=example_tsds,
+        start_timestamp=example_tsds.index[20],
+        end_timestamp=example_tsds.index[30],
+        prediction_interval=False,
+        quantiles=(),
+    )
+
+    naive_ensemble._process_forecasts.assert_called_once()
+    assert result == naive_ensemble._process_forecasts.return_value
+
+
+def test_forecast_sanity(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble):
+    """Check that StackingEnsemble.forecast forecast correct values"""
+    train, test = weekly_period_ts
+    ensemble = naive_ensemble.fit(train)
+    forecast = ensemble.forecast()
+    mae = MAE("macro")
+    np.allclose(mae(test, forecast), 0)
 
 
 @pytest.mark.long_1

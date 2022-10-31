@@ -10,7 +10,9 @@ from tbats.tbats import TBATS
 from tbats.tbats.Model import Model
 
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
 
 
@@ -33,7 +35,7 @@ class _TBATSAdapter(BaseAdapter):
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+    def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
@@ -68,6 +70,9 @@ class _TBATSAdapter(BaseAdapter):
 
         return y_pred
 
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+        raise NotImplementedError("Method predict isn't currently implemented!")
+
     def get_model(self) -> Model:
         """Get internal :py:class:`tbats.tbats.Model` model that was fitted inside etna class.
 
@@ -79,7 +84,9 @@ class _TBATSAdapter(BaseAdapter):
         return self._fitted_model
 
 
-class BATSModel(PerSegmentPredictionIntervalModel):
+class BATSModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """Class for holding segment interval BATS model."""
 
     def __init__(
@@ -146,7 +153,9 @@ class BATSModel(PerSegmentPredictionIntervalModel):
         super().__init__(base_model=_TBATSAdapter(self.model))
 
 
-class TBATSModel(PerSegmentPredictionIntervalModel):
+class TBATSModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """Class for holding segment interval TBATS model."""
 
     def __init__(
