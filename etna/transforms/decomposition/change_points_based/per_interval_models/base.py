@@ -3,8 +3,10 @@ from abc import abstractmethod
 
 import numpy as np
 
+from etna.core import BaseMixin
 
-class PerIntervalModel(ABC):
+
+class PerIntervalModel(BaseMixin, ABC):
     """Class to handle intervals in change point based transforms.
 
     PerIntervalModel is a class to process intervals between change points

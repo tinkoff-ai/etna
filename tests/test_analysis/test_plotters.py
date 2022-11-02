@@ -15,7 +15,7 @@ from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
-from etna.transforms import BinsegTrendTransform
+from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import STLTransform
@@ -96,7 +96,7 @@ def test_plot_trend(poly_degree, example_tsdf, trend_transform_class):
 
 @pytest.mark.parametrize("detrend_model", (TheilSenRegressor(), LinearRegression()))
 def test_plot_bin_seg(example_tsdf, detrend_model):
-    plot_trend(ts=example_tsdf, trend_transform=BinsegTrendTransform(in_column="target", detrend_model=detrend_model))
+    plot_trend(ts=example_tsdf, trend_transform=ChangePointsTrendTransform(in_column="target"))
 
 
 @pytest.mark.parametrize("period", (7, 30))

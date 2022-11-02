@@ -7,11 +7,13 @@ from typing import Type
 import pandas as pd
 from sklearn.base import RegressorMixin
 
+from etna.core import BaseMixin
+
 TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
 TDetrendModel = Type[RegressorMixin]
 
 
-class BaseChangePointsModelAdapter(ABC):
+class BaseChangePointsModelAdapter(BaseMixin, ABC):
     """BaseChangePointsModelAdapter is the base class for change point models adapters."""
 
     @abstractmethod
