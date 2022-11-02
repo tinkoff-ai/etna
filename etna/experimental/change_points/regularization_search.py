@@ -26,6 +26,7 @@ class OptimizationMode(str, Enum):
 
 def _get_n_bkps(series: pd.Series, change_point_model: BaseEstimator, **model_predict_params) -> int:
     """Get number of change points, detected with given params.
+
     Parameters
     ----------
     series:
@@ -52,6 +53,7 @@ def _get_next_value(
     now_value: float, lower_bound: float, upper_bound: float, need_greater: bool
 ) -> Tuple[float, float, float]:
     """Give next value according to binary search.
+
     Parameters
     ----------
     now_value:
@@ -83,6 +85,7 @@ def bin_search(
     max_iters: int = 200,
 ) -> float:
     """Run binary search for optimal regularizations.
+
     Parameters
     ----------
     series:
@@ -102,6 +105,11 @@ def bin_search(
     -------
     :
         regularization parameters value
+
+    Raises
+    ______
+    ValueError:
+        If max_value is so low for needed n_bkps
     """
     zero_param = _get_n_bkps(series, change_point_model, **{opt_param: 0})
     max_param = _get_n_bkps(series, change_point_model, **{opt_param: max_value})
@@ -155,7 +163,7 @@ def get_ruptures_regularization(
     Returns
     -------
     :
-        regularization parameters values
+        regularization parameters values in dictionary format {segment: {mode: value}}.
 
     Raises
     ______
