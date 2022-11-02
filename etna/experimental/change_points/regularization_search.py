@@ -101,7 +101,8 @@ def bin_search(
     Returns
     -------
     :
-        regularization parameters value"""
+        regularization parameters value
+    """
     zero_param = _get_n_bkps(series, change_point_model, **{opt_param: 0})
     max_param = _get_n_bkps(series, change_point_model, **{opt_param: max_value})
     if zero_param < n_bkps:
@@ -161,6 +162,7 @@ def get_ruptures_regularization(
     ValueError:
         If max_value is so low for needed n_bkps
     """
+    mode = OptimizationMode(mode)
     df = ts.to_pandas()
     segments = df.columns.get_level_values(0).unique()
 
