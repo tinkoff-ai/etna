@@ -4,10 +4,10 @@ import pytest
 from ruptures import Binseg
 
 from etna.datasets import TSDataset
-from etna.transforms.decomposition.changepoints_based import ChangePointsTrendTransform
-from etna.transforms.decomposition.changepoints_based import SklearnPerIntervalModel
-from etna.transforms.decomposition.changepoints_based.change_points_models import RupturesChangePointsModel
-from etna.transforms.decomposition.changepoints_based.detrend import _OneSegmentChangePointsTrendTransform
+from etna.transforms.decomposition.change_points_based import ChangePointsTrendTransform
+from etna.transforms.decomposition.change_points_based import SklearnPerIntervalModel
+from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
 
 
 @pytest.fixture

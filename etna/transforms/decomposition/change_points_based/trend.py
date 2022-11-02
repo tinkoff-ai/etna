@@ -3,13 +3,11 @@ from typing import Optional
 
 import pandas as pd
 
-from etna.transforms.base import FutureMixin
-from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.decomposition.changepoints_based.base import ChangePointsTransform
-from etna.transforms.decomposition.changepoints_based.change_points_models import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.changepoints_based.detrend import _OneSegmentChangePointsTrendTransform
-from etna.transforms.decomposition.changepoints_based.per_interval_models import PerIntervalModel
-from etna.transforms.decomposition.changepoints_based.per_interval_models import SklearnPerIntervalModel
+from etna.transforms.decomposition.change_points_based.base import IrreversibleChangePointsTransform
+from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
+from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
+from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnPerIntervalModel
 
 
 class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
@@ -50,7 +48,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         return df
 
 
-class TrendTransform(ChangePointsTransform, ReversiblePerSegmentWrapper, FutureMixin):
+class TrendTransform(IrreversibleChangePointsTransform):
     """TrendTransform adds trend as a feature.
 
     TrendTransform uses uses :py:class:`ruptures.detection.Binseg` model as a change point detection model
@@ -92,6 +90,3 @@ class TrendTransform(ChangePointsTransform, ReversiblePerSegmentWrapper, FutureM
             ),
             required_features=[in_column],
         )
-
-    def get_regressors_info(self) -> List[str]:
-        return [self.out_column]

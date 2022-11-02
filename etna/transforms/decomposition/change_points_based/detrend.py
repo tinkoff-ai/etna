@@ -5,13 +5,12 @@ import pandas as pd
 from ruptures.detection import Binseg
 from sklearn.linear_model import LinearRegression
 
-from etna.transforms import ReversiblePerSegmentWrapper
-from etna.transforms.decomposition.changepoints_based.base import ChangePointsTransform
-from etna.transforms.decomposition.changepoints_based.base import OneSegmentChangePointsTransform
-from etna.transforms.decomposition.changepoints_based.change_points_models import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.changepoints_based.change_points_models import RupturesChangePointsModel
-from etna.transforms.decomposition.changepoints_based.per_interval_models import PerIntervalModel
-from etna.transforms.decomposition.changepoints_based.per_interval_models import SklearnPerIntervalModel
+from etna.transforms.decomposition.change_points_based.base import OneSegmentChangePointsTransform
+from etna.transforms.decomposition.change_points_based.base import ReversibleChangePointsTransform
+from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
+from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnPerIntervalModel
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -38,7 +37,7 @@ class _OneSegmentChangePointsTrendTransform(OneSegmentChangePointsTransform):
         return df
 
 
-class ChangePointsTrendTransform(ChangePointsTransform, ReversiblePerSegmentWrapper):
+class ChangePointsTrendTransform(ReversibleChangePointsTransform):
     """ChangePointsTrendTransform uses :py:class:`ruptures.detection.Binseg` model as a change point detection model.
 
     Warning
@@ -78,6 +77,3 @@ class ChangePointsTrendTransform(ChangePointsTransform, ReversiblePerSegmentWrap
             ),
             required_features=[in_column],
         )
-
-    def get_regressors_info(self) -> List[str]:
-        return []

@@ -8,9 +8,9 @@ from sklearn.linear_model import LinearRegression
 
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.decomposition import TrendTransform
-from etna.transforms.decomposition.changepoints_based.change_points_models import RupturesChangePointsModel
-from etna.transforms.decomposition.changepoints_based.per_interval_models import SklearnPerIntervalModel
-from etna.transforms.decomposition.changepoints_based.trend import _OneSegmentTrendTransform
+from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnPerIntervalModel
+from etna.transforms.decomposition.change_points_based.trend import _OneSegmentTrendTransform
 
 DEFAULT_SEGMENT = "segment_1"
 

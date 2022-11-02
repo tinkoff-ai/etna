@@ -1,3 +1,5 @@
+from abc import ABC
+from abc import abstractmethod
 from copy import deepcopy
 from typing import Any
 from typing import Dict
@@ -8,14 +10,16 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
+from etna.transforms.base import FutureMixin
+from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.decomposition.changepoints_based.change_points_models import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.changepoints_based.per_interval_models import PerIntervalModel
+from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
 
 
-class OneSegmentChangePointsTransform(OneSegmentTransform):
+class OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
     def __init__(
         self, in_column: str, change_point_model: BaseChangePointsModelAdapter, per_interval_model: PerIntervalModel
     ):
@@ -71,9 +75,11 @@ class OneSegmentChangePointsTransform(OneSegmentTransform):
             prediction_series[tmp_series.index] = per_interval_prediction
         return prediction_series
 
+    @abstractmethod
     def _apply_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
         return df
 
+    @abstractmethod
     def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
         return df
 
@@ -104,7 +110,13 @@ class OneSegmentChangePointsTransform(OneSegmentTransform):
         return df
 
 
-class ChangePointsTransform(PerSegmentWrapper):
+class BaseChangePointsTransform(PerSegmentWrapper, ABC):
+    """Base class for all the change points based transforms."""
+
+    pass
+
+
+class ReversibleChangePointsTransform(BaseChangePointsTransform, ReversiblePerSegmentWrapper):
     """ChangePointsTrendTransform subtracts multiple linear trend from series.
 
     Warning
@@ -116,3 +128,17 @@ class ChangePointsTransform(PerSegmentWrapper):
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         return []
+
+
+class IrreversibleChangePointsTransform(BaseChangePointsTransform, IrreversiblePerSegmentWrapper, FutureMixin):
+    """ChangePointsTrendTransform subtracts multiple linear trend from series.
+
+    Warning
+    -------
+    This transform can suffer from look-ahead bias. For transforming data at some timestamp
+    it uses information from the whole train part.
+    """
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return [self.out_column]

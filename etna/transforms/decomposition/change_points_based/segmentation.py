@@ -1,14 +1,11 @@
-from typing import List
 from typing import Optional
 
 import pandas as pd
 
-from etna.transforms.base import FutureMixin
-from etna.transforms.base import IrreversiblePerSegmentWrapper
-from etna.transforms.decomposition.changepoints_based.base import ChangePointsTransform
-from etna.transforms.decomposition.changepoints_based.base import OneSegmentChangePointsTransform
-from etna.transforms.decomposition.changepoints_based.change_points_models import BaseChangePointsModelAdapter
-from etna.transforms.decomposition.changepoints_based.per_interval_models import ConstantPerIntervalModel
+from etna.transforms.decomposition.change_points_based.base import IrreversibleChangePointsTransform
+from etna.transforms.decomposition.change_points_based.base import OneSegmentChangePointsTransform
+from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.change_points_based.per_interval_models import ConstantPerIntervalModel
 
 
 class _OneSegmentChangePointsSegmentationTransform(OneSegmentChangePointsTransform):
@@ -43,11 +40,11 @@ class _OneSegmentChangePointsSegmentationTransform(OneSegmentChangePointsTransfo
         df.loc[:, self.out_column] = transformed_series.astype(int).astype("category")
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
         return df
 
 
-class ChangePointsSegmentationTransform(ChangePointsTransform, IrreversiblePerSegmentWrapper, FutureMixin):
+class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
     """ChangePointsSegmentationTransform make label encoder to change points.
 
     Warning
@@ -84,7 +81,3 @@ class ChangePointsSegmentationTransform(ChangePointsTransform, IrreversiblePerSe
             ),
             required_features=[in_column],
         )
-
-    def get_regressors_info(self) -> List[str]:
-        """Return the list with regressors created by the transform."""
-        return [self.out_column]

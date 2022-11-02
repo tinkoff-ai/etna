@@ -9,8 +9,8 @@ from etna.metrics import SMAPE
 from etna.models import CatBoostModelPerSegment
 from etna.pipeline import Pipeline
 from etna.transforms import ChangePointsSegmentationTransform
-from etna.transforms.decomposition.changepoints_based.change_points_models import RupturesChangePointsModel
-from etna.transforms.decomposition.changepoints_based.segmentation import _OneSegmentChangePointsSegmentationTransform
+from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_based.segmentation import _OneSegmentChangePointsSegmentationTransform
 
 OUT_COLUMN = "result"
 N_BKPS = 5

@@ -4,7 +4,7 @@ import pandas as pd
 from ruptures.base import BaseEstimator
 from ruptures.costs import CostLinear
 
-from etna.transforms.decomposition.changepoints_based.change_points_models.base import BaseChangePointsModelAdapter
+from etna.transforms.decomposition.change_points_based.change_points_models.base import BaseChangePointsModelAdapter
 
 
 class RupturesChangePointsModel(BaseChangePointsModelAdapter):
