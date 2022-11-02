@@ -109,7 +109,9 @@ def bin_search(
     Raises
     ______
     ValueError:
-        If max_value is so low for needed n_bkps or n_bkps is so high for this series
+        If max_value is too low for needed n_bkps
+    ValueError:
+        If n_bkps is too high for this series
     """
     zero_param = _get_n_bkps(series, change_point_model, **{opt_param: 0})
     max_param = _get_n_bkps(series, change_point_model, **{opt_param: max_value})
@@ -141,6 +143,7 @@ def get_ruptures_regularization(
     max_iters: int = 200,
 ) -> Dict[str, Dict[str, float]]:
     """Get regularization parameter values for given number of changepoints.
+
     It is assumed that as the regularization being selected increases, the number of change points decreases.
 
     Parameters
@@ -168,7 +171,9 @@ def get_ruptures_regularization(
     Raises
     ______
     ValueError:
-        If max_value is so low for needed n_bkps or n_bkps is so high for this series
+        If max_value is too low for needed n_bkps
+    ValueError:
+        If n_bkps is too high for this series
     """
     mode = OptimizationMode(mode)
     df = ts.to_pandas()
