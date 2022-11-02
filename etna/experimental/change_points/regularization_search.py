@@ -109,7 +109,7 @@ def bin_search(
     Raises
     ______
     ValueError:
-        If max_value is so low for needed n_bkps
+        If max_value is so low for needed n_bkps or n_bkps is so high for this series
     """
     zero_param = _get_n_bkps(series, change_point_model, **{opt_param: 0})
     max_param = _get_n_bkps(series, change_point_model, **{opt_param: max_value})
@@ -168,7 +168,7 @@ def get_ruptures_regularization(
     Raises
     ______
     ValueError:
-        If max_value is so low for needed n_bkps
+        If max_value is so low for needed n_bkps or n_bkps is so high for this series
     """
     mode = OptimizationMode(mode)
     df = ts.to_pandas()
