@@ -12,7 +12,7 @@ class ConstantPerIntervalModel(PerIntervalModel):
         """Init ConstantPerIntervalModel."""
         self.value: Optional[float] = None
 
-    def fit(self, value: float) -> "ConstantPerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "ConstantPerIntervalModel":
         """Fit constant model.
 
         Parameters
@@ -25,10 +25,10 @@ class ConstantPerIntervalModel(PerIntervalModel):
         self:
             fitted ConstantPerIntervalModel
         """
-        self.value = value
+        self.value = kwargs.get("value", None)
         return self
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict(self, features: np.ndarray, *args, **kwargs) -> np.ndarray:
         """Predict with constant.
 
         Parameters

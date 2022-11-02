@@ -1,17 +1,18 @@
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 from etna.transforms.decomposition.change_points_based.base import IrreversibleChangePointsTransform
-from etna.transforms.decomposition.change_points_based.base import OneSegmentChangePointsTransform
+from etna.transforms.decomposition.change_points_based.base import _OneSegmentChangePointsTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.change_points_based.per_interval_models import ConstantPerIntervalModel
 
 
-class _OneSegmentChangePointsSegmentationTransform(OneSegmentChangePointsTransform):
+class _OneSegmentChangePointsSegmentationTransform(_OneSegmentChangePointsTransform):
     """_OneSegmentChangePointsSegmentationTransform make label encoder to change points."""
 
-    def __init__(self, in_column: str, out_column: str, change_point_model: BaseChangePointsModelAdapter):
+    def __init__(self, in_column: str, out_column: str, change_points_model: BaseChangePointsModelAdapter):
         """Init _OneSegmentChangePointsSegmentationTransform.
         Parameters
         ----------
@@ -25,7 +26,7 @@ class _OneSegmentChangePointsSegmentationTransform(OneSegmentChangePointsTransfo
         self.out_column = out_column
         super().__init__(
             in_column=in_column,
-            change_point_model=change_point_model,
+            change_points_model=change_points_model,
             per_interval_model=ConstantPerIntervalModel(),
         )
 
@@ -34,7 +35,7 @@ class _OneSegmentChangePointsSegmentationTransform(OneSegmentChangePointsTransfo
         if self.intervals is None or self.per_interval_models is None:
             raise ValueError("Something went wrong on fit! Check the parameters of the transform.")
         for k, interval in enumerate(self.intervals):
-            self.per_interval_models[interval].fit(value=k)
+            self.per_interval_models[interval].fit(features=np.array([]), target=np.array([]), value=k)
 
     def _apply_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
         df.loc[:, self.out_column] = transformed_series.astype(int).astype("category")
@@ -56,7 +57,7 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
     def __init__(
         self,
         in_column: str,
-        change_point_model: BaseChangePointsModelAdapter,
+        change_points_model: BaseChangePointsModelAdapter,
         out_column: Optional[str] = None,
     ):
         """Init ChangePointsSegmentationTransform.
@@ -67,17 +68,17 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
             name of column to fit change point model
         out_column:
             result column name. If not given use ``self.__repr__()``
-        change_point_model:
+        change_points_model:
             model to get change points
         """
         self.in_column = in_column
         self.out_column = out_column if out_column is not None else self.__repr__()
-        self.change_point_model = change_point_model
+        self.change_points_model = change_points_model
         super().__init__(
             transform=_OneSegmentChangePointsSegmentationTransform(
                 in_column=self.in_column,
                 out_column=self.out_column,
-                change_point_model=self.change_point_model,
+                change_points_model=self.change_points_model,
             ),
             required_features=[in_column],
         )

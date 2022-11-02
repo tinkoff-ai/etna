@@ -33,8 +33,8 @@ def test_binseg_run_with_custom_costs(example_tsds: TSDataset, custom_cost_class
     """Check that binseg trend works with different custom costs."""
     bs = ChangePointsTrendTransform(
         in_column="target",
-        change_point_model=RupturesChangePointsModel(
-            change_point_model=Binseg(custom_cost=custom_cost_class()),
+        change_points_model=RupturesChangePointsModel(
+            change_points_model=Binseg(custom_cost=custom_cost_class()),
             n_bkps=5,
         ),
     )
@@ -49,8 +49,8 @@ def test_binseg_run_with_model(example_tsds: TSDataset, model: Any):
     """Check that binseg trend works with different models."""
     bs = ChangePointsTrendTransform(
         in_column="target",
-        change_point_model=RupturesChangePointsModel(
-            change_point_model=Binseg(model=model),
+        change_points_model=RupturesChangePointsModel(
+            change_points_model=Binseg(model=model),
             n_bkps=5,
         ),
     )

@@ -9,7 +9,7 @@ from etna.transforms.decomposition.change_points_based.per_interval_models.base 
 class StatisticsPerIntervalModel(PerIntervalModel):
     """StatisticsPerIntervalModel gets statistics from series and use them for prediction."""
 
-    def __init__(self, statistics_function: Callable[[np.ndarray], np.ndarray]):
+    def __init__(self, statistics_function: Callable[[np.ndarray], float]):
         """Init StatisticsPerIntervalModel.
 
         Parameters
@@ -18,9 +18,9 @@ class StatisticsPerIntervalModel(PerIntervalModel):
             function to compute statistics from series
         """
         self.statistics_function = statistics_function
-        self._statistics_value: Optional[float] = 0
+        self._statistics_value: Optional[float] = None
 
-    def fit(self, features: np.ndarray, target: np.ndarray) -> "StatisticsPerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "StatisticsPerIntervalModel":
         """Fit statistics from given target.
 
         Parameters
@@ -38,7 +38,7 @@ class StatisticsPerIntervalModel(PerIntervalModel):
         self._statistics_value = self.statistics_function(target)
         return self
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict(self, features: np.ndarray, *args, **kwargs) -> np.ndarray:
         """Build prediction from precomputed statistics.
 
         Parameters
@@ -56,7 +56,8 @@ class StatisticsPerIntervalModel(PerIntervalModel):
 
 
 class MeanPerIntervalModel(StatisticsPerIntervalModel):
-    """
+    """MeanPerIntervalModel.
+
     MeanPerIntervalModel is a shortcut for
     :py:class:`etna.transforms.decomposition.change_points_based.per_interval_models.statistics_based.StatisticsPerIntervalModel
     that uses mean value as statistics function.
@@ -67,7 +68,8 @@ class MeanPerIntervalModel(StatisticsPerIntervalModel):
 
 
 class MedianPerIntervalModel(StatisticsPerIntervalModel):
-    """
+    """MedianPerIntervalModel.
+
     MedianPerIntervalModel is a shortcut for
     :py:class:`etna.transforms.decomposition.change_points_based.per_interval_models.statistics_based.StatisticsPerIntervalModel
     that uses median value as statistics function.

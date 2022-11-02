@@ -16,8 +16,8 @@ from etna.transforms.decomposition import RupturesChangePointsModel
     (
         ChangePointsTrendTransform(
             in_column="target",
-            change_point_model=RupturesChangePointsModel(
-                change_point_model=Binseg(model="l2", jump=1, min_size=1),
+            change_points_model=RupturesChangePointsModel(
+                change_points_model=Binseg(model="l2", jump=1, min_size=1),
                 n_bkps=1,
             ),
         ),

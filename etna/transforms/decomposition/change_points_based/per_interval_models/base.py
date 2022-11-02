@@ -5,16 +5,18 @@ import numpy as np
 
 
 class PerIntervalModel(ABC):
-    """PerIntervalModel is a class to process intervals between change points
+    """Class to handle intervals in change point based transforms.
+
+    PerIntervalModel is a class to process intervals between change points
     in `~etna.transforms.decomposition.change_points_based` transforms.
     """
 
     @abstractmethod
-    def fit(self, *args, **kwargs) -> "PerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "PerIntervalModel":
         """Fit per interval model with given params."""
         pass
 
     @abstractmethod
-    def predict(self, *args, **kwargs) -> np.ndarray:
+    def predict(self, features: np.ndarray, *args, **kwargs) -> np.ndarray:
         """Make prediction with per interval model."""
         pass

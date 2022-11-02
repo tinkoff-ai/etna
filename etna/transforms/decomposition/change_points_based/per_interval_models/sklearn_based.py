@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from sklearn.base import RegressorMixin
 from sklearn.base import TransformerMixin
@@ -9,7 +11,7 @@ from etna.transforms.decomposition.change_points_based.per_interval_models.base 
 class SklearnPerIntervalModel(PerIntervalModel):
     """SklearnPerIntervalModel applies PerIntervalModel interface for sklearn-like regression models."""
 
-    def __init__(self, model: RegressorMixin = LinearRegression()):
+    def __init__(self, model: Optional[RegressorMixin] = None):
         """Init SklearnPerIntervalModel.
 
         Parameters
@@ -17,9 +19,9 @@ class SklearnPerIntervalModel(PerIntervalModel):
         model:
             model with sklearn interface to use for interval processing
         """
-        self.model = model
+        self.model = model if model is not None else LinearRegression()
 
-    def fit(self, features: np.ndarray, target: np.ndarray) -> "SklearnPerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "SklearnPerIntervalModel":
         """Fit model with given features and targets.
 
         Parameters
@@ -37,7 +39,7 @@ class SklearnPerIntervalModel(PerIntervalModel):
         self.model.fit(X=features, y=target)
         return self
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict(self, features: np.ndarray, *args, **kwargs) -> np.ndarray:
         """Make prediction for given features.
 
         Parameters
@@ -59,7 +61,7 @@ class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
     def __init__(self, preprocessing: TransformerMixin):
         self.preprocessing = preprocessing
 
-    def fit(self, features: np.ndarray, target: np.ndarray) -> "SklearnPreprocessing2PerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "SklearnPreprocessing2PerIntervalModel":
         """Fit preprocessing with given features and targets.
 
         Parameters
@@ -77,7 +79,7 @@ class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
         self.preprocessing.fit(X=features, y=target)
         return self
 
-    def predict(self, features: np.ndarray) -> np.ndarray:
+    def predict(self, features: np.ndarray, *args, **kwargs) -> np.ndarray:
         """Apply preprocessing to given features.
 
         Parameters

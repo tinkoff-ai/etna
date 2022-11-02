@@ -32,7 +32,7 @@ def simple_ar_df(random_seed):
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
+    change_point_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = change_point_model.get_change_points_intervals(df=ts_with_nans.to_pandas()["segment_1"], in_column="target")
 
@@ -55,7 +55,7 @@ def test_build_intervals():
 
 
 def test_get_change_points_intervals_format(simple_ar_df):
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
+    change_point_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     intervals = change_point_model.get_change_points_intervals(df=simple_ar_df, in_column="target")
     assert isinstance(intervals, list)
     assert len(intervals) == N_BKPS + 1
@@ -64,7 +64,7 @@ def test_get_change_points_intervals_format(simple_ar_df):
 
 
 def test_get_change_points_format(simple_ar_df):
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
+    change_point_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     intervals = change_point_model.get_change_points(df=simple_ar_df, in_column="target")
     assert isinstance(intervals, list)
     assert len(intervals) == N_BKPS

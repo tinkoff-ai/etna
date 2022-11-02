@@ -28,7 +28,7 @@ def test_fit_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     out_column = "regressor_result"
     trend_transform = _OneSegmentTrendTransform(
         in_column="target",
-        change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
         per_interval_model=SklearnPerIntervalModel(),
         out_column=out_column,
     )
@@ -45,7 +45,7 @@ def test_inverse_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
     """
     trend_transform = _OneSegmentTrendTransform(
         in_column="target",
-        change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
         per_interval_model=SklearnPerIntervalModel(),
         out_column="test",
     )
@@ -63,7 +63,7 @@ def test_fit_transform_many_segments(example_tsds: TSDataset) -> None:
     trend_transform = TrendTransform(
         in_column="target",
         per_interval_model=SklearnPerIntervalModel(),
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
         out_column=out_column,
     )
     trend_transform.fit_transform(example_tsds)
@@ -83,7 +83,7 @@ def test_inverse_transform_many_segments(example_tsds: TSDataset) -> None:
     trend_transform = TrendTransform(
         in_column="target",
         per_interval_model=SklearnPerIntervalModel(),
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
         out_column="test",
     )
     trend_transform.fit_transform(example_tsds)
@@ -99,7 +99,7 @@ def test_transform_inverse_transform(example_tsds: TSDataset) -> None:
     original_df = example_tsds.to_pandas().copy(deep=True)
     trend_transform = TrendTransform(
         in_column="target",
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(model="rbf"), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="rbf"), n_bkps=5),
         per_interval_model=SklearnPerIntervalModel(),
     )
     trend_transform.fit_transform(example_tsds)
@@ -113,7 +113,7 @@ def test_transform_interface_out_column(example_tsds: TSDataset) -> None:
     trend_transform = TrendTransform(
         in_column="target",
         per_interval_model=SklearnPerIntervalModel(),
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(model="rbf"), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="rbf"), n_bkps=5),
         out_column=out_column,
     )
     result = trend_transform.fit_transform(example_tsds).to_pandas()
@@ -126,7 +126,7 @@ def test_transform_interface_repr(example_tsds: TSDataset) -> None:
     trend_transform = TrendTransform(
         in_column="target",
         per_interval_model=SklearnPerIntervalModel(),
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(model="rbf"), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="rbf"), n_bkps=5),
     )
     out_column = f"{trend_transform.__repr__()}"
     result = trend_transform.fit_transform(example_tsds).to_pandas()
@@ -139,7 +139,7 @@ def test_fit_transform_with_nans_in_tails(ts_with_nans_in_tails, model):
     transform = TrendTransform(
         in_column="target",
         per_interval_model=SklearnPerIntervalModel(model=model()),
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(model="rbf", jump=1), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="rbf", jump=1), n_bkps=5),
         out_column="regressor_result",
     )
     transformed = transform.fit_transform(ts_with_nans_in_tails).to_pandas()
@@ -154,7 +154,7 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans, model):
     transform = TrendTransform(
         in_column="target",
         per_interval_model=SklearnPerIntervalModel(model=model()),
-        change_points_model=RupturesChangePointsModel(change_point_model=Binseg(model="rbf"), n_bkps=5),
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="rbf"), n_bkps=5),
     )
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         transform.fit_transform(ts_with_nans)

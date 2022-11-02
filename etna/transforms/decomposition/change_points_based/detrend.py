@@ -1,12 +1,12 @@
-from typing import List
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 from ruptures.detection import Binseg
 from sklearn.linear_model import LinearRegression
 
-from etna.transforms.decomposition.change_points_based.base import OneSegmentChangePointsTransform
 from etna.transforms.decomposition.change_points_based.base import ReversibleChangePointsTransform
+from etna.transforms.decomposition.change_points_based.base import _OneSegmentChangePointsTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
@@ -14,7 +14,7 @@ from etna.transforms.decomposition.change_points_based.per_interval_models impor
 from etna.transforms.utils import match_target_quantiles
 
 
-class _OneSegmentChangePointsTrendTransform(OneSegmentChangePointsTransform):
+class _OneSegmentChangePointsTrendTransform(_OneSegmentChangePointsTransform):
     """_OneSegmentChangePointsTransform subtracts multiple linear trend from series."""
 
     @staticmethod
@@ -49,11 +49,8 @@ class ChangePointsTrendTransform(ReversibleChangePointsTransform):
     def __init__(
         self,
         in_column: str,
-        change_point_model: BaseChangePointsModelAdapter = RupturesChangePointsModel(
-            change_point_model=Binseg(model="ar"),
-            n_bkps=5,
-        ),
-        per_interval_model: PerIntervalModel = SklearnPerIntervalModel(model=LinearRegression()),
+        change_points_model: Optional[BaseChangePointsModelAdapter] = None,
+        per_interval_model: Optional[PerIntervalModel] = None,
     ):
         """Init ChangePointsTrendTransform.
 
@@ -61,18 +58,27 @@ class ChangePointsTrendTransform(ReversibleChangePointsTransform):
         ----------
         in_column:
             name of column to apply transform to
-        change_point_model:
+        change_points_model:
             model to get trend change points
         per_interval_model:
             model to process intervals of segment
         """
         self.in_column = in_column
-        self.change_point_model = change_point_model
-        self.per_interval_model = per_interval_model
+        self.change_points_model = (
+            change_points_model
+            if change_points_model is not None
+            else RupturesChangePointsModel(
+                change_points_model=Binseg(model="ar"),
+                n_bkps=5,
+            )
+        )
+        self.per_interval_model = (
+            per_interval_model if per_interval_model is not None else SklearnPerIntervalModel(model=LinearRegression())
+        )
         super().__init__(
             transform=_OneSegmentChangePointsTrendTransform(
                 in_column=self.in_column,
-                change_point_model=self.change_point_model,
+                change_points_model=self.change_points_model,
                 per_interval_model=self.per_interval_model,
             ),
             required_features=[in_column],

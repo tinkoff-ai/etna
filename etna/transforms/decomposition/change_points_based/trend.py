@@ -1,4 +1,3 @@
-from typing import List
 from typing import Optional
 
 import pandas as pd
@@ -17,7 +16,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         self,
         in_column: str,
         out_column: str,
-        change_point_model: BaseChangePointsModelAdapter,
+        change_points_model: BaseChangePointsModelAdapter,
         per_interval_model: PerIntervalModel,
     ):
         """Init _OneSegmentTrendTransform.
@@ -28,7 +27,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
             name of column to apply transform to
         out_column:
             name of added column
-        change_point_model:
+        change_points_model:
             model to get trend change points
         per_interval_model:
             model to get trend from data
@@ -36,7 +35,7 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         self.out_column = out_column
         super().__init__(
             in_column=in_column,
-            change_point_model=change_point_model,
+            change_points_model=change_points_model,
             per_interval_model=per_interval_model,
         )
 
@@ -78,14 +77,14 @@ class TrendTransform(IrreversibleChangePointsTransform):
             If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
-        self.out_column = out_column
         self.per_interval_model = SklearnPerIntervalModel() if per_interval_model is None else per_interval_model
         self.change_points_model = change_points_model
+        self.out_column = out_column
         super().__init__(
             transform=_OneSegmentTrendTransform(
-                in_column=in_column,
+                in_column=self.in_column,
                 out_column=self.out_column if self.out_column is not None else f"{self.__repr__()}",
-                change_point_model=self.change_points_model,
+                change_points_model=self.change_points_model,
                 per_interval_model=self.per_interval_model,
             ),
             required_features=[in_column],

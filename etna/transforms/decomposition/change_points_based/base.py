@@ -19,27 +19,63 @@ from etna.transforms.decomposition.change_points_based.change_points_models impo
 from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
 
 
-class OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
+class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
     def __init__(
-        self, in_column: str, change_point_model: BaseChangePointsModelAdapter, per_interval_model: PerIntervalModel
+        self, in_column: str, change_points_model: BaseChangePointsModelAdapter, per_interval_model: PerIntervalModel
     ):
+        """Init _OneSegmentChangePointsTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of column to apple transform to
+        change_points_model:
+            model to get change points from data
+        per_interval_model:
+            model to process intervals between change points
+        """
         self.in_column = in_column
-        self.change_point_model = change_point_model
+        self.change_points_model = change_points_model
         self.per_interval_model = per_interval_model
         self.per_interval_models: Optional[Dict[Any, PerIntervalModel]] = None
         self.intervals: Optional[List[Tuple[Any, Any]]] = None
 
-    def _init_per_interval_models(self, intervals: List[Tuple[Any, Any]]):
+    def _init_per_interval_models(self, intervals: List[Tuple[Any, Any]]) -> Dict[Tuple[Any, Any], PerIntervalModel]:
+        """Multiply per interval model for given intervals."""
         per_interval_models = {interval: deepcopy(self.per_interval_model) for interval in intervals}
         return per_interval_models
 
     @staticmethod
     def _get_features(series: pd.Series) -> np.ndarray:
+        """Prepare features to train per interval model.
+
+        Parameters
+        ----------
+        series:
+            series to get features from
+
+        Returns
+        -------
+        features:
+            array with prepared features
+        """
         features = series.index.values.reshape((-1, 1))
         return features
 
     @staticmethod
     def _get_targets(series: pd.Series) -> np.ndarray:
+        """Get targets from given series to train per interval model.
+
+        Parameters
+        ----------
+        series:
+            series to get targets from
+
+        Returns
+        -------
+        targets:
+            array with targets
+        """
         return series.values
 
     def _fit_per_interval_models(self, series: pd.Series):
@@ -52,9 +88,21 @@ class OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
             targets = self._get_targets(series=tmp_series)
             self.per_interval_models[interval].fit(features=features, target=targets)
 
-    def fit(self, df: pd.DataFrame) -> "OneSegmentChangePointsTransform":
+    def fit(self, df: pd.DataFrame) -> "_OneSegmentChangePointsTransform":
+        """Fit transform.
+        Get no-changepoints intervals with change_points_model and fit per_interval_model on the intervals.
 
-        self.intervals = self.change_point_model.get_change_points_intervals(df=df, in_column=self.in_column)
+        Parameters
+        ----------
+        df:
+            dataframe to process
+
+        Returns
+        -------
+        self:
+            fitted _OneSegmentChangePointsTransform
+        """
+        self.intervals = self.change_points_model.get_change_points_intervals(df=df, in_column=self.in_column)
         self.per_interval_models = self._init_per_interval_models(intervals=self.intervals)
 
         series = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index(), self.in_column]
@@ -77,18 +125,58 @@ class OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
 
     @abstractmethod
     def _apply_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
-        return df
+        """Apply transformation given by per_interval_model.
+
+        Parameters
+        ----------
+        df:
+            original dataframe to apply transformation
+        transformed_series:
+            transformed series to be applied to df
+
+        Returns
+        -------
+        transformed_df:
+            dataframe with applied transformation
+        """
+        pass
 
     @abstractmethod
     def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
-        return df
+        """Apply inverse transformation given by per_interval_model.
+
+        Parameters
+        ----------
+        df:
+            transformed dataframe to apply inverse transformation
+        transformed_series:
+            transformed series to be applied to df
+
+        Returns
+        -------
+        transformed_df:
+            dataframe with inverse transformation
+        """
+        pass
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Transform data from df.
+
+        Parameters
+        ----------
+        df:
+            dataframe to apply transformation to
+
+        Returns
+        -------
+        transformed_df:
+            dataframe with applied transformation
+        """
         df._is_copy = False
         series = df[self.in_column]
         transformed_series = self._predict_per_interval_model(series=series)
-        df = self._apply_transformation(df=df, transformed_series=transformed_series)
-        return df
+        transformed_df = self._apply_transformation(df=df, transformed_series=transformed_series)
+        return transformed_df
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Split df to intervals of stable trend according to previous change point detection and add trend to each one.
@@ -139,6 +227,8 @@ class IrreversibleChangePointsTransform(BaseChangePointsTransform, IrreversibleP
     it uses information from the whole train part.
     """
 
+    out_column: Optional[str] = None
+
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return [self.out_column]
+        return [self.out_column]  # type: ignore

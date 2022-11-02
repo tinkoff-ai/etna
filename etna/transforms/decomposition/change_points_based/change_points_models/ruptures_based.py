@@ -10,7 +10,7 @@ from etna.transforms.decomposition.change_points_based.change_points_models.base
 class RupturesChangePointsModel(BaseChangePointsModelAdapter):
     """RupturesChangePointsModel is ruptures change point models adapter."""
 
-    def __init__(self, change_point_model: BaseEstimator, **change_point_model_predict_params):
+    def __init__(self, change_points_model: BaseEstimator, **change_points_model_predict_params):
         """Init RupturesChangePointsModel.
         @ TODO: add arg names for pen/eps/n_bkps or clear error message about its validation
 
@@ -21,8 +21,8 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method
         """
-        self.change_point_model = change_point_model
-        self.model_predict_params = change_point_model_predict_params
+        self.change_points_model = change_points_model
+        self.change_points_model_predict_params = change_points_model_predict_params
 
     def get_change_points(self, df: pd.DataFrame, in_column: str) -> List[pd.Timestamp]:
         """Find change points within one segment.
@@ -44,11 +44,11 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
 
         signal = series.to_numpy()
-        if isinstance(self.change_point_model.cost, CostLinear):
+        if isinstance(self.change_points_model.cost, CostLinear):
             signal = signal.reshape((-1, 1))
         timestamp = series.index
-        self.change_point_model.fit(signal=signal)
+        self.change_points_model.fit(signal=signal)
         # last point in change points is the first index after the series
-        change_points_indices = self.change_point_model.predict(**self.model_predict_params)[:-1]
+        change_points_indices = self.change_points_model.predict(**self.change_points_model_predict_params)[:-1]
         change_points = [timestamp[idx] for idx in change_points_indices]
         return change_points
