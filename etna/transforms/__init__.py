@@ -6,6 +6,7 @@ from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.base import Transform
 from etna.transforms.decomposition import BaseChangePointsTransform
+from etna.transforms.decomposition import ChangePointsLevelTransform
 from etna.transforms.decomposition import ChangePointsSegmentationTransform
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import IrreversibleChangePointsTransform
