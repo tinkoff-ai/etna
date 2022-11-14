@@ -1,12 +1,21 @@
 import inspect
+import json
+import pathlib
+import pickle
+import sys
 import warnings
 from enum import Enum
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Tuple
+from typing import cast
+from zipfile import ZipFile
 
 from sklearn.base import BaseEstimator
+
+from etna.core.saving import AbstractSaveable
 
 
 class BaseMixin:
@@ -89,3 +98,82 @@ class StringEnumWithRepr(str, Enum):
     def __repr__(self):
         """Get string representation for enum string so that enum can be created from it."""
         return self.value.__repr__()
+
+
+def get_etna_version() -> Tuple[int, int, int]:
+    """Get current version of etna library."""
+    python_version = sys.version_info
+    if python_version[0] == 3 and python_version[1] >= 8:
+        from importlib.metadata import version
+
+        str_version = version("etna")
+        result = tuple([int(x) for x in str_version.split(".")])[:3]
+        result = cast(Tuple[int, int, int], result)
+        return result
+    else:
+        import pkg_resources
+
+        str_version = pkg_resources.get_distribution("etna").version
+        result = tuple([int(x) for x in str_version.split(".")])[:3]
+        result = cast(Tuple[int, int, int], result)
+        return result
+
+
+class SaveMixin(AbstractSaveable):
+    """Basic implementation of AbstractSaveable abstract class.
+
+    It saves object to the zip archive with 2 files:
+
+    * metadata.json: contains library version and class name.
+
+    * object.pkl: pickled object.
+    """
+
+    def save(self, path: pathlib.Path):
+        """Save the object.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        """
+        with ZipFile(path, "w") as zip_file:
+            metadata = {
+                "etna_version": get_etna_version(),
+                "class": inspect.getmodule(self).__name__,  # type: ignore
+            }
+            metadata_str = json.dumps(metadata)
+            metadata_bytes = metadata_str.encode("utf-8")
+            with zip_file.open("metadata.json", "w") as output_file:
+                output_file.write(metadata_bytes)
+
+            with zip_file.open("object.pkl", "w") as output_file:
+                pickle.dump(self, output_file)
+
+    @classmethod
+    def load(cls, source: pathlib.Path) -> "SaveMixin":
+        """Load an object.
+
+        Parameters
+        ----------
+        source:
+            Path to load object from.
+        """
+        with ZipFile(source, "r") as zip_file:
+            with zip_file.open("metadata.json", "r") as input_file:
+                metadata_bytes = input_file.read()
+            metadata_str = metadata_bytes.decode("utf-8")
+            metadata = json.loads(metadata_str)
+            current_etna_version = get_etna_version()
+            saved_etna_version = tuple(metadata["etna_version"])
+
+            # if major version is different give a warning
+            if current_etna_version[0] != saved_etna_version[0] or current_etna_version[:2] < saved_etna_version[:2]:
+                current_etna_version_str = ".".join([str(x) for x in current_etna_version])
+                saved_etna_version_str = ".".join([str(x) for x in saved_etna_version])
+                warnings.warn(
+                    f"The object was saved under etna version {saved_etna_version_str} but running version is {current_etna_version_str}, this can cause problems with compatibility!"
+                )
+
+            with zip_file.open("object.pkl", "r") as input_file:
+                return pickle.load(input_file)
