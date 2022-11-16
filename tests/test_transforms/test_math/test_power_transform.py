@@ -10,6 +10,7 @@ from etna.datasets import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms.math import BoxCoxTransform
 from etna.transforms.math import YeoJohnsonTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -107,3 +108,11 @@ def test_inverse_transform_one_column(positive_df: pd.DataFrame, preprocessing_c
 def test_fit_transform_with_nans(preprocessing_class, mode, ts_diff_endings):
     preprocess = preprocessing_class(in_column="target", mode=mode)
     ts_diff_endings.fit_transform([AddConstTransform(in_column="target", value=100)] + [preprocess])
+
+
+@pytest.mark.parametrize("transform_constructor", (BoxCoxTransform, YeoJohnsonTransform))
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_save_load(transform_constructor, mode, positive_df):
+    transform = transform_constructor(in_column="target", mode=mode)
+    ts = TSDataset(df=positive_df, freq="D")
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

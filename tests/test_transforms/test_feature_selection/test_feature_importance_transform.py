@@ -18,6 +18,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms.feature_selection import TreeFeatureSelectionTransform
 from etna.transforms.feature_selection.feature_importance import MRMRFeatureSelectionTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -269,3 +270,17 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
         if column.startswith("regressor"):
             selected_regressors.add(column)
     assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=3),
+        MRMRFeatureSelectionTransform(
+            relevance_table=ModelRelevanceTable(), top_k=3, model=RandomForestRegressor(random_state=42)
+        ),
+        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3),
+    ],
+)
+def test_save_load(transform, ts_with_regressors):
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_regressors)

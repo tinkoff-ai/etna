@@ -15,8 +15,6 @@ from zipfile import ZipFile
 
 from sklearn.base import BaseEstimator
 
-from etna.core.saving import AbstractSaveable
-
 
 class BaseMixin:
     """Base mixin for etna classes."""
@@ -119,7 +117,7 @@ def get_etna_version() -> Tuple[int, int, int]:
         return result
 
 
-class SaveMixin(AbstractSaveable):
+class SaveMixin:
     """Basic implementation of AbstractSaveable abstract class.
 
     It saves object to the zip archive with 2 files:
@@ -151,15 +149,15 @@ class SaveMixin(AbstractSaveable):
                 pickle.dump(self, output_file)
 
     @classmethod
-    def load(cls, source: pathlib.Path) -> "SaveMixin":
+    def load(cls, path: pathlib.Path) -> Any:
         """Load an object.
 
         Parameters
         ----------
-        source:
+        path:
             Path to load object from.
         """
-        with ZipFile(source, "r") as zip_file:
+        with ZipFile(path, "r") as zip_file:
             with zip_file.open("metadata.json", "r") as input_file:
                 metadata_bytes = input_file.read()
             metadata_str = metadata_bytes.decode("utf-8")
@@ -172,7 +170,8 @@ class SaveMixin(AbstractSaveable):
                 current_etna_version_str = ".".join([str(x) for x in current_etna_version])
                 saved_etna_version_str = ".".join([str(x) for x in saved_etna_version])
                 warnings.warn(
-                    f"The object was saved under etna version {saved_etna_version_str} but running version is {current_etna_version_str}, this can cause problems with compatibility!"
+                    f"The object was saved under etna version {saved_etna_version_str} "
+                    f"but running version is {current_etna_version_str}, this can cause problems with compatibility!"
                 )
 
             with zip_file.open("object.pkl", "r") as input_file:

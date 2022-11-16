@@ -4,6 +4,7 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.transforms.feature_selection import FilterFeaturesTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -189,3 +190,16 @@ def test_inverse_transform_back_included_columns(ts_with_features, columns, retu
     assert columns_inversed == set(expected_columns)
     for column in ts_with_features.columns:
         assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        FilterFeaturesTransform(include=["target"], return_features=True),
+        FilterFeaturesTransform(include=["target"], return_features=False),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
+    ],
+)
+def test_save_load(transform, ts_with_features):
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_features)

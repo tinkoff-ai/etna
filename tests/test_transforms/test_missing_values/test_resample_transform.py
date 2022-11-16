@@ -1,6 +1,7 @@
 import pytest
 
 from etna.transforms.missing_values import ResampleWithDistributionTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def test_fail_on_incompatible_freq(incompatible_freq_ts):
@@ -78,3 +79,13 @@ def test_fit_transform_with_nans(daily_exog_ts_diff_endings):
         in_column="regressor_exog", inplace=True, distribution_column="target"
     )
     daily_exog_ts_diff_endings.fit_transform([resampler])
+
+
+# TODO: make issue with bug
+@pytest.mark.parametrize("inplace", [False, True])
+def test_save_load(inplace, daily_exog_ts):
+    daily_exog_ts = daily_exog_ts["ts"]
+    transform = ResampleWithDistributionTransform(
+        in_column="regressor_exog", inplace=inplace, distribution_column="target"
+    )
+    assert_transformation_equals_loaded_original(transform=transform, ts=daily_exog_ts)

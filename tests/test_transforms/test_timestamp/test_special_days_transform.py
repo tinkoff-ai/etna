@@ -3,8 +3,10 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp.special_days import _OneSegmentSpecialDaysTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture()
@@ -189,3 +191,9 @@ def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
     ts_diff_endings.fit_transform([transform])
+
+
+def test_save_load(df_with_specials):
+    ts = TSDataset(df=df_with_specials, freq="D")
+    transform = SpecialDaysTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

@@ -7,9 +7,11 @@ from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture()
@@ -163,3 +165,26 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
     ts_diff_endings.fit_transform([transform])
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+    ),
+)
+def test_save_load(transform, outliers_solid_tsds):
+    assert_transformation_equals_loaded_original(transform=transform, ts=outliers_solid_tsds)
+
+
+@pytest.mark.xfail(reason="Working, but should be fixed")
+@pytest.mark.parametrize(
+    "transform",
+    (
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+        PredictionIntervalOutliersTransform(in_column="target", model=SARIMAXModel),
+    ),
+)
+def test_save_load_prediction_interval(transform, outliers_solid_tsds):
+    assert_transformation_equals_loaded_original(transform=transform, ts=outliers_solid_tsds)

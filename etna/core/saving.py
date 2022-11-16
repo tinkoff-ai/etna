@@ -1,6 +1,7 @@
 import pathlib
 from abc import ABC
 from abc import abstractmethod
+from typing import Any
 
 
 class AbstractSaveable(ABC):
@@ -19,12 +20,12 @@ class AbstractSaveable(ABC):
 
     @classmethod
     @abstractmethod
-    def load(cls, source: pathlib.Path) -> "AbstractSaveable":
+    def load(cls, path: pathlib.Path) -> Any:
         """Load an object.
 
         Parameters
         ----------
-        source:
+        path:
             Path to load object from.
         """
         pass
