@@ -5,6 +5,8 @@ import pytest
 from etna.analysis.eda_utils import _cross_correlation
 from etna.analysis.eda_utils import _resample
 from etna.analysis.eda_utils import _seasonal_split
+from etna.analysis.eda_utils import sample_acf_plot
+from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.eda_utils import seasonal_plot
 from etna.datasets import TSDataset
 
@@ -215,3 +217,12 @@ def test_resample(timestamp, values, resample_freq, aggregation, expected_timest
 )
 def test_dummy_seasonal_plot(freq, cycle, additional_params, ts_with_different_series_length):
     seasonal_plot(ts=ts_with_different_series_length, freq=freq, cycle=cycle, **additional_params)
+
+
+def test_warnings_acf(example_tsds):
+    with pytest.warns(
+        DeprecationWarning,
+        match="DeprecationWarning: This function is deprecated and will be removed in etna=1.14.0; Please use acf_plot instead",
+    ):
+        sample_acf_plot(example_tsds)
+        sample_pacf_plot(example_tsds)

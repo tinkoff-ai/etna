@@ -166,6 +166,66 @@ def cross_corr_plot(
         ax[i].xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
+def acf_plot(
+    ts: "TSDataset",
+    n_segments: int = 10,
+    lags: int = 21,
+    partial: bool = False,
+    columns_num: int = 2,
+    segments: Optional[List[str]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """
+    Autocorrelation and partial autocorrelation plot for multiple timeseries.
+
+    Notes
+    -----
+    `Definition of autocorrelation <https://en.wikipedia.org/wiki/Autocorrelation>`_.
+
+    `Definition of partial autocorrelation <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    n_segments:
+        number of random segments to plot
+    lags:
+        number of timeseries shifts for cross-correlation
+    segments:
+        segments to plot
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    nan_flag_segments = False
+    if segments is None:
+        nan_flag_segments = True
+        segments = sorted(ts.segments)
+
+    plot = plot_pacf if partial else plot_acf
+    title = "Partial Autocorrelation" if partial else "Autocorrelation"
+
+    k = min(n_segments, len(segments))
+    fig, ax = prepare_axes(num_plots=k, columns_num=columns_num, figsize=figsize)
+    fig.suptitle(title, fontsize=16)
+
+    if nan_flag_segments:
+        used_segments = sorted(np.random.choice(segments, size=k, replace=False))
+    else:
+        used_segments = segments
+    for i, name in enumerate(used_segments):
+        df_slice = ts[:, name, :][name]
+
+        if df_slice["target"].isna().any():
+            print("yes")
+            df_slice["target"].dropna(inplace=True)
+            warnings.warn("Values with NaN dropped!")
+
+        plot(x=df_slice["target"].values, ax=ax[i], lags=lags)
+        ax[i].set_title(name)
+    plt.show()
+
+
 def sample_acf_plot(
     ts: "TSDataset",
     n_segments: int = 10,
@@ -175,7 +235,6 @@ def sample_acf_plot(
 ):
     """
     Autocorrelation plot for multiple timeseries.
-
 
     Notes
     -----
@@ -194,23 +253,11 @@ def sample_acf_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if segments is None:
-        segments = sorted(ts.segments)
-
-    k = min(n_segments, len(segments))
-    columns_num = min(2, k)
-    rows_num = math.ceil(k / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
-    ax = ax.ravel()
-    fig.suptitle("Autocorrelation", fontsize=16)
-    for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
-        df_slice = ts[:, name, :][name]
-        plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)
-        ax[i].set_title(name)
-        ax[i].grid()
-    plt.show()
+    acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=False)
+    warnings.warn(
+        "DeprecationWarning: This function is deprecated and will be removed in etna=1.14.0; Please use acf_plot instead",
+        DeprecationWarning,
+    )
 
 
 def sample_pacf_plot(
@@ -240,23 +287,11 @@ def sample_pacf_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if segments is None:
-        segments = sorted(ts.segments)
-
-    k = min(n_segments, len(segments))
-    columns_num = min(2, k)
-    rows_num = math.ceil(k / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
-    ax = ax.ravel()
-    fig.suptitle("Partial Autocorrelation", fontsize=16)
-    for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
-        df_slice = ts[:, name, :][name]
-        plot_pacf(x=df_slice["target"].values, ax=ax[i], lags=lags)
-        ax[i].set_title(name)
-        ax[i].grid()
-    plt.show()
+    acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=True)
+    warnings.warn(
+        "DeprecationWarning: This function is deprecated and will be removed in etna=1.14.0; Please use acf_plot instead",
+        DeprecationWarning,
+    )
 
 
 def distribution_plot(
