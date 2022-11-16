@@ -1,12 +1,9 @@
 import functools
-import inspect
 from abc import ABC
 from abc import abstractmethod
-from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import Iterable
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Sized
@@ -20,6 +17,7 @@ from etna import SETTINGS
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
+from etna.models.decorators import log_decorator
 
 if SETTINGS.torch_required:
     import torch
@@ -34,83 +32,17 @@ else:
     LightningModule = Mock  # type: ignore
 
 
-# TODO: make PyCharm see signature of decorated method
-def log_decorator(f):
-    """Add logging for method of the model."""
-    patch_dict = {"function": f.__name__, "line": inspect.getsourcelines(f)[1], "name": inspect.getmodule(f).__name__}
-
-    @functools.wraps(f)
-    def wrapper(self, *args, **kwargs):
-        tslogger.log(f"Calling method {f.__name__} of {self.__class__.__name__}", **patch_dict)
-        result = f(self, *args, **kwargs)
-        return result
-
-    return wrapper
-
-
-class Model(ABC, BaseMixin):
-    """Class for holding specific models - autoregression and simple regressions."""
-
-    def __init__(self):
-        self._models = None
-
-    @abstractmethod
-    def fit(self, ts: TSDataset) -> "Model":
-        """Fit model.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-
-        Returns
-        -------
-        :
-            Model after fit
-        """
-        pass
-
-    @abstractmethod
-    def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
-    ) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-
-        Returns
-        -------
-        TSDataset
-            Models result
-        """
-        pass
-
-    @staticmethod
-    def _forecast_segment(model, segment: Union[str, List[str]], ts: TSDataset) -> pd.DataFrame:
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features)
-        segment_predict = pd.DataFrame({"target": segment_predict})
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
-
-
-class FitAbstractModel(ABC):
+class AbstractModel(ABC, BaseMixin):
     """Interface for model with fit method."""
 
+    @property
     @abstractmethod
-    def fit(self, ts: TSDataset) -> "FitAbstractModel":
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model."""
+        pass
+
+    @abstractmethod
+    def fit(self, ts: TSDataset) -> "AbstractModel":
         """Fit model.
 
         Parameters
@@ -145,8 +77,16 @@ class FitAbstractModel(ABC):
         pass
 
 
-class ForecastAbstractModel(ABC):
-    """Interface for model with forecast method."""
+class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
+    """Interface for models that don't support prediction intervals and don't need context for prediction."""
+
+    @property
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model.
+
+        Zero for this model.
+        """
+        return 0
 
     @abstractmethod
     def forecast(self, ts: TSDataset) -> TSDataset:
@@ -164,9 +104,75 @@ class ForecastAbstractModel(ABC):
         """
         pass
 
+    @abstractmethod
+    def predict(self, ts: TSDataset) -> TSDataset:
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
-class PredictIntervalAbstractModel(ABC):
-    """Interface for model with forecast method that creates prediction interval."""
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
+    """Interface for models that don't support prediction intervals and need context for prediction."""
+
+    @abstractmethod
+    def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        pass
+
+
+class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
+    """Interface for models that support prediction intervals and don't need context for prediction."""
+
+    @property
+    def context_size(self) -> int:
+        """Context size of the model. Determines how many history points do we ask to pass to the model.
+
+        Zero for this model.
+        """
+        return 0
 
     @abstractmethod
     def forecast(
@@ -190,159 +196,11 @@ class PredictIntervalAbstractModel(ABC):
         """
         pass
 
-
-class PerSegmentBaseModel(FitAbstractModel, BaseMixin):
-    """Base class for holding specific models for per-segment prediction."""
-
-    def __init__(self, base_model: Any):
-        """
-        Init PerSegmentBaseModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        self._base_model = base_model
-        self._models: Optional[Dict[str, Any]] = None
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "PerSegmentBaseModel":
-        """Fit model.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features
-
-        Returns
-        -------
-        :
-            Model after fit
-        """
-        self._models = {}
-        for segment in ts.segments:
-            self._models[segment] = deepcopy(self._base_model)
-
-        for segment, model in self._models.items():
-            segment_features = ts[:, segment, :]
-            segment_features = segment_features.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
-            segment_features = segment_features.droplevel("segment", axis=1)
-            segment_features = segment_features.reset_index()
-            model.fit(df=segment_features, regressors=ts.regressors)
-        return self
-
-    def _get_model(self) -> Dict[str, Any]:
-        """Get internal etna base models that are used inside etna class.
-
-        Returns
-        -------
-        :
-           dictionary where key is segment and value is internal model
-        """
-        if self._models is None:
-            raise ValueError("Can not get the dict with base models, the model is not fitted!")
-        return self._models
-
-    def get_model(self) -> Dict[str, Any]:
-        """Get internal models that are used inside etna class.
-
-        Internal model is a model that is used inside etna to forecast segments,
-        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
-
-        Returns
-        -------
-        :
-           dictionary where key is segment and value is internal model
-        """
-        internal_models = {}
-        for segment, base_model in self._get_model().items():
-            if not hasattr(base_model, "get_model"):
-                raise NotImplementedError(
-                    f"get_model method is not implemented for {self._base_model.__class__.__name__}"
-                )
-            internal_models[segment] = base_model.get_model()
-        return internal_models
-
-    @staticmethod
-    def _forecast_segment(model: Any, segment: str, ts: TSDataset, *args, **kwargs) -> pd.DataFrame:
-        """Make predictions for one segment."""
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
-        segment_features = segment_features.reset_index()
-        dates = segment_features["timestamp"]
-        dates.reset_index(drop=True, inplace=True)
-        segment_predict = model.predict(df=segment_features, *args, **kwargs)
-        if isinstance(segment_predict, np.ndarray):
-            segment_predict = pd.DataFrame({"target": segment_predict})
-        segment_predict["segment"] = segment
-        segment_predict["timestamp"] = dates
-        return segment_predict
-
-
-class PerSegmentModel(PerSegmentBaseModel, ForecastAbstractModel):
-    """Class for holding specific models for per-segment prediction."""
-
-    def __init__(self, base_model: Any):
-        """
-        Init PerSegmentBaseModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        super().__init__(base_model=base_model)
-
-    @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataframe with features
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        result_list = list()
-        for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(model=model, segment=segment, ts=ts)
-            result_list.append(segment_predict)
-
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
-        ts.inverse_transform()
-        return ts
-
-
-class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbstractModel):
-    """Class for holding specific models for per-segment prediction which are able to build prediction intervals."""
-
-    def __init__(self, base_model: Any):
-        """
-        Init PerSegmentPredictionIntervalModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        super().__init__(base_model=base_model)
-
-    @log_decorator
-    def forecast(
+    @abstractmethod
+    def predict(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
-        """Make predictions.
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
@@ -358,94 +216,69 @@ class PerSegmentPredictionIntervalModel(PerSegmentBaseModel, PredictIntervalAbst
         :
             Dataset with predictions
         """
-        result_list = list()
-        for segment, model in self._get_model().items():
-            segment_predict = self._forecast_segment(
-                model=model, segment=segment, ts=ts, prediction_interval=prediction_interval, quantiles=quantiles
-            )
-            result_list.append(segment_predict)
-
-        result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
-        df = df.combine_first(result_df).reset_index()
-
-        df = TSDataset.to_dataset(df)
-        ts.df = df
-        ts.inverse_transform()
-        return ts
+        pass
 
 
-class MultiSegmentModel(FitAbstractModel, ForecastAbstractModel, BaseMixin):
-    """Class for holding specific models for per-segment prediction."""
+class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
+    """Interface for models that support prediction intervals and need context for prediction."""
 
-    def __init__(self, base_model: Any):
-        """
-        Init MultiSegmentModel.
-
-        Parameters
-        ----------
-        base_model:
-            Internal model which will be used to forecast segments, expected to have fit/predict interface
-        """
-        self._base_model = base_model
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "MultiSegmentModel":
-        """Fit model.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features
-
-        Returns
-        -------
-        :
-            Model after fit
-        """
-        df = ts.to_pandas(flatten=True)
-        df = df.dropna()  # TODO: https://github.com/tinkoff-ai/etna/issues/557
-        df = df.drop(columns="segment")
-        self._base_model.fit(df=df, regressors=ts.regressors)
-        return self
-
-    @log_decorator
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    @abstractmethod
+    def forecast(
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        horizon = len(ts.df)
-        x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
-        y = self._base_model.predict(x).reshape(-1, horizon).T
-        ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
-        return ts
+        pass
 
-    def get_model(self) -> Any:
-        """Get internal model that is used inside etna class.
+    @abstractmethod
+    def predict(
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+    ) -> TSDataset:
+        """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
-        Internal model is a model that is used inside etna to forecast segments,
-        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
 
         Returns
         -------
         :
-           Internal model
+            Dataset with predictions
         """
-        if not hasattr(self._base_model, "get_model"):
-            raise NotImplementedError(f"get_model method is not implemented for {self._base_model.__class__.__name__}")
-        return self._base_model.get_model()
+        pass
 
 
 class BaseAdapter(ABC):
@@ -508,24 +341,6 @@ class DeepAbstractNet(ABC):
 
 class DeepBaseAbstractModel(ABC):
     """Interface for holding class of etna native deep models."""
-
-    @abstractmethod
-    def forecast(self, ts: TSDataset, horizon: int) -> TSDataset:
-        """Make predictions.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with features and expected decoder length for context
-        horizon:
-            Horizon to predict for
-
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        pass
 
     @abstractmethod
     def raw_fit(self, torch_dataset: "Dataset") -> "DeepBaseAbstractModel":
@@ -613,7 +428,7 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         return loss
 
 
-class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
+class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredAbstractModel):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(
@@ -671,6 +486,11 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         self.val_dataloader_params = {} if val_dataloader_params is None else val_dataloader_params
         self.trainer_params = {} if trainer_params is None else trainer_params
         self.split_params = {} if split_params is None else split_params
+
+    @property
+    def context_size(self) -> int:
+        """Context size of the model."""
+        return self.encoder_length
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "DeepBaseModel":
@@ -779,15 +599,18 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         return predictions_dict
 
     @log_decorator
-    def forecast(self, ts: "TSDataset", horizon: int) -> "TSDataset":
+    def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
         """Make predictions.
+
+        This method will make autoregressive predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features and expected decoder length for context
-        horizon:
-            Horizon to predict for
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
 
         Returns
         -------
@@ -796,18 +619,40 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         """
         test_dataset = ts.to_torch_dataset(
             make_samples=functools.partial(
-                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=horizon
+                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=prediction_size
             ),
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + horizon)
+        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + prediction_size)
         for (segment, feature_nm), value in predictions.items():
-            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:horizon, :]
+            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :]
 
         future_ts.inverse_transform()
 
         return future_ts
+
+    @log_decorator
+    def predict(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+        """Make predictions.
+
+        This method will make predictions using true values instead of predicted on a previous step.
+        It can be useful for making in-sample forecasts.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        raise NotImplementedError("Method predict isn't currently implemented!")
 
     def get_model(self) -> "DeepBaseNet":
         """Get model.
@@ -820,31 +665,27 @@ class DeepBaseModel(FitAbstractModel, DeepBaseAbstractModel, BaseMixin):
         return self.net
 
 
-class MultiSegmentPredictionIntervalModel(FitAbstractModel, PredictIntervalAbstractModel, BaseMixin):
-    """Class for holding specific models for multi-segment prediction which are able to build prediction intervals."""
+ModelType = Union[
+    NonPredictionIntervalContextIgnorantAbstractModel,
+    NonPredictionIntervalContextRequiredAbstractModel,
+    PredictionIntervalContextIgnorantAbstractModel,
+    PredictionIntervalContextRequiredAbstractModel,
+]
 
-    def __init__(self):
-        """Init MultiSegmentPredictionIntervalModel."""
-        self.model = None
+ContextRequiredModelType = Union[
+    NonPredictionIntervalContextRequiredAbstractModel,
+    PredictionIntervalContextRequiredAbstractModel,
+]
 
-    def get_model(self) -> Any:
-        """Get internal model that is used inside etna class.
+ContextIgnorantModelType = Union[
+    NonPredictionIntervalContextIgnorantAbstractModel,
+    PredictionIntervalContextIgnorantAbstractModel,
+]
 
-        Internal model is a model that is used inside etna to forecast segments,
-        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+PredictionIntervalModelType = Union[
+    PredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextRequiredAbstractModel
+]
 
-        Returns
-        -------
-        :
-           Internal model
-        """
-        return self.model
-
-
-BaseModel = Union[
-    PerSegmentModel,
-    PerSegmentPredictionIntervalModel,
-    MultiSegmentModel,
-    DeepBaseModel,
-    MultiSegmentPredictionIntervalModel,
+NonPredictionIntervalModelType = Union[
+    NonPredictionIntervalContextIgnorantAbstractModel, NonPredictionIntervalContextRequiredAbstractModel
 ]

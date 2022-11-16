@@ -252,6 +252,7 @@ filterwarnings = [
     "ignore: Feature names only support names that are all strings",
     "ignore: Given top_k=.* is less than n_segments. Algo will filter data without Gale-Shapley run.",
     "ignore: Call to deprecated create function", # protobuf warning
+    "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
     "ignore: `tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 && pip install protobuf==3.20.1`",
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning"
 ]

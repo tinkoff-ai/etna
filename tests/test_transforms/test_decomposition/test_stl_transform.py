@@ -153,8 +153,8 @@ def test_forecast(ts_trend_seasonal, model_stl):
     ts_train.fit_transform(transforms=[transform])
     model = NaiveModel()
     model.fit(ts_train)
-    ts_future = ts_train.make_future(3)
-    ts_forecast = model.forecast(ts_future)
+    ts_future = ts_train.make_future(future_steps=3, tail_steps=model.context_size)
+    ts_forecast = model.forecast(ts_future, prediction_size=3)
     for segment in ts_forecast.segments:
         np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.1)
 
