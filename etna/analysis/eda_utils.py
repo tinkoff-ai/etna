@@ -184,6 +184,8 @@ def acf_plot(
 
     `Definition of partial autocorrelation <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
 
+    This function removes any NaNs before plotting.
+
     Parameters
     ----------
     ts:
@@ -192,34 +194,32 @@ def acf_plot(
         number of random segments to plot
     lags:
         number of timeseries shifts for cross-correlation
+    partial:
+        plot autocorrelation or partial autocorrelation
+    columns_num:
+        number of columns in subplots
     segments:
         segments to plot
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    nan_flag_segments = False
+    df_pd = ts.to_pandas(flatten=True)
     if segments is None:
-        nan_flag_segments = True
-        segments = sorted(ts.segments)
+        exist_segments = df_pd.segment.unique()
+        chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
+        segments = list(chosen_segments)
 
     plot = plot_pacf if partial else plot_acf
     title = "Partial Autocorrelation" if partial else "Autocorrelation"
 
-    k = min(n_segments, len(segments))
-    fig, ax = prepare_axes(num_plots=k, columns_num=columns_num, figsize=figsize)
+    fig, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     fig.suptitle(title, fontsize=16)
 
-    if nan_flag_segments:
-        used_segments = sorted(np.random.choice(segments, size=k, replace=False))
-    else:
-        used_segments = segments
-    for i, name in enumerate(used_segments):
+    for i, name in enumerate(segments):
         df_slice = ts[:, name, :][name]
 
         if df_slice["target"].isna().any():
-            print("yes")
             df_slice["target"].dropna(inplace=True)
-            warnings.warn("Values with NaN dropped!")
 
         plot(x=df_slice["target"].values, ax=ax[i], lags=lags)
         ax[i].set_title(name)
@@ -255,7 +255,7 @@ def sample_acf_plot(
     """
     acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=False)
     warnings.warn(
-        "DeprecationWarning: This function is deprecated and will be removed in etna=1.14.0; Please use acf_plot instead",
+        "DeprecationWarning: This function is deprecated and will be removed soon; Please use acf_plot instead",
         DeprecationWarning,
     )
 
@@ -289,7 +289,7 @@ def sample_pacf_plot(
     """
     acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=True)
     warnings.warn(
-        "DeprecationWarning: This function is deprecated and will be removed in etna=1.14.0; Please use acf_plot instead",
+        "DeprecationWarning: This function is deprecated and will be removed soon; Please use acf_plot instead",
         DeprecationWarning,
     )
 
