@@ -81,11 +81,18 @@ def test_fit_transform_with_nans(daily_exog_ts_diff_endings):
     daily_exog_ts_diff_endings.fit_transform([resampler])
 
 
-# TODO: make issue with bug
-@pytest.mark.parametrize("inplace", [False, True])
-def test_save_load(inplace, daily_exog_ts):
+@pytest.mark.parametrize(
+    "inplace,out_column",
+    (
+        [
+            (True, None),
+            (False, "resampled_exog"),
+        ]
+    ),
+)
+def test_save_load(inplace, out_column, daily_exog_ts):
     daily_exog_ts = daily_exog_ts["ts"]
     transform = ResampleWithDistributionTransform(
-        in_column="regressor_exog", inplace=inplace, distribution_column="target"
+        in_column="regressor_exog", inplace=inplace, distribution_column="target", out_column=out_column
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=daily_exog_ts)
