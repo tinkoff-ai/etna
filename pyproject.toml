@@ -126,7 +126,7 @@ release = ["click", "semver"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 tests = ["pytest-cov", "coverage", "pytest"]
 jupyter = ["jupyter", "nbconvert", "black"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools"]
 
 all = [
     "prophet",
@@ -144,7 +144,7 @@ all-dev = [
     "click", "semver",
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
-    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions",
+    "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools",
     "click", "semver",
     "jupyter", "nbconvert",
     "pyts"
