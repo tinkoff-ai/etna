@@ -6,6 +6,7 @@ from etna.models.sklearn import SklearnMultiSegmentModel
 from etna.models.sklearn import SklearnPerSegmentModel
 from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.fixture
@@ -47,3 +48,16 @@ def test_sklearn_multisegment_model_regressors_number(ts_with_regressors, model)
     """Test that the number of features used by SklearnMultiSegmentModel is the same as the number of regressors."""
     model.fit(ts_with_regressors)
     assert len(model._base_model.model.coef_) == len(ts_with_regressors.regressors)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SklearnPerSegmentModel(regressor=LinearRegression()),
+        SklearnMultiSegmentModel(regressor=LinearRegression()),
+    ],
+)
+def test_save_load(model, example_tsds):
+    horizon = 3
+    transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)

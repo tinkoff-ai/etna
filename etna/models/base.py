@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
+from etna.core import AbstractSaveable
+from etna.core import SaveMixin
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
@@ -32,7 +34,7 @@ else:
     LightningModule = Mock  # type: ignore
 
 
-class AbstractModel(ABC, BaseMixin):
+class AbstractModel(SaveMixin, AbstractSaveable, ABC, BaseMixin):
     """Interface for model with fit method."""
 
     @property

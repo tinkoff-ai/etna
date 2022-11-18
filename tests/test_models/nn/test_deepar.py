@@ -10,6 +10,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import PytorchForecastingTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def test_fit_wrong_order_transform(weekly_period_df):
@@ -169,3 +170,18 @@ def test_prediction_interval_run_infuture(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
+
+
+@pytest.mark.xfail(reason="Should be fixed in inference-v2.0")
+def test_save_load(example_tsds):
+    horizon = 3
+    model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
+    transform = PytorchForecastingTransform(
+        max_encoder_length=horizon,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        target_normalizer=GroupNormalizer(groups=["segment"]),
+    )
+    transforms = [transform]
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)

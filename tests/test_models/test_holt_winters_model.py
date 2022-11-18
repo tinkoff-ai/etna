@@ -9,6 +9,7 @@ from etna.models import HoltModel
 from etna.models import HoltWintersModel
 from etna.models import SimpleExpSmoothingModel
 from etna.pipeline import Pipeline
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.fixture
@@ -113,3 +114,8 @@ def test_get_model_after_training(example_tsds, etna_model_class, expected_class
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], expected_class)
+
+
+@pytest.mark.parametrize("model", [HoltModel(), HoltWintersModel(), SimpleExpSmoothingModel()])
+def test_save_load(model, example_tsds):
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)

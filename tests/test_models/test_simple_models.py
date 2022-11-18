@@ -12,6 +12,7 @@ from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.models.seasonal_ma import _SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def _check_forecast(ts, model, horizon):
@@ -697,3 +698,16 @@ def test_deadline_model_forecast_correct_with_big_horizons(two_month_ts):
         ]
     )
     assert np.all(res.df.values == expected)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        NaiveModel(),
+        MovingAverageModel(),
+        SeasonalMovingAverageModel(),
+        DeadlineMovingAverageModel(),
+    ],
+)
+def test_save_load(model, example_tsds):
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)

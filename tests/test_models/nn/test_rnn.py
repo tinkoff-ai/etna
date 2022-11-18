@@ -7,6 +7,7 @@ from etna.metrics import MAE
 from etna.models.nn import RNNModel
 from etna.models.nn.rnn import RNNNet
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.mark.long_2
@@ -72,3 +73,9 @@ def test_context_size(encoder_length):
     )
 
     assert model.context_size == encoder_length
+
+
+@pytest.mark.xfail(reason="Working, but should be fixed in inference-v2.0")
+def test_save_load(example_tsds):
+    model = RNNModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=2))
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
