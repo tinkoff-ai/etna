@@ -194,6 +194,9 @@ def test_fit_transform_with_nans(ts_diff_endings):
 
 
 def test_save_load(df_with_specials):
-    ts = TSDataset(df=df_with_specials, freq="D")
+    df = df_with_specials.reset_index()
+    df["segment"] = "1"
+    df = df[["timestamp", "segment", "target"]]
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
     transform = SpecialDaysTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
