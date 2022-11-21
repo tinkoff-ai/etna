@@ -105,14 +105,14 @@ def get_etna_version() -> Tuple[int, int, int]:
         from importlib.metadata import version
 
         str_version = version("etna")
-        result = tuple([int(x) for x in str_version.split(".")])[:3]
+        result = tuple([int(x) for x in str_version.split(".")])
         result = cast(Tuple[int, int, int], result)
         return result
     else:
         import pkg_resources
 
         str_version = pkg_resources.get_distribution("etna").version
-        result = tuple([int(x) for x in str_version.split(".")])[:3]
+        result = tuple([int(x) for x in str_version.split(".")])
         result = cast(Tuple[int, int, int], result)
         return result
 
