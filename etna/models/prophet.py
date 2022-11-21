@@ -165,6 +165,11 @@ class ProphetModel(
     Original Prophet can use features 'cap' and 'floor',
     they should be added to the known_future list on dataset initialization.
 
+    Warning
+    -------
+    Currently, pickle is used in ``save`` and  ``load`` methods.
+    It can work unreliably according to `documentation <https://facebook.github.io/prophet/docs/additional_topics.html>`_.
+
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
