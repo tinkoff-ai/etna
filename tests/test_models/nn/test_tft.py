@@ -181,7 +181,7 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
         assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.columns)
 
 
-@pytest.mark.xfail(reason="Should be fixed in inference-v2.0")
+@pytest.mark.xfail(reason="Should be fixed in inference-v2.0", strict=True)
 def test_save_load(example_tsds):
     horizon = 3
     model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64, loss=MAEPF())
