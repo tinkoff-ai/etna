@@ -194,9 +194,7 @@ class STLTransform(PerSegmentWrapper):
             2. "holt": ``ETSModel(data, trend='add')``
 
             Custom model should be a subclass of :py:class:`statsmodels.tsa.base.tsa_model.TimeSeriesModel`
-            and have method ``get_prediction`` (not just ``predict``).
-
-            During ``save`` pickle is used and model should support saving and loading with pickle.
+            and have method ``get_prediction`` (not just ``predict``)
         robust:
             flag indicating whether to use robust version of STL
         model_kwargs:

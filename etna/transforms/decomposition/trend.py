@@ -153,8 +153,7 @@ class TrendTransform(_TrendTransform, FutureMixin):
             name of added column.
             If not given, use ``self.__repr__()``
         detrend_model:
-            model to get trend in data;
-            during ``save`` pickle is used and model should support saving and loading with pickle
+            model to get trend in data
         model:
             binseg segment model, ["l1", "l2", "rbf",...]. Not used if 'custom_cost' is not None.
         custom_cost:
