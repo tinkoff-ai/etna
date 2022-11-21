@@ -203,9 +203,8 @@ def acf_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    df_pd = ts.to_pandas(flatten=True)
     if segments is None:
-        exist_segments = df_pd.segment.unique()
+        exist_segments = sorted(ts.segments)
         chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
         segments = list(chosen_segments)
 
@@ -255,7 +254,7 @@ def sample_acf_plot(
     """
     acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=False)
     warnings.warn(
-        "DeprecationWarning: This function is deprecated and will be removed soon; Please use acf_plot instead",
+        "DeprecationWarning: This function is deprecated and will be removed in etna=2.0; Please use acf_plot instead.",
         DeprecationWarning,
     )
 
@@ -289,7 +288,7 @@ def sample_pacf_plot(
     """
     acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=True)
     warnings.warn(
-        "DeprecationWarning: This function is deprecated and will be removed soon; Please use acf_plot instead",
+        "DeprecationWarning: This function is deprecated and will be removed in etna=2.0; Please use acf_plot instead.",
         DeprecationWarning,
     )
 

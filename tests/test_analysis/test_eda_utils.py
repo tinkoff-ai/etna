@@ -222,7 +222,7 @@ def test_dummy_seasonal_plot(freq, cycle, additional_params, ts_with_different_s
 def test_warnings_acf(example_tsds):
     with pytest.warns(
         DeprecationWarning,
-        match="DeprecationWarning: This function is deprecated and will be removed soon; Please use acf_plot instead",
+        match="DeprecationWarning: This function is deprecated and will be removed in etna=2.0; Please use acf_plot instead.",
     ):
         sample_acf_plot(example_tsds)
         sample_pacf_plot(example_tsds)
