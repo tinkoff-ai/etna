@@ -104,7 +104,7 @@ def test_mlp_layers():
     assert repr(model_) == repr(model.mlp)
 
 
-@pytest.mark.xfail(reason="Working, but should be fixed in inference-v2.0")
+@pytest.mark.xfail(reason="Working but unreliable, should be fixed in inference-v2.0")
 def test_save_load(example_tsds):
     horizon = 3
     model = MLPModel(

@@ -123,7 +123,7 @@ def test_get_model_after_training(example_tsds):
         assert isinstance(models_dict[segment], Prophet)
 
 
-@pytest.mark.xfail(reason="Working, but should be fixed in inference-v2.0")
+@pytest.mark.xfail(reason="Working but unreliable, should be fixed in inference-v2.0")
 def test_save_load(example_tsds):
     model = ProphetModel()
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
