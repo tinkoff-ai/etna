@@ -39,6 +39,7 @@ def test_save_mixin_save():
             metadata_str = metadata_bytes.decode("utf-8")
             metadata = json.loads(metadata_str)
             assert sorted(metadata.keys()) == ["class", "etna_version"]
+            assert metadata["class"] == "tests.test_core.test_mixins.Dummy"
 
             with zip_file.open("object.pkl", "r") as input_file:
                 loaded_dummy = pickle.load(input_file)

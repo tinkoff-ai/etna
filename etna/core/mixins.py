@@ -136,11 +136,12 @@ class SaveMixin:
             Path to save object to.
         """
         with ZipFile(path, "w") as zip_file:
+            full_class_name = f"{inspect.getmodule(self).__name__}.{self.__class__.__name__}"  # type: ignore
             metadata = {
                 "etna_version": get_etna_version(),
-                "class": inspect.getmodule(self).__name__,  # type: ignore
+                "class": full_class_name,
             }
-            metadata_str = json.dumps(metadata)
+            metadata_str = json.dumps(metadata, indent=2, sort_keys=True)
             metadata_bytes = metadata_str.encode("utf-8")
             with zip_file.open("metadata.json", "w") as output_file:
                 output_file.write(metadata_bytes)
