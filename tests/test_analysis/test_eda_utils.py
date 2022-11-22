@@ -5,6 +5,7 @@ import pytest
 from etna.analysis.eda_utils import _cross_correlation
 from etna.analysis.eda_utils import _resample
 from etna.analysis.eda_utils import _seasonal_split
+from etna.analysis.eda_utils import acf_plot
 from etna.analysis.eda_utils import sample_acf_plot
 from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.eda_utils import seasonal_plot
@@ -226,3 +227,33 @@ def test_warnings_acf(example_tsds):
     ):
         sample_acf_plot(example_tsds)
         sample_pacf_plot(example_tsds)
+
+
+@pytest.fixture
+def df_with_nans_in_head(example_df):
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[:5, pd.IndexSlice["segment_2", "target"]] = None
+    return df
+
+
+def test_acf_nan_end(ts_diff_endings):
+    ts = ts_diff_endings
+    acf_plot(ts, partial=False)
+    with pytest.warns(FutureWarning):
+        acf_plot(ts, partial=True)
+
+
+def test_acf_nan_middle(df_with_nans):
+    ts = TSDataset(df_with_nans, freq="H")
+    acf_plot(ts, partial=False)
+    with pytest.warns(FutureWarning):
+        with pytest.raises(ValueError):
+            acf_plot(ts, partial=True)
+
+
+def test_acf_nan_begin(df_with_nans_in_head):
+    ts = TSDataset(df_with_nans_in_head, freq="H")
+    acf_plot(ts, partial=False)
+    with pytest.warns(FutureWarning):
+        acf_plot(ts, partial=True)

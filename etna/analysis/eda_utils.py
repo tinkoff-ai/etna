@@ -208,20 +208,42 @@ def acf_plot(
         chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
         segments = list(chosen_segments)
 
-    plot = plot_pacf if partial else plot_acf
     title = "Partial Autocorrelation" if partial else "Autocorrelation"
 
     fig, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     fig.suptitle(title, fontsize=16)
 
     for i, name in enumerate(segments):
-        df_slice = ts[:, name, :][name]
+        df_slice = ts.to_pandas()[name]["target"]
+        if partial:
+            # for partial autocorrelation remove NaN from the beginning and end of the series
+            indices_nan = np.argwhere(np.isnan(df_slice.values)).squeeze(1)
+            indices2remove_begin = []
+            current_begin = 0
+            for i in range(len(indices_nan)):
+                if indices_nan[i] == current_begin:
+                    indices2remove_begin.append(indices_nan[i])
+                    current_begin += 1
 
-        if df_slice["target"].isna().any():
-            df_slice["target"].dropna(inplace=True)
+            indices2remove_end = []
 
-        plot(x=df_slice["target"].values, ax=ax[i], lags=lags)
+            current_end = len(df_slice.values) - 1
+            for i in range(len(indices_nan) - 1, -1, -1):
+                if indices_nan[i] == current_end:
+                    indices2remove_end.append(indices_nan[i])
+                    current_end -= 1
+
+            candidates2delete = indices2remove_begin + indices2remove_end
+            if set(indices_nan) != set(candidates2delete):
+                raise ValueError("There is a NaN in the middle of the time series!")
+            x = np.delete(df_slice.values, candidates2delete)
+            plot_pacf(x=x, ax=ax[i], lags=lags)
+
+        if not partial:
+            plot_acf(x=df_slice.values, ax=ax[i], lags=lags, missing="conservative")
+
         ax[i].set_title(name)
+
     plt.show()
 
 
