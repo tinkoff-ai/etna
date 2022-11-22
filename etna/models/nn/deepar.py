@@ -10,7 +10,7 @@ import pandas as pd
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
-from etna.models.base import MultiSegmentPredictionIntervalModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import log_decorator
 from etna.models.nn.utils import _DeepCopyMixin
 from etna.transforms import PytorchForecastingTransform
@@ -24,7 +24,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
+class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes
@@ -32,6 +32,8 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
+
+    context_size = 0
 
     def __init__(
         self,
@@ -172,8 +174,9 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
     def forecast(
         self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
     ) -> TSDataset:
-        """
-        Predict future.
+        """Make predictions.
+
+        This method will make autoregressive predictions.
 
         Parameters
         ----------
@@ -238,3 +241,41 @@ class DeepARModel(MultiSegmentPredictionIntervalModel, _DeepCopyMixin):
 
         ts.inverse_transform()
         return ts
+
+    @log_decorator
+    def predict(
+        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+    ) -> TSDataset:
+        """Make predictions.
+
+        This method will make predictions using true values instead of predicted on a previous step.
+        It can be useful for making in-sample forecasts.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+
+        Returns
+        -------
+        TSDataset
+            TSDataset with predictions.
+        """
+        raise NotImplementedError("Method predict isn't currently implemented!")
+
+    def get_model(self) -> Any:
+        """Get internal model that is used inside etna class.
+
+        Internal model is a model that is used inside etna to forecast segments,
+        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+
+        Returns
+        -------
+        :
+           Internal model
+        """
+        return self.model

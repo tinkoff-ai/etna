@@ -5,13 +5,13 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from etna.models.base import BaseModel
+from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
 from etna.transforms import Transform
 
 
 def assemble_pipelines(
-    models: Union[BaseModel, Sequence[BaseModel]],
+    models: Union[ModelType, Sequence[ModelType]],
     transforms: Sequence[Union[Transform, Sequence[Optional[Transform]]]],
     horizons: Union[int, Sequence[int]],
 ) -> List[Pipeline]:

@@ -2,6 +2,8 @@ from copy import deepcopy
 from datetime import datetime
 from typing import Dict
 from typing import List
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -15,17 +17,25 @@ from etna.metrics import SMAPE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics import Width
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
+from etna.models import SeasonalMovingAverageModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LagTransform
 from etna.transforms import LogTransform
+from etna.transforms import TimeSeriesImputerTransform
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -74,6 +84,88 @@ def test_fit(example_tsds):
     original_ts.fit_transform(transforms)
     original_ts.inverse_transform()
     assert np.all(original_ts.df.values == pipeline.ts.df.values)
+
+
+@patch("etna.pipeline.pipeline.Pipeline._forecast")
+def test_forecast_without_intervals_calls_private_forecast(private_forecast, example_tsds):
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds)
+    _ = pipeline.forecast()
+
+    private_forecast.assert_called()
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextIgnorantAbstractModel]
+)
+def test_private_forecast_context_ignorant_model(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline._forecast()
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    model.forecast.assert_called_with(ts=ts.make_future())
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextRequiredAbstractModel, PredictionIntervalContextRequiredAbstractModel]
+)
+def test_private_forecast_context_required_model(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline._forecast()
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
+
+
+def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=PredictionIntervalContextIgnorantAbstractModel)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    model.forecast.assert_called_with(ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975))
+
+
+def test_forecast_with_intervals_prediction_interval_context_required_model():
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=PredictionIntervalContextRequiredAbstractModel)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    model.forecast.assert_called_with(
+        ts=ts.make_future(), prediction_size=pipeline.horizon, prediction_interval=True, quantiles=(0.025, 0.975)
+    )
+
+
+@patch("etna.pipeline.base.BasePipeline.forecast")
+@pytest.mark.parametrize(
+    "model_class",
+    [NonPredictionIntervalContextIgnorantAbstractModel, NonPredictionIntervalContextRequiredAbstractModel],
+)
+def test_forecast_with_intervals_other_model(base_forecast, model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+
+    pipeline = Pipeline(model=model, horizon=5)
+    pipeline.fit(ts)
+    _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+    base_forecast.assert_called_with(prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
 
 
 def test_forecast(example_tsds):
@@ -376,8 +468,7 @@ def test_forecast_raise_error_if_not_fitted():
 
 def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
-
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
     pipeline.fit(TSDataset(df_with_nans_in_tails, freq="1H"))
     forecast = pipeline.forecast()
     assert len(forecast.df) == 5
@@ -592,3 +683,41 @@ def test_pipeline_with_deepmodel(example_tsds):
         horizon=2,
     )
     _ = pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_predict(model, transforms, example_tsds):
+    ts = example_tsds
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=7)
+    pipeline.fit(ts)
+
+    start_idx = 50
+    end_idx = 70
+    start_timestamp = ts.index[start_idx]
+    end_timestamp = ts.index[end_idx]
+    num_points = end_idx - start_idx + 1
+
+    # create a separate TSDataset with slice of original timestamps
+    predict_ts = deepcopy(ts)
+    predict_ts.df = predict_ts.df.iloc[5 : end_idx + 5]
+
+    result_ts = pipeline.predict(ts=predict_ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    result_df = result_ts.to_pandas(flatten=True)
+
+    assert not np.any(result_df["target"].isna())
+    assert len(result_df) == len(example_tsds.segments) * num_points

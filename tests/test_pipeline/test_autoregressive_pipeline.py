@@ -1,4 +1,8 @@
 from copy import deepcopy
+from typing import Optional
+from unittest.mock import ANY
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -7,9 +11,17 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.metrics import MetricAggregationMode
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
+from etna.models import SeasonalMovingAverageModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
@@ -24,6 +36,72 @@ def test_fit(example_tsds):
     transforms = [LagTransform(in_column="target", lags=[1]), DateFlagsTransform()]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=5, step=1)
     pipeline.fit(example_tsds)
+
+
+def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None):
+    df = ts.to_pandas()
+
+    df.loc[:, pd.IndexSlice[:, "target"]] = 0
+    if prediction_size is not None:
+        df = df.iloc[-prediction_size:]
+
+    ts.df = df
+
+    return TSDataset(df=df, freq=ts.freq)
+
+
+def spy_decorator(method_to_decorate):
+    mock = MagicMock()
+
+    def wrapper(self, *args, **kwargs):
+        mock(*args, **kwargs)
+        return method_to_decorate(self, *args, **kwargs)
+
+    wrapper.mock = mock
+    return wrapper
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextIgnorantAbstractModel]
+)
+def test_private_forecast_context_ignorant_model(model_class, example_tsds):
+    # we should do it this way because we want not to change behavior but have ability to inspect calls
+    # source: https://stackoverflow.com/a/41599695
+    make_future = spy_decorator(TSDataset.make_future)
+    model = MagicMock(spec=model_class)
+    model.forecast.side_effect = fake_forecast
+
+    with patch.object(TSDataset, "make_future", make_future):
+        pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
+        pipeline.fit(example_tsds)
+        _ = pipeline._forecast()
+
+    assert make_future.mock.call_count == 5
+    make_future.mock.assert_called_with(future_steps=pipeline.step)
+    assert model.forecast.call_count == 5
+    model.forecast.assert_called_with(ts=ANY)
+
+
+@pytest.mark.parametrize(
+    "model_class", [NonPredictionIntervalContextRequiredAbstractModel, PredictionIntervalContextRequiredAbstractModel]
+)
+def test_private_forecast_context_required_model(model_class, example_tsds):
+    # we should do it this way because we want not to change behavior but have ability to inspect calls
+    # source: https://stackoverflow.com/a/41599695
+    make_future = spy_decorator(TSDataset.make_future)
+    model = MagicMock(spec=model_class)
+    model.context_size = 1
+    model.forecast.side_effect = fake_forecast
+
+    with patch.object(TSDataset, "make_future", make_future):
+        pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
+        pipeline.fit(example_tsds)
+        _ = pipeline._forecast()
+
+    assert make_future.mock.call_count == 5
+    make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
+    assert model.forecast.call_count == 5
+    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 
 
 def test_forecast_columns(example_reg_tsds):
@@ -156,3 +234,41 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
     assert np.all(forecast_df == expected_forecast_df)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_predict(model, transforms, example_tsds):
+    ts = example_tsds
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=7)
+    pipeline.fit(ts)
+
+    start_idx = 50
+    end_idx = 70
+    start_timestamp = ts.index[start_idx]
+    end_timestamp = ts.index[end_idx]
+    num_points = end_idx - start_idx + 1
+
+    # create a separate TSDataset with slice of original timestamps
+    predict_ts = deepcopy(ts)
+    predict_ts.df = predict_ts.df.iloc[5 : end_idx + 5]
+
+    result_ts = pipeline.predict(ts=predict_ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    result_df = result_ts.to_pandas(flatten=True)
+
+    assert not np.any(result_df["target"].isna())
+    assert len(result_df) == len(example_tsds.segments) * num_points

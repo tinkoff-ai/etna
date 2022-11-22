@@ -1,4 +1,7 @@
 from typing import List
+from typing import Optional
+
+import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
@@ -37,3 +40,16 @@ class EnsembleMixin:
         forecast = pipeline.forecast()
         tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
+
+    @staticmethod
+    def _predict_pipeline(
+        ts: TSDataset,
+        pipeline: BasePipeline,
+        start_timestamp: Optional[pd.Timestamp],
+        end_timestamp: Optional[pd.Timestamp],
+    ) -> TSDataset:
+        """Make predict with given pipeline."""
+        tslogger.log(msg=f"Start prediction with {pipeline}.")
+        prediction = pipeline.predict(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+        tslogger.log(msg=f"Prediction is done with {pipeline}.")
+        return prediction
