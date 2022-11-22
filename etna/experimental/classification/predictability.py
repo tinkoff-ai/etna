@@ -1,5 +1,6 @@
 from typing import Dict
 from typing import List
+from urllib import request
 
 import numpy as np
 from sklearn.base import ClassifierMixin
@@ -66,3 +67,30 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
         y_pred = self.predict(x=x)
         result = dict(zip(sorted(ts.segments), y_pred))
         return result
+
+    @staticmethod
+    def get_available_models() -> List[str]:
+        """Return the list of available models."""
+        return ["weasel", "tsfresh", "tsfresh_min"]
+
+    @staticmethod
+    def download_model(model_name: str, dataset_freq: str, path: str):
+        """Return the list of available models.
+
+        Parameters
+        ----------
+        model_name:
+            Name of the pretrained model.
+        dataset_freq:
+            Frequency of the dataset.
+        path:
+            Path to save the file with model.
+        """
+        freq_to_name = {"H": "hourly", "D": "daily", "W": "weekly"}
+        suffix = "_min" if model_name.endswith("_min") else ""
+        model_name = model_name.split("_")[0]
+        url = f"http://etna-github-prod.cdn-tinkoff.ru/series_classification/26_10/{model_name}_{freq_to_name[dataset_freq]}{suffix}.pickle"
+        try:
+            request.urlretrieve(url=url, filename=path)
+        except Exception:
+            raise ValueError("Model not found! Check the list of available models!")
