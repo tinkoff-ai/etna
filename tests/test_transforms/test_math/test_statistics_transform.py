@@ -13,6 +13,7 @@ from etna.transforms.math import MinMaxDifferenceTransform
 from etna.transforms.math import MinTransform
 from etna.transforms.math import QuantileTransform
 from etna.transforms.math import StdTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -293,3 +294,20 @@ def test_min_max_diff_feature(
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
     ts_diff_endings.fit_transform([transform])
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MaxTransform(in_column="target", window=5),
+        MinTransform(in_column="target", window=5),
+        MedianTransform(in_column="target", window=5),
+        MeanTransform(in_column="target", window=5),
+        StdTransform(in_column="target", window=5),
+        MADTransform(in_column="target", window=5),
+        MinMaxDifferenceTransform(in_column="target", window=5),
+    ),
+)
+def test_save_load(transform, simple_df_for_agg):
+    ts = TSDataset(df=simple_df_for_agg, freq="D")
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

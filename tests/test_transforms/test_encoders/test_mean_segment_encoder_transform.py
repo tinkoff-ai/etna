@@ -6,6 +6,7 @@ from etna.datasets import TSDataset
 from etna.metrics import R2
 from etna.models import LinearMultiSegmentModel
 from etna.transforms import MeanSegmentEncoderTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.mark.parametrize("expected_global_means", ([[3, 30]]))
@@ -56,3 +57,8 @@ def test_mean_segment_encoder_forecast(almost_constant_ts):
 def test_fit_transform_with_nans(ts_diff_endings):
     encoder = MeanSegmentEncoderTransform()
     ts_diff_endings.fit_transform([encoder])
+
+
+def test_save_load(almost_constant_ts):
+    transform = MeanSegmentEncoderTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=almost_constant_ts)

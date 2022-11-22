@@ -13,6 +13,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms.math import LagTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
@@ -127,3 +128,17 @@ def test_encoder_catboost(encoder):
     model = CatBoostMultiSegmentModel(iterations=100)
     pipeline = Pipeline(model=model, transforms=transforms, horizon=1)
     _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=1)
+
+
+@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
+@pytest.mark.parametrize(
+    "model",
+    [
+        CatBoostPerSegmentModel(),
+        CatBoostMultiSegmentModel(),
+    ],
+)
+def test_save_load(model, example_tsds):
+    horizon = 3
+    transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)

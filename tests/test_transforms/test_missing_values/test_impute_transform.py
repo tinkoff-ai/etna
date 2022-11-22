@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.missing_values import TimeSeriesImputerTransform
 from etna.transforms.missing_values.imputation import _OneSegmentTimeSeriesImputerTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -386,3 +387,8 @@ def test_constant_fill_strategy(df_with_missing_range_x_index_two_segments: pd.D
     df = ts.to_pandas(flatten=False)
     for segment in ["segment_1", "segment_2"]:
         np.testing.assert_array_equal(df.loc[rng][segment]["target"].values, [constant_value] * 5)
+
+
+def test_save_load(ts_to_fill):
+    transform = TimeSeriesImputerTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_to_fill)

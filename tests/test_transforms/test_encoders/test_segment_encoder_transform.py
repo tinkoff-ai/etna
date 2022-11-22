@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms import SegmentEncoderTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def test_segment_encoder_transform(dummy_df):
@@ -18,3 +19,8 @@ def test_segment_encoder_transform(dummy_df):
         assert np.all(column == column.iloc[0]), "Values are not the same for the whole column"
         codes.add(column.iloc[0])
     assert codes == {0, 1}, "Codes are not 0 and 1"
+
+
+def test_save_load(example_tsds):
+    transform = SegmentEncoderTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)

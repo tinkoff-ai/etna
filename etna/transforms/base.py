@@ -1,17 +1,18 @@
-from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 
 import pandas as pd
 
+from etna.core import AbstractSaveable
 from etna.core import BaseMixin
+from etna.core import SaveMixin
 
 
 class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-class Transform(ABC, BaseMixin):
+class Transform(SaveMixin, AbstractSaveable, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     @abstractmethod

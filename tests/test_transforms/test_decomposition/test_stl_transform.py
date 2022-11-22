@@ -6,6 +6,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.decomposition import STLTransform
 from etna.transforms.decomposition.stl import _OneSegmentSTLTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def add_trend(series: pd.Series, coef: float = 1) -> pd.Series:
@@ -184,3 +185,14 @@ def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     transform = STLTransform(in_column="target", period=7)
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = transform.fit_transform(df_with_nans)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        STLTransform(in_column="target", period=7, model="arima"),
+        STLTransform(in_column="target", period=7, model="holt"),
+    ],
+)
+def test_save_load(transform, ts_trend_seasonal):
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_trend_seasonal)

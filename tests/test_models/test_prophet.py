@@ -6,6 +6,7 @@ from prophet import Prophet
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
 from etna.pipeline import Pipeline
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def test_run(new_format_df):
@@ -120,3 +121,9 @@ def test_get_model_after_training(example_tsds):
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], Prophet)
+
+
+@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
+def test_save_load(example_tsds):
+    model = ProphetModel()
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)

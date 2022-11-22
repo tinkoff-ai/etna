@@ -12,6 +12,7 @@ from etna.models.nn.mlp import MLPNet
 from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.mark.parametrize(
@@ -101,3 +102,20 @@ def test_mlp_layers():
         nn.Linear(in_features=3, out_features=10), nn.ReLU(), nn.Linear(in_features=10, out_features=1)
     )
     assert repr(model_) == repr(model.mlp)
+
+
+@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
+def test_save_load(example_tsds):
+    horizon = 3
+    model = MLPModel(
+        input_size=10,
+        hidden_size=[10, 10, 10, 10, 10],
+        lr=1e-1,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=2),
+    )
+    lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))
+    fourier = FourierTransform(period=7, order=3)
+    std = StandardScalerTransform(in_column="target")
+    transforms = [lag, fourier, std]
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)

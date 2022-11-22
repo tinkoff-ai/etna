@@ -8,6 +8,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import PytorchForecastingTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def test_fit_wrong_order_transform(weekly_period_df):
@@ -178,3 +179,12 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target"}.issubset(segment_slice.columns)
         assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.columns)
+
+
+@pytest.mark.xfail(reason="Should be fixed in inference-v2.0", strict=True)
+def test_save_load(example_tsds):
+    horizon = 3
+    model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64, loss=MAEPF())
+    transform = _get_default_transform(horizon)
+    transforms = [transform]
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
