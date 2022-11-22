@@ -85,6 +85,11 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
             Frequency of the dataset.
         path:
             Path to save the file with model.
+
+        Raises
+        ------
+        ValueError:
+            If the model does not exist in s3.
         """
         url = f"http://etna-github-prod.cdn-tinkoff.ru/series_classification/22_11_2022/{dataset_freq}/{model_name}.pickle"
         try:
