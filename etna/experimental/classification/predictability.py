@@ -86,10 +86,7 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
         path:
             Path to save the file with model.
         """
-        freq_to_name = {"H": "hourly", "D": "daily", "W": "weekly"}
-        suffix = "_min" if model_name.endswith("_min") else ""
-        model_name = model_name.split("_")[0]
-        url = f"http://etna-github-prod.cdn-tinkoff.ru/series_classification/26_10/{model_name}_{freq_to_name[dataset_freq]}{suffix}.pickle"
+        url = f"http://etna-github-prod.cdn-tinkoff.ru/series_classification/22_11_2022/{dataset_freq}/{model_name}.pickle"
         try:
             request.urlretrieve(url=url, filename=path)
         except Exception:
