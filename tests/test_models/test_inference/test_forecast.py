@@ -65,12 +65,15 @@ class TestForecastInSampleFullNoTarget:
 
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
+        print(forecast_df)
+        print(forecast_df["target"].isna())
         assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
@@ -86,7 +89,6 @@ class TestForecastInSampleFullNoTarget:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
