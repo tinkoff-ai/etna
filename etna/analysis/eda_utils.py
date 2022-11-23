@@ -184,7 +184,7 @@ def acf_plot(
 
     `Definition of partial autocorrelation <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
 
-    This function removes any NaNs before plotting.
+    This function removes any NaNs from the beginning and end of the series if partial=True.
 
     Parameters
     ----------
@@ -202,6 +202,11 @@ def acf_plot(
         segments to plot
     figsize:
         size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        If partial=True and there is a NaN in the middle of the time series
     """
     if segments is None:
         exist_segments = sorted(ts.segments)
@@ -214,29 +219,14 @@ def acf_plot(
     fig.suptitle(title, fontsize=16)
 
     for i, name in enumerate(segments):
-        df_slice = ts.to_pandas()[name]["target"]
+        df_slice = ts.to_pandas()[name].reset_index()["target"]
         if partial:
             # for partial autocorrelation remove NaN from the beginning and end of the series
-            indices_nan = np.argwhere(np.isnan(df_slice.values)).squeeze(1)
-            indices2remove_begin = []
-            current_begin = 0
-            for i in range(len(indices_nan)):
-                if indices_nan[i] == current_begin:
-                    indices2remove_begin.append(indices_nan[i])
-                    current_begin += 1
-
-            indices2remove_end = []
-
-            current_end = len(df_slice.values) - 1
-            for i in range(len(indices_nan) - 1, -1, -1):
-                if indices_nan[i] == current_end:
-                    indices2remove_end.append(indices_nan[i])
-                    current_end -= 1
-
-            candidates2delete = indices2remove_begin + indices2remove_end
-            if set(indices_nan) != set(candidates2delete):
+            begin = df_slice.first_valid_index()
+            end = df_slice.last_valid_index()
+            x = df_slice.values[begin:end]
+            if np.isnan(x).any():
                 raise ValueError("There is a NaN in the middle of the time series!")
-            x = np.delete(df_slice.values, candidates2delete)
             plot_pacf(x=x, ax=ax[i], lags=lags)
 
         if not partial:

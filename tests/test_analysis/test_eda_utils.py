@@ -240,20 +240,17 @@ def df_with_nans_in_head(example_df):
 def test_acf_nan_end(ts_diff_endings):
     ts = ts_diff_endings
     acf_plot(ts, partial=False)
-    with pytest.warns(FutureWarning):
-        acf_plot(ts, partial=True)
+    acf_plot(ts, partial=True)
 
 
 def test_acf_nan_middle(df_with_nans):
     ts = TSDataset(df_with_nans, freq="H")
     acf_plot(ts, partial=False)
-    with pytest.warns(FutureWarning):
-        with pytest.raises(ValueError):
-            acf_plot(ts, partial=True)
+    with pytest.raises(ValueError):
+        acf_plot(ts, partial=True)
 
 
 def test_acf_nan_begin(df_with_nans_in_head):
     ts = TSDataset(df_with_nans_in_head, freq="H")
     acf_plot(ts, partial=False)
-    with pytest.warns(FutureWarning):
-        acf_plot(ts, partial=True)
+    acf_plot(ts, partial=True)
