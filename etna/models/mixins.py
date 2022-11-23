@@ -288,8 +288,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         model: Any, segment: str, ts: TSDataset, prediction_method: Callable, **kwargs
     ) -> pd.DataFrame:
         """Make predictions for one segment."""
-        segment_features = ts[:, segment, :]
-        segment_features = segment_features.droplevel("segment", axis=1)
+        segment_features = ts.to_pandas()[segment]
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
