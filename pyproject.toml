@@ -255,7 +255,7 @@ filterwarnings = [
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
     "ignore: `tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 && pip install protobuf==3.20.1`",
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
-    "ignore: The default method 'yw' can produce PACF values outside of the [-1,1] interval. After 0.13, the default will change tounadjusted Yule-Walker ('ywm'). You can use this method now by setting method='ywm'.",
+    "ignore: The default method 'yw' can produce PACF values outside",
 ]
 markers = [
     "smoke",

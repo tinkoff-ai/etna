@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-import matplotlib.pyplot as plt
 
 from etna.analysis.eda_utils import _cross_correlation
 from etna.analysis.eda_utils import _resample
