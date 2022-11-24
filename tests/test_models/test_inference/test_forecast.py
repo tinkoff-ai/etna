@@ -65,8 +65,6 @@ class TestForecastInSampleFullNoTarget:
 
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
-        print(forecast_df)
-        print(forecast_df["target"].isna())
         assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(

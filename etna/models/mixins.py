@@ -285,10 +285,10 @@ class PerSegmentModelMixin(ModelForecastingMixin):
 
     @staticmethod
     def _make_predictions_segment(
-        model: Any, segment: str, ts: TSDataset, prediction_method: Callable, **kwargs
+        model: Any, segment: str, df: pd.DataFrame, prediction_method: Callable, **kwargs
     ) -> pd.DataFrame:
         """Make predictions for one segment."""
-        segment_features = ts.to_pandas()[segment]
+        segment_features = df[segment]
         segment_features = segment_features.reset_index()
         dates = segment_features["timestamp"]
         dates.reset_index(drop=True, inplace=True)
@@ -320,9 +320,10 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         result_list = list()
+        df = ts.to_pandas()
         for segment, model in self._get_model().items():
             segment_predict = self._make_predictions_segment(
-                model=model, segment=segment, ts=ts, prediction_method=prediction_method, **kwargs
+                model=model, segment=segment, df=df, prediction_method=prediction_method, **kwargs
             )
 
             result_list.append(segment_predict)
