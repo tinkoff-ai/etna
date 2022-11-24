@@ -20,7 +20,6 @@ from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
-from etna.models.mixins import SaveNNMixin
 
 if SETTINGS.torch_required:
     import torch
@@ -33,7 +32,6 @@ else:
     from unittest.mock import Mock
 
     LightningModule = Mock  # type: ignore
-    SaveNNMixin = Mock  # type: ignore
 
 
 class AbstractModel(SaveMixin, AbstractSaveable, ABC, BaseMixin):
@@ -432,7 +430,7 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         return loss
 
 
-class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalContextRequiredAbstractModel):
+class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredAbstractModel):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(

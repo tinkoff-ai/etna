@@ -12,7 +12,6 @@ from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import log_decorator
-from etna.models.mixins import SaveNNMixin
 from etna.models.nn.utils import _DeepCopyMixin
 from etna.transforms import PytorchForecastingTransform
 
@@ -25,7 +24,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class DeepARModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbstractModel):
+class DeepARModel(_DeepCopyMixin, PredictionIntervalContextIgnorantAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Notes

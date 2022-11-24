@@ -146,7 +146,14 @@ class MLPNet(DeepBaseNet):
 
 
 class MLPModel(DeepBaseModel):
-    """MLPModel."""
+    """MLPModel.
+
+    Warning
+    -------
+    Currently, pickle is used in ``save`` and  ``load`` methods.
+    It can work unreliably, because there is a native method :py:meth:`pytorch_lightning.Trainer.save_checkpoint`
+    that solves problems with using multiple devices.
+    """
 
     def __init__(
         self,
