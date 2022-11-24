@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,6 +11,12 @@ from etna.analysis.eda_utils import sample_acf_plot
 from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.eda_utils import seasonal_plot
 from etna.datasets import TSDataset
+
+
+@pytest.fixture(autouse=True)
+def close_plots():
+    yield
+    plt.close()
 
 
 def test_cross_corr_fail_lengths():
