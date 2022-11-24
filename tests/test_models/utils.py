@@ -1,6 +1,5 @@
 import pathlib
 import tempfile
-from copy import deepcopy
 from typing import Sequence
 from typing import Tuple
 
@@ -17,21 +16,24 @@ def get_loaded_model(model: ModelType) -> ModelType:
         dir_path = pathlib.Path(dir_path_str)
         path = dir_path.joinpath("dummy.zip")
         model.save(path)
-        loaded_model = deepcopy(model).load(path)
+        loaded_model = model.load(path)
     return loaded_model
 
 
 def assert_model_equals_loaded_original(
     model: ModelType, ts: TSDataset, transforms: Sequence[Transform], horizon: int
 ) -> Tuple[ModelType, ModelType]:
+    import torch  # TODO: remove after fix at issue-802
+
     pipeline_1 = Pipeline(model=model, transforms=transforms, horizon=horizon)
     pipeline_1.fit(ts)
-    loaded_model = get_loaded_model(pipeline_1.model)
-    pipeline_2 = deepcopy(pipeline_1)
-    pipeline_2.model = loaded_model
-
+    torch.manual_seed(11)
     forecast_ts_1 = pipeline_1.forecast()
-    forecast_ts_2 = pipeline_2.forecast()
+
+    loaded_model = get_loaded_model(pipeline_1.model)
+    pipeline_1.model = loaded_model
+    torch.manual_seed(11)
+    forecast_ts_2 = pipeline_1.forecast()
 
     pd.testing.assert_frame_equal(forecast_ts_1.to_pandas(), forecast_ts_2.to_pandas())
 

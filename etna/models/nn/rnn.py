@@ -193,14 +193,7 @@ class RNNNet(DeepBaseNet):
 
 
 class RNNModel(DeepBaseModel):
-    """RNN based model on LSTM cell.
-
-    Warning
-    -------
-    Currently, pickle is used in ``save`` and  ``load`` methods.
-    It can work unreliably, because there is a native method :py:meth:`pytorch_lightning.Trainer.save_checkpoint`
-    that solves problems with using multiple devices.
-    """
+    """RNN based model on LSTM cell."""
 
     def __init__(
         self,

@@ -172,7 +172,6 @@ def test_prediction_interval_run_infuture(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
 
 
-@pytest.mark.xfail(reason="Should be fixed in inference-v2.0", strict=True)
 def test_save_load(example_tsds):
     horizon = 3
     model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
