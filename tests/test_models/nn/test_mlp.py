@@ -104,7 +104,6 @@ def test_mlp_layers():
     assert repr(model_) == repr(model.mlp)
 
 
-@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
 def test_save_load(example_tsds):
     horizon = 3
     model = MLPModel(

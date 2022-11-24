@@ -1,3 +1,4 @@
+import zipfile
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
@@ -7,9 +8,11 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 
+import dill
 import numpy as np
 import pandas as pd
 
+from etna.core.mixins import SaveMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.models.decorators import log_decorator
 
@@ -441,3 +444,27 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         if not hasattr(self._base_model, "get_model"):
             raise NotImplementedError(f"get_model method is not implemented for {self._base_model.__class__.__name__}")
         return self._base_model.get_model()
+
+
+class SaveNNMixin(SaveMixin):
+    """Implementation of ``AbstractSaveable``  torch related classes.
+
+    It saves object to the zip archive with 2 files:
+
+    * metadata.json: contains library version and class name.
+
+    * object.pt: object saved by ``torch.save``.
+    """
+
+    def _save_state(self, archive: zipfile.ZipFile):
+        import torch
+
+        with archive.open("object.pt", "w") as output_file:
+            torch.save(self, output_file, pickle_module=dill)
+
+    @classmethod
+    def _load_state(cls, archive: zipfile.ZipFile) -> Any:
+        import torch
+
+        with archive.open("object.pt", "r") as input_file:
+            return torch.load(input_file, pickle_module=dill)
