@@ -184,7 +184,9 @@ def acf_plot(
 
     `Definition of partial autocorrelation <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
 
-    This function removes any NaNs from the beginning and end of the series if partial=True.
+    * If ``partial=False`` function works with NaNs at any place of the time-series.
+
+    * if ``partial=True`` function works only with NaNs at the edges of the time-series and fails if there are NaNs inside it.
 
     Parameters
     ----------
@@ -218,8 +220,10 @@ def acf_plot(
     fig, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
     fig.suptitle(title, fontsize=16)
 
+    df = ts.to_pandas()
+
     for i, name in enumerate(segments):
-        df_slice = ts.to_pandas()[name].reset_index()["target"]
+        df_slice = df[name].reset_index()["target"]
         if partial:
             # for partial autocorrelation remove NaN from the beginning and end of the series
             begin = df_slice.first_valid_index()
