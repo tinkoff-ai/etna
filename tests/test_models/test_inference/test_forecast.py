@@ -71,6 +71,7 @@ class TestForecastInSampleFullNoTarget:
         "model, transforms",
         [
             (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
@@ -86,7 +87,6 @@ class TestForecastInSampleFullNoTarget:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
