@@ -110,7 +110,6 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         self.trainer_kwargs = trainer_kwargs if trainer_kwargs is not None else dict()
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
-        self.trainer: Optional[pl.Trainer] = None
         self._last_train_timestamp = None
         self._freq: Optional[str] = None
 
@@ -170,11 +169,11 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         )
         trainer_kwargs.update(self.trainer_kwargs)
 
-        self.trainer = pl.Trainer(**trainer_kwargs)
+        trainer = pl.Trainer(**trainer_kwargs)
 
         train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
 
-        self.trainer.fit(self.model, train_dataloader)
+        trainer.fit(self.model, train_dataloader)
 
         return self
 
