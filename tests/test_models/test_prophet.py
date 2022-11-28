@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from prophet import Prophet
+from prophet.serialize import model_to_dict
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
+from etna.models.prophet import _ProphetAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 
@@ -121,6 +123,78 @@ def test_get_model_after_training(example_tsds):
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], Prophet)
+
+
+@pytest.fixture
+def prophet_default_params():
+    params = {
+        "growth": "linear",
+        "changepoints": None,
+        "n_changepoints": 25,
+        "changepoint_range": 0.8,
+        "yearly_seasonality": "auto",
+        "weekly_seasonality": "auto",
+        "daily_seasonality": "auto",
+        "holidays": None,
+        "seasonality_mode": "additive",
+        "seasonality_prior_scale": 10.0,
+        "holidays_prior_scale": 10.0,
+        "changepoint_prior_scale": 0.05,
+        "mcmc_samples": 0,
+        "interval_width": 0.8,
+        "uncertainty_samples": 1000,
+        "stan_backend": None,
+        "additional_seasonality_params": (),
+    }
+    return params
+
+
+def test_getstate_not_fitted(prophet_default_params):
+    model = _ProphetAdapter()
+    state = model.__getstate__()
+    expected_state = {
+        "_is_fitted": False,
+        "_model_dict": {},
+        "regressor_columns": None,
+        **prophet_default_params,
+    }
+    assert state == expected_state
+
+
+def test_getstate_fitted(example_tsds, prophet_default_params):
+    model = _ProphetAdapter()
+    df = example_tsds.to_pandas()["segment_1"].reset_index()
+    model.fit(df, regressors=[])
+    state = model.__getstate__()
+    expected_state = {
+        "_is_fitted": True,
+        "_model_dict": model_to_dict(model.model),
+        "regressor_columns": [],
+        **prophet_default_params,
+    }
+    assert state == expected_state
+
+
+def test_setstate_not_fitted():
+    model_1 = _ProphetAdapter()
+    initial_state = model_1.__getstate__()
+
+    model_2 = _ProphetAdapter()
+    model_2.__setstate__(initial_state)
+    new_state = model_2.__getstate__()
+    assert new_state == initial_state
+
+
+def test_setstate_fitted(example_tsds):
+    model_1 = _ProphetAdapter()
+    df = example_tsds.to_pandas()["segment_1"].reset_index()
+    model_1.fit(df, regressors=[])
+    initial_state = model_1.__getstate__()
+
+    model_2 = _ProphetAdapter()
+    model_2.__setstate__(initial_state)
+    new_state = model_2.__getstate__()
+    assert new_state == initial_state
 
 
 @pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
