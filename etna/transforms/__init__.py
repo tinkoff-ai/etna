@@ -32,6 +32,7 @@ from etna.transforms.math import QuantileTransform
 from etna.transforms.math import RobustScalerTransform
 from etna.transforms.math import StandardScalerTransform
 from etna.transforms.math import StdTransform
+from etna.transforms.math import SumTransform
 from etna.transforms.math import YeoJohnsonTransform
 from etna.transforms.missing_values import ResampleWithDistributionTransform
 from etna.transforms.missing_values import TimeSeriesImputerTransform

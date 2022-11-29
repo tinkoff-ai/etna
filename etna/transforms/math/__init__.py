@@ -19,3 +19,4 @@ from etna.transforms.math.statistics import MinTransform
 from etna.transforms.math.statistics import QuantileTransform
 from etna.transforms.math.statistics import StdTransform
 from etna.transforms.math.statistics import WindowStatisticsTransform
+from etna.transforms.math.statistics import SumTransform
