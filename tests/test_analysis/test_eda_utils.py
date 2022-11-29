@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -5,8 +6,17 @@ import pytest
 from etna.analysis.eda_utils import _cross_correlation
 from etna.analysis.eda_utils import _resample
 from etna.analysis.eda_utils import _seasonal_split
+from etna.analysis.eda_utils import acf_plot
+from etna.analysis.eda_utils import sample_acf_plot
+from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.eda_utils import seasonal_plot
 from etna.datasets import TSDataset
+
+
+@pytest.fixture(autouse=True)
+def close_plots():
+    yield
+    plt.close()
 
 
 def test_cross_corr_fail_lengths():
@@ -215,3 +225,39 @@ def test_resample(timestamp, values, resample_freq, aggregation, expected_timest
 )
 def test_dummy_seasonal_plot(freq, cycle, additional_params, ts_with_different_series_length):
     seasonal_plot(ts=ts_with_different_series_length, freq=freq, cycle=cycle, **additional_params)
+
+
+def test_warnings_acf(example_tsds):
+    with pytest.warns(
+        DeprecationWarning,
+        match="DeprecationWarning: This function is deprecated and will be removed in etna=2.0; Please use acf_plot instead.",
+    ):
+        sample_acf_plot(example_tsds)
+        sample_pacf_plot(example_tsds)
+
+
+@pytest.fixture
+def df_with_nans_in_head(example_df):
+    df = TSDataset.to_dataset(example_df)
+    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[:5, pd.IndexSlice["segment_2", "target"]] = None
+    return df
+
+
+def test_acf_nan_end(ts_diff_endings):
+    ts = ts_diff_endings
+    acf_plot(ts, partial=False)
+    acf_plot(ts, partial=True)
+
+
+def test_acf_nan_middle(df_with_nans):
+    ts = TSDataset(df_with_nans, freq="H")
+    acf_plot(ts, partial=False)
+    with pytest.raises(ValueError):
+        acf_plot(ts, partial=True)
+
+
+def test_acf_nan_begin(df_with_nans_in_head):
+    ts = TSDataset(df_with_nans_in_head, freq="H")
+    acf_plot(ts, partial=False)
+    acf_plot(ts, partial=True)
