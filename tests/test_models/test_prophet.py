@@ -176,10 +176,10 @@ def test_getstate_fitted(example_tsds, prophet_default_params):
 
 
 def test_setstate_not_fitted():
-    model_1 = _ProphetAdapter()
+    model_1 = _ProphetAdapter(n_changepoints=25)
     initial_state = model_1.__getstate__()
 
-    model_2 = _ProphetAdapter()
+    model_2 = _ProphetAdapter(n_changepoints=20)
     model_2.__setstate__(initial_state)
     new_state = model_2.__getstate__()
     assert new_state == initial_state
