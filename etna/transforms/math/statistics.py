@@ -559,6 +559,7 @@ class MinMaxDifferenceTransform(WindowStatisticsTransform):
 
 class SumTransform(WindowStatisticsTransform):
     """SumTransform computes sum of values over given window."""
+
     def __init__(
         self,
         in_column: str,
@@ -586,7 +587,6 @@ class SumTransform(WindowStatisticsTransform):
         out_column:
             result column name. If not given use ``self.__repr__()``
         """
-
         self.in_column = in_column
         self.window = window
         self.seasonality = seasonality
