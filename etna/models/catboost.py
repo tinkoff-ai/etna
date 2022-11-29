@@ -115,8 +115,6 @@ class CatBoostPerSegmentModel(
 ):
     """Class for holding per segment Catboost model.
 
-    Currently, pickle is used in ``save`` and  ``load`` methods. It can work unreliably.
-
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
@@ -242,11 +240,6 @@ class CatBoostMultiSegmentModel(
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
     """Class for holding Catboost model for all segments.
-
-    Warning
-    -------
-    Currently, pickle is used in ``save`` and  ``load`` methods. It can work unreliably, because
-    there is a native method :py:meth:`catboost.CatBoost.save_model`.
 
     Examples
     --------
