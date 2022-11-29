@@ -13,6 +13,7 @@ from etna.transforms.math import MinMaxDifferenceTransform
 from etna.transforms.math import MinTransform
 from etna.transforms.math import QuantileTransform
 from etna.transforms.math import StdTransform
+from etna.transforms.math import SumTransform
 
 
 @pytest.fixture
@@ -62,6 +63,8 @@ def df_for_agg_with_nan() -> pd.DataFrame:
         (MADTransform, "test_mad"),
         (MinMaxDifferenceTransform, None),
         (MinMaxDifferenceTransform, "test_min_max_diff"),
+        (SumTransform, None),
+        (SumTransform, "test_sum"),
     ),
 )
 def test_interface_simple(simple_df_for_agg: pd.DataFrame, class_name: Any, out_column: str):
@@ -280,6 +283,56 @@ def test_min_max_diff_feature(
 
 
 @pytest.mark.parametrize(
+    "window,periods,fill_na,expected",
+    ((10, 1, 0, np.array([-1, 0, 3, 3, 7, 16, 24, 29, 35, 35])),),
+)
+def test_sum_feature_with_nan(
+    df_for_agg_with_nan: pd.DataFrame,
+    window: int,
+    periods: int,
+    fill_na: float,
+    expected: np.ndarray,
+):
+    transform = SumTransform(
+        window=window,
+        min_periods=periods,
+        fillna=fill_na,
+        in_column="target",
+        out_column="result",
+    )
+    res = transform.fit_transform(df_for_agg_with_nan)
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+
+
+@pytest.mark.parametrize(
+    "window,periods,fill_na,expected",
+    (
+        (10, 1, 0, np.array([0, 1, 3, 6, 10, 15, 21, 28, 36, 45])),
+        (-1, 1, 0, np.array([0, 1, 3, 6, 10, 15, 21, 28, 36, 45])),
+        (3, 1, -17, np.array([0, 1, 3, 6, 9, 12, 15, 18, 21, 24])),
+        (1, 1, -17, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])),
+    ),
+)
+def test_sum_feature(
+    simple_df_for_agg: pd.DataFrame,
+    window: int,
+    periods: int,
+    fill_na: float,
+    expected: np.array,
+):
+    transform = SumTransform(
+        window=window,
+        min_periods=periods,
+        fillna=fill_na,
+        in_column="target",
+        out_column="result",
+    )
+
+    res = transform.fit_transform(simple_df_for_agg)
+    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+
+
+@pytest.mark.parametrize(
     "transform",
     (
         MaxTransform(in_column="target", window=5),
@@ -289,6 +342,7 @@ def test_min_max_diff_feature(
         StdTransform(in_column="target", window=5),
         MADTransform(in_column="target", window=5),
         MinMaxDifferenceTransform(in_column="target", window=5),
+        SumTransform(in_column="target", window=5),
     ),
 )
 def test_fit_transform_with_nans(transform, ts_diff_endings):
