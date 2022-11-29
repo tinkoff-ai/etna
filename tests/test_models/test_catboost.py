@@ -130,7 +130,6 @@ def test_encoder_catboost(encoder):
     _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=1)
 
 
-@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
 @pytest.mark.parametrize(
     "model",
     [
