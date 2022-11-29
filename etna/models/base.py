@@ -20,6 +20,7 @@ from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
+from etna.models.mixins import SaveNNMixin
 
 if SETTINGS.torch_required:
     import torch
@@ -32,6 +33,7 @@ else:
     from unittest.mock import Mock
 
     LightningModule = Mock  # type: ignore
+    SaveNNMixin = Mock  # type: ignore
 
 
 class AbstractModel(SaveMixin, AbstractSaveable, ABC, BaseMixin):
@@ -430,7 +432,7 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         return loss
 
 
-class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredAbstractModel):
+class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalContextRequiredAbstractModel):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(
@@ -488,6 +490,7 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
         self.val_dataloader_params = {} if val_dataloader_params is None else val_dataloader_params
         self.trainer_params = {} if trainer_params is None else trainer_params
         self.split_params = {} if split_params is None else split_params
+        self.trainer: Optional[Trainer] = None
 
     @property
     def context_size(self) -> int:
@@ -565,8 +568,8 @@ class DeepBaseModel(DeepBaseAbstractModel, NonPredictionIntervalContextRequiredA
         else:
             self.trainer_params["logger"] += tslogger.pl_loggers
 
-        trainer = Trainer(**self.trainer_params)
-        trainer.fit(self.net, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+        self.trainer = Trainer(**self.trainer_params)
+        self.trainer.fit(self.net, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
         return self
 
     def raw_predict(self, torch_dataset: "Dataset") -> Dict[Tuple[str, str], np.ndarray]:
