@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 -
 - Remove documentation warning about using pickle in saving/loading catboost ([#1020](https://github.com/tinkoff-ai/etna/pull/1020))
+- Fix saving/loading ProphetModel ([#1019](https://github.com/tinkoff-ai/etna/pull/1019))
+-
 -
 ## [1.13.0] - 2022-10-10
 ### Added

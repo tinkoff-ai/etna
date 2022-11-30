@@ -178,7 +178,6 @@ def test_save_load(transform, outliers_solid_tsds):
     assert_transformation_equals_loaded_original(transform=transform, ts=outliers_solid_tsds)
 
 
-@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
 @pytest.mark.parametrize(
     "transform",
     (

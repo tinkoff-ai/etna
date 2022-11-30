@@ -122,13 +122,7 @@ class DensityOutliersTransform(OutliersTransform):
 
 
 class PredictionIntervalOutliersTransform(OutliersTransform):
-    """Transform that uses :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` to find anomalies in data.
-
-    Warning
-    -------
-    Currently, pickle is used in ``save`` and  ``load`` methods.
-    It can work unreliably according to `documentation <https://facebook.github.io/prophet/docs/additional_topics.html>`_.
-    """
+    """Transform that uses :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` to find anomalies in data."""
 
     def __init__(
         self,
