@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -
 - Add python 3.10 support ([#1005](https://github.com/tinkoff-ai/etna/pull/1005))
--
+- Add `SumTranform`([#1021](https://github.com/tinkoff-ai/etna/pull/1021))
 - Add `plot_change_points_interactive` ([#988](https://github.com/tinkoff-ai/etna/pull/988))
 - Add `experimental` module with `TimeSeriesBinaryClassifier` and `PredictabilityAnalyzer` ([#985](https://github.com/tinkoff-ai/etna/pull/985))
 - Inference track results: add `predict` method to pipelines, teach some models to work with context, change hierarchy of base models, update notebook examples ([#979](https://github.com/tinkoff-ai/etna/pull/979))
