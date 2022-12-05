@@ -51,7 +51,7 @@ class StatisticsPerIntervalModel(PerIntervalModel):
         prediction:
             array of features len filled with statistics value
         """
-        prediction = np.ones(shape=(features.shape[0],)) * self._statistics_value
+        prediction = np.full(shape=(features.shape[0],), fill_value=self._statistics_value)
         return prediction
 
 

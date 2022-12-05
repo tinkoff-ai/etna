@@ -17,8 +17,10 @@ class ConstantPerIntervalModel(PerIntervalModel):
 
         Parameters
         ----------
-        value:
-            constant value to be used for prediction
+        features:
+            features to fit model, will be ignored
+        target:
+            target to fit model, will be ignored
 
         Returns
         -------
@@ -41,5 +43,5 @@ class ConstantPerIntervalModel(PerIntervalModel):
         prediction:
             constant array of features' len
         """
-        prediction = np.ones(shape=(features.shape[0],)) * self.value
+        prediction = np.full(shape=(features.shape[0],), fill_value=self.value)
         return prediction

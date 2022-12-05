@@ -76,7 +76,7 @@ class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
         self:
             fitted SklearnPreprocessing2PerIntervalModel
         """
-        self.preprocessing.fit(X=features, y=target)
+        self.preprocessing.fit(X=features.reshape(-1, 1), y=target)
         return self
 
     def predict(self, features: np.ndarray, *args, **kwargs) -> np.ndarray:
@@ -92,5 +92,10 @@ class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
         prediction:
             preprocessing's prediction for given features
         """
-        prediction = self.preprocessing.transform(X=features)
+        prediction = self.preprocessing.transform(X=features.reshape(-1, 1)).reshape(
+            -1,
+        )
         return prediction
+
+    def inverse(self, features: np.ndarray) -> np.ndarray:
+        return self.preprocessing.inverse_transform(features.reshape(-1,1)).reshape(-1,1)

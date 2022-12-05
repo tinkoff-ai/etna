@@ -138,8 +138,6 @@ def test_to_dict_models(target_model):
 )
 def test_to_dict_pipeline(target_object):
     dict_object = target_object.to_dict()
-    # import ipdb
-    # ipdb.set_trace()
     transformed_object = hydra_slayer.get_from_params(**dict_object)
     assert json.loads(json.dumps(dict_object)) == dict_object
     # assert pickle.dumps(transformed_object) == pickle.dumps(target_object)
