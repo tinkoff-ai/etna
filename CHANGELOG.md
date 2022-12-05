@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 - Fix release docs and docker images cron job ([#982](https://github.com/tinkoff-ai/etna/pull/982))
 - Fix forecast first point with CatBoostPerSegmentModel ([#1010](https://github.com/tinkoff-ai/etna/pull/1010))
--
+- Fix hanging EDA notebook ([#1027](https://github.com/tinkoff-ai/etna/pull/1027))
 -
 -
 ## [1.13.0] - 2022-10-10
