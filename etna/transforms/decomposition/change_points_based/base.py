@@ -205,13 +205,7 @@ class BaseChangePointsTransform(PerSegmentWrapper, ABC):
 
 
 class ReversibleChangePointsTransform(BaseChangePointsTransform, ReversiblePerSegmentWrapper):
-    """ChangePointsTrendTransform subtracts multiple linear trend from series.
-
-    Warning
-    -------
-    This transform can suffer from look-ahead bias. For transforming data at some timestamp
-    it uses information from the whole train part.
-    """
+    """ReversibleChangePointsTransform class is a base class for all reversible transforms that work with change point."""
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
@@ -219,13 +213,7 @@ class ReversibleChangePointsTransform(BaseChangePointsTransform, ReversiblePerSe
 
 
 class IrreversibleChangePointsTransform(BaseChangePointsTransform, IrreversiblePerSegmentWrapper, FutureMixin):
-    """ChangePointsTrendTransform subtracts multiple linear trend from series.
-
-    Warning
-    -------
-    This transform can suffer from look-ahead bias. For transforming data at some timestamp
-    it uses information from the whole train part.
-    """
+    """IrreversibleChangePointsTransform class is a base class for all reversible transforms that work with change point."""
 
     out_column: Optional[str] = None
 
