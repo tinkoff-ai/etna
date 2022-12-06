@@ -213,7 +213,7 @@ class ReversibleChangePointsTransform(BaseChangePointsTransform, ReversiblePerSe
 
 
 class IrreversibleChangePointsTransform(BaseChangePointsTransform, IrreversiblePerSegmentWrapper, FutureMixin):
-    """IrreversibleChangePointsTransform class is a base class for all reversible transforms that work with change point."""
+    """IrreversibleChangePointsTransform class is a base class for all irreversible transforms that work with change point."""
 
     out_column: Optional[str] = None
 
