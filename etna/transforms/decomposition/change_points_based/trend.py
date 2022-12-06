@@ -6,7 +6,7 @@ from etna.transforms.decomposition.change_points_based.base import IrreversibleC
 from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
-from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnPerIntervalModel
+from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnRegressionPerIntervalModel
 
 
 class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
@@ -77,7 +77,9 @@ class TrendTransform(IrreversibleChangePointsTransform):
             If not given, use ``self.__repr__()``
         """
         self.in_column = in_column
-        self.per_interval_model = SklearnPerIntervalModel() if per_interval_model is None else per_interval_model
+        self.per_interval_model = (
+            SklearnRegressionPerIntervalModel() if per_interval_model is None else per_interval_model
+        )
         self.change_points_model = change_points_model
         self.out_column = out_column
         super().__init__(

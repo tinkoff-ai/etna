@@ -8,8 +8,8 @@ from sklearn.linear_model import LinearRegression
 from etna.transforms.decomposition.change_points_based.per_interval_models.base import PerIntervalModel
 
 
-class SklearnPerIntervalModel(PerIntervalModel):
-    """SklearnPerIntervalModel applies PerIntervalModel interface for sklearn-like regression models."""
+class SklearnRegressionPerIntervalModel(PerIntervalModel):
+    """SklearnRegressionPerIntervalModel applies PerIntervalModel interface for sklearn-like regression models."""
 
     def __init__(self, model: Optional[RegressorMixin] = None):
         """Init SklearnPerIntervalModel.
@@ -21,7 +21,7 @@ class SklearnPerIntervalModel(PerIntervalModel):
         """
         self.model = model if model is not None else LinearRegression()
 
-    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "SklearnPerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "SklearnRegressionPerIntervalModel":
         """Fit model with given features and targets.
 
         Parameters
@@ -34,7 +34,7 @@ class SklearnPerIntervalModel(PerIntervalModel):
         Returns
         -------
         self:
-            fitted SklearnPerIntervalModel
+            fitted SklearnRegressionPerIntervalModel
         """
         self.model.fit(X=features, y=target)
         return self
@@ -55,13 +55,13 @@ class SklearnPerIntervalModel(PerIntervalModel):
         return self.model.predict(X=features)
 
 
-class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
-    """SklearnPreprocessing2PerIntervalModel applies PerIntervalModel interface for sklearn preprocessings."""
+class SklearnPreprocessingPerIntervalModel(PerIntervalModel):
+    """SklearnPreprocessingPerIntervalModel applies PerIntervalModel interface for sklearn preprocessings."""
 
     def __init__(self, preprocessing: TransformerMixin):
         self.preprocessing = preprocessing
 
-    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "SklearnPreprocessing2PerIntervalModel":
+    def fit(self, features: np.ndarray, target: np.ndarray, *args, **kwargs) -> "SklearnPreprocessingPerIntervalModel":
         """Fit preprocessing with given features and targets.
 
         Parameters
@@ -74,7 +74,7 @@ class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
         Returns
         -------
         self:
-            fitted SklearnPreprocessing2PerIntervalModel
+            fitted SklearnPreprocessingPerIntervalModel
         """
         self.preprocessing.fit(X=features.reshape(-1, 1), y=target)
         return self
@@ -98,4 +98,16 @@ class SklearnPreprocessing2PerIntervalModel(PerIntervalModel):
         return prediction
 
     def inverse(self, features: np.ndarray) -> np.ndarray:
-        return self.preprocessing.inverse_transform(features.reshape(-1,1)).reshape(-1,1)
+        """Apply inverse transformation.
+
+        Parameters
+        ----------
+        features:
+            features to apply inverse transformation
+
+        Returns
+        -------
+        inversed data:
+            features after inverse transformation
+        """
+        return self.preprocessing.inverse_transform(features.reshape(-1, 1)).reshape(-1, 1)

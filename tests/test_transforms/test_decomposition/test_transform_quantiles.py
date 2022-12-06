@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 from ruptures import Binseg
 
-from etna.transforms import ChangePointsTrendTransform, ChangePointsLevelTransform
+from etna.transforms import ChangePointsLevelTransform
+from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import STLTransform
 from etna.transforms import TheilSenTrendTransform

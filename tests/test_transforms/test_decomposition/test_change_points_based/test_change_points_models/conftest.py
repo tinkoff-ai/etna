@@ -5,6 +5,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 
+
 @pytest.fixture
 def ts_with_nans() -> TSDataset:
     """Generate pd.DataFrame with timestamp."""

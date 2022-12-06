@@ -1,5 +1,5 @@
-import pytest
 import pandas as pd
+import pytest
 from ruptures import Binseg
 
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
