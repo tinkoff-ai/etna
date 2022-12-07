@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Fixed
 -
--
+- Fix `MinMaxDifferenceTransform` import ([#1030](https://github.com/tinkoff-ai/etna/pull/1030))
 - Fix release docs and docker images cron job ([#982](https://github.com/tinkoff-ai/etna/pull/982))
 - Fix forecast first point with CatBoostPerSegmentModel ([#1010](https://github.com/tinkoff-ai/etna/pull/1010))
 - Fix hanging EDA notebook ([#1027](https://github.com/tinkoff-ai/etna/pull/1027))
