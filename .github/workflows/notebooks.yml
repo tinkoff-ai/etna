@@ -1,18 +1,25 @@
 name: Test notebooks
 
+# on:
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
+#     types: [closed]
+
 on:
   push:
     branches:
       - master
   pull_request:
-    branches:
-      - master
-    types: [closed]
+    types: [opened, synchronize]
 
 jobs:
   
   notebooks-test:
-      if: github.event_name == 'push'||github.event.pull_request.merged == true
+      # if: github.event_name == 'push'||github.event.pull_request.merged == true
       runs-on: ubuntu-latest
 
       steps:
@@ -31,6 +38,8 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install -E "all release jupyter" -vv
+          poetry run pip install tsfresh==0.19.0
+          poetry run pip install protobuf==3.20.1
       - name: Notebook runner
         run: |
           poetry run python -m scripts.notebook_runner
