@@ -25,7 +25,7 @@ from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
-class StackingEnsemble(BasePipeline, EnsembleMixin):
+class StackingEnsemble(EnsembleMixin, BasePipeline):
     """StackingEnsemble is a pipeline that forecast future using the metamodel to combine the forecasts of the base models.
 
     Examples

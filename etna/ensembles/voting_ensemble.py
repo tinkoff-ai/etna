@@ -21,7 +21,7 @@ from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
-class VotingEnsemble(BasePipeline, EnsembleMixin):
+class VotingEnsemble(EnsembleMixin, BasePipeline):
     """VotingEnsemble is a pipeline that forecast future values with weighted averaging of it's pipelines forecasts.
 
     Examples
