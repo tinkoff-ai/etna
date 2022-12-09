@@ -26,6 +26,7 @@ from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -272,3 +273,25 @@ def test_predict(model, transforms, example_tsds):
 
     assert not np.any(result_df["target"].isna())
     assert len(result_df) == len(example_tsds.segments) * num_points
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_save_load(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
+    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)

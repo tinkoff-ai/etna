@@ -105,7 +105,7 @@ class SaveModelPipelineMixin(SaveMixin):
 
     model: ModelType
     transforms: Sequence[Transform]
-    ts: TSDataset
+    ts: Optional[TSDataset]
 
     def save(self, path: pathlib.Path):
         """Save the object.
@@ -180,8 +180,11 @@ class SaveModelPipelineMixin(SaveMixin):
                 # load transforms
                 transforms_dir = temp_dir / "transforms"
                 transforms = []
-                for path in transforms_dir.iterdir():
-                    transforms.append(load(path))
+
+                if transforms_dir.exists():
+                    for path in transforms_dir.iterdir():
+                        transforms.append(load(path))
+
                 obj.transforms = transforms
 
         return obj
