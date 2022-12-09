@@ -115,16 +115,16 @@ class SaveModelPipelineMixin(SaveMixin):
         path:
             Path to save object to.
         """
-        # extract attributes we can't easily save
         model = self.model
         transforms = self.transforms
         ts = self.ts
-        delattr(self, "model")
-        delattr(self, "transforms")
-        delattr(self, "ts")
-
-        # save the remaining part
         try:
+            # extract attributes we can't easily save
+            delattr(self, "model")
+            delattr(self, "transforms")
+            delattr(self, "ts")
+
+            # save the remaining part
             super().save(path=path)
         finally:
             self.model = model
