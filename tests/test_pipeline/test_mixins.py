@@ -1,13 +1,21 @@
+import json
+import pathlib
+import pickle
+import zipfile
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
 
+from etna.models import NaiveModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline.mixins import ModelPipelinePredictMixin
+from etna.pipeline.mixins import SaveModelPipelineMixin
+from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
 
@@ -44,7 +52,7 @@ def make_mixin(model=None, transforms=(), mock_recreate_ts=True, mock_determine_
         [DateFlagsTransform(), FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
     ],
 )
-def test_create_ts(context_size, start_timestamp, end_timestamp, transforms, example_reg_tsds):
+def test_predict_mixin_create_ts(context_size, start_timestamp, end_timestamp, transforms, example_reg_tsds):
     ts = example_reg_tsds
     model = MagicMock()
     model.context_size = context_size
@@ -70,7 +78,9 @@ def test_create_ts(context_size, start_timestamp, end_timestamp, transforms, exa
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10"), 6),
     ],
 )
-def test_determine_prediction_size(start_timestamp, end_timestamp, expected_prediction_size, example_tsds):
+def test_predict_mixin_determine_prediction_size(
+    start_timestamp, end_timestamp, expected_prediction_size, example_tsds
+):
     ts = example_tsds
     mixin = make_mixin(mock_determine_prediction_size=False)
 
@@ -90,7 +100,7 @@ def test_determine_prediction_size(start_timestamp, end_timestamp, expected_pred
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
     ],
 )
-def test_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
+def test_predict_mixin_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
     ts = MagicMock()
     mixin = make_mixin()
 
@@ -110,7 +120,7 @@ def test_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
     ],
 )
-def test_predict_determine_prediction_size_called(start_timestamp, end_timestamp, example_tsds):
+def test_predict_mixin_predict_determine_prediction_size_called(start_timestamp, end_timestamp, example_tsds):
     ts = MagicMock()
     mixin = make_mixin()
 
@@ -127,7 +137,7 @@ def test_predict_determine_prediction_size_called(start_timestamp, end_timestamp
     "model_class",
     [NonPredictionIntervalContextIgnorantAbstractModel, NonPredictionIntervalContextRequiredAbstractModel],
 )
-def test_predict_fail_doesnt_support_prediction_interval(model_class):
+def test_predict_mixin_predict_fail_doesnt_support_prediction_interval(model_class):
     ts = MagicMock()
     model = MagicMock(spec=model_class)
     mixin = make_mixin(model=model)
@@ -170,7 +180,7 @@ def _check_predict_called(spec, prediction_interval, quantiles, check_keys):
     assert result == mixin.model.predict.return_value
 
 
-def test_predict_model_predict_called_non_prediction_interval_context_ignorant():
+def test_predict_mixin_predict_called_non_prediction_interval_context_ignorant():
     _check_predict_called(
         spec=NonPredictionIntervalContextIgnorantAbstractModel,
         prediction_interval=False,
@@ -179,7 +189,7 @@ def test_predict_model_predict_called_non_prediction_interval_context_ignorant()
     )
 
 
-def test_predict_model_predict_called_non_prediction_interval_context_required():
+def test_predict_mixin_predict_called_non_prediction_interval_context_required():
     _check_predict_called(
         spec=NonPredictionIntervalContextRequiredAbstractModel,
         prediction_interval=False,
@@ -190,7 +200,7 @@ def test_predict_model_predict_called_non_prediction_interval_context_required()
 
 @pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,), ()])
 @pytest.mark.parametrize("prediction_interval", [False, True])
-def test_predict_model_predict_called_prediction_interval_context_ignorant(prediction_interval, quantiles):
+def test_predict_mixin_predict_called_prediction_interval_context_ignorant(prediction_interval, quantiles):
     _check_predict_called(
         spec=PredictionIntervalContextIgnorantAbstractModel,
         prediction_interval=False,
@@ -201,10 +211,117 @@ def test_predict_model_predict_called_prediction_interval_context_ignorant(predi
 
 @pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,), ()])
 @pytest.mark.parametrize("prediction_interval", [False, True])
-def test_predict_model_predict_called_prediction_interval_context_required(prediction_interval, quantiles):
+def test_predict_mixin_predict_called_prediction_interval_context_required(prediction_interval, quantiles):
     _check_predict_called(
         spec=PredictionIntervalContextRequiredAbstractModel,
         prediction_interval=False,
         quantiles=(),
         check_keys=["ts", "prediction_size", "prediction_interval", "quantiles"],
     )
+
+
+class Dummy(SaveModelPipelineMixin):
+    def __init__(self, a, b, ts, model, transforms):
+        self.a = a
+        self.b = b
+        self.ts = ts
+        self.model = model
+        self.transforms = transforms
+
+
+def test_save_mixin_save(example_tsds, tmp_path):
+    model = NaiveModel()
+    transforms = [AddConstTransform(in_column="target", value=10.0)]
+    dummy = Dummy(a=1, b=2, ts=example_tsds, model=model, transforms=transforms)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path / "dummy.zip"
+
+    dummy.save(path)
+
+    with zipfile.ZipFile(path, "r") as archive:
+        files = archive.namelist()
+        assert sorted(files) == sorted(["metadata.json", "object.pkl", "model.zip", "transforms/0.zip"])
+
+        with archive.open("metadata.json", "r") as input_file:
+            metadata_bytes = input_file.read()
+        metadata_str = metadata_bytes.decode("utf-8")
+        metadata = json.loads(metadata_str)
+        assert sorted(metadata.keys()) == ["class", "etna_version"]
+        assert metadata["class"] == "tests.test_pipeline.test_mixins.Dummy"
+
+        with archive.open("object.pkl", "r") as input_file:
+            loaded_obj = pickle.load(input_file)
+        assert loaded_obj.a == dummy.a
+        assert loaded_obj.b == dummy.b
+
+    # check that we didn't break dummy object itself
+    assert hasattr(dummy, "ts")
+    assert hasattr(dummy, "model")
+    assert hasattr(dummy, "transforms")
+
+
+def test_save_mixin_load_fail_file_not_found():
+    non_existent_path = pathlib.Path("archive.zip")
+    with pytest.raises(FileNotFoundError):
+        Dummy.load(non_existent_path)
+
+
+def test_save_mixin_load_ok_no_ts(example_tsds, recwarn, tmp_path):
+    model = NaiveModel()
+    transforms = [AddConstTransform(in_column="target", value=10.0)]
+    dummy = Dummy(a=1, b=2, ts=example_tsds, model=model, transforms=transforms)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path / "dummy.zip"
+
+    dummy.save(path)
+    loaded_dummy = Dummy.load(path)
+
+    assert loaded_dummy.a == dummy.a
+    assert loaded_dummy.b == dummy.b
+    assert loaded_dummy.ts is None
+    assert isinstance(loaded_dummy.model, NaiveModel)
+    assert len(loaded_dummy.transforms) == len(dummy.transforms)
+    assert len(recwarn) == 0
+
+
+def test_save_mixin_load_ok_with_ts(example_tsds, recwarn, tmp_path):
+    model = NaiveModel()
+    transforms = [AddConstTransform(in_column="target", value=10.0)]
+    dummy = Dummy(a=1, b=2, ts=example_tsds, model=model, transforms=transforms)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path / "dummy.zip"
+
+    dummy.save(path)
+    loaded_dummy = Dummy.load(path, ts=example_tsds)
+
+    assert loaded_dummy.a == dummy.a
+    assert loaded_dummy.b == dummy.b
+    assert loaded_dummy.ts is not example_tsds
+    pd.testing.assert_frame_equal(loaded_dummy.ts.to_pandas(), dummy.ts.to_pandas())
+    assert isinstance(loaded_dummy.model, NaiveModel)
+    assert len(loaded_dummy.transforms) == len(dummy.transforms)
+    assert len(recwarn) == 0
+
+
+@pytest.mark.parametrize(
+    "save_version, load_version", [((1, 5, 0), (2, 5, 0)), ((2, 5, 0), (1, 5, 0)), ((1, 5, 0), (1, 3, 0))]
+)
+@patch("etna.core.mixins.get_etna_version")
+def test_save_mixin_load_warning(get_version_mock, save_version, load_version, example_tsds, tmp_path):
+    model = NaiveModel()
+    transforms = [AddConstTransform(in_column="target", value=10.0)]
+    dummy = Dummy(a=1, b=2, ts=example_tsds, model=model, transforms=transforms)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path / "dummy.zip"
+
+    get_version_mock.return_value = save_version
+    dummy.save(path)
+
+    save_version_str = ".".join([str(x) for x in save_version])
+    load_version_str = ".".join([str(x) for x in load_version])
+    with pytest.warns(
+        UserWarning,
+        match=f"The object was saved under etna version {save_version_str} but running version is {load_version_str}",
+    ):
+        get_version_mock.return_value = load_version
+        _ = Dummy.load(path)

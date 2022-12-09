@@ -1,8 +1,8 @@
 import json
 import pathlib
 import pickle
+import zipfile
 from unittest.mock import patch
-from zipfile import ZipFile
 
 import pytest
 
@@ -24,31 +24,37 @@ def test_get_etna_version():
 def test_save_mixin_save(tmp_path):
     dummy = Dummy(a=1, b=2)
     dir_path = pathlib.Path(tmp_path)
-    path = dir_path.joinpath("dummy.zip")
+    path = dir_path / "dummy.zip"
 
     dummy.save(path)
 
-    with ZipFile(path, "r") as zip_file:
-        files = zip_file.namelist()
+    with zipfile.ZipFile(path, "r") as archive:
+        files = archive.namelist()
         assert sorted(files) == ["metadata.json", "object.pkl"]
 
-        with zip_file.open("metadata.json", "r") as input_file:
+        with archive.open("metadata.json", "r") as input_file:
             metadata_bytes = input_file.read()
         metadata_str = metadata_bytes.decode("utf-8")
         metadata = json.loads(metadata_str)
         assert sorted(metadata.keys()) == ["class", "etna_version"]
         assert metadata["class"] == "tests.test_core.test_mixins.Dummy"
 
-        with zip_file.open("object.pkl", "r") as input_file:
+        with archive.open("object.pkl", "r") as input_file:
             loaded_dummy = pickle.load(input_file)
         assert loaded_dummy.a == dummy.a
         assert loaded_dummy.b == dummy.b
 
 
+def test_save_mixin_load_fail_file_not_found():
+    non_existent_path = pathlib.Path("archive.zip")
+    with pytest.raises(FileNotFoundError):
+        Dummy.load(non_existent_path)
+
+
 def test_save_mixin_load_ok(recwarn, tmp_path):
     dummy = Dummy(a=1, b=2)
     dir_path = pathlib.Path(tmp_path)
-    path = dir_path.joinpath("dummy.zip")
+    path = dir_path / "dummy.zip"
 
     dummy.save(path)
     loaded_dummy = Dummy.load(path)
@@ -65,7 +71,7 @@ def test_save_mixin_load_ok(recwarn, tmp_path):
 def test_save_mixin_load_warning(get_version_mock, save_version, load_version, tmp_path):
     dummy = Dummy(a=1, b=2)
     dir_path = pathlib.Path(tmp_path)
-    path = dir_path.joinpath("dummy.zip")
+    path = dir_path / "dummy.zip"
 
     get_version_mock.return_value = save_version
     dummy.save(path)
