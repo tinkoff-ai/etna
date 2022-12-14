@@ -10,7 +10,7 @@ from typing import Callable
 from hydra_slayer import get_factory
 
 
-def load_saved(path: pathlib.Path) -> Any:
+def load(path: pathlib.Path) -> Any:
     """Load saved object by path.
 
     Parameters

@@ -11,7 +11,7 @@ import pandas as pd
 from typing_extensions import get_args
 
 from etna.core import SaveMixin
-from etna.core.utils import load_saved
+from etna.core import load
 from etna.datasets import TSDataset
 from etna.models import ModelType
 from etna.models import NonPredictionIntervalContextIgnorantAbstractModel
@@ -177,7 +177,7 @@ class SaveModelPipelineMixin(SaveMixin):
 
                 # load model
                 model_path = temp_dir / "model.zip"
-                obj.model = load_saved(model_path)
+                obj.model = load(model_path)
 
                 # load transforms
                 transforms_dir = temp_dir / "transforms"
@@ -185,7 +185,7 @@ class SaveModelPipelineMixin(SaveMixin):
 
                 if transforms_dir.exists():
                     for path in sorted(transforms_dir.iterdir()):
-                        transforms.append(load_saved(path))
+                        transforms.append(load(path))
 
                 obj.transforms = transforms
 
