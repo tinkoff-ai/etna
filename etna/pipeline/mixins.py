@@ -143,10 +143,12 @@ class SaveModelPipelineMixin(SaveMixin):
                 # save transforms separately
                 transforms_dir = temp_dir / "transforms"
                 transforms_dir.mkdir()
+                num_digits = len(str(len(transforms) - 1))
                 for i, transform in enumerate(transforms):
-                    transform_save_path = transforms_dir / f"{i}.zip"
+                    save_name = f"{i:0{num_digits}d}.zip"
+                    transform_save_path = transforms_dir / save_name
                     transform.save(transform_save_path)
-                    archive.write(transform_save_path, f"transforms/{i}.zip")
+                    archive.write(transform_save_path, f"transforms/{save_name}")
 
     @classmethod
     def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Any:
@@ -182,7 +184,7 @@ class SaveModelPipelineMixin(SaveMixin):
                 transforms = []
 
                 if transforms_dir.exists():
-                    for path in transforms_dir.iterdir():
+                    for path in sorted(transforms_dir.iterdir()):
                         transforms.append(load(path))
 
                 obj.transforms = transforms

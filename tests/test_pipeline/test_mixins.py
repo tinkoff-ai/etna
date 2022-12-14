@@ -255,9 +255,9 @@ def test_save_mixin_save(example_tsds, tmp_path):
         assert loaded_obj.b == dummy.b
 
     # check that we didn't break dummy object itself
-    assert hasattr(dummy, "ts")
-    assert hasattr(dummy, "model")
-    assert hasattr(dummy, "transforms")
+    assert dummy.ts is example_tsds
+    assert dummy.model is model
+    assert dummy.transforms is transforms
 
 
 def test_save_mixin_load_fail_file_not_found():
@@ -268,7 +268,8 @@ def test_save_mixin_load_fail_file_not_found():
 
 def test_save_mixin_load_ok_no_ts(example_tsds, recwarn, tmp_path):
     model = NaiveModel()
-    transforms = [AddConstTransform(in_column="target", value=10.0)]
+    transform_values = list(range(1, 11))
+    transforms = [AddConstTransform(in_column="target", value=value) for value in transform_values]
     dummy = Dummy(a=1, b=2, ts=example_tsds, model=model, transforms=transforms)
     dir_path = pathlib.Path(tmp_path)
     path = dir_path / "dummy.zip"
@@ -280,13 +281,14 @@ def test_save_mixin_load_ok_no_ts(example_tsds, recwarn, tmp_path):
     assert loaded_dummy.b == dummy.b
     assert loaded_dummy.ts is None
     assert isinstance(loaded_dummy.model, NaiveModel)
-    assert len(loaded_dummy.transforms) == len(dummy.transforms)
+    assert [transform.value for transform in loaded_dummy.transforms] == transform_values
     assert len(recwarn) == 0
 
 
 def test_save_mixin_load_ok_with_ts(example_tsds, recwarn, tmp_path):
     model = NaiveModel()
-    transforms = [AddConstTransform(in_column="target", value=10.0)]
+    transform_values = list(range(1, 11))
+    transforms = [AddConstTransform(in_column="target", value=value) for value in transform_values]
     dummy = Dummy(a=1, b=2, ts=example_tsds, model=model, transforms=transforms)
     dir_path = pathlib.Path(tmp_path)
     path = dir_path / "dummy.zip"
@@ -299,7 +301,7 @@ def test_save_mixin_load_ok_with_ts(example_tsds, recwarn, tmp_path):
     assert loaded_dummy.ts is not example_tsds
     pd.testing.assert_frame_equal(loaded_dummy.ts.to_pandas(), dummy.ts.to_pandas())
     assert isinstance(loaded_dummy.model, NaiveModel)
-    assert len(loaded_dummy.transforms) == len(dummy.transforms)
+    assert [transform.value for transform in loaded_dummy.transforms] == transform_values
     assert len(recwarn) == 0
 
 
