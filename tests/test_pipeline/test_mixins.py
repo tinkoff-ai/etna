@@ -2,6 +2,7 @@ import json
 import pathlib
 import pickle
 import zipfile
+from copy import deepcopy
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -236,6 +237,9 @@ def test_save_mixin_save(example_tsds, tmp_path):
     dir_path = pathlib.Path(tmp_path)
     path = dir_path / "dummy.zip"
 
+    initial_ts = deepcopy(example_tsds)
+    initial_model = deepcopy(model)
+    initial_transforms = deepcopy(transforms)
     dummy.save(path)
 
     with zipfile.ZipFile(path, "r") as archive:
@@ -255,9 +259,9 @@ def test_save_mixin_save(example_tsds, tmp_path):
         assert loaded_obj.b == dummy.b
 
     # check that we didn't break dummy object itself
-    assert dummy.ts is example_tsds
-    assert dummy.model is model
-    assert dummy.transforms is transforms
+    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_ts)
+    assert pickle.dumps(dummy.model) == pickle.dumps(initial_model)
+    assert pickle.dumps(dummy.transforms) == pickle.dumps(initial_transforms)
 
 
 def test_save_mixin_load_fail_file_not_found():
