@@ -81,14 +81,38 @@ def test_tree_structure_errors(structure: Dict[str, List[str]]):
     "structure,names,answer",
     (
         ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, None, ["level_0", "level_1", "level_2"]),
-        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"]),
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"], ["l1", "l2", "l3"]),
     ),
 )
-def test_level_names_errors(structure: Dict[str, List[str]], names: List[str], answer: List[str]):
+def test_level_names(structure: Dict[str, List[str]], names: List[str], answer: List[str]):
     h = HierarchicalStructure(structure, names)
-
     for name, correct in zip(h.level_names, answer):
         assert name == correct
+
+
+@pytest.mark.parametrize(
+    "level,answer",
+    (
+        ("l1", ["total"]),
+        ("l2", ["X", "Y"]),
+        ("l3", ["a", "b", "c", "d"])
+    ),
+)
+def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level: str, answer: List[str]):
+    for name, correct in zip(simple_hierarchical_struct.get_level_segments(level), answer):
+        assert name == correct
+
+
+@pytest.mark.parametrize(
+    "segment,answer",
+    (
+        ("total", "l1"),
+        ("Y", "l2"),
+        ("c", "l3")
+    ),
+)
+def test_level_of_segments(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
+    assert simple_hierarchical_struct.get_level_of_segment(segment) == answer
 
 
 @pytest.mark.parametrize(
