@@ -92,11 +92,7 @@ def test_level_names(structure: Dict[str, List[str]], names: List[str], answer: 
 
 @pytest.mark.parametrize(
     "level,answer",
-    (
-        ("l1", ["total"]),
-        ("l2", ["X", "Y"]),
-        ("l3", ["a", "b", "c", "d"])
-    ),
+    (("l1", ["total"]), ("l2", ["X", "Y"]), ("l3", ["a", "b", "c", "d"])),
 )
 def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level: str, answer: List[str]):
     for name, correct in zip(simple_hierarchical_struct.get_level_segments(level), answer):
@@ -105,11 +101,7 @@ def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level
 
 @pytest.mark.parametrize(
     "segment,answer",
-    (
-        ("total", "l1"),
-        ("Y", "l2"),
-        ("c", "l3")
-    ),
+    (("total", "l1"), ("Y", "l2"), ("c", "l3")),
 )
 def test_segments_level(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
     assert simple_hierarchical_struct.get_segment_level(segment) == answer
