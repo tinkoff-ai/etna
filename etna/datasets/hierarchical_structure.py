@@ -36,7 +36,6 @@ class HierarchicalStructure(BaseMixin):
 
         self._level_series = dict()
         self._level_index_map = dict()
-        self._level_names = level_names
         for i in range(tree_depth):
             self._level_index_map[level_names[i]] = i
             self._level_series[level_names[i]] = hierarchy_levels[i]
@@ -131,10 +130,11 @@ class HierarchicalStructure(BaseMixin):
         if target_idx >= source_idx:
             raise ValueError("Target level must be higher in hierarchy than source level!")
 
+        level_names = self.level_names
         transition_matrix = None
         for i in range(target_idx, source_idx):
-            top_level = self._level_names[i]
-            bottom_level = self._level_names[i + 1]
+            top_level = level_names[i]
+            bottom_level = level_names[i + 1]
 
             matrix = lil_matrix((len(self.get_level_segments(top_level)), len(self.get_level_segments(bottom_level))))
 
@@ -156,7 +156,7 @@ class HierarchicalStructure(BaseMixin):
     @property
     def level_names(self) -> List[str]:
         """Get all levels names."""
-        return self._level_names[:]
+        return sorted(self._level_index_map.keys(), key=lambda l: self._level_index_map[l])
 
     def get_level_segments(self, level_name: str) -> List[str]:
         """Get all segments from particular level."""
@@ -171,3 +171,19 @@ class HierarchicalStructure(BaseMixin):
             return self._segment_levels_map[segment]
         except KeyError:
             return None
+
+
+
+# valid
+HierarchicalStructure({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]})
+h = HierarchicalStructure({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"])
+h.get_summing_matrix("l1", "l3")
+
+h = HierarchicalStructure(
+    {"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["f"], "d": ["g"], "a": ["e", "h"]},
+    ["l1", "l2", "l3", "l4"],
+)
+print(h.get_summing_matrix("l2", "l3").toarray())
+print(h.get_level_segments("l4"))
+
+print(h.level_names)
