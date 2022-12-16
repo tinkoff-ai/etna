@@ -1,3 +1,5 @@
+import pathlib
+from typing import Any
 from typing import List
 from typing import Optional
 
@@ -53,3 +55,24 @@ class EnsembleMixin:
         prediction = pipeline.predict(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
         tslogger.log(msg=f"Prediction is done with {pipeline}.")
         return prediction
+
+    def save(self, path: pathlib.Path):
+        """Save the object.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def load(cls, path: pathlib.Path) -> Any:
+        """Load an object.
+
+        Parameters
+        ----------
+        path:
+            Path to load object from.
+        """
+        raise NotImplementedError()

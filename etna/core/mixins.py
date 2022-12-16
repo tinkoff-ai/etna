@@ -12,7 +12,6 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 from typing import cast
-from zipfile import ZipFile
 
 from sklearn.base import BaseEstimator
 
@@ -151,7 +150,7 @@ class SaveMixin:
         path:
             Path to save object to.
         """
-        with ZipFile(path, "w") as archive:
+        with zipfile.ZipFile(path, "w") as archive:
             self._save_metadata(archive)
             self._save_state(archive)
 
@@ -190,8 +189,13 @@ class SaveMixin:
         ----------
         path:
             Path to load object from.
+
+        Returns
+        -------
+        :
+            Loaded object.
         """
-        with ZipFile(path, "r") as archive:
+        with zipfile.ZipFile(path, "r") as archive:
             metadata = cls._load_metadata(archive)
             cls._validate_metadata(metadata)
             obj = cls._load_state(archive)

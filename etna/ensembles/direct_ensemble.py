@@ -15,7 +15,7 @@ from etna.ensembles import EnsembleMixin
 from etna.pipeline.base import BasePipeline
 
 
-class DirectEnsemble(BasePipeline, EnsembleMixin):
+class DirectEnsemble(EnsembleMixin, BasePipeline):
     """DirectEnsemble is a pipeline that forecasts future values merging the forecasts of base pipelines.
 
     Ensemble expects several pipelines during init. These pipelines are expected to have different forecasting horizons.
