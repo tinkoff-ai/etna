@@ -111,8 +111,8 @@ def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level
         ("c", "l3")
     ),
 )
-def test_level_of_segments(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
-    assert simple_hierarchical_struct.get_level_of_segment(segment) == answer
+def test_segments_level(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
+    assert simple_hierarchical_struct.get_segment_level(segment) == answer
 
 
 @pytest.mark.parametrize(

@@ -165,7 +165,7 @@ class HierarchicalStructure(BaseMixin):
         except KeyError as e:
             raise ValueError("Invalid level name: " + e.args[0])
 
-    def get_level_of_segment(self, segment: str) -> Union[str, None]:
+    def get_segment_level(self, segment: str) -> Union[str, None]:
         """Get level name for provided segment."""
         try:
             return self._segment_levels_map[segment]
