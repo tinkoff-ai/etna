@@ -237,8 +237,7 @@ def test_save_mixin_save(example_tsds, tmp_path):
     dir_path = pathlib.Path(tmp_path)
     path = dir_path / "dummy.zip"
 
-    initial_ts = deepcopy(example_tsds)
-    initial_model = deepcopy(model)
+    initial_dummy = deepcopy(dummy)
     initial_transforms = deepcopy(transforms)
     dummy.save(path)
 
@@ -259,8 +258,9 @@ def test_save_mixin_save(example_tsds, tmp_path):
         assert loaded_obj.b == dummy.b
 
     # check that we didn't break dummy object itself
-    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_ts)
-    assert pickle.dumps(dummy.model) == pickle.dumps(initial_model)
+    assert dummy.a == initial_dummy.a
+    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_dummy.ts)
+    assert pickle.dumps(dummy.model) == pickle.dumps(initial_dummy.model)
     assert pickle.dumps(dummy.transforms) == pickle.dumps(initial_transforms)
 
 
