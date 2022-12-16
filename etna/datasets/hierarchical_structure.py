@@ -171,19 +171,3 @@ class HierarchicalStructure(BaseMixin):
             return self._segment_levels_map[segment]
         except KeyError:
             return None
-
-
-
-# valid
-HierarchicalStructure({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]})
-h = HierarchicalStructure({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"])
-h.get_summing_matrix("l1", "l3")
-
-h = HierarchicalStructure(
-    {"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["f"], "d": ["g"], "a": ["e", "h"]},
-    ["l1", "l2", "l3", "l4"],
-)
-print(h.get_summing_matrix("l2", "l3").toarray())
-print(h.get_level_segments("l4"))
-
-print(h.level_names)
