@@ -5,7 +5,6 @@ from copy import deepcopy
 from typing import Any
 from typing import List
 from typing import Optional
-from typing import Sequence
 
 import pandas as pd
 
@@ -13,7 +12,6 @@ from etna.core import SaveMixin
 from etna.core import load
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
-from etna.pipeline.base import AbstractPipeline
 from etna.pipeline.base import BasePipeline
 
 
@@ -63,27 +61,6 @@ class EnsembleMixin:
         tslogger.log(msg=f"Prediction is done with {pipeline}.")
         return prediction
 
-    def save(self, path: pathlib.Path):
-        """Save the object.
-
-        Parameters
-        ----------
-        path:
-            Path to save object to.
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    def load(cls, path: pathlib.Path) -> Any:
-        """Load an object.
-
-        Parameters
-        ----------
-        path:
-            Path to load object from.
-        """
-        raise NotImplementedError()
-
 
 class SaveEnsembleMixin(SaveMixin):
     """Implementation of ``AbstractSaveable`` abstract class for ensemble pipelines.
@@ -97,7 +74,7 @@ class SaveEnsembleMixin(SaveMixin):
     * pipelines: folder with saved pipelines.
     """
 
-    pipelines: Sequence[AbstractPipeline]
+    pipelines: List[BasePipeline]
     ts: Optional[TSDataset]
 
     def save(self, path: pathlib.Path):

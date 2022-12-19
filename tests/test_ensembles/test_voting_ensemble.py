@@ -15,6 +15,7 @@ from etna.datasets import TSDataset
 from etna.ensembles.voting_ensemble import VotingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 
 HORIZON = 7
 
@@ -194,3 +195,7 @@ def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSData
     results = voting_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
     for df in results:
         assert isinstance(df, pd.DataFrame)
+
+
+def test_save_load(voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds)

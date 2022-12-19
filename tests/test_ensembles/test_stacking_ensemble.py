@@ -14,6 +14,7 @@ from etna.datasets import TSDataset
 from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 
 HORIZON = 7
 
@@ -317,3 +318,7 @@ def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
     """Test that StackingEnsemble raise error when calling forecast without being fit."""
     with pytest.raises(ValueError, match="StackingEnsemble is not fitted!"):
         _ = naive_ensemble.forecast()
+
+
+def test_save_load(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
