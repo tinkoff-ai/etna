@@ -23,6 +23,14 @@ def tailed_hierarchical_struct():
     )
 
 
+@pytest.fixture
+def long_hierarchical_struct():
+    return HierarchicalStructure(
+        level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["b"], "a": ["c"], "b": ["d"]},
+        level_names=["l1", "l2", "l3", "l4"],
+    )
+
+
 @pytest.mark.parametrize(
     "target,source",
     (
@@ -39,11 +47,20 @@ def test_get_summing_matrix_output(simple_hierarchical_struct: HierarchicalStruc
     "struct, target,source,answer",
     (
         ("tailed_hierarchical_struct", "l1", "l2", np.array([[1, 1]])),
+        ("tailed_hierarchical_struct", "l1", "l3", np.array([[1, 1, 1]])),
         ("tailed_hierarchical_struct", "l1", "l4", np.array([[1, 1, 1, 1]])),
         ("tailed_hierarchical_struct", "l2", "l3", np.array([[1, 0, 0], [0, 1, 1]])),
+        ("tailed_hierarchical_struct", "l2", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
+        ("tailed_hierarchical_struct", "l3", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])),
         ("simple_hierarchical_struct", "l1", "l2", np.array([[1, 1]])),
         ("simple_hierarchical_struct", "l1", "l3", np.array([[1, 1, 1, 1]])),
         ("simple_hierarchical_struct", "l2", "l3", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
+        ("long_hierarchical_struct", "l1", "l2", np.array([[1, 1]])),
+        ("long_hierarchical_struct", "l1", "l3", np.array([[1, 1]])),
+        ("long_hierarchical_struct", "l1", "l4", np.array([[1, 1]])),
+        ("long_hierarchical_struct", "l2", "l3", np.array([[1, 0], [0, 1]])),
+        ("long_hierarchical_struct", "l2", "l4", np.array([[1, 0], [0, 1]])),
+        ("long_hierarchical_struct", "l3", "l4", np.array([[1, 0], [0, 1]])),
     ),
 )
 def test_summing_matrix(struct: str, source: str, target: str, answer: np.ndarray, request: pytest.FixtureRequest):

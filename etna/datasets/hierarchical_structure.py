@@ -49,6 +49,8 @@ class HierarchicalStructure(BaseMixin):
 
         self._sub_segment_size_map: Dict[str, int] = {k: len(v) for k, v in level_structure.items()}
 
+        self._segment_subtree_size_map: Dict[str, int] = self._get_subtree_sizes(hierarchy_levels)
+
         self._segment_to_level: Dict[str, str] = {
             segment: level for level in self._level_series for segment in self._level_series[level]
         }
@@ -109,6 +111,23 @@ class HierarchicalStructure(BaseMixin):
 
         return levels
 
+    def _get_subtree_sizes(self, hierarchy_levels: Dict[int, List[str]]) -> Dict[str, int]:
+        """Compute subtree size for each node."""
+        subtree_size_map = dict()
+        for _, node_list in sorted(hierarchy_levels.items(), key=lambda x: x[0], reverse=True):
+            for node in node_list:
+                subtree_size = 0
+                if node not in self.level_structure:
+                    subtree_size_map[node] = 1
+                    continue
+
+                for child_node in self.level_structure.get(node, []):
+                    subtree_size += subtree_size_map[child_node]
+
+                subtree_size_map[node] = subtree_size
+
+        return subtree_size_map
+
     def get_summing_matrix(self, target_level: str, source_level: str) -> scipy.sparse.base.spmatrix:
         """
         Get summing matrix for transition from source level to target level.
@@ -135,26 +154,21 @@ class HierarchicalStructure(BaseMixin):
         if target_idx >= source_idx:
             raise ValueError("Target level must be higher in hierarchy than source level!")
 
-        level_names = self.level_names
-        summing_matrix = None
-        for i in range(target_idx, source_idx):
-            top_level = level_names[i]
-            bottom_level = level_names[i + 1]
+        target_level_list = self.get_level_segments(target_level)
+        source_level_list = self.get_level_segments(source_level)
+        summing_matrix = lil_matrix((len(target_level_list), len(source_level_list)))
 
-            matrix = lil_matrix((len(self.get_level_segments(top_level)), len(self.get_level_segments(bottom_level))))
+        j = 0
+        for i, segment in enumerate(target_level_list):
+            sub_segment_size = self._segment_subtree_size_map[segment]
 
-            offset = 0
-            for i, segment in enumerate(self.get_level_segments(top_level)):
-                sub_segment_size = self._sub_segment_size_map.get(segment, 0)
-                for j in range(sub_segment_size):
-                    matrix[i, offset + j] = 1
-                offset += sub_segment_size
+            while sub_segment_size > 0:
+                source_segment = source_level_list[j]
+                sub_segment_size -= self._segment_subtree_size_map[source_segment]
+                summing_matrix[i, j] = 1
+                j += 1
 
-            matrix.tocsr()
-            if summing_matrix is None:
-                summing_matrix = matrix
-            else:
-                summing_matrix = summing_matrix @ matrix
+        summing_matrix.tocsr()
 
         return summing_matrix
 
