@@ -137,16 +137,27 @@ class TSDataset:
         self._regressors = copy(self.known_future)
 
         self.hierarchical_structure = hierarchical_structure
-        self.current_df_level: Optional[str] = None
+        self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
         self.current_df_exog_level: Optional[str] = None
-
 
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
+            self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             self.df = self._merge_exog(self.df)
 
         self.transforms: Optional[Sequence["Transform"]] = None
+
+    def _get_dataframe_level(self, df:pd.DataFrame) -> Optional[str]:
+        """Return the level of the passed dataframe in hierarchical structure"""
+        if self.hierarchical_structure is None:
+            return None
+
+        df_segments = df.columns.get_level_values("segment")
+        segment_levels = [self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments]
+        if len(set(segment_levels)) != 1 or None in segment_levels:
+            raise ValueError("Segments in dataframe are not consistent with hierarchical structure!")
+        return segment_levels[0]
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
