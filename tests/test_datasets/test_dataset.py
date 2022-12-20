@@ -896,13 +896,22 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
 def hierarchical_structure():
     hs = HierarchicalStructure(level_structure={"total":["X", "Y"], "X":["a", "b"], "Y":["c", "d"]}, level_names=["total", "market", "product"])
     return hs
-
 @pytest.fixture
 def inconsistent_segments_df():
     df = pd.DataFrame({
         "timestamp": ["2000-01-01", "2000-01-02"],
         "segment": ["fake_segment"]*2,
         "target": [1, 2],
+    })
+    df = TSDataset.to_dataset(df)
+    return df
+
+@pytest.fixture
+def inconsistent_segments_df_exog():
+    df = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"],
+        "segment": ["fake_segment"]*2,
+        "exog": [1, 2],
     })
     df = TSDataset.to_dataset(df)
     return df
@@ -928,6 +937,16 @@ def market_level_df():
     return df
 
 @pytest.fixture
+def market_level_df_exog():
+    df_exog = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"]*2,
+        "segment": ["X"]*2 + ["Y"]*2,
+        "exog": [1, 2] + [10, 20],
+    })
+    df_exog = TSDataset.to_dataset(df_exog)
+    return df_exog
+
+@pytest.fixture
 def product_level_df():
     df = pd.DataFrame({
         "timestamp": ["2000-01-01", "2000-01-02"]*4,
@@ -937,18 +956,44 @@ def product_level_df():
     df = TSDataset.to_dataset(df)
     return df
 
+@pytest.fixture
+def simple_hierarchical_ts(market_level_df, hierarchical_structure):
+    df = market_level_df
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
 
-def test_get_dataframe_level_inconsistent_segments_fails(inconsistent_segments_df, hierarchical_structure):
+def test_get_dataframe_level_inconsistent_segments_fails(inconsistent_segments_df, simple_hierarchical_ts):
     with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
-        _ = TSDataset(df=inconsistent_segments_df, freq="D", hierarchical_structure=hierarchical_structure)
+        simple_hierarchical_ts._get_dataframe_level(df=inconsistent_segments_df)
 
-def test_get_dataframe_level_missing_segments_fails(missing_segments_df, hierarchical_structure):
+def test_get_dataframe_level_missing_segments_fails(missing_segments_df, simple_hierarchical_ts):
     with pytest.raises(ValueError, match="Some segments of hierarchical level are missing in dataframe!"):
-        _ = TSDataset(df=missing_segments_df, freq="D", hierarchical_structure=hierarchical_structure)
+        simple_hierarchical_ts._get_dataframe_level(df=missing_segments_df)
 
 @pytest.mark.parametrize("df, expected_level", [("market_level_df", "market"), ("product_level_df", "product")])
-def test_get_dataframe(df, expected_level, hierarchical_structure, request):
+def test_get_dataframe(df, expected_level, simple_hierarchical_ts, request):
     df = request.getfixturevalue(df)
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
-    df_level = ts._get_dataframe_level(df=df)
+    df_level = simple_hierarchical_ts._get_dataframe_level(df=df)
     assert df_level == expected_level
+
+def test_init_inconsistent_segments_df_fails(inconsistent_segments_df, hierarchical_structure):
+    df = inconsistent_segments_df
+    with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
+        _ = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+
+def test_init_inconsistent_segments_df_exog_fails(market_level_df, inconsistent_segments_df_exog, hierarchical_structure):
+    df, df_exog = market_level_df, inconsistent_segments_df_exog
+    with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
+        _ = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+
+def test_init_df_same_level_df_exog(market_level_df, market_level_df_exog, hierarchical_structure):
+    df, df_exog = market_level_df, market_level_df_exog
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog,hierarchical_structure=hierarchical_structure)
+    df_columns = set(ts.columns.get_level_values("feature"))
+    assert df_columns == {"target", "exog"}
+
+def test_init_df_diff_level_df_exog(product_level_df, market_level_df_exog, hierarchical_structure):
+    df, df_exog = product_level_df, market_level_df_exog
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog,hierarchical_structure=hierarchical_structure)
+    df_columns = set(ts.columns.get_level_values("feature"))
+    assert df_columns == {"target"}
