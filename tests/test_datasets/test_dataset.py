@@ -17,7 +17,9 @@ from etna.transforms import OneHotEncoderTransform
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
+from etna.datasets import HierarchicalStructure
 
+'''
 @pytest.fixture()
 def tsdf_with_exog(random_seed) -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
@@ -888,3 +890,65 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     np.testing.assert_array_equal(
         torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
     )
+'''
+
+@pytest.fixture
+def hierarchical_structure():
+    hs = HierarchicalStructure(level_structure={"total":["X", "Y"], "X":["a", "b"], "Y":["c", "d"]}, level_names=["total", "market", "product"])
+    return hs
+
+@pytest.fixture
+def inconsistent_segments_df():
+    df = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"],
+        "segment": ["fake_segment"]*2,
+        "target": [1, 2],
+    })
+    df = TSDataset.to_dataset(df)
+    return df
+
+@pytest.fixture
+def missing_segments_df():
+    df = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"],
+        "segment": ["X"]*2,
+        "target": [1, 2],
+    })
+    df = TSDataset.to_dataset(df)
+    return df
+
+@pytest.fixture
+def market_level_df():
+    df = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"]*2,
+        "segment": ["X"]*2 + ["Y"]*2,
+        "target": [1, 2] + [10, 20],
+    })
+    df = TSDataset.to_dataset(df)
+    return df
+
+@pytest.fixture
+def product_level_df():
+    df = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"]*4,
+        "segment": ["a"]*2 + ["b"]*2 + ["c"]*2 + ["d"]*2,
+        "target": [1, 2] + [10, 20] + [100, 200] + [1000, 2000],
+    })
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+def test_get_dataframe_level_inconsistent_segments_fails(inconsistent_segments_df, hierarchical_structure):
+    with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
+        _ = TSDataset(df=inconsistent_segments_df, freq="D", hierarchical_structure=hierarchical_structure)
+
+def test_get_dataframe_level_missing_segments_fails(missing_segments_df, hierarchical_structure):
+    with pytest.raises(ValueError, match="Some segments of hierarchical level are missing in dataframe!"):
+        _ = TSDataset(df=missing_segments_df, freq="D", hierarchical_structure=hierarchical_structure)
+
+@pytest.mark.parametrize("df, expected_level", [("market_level_df", "market"), ("product_level_df", "product")])
+def test_get_dataframe(df, expected_level, hierarchical_structure, request):
+    df = request.getfixturevalue(df)
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    df_level = ts._get_dataframe_level(df=df)
+    assert df_level == expected_level

@@ -23,7 +23,7 @@ from typing_extensions import Literal
 from etna import SETTINGS
 from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
-from hierarchical_structure import HierarchicalStructure
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
@@ -157,7 +157,13 @@ class TSDataset:
         segment_levels = [self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments]
         if len(set(segment_levels)) != 1 or None in segment_levels:
             raise ValueError("Segments in dataframe are not consistent with hierarchical structure!")
-        return segment_levels[0]
+
+        df_level = segment_levels[0]
+        level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
+        if len(df_segments) != len(level_segments):
+            raise ValueError("Some segments of hierarchical level are missing in dataframe!")
+
+        return df_level
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
