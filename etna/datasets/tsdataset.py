@@ -21,9 +21,9 @@ from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
 from etna import SETTINGS
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
-from etna.datasets.hierarchical_structure import HierarchicalStructure
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
@@ -93,7 +93,7 @@ class TSDataset:
         freq: str,
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
-        hierarchical_structure: Optional[HierarchicalStructure] = None
+        hierarchical_structure: Optional[HierarchicalStructure] = None,
     ):
         """Init TSDataset.
 
@@ -149,8 +149,8 @@ class TSDataset:
 
         self.transforms: Optional[Sequence["Transform"]] = None
 
-    def _get_dataframe_level(self, df:pd.DataFrame) -> Optional[str]:
-        """Return the level of the passed dataframe in hierarchical structure"""
+    def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
+        """Return the level of the passed dataframe in hierarchical structure."""
         if self.hierarchical_structure is None:
             return None
 
@@ -160,9 +160,10 @@ class TSDataset:
             raise ValueError("Segments in dataframe are not consistent with hierarchical structure!")
 
         df_level = segment_levels[0]
-        level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
-        if len(df_segments) != len(level_segments):
-            raise ValueError("Some segments of hierarchical level are missing in dataframe!")
+        if df_level is not None:
+            level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
+            if len(df_segments) != len(level_segments):
+                raise ValueError("Some segments of hierarchical level are missing in dataframe!")
 
         return df_level
 
@@ -899,6 +900,7 @@ class TSDataset:
         return self.df.index
 
     def level_names(self) -> Optional[List[str]]:
+        """Return names of the levels in the hierarchical structure."""
         if self.hierarchical_structure is None:
             return None
         return self.hierarchical_structure.level_names
