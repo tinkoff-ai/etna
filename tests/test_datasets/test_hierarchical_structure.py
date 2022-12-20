@@ -38,7 +38,7 @@ def long_hierarchical_struct():
         ("l2", "l3"),
     ),
 )
-def test_get_summing_matrix_output(simple_hierarchical_struct: HierarchicalStructure, source: str, target: str):
+def test_get_summing_matrix_format(simple_hierarchical_struct: HierarchicalStructure, source: str, target: str):
     output = simple_hierarchical_struct.get_summing_matrix(target_level=target, source_level=source)
     assert isinstance(output, scipy.sparse.base.spmatrix)
 

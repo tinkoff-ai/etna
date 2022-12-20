@@ -14,7 +14,7 @@ from etna.core import BaseMixin
 
 
 class HierarchicalStructure(BaseMixin):
-    """Represents hierarchical structure for provided hierarchical tree."""
+    """Represents hierarchical structure of TSDataset."""
 
     def __init__(self, level_structure: Dict[str, List[str]], level_names: Optional[List[str]] = None):
         """Init HierarchicalStructure.
@@ -27,11 +27,12 @@ class HierarchicalStructure(BaseMixin):
             Names of levels in the hierarchy in the order from top to bottom (i.e. ["total", "category", "product"]).
             If None is passed, level names are generated automatically with structure "level_<level_index>".
         """
-        self._hierarchy_root: Union[str, None] = None
-        self._hierarchy_interm_nodes: Set[str] = set()
-        self._hierarchy_leaves: Set[str] = set()
+        self._num_nodes = 0
+        self._hierarchy_root: Optional[str] = None
+        self._hierarchy_interm_nodes: Optional[Set[str]] = None
+        self._hierarchy_leaves: Optional[Set[str]] = None
 
-        self.level_structure: Dict[str, List[str]] = level_structure
+        self.level_structure = level_structure
 
         self._find_graph_structure(level_structure)
         hierarchy_levels = self._find_hierarchy_levels(level_structure)
@@ -43,13 +44,11 @@ class HierarchicalStructure(BaseMixin):
         if len(level_names) != tree_depth:
             raise ValueError("Length of `level_names` must be equal to hierarchy tree depth!")
 
-        self.level_names: List[str] = level_names
+        self.level_names = level_names
         self._level_series: Dict[str, List[str]] = {level_names[i]: hierarchy_levels[i] for i in range(tree_depth)}
         self._level_to_index: Dict[str, int] = {level_names[i]: i for i in range(tree_depth)}
 
-        self._sub_segment_size_map: Dict[str, int] = {k: len(v) for k, v in level_structure.items()}
-
-        self._segment_subtree_size_map: Dict[str, int] = self._get_subtree_sizes(hierarchy_levels)
+        self._segment_num_reachable_leafs: Dict[str, int] = self._get_num_reachable_leafs(hierarchy_levels)
 
         self._segment_to_level: Dict[str, str] = {
             segment: level for level in self._level_series for segment in self._level_series[level]
@@ -70,67 +69,66 @@ class HierarchicalStructure(BaseMixin):
         tree_root = tree_roots.pop()
         self._hierarchy_root = tree_root
 
+        self._num_nodes = len(self._hierarchy_interm_nodes | self._hierarchy_leaves) + 1
+
     def _find_hierarchy_levels(self, hierarchy_structure: Dict[str, List[str]]):
         """Traverse hierarchy tree to group segments into levels."""
-        nodes: Set[str] = self._hierarchy_interm_nodes | self._hierarchy_leaves
-        nodes.add(str(self._hierarchy_root))
-
         num_edges = sum(map(len, hierarchy_structure.values()))
 
-        num_nodes = len(nodes)
-        if num_edges != num_nodes - 1:
+        if num_edges != self._num_nodes - 1:
             raise ValueError("Invalid tree definition: invalid number of nodes and edges!")
 
-        leaves_level = None
-        node_levels = []
+        leaves_levels = set()
+        levels = defaultdict(list)
         seen_nodes = {self._hierarchy_root}
         queue: Queue = Queue()
         queue.put((self._hierarchy_root, 0))
         while not queue.empty():
             node, level = queue.get()
-            node_levels.append((level, node))
+            levels[level].append(node)
             child_nodes = hierarchy_structure.get(node, [])
 
             if len(child_nodes) == 0:
-                if leaves_level is not None and level != leaves_level:
-                    raise ValueError("All hierarchy tree leaves must be on the same level!")
-                else:
-                    leaves_level = level
+                leaves_levels.add(level)
 
             for adj_node in child_nodes:
                 if adj_node not in seen_nodes:
                     queue.put((adj_node, level + 1))
                     seen_nodes.add(adj_node)
+                else:
+                    raise ValueError("Invalid tree definition!")
 
-        if len(seen_nodes) != num_nodes:
+        if len(seen_nodes) != self._num_nodes:
             raise ValueError("Invalid tree definition: disconnected graph!")
 
-        levels = defaultdict(list)
-        for level, node in node_levels:
-            levels[level].append(node)
+        if len(leaves_levels) != 1:
+            raise ValueError("All hierarchy tree leaves must be on the same level!")
 
         return levels
 
-    def _get_subtree_sizes(self, hierarchy_levels: Dict[int, List[str]]) -> Dict[str, int]:
+    def _get_num_reachable_leafs(self, hierarchy_levels: Dict[int, List[str]]) -> Dict[str, int]:
         """Compute subtree size for each node."""
-        subtree_size_map = dict()
-        for _, node_list in sorted(hierarchy_levels.items(), key=lambda x: x[0], reverse=True):
-            for node in node_list:
+        num_reachable_leafs = dict()
+        for level in sorted(hierarchy_levels.keys(), reverse=True):
+            for node in hierarchy_levels[level]:
                 subtree_size = 0
                 if node not in self.level_structure:
-                    subtree_size_map[node] = 1
+                    num_reachable_leafs[node] = 1
                     continue
 
                 for child_node in self.level_structure.get(node, []):
-                    subtree_size += subtree_size_map[child_node]
+                    subtree_size += num_reachable_leafs[child_node]
 
-                subtree_size_map[node] = subtree_size
+                num_reachable_leafs[node] = subtree_size
 
-        return subtree_size_map
+        return num_reachable_leafs
 
     def get_summing_matrix(self, target_level: str, source_level: str) -> scipy.sparse.base.spmatrix:
-        """
-        Get summing matrix for transition from source level to target level.
+        """Get summing matrix for transition from source level to target level.
+        Generation algorithm is based on summing matrix structure. Number of 1 in such matrices equals to
+        number of nodes on the source level. Each row of summing matrices has ones only for source level nodes that
+        belongs to subtree rooted from corresponding target level node. BFS order of nodes on levels view simplifies
+        algorithm to calculation necessary offsets for each row.
 
         Parameters
         ----------
@@ -142,7 +140,7 @@ class HierarchicalStructure(BaseMixin):
         Returns
         -------
         :
-            transition matrix from source level to target level
+            summing matrix from source level to target level
 
         """
         try:
@@ -154,19 +152,19 @@ class HierarchicalStructure(BaseMixin):
         if target_idx >= source_idx:
             raise ValueError("Target level must be higher in hierarchy than source level!")
 
-        target_level_list = self.get_level_segments(target_level)
-        source_level_list = self.get_level_segments(source_level)
-        summing_matrix = lil_matrix((len(target_level_list), len(source_level_list)))
+        target_level_segment = self.get_level_segments(target_level)
+        source_level_segment = self.get_level_segments(source_level)
+        summing_matrix = lil_matrix((len(target_level_segment), len(source_level_segment)))
 
-        j = 0
-        for i, segment in enumerate(target_level_list):
-            sub_segment_size = self._segment_subtree_size_map[segment]
+        current_source_segment_id = 0
+        for current_target_segment_id, segment in enumerate(target_level_segment):
+            num_reachable_leafs_left = self._segment_num_reachable_leafs[segment]
 
-            while sub_segment_size > 0:
-                source_segment = source_level_list[j]
-                sub_segment_size -= self._segment_subtree_size_map[source_segment]
-                summing_matrix[i, j] = 1
-                j += 1
+            while num_reachable_leafs_left > 0:
+                source_segment = source_level_segment[current_source_segment_id]
+                num_reachable_leafs_left -= self._segment_num_reachable_leafs[source_segment]
+                summing_matrix[current_target_segment_id, current_source_segment_id] = 1
+                current_source_segment_id += 1
 
         summing_matrix.tocsr()
 
