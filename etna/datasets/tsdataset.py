@@ -23,6 +23,7 @@ from typing_extensions import Literal
 from etna import SETTINGS
 from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
+from hierarchical_structure import HierarchicalStructure
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
@@ -92,6 +93,7 @@ class TSDataset:
         freq: str,
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
+        hierarchical_structure: Optional[HierarchicalStructure] = None
     ):
         """Init TSDataset.
 
@@ -106,6 +108,8 @@ class TSDataset:
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
+        hierarchical_structure:
+            Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
         self.raw_df = self._prepare_df(df)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
@@ -131,6 +135,11 @@ class TSDataset:
 
         self.known_future = self._check_known_future(known_future, df_exog)
         self._regressors = copy(self.known_future)
+
+        self.hierarchical_structure = hierarchical_structure
+        self.current_df_level: Optional[str] = None
+        self.current_df_exog_level: Optional[str] = None
+
 
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
