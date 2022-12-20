@@ -1,10 +1,10 @@
 from collections import defaultdict
 from itertools import chain
 from queue import Queue
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Set
 from typing import Union
 
 import scipy
@@ -29,8 +29,6 @@ class HierarchicalStructure(BaseMixin):
         """
         self._num_nodes = 0
         self._hierarchy_root: Optional[str] = None
-        self._hierarchy_interm_nodes: Optional[Set[str]] = None
-        self._hierarchy_leaves: Optional[Set[str]] = None
 
         self.level_structure = level_structure
 
@@ -63,15 +61,15 @@ class HierarchicalStructure(BaseMixin):
         if len(tree_roots) != 1:
             raise ValueError("Invalid tree definition: unable to find root!")
 
-        self._hierarchy_interm_nodes = parents & children
-        self._hierarchy_leaves = children.difference(parents)
+        hierarchy_interm_nodes = parents & children
+        hierarchy_leaves = children.difference(parents)
 
         tree_root = tree_roots.pop()
         self._hierarchy_root = tree_root
 
-        self._num_nodes = len(self._hierarchy_interm_nodes | self._hierarchy_leaves) + 1
+        self._num_nodes = len(hierarchy_interm_nodes) + len(hierarchy_leaves) + 1
 
-    def _find_hierarchy_levels(self, hierarchy_structure: Dict[str, List[str]]):
+    def _find_hierarchy_levels(self, hierarchy_structure: Dict[str, List[str]]) -> DefaultDict[int, List[str]]:
         """Traverse hierarchy tree to group segments into levels."""
         num_edges = sum(map(len, hierarchy_structure.values()))
 
@@ -92,11 +90,8 @@ class HierarchicalStructure(BaseMixin):
                 leaves_levels.add(level)
 
             for adj_node in child_nodes:
-                if adj_node not in seen_nodes:
-                    queue.put((adj_node, level + 1))
-                    seen_nodes.add(adj_node)
-                else:
-                    raise ValueError("Invalid tree definition!")
+                queue.put((adj_node, level + 1))
+                seen_nodes.add(adj_node)
 
         if len(seen_nodes) != self._num_nodes:
             raise ValueError("Invalid tree definition: disconnected graph!")
@@ -108,23 +103,22 @@ class HierarchicalStructure(BaseMixin):
 
     def _get_num_reachable_leafs(self, hierarchy_levels: Dict[int, List[str]]) -> Dict[str, int]:
         """Compute subtree size for each node."""
-        num_reachable_leafs = dict()
+        num_reachable_leafs: Dict[str, int] = dict()
         for level in sorted(hierarchy_levels.keys(), reverse=True):
             for node in hierarchy_levels[level]:
-                subtree_size = 0
-                if node not in self.level_structure:
+                if node in self.level_structure:
+                    num_reachable_leafs[node] = sum(
+                        num_reachable_leafs[child_node] for child_node in self.level_structure[node]
+                    )
+
+                else:
                     num_reachable_leafs[node] = 1
-                    continue
-
-                for child_node in self.level_structure.get(node, []):
-                    subtree_size += num_reachable_leafs[child_node]
-
-                num_reachable_leafs[node] = subtree_size
 
         return num_reachable_leafs
 
     def get_summing_matrix(self, target_level: str, source_level: str) -> scipy.sparse.base.spmatrix:
         """Get summing matrix for transition from source level to target level.
+
         Generation algorithm is based on summing matrix structure. Number of 1 in such matrices equals to
         number of nodes on the source level. Each row of summing matrices has ones only for source level nodes that
         belongs to subtree rooted from corresponding target level node. BFS order of nodes on levels view simplifies
@@ -140,7 +134,7 @@ class HierarchicalStructure(BaseMixin):
         Returns
         -------
         :
-            summing matrix from source level to target level
+            Summing matrix from source level to target level
 
         """
         try:

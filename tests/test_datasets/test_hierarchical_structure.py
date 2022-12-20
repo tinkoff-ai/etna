@@ -3,7 +3,6 @@ from typing import List
 
 import numpy as np
 import pytest
-import scipy.sparse
 
 from etna.datasets import HierarchicalStructure
 
@@ -29,18 +28,6 @@ def long_hierarchical_struct():
         level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["b"], "a": ["c"], "b": ["d"]},
         level_names=["l1", "l2", "l3", "l4"],
     )
-
-
-@pytest.mark.parametrize(
-    "target,source",
-    (
-        ("l1", "l2"),
-        ("l2", "l3"),
-    ),
-)
-def test_get_summing_matrix_format(simple_hierarchical_struct: HierarchicalStructure, source: str, target: str):
-    output = simple_hierarchical_struct.get_summing_matrix(target_level=target, source_level=source)
-    assert isinstance(output, scipy.sparse.base.spmatrix)
 
 
 @pytest.mark.parametrize(
@@ -88,6 +75,18 @@ def test_level_transition_errors(
 
 
 @pytest.mark.parametrize(
+    "structure",
+    (
+        {"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["e", "f"]},  # e f leaves have lower level
+        {"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"], "a": ["e"]},  # e has lower level
+    ),
+)
+def test_leaves_level_errors(structure: Dict[str, List[str]]):
+    with pytest.raises(ValueError, match="All hierarchy tree leaves must be on the same level!"):
+        HierarchicalStructure(level_structure=structure)
+
+
+@pytest.mark.parametrize(
     "structure,answer",
     (
         ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, "total"),
@@ -97,6 +96,104 @@ def test_level_transition_errors(
 def test_root_finding(structure: Dict[str, List[str]], answer: str):
     h = HierarchicalStructure(level_structure=structure)
     assert h._hierarchy_root == answer
+
+
+@pytest.mark.parametrize(
+    "structure,answer",
+    (
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, 7),
+        ({"X": ["a", "b"]}, 3),
+    ),
+)
+def test_num_nodes(structure: Dict[str, List[str]], answer: int):
+    h = HierarchicalStructure(level_structure=structure)
+    assert h._num_nodes == answer
+
+
+@pytest.mark.parametrize(
+    "structure,answer",
+    (
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, [["total"], ["X", "Y"], ["a", "b", "c", "d"]]),
+        ({"X": ["a", "b"]}, [["X"], ["a", "b"]]),
+    ),
+)
+def test_find_hierarchy_levels(structure: Dict[str, List[str]], answer: List[List[str]]):
+    h = HierarchicalStructure(level_structure=structure)
+    hierarchy_levels = h._find_hierarchy_levels(structure)
+    for i, level_segments in enumerate(answer):
+        assert hierarchy_levels[i] == level_segments
+
+
+@pytest.mark.parametrize(
+    "structure,answer",
+    (
+        (
+            {"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]},
+            {"total": 4, "X": 2, "Y": 2, "a": 1, "b": 1, "c": 1, "d": 1},
+        ),
+        ({"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"]}, {"total": 3, "X": 1, "Y": 2, "a": 1, "c": 1, "d": 1}),
+        ({"X": ["a", "b"]}, {"X": 2, "a": 1, "b": 1}),
+    ),
+)
+def test_get_num_reachable_leafs(structure: Dict[str, List[str]], answer: Dict[str, int]):
+    h = HierarchicalStructure(level_structure=structure)
+    hierarchy_levels = h._find_hierarchy_levels(structure)
+    reachable_leafs = h._get_num_reachable_leafs(hierarchy_levels)
+    assert len(reachable_leafs) == len(answer)
+    for segment in answer:
+        assert reachable_leafs[segment] == answer[segment]
+
+
+@pytest.mark.parametrize(
+    "structure,level_names,answer",
+    (
+        (
+            {"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]},
+            None,
+            {"level_0": 0, "level_1": 1, "level_2": 2},
+        ),
+        (
+            {"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]},
+            ["l1", "l2", "l3"],
+            {"l1": 0, "l2": 1, "l3": 2},
+        ),
+        (
+            {"X": ["a"]},
+            None,
+            {"level_0": 0, "level_1": 1},
+        ),
+    ),
+)
+def test_level_to_index(structure: Dict[str, List[str]], level_names: List[str], answer: Dict[str, int]):
+    h = HierarchicalStructure(level_structure=structure, level_names=level_names)
+    assert len(h._level_to_index) == len(answer)
+    for level in answer:
+        assert h._level_to_index[level] == answer[level]
+
+
+@pytest.mark.parametrize(
+    "structure,answer",
+    (
+        (
+            {"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]},
+            {
+                "total": "level_0",
+                "X": "level_1",
+                "Y": "level_1",
+                "a": "level_2",
+                "b": "level_2",
+                "c": "level_2",
+                "d": "level_2",
+            },
+        ),
+        ({"X": ["a"]}, {"X": "level_0", "a": "level_1"}),
+    ),
+)
+def test_segment_to_level(structure: Dict[str, List[str]], answer: Dict[str, str]):
+    h = HierarchicalStructure(level_structure=structure)
+    assert len(h._segment_to_level) == len(answer)
+    for segment in answer:
+        assert h._segment_to_level[segment] == answer[segment]
 
 
 @pytest.mark.parametrize(
@@ -162,15 +259,3 @@ def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level
 )
 def test_segments_level(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
     assert simple_hierarchical_struct.get_segment_level(segment) == answer
-
-
-@pytest.mark.parametrize(
-    "structure",
-    (
-        {"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["e", "f"]},  # e f leaves have lower level
-        {"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"], "a": ["e"]},  # e has lower level
-    ),
-)
-def test_leaves_level_errors(structure: Dict[str, List[str]]):
-    with pytest.raises(ValueError, match="All hierarchy tree leaves must be on the same level!"):
-        HierarchicalStructure(level_structure=structure)
