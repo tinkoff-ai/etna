@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 
 from etna import SETTINGS
 from etna.datasets.utils import _TorchDataset
@@ -707,6 +708,32 @@ class TSDataset:
         df_copy.columns.names = ["segment", "feature"]
         df_copy = df_copy.sort_index(axis=1, level=(0, 1))
         return df_copy
+
+    @staticmethod
+    def to_hierarchical_dataset(
+            df: pd.DataFrame,
+            level_columns: List[str],
+            keep_level_columns: bool = False,
+            sep: str = "_",
+            return_hierarchy: bool = True
+    ) -> Tuple[pd.DataFrame, Optional[HierarchicalStructure]]:
+        """Convert pandas dataframe from long hierarchical to ETNA Dataset format.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in long hierarchical format with columns [timestamp, target] + [level_columns] + [other_columns]
+        level_columns:
+            Columns of dataframe defines the levels in the hierarchy in order from top to bottom i.e [level_name_1, level_name_2, ...].
+        keep_level_columns:
+            If true, leave the level columns in the result dataframe.
+            By default level columns are concatenated into "segment" column and dropped
+        sep:
+            String to concatenated the level names with
+        return_hierarchy:
+            If true, returns the hierarchical structure
+        """
+        pass
 
     def _find_all_borders(
         self,
