@@ -19,9 +19,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
-from etna.datasets.hierarchical_structure import HierarchicalStructure
 
 from etna import SETTINGS
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.loggers import tslogger
 
@@ -711,11 +711,11 @@ class TSDataset:
 
     @staticmethod
     def to_hierarchical_dataset(
-            df: pd.DataFrame,
-            level_columns: List[str],
-            keep_level_columns: bool = False,
-            sep: str = "_",
-            return_hierarchy: bool = True
+        df: pd.DataFrame,
+        level_columns: List[str],
+        keep_level_columns: bool = False,
+        sep: str = "_",
+        return_hierarchy: bool = True,
     ) -> Tuple[pd.DataFrame, Optional[HierarchicalStructure]]:
         """Convert pandas dataframe from long hierarchical to ETNA Dataset format.
 
@@ -724,7 +724,9 @@ class TSDataset:
         df:
             Dataframe in long hierarchical format with columns [timestamp, target] + [level_columns] + [other_columns]
         level_columns:
-            Columns of dataframe defines the levels in the hierarchy in order from top to bottom i.e [level_name_1, level_name_2, ...].
+            Columns of dataframe defines the levels in the hierarchy in order
+            from top to bottom i.e [level_name_1, level_name_2, ...]. Names of the columns will be used as
+            names of the levels in hierarchy.
         keep_level_columns:
             If true, leave the level columns in the result dataframe.
             By default level columns are concatenated into "segment" column and dropped
@@ -733,7 +735,19 @@ class TSDataset:
         return_hierarchy:
             If true, returns the hierarchical structure
         """
-        pass
+        df_copy = df.copy(deep=True)
+        df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
+        if not keep_level_columns:
+            df_copy.drop(columns=level_columns, inplace=True)
+        df_copy = TSDataset.to_dataset(df_copy)
+
+        hierarchical_structure = None
+        if return_hierarchy:
+            hierarchical_structure = TSDataset._hierarchical_structure_from_hierarchical_columns(
+                df=df, level_columns=level_columns, sep=sep
+            )
+
+        return df_copy, hierarchical_structure
 
     def _find_all_borders(
         self,
