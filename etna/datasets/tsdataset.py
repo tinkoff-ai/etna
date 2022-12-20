@@ -144,7 +144,8 @@ class TSDataset:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
-            self.df = self._merge_exog(self.df)
+            if self.current_df_level == self.current_df_exog_level:
+                self.df = self._merge_exog(self.df)
 
         self.transforms: Optional[Sequence["Transform"]] = None
 
@@ -320,7 +321,7 @@ class TSDataset:
         df = self.raw_df.reindex(new_index)
         df.index.name = "timestamp"
 
-        if self.df_exog is not None:
+        if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
