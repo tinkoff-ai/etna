@@ -898,6 +898,11 @@ class TSDataset:
         """
         return self.df.index
 
+    def level_names(self) -> Optional[List[str]]:
+        if self.hierarchical_structure is None:
+            return None
+        return self.hierarchical_structure.level_names
+
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
         """Return columns of ``self.df``.

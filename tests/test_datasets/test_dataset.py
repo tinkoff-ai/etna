@@ -1011,3 +1011,12 @@ def test_make_future_df_diff_level_df_exog(product_level_df, market_level_df_exo
     future = ts.make_future(future_steps=4)
     future_columns = set(future.columns.get_level_values("feature"))
     assert future_columns == {"target"}
+
+def test_level_names_with_hierarchical_structure(simple_hierarchical_ts, expected_names=["total", "market", "product"]):
+    ts_level_names = simple_hierarchical_ts.level_names()
+    assert sorted(ts_level_names) == sorted(expected_names)
+
+def test_level_names_without_hierarchical_structure(market_level_df):
+    ts = TSDataset(df=market_level_df, freq="D")
+    ts_level_names = ts.level_names()
+    assert ts_level_names is None
