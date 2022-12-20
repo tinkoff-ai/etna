@@ -710,6 +710,31 @@ class TSDataset:
         return df_copy
 
     @staticmethod
+    def _hierarchical_structure_from_hierarchical_columns(
+        df: pd.DataFrame, level_columns: List[str], sep: str
+    ) -> HierarchicalStructure:
+        df_level_columns = df[level_columns]
+        prev_level_name = level_columns[0]
+        for cur_level_name in level_columns[1:]:
+            df_level_columns[cur_level_name] = (
+                df_level_columns[prev_level_name] + sep + df_level_columns[cur_level_name]
+            )
+            prev_level_name = cur_level_name
+
+        level_structure = {"total": df[level_columns[0]].unique()}
+        cur_level_name = level_columns[0]
+        for next_level_name in level_columns[1:]:
+            cur_level_to_next_level = (
+                df_level_columns[[cur_level_name, next_level_name]].drop_duplicates().groupby(cur_level_name).agg(list)
+            )
+            level_structure.update(
+                {node: list(neighbours.to_list()[0]) for node, neighbours in cur_level_to_next_level.iterrows()}
+            )
+
+        hierarchical_structure = HierarchicalStructure(level_structure=level_structure, level_names=level_columns)
+        return hierarchical_structure
+
+    @staticmethod
     def to_hierarchical_dataset(
         df: pd.DataFrame,
         level_columns: List[str],
