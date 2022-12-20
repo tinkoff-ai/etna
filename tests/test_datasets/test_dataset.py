@@ -997,3 +997,17 @@ def test_init_df_diff_level_df_exog(product_level_df, market_level_df_exog, hier
     ts = TSDataset(df=df, freq="D", df_exog=df_exog,hierarchical_structure=hierarchical_structure)
     df_columns = set(ts.columns.get_level_values("feature"))
     assert df_columns == {"target"}
+
+def test_make_future_df_same_level_df_exog(market_level_df, market_level_df_exog, hierarchical_structure):
+    df, df_exog = market_level_df, market_level_df_exog
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog,hierarchical_structure=hierarchical_structure)
+    future = ts.make_future(future_steps=4)
+    future_columns = set(future.columns.get_level_values("feature"))
+    assert future_columns == {"target", "exog"}
+
+def test_make_future_df_diff_level_df_exog(product_level_df, market_level_df_exog, hierarchical_structure):
+    df, df_exog = product_level_df, market_level_df_exog
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog,hierarchical_structure=hierarchical_structure)
+    future = ts.make_future(future_steps=4)
+    future_columns = set(future.columns.get_level_values("feature"))
+    assert future_columns == {"target"}
