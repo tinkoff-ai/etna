@@ -53,7 +53,9 @@ def test_save_mixin_save(example_tsds, tmp_path):
 
     with zipfile.ZipFile(path, "r") as archive:
         files = archive.namelist()
-        assert sorted(files) == sorted(["metadata.json", "object.pkl", "pipelines/0.zip", "pipelines/1.zip"])
+        assert sorted(files) == sorted(
+            ["metadata.json", "object.pkl", "pipelines/00000000.zip", "pipelines/00000001.zip"]
+        )
 
         with archive.open("metadata.json", "r") as input_file:
             metadata_bytes = input_file.read()
