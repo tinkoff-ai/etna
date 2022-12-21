@@ -731,7 +731,7 @@ class TSDataset:
                 {node: list(neighbours.to_list()[0]) for node, neighbours in cur_level_to_next_level.iterrows()}
             )
 
-        hierarchical_structure = HierarchicalStructure(level_structure=level_structure, level_names=level_columns)
+        hierarchical_structure = HierarchicalStructure(level_structure=level_structure, level_names=["total"] + level_columns)
         return hierarchical_structure
 
     @staticmethod
