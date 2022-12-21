@@ -198,7 +198,7 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
         return df
 
 
-class BaseChangePointsTransform(PerSegmentWrapper, ABC):
+class BaseChangePointsTransform:
     """Base class for all the change points based transforms."""
 
     pass
