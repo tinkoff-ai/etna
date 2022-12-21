@@ -94,8 +94,7 @@ def test_leaves_level_errors(structure: Dict[str, List[str]]):
     ),
 )
 def test_root_finding(structure: Dict[str, List[str]], answer: str):
-    h = HierarchicalStructure(level_structure=structure)
-    assert h._hierarchy_root == answer
+    assert HierarchicalStructure._find_tree_root(structure) == answer
 
 
 @pytest.mark.parametrize(
@@ -106,8 +105,18 @@ def test_root_finding(structure: Dict[str, List[str]], answer: str):
     ),
 )
 def test_num_nodes(structure: Dict[str, List[str]], answer: int):
-    h = HierarchicalStructure(level_structure=structure)
-    assert h._num_nodes == answer
+    assert HierarchicalStructure._find_num_nodes(structure) == answer
+
+
+@pytest.mark.parametrize(
+    "level_names,tree_depth,answer",
+    (
+        (None, 3, ["level_0", "level_1", "level_2"]),
+        (["l1", "l2", "l3", "l4"], 4, ["l1", "l2", "l3", "l4"]),
+    ),
+)
+def test_get_level_names(level_names: List[str], tree_depth: int, answer: List[str]):
+    assert HierarchicalStructure._get_level_names(level_names, tree_depth) == answer
 
 
 @pytest.mark.parametrize(

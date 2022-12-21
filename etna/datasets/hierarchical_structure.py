@@ -1,13 +1,12 @@
 from collections import defaultdict
 from itertools import chain
 from queue import Queue
-from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
 
-import scipy
+from scipy.sparse import csr_matrix
 from scipy.sparse import lil_matrix
 
 from etna.core import BaseMixin
@@ -27,24 +26,16 @@ class HierarchicalStructure(BaseMixin):
             Names of levels in the hierarchy in the order from top to bottom (i.e. ["total", "category", "product"]).
             If None is passed, level names are generated automatically with structure "level_<level_index>".
         """
-        self._num_nodes = 0
-        self._hierarchy_root: Optional[str] = None
-
         self.level_structure = level_structure
+        self._num_nodes = self._find_num_nodes(self.level_structure)
+        self._hierarchy_root = self._find_tree_root(self.level_structure)
 
-        self._find_graph_structure(level_structure)
-        hierarchy_levels = self._find_hierarchy_levels(level_structure)
+        hierarchy_levels = self._find_hierarchy_levels(self.level_structure)
         tree_depth = len(hierarchy_levels)
 
-        if level_names is None:
-            level_names = [f"level_{i}" for i in range(tree_depth)]
-
-        if len(level_names) != tree_depth:
-            raise ValueError("Length of `level_names` must be equal to hierarchy tree depth!")
-
-        self.level_names = level_names
-        self._level_series: Dict[str, List[str]] = {level_names[i]: hierarchy_levels[i] for i in range(tree_depth)}
-        self._level_to_index: Dict[str, int] = {level_names[i]: i for i in range(tree_depth)}
+        self.level_names = self._get_level_names(level_names, tree_depth)
+        self._level_series: Dict[str, List[str]] = {self.level_names[i]: hierarchy_levels[i] for i in range(tree_depth)}
+        self._level_to_index: Dict[str, int] = {self.level_names[i]: i for i in range(tree_depth)}
 
         self._segment_num_reachable_leafs: Dict[str, int] = self._get_num_reachable_leafs(hierarchy_levels)
 
@@ -52,7 +43,19 @@ class HierarchicalStructure(BaseMixin):
             segment: level for level in self._level_series for segment in self._level_series[level]
         }
 
-    def _find_graph_structure(self, adj_list: Dict[str, List[str]]):
+    @staticmethod
+    def _get_level_names(level_names: Optional[List[str]], tree_depth: int) -> List[str]:
+        """Assign level names if not provided."""
+        if level_names is None:
+            level_names = [f"level_{i}" for i in range(tree_depth)]
+
+        if len(level_names) != tree_depth:
+            raise ValueError("Length of `level_names` must be equal to hierarchy tree depth!")
+
+        return level_names
+
+    @staticmethod
+    def _find_tree_root(adj_list: Dict[str, List[str]]) -> str:
         """Find hierarchy top level (root of tree)."""
         children = set(chain(*adj_list.values()))
         parents = set(adj_list.keys())
@@ -61,21 +64,27 @@ class HierarchicalStructure(BaseMixin):
         if len(tree_roots) != 1:
             raise ValueError("Invalid tree definition: unable to find root!")
 
+        return tree_roots.pop()
+
+    @staticmethod
+    def _find_num_nodes(adj_list: Dict[str, List[str]]) -> int:
+        """Count number of nodes in tree."""
+        children = set(chain(*adj_list.values()))
+        parents = set(adj_list.keys())
+
         hierarchy_interm_nodes = parents & children
         hierarchy_leaves = children.difference(parents)
 
-        tree_root = tree_roots.pop()
-        self._hierarchy_root = tree_root
+        num_nodes = len(hierarchy_interm_nodes) + len(hierarchy_leaves) + 1
 
-        self._num_nodes = len(hierarchy_interm_nodes) + len(hierarchy_leaves) + 1
-
-    def _find_hierarchy_levels(self, hierarchy_structure: Dict[str, List[str]]) -> DefaultDict[int, List[str]]:
-        """Traverse hierarchy tree to group segments into levels."""
-        num_edges = sum(map(len, hierarchy_structure.values()))
-
-        if num_edges != self._num_nodes - 1:
+        num_edges = sum(map(len, adj_list.values()))
+        if num_edges != num_nodes - 1:
             raise ValueError("Invalid tree definition: invalid number of nodes and edges!")
 
+        return num_nodes
+
+    def _find_hierarchy_levels(self, hierarchy_structure: Dict[str, List[str]]) -> Dict[int, List[str]]:
+        """Traverse hierarchy tree to group segments into levels."""
         leaves_levels = set()
         levels = defaultdict(list)
         seen_nodes = {self._hierarchy_root}
@@ -116,7 +125,7 @@ class HierarchicalStructure(BaseMixin):
 
         return num_reachable_leafs
 
-    def get_summing_matrix(self, target_level: str, source_level: str) -> scipy.sparse.base.spmatrix:
+    def get_summing_matrix(self, target_level: str, source_level: str) -> csr_matrix:
         """Get summing matrix for transition from source level to target level.
 
         Generation algorithm is based on summing matrix structure. Number of 1 in such matrices equals to
@@ -160,9 +169,7 @@ class HierarchicalStructure(BaseMixin):
                 summing_matrix[current_target_segment_id, current_source_segment_id] = 1
                 current_source_segment_id += 1
 
-        summing_matrix.tocsr()
-
-        return summing_matrix
+        return summing_matrix.tocsr()
 
     def get_level_segments(self, level_name: str) -> List[str]:
         """Get all segments from particular level."""
@@ -176,4 +183,4 @@ class HierarchicalStructure(BaseMixin):
         try:
             return self._segment_to_level[segment]
         except KeyError:
-            return None
+            raise ValueError(f"Segment {segment} is out of the hierarchy")
