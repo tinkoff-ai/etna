@@ -710,10 +710,12 @@ class TSDataset:
         return df_copy
 
     @staticmethod
-    def _hierarchical_structure_from_hierarchical_columns(
+    def _hierarchical_structure_from_level_columns(
         df: pd.DataFrame, level_columns: List[str], sep: str
     ) -> HierarchicalStructure:
+        """Create hierarchical structure from dataframe columns."""
         df_level_columns = df[level_columns]
+
         prev_level_name = level_columns[0]
         for cur_level_name in level_columns[1:]:
             df_level_columns[cur_level_name] = (
@@ -724,14 +726,13 @@ class TSDataset:
         level_structure = {"total": df[level_columns[0]].unique()}
         cur_level_name = level_columns[0]
         for next_level_name in level_columns[1:]:
-            cur_level_to_next_level = (
-                df_level_columns[[cur_level_name, next_level_name]].drop_duplicates().groupby(cur_level_name).agg(list)
-            )
-            level_structure.update(
-                {node: list(neighbours.to_list()[0]) for node, neighbours in cur_level_to_next_level.iterrows()}
-            )
+            cur_level_to_next_level_edges = df_level_columns[[cur_level_name, next_level_name]].drop_duplicates()
+            cur_level_to_next_level_adjacency_list = cur_level_to_next_level_edges.groupby(cur_level_name).agg(list)
+            level_structure.update(cur_level_to_next_level_adjacency_list.to_records())
 
-        hierarchical_structure = HierarchicalStructure(level_structure=level_structure, level_names=["total"] + level_columns)
+        hierarchical_structure = HierarchicalStructure(
+            level_structure=level_structure, level_names=["total"] + level_columns
+        )
         return hierarchical_structure
 
     @staticmethod
@@ -768,7 +769,7 @@ class TSDataset:
 
         hierarchical_structure = None
         if return_hierarchy:
-            hierarchical_structure = TSDataset._hierarchical_structure_from_hierarchical_columns(
+            hierarchical_structure = TSDataset._hierarchical_structure_from_level_columns(
                 df=df, level_columns=level_columns, sep=sep
             )
 
