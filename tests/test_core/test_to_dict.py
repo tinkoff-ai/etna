@@ -4,6 +4,7 @@ import pickle
 import hydra_slayer
 import pytest
 from ruptures import Binseg
+from sklearn.linear_model import LinearRegression
 
 from etna.core import BaseMixin
 from etna.ensembles import StackingEnsemble
@@ -23,7 +24,7 @@ from etna.transforms import DensityOutliersTransform
 from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
 from etna.transforms.decomposition.change_points_based import RupturesChangePointsModel
-from etna.transforms.decomposition.change_points_based import SklearnPerIntervalModel
+from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
 
 
 def ensemble_samples():
@@ -33,8 +34,8 @@ def ensemble_samples():
             AddConstTransform(in_column="target", value=10),
             ChangePointsTrendTransform(
                 in_column="target",
-                change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=50),
-                per_interval_model=SklearnPerIntervalModel(),
+                change_points_model=RupturesChangePointsModel(Binseg(model="l2", min_size=2, jump=5), n_bkps=50),
+                per_interval_model=SklearnRegressionPerIntervalModel(),
             ),
         ],
         horizon=5,
@@ -44,8 +45,10 @@ def ensemble_samples():
         transforms=[
             ChangePointsTrendTransform(
                 in_column="target",
-                change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=50),
-                per_interval_model=SklearnPerIntervalModel(),
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="l2", min_size=2, jump=5), n_bkps=50
+                ),
+                per_interval_model=SklearnRegressionPerIntervalModel(),
             ),
             LogTransform(in_column="target"),
         ],
@@ -60,8 +63,10 @@ def ensemble_samples():
         AddConstTransform(in_column="target", value=10),
         ChangePointsTrendTransform(
             in_column="target",
-            change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=50),
-            per_interval_model=SklearnPerIntervalModel(),
+            change_points_model=RupturesChangePointsModel(
+                change_points_model=Binseg(model="l2", min_size=2, jump=5), n_bkps=50
+            ),
+            per_interval_model=SklearnRegressionPerIntervalModel(model=LinearRegression()),
         ),
         pytest.param(
             DensityOutliersTransform("target", distance_coef=6),
@@ -79,8 +84,7 @@ def test_to_dict_transforms(target_object):
     dict_object = target_object.to_dict()
     transformed_object = hydra_slayer.get_from_params(**dict_object)
     assert json.loads(json.dumps(dict_object)) == dict_object
-    # TODO: discuss it
-    # assert pickle.dumps(transformed_object) == pickle.dumps(target_object)
+    assert pickle.dumps(transformed_object) == pickle.dumps(target_object)
 
 
 # fmt: off
@@ -116,7 +120,7 @@ def test_to_dict_models(target_model):
     dict_object = target_model.to_dict()
     transformed_object = hydra_slayer.get_from_params(**dict_object)
     assert json.loads(json.dumps(dict_object)) == dict_object
-    # assert pickle.dumps(transformed_object) == pickle.dumps(target_model)
+    assert pickle.dumps(transformed_object) == pickle.dumps(target_model)
 
 
 @pytest.mark.parametrize(
@@ -128,8 +132,10 @@ def test_to_dict_models(target_model):
                 AddConstTransform(in_column="target", value=10),
                 ChangePointsTrendTransform(
                     in_column="target",
-                    per_interval_model=SklearnPerIntervalModel(),
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=50),
+                    per_interval_model=SklearnRegressionPerIntervalModel(),
+                    change_points_model=RupturesChangePointsModel(
+                        change_points_model=Binseg(model="l2", min_size=2, jump=5), n_bkps=50
+                    ),
                 ),
             ],
             horizon=5,
@@ -140,7 +146,7 @@ def test_to_dict_pipeline(target_object):
     dict_object = target_object.to_dict()
     transformed_object = hydra_slayer.get_from_params(**dict_object)
     assert json.loads(json.dumps(dict_object)) == dict_object
-    # assert pickle.dumps(transformed_object) == pickle.dumps(target_object)
+    assert pickle.dumps(transformed_object) == pickle.dumps(target_object)
 
 
 @pytest.mark.parametrize("target_object", [MAE(mode="macro"), SMAPE()])
@@ -159,7 +165,7 @@ def test_ensembles(target_ensemble):
     dict_object = target_ensemble.to_dict()
     transformed_object = hydra_slayer.get_from_params(**dict_object)
     assert json.loads(json.dumps(dict_object)) == dict_object
-    # assert pickle.dumps(transformed_object) == pickle.dumps(target_ensemble)
+    assert pickle.dumps(transformed_object) == pickle.dumps(target_ensemble)
 
 
 class _Dummy:

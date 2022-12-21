@@ -13,7 +13,6 @@ import pandas as pd
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
-from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.decomposition.change_points_based.change_points_models import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
