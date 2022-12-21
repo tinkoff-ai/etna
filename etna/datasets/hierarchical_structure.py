@@ -27,10 +27,10 @@ class HierarchicalStructure(BaseMixin):
             If None is passed, level names are generated automatically with structure "level_<level_index>".
         """
         self.level_structure = level_structure
-        self._num_nodes = self._find_num_nodes(self.level_structure)
         self._hierarchy_root = self._find_tree_root(self.level_structure)
+        self._num_nodes = self._find_num_nodes(self.level_structure)
 
-        hierarchy_levels = self._find_hierarchy_levels(self.level_structure)
+        hierarchy_levels = self._find_hierarchy_levels()
         tree_depth = len(hierarchy_levels)
 
         self.level_names = self._get_level_names(level_names, tree_depth)
@@ -55,10 +55,10 @@ class HierarchicalStructure(BaseMixin):
         return level_names
 
     @staticmethod
-    def _find_tree_root(adj_list: Dict[str, List[str]]) -> str:
+    def _find_tree_root(hierarchy_structure: Dict[str, List[str]]) -> str:
         """Find hierarchy top level (root of tree)."""
-        children = set(chain(*adj_list.values()))
-        parents = set(adj_list.keys())
+        children = set(chain(*hierarchy_structure.values()))
+        parents = set(hierarchy_structure.keys())
 
         tree_roots = parents.difference(children)
         if len(tree_roots) != 1:
@@ -67,23 +67,20 @@ class HierarchicalStructure(BaseMixin):
         return tree_roots.pop()
 
     @staticmethod
-    def _find_num_nodes(adj_list: Dict[str, List[str]]) -> int:
+    def _find_num_nodes(hierarchy_structure: Dict[str, List[str]]) -> int:
         """Count number of nodes in tree."""
-        children = set(chain(*adj_list.values()))
-        parents = set(adj_list.keys())
+        children = set(chain(*hierarchy_structure.values()))
+        parents = set(hierarchy_structure.keys())
 
-        hierarchy_interm_nodes = parents & children
-        hierarchy_leaves = children.difference(parents)
+        num_nodes = len(children | parents)
 
-        num_nodes = len(hierarchy_interm_nodes) + len(hierarchy_leaves) + 1
-
-        num_edges = sum(map(len, adj_list.values()))
+        num_edges = sum(map(len, hierarchy_structure.values()))
         if num_edges != num_nodes - 1:
             raise ValueError("Invalid tree definition: invalid number of nodes and edges!")
 
         return num_nodes
 
-    def _find_hierarchy_levels(self, hierarchy_structure: Dict[str, List[str]]) -> Dict[int, List[str]]:
+    def _find_hierarchy_levels(self) -> Dict[int, List[str]]:
         """Traverse hierarchy tree to group segments into levels."""
         leaves_levels = set()
         levels = defaultdict(list)
@@ -93,7 +90,7 @@ class HierarchicalStructure(BaseMixin):
         while not queue.empty():
             node, level = queue.get()
             levels[level].append(node)
-            child_nodes = hierarchy_structure.get(node, [])
+            child_nodes = self.level_structure.get(node, [])
 
             if len(child_nodes) == 0:
                 leaves_levels.add(level)

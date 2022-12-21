@@ -128,7 +128,7 @@ def test_get_level_names(level_names: List[str], tree_depth: int, answer: List[s
 )
 def test_find_hierarchy_levels(structure: Dict[str, List[str]], answer: List[List[str]]):
     h = HierarchicalStructure(level_structure=structure)
-    hierarchy_levels = h._find_hierarchy_levels(structure)
+    hierarchy_levels = h._find_hierarchy_levels()
     for i, level_segments in enumerate(answer):
         assert hierarchy_levels[i] == level_segments
 
@@ -146,7 +146,7 @@ def test_find_hierarchy_levels(structure: Dict[str, List[str]], answer: List[Lis
 )
 def test_get_num_reachable_leafs(structure: Dict[str, List[str]], answer: Dict[str, int]):
     h = HierarchicalStructure(level_structure=structure)
-    hierarchy_levels = h._find_hierarchy_levels(structure)
+    hierarchy_levels = h._find_hierarchy_levels()
     reachable_leafs = h._get_num_reachable_leafs(hierarchy_levels)
     assert len(reachable_leafs) == len(answer)
     for segment in answer:
