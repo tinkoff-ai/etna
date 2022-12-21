@@ -888,3 +888,38 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     np.testing.assert_array_equal(
         torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
     )
+
+@pytest.fixture
+def product_level_df_long():
+    df = pd.DataFrame({
+        "timestamp": ["2000-01-01", "2000-01-02"]*4,
+        "market": ["A"]*2 + ["A"]*2 + ["B"]*2 + ["B"]*2,
+        "product": ["x"]*2 + ["y"]*2 + ["c"]*2 + ["d"]*2,
+        "target": [1, 2] + [10, 20] + [100, 200] + [1000, 2000],
+    })
+    return df
+
+def test_to_hierarchical_dataset_not_change_input_df(product_level_df_long):
+    df = product_level_df_long
+    df_before = df.copy()
+    df_after, _ = TSDataset.to_hierarchical_dataset(df=df, level_columns=["market", "product"], keep_level_columns=False, return_hierarchy=True)
+    pd.testing.assert_frame_equal(df, df_before)
+
+'''
+def test_to_hierarchical_dataset_correct_segments():
+    pass
+
+@pytest.mark.parametrize("keep_level_columns, expected_columns", [(True, ["target", "market", "product"]), (False, ["target"])])
+def test_to_hierarchical_dataset_correct_columns(keep_level_columns, expected_columns):
+    pass
+
+def test_to_hierarchical_dataset_correct_dataframe():
+    pass
+
+@pytest.mark.parametrize("level_names, sep, expected_segments", [(["product", "market"], "_", ["product", "market"]), (["product", "market"], "#", ["product", "market"]))])
+def test_to_hierarchical_dataset_level_segments(level_names, sep, expected_segments):
+    pass
+
+def test_to_hierarchical_dataset_level_structure():
+    pass
+'''
