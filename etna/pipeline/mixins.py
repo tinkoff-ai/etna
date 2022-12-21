@@ -144,7 +144,7 @@ class SaveModelPipelineMixin(SaveMixin):
                 # save transforms separately
                 transforms_dir = temp_dir / "transforms"
                 transforms_dir.mkdir()
-                num_digits = len(str(len(transforms) - 1))
+                num_digits = 8
                 for i, transform in enumerate(transforms):
                     save_name = f"{i:0{num_digits}d}.zip"
                     transform_save_path = transforms_dir / save_name

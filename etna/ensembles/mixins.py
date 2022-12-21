@@ -105,7 +105,7 @@ class SaveEnsembleMixin(SaveMixin):
                 # save transforms separately
                 pipelines_dir = temp_dir / "pipelines"
                 pipelines_dir.mkdir()
-                num_digits = len(str(len(pipelines) - 1))
+                num_digits = 8
                 for i, pipeline in enumerate(pipelines):
                     save_name = f"{i:0{num_digits}d}.zip"
                     pipeline_save_path = pipelines_dir / save_name
