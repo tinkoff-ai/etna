@@ -154,16 +154,15 @@ class TSDataset:
         if self.hierarchical_structure is None:
             return None
 
-        df_segments = df.columns.get_level_values("segment")
-        segment_levels = [self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments]
-        if len(set(segment_levels)) != 1 or None in segment_levels:
-            raise ValueError("Segments in dataframe are not consistent with hierarchical structure!")
+        df_segments = df.columns.get_level_values("segment").unique()
+        segment_levels = {self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments}
+        if len(segment_levels) != 1:
+            raise ValueError("Segments in dataframe are from more than 1 hierarchical levels!")
 
-        df_level = segment_levels[0]
-        if df_level is not None:
-            level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
-            if len(df_segments) != len(level_segments):
-                raise ValueError("Some segments of hierarchical level are missing in dataframe!")
+        df_level = segment_levels.pop()
+        level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
+        if len(df_segments) != len(level_segments):
+            raise ValueError("Some segments of hierarchical level are missing in dataframe!")
 
         return df_level
 
