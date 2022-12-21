@@ -901,12 +901,12 @@ def hierarchical_structure():
 
 
 @pytest.fixture
-def inconsistent_segments_df():
+def diff_level_segments_df():
     df = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02"],
-            "segment": ["fake_segment"] * 2,
-            "target": [1, 2],
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["X"] * 2 + ["a"] * 2,
+            "target": [1, 2] + [10, 20],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -914,12 +914,12 @@ def inconsistent_segments_df():
 
 
 @pytest.fixture
-def inconsistent_segments_df_exog():
+def diff_level_segments_df_exog():
     df = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02"],
-            "segment": ["fake_segment"] * 2,
-            "exog": [1, 2],
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["X"] * 2 + ["a"] * 2,
+            "exog": [1, 2] + [10, 20],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -985,9 +985,9 @@ def simple_hierarchical_ts(market_level_df, hierarchical_structure):
     return ts
 
 
-def test_get_dataframe_level_inconsistent_segments_fails(inconsistent_segments_df, simple_hierarchical_ts):
-    with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
-        simple_hierarchical_ts._get_dataframe_level(df=inconsistent_segments_df)
+def test_get_dataframe_level_diff_level_segments_fails(diff_level_segments_df, simple_hierarchical_ts):
+    with pytest.raises(ValueError, match="Segments in dataframe are from more than 1 hierarchical levels!"):
+        simple_hierarchical_ts._get_dataframe_level(df=diff_level_segments_df)
 
 
 def test_get_dataframe_level_missing_segments_fails(missing_segments_df, simple_hierarchical_ts):
@@ -1002,17 +1002,15 @@ def test_get_dataframe(df, expected_level, simple_hierarchical_ts, request):
     assert df_level == expected_level
 
 
-def test_init_inconsistent_segments_df_fails(inconsistent_segments_df, hierarchical_structure):
-    df = inconsistent_segments_df
-    with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
+def test_init_diff_level_segments_df_fails(diff_level_segments_df, hierarchical_structure):
+    df = diff_level_segments_df
+    with pytest.raises(ValueError, match="Segments in dataframe are from more than 1 hierarchical levels!"):
         _ = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
 
 
-def test_init_inconsistent_segments_df_exog_fails(
-    market_level_df, inconsistent_segments_df_exog, hierarchical_structure
-):
-    df, df_exog = market_level_df, inconsistent_segments_df_exog
-    with pytest.raises(ValueError, match="Segments in dataframe are not consistent with hierarchical structure!"):
+def test_init_diff_level_segments_df_exog_fails(market_level_df, diff_level_segments_df_exog, hierarchical_structure):
+    df, df_exog = market_level_df, diff_level_segments_df_exog
+    with pytest.raises(ValueError, match="Segments in dataframe are from more than 1 hierarchical levels!"):
         _ = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
 
 
