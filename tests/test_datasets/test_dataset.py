@@ -899,6 +899,14 @@ def product_level_df_long():
     })
     return df
 
+@pytest.fixture
+def product_level_df_wide(product_level_df_long):
+    df = product_level_df_long
+    df["segment"] = ["A_x"] * 2 + ["A_y"] * 2 + ["B_c"] * 2 + ["B_d"] * 2
+    df = TSDataset.to_dataset(df)
+    return df
+
+
 def test_to_hierarchical_dataset_not_change_input_df(product_level_df_long):
     df = product_level_df_long
     df_before = df.copy()
@@ -922,10 +930,11 @@ def test_to_hierarchical_dataset_correct_columns(product_level_df_long, keep_lev
     assert sorted(df_columns) == sorted(expected_columns)
 
 
-'''
-def test_to_hierarchical_dataset_correct_dataframe():
-    pass
+def test_to_hierarchical_dataset_correct_dataframe(product_level_df_long, product_level_df_wide):
+    df_wide_obtained, _ = TSDataset.to_hierarchical_dataset(df=product_level_df_long, keep_level_columns=True, level_columns=["market", "product"], return_hierarchy=False)
+    pd.testing.assert_frame_equal(df_wide_obtained, product_level_df_wide)
 
+'''
 @pytest.mark.parametrize("level_names, sep, expected_segments", [(["product", "market"], "_", ["product", "market"]), (["product", "market"], "#", ["product", "market"]))])
 def test_to_hierarchical_dataset_level_segments(level_names, sep, expected_segments):
     pass
