@@ -714,7 +714,7 @@ class TSDataset:
         df: pd.DataFrame, level_columns: List[str], sep: str
     ) -> HierarchicalStructure:
         """Create hierarchical structure from dataframe columns."""
-        df_level_columns = df[level_columns]
+        df_level_columns = df[level_columns].astype("string")
 
         prev_level_name = level_columns[0]
         for cur_level_name in level_columns[1:]:
@@ -723,12 +723,13 @@ class TSDataset:
             )
             prev_level_name = cur_level_name
 
-        level_structure = {"total": df[level_columns[0]].unique()}
+        level_structure = {"total": list(df_level_columns[level_columns[0]].unique())}
         cur_level_name = level_columns[0]
         for next_level_name in level_columns[1:]:
             cur_level_to_next_level_edges = df_level_columns[[cur_level_name, next_level_name]].drop_duplicates()
             cur_level_to_next_level_adjacency_list = cur_level_to_next_level_edges.groupby(cur_level_name).agg(list)
             level_structure.update(cur_level_to_next_level_adjacency_list.to_records())
+            cur_level_name = next_level_name
 
         hierarchical_structure = HierarchicalStructure(
             level_structure=level_structure, level_names=["total"] + level_columns
