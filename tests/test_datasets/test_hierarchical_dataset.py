@@ -14,6 +14,7 @@ def hierarchical_structure():
     return hs
 
 
+@pytest.fixture
 def hierarchical_structure_complex():
     hs = HierarchicalStructure(
         level_structure={
@@ -53,7 +54,6 @@ def level_columns_different_types_df():
         }
     )
     df["categorical"] = df["categorical"].astype("category")
-    df = TSDataset.to_dataset(df)
     return df
 
 
@@ -80,7 +80,6 @@ def product_level_df_long():
             "target": [1, 2] + [10, 20] + [100, 200] + [1000, 2000],
         }
     )
-    df = TSDataset.to_dataset(df)
     return df
 
 
