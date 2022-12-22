@@ -976,6 +976,10 @@ class TSDataset:
             return None
         return self.hierarchical_structure.level_names
 
+    def has_hierarchy(self) -> bool:
+        """Check whether dataset has hierarchical structure."""
+        return self.hierarchical_structure is not None
+
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
         """Return columns of ``self.df``.
