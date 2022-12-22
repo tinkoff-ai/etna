@@ -1,5 +1,5 @@
 from etna.core import BaseMixin
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Optional
 from scipy.sparse import csr_matrix
 from etna.datasets import TSDataset
@@ -20,3 +20,19 @@ class Reconciliator(ABC, BaseMixin):
         self.target_level = target_level
         self.source_level = source_level
         self.mapping_matrix: Optional[csr_matrix] = None
+
+    @abstractmethod
+    def fit(self, ts: TSDataset) -> "Reconciliator":
+        """ Fit the reconciliator parameters.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset on the level which is lower or equal to ``target_level``, ``source_level``.
+
+        Returns
+        -------
+        :
+            Fitted instance of reconciliator.
+        """
+        pass
