@@ -36,3 +36,19 @@ class Reconciliator(ABC, BaseMixin):
             Fitted instance of reconciliator.
         """
         pass
+
+    def aggregate(self, ts: TSDataset) -> TSDataset:
+        """ Fit the reconciliator parameters.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset on the level which is lower or equal to ``source_level``.
+
+        Returns
+        -------
+        :
+            TSDataset on the ``source_level``.
+        """
+        ts_aggregated = ts.get_level_dataset(target_level=self.source_level)
+        return ts_aggregated
