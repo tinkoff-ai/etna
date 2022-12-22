@@ -237,14 +237,13 @@ def test_save_mixin_save(example_tsds, tmp_path):
     dir_path = pathlib.Path(tmp_path)
     path = dir_path / "dummy.zip"
 
-    initial_ts = deepcopy(example_tsds)
-    initial_model = deepcopy(model)
+    initial_dummy = deepcopy(dummy)
     initial_transforms = deepcopy(transforms)
     dummy.save(path)
 
     with zipfile.ZipFile(path, "r") as archive:
         files = archive.namelist()
-        assert sorted(files) == sorted(["metadata.json", "object.pkl", "model.zip", "transforms/0.zip"])
+        assert sorted(files) == sorted(["metadata.json", "object.pkl", "model.zip", "transforms/00000000.zip"])
 
         with archive.open("metadata.json", "r") as input_file:
             metadata_bytes = input_file.read()
@@ -259,8 +258,9 @@ def test_save_mixin_save(example_tsds, tmp_path):
         assert loaded_obj.b == dummy.b
 
     # check that we didn't break dummy object itself
-    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_ts)
-    assert pickle.dumps(dummy.model) == pickle.dumps(initial_model)
+    assert dummy.a == initial_dummy.a
+    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_dummy.ts)
+    assert pickle.dumps(dummy.model) == pickle.dumps(initial_dummy.model)
     assert pickle.dumps(dummy.transforms) == pickle.dumps(initial_transforms)
 
 
@@ -303,6 +303,7 @@ def test_save_mixin_load_ok_with_ts(example_tsds, recwarn, tmp_path):
     assert loaded_dummy.a == dummy.a
     assert loaded_dummy.b == dummy.b
     assert loaded_dummy.ts is not example_tsds
+    assert loaded_dummy.ts.transforms is loaded_dummy.transforms
     pd.testing.assert_frame_equal(loaded_dummy.ts.to_pandas(), dummy.ts.to_pandas())
     assert isinstance(loaded_dummy.model, NaiveModel)
     assert [transform.value for transform in loaded_dummy.transforms] == transform_values

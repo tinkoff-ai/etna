@@ -19,13 +19,14 @@ from sklearn.linear_model import LinearRegression
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
-from etna.ensembles import EnsembleMixin
+from etna.ensembles.mixins import EnsembleMixin
+from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
-class StackingEnsemble(EnsembleMixin, BasePipeline):
+class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     """StackingEnsemble is a pipeline that forecast future using the metamodel to combine the forecasts of the base models.
 
     Examples

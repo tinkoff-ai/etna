@@ -92,7 +92,7 @@ class ModelPipelinePredictMixin:
 class SaveModelPipelineMixin(SaveMixin):
     """Implementation of ``AbstractSaveable`` abstract class for pipelines with model inside.
 
-    It saves object to the zip archive with 2 files:
+    It saves object to the zip archive with 4 entities:
 
     * metadata.json: contains library version and class name.
 
@@ -118,6 +118,7 @@ class SaveModelPipelineMixin(SaveMixin):
         model = self.model
         transforms = self.transforms
         ts = self.ts
+
         try:
             # extract attributes we can't easily save
             delattr(self, "model")
@@ -143,7 +144,7 @@ class SaveModelPipelineMixin(SaveMixin):
                 # save transforms separately
                 transforms_dir = temp_dir / "transforms"
                 transforms_dir.mkdir()
-                num_digits = len(str(len(transforms) - 1))
+                num_digits = 8
                 for i, transform in enumerate(transforms):
                     save_name = f"{i:0{num_digits}d}.zip"
                     transform_save_path = transforms_dir / save_name
@@ -188,5 +189,9 @@ class SaveModelPipelineMixin(SaveMixin):
                         transforms.append(load(path))
 
                 obj.transforms = transforms
+
+                # set transforms in ts
+                if obj.ts is not None:
+                    obj.ts.transforms = transforms
 
         return obj

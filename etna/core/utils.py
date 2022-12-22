@@ -10,13 +10,15 @@ from typing import Callable
 from hydra_slayer import get_factory
 
 
-def load(path: pathlib.Path) -> Any:
+def load(path: pathlib.Path, **kwargs: Any) -> Any:
     """Load saved object by path.
 
     Parameters
     ----------
     path:
         Path to load object from.
+    kwargs:
+        Parameters for loading specific for the loaded object.
 
     Returns
     -------
@@ -33,7 +35,7 @@ def load(path: pathlib.Path) -> Any:
 
         # create object for that class
         object_class = get_factory(object_class_name)
-        loaded_object = object_class.load(path=path)
+        loaded_object = object_class.load(path=path, **kwargs)
 
     return loaded_object
 

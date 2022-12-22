@@ -8,6 +8,18 @@ from etna.datasets import generate_from_patterns_df
 from etna.ensembles import DirectEnsemble
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+
+
+@pytest.fixture
+def direct_ensemble_pipeline() -> DirectEnsemble:
+    ensemble = DirectEnsemble(
+        pipelines=[
+            Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1),
+            Pipeline(model=NaiveModel(lag=3), transforms=[], horizon=2),
+        ]
+    )
+    return ensemble
 
 
 @pytest.fixture
@@ -36,32 +48,24 @@ def test_get_horizon_raise_error_on_same_horizons():
         _ = DirectEnsemble(pipelines=[Mock(horizon=1), Mock(horizon=1)])
 
 
-def test_forecast(simple_ts_train, simple_ts_forecast):
-    ensemble = DirectEnsemble(
-        pipelines=[
-            Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1),
-            Pipeline(model=NaiveModel(lag=3), transforms=[], horizon=2),
-        ]
-    )
-    ensemble.fit(simple_ts_train)
-    forecast = ensemble.forecast()
+def test_forecast(direct_ensemble_pipeline, simple_ts_train, simple_ts_forecast):
+    direct_ensemble_pipeline.fit(simple_ts_train)
+    forecast = direct_ensemble_pipeline.forecast()
     pd.testing.assert_frame_equal(forecast.to_pandas(), simple_ts_forecast.to_pandas())
 
 
-def test_predict(simple_ts_train):
-    ensemble = DirectEnsemble(
-        pipelines=[
-            Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1),
-            Pipeline(model=NaiveModel(lag=3), transforms=[], horizon=2),
-        ]
-    )
+def test_predict(direct_ensemble_pipeline, simple_ts_train):
     smallest_pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1)
-    ensemble.fit(simple_ts_train)
+    direct_ensemble_pipeline.fit(simple_ts_train)
     smallest_pipeline.fit(simple_ts_train)
-    prediction = ensemble.predict(
+    prediction = direct_ensemble_pipeline.predict(
         ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
     )
     expected_prediction = smallest_pipeline.predict(
         ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
     )
     pd.testing.assert_frame_equal(prediction.to_pandas(), expected_prediction.to_pandas())
+
+
+def test_save_load(direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds)

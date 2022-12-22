@@ -11,11 +11,12 @@ from joblib import Parallel
 from joblib import delayed
 
 from etna.datasets import TSDataset
-from etna.ensembles import EnsembleMixin
+from etna.ensembles.mixins import EnsembleMixin
+from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.pipeline.base import BasePipeline
 
 
-class DirectEnsemble(EnsembleMixin, BasePipeline):
+class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     """DirectEnsemble is a pipeline that forecasts future values merging the forecasts of base pipelines.
 
     Ensemble expects several pipelines during init. These pipelines are expected to have different forecasting horizons.
