@@ -994,20 +994,20 @@ class TSDataset:
             generated dataset
         """
         if not self.has_hierarchy():
-            raise ValueError("Method could be applied only for instances with hierarchy!")
+            raise ValueError("Method could be applied only to instances with a hierarchy!")
 
         # ensure all necessary fields are initialized
         assert self.hierarchical_structure is not None
         assert self.current_df_level is not None
 
         if target_level not in self.hierarchical_structure._level_to_index:
-            raise ValueError("Provide level name is not part of hierarchy!")
+            raise ValueError("Provided level name is not part of the hierarchy!")
 
         current_level_index = self.hierarchical_structure._level_to_index[self.current_df_level]
         target_level_index = self.hierarchical_structure._level_to_index[target_level]
 
         if target_level_index > current_level_index:
-            raise ValueError("Target level should be higher in hierarchy than current dataframe level!")
+            raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(

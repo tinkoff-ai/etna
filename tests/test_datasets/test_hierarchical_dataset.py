@@ -500,7 +500,7 @@ def test_get_level_dataset(hierarchical_structure_name, source_df_name, freq, ta
 
 def test_get_level_dataset_invalid_level_name_error(market_level_df):
     ts = TSDataset(df=market_level_df, freq="D")
-    with pytest.raises(ValueError, match="Method could be applied only for instances with hierarchy!"):
+    with pytest.raises(ValueError, match="Method could be applied only to instances with a hierarchy!"):
         ts.get_level_dataset(target_level="total")
 
 
@@ -509,7 +509,7 @@ def test_get_level_dataset_invalid_level_name_error(market_level_df):
     ("", "abcd"),
 )
 def test_get_level_dataset_invalid_level_name_error(simple_hierarchical_ts, target_level):
-    with pytest.raises(ValueError, match="Provide level name is not part of hierarchy!"):
+    with pytest.raises(ValueError, match="Provided level name is not part of the hierarchy!"):
         simple_hierarchical_ts.get_level_dataset(target_level=target_level)
 
 
@@ -519,5 +519,7 @@ def test_get_level_dataset_invalid_level_name_error(simple_hierarchical_ts, targ
 )
 def test_get_level_dataset_invalid_level_name_error(hierarchical_ts_name, target_level, request):
     ts = request.getfixturevalue(hierarchical_ts_name)
-    with pytest.raises(ValueError, match="Target level should be higher in hierarchy than current dataframe level!"):
+    with pytest.raises(
+        ValueError, match="Target level should be higher in the hierarchy than the current level of dataframe!"
+    ):
         ts.get_level_dataset(target_level=target_level)
