@@ -9,6 +9,8 @@ from etna.metrics import smape
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 
+import numpy as np
+
 
 class MAE(Metric):
     """Mean absolute error metric with multi-segment computation support.
@@ -67,6 +69,78 @@ class MSE(Metric):
         """Whether higher metric value is better."""
         return False
 
+class RMSE(Metric):
+    """Root mean squared error metric with multi-segment computation support.
+
+    .. math::
+        RMSE(y\_true, y\_pred) = \\sqrt{\\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{n}}
+
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
+    """
+
+    def __init__(self, mode: str = MetricAggregationMode.per_segment, squared: bool = False,  **kwargs):
+        """Init metric.
+
+        Parameters
+        ----------
+        mode: 'macro' or 'per-segment'
+            metrics aggregation mode
+        kwargs:
+            metric's computation arguments
+        """
+        super().__init__(mode=mode, metric_fn=mse, **kwargs)
+        self.squared = squared
+
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+        """
+        Compute metric's value with ``y_true`` and ``y_pred``.
+
+        Notes
+        -----
+        Note that if ``y_true`` and ``y_pred`` are not sorted Metric will sort it anyway
+
+        Parameters
+        ----------
+        y_true:
+            dataset with true time series values
+        y_pred:
+            dataset with predicted time series values
+
+        Returns
+        -------
+        :
+            metric's value aggregated over segments or not (depends on mode)
+        """
+        self._log_start()
+        self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+
+        segments = set(y_true.df.columns.get_level_values("segment"))
+        metrics_per_segment = {}
+        for segment in segments:
+            self._validate_timestamp_columns(
+                timestamp_true=y_true[:, segment, "target"].dropna().index,
+                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
+            )
+            if self.squared:
+                metrics_per_segment[segment] = np.sqrt(
+                    self.metric_fn(
+                        y_true=y_true[:, segment, "target"].values, y_pred=y_pred[:, segment, "target"].values, **self.kwargs
+                    )
+                )
+            else:
+                metrics_per_segment[segment] = self.metric_fn(
+                        y_true=y_true[:, segment, "target"].values, y_pred=y_pred[:, segment, "target"].values,
+                        **self.kwargs
+                    )
+        metrics = self._aggregate_metrics(metrics_per_segment)
+        return metrics
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
 
 class R2(Metric):
     """Coefficient of determination metric with multi-segment computation support.
@@ -242,4 +316,4 @@ class Sign(Metric):
         return None
 
 
-__all__ = ["MAE", "MSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign"]
+__all__ = ["MAE", "MSE", "RMSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign"]
