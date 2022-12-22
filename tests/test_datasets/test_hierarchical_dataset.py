@@ -13,17 +13,20 @@ def hierarchical_structure():
     )
     return hs
 
+
 def hierarchical_structure_complex():
     hs = HierarchicalStructure(
-    level_structure = {
-                          "total": ["77", "120"],
-                          "77": ["77_X"],
-                          "120": ["120_Y"],
-                          "77_X": ["77_X_1", "77_X_2"],
-                          "120_Y": ["120_Y_3", "120_Y_4"],
-                      },
-    level_names = ["total", "categorical", "string", "int"])
+        level_structure={
+            "total": ["77", "120"],
+            "77": ["77_X"],
+            "120": ["120_Y"],
+            "77_X": ["77_X_1", "77_X_2"],
+            "120_Y": ["120_Y_3", "120_Y_4"],
+        },
+        level_names=["total", "categorical", "string", "int"],
+    )
     return hs
+
 
 @pytest.fixture
 def different_level_segments_df():
@@ -36,6 +39,7 @@ def different_level_segments_df():
     )
     df = TSDataset.to_dataset(df)
     return df
+
 
 @pytest.fixture
 def level_columns_different_types_df():
@@ -65,6 +69,7 @@ def different_level_segments_df_exog():
     df = TSDataset.to_dataset(df)
     return df
 
+
 @pytest.fixture
 def product_level_df_long():
     df = pd.DataFrame(
@@ -90,6 +95,7 @@ def missing_segments_df():
     )
     df = TSDataset.to_dataset(df)
     return df
+
 
 @pytest.fixture
 def product_level_df_wide(product_level_df_long):
@@ -231,6 +237,7 @@ def test_level_names_without_hierarchical_structure(market_level_df):
     ts_level_names = ts.level_names()
     assert ts_level_names is None
 
+
 def test_to_hierarchical_dataset_not_change_input_df(product_level_df_long):
     df = product_level_df_long
     df_before = df.copy()
@@ -280,13 +287,15 @@ def test_to_hierarchical_dataset_correct_dataframe(product_level_df_long, produc
     pd.testing.assert_frame_equal(df_wide_obtained, product_level_df_wide)
 
 
-def test_to_hierarchical_dataset_hierarchical_structure(level_columns_different_types_df, hierarchical_structure):
+def test_to_hierarchical_dataset_hierarchical_structure(
+    level_columns_different_types_df, hierarchical_structure_complex
+):
     _, hs = TSDataset.to_hierarchical_dataset(
         df=level_columns_different_types_df, level_columns=["categorical", "string", "int"], return_hierarchy=True
     )
-    assert hs.level_names == hierarchical_structure.level_names
-    for level_name in hierarchical_structure.level_names:
+    assert hs.level_names == hierarchical_structure_complex.level_names
+    for level_name in hierarchical_structure_complex.level_names:
         assert level_name in hs.level_names
-        expected_level_segments = hierarchical_structure.get_level_segments(level_name=level_name)
+        expected_level_segments = hierarchical_structure_complex.get_level_segments(level_name=level_name)
         obtained_level_segments = hs.get_level_segments(level_name=level_name)
         assert sorted(obtained_level_segments) == sorted(expected_level_segments)
