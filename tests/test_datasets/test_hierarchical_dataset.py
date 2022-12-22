@@ -122,40 +122,56 @@ def test_init_different_level_segments_df_fails(different_level_segments_df, hie
         _ = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
 
 
-def test_init_different_level_segments_df_exog_fails(market_level_df, different_level_segments_df_exog, hierarchical_structure):
+def test_init_different_level_segments_df_exog_fails(
+    market_level_df, different_level_segments_df_exog, hierarchical_structure
+):
     df, df_exog = market_level_df, different_level_segments_df_exog
     with pytest.raises(ValueError, match="Segments in dataframe are from more than 1 hierarchical levels!"):
         _ = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
 
 
-def test_init_df_same_level_df_exog(market_level_df, market_level_df_exog, hierarchical_structure):
+def test_init_df_same_level_df_exog(
+    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "exog"}
+):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     df_columns = set(ts.columns.get_level_values("feature"))
-    assert df_columns == {"target", "exog"}
+    assert df_columns == expected_columns
 
 
-def test_init_df_different_level_df_exog(product_level_df, market_level_df_exog, hierarchical_structure):
+def test_init_df_different_level_df_exog(
+    product_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target"}
+):
     df, df_exog = product_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     df_columns = set(ts.columns.get_level_values("feature"))
-    assert df_columns == {"target"}
+    assert df_columns == expected_columns
 
 
-def test_make_future_df_same_level_df_exog(market_level_df, market_level_df_exog, hierarchical_structure):
+def test_init_missing_segmnets_df(missing_segments_df, hierarchical_structure):
+    df = missing_segments_df
+    with pytest.raises(ValueError, match="Some segments of hierarchical level are missing in dataframe!"):
+        _ = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+
+
+def test_make_future_df_same_level_df_exog(
+    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "exog"}
+):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     future = ts.make_future(future_steps=4)
     future_columns = set(future.columns.get_level_values("feature"))
-    assert future_columns == {"target", "exog"}
+    assert future_columns == expected_columns
 
 
-def test_make_future_df_different_level_df_exog(product_level_df, market_level_df_exog, hierarchical_structure):
+def test_make_future_df_different_level_df_exog(
+    product_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target"}
+):
     df, df_exog = product_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     future = ts.make_future(future_steps=4)
     future_columns = set(future.columns.get_level_values("feature"))
-    assert future_columns == {"target"}
+    assert future_columns == expected_columns
 
 
 def test_level_names_with_hierarchical_structure(simple_hierarchical_ts, expected_names=["total", "market", "product"]):
@@ -164,6 +180,7 @@ def test_level_names_with_hierarchical_structure(simple_hierarchical_ts, expecte
 
 
 def test_level_names_without_hierarchical_structure(market_level_df):
-    ts = TSDataset(df=market_level_df, freq="D")
+    df = market_level_df
+    ts = TSDataset(df=df, freq="D")
     ts_level_names = ts.level_names()
     assert ts_level_names is None
