@@ -93,6 +93,7 @@ class TSDataset:
         freq: str,
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
+        hierarchical_structure: Optional[HierarchicalStructure] = None,
     ):
         """Init TSDataset.
 
@@ -107,6 +108,8 @@ class TSDataset:
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
+        hierarchical_structure:
+            Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
         self.raw_df = self._prepare_df(df)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
@@ -133,12 +136,35 @@ class TSDataset:
         self.known_future = self._check_known_future(known_future, df_exog)
         self._regressors = copy(self.known_future)
 
+        self.hierarchical_structure = hierarchical_structure
+        self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
+        self.current_df_exog_level: Optional[str] = None
+
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
-            self.df = self._merge_exog(self.df)
+            self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
+            if self.current_df_level == self.current_df_exog_level:
+                self.df = self._merge_exog(self.df)
 
         self.transforms: Optional[Sequence["Transform"]] = None
+
+    def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
+        """Return the level of the passed dataframe in hierarchical structure."""
+        if self.hierarchical_structure is None:
+            return None
+
+        df_segments = df.columns.get_level_values("segment").unique()
+        segment_levels = {self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments}
+        if len(segment_levels) != 1:
+            raise ValueError("Segments in dataframe are from more than 1 hierarchical levels!")
+
+        df_level = segment_levels.pop()
+        level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
+        if len(df_segments) != len(level_segments):
+            raise ValueError("Some segments of hierarchical level are missing in dataframe!")
+
+        return df_level
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
@@ -295,7 +321,7 @@ class TSDataset:
         df = self.raw_df.reindex(new_index)
         df.index.name = "timestamp"
 
-        if self.df_exog is not None:
+        if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
@@ -943,6 +969,16 @@ class TSDataset:
             timestamp index of TSDataset
         """
         return self.df.index
+
+    def level_names(self) -> Optional[List[str]]:
+        """Return names of the levels in the hierarchical structure."""
+        if self.hierarchical_structure is None:
+            return None
+        return self.hierarchical_structure.level_names
+
+    def has_hierarchy(self) -> bool:
+        """Check whether dataset has hierarchical structure."""
+        return self.hierarchical_structure is not None
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:

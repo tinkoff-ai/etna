@@ -4,7 +4,6 @@ from queue import Queue
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
 
 from scipy.sparse import csr_matrix
 from scipy.sparse import lil_matrix
@@ -147,7 +146,7 @@ class HierarchicalStructure(BaseMixin):
             target_idx = self._level_to_index[target_level]
             source_idx = self._level_to_index[source_level]
         except KeyError as e:
-            raise ValueError("Invalid level name: " + e.args[0])
+            raise ValueError(f"Invalid level name: {e.args[0]}")
 
         if target_idx >= source_idx:
             raise ValueError("Target level must be higher in hierarchy than source level!")
@@ -172,10 +171,10 @@ class HierarchicalStructure(BaseMixin):
         """Get all segments from particular level."""
         try:
             return self._level_series[level_name]
-        except KeyError as e:
-            raise ValueError("Invalid level name: " + e.args[0])
+        except KeyError:
+            raise ValueError(f"Invalid level name: {level_name}")
 
-    def get_segment_level(self, segment: str) -> Union[str, None]:
+    def get_segment_level(self, segment: str) -> str:
         """Get level name for provided segment."""
         try:
             return self._segment_to_level[segment]
