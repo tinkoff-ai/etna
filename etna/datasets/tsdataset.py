@@ -760,6 +760,11 @@ class TSDataset:
             String to concatenated the level names with
         return_hierarchy:
             If true, returns the hierarchical structure
+
+        Returns
+        -------
+        :
+            Dataframe in wide format and optionally hierarchical structure
         """
         df_copy = df.copy(deep=True)
         df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
