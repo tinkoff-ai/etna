@@ -993,18 +993,14 @@ class TSDataset:
         TSDataset
             generated dataset
         """
-        if not self.has_hierarchy():
+        if self.hierarchical_structure is None or self.current_df_level is None:
             raise ValueError("Method could be applied only to instances with a hierarchy!")
 
-        # ensure all necessary fields are initialized
-        assert self.hierarchical_structure is not None
-        assert self.current_df_level is not None
+        current_level_segments = self.hierarchical_structure.get_level_segments(level_name=self.current_df_level)
+        target_level_segments = self.hierarchical_structure.get_level_segments(level_name=target_level)
 
-        if target_level not in self.hierarchical_structure._level_to_index:
-            raise ValueError("Provided level name is not part of the hierarchy!")
-
-        current_level_index = self.hierarchical_structure._level_to_index[self.current_df_level]
-        target_level_index = self.hierarchical_structure._level_to_index[target_level]
+        current_level_index = self.hierarchical_structure.get_level_depth(self.current_df_level)
+        target_level_index = self.hierarchical_structure.get_level_depth(target_level)
 
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
@@ -1013,9 +1009,6 @@ class TSDataset:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
                 target_level=target_level, source_level=self.current_df_level
             )
-
-            current_level_segments = self.hierarchical_structure.get_level_segments(level_name=self.current_df_level)
-            target_level_segments = self.hierarchical_structure.get_level_segments(level_name=target_level)
 
             source_level_data = self.df[current_level_segments].values
             target_level_data = source_level_data @ summing_matrix.T
