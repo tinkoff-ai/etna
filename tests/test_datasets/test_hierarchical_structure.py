@@ -14,22 +14,6 @@ def simple_hierarchical_struct():
     )
 
 
-@pytest.fixture
-def tailed_hierarchical_struct():
-    return HierarchicalStructure(
-        level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["f"], "d": ["g"], "a": ["e", "h"]},
-        level_names=["l1", "l2", "l3", "l4"],
-    )
-
-
-@pytest.fixture
-def long_hierarchical_struct():
-    return HierarchicalStructure(
-        level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["b"], "a": ["c"], "b": ["d"]},
-        level_names=["l1", "l2", "l3", "l4"],
-    )
-
-
 @pytest.mark.parametrize(
     "struct, target,source,answer",
     (

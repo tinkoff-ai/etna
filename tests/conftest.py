@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import generate_const_df
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
 
 
@@ -473,3 +474,20 @@ def toy_dataset_with_mean_shift_in_target():
         "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
     return TSDataset.to_dataset(pd.DataFrame(df))
+
+@pytest.fixture
+def long_hierarchical_structure():
+    hs = HierarchicalStructure(
+        level_structure={"total": ["X", "Y"], "X": ["a"], "a": ["c"], "Y": ["b"], "b": ["d"]},
+        level_names=["l1", "l2", "l3", "l4"],
+    )
+    return hs
+
+
+@pytest.fixture
+def tailed_hierarchical_structure():
+    hs = HierarchicalStructure(
+        level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["f"], "d": ["g"], "a": ["e", "h"]},
+        level_names=["l1", "l2", "l3", "l4"],
+    )
+    return hs
