@@ -252,3 +252,20 @@ def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level
 )
 def test_segments_level(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
     assert simple_hierarchical_struct.get_segment_level(segment) == answer
+
+
+@pytest.mark.parametrize(
+    "target_level,answer",
+    (("l2", 1), ("l3", 2), ("l1", 0)),
+)
+def test_get_level_depth(simple_hierarchical_struct, target_level, answer):
+    assert simple_hierarchical_struct.get_level_depth(level_name=target_level) == answer
+
+
+@pytest.mark.parametrize(
+    "target_level",
+    ("", "abcd"),
+)
+def test_get_level_depth_invalid_name_error(simple_hierarchical_struct, target_level):
+    with pytest.raises(ValueError, match=f"Invalid level name: {target_level}"):
+        simple_hierarchical_struct.get_level_depth(level_name=target_level)
