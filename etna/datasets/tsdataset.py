@@ -1019,7 +1019,6 @@ class TSDataset:
 
             source_level_data = self.df[current_level_segments].values
             target_level_data = source_level_data @ summing_matrix.T
-            target_level_data = target_level_data.astype(source_level_data.dtype)
 
             target_level_segments = pd.MultiIndex.from_product(
                 [target_level_segments, ["target"]], names=["segment", "feature"]
