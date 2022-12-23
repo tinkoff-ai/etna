@@ -155,6 +155,7 @@ def product_level_df():
     df = TSDataset.to_dataset(df)
     return df
 
+
 @pytest.fixture
 def product_level_df_w_nans():
     df = pd.DataFrame(
@@ -166,6 +167,7 @@ def product_level_df_w_nans():
     )
     df = TSDataset.to_dataset(df)
     return df
+
 
 @pytest.fixture
 def market_level_df_w_nans():
@@ -191,8 +193,6 @@ def total_level_df_w_nans():
     )
     df = TSDataset.to_dataset(df)
     return df
-
-
 
 
 @pytest.fixture
@@ -497,6 +497,7 @@ def test_get_level_dataset(hierarchical_structure_name, source_df_name, target_l
 
     pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
 
+
 @pytest.mark.parametrize(
     "source_df_name,target_level,target_df_name",
     (
@@ -509,10 +510,14 @@ def test_get_level_dataset_with_exog(
     source_df_name, target_level, target_df_name, market_level_df_exog, hierarchical_structure, request
 ):
     source_df = request.getfixturevalue(source_df_name)
-    source_ts = TSDataset(df=source_df, df_exog=market_level_df_exog, freq="D", hierarchical_structure=hierarchical_structure)
+    source_ts = TSDataset(
+        df=source_df, df_exog=market_level_df_exog, freq="D", hierarchical_structure=hierarchical_structure
+    )
 
     target_df = request.getfixturevalue(target_df_name)
-    target_ts = TSDataset(df=target_df, df_exog=market_level_df_exog, freq="D", hierarchical_structure=hierarchical_structure)
+    target_ts = TSDataset(
+        df=target_df, df_exog=market_level_df_exog, freq="D", hierarchical_structure=hierarchical_structure
+    )
 
     estimated_target_ts = source_ts.get_level_dataset(target_level)
 

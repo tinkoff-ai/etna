@@ -475,6 +475,7 @@ def toy_dataset_with_mean_shift_in_target():
     }
     return TSDataset.to_dataset(pd.DataFrame(df))
 
+
 @pytest.fixture
 def long_hierarchical_structure():
     hs = HierarchicalStructure(
