@@ -1,8 +1,9 @@
+from functools import partial
 from typing import List
 from typing import Union
 
 import numpy as np
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error as mse
 
 ArrayLike = List[Union[float, List[float]]]
 
@@ -115,32 +116,4 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
     return np.mean(np.sign(y_true_array - y_pred_array))
 
 
-def rmse(y_true: ArrayLike, y_pred: ArrayLike) -> float:
-    """Root mean squared error metric.
-
-    .. math::
-        RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{n}
-
-    Parameters
-    ----------
-    y_true:
-        array-like of shape (n_samples,) or (n_samples, n_outputs)
-
-        Ground truth (correct) target values.
-
-    y_pred:
-        array-like of shape (n_samples,) or (n_samples, n_outputs)
-
-        Estimated target values.
-
-    Returns
-    -------
-    float
-        A floating point value (the best value is 0.0).
-    """
-    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
-
-    if len(y_true_array.shape) != len(y_pred_array.shape):
-        raise ValueError("Shapes of the labels must be the same")
-
-    return mean_squared_error(y_true=y_true_array, y_pred=y_pred_array, squared=False)
+rmse = partial(mse, squared=False)
