@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `IrreversibleTransform`, `ReversibleTransform`, `IrreversiblePerSegmentWrapper`, `ReversiblePerSegmentWrapper` classes ([#884](https://github.com/tinkoff-ai/etna/pull/884))
 - 
 ### Changed
--
+- All the `ChengePoints*Transform` structure: added per-interval models, added shortcuts for detrend and level transformations ([#998](https://github.com/tinkoff-ai/etna/pull/998))
 - 
 - Base class for transforms now works with TSDataset ([835](https://github.com/tinkoff-ai/etna/pull/835))
 - All the transforms now has `in_column` attribute ([#820](https://github.com/tinkoff-ai/etna/pull/820))
