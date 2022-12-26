@@ -186,7 +186,7 @@ class _DeadlineMovingAverageModel:
         history = df_history["target"]
         history = history[history.index >= context_beginning]
         if np.any(history.isnull()):
-            raise ValueError("There are NaNs in a forecast context, forecast method required context to filled!")
+            raise ValueError("There are NaNs in a forecast context, forecast method requires context to be filled!")
 
         index = pd.date_range(start=context_beginning, end=df.index[-1], freq=self._freq)
         result_template = np.append(history.values, np.zeros(prediction_size))
