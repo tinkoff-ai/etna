@@ -84,6 +84,19 @@ def product_level_df_long():
 
 
 @pytest.fixture
+def total_level_df():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"],
+            "segment": ["total"] * 2,
+            "target": [11.0, 22.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
 def missing_segments_df():
     df = pd.DataFrame(
         {
@@ -110,7 +123,7 @@ def market_level_df():
         {
             "timestamp": ["2000-01-01", "2000-01-02"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
-            "target": [1, 2] + [10, 20],
+            "target": [1.0, 2.0] + [10.0, 20.0],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -121,9 +134,10 @@ def market_level_df():
 def market_level_df_exog():
     df_exog = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "timestamp": ["2000-01-01", "2000-01-03"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
-            "exog": [1, 2] + [10, 20],
+            "exog": [1.0, 5.0] + [10.0, 5.0],
+            "regressor": 1,
         }
     )
     df_exog = TSDataset.to_dataset(df_exog)
@@ -136,7 +150,150 @@ def product_level_df():
         {
             "timestamp": ["2000-01-01", "2000-01-02"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
-            "target": [1, 2] + [10, 20] + [100, 200] + [1000, 2000],
+            "target": [1.0, 1.0] + [0.0, 1.0] + [3.0, 18.0] + [7.0, 2.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def product_level_df_w_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 4,
+            "segment": ["a"] * 4 + ["b"] * 4 + ["c"] * 4 + ["d"] * 4,
+            "target": [None, 0, 1, 2] + [3, 4, 5, None] + [7, 8, None, 9] + [10, 11, 12, 13],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def market_level_df_w_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 2,
+            "segment": ["X"] * 4 + ["Y"] * 4,
+            "target": [None, 4, 6, None] + [17, 19, None, 22],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def total_level_df_w_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"],
+            "segment": ["total"] * 4,
+            "target": [None, 23, None, None],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l4_level_df_long():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["c"] * 2 + ["d"] * 2,
+            "target": [0, 1] + [2, 3],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l3_level_df_long():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["a"] * 2 + ["b"] * 2,
+            "target": [0, 1] + [2, 3],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l2_level_df_long():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target": [0, 1] + [2, 3],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l1_level_df_long():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"],
+            "segment": ["total"] * 2,
+            "target": [2, 4],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l4_level_df_tailed():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 4,
+            "segment": ["e"] * 2 + ["h"] * 2 + ["f"] * 2 + ["g"] * 2,
+            "target": [0, 1] + [2, 3] + [4, 5] + [6, 7],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l3_level_df_tailed():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 3,
+            "segment": ["a"] * 2 + ["c"] * 2 + ["d"] * 2,
+            "target": [2, 4] + [4, 5] + [6, 7],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l2_level_df_tailed():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target": [2, 4] + [10, 12],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def l1_level_df_tailed():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"],
+            "segment": ["total"] * 2,
+            "target": [12, 16],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -182,7 +339,7 @@ def test_init_different_level_segments_df_exog_fails(
 
 
 def test_init_df_same_level_df_exog(
-    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "exog"}
+    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "regressor", "exog"}
 ):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
@@ -206,7 +363,7 @@ def test_init_missing_segmnets_df(missing_segments_df, hierarchical_structure):
 
 
 def test_make_future_df_same_level_df_exog(
-    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "exog"}
+    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "regressor", "exog"}
 ):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
@@ -298,3 +455,102 @@ def test_to_hierarchical_dataset_hierarchical_structure(
         expected_level_segments = hierarchical_structure_complex.get_level_segments(level_name=level_name)
         obtained_level_segments = hs.get_level_segments(level_name=level_name)
         assert sorted(obtained_level_segments) == sorted(expected_level_segments)
+
+
+@pytest.mark.parametrize(
+    "hierarchical_structure_name,source_df_name,target_level,target_df_name",
+    (
+        ("hierarchical_structure", "product_level_df", "market", "market_level_df"),
+        ("hierarchical_structure", "product_level_df", "total", "total_level_df"),
+        ("hierarchical_structure", "market_level_df", "total", "total_level_df"),
+        ("hierarchical_structure", "product_level_df_w_nans", "market", "market_level_df_w_nans"),
+        ("hierarchical_structure", "product_level_df_w_nans", "total", "total_level_df_w_nans"),
+        ("hierarchical_structure", "market_level_df_w_nans", "total", "total_level_df_w_nans"),
+        ("long_hierarchical_structure", "l4_level_df_long", "l3", "l3_level_df_long"),
+        ("long_hierarchical_structure", "l4_level_df_long", "l2", "l2_level_df_long"),
+        ("long_hierarchical_structure", "l4_level_df_long", "l1", "l1_level_df_long"),
+        ("long_hierarchical_structure", "l3_level_df_long", "l2", "l2_level_df_long"),
+        ("long_hierarchical_structure", "l3_level_df_long", "l1", "l1_level_df_long"),
+        ("long_hierarchical_structure", "l2_level_df_long", "l1", "l1_level_df_long"),
+        ("tailed_hierarchical_structure", "l4_level_df_tailed", "l3", "l3_level_df_tailed"),
+        ("tailed_hierarchical_structure", "l4_level_df_tailed", "l2", "l2_level_df_tailed"),
+        ("tailed_hierarchical_structure", "l4_level_df_tailed", "l1", "l1_level_df_tailed"),
+        ("tailed_hierarchical_structure", "l3_level_df_tailed", "l2", "l2_level_df_tailed"),
+        ("tailed_hierarchical_structure", "l3_level_df_tailed", "l1", "l1_level_df_tailed"),
+        ("tailed_hierarchical_structure", "l2_level_df_tailed", "l1", "l1_level_df_tailed"),
+    ),
+)
+def test_get_level_dataset(hierarchical_structure_name, source_df_name, target_level, target_df_name, request):
+    hierarchical_structure = request.getfixturevalue(hierarchical_structure_name)
+
+    source_df = request.getfixturevalue(source_df_name)
+    source_ts = TSDataset(df=source_df, freq="D", hierarchical_structure=hierarchical_structure)
+
+    target_df = request.getfixturevalue(target_df_name)
+    target_ts = TSDataset(df=target_df, freq="D", hierarchical_structure=hierarchical_structure)
+
+    estimated_target_ts = source_ts.get_level_dataset(target_level)
+
+    # check attributes
+    assert target_ts.freq == estimated_target_ts.freq
+    assert target_ts.hierarchical_structure == estimated_target_ts.hierarchical_structure
+    assert target_ts.current_df_level == estimated_target_ts.current_df_level
+
+    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
+
+
+@pytest.mark.parametrize(
+    "source_df_name,target_level,target_df_name",
+    (
+        ("product_level_df", "market", "market_level_df"),
+        ("product_level_df", "total", "total_level_df"),
+        ("market_level_df", "total", "total_level_df"),
+    ),
+)
+def test_get_level_dataset_with_exog(
+    source_df_name, target_level, target_df_name, market_level_df_exog, hierarchical_structure, request
+):
+    source_df = request.getfixturevalue(source_df_name)
+    source_ts = TSDataset(
+        df=source_df,
+        df_exog=market_level_df_exog,
+        freq="D",
+        hierarchical_structure=hierarchical_structure,
+        known_future=["regressor"],
+    )
+
+    target_df = request.getfixturevalue(target_df_name)
+    target_ts = TSDataset(
+        df=target_df,
+        df_exog=market_level_df_exog,
+        freq="D",
+        hierarchical_structure=hierarchical_structure,
+        known_future=["regressor"],
+    )
+
+    estimated_target_ts = source_ts.get_level_dataset(target_level)
+
+    assert target_ts.current_df_exog_level == estimated_target_ts.current_df_exog_level
+    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
+
+
+def test_get_level_dataset_no_hierarchy_error(market_level_df):
+    ts = TSDataset(df=market_level_df, freq="D")
+    with pytest.raises(ValueError, match="Method could be applied only to instances with a hierarchy!"):
+        ts.get_level_dataset(target_level="total")
+
+
+@pytest.mark.parametrize(
+    "target_level",
+    ("", "abcd"),
+)
+def test_get_level_dataset_invalid_level_name_error(simple_hierarchical_ts, target_level):
+    with pytest.raises(ValueError, match=f"Invalid level name: {target_level}"):
+        simple_hierarchical_ts.get_level_dataset(target_level=target_level)
+
+
+def test_get_level_dataset_lower_level_error(simple_hierarchical_ts):
+    with pytest.raises(
+        ValueError, match="Target level should be higher in the hierarchy than the current level of dataframe!"
+    ):
+        simple_hierarchical_ts.get_level_dataset(target_level="product")

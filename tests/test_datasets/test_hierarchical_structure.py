@@ -8,46 +8,30 @@ from etna.datasets import HierarchicalStructure
 
 
 @pytest.fixture
-def simple_hierarchical_struct():
+def simple_hierarchical_structure():
     return HierarchicalStructure(
         level_structure={"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, level_names=["l1", "l2", "l3"]
-    )
-
-
-@pytest.fixture
-def tailed_hierarchical_struct():
-    return HierarchicalStructure(
-        level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["c", "d"], "c": ["f"], "d": ["g"], "a": ["e", "h"]},
-        level_names=["l1", "l2", "l3", "l4"],
-    )
-
-
-@pytest.fixture
-def long_hierarchical_struct():
-    return HierarchicalStructure(
-        level_structure={"total": ["X", "Y"], "X": ["a"], "Y": ["b"], "a": ["c"], "b": ["d"]},
-        level_names=["l1", "l2", "l3", "l4"],
     )
 
 
 @pytest.mark.parametrize(
     "struct, target,source,answer",
     (
-        ("tailed_hierarchical_struct", "l1", "l2", np.array([[1, 1]])),
-        ("tailed_hierarchical_struct", "l1", "l3", np.array([[1, 1, 1]])),
-        ("tailed_hierarchical_struct", "l1", "l4", np.array([[1, 1, 1, 1]])),
-        ("tailed_hierarchical_struct", "l2", "l3", np.array([[1, 0, 0], [0, 1, 1]])),
-        ("tailed_hierarchical_struct", "l2", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
-        ("tailed_hierarchical_struct", "l3", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])),
-        ("simple_hierarchical_struct", "l1", "l2", np.array([[1, 1]])),
-        ("simple_hierarchical_struct", "l1", "l3", np.array([[1, 1, 1, 1]])),
-        ("simple_hierarchical_struct", "l2", "l3", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
-        ("long_hierarchical_struct", "l1", "l2", np.array([[1, 1]])),
-        ("long_hierarchical_struct", "l1", "l3", np.array([[1, 1]])),
-        ("long_hierarchical_struct", "l1", "l4", np.array([[1, 1]])),
-        ("long_hierarchical_struct", "l2", "l3", np.array([[1, 0], [0, 1]])),
-        ("long_hierarchical_struct", "l2", "l4", np.array([[1, 0], [0, 1]])),
-        ("long_hierarchical_struct", "l3", "l4", np.array([[1, 0], [0, 1]])),
+        ("simple_hierarchical_structure", "l1", "l2", np.array([[1, 1]])),
+        ("simple_hierarchical_structure", "l1", "l3", np.array([[1, 1, 1, 1]])),
+        ("simple_hierarchical_structure", "l2", "l3", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
+        ("tailed_hierarchical_structure", "l1", "l2", np.array([[1, 1]])),
+        ("tailed_hierarchical_structure", "l1", "l3", np.array([[1, 1, 1]])),
+        ("tailed_hierarchical_structure", "l1", "l4", np.array([[1, 1, 1, 1]])),
+        ("tailed_hierarchical_structure", "l2", "l3", np.array([[1, 0, 0], [0, 1, 1]])),
+        ("tailed_hierarchical_structure", "l2", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
+        ("tailed_hierarchical_structure", "l3", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])),
+        ("long_hierarchical_structure", "l1", "l2", np.array([[1, 1]])),
+        ("long_hierarchical_structure", "l1", "l3", np.array([[1, 1]])),
+        ("long_hierarchical_structure", "l1", "l4", np.array([[1, 1]])),
+        ("long_hierarchical_structure", "l2", "l3", np.array([[1, 0], [0, 1]])),
+        ("long_hierarchical_structure", "l2", "l4", np.array([[1, 0], [0, 1]])),
+        ("long_hierarchical_structure", "l3", "l4", np.array([[1, 0], [0, 1]])),
     ),
 )
 def test_summing_matrix(struct: str, source: str, target: str, answer: np.ndarray, request: pytest.FixtureRequest):
@@ -65,13 +49,13 @@ def test_summing_matrix(struct: str, source: str, target: str, answer: np.ndarra
     ),
 )
 def test_level_transition_errors(
-    simple_hierarchical_struct: HierarchicalStructure,
+    simple_hierarchical_structure: HierarchicalStructure,
     target: str,
     source: str,
     error: str,
 ):
     with pytest.raises(ValueError, match=error):
-        simple_hierarchical_struct.get_summing_matrix(target_level=target, source_level=source)
+        simple_hierarchical_structure.get_summing_matrix(target_level=target, source_level=source)
 
 
 @pytest.mark.parametrize(
@@ -258,13 +242,30 @@ def test_level_names_length_error(structure: Dict[str, List[str]], names: List[s
     "level,answer",
     (("l1", ["total"]), ("l2", ["X", "Y"]), ("l3", ["a", "b", "c", "d"])),
 )
-def test_level_segments(simple_hierarchical_struct: HierarchicalStructure, level: str, answer: List[str]):
-    assert simple_hierarchical_struct.get_level_segments(level) == answer
+def test_level_segments(simple_hierarchical_structure: HierarchicalStructure, level: str, answer: List[str]):
+    assert simple_hierarchical_structure.get_level_segments(level) == answer
 
 
 @pytest.mark.parametrize(
     "segment,answer",
     (("total", "l1"), ("Y", "l2"), ("c", "l3")),
 )
-def test_segments_level(simple_hierarchical_struct: HierarchicalStructure, segment: str, answer: str):
-    assert simple_hierarchical_struct.get_segment_level(segment) == answer
+def test_segments_level(simple_hierarchical_structure: HierarchicalStructure, segment: str, answer: str):
+    assert simple_hierarchical_structure.get_segment_level(segment) == answer
+
+
+@pytest.mark.parametrize(
+    "target_level,answer",
+    (("l2", 1), ("l3", 2), ("l1", 0)),
+)
+def test_get_level_depth(simple_hierarchical_structure, target_level, answer):
+    assert simple_hierarchical_structure.get_level_depth(level_name=target_level) == answer
+
+
+@pytest.mark.parametrize(
+    "target_level",
+    ("", "abcd"),
+)
+def test_get_level_depth_invalid_name_error(simple_hierarchical_structure, target_level):
+    with pytest.raises(ValueError, match=f"Invalid level name: {target_level}"):
+        simple_hierarchical_structure.get_level_depth(level_name=target_level)

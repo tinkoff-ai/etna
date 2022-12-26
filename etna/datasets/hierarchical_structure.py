@@ -153,7 +153,7 @@ class HierarchicalStructure(BaseMixin):
 
         target_level_segment = self.get_level_segments(target_level)
         source_level_segment = self.get_level_segments(source_level)
-        summing_matrix = lil_matrix((len(target_level_segment), len(source_level_segment)))
+        summing_matrix = lil_matrix((len(target_level_segment), len(source_level_segment)), dtype="int32")
 
         current_source_segment_id = 0
         for current_target_segment_id, segment in enumerate(target_level_segment):
@@ -180,3 +180,10 @@ class HierarchicalStructure(BaseMixin):
             return self._segment_to_level[segment]
         except KeyError:
             raise ValueError(f"Segment {segment} is out of the hierarchy")
+
+    def get_level_depth(self, level_name: str) -> int:
+        """Get level depth in a hierarchy tree."""
+        try:
+            return self._level_to_index[level_name]
+        except KeyError:
+            raise ValueError(f"Invalid level name: {level_name}")
