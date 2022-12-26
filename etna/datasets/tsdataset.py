@@ -1010,8 +1010,7 @@ class TSDataset:
                 target_level=target_level, source_level=self.current_df_level
             )
 
-            source_level_index = pd.IndexSlice[current_level_segments, "target"]
-            source_level_data = self.df.loc[:, source_level_index].values
+            source_level_data = self[:, current_level_segments, "target"].values
             target_level_data = source_level_data @ summing_matrix.T
 
             target_level_segments = pd.MultiIndex.from_product(
