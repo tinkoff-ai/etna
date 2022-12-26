@@ -2,17 +2,33 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+from ruptures import Binseg
 
-from etna.transforms import BinsegTrendTransform
+from etna.transforms import ChangePointsLevelTransform
+from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import STLTransform
 from etna.transforms import TheilSenTrendTransform
+from etna.transforms.decomposition import RupturesChangePointsModel
 
 
 @pytest.mark.parametrize(
     "transform",
     (
-        BinsegTrendTransform(in_column="target", n_bkps=1, min_size=1, model="l2"),
+        ChangePointsTrendTransform(
+            in_column="target",
+            change_points_model=RupturesChangePointsModel(
+                change_points_model=Binseg(model="l2", jump=1, min_size=1),
+                n_bkps=1,
+            ),
+        ),
+        ChangePointsLevelTransform(
+            in_column="target",
+            change_points_model=RupturesChangePointsModel(
+                change_points_model=Binseg(model="l2", jump=1, min_size=1),
+                n_bkps=1,
+            ),
+        ),
         STLTransform(in_column="target", period=2),
         LinearTrendTransform(in_column="target"),
         TheilSenTrendTransform(in_column="target"),

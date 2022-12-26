@@ -5,9 +5,11 @@ from ruptures import Binseg
 from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
-from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
-from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from etna.transforms.decomposition.change_points_based import ChangePointsTrendTransform
+from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
+from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
 
 
 @pytest.fixture
@@ -43,7 +45,9 @@ def multitrend_ts_with_nans_in_tails(multitrend_df):
 def test_models_after_fit(multitrend_df: pd.DataFrame):
     """Check that fit method generates correct number of detrend model's copies."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     assert isinstance(bs.per_interval_models, dict)
@@ -56,7 +60,9 @@ def test_models_after_fit(multitrend_df: pd.DataFrame):
 def test_transform_detrend(multitrend_df: pd.DataFrame):
     """Check that transform method detrends given series."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(df=multitrend_df["segment_1"])
@@ -67,7 +73,9 @@ def test_transform_detrend(multitrend_df: pd.DataFrame):
 def test_transform(multitrend_df: pd.DataFrame):
     """Check that detrend models get series trends."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=50),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(df=multitrend_df["segment_1"])
@@ -78,7 +86,9 @@ def test_transform(multitrend_df: pd.DataFrame):
 def test_inverse_transform(multitrend_df: pd.DataFrame):
     """Check that inverse_transform turns transformed series back to the origin one."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
 
@@ -95,7 +105,9 @@ def test_inverse_transform(multitrend_df: pd.DataFrame):
 def test_inverse_transform_hard(multitrend_df: pd.DataFrame):
     """Check the logic of out-of-sample inverse transformation: for past and future dates unseen by transform."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"]["2020-02-01":"2021-05-01"])
 
@@ -112,7 +124,9 @@ def test_inverse_transform_hard(multitrend_df: pd.DataFrame):
 def test_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: pd.DataFrame):
     """Check that transform works correctly in case of fully unseen pre history data."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=20),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(pre_multitrend_df["segment_1"])
@@ -123,7 +137,9 @@ def test_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: p
 def test_inverse_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitrend_df: pd.DataFrame):
     """Check that inverse_transform works correctly in case of fully unseen pre history data."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=20),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     inversed = bs.inverse_transform(pre_multitrend_df["segment_1"])
@@ -134,7 +150,9 @@ def test_inverse_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitre
 def test_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df: pd.DataFrame):
     """Check that transform works correctly in case of fully unseen post history data with offset."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=20),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.transform(post_multitrend_df["segment_1"])
@@ -158,7 +176,9 @@ def test_inverse_transform_post_history(multitrend_df: pd.DataFrame, post_multit
 def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
     """Test that transform for one segment raise error when calling transform without being fit."""
     transform = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.transform(df=multitrend_df["segment_1"])
@@ -166,7 +186,9 @@ def test_transform_raise_error_if_not_fitted(multitrend_df: pd.DataFrame):
 
 def test_fit_transform_with_nans_in_tails(multitrend_ts_with_nans_in_tails):
     transform = ChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     transformed_df = transform.fit_transform(ts=multitrend_ts_with_nans_in_tails).to_pandas()
     for segment in transformed_df.columns.get_level_values("segment").unique():
@@ -176,7 +198,9 @@ def test_fit_transform_with_nans_in_tails(multitrend_ts_with_nans_in_tails):
 
 def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     bs = ChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         bs.fit_transform(ts=ts_with_nans)
