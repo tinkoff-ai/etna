@@ -1026,7 +1026,7 @@ class TSDataset:
             freq=self.freq,
             df_exog=self.df_exog,
             known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure
+            hierarchical_structure=self.hierarchical_structure,
         )
 
     @property

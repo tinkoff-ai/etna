@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 
 from etna.datasets import generate_const_df
-from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
 
 

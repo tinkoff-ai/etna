@@ -89,7 +89,7 @@ def total_level_df():
         {
             "timestamp": ["2000-01-01", "2000-01-02"],
             "segment": ["total"] * 2,
-            "target": [11, 22],
+            "target": [11.0, 22.0],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -123,7 +123,7 @@ def market_level_df():
         {
             "timestamp": ["2000-01-01", "2000-01-02"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
-            "target": [1, 2] + [10, 20],
+            "target": [1.0, 2.0] + [10.0, 20.0],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -134,9 +134,10 @@ def market_level_df():
 def market_level_df_exog():
     df_exog = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "timestamp": ["2000-01-01", "2000-01-03"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
-            "exog": [1, 2] + [10, 20],
+            "exog": [1.0, 5.0] + [10.0, 5.0],
+            "regressor": 1,
         }
     )
     df_exog = TSDataset.to_dataset(df_exog)
@@ -149,7 +150,7 @@ def product_level_df():
         {
             "timestamp": ["2000-01-01", "2000-01-02"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
-            "target": [1, 1] + [0, 1] + [3, 18] + [7, 2],
+            "target": [1.0, 1.0] + [0.0, 1.0] + [3.0, 18.0] + [7.0, 2.0],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -338,7 +339,7 @@ def test_init_different_level_segments_df_exog_fails(
 
 
 def test_init_df_same_level_df_exog(
-    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "exog"}
+    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "regressor", "exog"}
 ):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
@@ -362,7 +363,7 @@ def test_init_missing_segmnets_df(missing_segments_df, hierarchical_structure):
 
 
 def test_make_future_df_same_level_df_exog(
-    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "exog"}
+    market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "regressor", "exog"}
 ):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
@@ -511,18 +512,26 @@ def test_get_level_dataset_with_exog(
 ):
     source_df = request.getfixturevalue(source_df_name)
     source_ts = TSDataset(
-        df=source_df, df_exog=market_level_df_exog, freq="D", hierarchical_structure=hierarchical_structure
+        df=source_df,
+        df_exog=market_level_df_exog,
+        freq="D",
+        hierarchical_structure=hierarchical_structure,
+        known_future=["regressor"],
     )
 
     target_df = request.getfixturevalue(target_df_name)
     target_ts = TSDataset(
-        df=target_df, df_exog=market_level_df_exog, freq="D", hierarchical_structure=hierarchical_structure
+        df=target_df,
+        df_exog=market_level_df_exog,
+        freq="D",
+        hierarchical_structure=hierarchical_structure,
+        known_future=["regressor"],
     )
 
     estimated_target_ts = source_ts.get_level_dataset(target_level)
 
     assert target_ts.current_df_exog_level == estimated_target_ts.current_df_exog_level
-    pd.testing.assert_frame_equal(target_ts.df_exog, estimated_target_ts.df_exog)
+    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
 
 
 def test_get_level_dataset_no_hierarchy_error(market_level_df):
