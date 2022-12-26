@@ -34,3 +34,11 @@ def test_aggregate_fails_low_source_level(hierarchical_ts):
     reconciliator = BaseReconciliator(target_level="level", source_level="product")
     with pytest.raises(ValueError, match=""):
         _ = reconciliator.aggregate(ts=ts_market_level)
+
+
+@pytest.mark.parametrize("cur_level", ("total", "product"))
+def test_reconcile_wrong_level_fails(hierarchical_ts, cur_level, source_level="market"):
+    hierarchical_ts = hierarchical_ts.get_level_dataset(target_level=cur_level)
+    reconciliator = BaseReconciliator(target_level="level", source_level=source_level)
+    with pytest.raises(ValueError, match=f"Dataset should be on the {source_level} level!"):
+        _ = reconciliator.reconcile(ts=hierarchical_ts)
