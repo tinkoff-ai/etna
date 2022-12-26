@@ -1,7 +1,9 @@
+from functools import partial
 from typing import List
 from typing import Union
 
 import numpy as np
+from sklearn.metrics import mean_squared_error as mse
 
 ArrayLike = List[Union[float, List[float]]]
 
@@ -112,3 +114,6 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
         raise ValueError("Shapes of the labels must be the same")
 
     return np.mean(np.sign(y_true_array - y_pred_array))
+
+
+rmse = partial(mse, squared=False)
