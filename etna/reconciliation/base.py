@@ -3,7 +3,6 @@ from abc import abstractmethod
 from typing import Optional
 
 import pandas as pd
-import scipy
 from scipy.sparse import csr_matrix
 
 from etna.core import BaseMixin
@@ -72,17 +71,25 @@ class BaseReconciliator(ABC, BaseMixin):
         :
             TSDataset on the ``target_level``.
         """
+        if self.mapping_matrix is None:
+            raise ValueError(f"Reconciliator is not fitted!")
+
+        if ts.hierarchical_structure is None:
+            raise ValueError(f"Passed dataset has not hierarchical structure!")
+
         if ts.current_df_level != self.source_level:
             raise ValueError(f"Dataset should be on the {self.source_level} level!")
 
         current_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.source_level)
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
-        current_level_values = ts[:, current_level_segments, "target"].values.T
-        target_level_values = scipy.sparse.csr_matrix.dot(self.mapping_matrix, current_level_values)
+        current_level_values = ts[:, current_level_segments, "target"].values
+        target_level_values = current_level_values @ self.mapping_matrix.T
 
         df_reconciled = pd.DataFrame(
-            target_level_values, columns=pd.MultiIndex.from_product([target_level_segments, ["target"]]), index=ts.index
+            target_level_values,
+            columns=pd.MultiIndex.from_product([target_level_segments, ["target"]], names=["segment", "feature"]),
+            index=ts.index,
         )
         ts_reconciled = TSDataset(
             df=df_reconciled,
