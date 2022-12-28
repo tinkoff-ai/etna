@@ -103,13 +103,12 @@ class TopDownReconciler(BaseReconciliator):
 
                 self.mapping_matrix[target_index, source_index] = self.proportions_method(
                     target_series=target_level_ts[:, target_segment, "target"],
-                    source_series=source_level_ts[:, source_segment, "target"]
+                    source_series=source_level_ts[:, source_segment, "target"],
                 )
 
         else:
             self.mapping_matrix = target_level_ts.hierarchical_structure.get_summing_matrix(
-                target_level=self.target_level,
-                source_level=self.source_level
+                target_level=self.target_level, source_level=self.source_level
             )
 
         return self
@@ -117,11 +116,11 @@ class TopDownReconciler(BaseReconciliator):
     def _estimate_ahp_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
         """Calculate reconciliation proportion with Average historical proportions method."""
         data = pd.concat((target_series, source_series), axis=1).values
-        data = data[-self.period_length:]
+        data = data[-self.period_length :]
         return np.nanmean(data[..., 0] / data[..., 1])
 
     def _estimate_pha_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
         """Calculate reconciliation proportions with Proportions of the historical averages method."""
         target_data = target_series.values
         source_data = source_series.values
-        return np.nanmean(target_data[-self.period_length:]) / np.nanmean(source_data[-self.period_length:])
+        return np.nanmean(target_data[-self.period_length :]) / np.nanmean(source_data[-self.period_length :])

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
@@ -125,7 +124,7 @@ def test_top_down_reconcile_init_error(reconciler_args, error_message):
                 "source_level": "market",
             },
             "The method can be applied only to instances with a hierarchy!",
-        )
+        ),
     ),
 )
 def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, request):
@@ -136,8 +135,6 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
     reconciler = TopDownReconciler(**reconciler_args)
     with pytest.raises(ValueError, match=error_message):
         reconciler.fit(ts)
-
-
 
 
 @pytest.mark.parametrize(
@@ -191,7 +188,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
                 "target_level": "market",
                 "source_level": "market",
             },
-            np.array([[1, 0.], [0., 1]]),
+            np.array([[1, 0.0], [0.0, 1]]),
         ),
         (
             "market_level_simple_hierarchical_ts",
@@ -261,7 +258,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
                 "target_level": "market",
                 "source_level": "market",
             },
-            np.array([[1, 0.], [0., 1]]),
+            np.array([[1, 0.0], [0.0, 1]]),
         ),
         (
             "market_level_simple_hierarchical_ts",
@@ -283,7 +280,6 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
             },
             np.array([[1]]),
         ),
-
         (
             "product_level_simple_hierarchical_ts",
             {
@@ -414,7 +410,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
             },
             np.array([[0.0909], [0.9091]]),
         ),
-(
+        (
             "total_level_simple_hierarchical_ts",
             {
                 "method": "PHA",
@@ -430,6 +426,4 @@ def test_top_down_reconcile_fit(ts_name, reconciler_args, answer, request):
     ts = request.getfixturevalue(ts_name)
     reconciler = TopDownReconciler(**reconciler_args)
     reconciler.fit(ts)
-    np.testing.assert_array_almost_equal(
-        reconciler.mapping_matrix.toarray().round(5), answer, decimal=4
-    )
+    np.testing.assert_array_almost_equal(reconciler.mapping_matrix.toarray().round(5), answer, decimal=4)
