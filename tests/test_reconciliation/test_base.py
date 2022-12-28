@@ -66,13 +66,15 @@ def test_aggregate(hierarchical_ts, source_level):
 def test_aggregate_fails_low_source_level(hierarchical_ts):
     ts_market_level = hierarchical_ts.get_level_dataset(target_level="market")
     reconciliator = DummyReconciliator(target_level="level", source_level="product")
-    with pytest.raises(ValueError, match=""):
+    with pytest.raises(
+        ValueError, match="Target level should be higher in the hierarchy than the current level of dataframe!"
+    ):
         _ = reconciliator.aggregate(ts=ts_market_level)
 
 
 def test_reconcile_not_fitted_fails(hierarchical_ts):
     reconciliator = DummyReconciliator(target_level="level", source_level="product")
-    with pytest.raises(ValueError, match=f"Reconciliator is not fitted!"):
+    with pytest.raises(ValueError, match="Reconciliator is not fitted!"):
         _ = reconciliator.reconcile(ts=hierarchical_ts)
 
 
