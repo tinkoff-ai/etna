@@ -523,6 +523,7 @@ def product_level_df():
     df = TSDataset.to_dataset(df)
     return df
 
+
 @pytest.fixture
 def market_level_df_w_nans():
     df = pd.DataFrame(
