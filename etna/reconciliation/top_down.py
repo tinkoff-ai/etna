@@ -70,7 +70,7 @@ class TopDownReconciler(BaseReconciliator):
         :
             Fitted instance of reconciliator.
         """
-        if ts.hierarchical_structure is None:
+        if ts.hierarchical_structure is None or ts.current_df_level is None:
             raise ValueError(f"The method can be applied only to instances with a hierarchy!")
 
         current_level_index = ts.hierarchical_structure.get_level_depth(ts.current_df_level)
@@ -85,6 +85,12 @@ class TopDownReconciler(BaseReconciliator):
 
         source_level_ts = ts.get_level_dataset(self.source_level)
         target_level_ts = ts.get_level_dataset(self.target_level)
+
+        if source_level_ts.hierarchical_structure is None:
+            raise ValueError("Source level dataset has no hierarchical structure!")
+
+        if target_level_ts.hierarchical_structure is None:
+            raise ValueError("Target level dataset has no hierarchical structure!")
 
         if source_level_index < target_level_index:
 
