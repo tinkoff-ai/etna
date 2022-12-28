@@ -148,8 +148,8 @@ class HierarchicalStructure(BaseMixin):
         except KeyError as e:
             raise ValueError(f"Invalid level name: {e.args[0]}")
 
-        if target_idx >= source_idx:
-            raise ValueError("Target level must be higher in hierarchy than source level!")
+        if target_idx > source_idx:
+            raise ValueError("Target level must be higher or equal in hierarchy than source level!")
 
         target_level_segment = self.get_level_segments(target_level)
         source_level_segment = self.get_level_segments(source_level)

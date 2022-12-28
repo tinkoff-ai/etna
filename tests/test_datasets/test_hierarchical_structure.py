@@ -17,15 +17,28 @@ def simple_hierarchical_structure():
 @pytest.mark.parametrize(
     "struct, target,source,answer",
     (
+        ("simple_hierarchical_structure", "l1", "l1", np.array([[1]])),
+        ("simple_hierarchical_structure", "l2", "l2", np.array([[1, 0], [0, 1]])),
+        ("simple_hierarchical_structure", "l3", "l3", np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])),
         ("simple_hierarchical_structure", "l1", "l2", np.array([[1, 1]])),
         ("simple_hierarchical_structure", "l1", "l3", np.array([[1, 1, 1, 1]])),
         ("simple_hierarchical_structure", "l2", "l3", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
+
+        ("tailed_hierarchical_structure", "l1", "l1", np.array([[1]])),
+        ("tailed_hierarchical_structure", "l2", "l2", np.array([[1, 0], [0, 1]])),
+        ("tailed_hierarchical_structure", "l3", "l3", np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+        ("tailed_hierarchical_structure", "l4", "l4", np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])),
         ("tailed_hierarchical_structure", "l1", "l2", np.array([[1, 1]])),
         ("tailed_hierarchical_structure", "l1", "l3", np.array([[1, 1, 1]])),
         ("tailed_hierarchical_structure", "l1", "l4", np.array([[1, 1, 1, 1]])),
         ("tailed_hierarchical_structure", "l2", "l3", np.array([[1, 0, 0], [0, 1, 1]])),
         ("tailed_hierarchical_structure", "l2", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 1]])),
         ("tailed_hierarchical_structure", "l3", "l4", np.array([[1, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])),
+
+        ("long_hierarchical_structure", "l1", "l1", np.array([[1]])),
+        ("long_hierarchical_structure", "l2", "l2", np.array([[1, 0], [0, 1]])),
+        ("long_hierarchical_structure", "l3", "l3", np.array([[1, 0], [0, 1]])),
+        ("long_hierarchical_structure", "l4", "l4", np.array([[1, 0], [0, 1]])),
         ("long_hierarchical_structure", "l1", "l2", np.array([[1, 1]])),
         ("long_hierarchical_structure", "l1", "l3", np.array([[1, 1]])),
         ("long_hierarchical_structure", "l1", "l4", np.array([[1, 1]])),
@@ -45,7 +58,7 @@ def test_summing_matrix(struct: str, source: str, target: str, answer: np.ndarra
     (
         ("l0", "l2", "Invalid level name: l0"),
         ("l1", "l0", "Invalid level name: l0"),
-        ("l2", "l1", "Target level must be higher in hierarchy than source level!"),
+        ("l2", "l1", "Target level must be higher or equal in hierarchy than source level!"),
     ),
 )
 def test_level_transition_errors(
