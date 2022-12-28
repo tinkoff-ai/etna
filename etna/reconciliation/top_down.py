@@ -77,11 +77,11 @@ class TopDownReconciler(BaseReconciliator):
         source_level_index = ts.hierarchical_structure.get_level_depth(self.source_level)
         target_level_index = ts.hierarchical_structure.get_level_depth(self.target_level)
 
-        if current_level_index > target_level_index:
-            raise ValueError("Current TSDataset level should be lower or equal in the hierarchy than the target level!")
-
-        if target_level_index > source_level_index:
+        if target_level_index < source_level_index:
             raise ValueError("Target level should be lower or equal in the hierarchy than the source level!")
+
+        if current_level_index < target_level_index:
+            raise ValueError("Current TSDataset level should be lower or equal in the hierarchy than the target level!")
 
         source_level_ts = ts.get_level_dataset(self.source_level)
         target_level_ts = ts.get_level_dataset(self.target_level)
@@ -102,8 +102,8 @@ class TopDownReconciler(BaseReconciliator):
                 target_segment = target_level_segments[target_index]
 
                 self.mapping_matrix[target_index, source_index] = self.proportions_method(
-                    target_series=target_level_ts[-self.period_length:, target_segment, "target"],
-                    source_series=source_level_ts[-self.period_length:, source_segment, "target"]
+                    target_series=target_level_ts[:, target_segment, "target"],
+                    source_series=source_level_ts[:, source_segment, "target"]
                 )
 
         else:
@@ -114,13 +114,14 @@ class TopDownReconciler(BaseReconciliator):
 
         return self
 
-    @staticmethod
-    def _estimate_ahp_proportion(target_series: TSDataset, source_series: TSDataset) -> float:
+    def _estimate_ahp_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
         """Calculate reconciliation proportion with Average historical proportions method."""
-        data = pd.concat((target_series.df, source_series.df), axis=1).values
+        data = pd.concat((target_series, source_series), axis=1).values
+        data = data[-self.period_length:]
         return np.nanmean(data[..., 0] / data[..., 1])
 
-    @staticmethod
-    def _estimate_pha_proportion(target_series: TSDataset, source_series: TSDataset) -> float:
+    def _estimate_pha_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
         """Calculate reconciliation proportions with Proportions of the historical averages method."""
-        return np.nanmean(target_series["target"].values) / np.nanmean(source_series["target"].values)
+        target_data = target_series.values
+        source_data = source_series.values
+        return np.nanmean(target_data[-self.period_length:]) / np.nanmean(source_data[-self.period_length:])
