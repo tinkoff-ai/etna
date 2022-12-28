@@ -75,7 +75,7 @@ class BaseReconciliator(ABC, BaseMixin):
             raise ValueError(f"Reconciliator is not fitted!")
 
         if ts.hierarchical_structure is None:
-            raise ValueError(f"Passed dataset has not hierarchical structure!")
+            raise ValueError(f"Passed dataset has no hierarchical structure!")
 
         if ts.current_df_level != self.source_level:
             raise ValueError(f"Dataset should be on the {self.source_level} level!")
