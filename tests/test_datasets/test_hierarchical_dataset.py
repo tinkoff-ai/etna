@@ -6,15 +6,6 @@ from etna.datasets.tsdataset import TSDataset
 
 
 @pytest.fixture
-def hierarchical_structure():
-    hs = HierarchicalStructure(
-        level_structure={"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]},
-        level_names=["total", "market", "product"],
-    )
-    return hs
-
-
-@pytest.fixture
 def hierarchical_structure_complex():
     hs = HierarchicalStructure(
         level_structure={
@@ -84,19 +75,6 @@ def product_level_df_long():
 
 
 @pytest.fixture
-def total_level_df():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02"],
-            "segment": ["total"] * 2,
-            "target": [11.0, 22.0],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
 def missing_segments_df():
     df = pd.DataFrame(
         {
@@ -118,19 +96,6 @@ def product_level_df_wide(product_level_df_long):
 
 
 @pytest.fixture
-def market_level_df():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
-            "segment": ["X"] * 2 + ["Y"] * 2,
-            "target": [1.0, 2.0] + [10.0, 20.0],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
 def market_level_df_exog():
     df_exog = pd.DataFrame(
         {
@@ -142,19 +107,6 @@ def market_level_df_exog():
     )
     df_exog = TSDataset.to_dataset(df_exog)
     return df_exog
-
-
-@pytest.fixture
-def product_level_df():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02"] * 4,
-            "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
-            "target": [1.0, 1.0] + [0.0, 1.0] + [3.0, 18.0] + [7.0, 2.0],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
 
 
 @pytest.fixture
