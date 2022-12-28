@@ -123,32 +123,6 @@ def product_level_df_w_nans():
 
 
 @pytest.fixture
-def market_level_df_w_nans():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 2,
-            "segment": ["X"] * 4 + ["Y"] * 4,
-            "target": [None, 4, 6, None] + [17, 19, None, 22],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
-def total_level_df_w_nans():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"],
-            "segment": ["total"] * 4,
-            "target": [None, 23, None, None],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
 def l4_level_df_long():
     df = pd.DataFrame(
         {

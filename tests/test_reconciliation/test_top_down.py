@@ -24,6 +24,12 @@ def product_level_simple_hierarchical_ts(product_level_df, hierarchical_structur
 
 
 @pytest.fixture
+def market_level_simple_hierarchical_ts_w_nans(market_level_df_w_nans, hierarchical_structure):
+    ts = TSDataset(df=market_level_df_w_nans, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
+
+
+@pytest.fixture
 def simple_no_hierarchy_ts(market_level_df):
     ts = TSDataset(df=market_level_df, freq="D")
     return ts
@@ -419,6 +425,86 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
                 "source_level": "total",
             },
             np.array([[1]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "AHP",
+                "period_length": 1,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[np.nan], [np.nan]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "AHP",
+                "period_length": 2,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[np.nan], [np.nan]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "AHP",
+                "period_length": 3,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[0.1739], [0.8261]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "AHP",
+                "period_length": 4,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[0.1739], [0.8261]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "PHA",
+                "period_length": 1,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[np.nan], [np.nan]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "PHA",
+                "period_length": 2,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[np.nan], [np.nan]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "PHA",
+                "period_length": 3,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[0.2174], [0.8913]]),
+        ),
+        (
+            "market_level_simple_hierarchical_ts_w_nans",
+            {
+                "method": "PHA",
+                "period_length": 4,
+                "target_level": "market",
+                "source_level": "total",
+            },
+            np.array([[0.2174], [0.8406]]),
         ),
     ),
 )
