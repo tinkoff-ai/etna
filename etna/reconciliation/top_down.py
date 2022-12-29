@@ -54,11 +54,11 @@ class TopDownReconciliator(BaseReconciliator):
 
         proportions_method = ReconciliationProportionsMethod(method)
         if proportions_method == ReconciliationProportionsMethod.AHP:
-            self.proportions_method = self._estimate_ahp_proportion
+            self._proportions_method_func = self._estimate_ahp_proportion
         elif proportions_method == ReconciliationProportionsMethod.PHA:
-            self.proportions_method = self._estimate_pha_proportion
+            self._proportions_method_func = self._estimate_pha_proportion
 
-    def fit(self, ts: TSDataset) -> "TopDownReconciler":
+    def fit(self, ts: TSDataset) -> "TopDownReconciliator":
         """Fit the reconciliator parameters.
 
         Parameters
@@ -108,7 +108,7 @@ class TopDownReconciliator(BaseReconciliator):
                 source_segment = source_level_segments[source_index]
                 target_segment = target_level_segments[target_index]
 
-                self.mapping_matrix[target_index, source_index] = self.proportions_method(
+                self.mapping_matrix[target_index, source_index] = self._proportions_method_func(
                     target_series=target_level_ts[:, target_segment, "target"],
                     source_series=source_level_ts[:, source_segment, "target"],
                 )
