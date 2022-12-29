@@ -1,6 +1,6 @@
 from enum import Enum
 
-import numpy as np
+import bottleneck as bn
 import pandas as pd
 from scipy.sparse import lil_matrix
 
@@ -34,10 +34,10 @@ class TopDownReconciliator(BaseReconciliator):
             Level to be reconciled from the forecasts.
         source_level:
             Level to be forecasted.
-        period_length:
+        period:
             Period length for calculation reconciliation proportions.
         method:
-            Method for calculation reconciliation proportions. Selects last ``period_length`` timestamps for estimation.
+            Proportions calculation method. Selects last ``period`` timestamps for estimation.
             Currently supported options:
 
             * AHP - Average historical proportions
@@ -46,10 +46,11 @@ class TopDownReconciliator(BaseReconciliator):
         """
         super().__init__(target_level=target_level, source_level=source_level)
 
-        if period_length < 1:
+        if period < 1:
             raise ValueError("Period length must be positive!")
 
-        self.period_length = period_length
+        self.period = period
+        self.method = method
 
         proportions_method = ReconciliationProportionsMethod(method)
         if proportions_method == ReconciliationProportionsMethod.AHP:
@@ -122,11 +123,11 @@ class TopDownReconciliator(BaseReconciliator):
     def _estimate_ahp_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
         """Calculate reconciliation proportion with Average historical proportions method."""
         data = pd.concat((target_series, source_series), axis=1).values
-        data = data[-self.period_length :]
-        return np.nanmean(data[..., 0] / data[..., 1])
+        data = data[-self.period :]
+        return bn.nanmean(data[..., 0] / data[..., 1])
 
     def _estimate_pha_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
         """Calculate reconciliation proportions with Proportions of the historical averages method."""
         target_data = target_series.values
         source_data = source_series.values
-        return np.nanmean(target_data[-self.period_length :]) / np.nanmean(source_data[-self.period_length :])
+        return bn.nanmean(target_data[-self.period :]) / bn.nanmean(source_data[-self.period :])
