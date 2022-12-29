@@ -9,7 +9,7 @@ from etna.reconciliation.base import BaseReconciliator
 
 
 class ReconciliationProportionsMethod(str, Enum):
-    """Enum for different default forecasts modes."""
+    """Enum for different reconciliation proportions methods."""
 
     AHP = "AHP"
     PHA = "PHA"
@@ -127,7 +127,7 @@ class TopDownReconciliator(BaseReconciliator):
         return bn.nanmean(data[..., 0] / data[..., 1])
 
     def _estimate_pha_proportion(self, target_series: pd.Series, source_series: pd.Series) -> float:
-        """Calculate reconciliation proportions with Proportions of the historical averages method."""
+        """Calculate reconciliation proportion with Proportions of the historical averages method."""
         target_data = target_series.values
         source_data = source_series.values
         return bn.nanmean(target_data[-self.period :]) / bn.nanmean(source_data[-self.period :])
