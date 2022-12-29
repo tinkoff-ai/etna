@@ -113,6 +113,8 @@ class TopDownReconciliator(BaseReconciliator):
                     source_series=source_level_ts[:, source_segment, "target"],
                 )
 
+            self.mapping_matrix = self.mapping_matrix.tocsr()
+
         else:
             self.mapping_matrix = target_level_ts.hierarchical_structure.get_summing_matrix(
                 target_level=self.target_level, source_level=self.source_level
