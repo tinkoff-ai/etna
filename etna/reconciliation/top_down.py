@@ -22,11 +22,11 @@ class ReconciliationProportionsMethod(str, Enum):
         )
 
 
-class TopDownReconciler(BaseReconciliator):
+class TopDownReconciliator(BaseReconciliator):
     """Top-down reconciliation methods."""
 
-    def __init__(self, target_level: str, source_level: str, period_length: int, method: str):
-        """Create top-down reconciler from ``source_level`` to ``target_level``.
+    def __init__(self, target_level: str, source_level: str, period: int, method: str):
+        """Create top-down reconciliator from ``source_level`` to ``target_level``.
 
         Parameters
         ----------
@@ -44,7 +44,7 @@ class TopDownReconciler(BaseReconciliator):
 
             * PHA - Proportions of the historical averages
         """
-        super(TopDownReconciler, self).__init__(target_level=target_level, source_level=source_level)
+        super().__init__(target_level=target_level, source_level=source_level)
 
         if period_length < 1:
             raise ValueError("Period length must be positive!")
