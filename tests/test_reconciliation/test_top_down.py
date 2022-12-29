@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from etna.datasets import TSDataset
-from etna.reconciliation.top_down import TopDownReconciler
+from etna.reconciliation.top_down import TopDownReconciliator
 
 
 @pytest.fixture
@@ -36,111 +36,63 @@ def simple_no_hierarchy_ts(market_level_df):
 
 
 @pytest.mark.parametrize(
-    "reconciler_args,error_message",
-    (
-        (
-            {
-                "period_length": 0,
-                "method": "AHP",
-            },
-            "Period length must be positive!",
-        ),
-        (
-            {
-                "period_length": -1,
-                "method": "AHP",
-            },
-            "Period length must be positive!",
-        ),
-        (
-            {
-                "period_length": 1,
-                "method": "ahp",
-            },
-            "Unable to recognize reconciliation method 'ahp'! Supported methods: AHP, PHA.",
-        ),
-        (
-            {"period_length": 1, "method": ""},
-            "Unable to recognize reconciliation method ''! Supported methods: AHP, PHA.",
-        ),
-        (
-            {
-                "period_length": 1,
-                "method": "abcd",
-            },
-            "Unable to recognize reconciliation method 'abcd'! Supported methods: AHP, PHA.",
-        ),
-    ),
+    "period",
+    (0, -1),
 )
-def test_top_down_reconcile_init_error(reconciler_args, error_message):
-    reconciler_args["target_level"] = "total"
-    reconciler_args["source_level"] = "market"
-
-    with pytest.raises(ValueError, match=error_message):
-        TopDownReconciler(**reconciler_args)
+def test_top_down_reconcile_init_period_error(period):
+    with pytest.raises(ValueError, match="Period length must be positive!"):
+        TopDownReconciliator(period=period, method="market", target_level="market", source_level="total")
 
 
 @pytest.mark.parametrize(
-    "ts_name,reconciler_args,error_message",
+    "method",
+    ("abcd", ""),
+)
+def test_top_down_reconcile_init_method_error(method):
+    with pytest.raises(
+        ValueError, match=f"Unable to recognize reconciliation method '{method}'! Supported methods: AHP, PHA."
+    ):
+        TopDownReconciliator(period=1, method=method, target_level="market", source_level="total")
+
+
+@pytest.mark.parametrize(
+    "ts_name,target_level,source_level,error_message",
     (
         (
             "product_level_simple_hierarchical_ts",
-            {
-                "target_level": "total",
-                "source_level": "market",
-            },
+            "total",
+            "market",
             "Target level should be lower or equal in the hierarchy than the source level!",
         ),
         (
             "market_level_simple_hierarchical_ts",
-            {
-                "target_level": "product",
-                "source_level": "total",
-            },
+            "product",
+            "total",
             "Current TSDataset level should be lower or equal in the hierarchy than the target level!",
-        ),
-        (
-            "total_level_simple_hierarchical_ts",
-            {
-                "target_level": "product",
-                "source_level": "market",
-            },
-            "Current TSDataset level should be lower or equal in the hierarchy than the target level!",
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "target_level": "abc",
-                "source_level": "total",
-            },
-            "Invalid level name: abc",
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "target_level": "market",
-                "source_level": "abc",
-            },
-            "Invalid level name: abc",
-        ),
-        (
-            "simple_no_hierarchy_ts",
-            {
-                "target_level": "total",
-                "source_level": "market",
-            },
-            "The method can be applied only to instances with a hierarchy!",
         ),
     ),
 )
-def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, request):
+def test_top_down_reconcile_level_order_errors(ts_name, target_level, source_level, error_message, request):
     ts = request.getfixturevalue(ts_name)
-    reconciler_args["period_length"] = 1
-    reconciler_args["method"] = "AHP"
-
-    reconciler = TopDownReconciler(**reconciler_args)
+    reconciler = TopDownReconciliator(period=1, method="AHP", target_level=target_level, source_level=source_level)
     with pytest.raises(ValueError, match=error_message):
         reconciler.fit(ts)
+
+
+@pytest.mark.parametrize(
+    "target_level,source_level",
+    (("abc", "total"), ("market", "abc")),
+)
+def test_top_down_reconcile_invalid_level_errors(market_level_simple_hierarchical_ts, target_level, source_level):
+    reconciler = TopDownReconciliator(period=1, method="AHP", target_level=target_level, source_level=source_level)
+    with pytest.raises(ValueError, match="Invalid level name: abc"):
+        reconciler.fit(market_level_simple_hierarchical_ts)
+
+
+def test_top_down_reconcile_no_hierarchy_error(simple_no_hierarchy_ts):
+    reconciler = TopDownReconciliator(method="AHP", period=1, target_level="market", source_level="total")
+    with pytest.raises(ValueError, match="The method can be applied only to instances with a hierarchy!"):
+        reconciler.fit(simple_no_hierarchy_ts)
 
 
 @pytest.mark.parametrize(
@@ -149,8 +101,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 1,
+                "period": 1,
                 "target_level": "product",
                 "source_level": "product",
             },
@@ -159,8 +110,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 1,
+                "period": 1,
                 "target_level": "product",
                 "source_level": "market",
             },
@@ -169,8 +119,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 1,
+                "period": 1,
                 "target_level": "product",
                 "source_level": "total",
             },
@@ -179,28 +128,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 1,
-                "target_level": "market",
-                "source_level": "total",
-            },
-            np.array([[0.0909], [0.9091]]),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 1,
-                "target_level": "market",
-                "source_level": "market",
-            },
-            np.array([[1, 0.0], [0.0, 1]]),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 1,
+                "period": 1,
                 "target_level": "market",
                 "source_level": "total",
             },
@@ -209,8 +137,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "total_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 1,
+                "period": 1,
                 "target_level": "total",
                 "source_level": "total",
             },
@@ -219,88 +146,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "product",
-                "source_level": "product",
-            },
-            np.identity(4),
-        ),
-        (
-            "product_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "product",
-                "source_level": "market",
-            },
-            np.array([[0.5, 0], [0.5, 0], [0, 0.9], [0, 0.1]]),
-        ),
-        (
-            "product_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "product",
-                "source_level": "total",
-            },
-            np.array([[0.04545], [0.04545], [0.8182], [0.0909]]),
-        ),
-        (
-            "product_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "market",
-                "source_level": "total",
-            },
-            np.array([[0.0909], [0.9091]]),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "market",
-                "source_level": "market",
-            },
-            np.array([[1, 0.0], [0.0, 1]]),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "market",
-                "source_level": "total",
-            },
-            np.array([[0.0909], [0.9091]]),
-        ),
-        (
-            "total_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "total",
-                "source_level": "total",
-            },
-            np.array([[1]]),
-        ),
-        (
-            "product_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 2,
-                "target_level": "product",
-                "source_level": "product",
-            },
-            np.identity(4),
-        ),
-        (
-            "product_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 2,
+                "period": 2,
                 "target_level": "product",
                 "source_level": "market",
             },
@@ -309,8 +155,7 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 2,
+                "period": 2,
                 "target_level": "product",
                 "source_level": "total",
             },
@@ -319,48 +164,29 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 2,
+                "period": 2,
                 "target_level": "market",
                 "source_level": "total",
             },
             np.array([[0.0909], [0.9091]]),
         ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 2,
-                "target_level": "market",
-                "source_level": "market",
-            },
-            np.identity(2),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 2,
-                "target_level": "market",
-                "source_level": "total",
-            },
-            np.array([[0.0909], [0.9091]]),
-        ),
-        (
-            "total_level_simple_hierarchical_ts",
-            {
-                "method": "AHP",
-                "period_length": 2,
-                "target_level": "total",
-                "source_level": "total",
-            },
-            np.array([[1]]),
-        ),
+    ),
+)
+def test_top_down_reconcile_ahp_fit(ts_name, reconciler_args, answer, request):
+    reconciler_args["method"] = "AHP"
+    ts = request.getfixturevalue(ts_name)
+    reconciler = TopDownReconciliator(**reconciler_args)
+    reconciler.fit(ts)
+    np.testing.assert_array_almost_equal(reconciler.mapping_matrix.toarray().round(5), answer, decimal=4)
+
+
+@pytest.mark.parametrize(
+    "ts_name,reconciler_args,answer",
+    (
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "PHA",
-                "period_length": 2,
+                "period": 1,
                 "target_level": "product",
                 "source_level": "product",
             },
@@ -369,48 +195,25 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "PHA",
-                "period_length": 2,
+                "period": 1,
                 "target_level": "product",
                 "source_level": "market",
             },
-            np.array([[0.6667, 0], [0.3333, 0], [0, 0.7], [0, 0.3]]),
+            np.array([[0.5, 0], [0.5, 0], [0, 0.9], [0, 0.1]]),
         ),
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "PHA",
-                "period_length": 2,
+                "period": 1,
                 "target_level": "product",
                 "source_level": "total",
             },
-            np.array([[0.0606], [0.0303], [0.6364], [0.2727]]),
+            np.array([[0.04545], [0.04545], [0.8182], [0.0909]]),
         ),
         (
             "product_level_simple_hierarchical_ts",
             {
-                "method": "PHA",
-                "period_length": 2,
-                "target_level": "market",
-                "source_level": "total",
-            },
-            np.array([[0.0909], [0.9091]]),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 2,
-                "target_level": "market",
-                "source_level": "market",
-            },
-            np.identity(2),
-        ),
-        (
-            "market_level_simple_hierarchical_ts",
-            {
-                "method": "PHA",
-                "period_length": 2,
+                "period": 1,
                 "target_level": "market",
                 "source_level": "total",
             },
@@ -419,97 +222,95 @@ def test_top_down_reconcile_errors(ts_name, reconciler_args, error_message, requ
         (
             "total_level_simple_hierarchical_ts",
             {
-                "method": "PHA",
-                "period_length": 2,
+                "period": 1,
                 "target_level": "total",
                 "source_level": "total",
             },
             np.array([[1]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
+            "product_level_simple_hierarchical_ts",
             {
-                "method": "AHP",
-                "period_length": 1,
+                "period": 2,
+                "target_level": "product",
+                "source_level": "market",
+            },
+            np.array([[0.6667, 0], [0.3333, 0], [0, 0.7], [0, 0.3]]),
+        ),
+        (
+            "product_level_simple_hierarchical_ts",
+            {
+                "period": 2,
+                "target_level": "product",
+                "source_level": "total",
+            },
+            np.array([[0.0606], [0.0303], [0.6364], [0.2727]]),
+        ),
+        (
+            "product_level_simple_hierarchical_ts",
+            {
+                "period": 2,
                 "target_level": "market",
                 "source_level": "total",
             },
+            np.array([[0.0909], [0.9091]]),
+        ),
+    ),
+)
+def test_top_down_reconcile_pha_fit(ts_name, reconciler_args, answer, request):
+    reconciler_args["method"] = "PHA"
+    ts = request.getfixturevalue(ts_name)
+    reconciler = TopDownReconciliator(**reconciler_args)
+    reconciler.fit(ts)
+    np.testing.assert_array_almost_equal(reconciler.mapping_matrix.toarray().round(5), answer, decimal=4)
+
+
+@pytest.mark.parametrize(
+    "method,period,answer",
+    (
+        (
+            "AHP",
+            1,
             np.array([[np.nan], [np.nan]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "AHP",
-                "period_length": 2,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "AHP",
+            2,
             np.array([[np.nan], [np.nan]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "AHP",
-                "period_length": 3,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "AHP",
+            3,
             np.array([[0.1739], [0.8261]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "AHP",
-                "period_length": 4,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "AHP",
+            4,
             np.array([[0.1739], [0.8261]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "PHA",
-                "period_length": 1,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "PHA",
+            1,
             np.array([[np.nan], [np.nan]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "PHA",
-                "period_length": 2,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "PHA",
+            2,
             np.array([[np.nan], [np.nan]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "PHA",
-                "period_length": 3,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "PHA",
+            3,
             np.array([[0.2174], [0.8913]]),
         ),
         (
-            "market_level_simple_hierarchical_ts_w_nans",
-            {
-                "method": "PHA",
-                "period_length": 4,
-                "target_level": "market",
-                "source_level": "total",
-            },
+            "PHA",
+            4,
             np.array([[0.2174], [0.8406]]),
         ),
     ),
 )
-def test_top_down_reconcile_fit(ts_name, reconciler_args, answer, request):
-    ts = request.getfixturevalue(ts_name)
-    reconciler = TopDownReconciler(**reconciler_args)
-    reconciler.fit(ts)
+def test_top_down_reconcile_fit_w_nans(market_level_simple_hierarchical_ts_w_nans, method, period, answer):
+    reconciler = TopDownReconciliator(method=method, period=period, source_level="total", target_level="market")
+    reconciler.fit(market_level_simple_hierarchical_ts_w_nans)
     np.testing.assert_array_almost_equal(reconciler.mapping_matrix.toarray().round(5), answer, decimal=4)
