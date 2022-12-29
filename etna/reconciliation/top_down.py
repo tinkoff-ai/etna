@@ -71,10 +71,10 @@ class TopDownReconciliator(BaseReconciliator):
         :
             Fitted instance of reconciliator.
         """
-        if ts.hierarchical_structure is None or ts.current_df_level is None:
+        if ts.hierarchical_structure is None:
             raise ValueError(f"The method can be applied only to instances with a hierarchy!")
 
-        current_level_index = ts.hierarchical_structure.get_level_depth(ts.current_df_level)
+        current_level_index = ts.hierarchical_structure.get_level_depth(ts.current_df_level)  # type: ignore
         source_level_index = ts.hierarchical_structure.get_level_depth(self.source_level)
         target_level_index = ts.hierarchical_structure.get_level_depth(self.target_level)
 
@@ -87,20 +87,14 @@ class TopDownReconciliator(BaseReconciliator):
         source_level_ts = ts.get_level_dataset(self.source_level)
         target_level_ts = ts.get_level_dataset(self.target_level)
 
-        if source_level_ts.hierarchical_structure is None:
-            raise ValueError("Source level dataset has no hierarchical structure!")
-
-        if target_level_ts.hierarchical_structure is None:
-            raise ValueError("Target level dataset has no hierarchical structure!")
-
         if source_level_index < target_level_index:
 
-            summing_matrix = target_level_ts.hierarchical_structure.get_summing_matrix(
+            summing_matrix = target_level_ts.hierarchical_structure.get_summing_matrix(  # type: ignore
                 target_level=self.source_level, source_level=self.target_level
             )
 
-            source_level_segments = source_level_ts.hierarchical_structure.get_level_segments(self.source_level)
-            target_level_segments = target_level_ts.hierarchical_structure.get_level_segments(self.target_level)
+            source_level_segments = source_level_ts.hierarchical_structure.get_level_segments(self.source_level)  # type: ignore
+            target_level_segments = target_level_ts.hierarchical_structure.get_level_segments(self.target_level)  # type: ignore
 
             self.mapping_matrix = lil_matrix((len(target_level_segments), len(source_level_segments)))
 
@@ -116,7 +110,7 @@ class TopDownReconciliator(BaseReconciliator):
             self.mapping_matrix = self.mapping_matrix.tocsr()
 
         else:
-            self.mapping_matrix = target_level_ts.hierarchical_structure.get_summing_matrix(
+            self.mapping_matrix = target_level_ts.hierarchical_structure.get_summing_matrix(  # type: ignore
                 target_level=self.target_level, source_level=self.source_level
             )
 
