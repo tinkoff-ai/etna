@@ -57,6 +57,8 @@ class TopDownReconciliator(BaseReconciliator):
             self._proportions_method_func = self._estimate_ahp_proportion
         elif proportions_method == ReconciliationProportionsMethod.PHA:
             self._proportions_method_func = self._estimate_pha_proportion
+        else:
+            raise ValueError(f"Failed to initialize proportions calculation method with name '{method}'!")
 
     def fit(self, ts: TSDataset) -> "TopDownReconciliator":
         """Fit the reconciliator parameters.
@@ -102,7 +104,7 @@ class TopDownReconciliator(BaseReconciliator):
                 source_segment = source_level_segments[source_index]
                 target_segment = target_level_segments[target_index]
 
-                self.mapping_matrix[target_index, source_index] = self._proportions_method_func(
+                self.mapping_matrix[target_index, source_index] = self._proportions_method_func(  # type: ignore
                     target_series=target_level_ts[:, target_segment, "target"],
                     source_series=source_level_ts[:, source_segment, "target"],
                 )
