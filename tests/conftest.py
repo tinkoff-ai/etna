@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import generate_const_df
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
 
 
@@ -473,3 +474,90 @@ def toy_dataset_with_mean_shift_in_target():
         "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
     return TSDataset.to_dataset(pd.DataFrame(df))
+
+
+@pytest.fixture
+def hierarchical_structure():
+    hs = HierarchicalStructure(
+        level_structure={"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]},
+        level_names=["total", "market", "product"],
+    )
+    return hs
+
+
+@pytest.fixture
+def total_level_df():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"],
+            "segment": ["total"] * 2,
+            "target": [11.0, 22.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def market_level_df():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target": [1.0, 2.0] + [10.0, 20.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def product_level_df():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 4,
+            "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
+            "target": [1.0, 1.0] + [0.0, 1.0] + [3.0, 18.0] + [7.0, 2.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def product_level_df_w_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 4,
+            "segment": ["a"] * 4 + ["b"] * 4 + ["c"] * 4 + ["d"] * 4,
+            "target": [None, 0, 1, 2] + [3, 4, 5, None] + [7, 8, None, 9] + [10, 11, 12, 13],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def market_level_df_w_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 2,
+            "segment": ["X"] * 4 + ["Y"] * 4,
+            "target": [None, 4, 6, None] + [17, 19, None, 22],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def total_level_df_w_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"],
+            "segment": ["total"] * 4,
+            "target": [None, 23, None, None],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
