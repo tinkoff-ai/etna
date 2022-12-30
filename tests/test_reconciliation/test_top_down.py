@@ -1,8 +1,22 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
 from etna.reconciliation.top_down import TopDownReconciliator
+
+
+@pytest.fixture
+def market_level_df_w_negatives():
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target": [-1.0, 2.0] + [0, -20.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
 
 
 @pytest.fixture
@@ -26,6 +40,12 @@ def product_level_simple_hierarchical_ts(product_level_df, hierarchical_structur
 @pytest.fixture
 def market_level_simple_hierarchical_ts_w_nans(market_level_df_w_nans, hierarchical_structure):
     ts = TSDataset(df=market_level_df_w_nans, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
+
+
+@pytest.fixture
+def simple_hierarchical_ts_w_negatives(market_level_df_w_negatives, hierarchical_structure):
+    ts = TSDataset(df=market_level_df_w_negatives, freq="D", hierarchical_structure=hierarchical_structure)
     return ts
 
 
@@ -93,6 +113,12 @@ def test_top_down_reconcile_no_hierarchy_error(simple_no_hierarchy_ts):
     reconciler = TopDownReconciliator(method="AHP", period=1, target_level="market", source_level="total")
     with pytest.raises(ValueError, match="The method can be applied only to instances with a hierarchy!"):
         reconciler.fit(simple_no_hierarchy_ts)
+
+
+def test_top_down_reconcile_negatives_error(simple_hierarchical_ts_w_negatives):
+    reconciler = TopDownReconciliator(method="AHP", period=1, target_level="market", source_level="total")
+    with pytest.raises(ValueError, match="Provided dataset should not contain any negative numbers!"):
+        reconciler.fit(simple_hierarchical_ts_w_negatives)
 
 
 @pytest.mark.parametrize(

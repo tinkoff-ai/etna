@@ -86,6 +86,9 @@ class TopDownReconciliator(BaseReconciliator):
         if current_level_index < target_level_index:
             raise ValueError("Current TSDataset level should be lower or equal in the hierarchy than the target level!")
 
+        if (ts[..., "target"] < 0).values.any():
+            raise ValueError("Provided dataset should not contain any negative numbers!")
+
         source_level_ts = ts.get_level_dataset(self.source_level)
         target_level_ts = ts.get_level_dataset(self.target_level)
 
