@@ -23,7 +23,12 @@ class ReconciliationProportionsMethod(str, Enum):
 
 
 class TopDownReconciliator(BaseReconciliator):
-    """Top-down reconciliation methods."""
+    """Top-down reconciliation methods.
+
+    Notes
+    -----
+    Top-down reconciliation methods support only non-negative data.
+    """
 
     def __init__(self, target_level: str, source_level: str, period: int, method: str):
         """Create top-down reconciliator from ``source_level`` to ``target_level``.
