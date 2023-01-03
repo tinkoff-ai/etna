@@ -43,12 +43,6 @@ def test_bottom_up_reconcile_no_hierarchy_error(simple_no_hierarchy_ts):
         reconciler.fit(simple_no_hierarchy_ts)
 
 
-def test_bottom_up_reconcile_negatives_error(simple_hierarchical_ts_w_negatives):
-    reconciler = BottomUpReconciliator(target_level="total", source_level="market")
-    with pytest.raises(ValueError, match="Provided dataset should not contain any negative numbers!"):
-        reconciler.fit(simple_hierarchical_ts_w_negatives)
-
-
 @pytest.mark.parametrize(
     "ts_name,target_level,source_level,answer",
     (

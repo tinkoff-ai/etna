@@ -18,8 +18,7 @@ class BottomUpReconciliator(BaseReconciliator):
         super().__init__(target_level=target_level, source_level=source_level)
 
     def fit(self, ts: TSDataset) -> "BottomUpReconciliator":
-        """
-        Fit the reconciliator parameters.
+        """Fit the reconciliator parameters.
 
         Parameters
         ----------
@@ -43,9 +42,6 @@ class BottomUpReconciliator(BaseReconciliator):
 
         if current_level_index < source_level_index:
             raise ValueError("Current TSDataset level should be lower or equal in the hierarchy than the source level!")
-
-        if (ts[..., "target"] < 0).values.any():
-            raise ValueError("Provided dataset should not contain any negative numbers!")
 
         self.mapping_matrix = ts.hierarchical_structure.get_summing_matrix(
             target_level=self.target_level, source_level=self.source_level
