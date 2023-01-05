@@ -33,19 +33,20 @@ class HierarchicalPipeline(Pipeline):
         self.reconciliator = reconciliator
 
     def fit(self, ts: TSDataset) -> "HierarchicalPipeline":
-        """Fit the Pipeline.
+        """Fit the HierarchicalPipeline.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
+        Provided hierarchical dataset will be aggregated to the source level before fitting pipeline.
 
         Parameters
         ----------
         ts:
-            Dataset with timeseries data
+            Dataset with hierarchical timeseries data
 
         Returns
         -------
         :
-            Fitted Pipeline instance
+            Fitted HierarchicalPipeline instance
         """
         self.reconciliator.fit(ts=ts)
         ts = self.reconciliator.aggregate(ts=ts)
