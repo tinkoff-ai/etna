@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -94,7 +96,7 @@ def product_level_constant_hierarchical_ts_w_exog(
     ),
 )
 def test_init_pass(reconciliator):
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     assert isinstance(pipeline.reconciliator, type(reconciliator))
 
@@ -107,10 +109,11 @@ def test_init_pass(reconciliator):
     ),
 )
 def test_fit_mapping_matrix(market_level_simple_hierarchical_ts, reconciliator):
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    pipeline.fit(market_level_simple_hierarchical_ts)
-    assert pipeline.reconciliator.mapping_matrix is not None
+    with patch.object(type(reconciliator), "fit", wraps=reconciliator.fit) as mock:
+        pipeline.fit(market_level_simple_hierarchical_ts)
+        mock.assert_called()
 
 
 @pytest.mark.parametrize(
@@ -121,14 +124,14 @@ def test_fit_mapping_matrix(market_level_simple_hierarchical_ts, reconciliator):
     ),
 )
 def test_fit_dataset_level(market_level_simple_hierarchical_ts, reconciliator):
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(market_level_simple_hierarchical_ts)
     assert pipeline.ts.current_df_level == reconciliator.source_level
 
 
 def test_fit_no_hierarchy(simple_no_hierarchy_ts):
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     reconciliator = BottomUpReconciliator(target_level="total", source_level="market")
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     with pytest.raises(ValueError, match="The method can be applied only to instances with a hierarchy!"):
@@ -158,7 +161,7 @@ def test_raw_forecast_correctness(market_level_constant_hierarchical_ts, reconci
     ),
 )
 def test_raw_forecast_level(market_level_simple_hierarchical_ts, reconciliator):
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=market_level_simple_hierarchical_ts)
     forecast = pipeline.raw_forecast()
@@ -188,7 +191,7 @@ def test_forecast_correctness(market_level_constant_hierarchical_ts, reconciliat
     ),
 )
 def test_forecast_level(market_level_simple_hierarchical_ts, reconciliator):
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=market_level_simple_hierarchical_ts)
     forecast = pipeline.forecast()
@@ -221,7 +224,7 @@ def test_forecast_columns_duplicates(market_level_constant_hierarchical_ts_w_exo
 )
 def test_backtest(market_level_constant_hierarchical_ts, reconciliator):
     ts = market_level_constant_hierarchical_ts
-    model = MovingAverageModel(window=1)
+    model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
     np.testing.assert_array_almost_equal(metrics["MAE"], 0)
