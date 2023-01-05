@@ -1031,7 +1031,7 @@ class TSDataset:
             target_level_df = pd.DataFrame(data=target_level_data, index=self.df.index, columns=target_level_segments)
 
         else:
-            target_level_df = self.df
+            target_level_df = self[..., "target"]
 
         return TSDataset(
             df=target_level_df,

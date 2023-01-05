@@ -74,7 +74,7 @@ class HierarchicalPipeline(Pipeline):
         """
         forecast = super().forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
         hierarchical_forecast = TSDataset(
-            df=forecast.df,
+            df=forecast[..., "target"],
             freq=forecast.freq,
             df_exog=forecast.df_exog,
             known_future=forecast.known_future,
