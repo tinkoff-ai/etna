@@ -197,7 +197,7 @@ def generate_hierarchical_df(
     sigma: float = 1,
     random_seed: int = 1,
 ) -> pd.DataFrame:
-    """Create DataFrame with AR process data and hierarchical structure.
+    """Create DataFrame with hierarchical structure and AR process data.
 
     Parameters
     ----------
@@ -218,8 +218,8 @@ def generate_hierarchical_df(
 
     Returns
     -------
-    pandas.DataFrame
-        DataFrame  at the bottom level of the hierarchy
+    :
+        DataFrame at the bottom level of the hierarchy
     """
     if len(n_segments) == 0:
         raise ValueError("`n_segments` should contain at least one positive integer!")
