@@ -106,17 +106,27 @@ def test_generate_hierarchical_df_negative_size_error(n_segments):
 
 
 @pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
-def test_generate_hierarchical_df(periods, n_segments):
+def test_generate_hierarchical_df_columns_set(periods, n_segments):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments)
 
     expected_columns = [f"level_{idx}" for idx in range(len(n_segments))]
     expected_columns = set(expected_columns) | {"target", "timestamp"}
 
     assert len(expected_columns ^ set(hierarchical_df.columns)) == 0
+
+
+@pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
+def test_generate_hierarchical_df_periods(periods, n_segments):
+    hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments)
     assert hierarchical_df["timestamp"].nunique() == periods
 
-    for level_id in range(len(n_segments)):
-        assert hierarchical_df[f"level_{level_id}"].nunique() == n_segments[level_id]
+
+@pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
+def test_generate_hierarchical_df_segments(periods, n_segments):
+    hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments)
+
+    for level_id, segment_size in enumerate(n_segments):
+        assert hierarchical_df[f"level_{level_id}"].nunique() == segment_size
 
 
 @pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
