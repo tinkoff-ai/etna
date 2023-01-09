@@ -2,9 +2,9 @@ import pandas as pd
 import pytest
 
 from etna.datasets.tsdataset import TSDataset
-from etna.metrics import deviation
 from etna.metrics import mae
 from etna.metrics import mape
+from etna.metrics import max_deviation
 from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
@@ -157,7 +157,7 @@ def test_invalid_segments_target(metric_class, train_test_dfs):
         (SMAPE, smape),
         (R2, r2_score),
         (Sign, sign),
-        (MaxDeviation, deviation),
+        (MaxDeviation, max_deviation),
         (DummyMetric, create_dummy_functional_metric()),
     ),
 )

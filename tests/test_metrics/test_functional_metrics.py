@@ -1,8 +1,8 @@
 import pytest
 
-from etna.metrics import deviation
 from etna.metrics import mae
 from etna.metrics import mape
+from etna.metrics import max_deviation
 from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
@@ -38,7 +38,7 @@ def y_pred_1d():
         (medae, 1),
         (r2_score, 0),
         (sign, -1),
-        (deviation, 2),
+        (max_deviation, 2),
     ),
 )
 def test_all_1d_metrics(metric, right_metrics_value, y_true_1d, y_pred_1d):
@@ -73,7 +73,7 @@ def y_pred_2d():
         (medae, 1),
         (r2_score, 0.0),
         (sign, -1),
-        (deviation, 4),
+        (max_deviation, 4),
     ),
 )
 def test_all_2d_metrics(metric, right_metrics_value, y_true_2d, y_pred_2d):

@@ -116,7 +116,7 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
     return np.mean(np.sign(y_true_array - y_pred_array))
 
 
-def deviation(y_true: ArrayLike, y_pred: ArrayLike) -> float:
+def max_deviation(y_true: ArrayLike, y_pred: ArrayLike) -> float:
     """Max Deviation metric.
 
     Parameters
