@@ -244,8 +244,9 @@ def generate_hierarchical_df(
 
     bottom_segments = np.unique(bottom_df["segment"])
 
+    num_levels = len(n_segments)
     child_to_parent = dict()
-    for level_id in range(1, len(n_segments)):
+    for level_id in range(1, num_levels):
         prev_level_n_segments = n_segments[level_id - 1]
         cur_level_n_segments = n_segments[level_id]
 
@@ -261,7 +262,6 @@ def generate_hierarchical_df(
                 parent_id = rnd.choice(prev_level_n_segments, 1).item()
                 child_to_parent[f"level_{level_id}_{child_id}"] = f"level_{level_id - 1}_{parent_id}"
 
-    num_levels = len(n_segments)
     bottom_segments_map = {segment: f"level_{num_levels - 1}_{idx}" for idx, segment in enumerate(bottom_segments)}
     bottom_df[f"level_{num_levels - 1}"] = bottom_df["segment"].map(lambda x: bottom_segments_map[x])
 

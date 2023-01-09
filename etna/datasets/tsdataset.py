@@ -88,8 +88,8 @@ class TSDataset:
     >>> pd.options.display.width = 0
     >>> n_segments = [2, 4]
     >>> df = generate_hierarchical_df(periods=100, n_segments=n_segments, start_time="2021-01-01",)
-    >>> level_names = [f"level_{idx}" for idx in range(len(n_segments))]
-    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=level_names)
+    >>> level_columns = [f"level_{idx}" for idx in range(len(n_segments))]
+    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=level_columns)
     >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     >>> tsdataset.df.head(5)
     segment    level_0_0_segment_3 level_0_1_segment_0 level_0_1_segment_1 level_0_1_segment_2
