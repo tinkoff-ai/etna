@@ -11,6 +11,7 @@ from etna.models import NaiveModel
 from etna.pipeline.hierarchical_pipeline import HierarchicalPipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.reconciliation import TopDownReconciliator
+from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 
@@ -240,25 +241,13 @@ def test_backtest(market_level_constant_hierarchical_ts, reconciliator):
 )
 def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconciliator):
     ts = market_level_constant_hierarchical_ts
-    model = NaiveModel()
-    transforms = [MeanTransform(in_column="target", window=2), LinearTrendTransform(in_column="target")]
+    model = LinearPerSegmentModel()
+    transforms = [
+        MeanTransform(in_column="target", window=2),
+        LinearTrendTransform(in_column="target"),
+        LagTransform(in_column="target", lags=[1])
+    ]
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=1)
-    metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
-    np.testing.assert_array_almost_equal(metrics["MAE"], 0)
-
-
-@pytest.mark.parametrize(
-    "reconciliator",
-    (
-        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
-        TopDownReconciliator(target_level="market", source_level="total", period=1, method="PHA"),
-        BottomUpReconciliator(target_level="total", source_level="market"),
-    ),
-)
-def test_backtest_w_exog(market_level_constant_hierarchical_ts_w_exog, reconciliator):
-    ts = market_level_constant_hierarchical_ts_w_exog
-    model = NaiveModel()
-    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
     np.testing.assert_array_almost_equal(metrics["MAE"], 0)
 
@@ -271,7 +260,7 @@ def test_backtest_w_exog(market_level_constant_hierarchical_ts_w_exog, reconcili
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
-def test_backtest_w_regressors(product_level_constant_hierarchical_ts_w_exog, reconciliator):
+def test_backtest_w_exog(product_level_constant_hierarchical_ts_w_exog, reconciliator):
     ts = product_level_constant_hierarchical_ts_w_exog
     model = LinearPerSegmentModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
