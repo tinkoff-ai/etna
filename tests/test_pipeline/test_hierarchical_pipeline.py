@@ -19,9 +19,9 @@ from etna.transforms import MeanTransform
 def product_level_constant_hierarchical_df():
     df = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03"] * 4,
-            "segment": ["a"] * 3 + ["b"] * 3 + ["c"] * 3 + ["d"] * 3,
-            "target": [1, 1, 1] * 4,
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 4,
+            "segment": ["a"] * 4 + ["b"] * 4 + ["c"] * 4 + ["d"] * 4,
+            "target": [1, 1, 1, 1] + [2, 2, 2, 2] + [3, 3, 3, 3] + [4, 4, 4, 4],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -32,9 +32,9 @@ def product_level_constant_hierarchical_df():
 def market_level_constant_hierarchical_df():
     df = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03"] * 2,
-            "segment": ["X"] * 3 + ["Y"] * 3,
-            "target": [2, 2, 2] * 2,
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 2,
+            "segment": ["X"] * 4 + ["Y"] * 4,
+            "target": [3, 3, 3, 3] + [7, 7, 7, 7],
         }
     )
     df = TSDataset.to_dataset(df)
@@ -45,9 +45,9 @@ def market_level_constant_hierarchical_df():
 def market_level_constant_hierarchical_df_exog():
     df = pd.DataFrame(
         {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04", "2000-01-05"] * 2,
-            "segment": ["X"] * 5 + ["Y"] * 5,
-            "regressor": [1, 1, 1, 1, 1] * 2,
+            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04", "2000-01-05", "2000-01-06"] * 2,
+            "segment": ["X"] * 6 + ["Y"] * 6,
+            "regressor": [1, 1, 1, 1, 1, 1] * 2,
         }
     )
     df = TSDataset.to_dataset(df)
@@ -141,8 +141,8 @@ def test_fit_no_hierarchy(simple_no_hierarchy_ts):
 @pytest.mark.parametrize(
     "reconciliator,answer",
     (
-        (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), 4),
-        (BottomUpReconciliator(target_level="total", source_level="market"), 2),
+        (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), 10),
+        (BottomUpReconciliator(target_level="total", source_level="market"), np.array([[3, 7]])),
     ),
 )
 def test_raw_forecast_correctness(market_level_constant_hierarchical_ts, reconciliator, answer):
@@ -171,8 +171,8 @@ def test_raw_forecast_level(market_level_simple_hierarchical_ts, reconciliator):
 @pytest.mark.parametrize(
     "reconciliator,answer",
     (
-        (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), 2),
-        (BottomUpReconciliator(target_level="total", source_level="market"), 4),
+        (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), np.array([[3, 7]])),
+        (BottomUpReconciliator(target_level="total", source_level="market"), 10),
     ),
 )
 def test_forecast_correctness(market_level_constant_hierarchical_ts, reconciliator, answer):
