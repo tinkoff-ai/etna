@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -112,9 +112,10 @@ def test_init_pass(reconciliator):
 def test_fit_mapping_matrix(market_level_simple_hierarchical_ts, reconciliator):
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    with patch.object(type(reconciliator), "fit", wraps=reconciliator.fit) as mock:
-        pipeline.fit(market_level_simple_hierarchical_ts)
-        mock.assert_called()
+
+    pipeline.reconciliator.fit = Mock()
+    pipeline.fit(market_level_simple_hierarchical_ts)
+    pipeline.reconciliator.fit.assert_called()
 
 
 @pytest.mark.parametrize(
