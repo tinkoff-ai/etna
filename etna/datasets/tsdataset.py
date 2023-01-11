@@ -964,13 +964,25 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
+        train = TSDataset(
+            df=train_df,
+            df_exog=self.df_exog,
+            freq=self.freq,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
         train.raw_df = train_raw_df
         train._regressors = self.regressors
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
+        test = TSDataset(
+            df=test_df,
+            df_exog=self.df_exog,
+            freq=self.freq,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
         test.raw_df = test_raw_df
         test._regressors = self.regressors
 
@@ -1036,7 +1048,7 @@ class TSDataset:
             target_level_df = pd.DataFrame(data=target_level_data, index=self.df.index, columns=target_level_segments)
 
         else:
-            target_level_df = self.df
+            target_level_df = self[..., "target"]
 
         return TSDataset(
             df=target_level_df,

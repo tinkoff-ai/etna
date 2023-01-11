@@ -502,8 +502,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             )
             yield train, test
 
-    @staticmethod
-    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, Dict[str, float]]:
+    def _compute_metrics(
+        self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
+    ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
