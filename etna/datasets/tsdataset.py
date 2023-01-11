@@ -83,6 +83,23 @@ class TSDataset:
     2021-01-03        0.48        0.47       -0.81       -1.56       -1.37   0.48
     2021-01-04       -0.59        2.44       -2.21       -1.21       -0.69  -0.59
     2021-01-05        0.28        0.58       -3.07       -1.45        0.77   0.28
+
+    >>> from etna.datasets import generate_hierarchical_df
+    >>> pd.options.display.width = 0
+    >>> n_segments = [2, 4]
+    >>> df = generate_hierarchical_df(periods=100, n_segments=n_segments, start_time="2021-01-01",)
+    >>> level_columns = [f"level_{idx}" for idx in range(len(n_segments))]
+    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=level_columns)
+    >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    >>> tsdataset.df.head(5)
+    segment    l0s0_l1s3 l0s1_l1s0 l0s1_l1s1 l0s1_l1s2
+    feature       target    target    target    target
+    timestamp
+    2021-01-01      2.07      1.62     -0.45     -0.40
+    2021-01-02      0.59      1.01      0.78      0.42
+    2021-01-03     -0.24      0.48      1.18     -0.14
+    2021-01-04     -1.12     -0.59      1.77      1.82
+    2021-01-05     -1.40      0.28      0.68      0.48
     """
 
     idx = pd.IndexSlice
