@@ -105,13 +105,17 @@ def test_generate_hierarchical_df_negative_size_error(n_segments):
         generate_hierarchical_df(periods=2, n_segments=n_segments)
 
 
-@pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
-def test_generate_hierarchical_df_columns_set(periods, n_segments):
+@pytest.mark.parametrize(
+    "periods,n_segments,expected_columns",
+    (
+        (2, [1, 2], {"target", "timestamp", "level_0", "level_1"}),
+        (2, [2], {"target", "timestamp", "level_0"}),
+        (4, [3, 4], {"target", "timestamp", "level_0", "level_1"}),
+        (4, [3, 3], {"target", "timestamp", "level_0", "level_1"}),
+    ),
+)
+def test_generate_hierarchical_df_columns_set(periods, n_segments, expected_columns):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments)
-
-    expected_columns = [f"level_{idx}" for idx in range(len(n_segments))]
-    expected_columns = set(expected_columns) | {"target", "timestamp"}
-
     assert expected_columns == set(hierarchical_df.columns)
 
 
