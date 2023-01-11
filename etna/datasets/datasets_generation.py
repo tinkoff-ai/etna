@@ -255,20 +255,19 @@ def generate_hierarchical_df(
         child_ids = rnd.choice(cur_level_n_segments, prev_level_n_segments, replace=False)
         for parent_id, child_id in enumerate(child_ids):
             seen_ids.add(child_id)
-            child_to_parent[f"level_{level_id}_{child_id}"] = f"level_{level_id - 1}_{parent_id}"
+            child_to_parent[f"l{level_id}s{child_id}"] = f"l{level_id - 1}s{parent_id}"
 
         for child_id in range(cur_level_n_segments):
             if child_id not in seen_ids:
                 parent_id = rnd.choice(prev_level_n_segments, 1).item()
-                child_to_parent[f"level_{level_id}_{child_id}"] = f"level_{level_id - 1}_{parent_id}"
+                child_to_parent[f"l{level_id}s{child_id}"] = f"l{level_id - 1}s{parent_id}"
 
-    bottom_segments_map = {segment: f"level_{num_levels - 1}_{idx}" for idx, segment in enumerate(bottom_segments)}
+    bottom_segments_map = {segment: f"l{num_levels - 1}s{idx}" for idx, segment in enumerate(bottom_segments)}
     bottom_df[f"level_{num_levels - 1}"] = bottom_df["segment"].map(lambda x: bottom_segments_map[x])
 
     for level_id in range(num_levels - 2, -1, -1):
         bottom_df[f"level_{level_id}"] = bottom_df[f"level_{level_id + 1}"].map(lambda x: child_to_parent[x])
 
-    bottom_df.drop(columns=[f"level_{num_levels - 1}"], inplace=True)
-    bottom_df.rename(columns={"segment": f"level_{num_levels - 1}"}, inplace=True)
+    bottom_df.drop(columns=["segment"], inplace=True)
 
     return bottom_df

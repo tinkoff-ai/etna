@@ -92,14 +92,14 @@ class TSDataset:
     >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=level_columns)
     >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     >>> tsdataset.df.head(5)
-    segment    level_0_0_segment_3 level_0_1_segment_0 level_0_1_segment_1 level_0_1_segment_2
-    feature                 target              target              target              target
+    segment    l0s0_l1s3 l0s1_l1s0 l0s1_l1s1 l0s1_l1s2
+    feature       target    target    target    target
     timestamp
-    2021-01-01                2.07                1.62               -0.45               -0.40
-    2021-01-02                0.59                1.01                0.78                0.42
-    2021-01-03               -0.24                0.48                1.18               -0.14
-    2021-01-04               -1.12               -0.59                1.77                1.82
-    2021-01-05               -1.40                0.28                0.68                0.48
+    2021-01-01      2.07      1.62     -0.45     -0.40
+    2021-01-02      0.59      1.01      0.78      0.42
+    2021-01-03     -0.24      0.48      1.18     -0.14
+    2021-01-04     -1.12     -0.59      1.77      1.82
+    2021-01-05     -1.40      0.28      0.68      0.48
     """
 
     idx = pd.IndexSlice
