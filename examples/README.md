@@ -62,6 +62,5 @@ We have prepared a set of tutorials for an easy introduction:
 - [WandB sweeps](https://github.com/tinkoff-ai/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)
 
 #### 10. [Inference: using saved pipeline on a new data](https://github.com/tinkoff-ai/etna/tree/master/examples/inference.ipynb) 
-- Preparing data
 - Fitting and saving pipeline
 - Using saved pipeline on a new data
