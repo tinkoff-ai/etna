@@ -3288,14 +3288,14 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 
 [extras]
 all = ["prophet", "torch", "pytorch-forecasting", "wandb", "optuna", "pyts"]
-all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "optuna", "click", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "click", "semver", "jupyter", "nbconvert", "pyts"]
+all-dev = ["prophet", "torch", "pytorch-forecasting", "wandb", "optuna", "click", "semver", "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pytest-cov", "coverage", "pytest", "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "click", "semver", "jupyter", "nbconvert", "pyts"]
 auto = ["optuna"]
 classification = ["pyts"]
 docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
 jupyter = ["jupyter", "nbconvert", "black"]
 prophet = ["prophet"]
 release = ["click", "semver"]
-style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions"]
+style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools"]
 tests = ["pytest-cov", "coverage", "pytest"]
 torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
 wandb = ["wandb"]
@@ -3303,7 +3303,7 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1, <3.11.0"
-content-hash = "9b4eb263928b260c85c66de360fae30e3160a2450f64a2d12be8922554066e4c"
+content-hash = "78cfffbb71287b0db8af81005d304cbb6e63ed0b725970863bc5800410b70829"
 
 [metadata.files]
 absl-py = [
