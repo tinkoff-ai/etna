@@ -557,6 +557,58 @@ class MinMaxDifferenceTransform(WindowStatisticsTransform):
         return result
 
 
+class SumTransform(WindowStatisticsTransform):
+    """SumTransform computes sum of values over given window."""
+
+    def __init__(
+        self,
+        in_column: str,
+        window: int,
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+        out_column: Optional[str] = None,
+    ):
+        """Init SumTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of processed column
+        window:
+            size of window to aggregate, if window == -1 compute rolling sum all over the given series
+        seasonality:
+            seasonality of lags to compute window's aggregation with
+        min_periods:
+            min number of targets in window to compute aggregation;
+            if there is less than ``min_periods`` number of targets return None
+        fillna:
+            value to fill results NaNs with
+        out_column:
+            result column name. If not given use ``self.__repr__()``
+        """
+        self.in_column = in_column
+        self.window = window
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        self.out_column = out_column
+
+        super().__init__(
+            in_column=in_column,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            window=window,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            fillna=fillna,
+        )
+
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
+        """Compute sum over the series."""
+        series = bn.nansum(series, axis=2)
+        return series
+
+
 __all__ = [
     "MedianTransform",
     "MaxTransform",
@@ -567,4 +619,5 @@ __all__ = [
     "WindowStatisticsTransform",
     "MADTransform",
     "MinMaxDifferenceTransform",
+    "SumTransform",
 ]

@@ -166,6 +166,81 @@ def cross_corr_plot(
         ax[i].xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
+def acf_plot(
+    ts: "TSDataset",
+    n_segments: int = 10,
+    lags: int = 21,
+    partial: bool = False,
+    columns_num: int = 2,
+    segments: Optional[List[str]] = None,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """
+    Autocorrelation and partial autocorrelation plot for multiple timeseries.
+
+    Notes
+    -----
+    `Definition of autocorrelation <https://en.wikipedia.org/wiki/Autocorrelation>`_.
+
+    `Definition of partial autocorrelation <https://en.wikipedia.org/wiki/Partial_autocorrelation_function>`_.
+
+    * If ``partial=False`` function works with NaNs at any place of the time-series.
+
+    * if ``partial=True`` function works only with NaNs at the edges of the time-series and fails if there are NaNs inside it.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    n_segments:
+        number of random segments to plot
+    lags:
+        number of timeseries shifts for cross-correlation
+    partial:
+        plot autocorrelation or partial autocorrelation
+    columns_num:
+        number of columns in subplots
+    segments:
+        segments to plot
+    figsize:
+        size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        If partial=True and there is a NaN in the middle of the time series
+    """
+    if segments is None:
+        exist_segments = sorted(ts.segments)
+        chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
+        segments = list(chosen_segments)
+
+    title = "Partial Autocorrelation" if partial else "Autocorrelation"
+
+    fig, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
+    fig.suptitle(title, fontsize=16)
+
+    df = ts.to_pandas()
+
+    for i, name in enumerate(segments):
+        df_slice = df[name].reset_index()["target"]
+        if partial:
+            # for partial autocorrelation remove NaN from the beginning and end of the series
+            begin = df_slice.first_valid_index()
+            end = df_slice.last_valid_index()
+            x = df_slice.values[begin:end]
+            if np.isnan(x).any():
+                raise ValueError("There is a NaN in the middle of the time series!")
+            plot_pacf(x=x, ax=ax[i], lags=lags)
+
+        if not partial:
+            plot_acf(x=df_slice.values, ax=ax[i], lags=lags, missing="conservative")
+
+        ax[i].set_title(name)
+
+    plt.show()
+
+
 def sample_acf_plot(
     ts: "TSDataset",
     n_segments: int = 10,
@@ -175,7 +250,6 @@ def sample_acf_plot(
 ):
     """
     Autocorrelation plot for multiple timeseries.
-
 
     Notes
     -----
@@ -194,23 +268,11 @@ def sample_acf_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if segments is None:
-        segments = sorted(ts.segments)
-
-    k = min(n_segments, len(segments))
-    columns_num = min(2, k)
-    rows_num = math.ceil(k / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
-    ax = ax.ravel()
-    fig.suptitle("Autocorrelation", fontsize=16)
-    for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
-        df_slice = ts[:, name, :][name]
-        plot_acf(x=df_slice["target"].values, ax=ax[i], lags=lags)
-        ax[i].set_title(name)
-        ax[i].grid()
-    plt.show()
+    acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=False)
+    warnings.warn(
+        "DeprecationWarning: This function is deprecated and will be removed in etna=2.0; Please use acf_plot instead.",
+        DeprecationWarning,
+    )
 
 
 def sample_pacf_plot(
@@ -240,23 +302,11 @@ def sample_pacf_plot(
     figsize:
         size of the figure per subplot with one segment in inches
     """
-    if segments is None:
-        segments = sorted(ts.segments)
-
-    k = min(n_segments, len(segments))
-    columns_num = min(2, k)
-    rows_num = math.ceil(k / columns_num)
-
-    figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
-    fig, ax = plt.subplots(rows_num, columns_num, figsize=figsize, constrained_layout=True, squeeze=False)
-    ax = ax.ravel()
-    fig.suptitle("Partial Autocorrelation", fontsize=16)
-    for i, name in enumerate(sorted(np.random.choice(segments, size=k, replace=False))):
-        df_slice = ts[:, name, :][name]
-        plot_pacf(x=df_slice["target"].values, ax=ax[i], lags=lags)
-        ax[i].set_title(name)
-        ax[i].grid()
-    plt.show()
+    acf_plot(ts=ts, n_segments=n_segments, lags=lags, segments=segments, figsize=figsize, partial=True)
+    warnings.warn(
+        "DeprecationWarning: This function is deprecated and will be removed in etna=2.0; Please use acf_plot instead.",
+        DeprecationWarning,
+    )
 
 
 def distribution_plot(

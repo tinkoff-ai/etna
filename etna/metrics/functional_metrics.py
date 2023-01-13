@@ -1,7 +1,9 @@
+from functools import partial
 from typing import List
 from typing import Union
 
 import numpy as np
+from sklearn.metrics import mean_squared_error as mse
 
 ArrayLike = List[Union[float, List[float]]]
 
@@ -112,3 +114,36 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike) -> float:
         raise ValueError("Shapes of the labels must be the same")
 
     return np.mean(np.sign(y_true_array - y_pred_array))
+
+
+def max_deviation(y_true: ArrayLike, y_pred: ArrayLike) -> float:
+    """Max Deviation metric.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    Returns
+    -------
+    float
+        A floating point value (the best value is 0.0).
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    prefix_error_sum = np.cumsum(y_pred_array - y_true_array)
+
+    return max(np.abs(prefix_error_sum))
+
+
+rmse = partial(mse, squared=False)

@@ -2,6 +2,7 @@ from etna.analysis.change_points_trend import find_change_points
 from etna.analysis.eda_utils import SeasonalPlotAggregation
 from etna.analysis.eda_utils import SeasonalPlotAlignment
 from etna.analysis.eda_utils import SeasonalPlotCycle
+from etna.analysis.eda_utils import acf_plot
 from etna.analysis.eda_utils import cross_corr_plot
 from etna.analysis.eda_utils import distribution_plot
 from etna.analysis.eda_utils import prediction_actual_scatter_plot

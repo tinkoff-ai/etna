@@ -1,9 +1,11 @@
 from etna.metrics import mae
 from etna.metrics import mape
+from etna.metrics import max_deviation
 from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
+from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
 from etna.metrics.base import Metric
@@ -61,6 +63,35 @@ class MSE(Metric):
             metric's computation arguments
         """
         super().__init__(mode=mode, metric_fn=mse, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
+
+class RMSE(Metric):
+    """Root mean squared error metric with multi-segment computation support.
+
+    .. math::
+        RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{n}
+
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
+    """
+
+    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+        """Init metric.
+
+        Parameters
+        ----------
+        mode: 'macro' or 'per-segment'
+            metrics aggregation mode
+        kwargs:
+            metric's computation arguments
+        """
+        super().__init__(mode=mode, metric_fn=rmse, **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -242,4 +273,33 @@ class Sign(Metric):
         return None
 
 
-__all__ = ["MAE", "MSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign"]
+class MaxDeviation(Metric):
+    """Max Deviation metric with multi-segment computation support (maximum deviation value of cumulative sums).
+
+    .. math::
+        MaxDeviation(y\_true, y\_pred) = \\max_{j} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
+
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
+    """
+
+    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+        """Init metric.
+
+        Parameters
+        ----------
+        mode: 'macro' or 'per-segment'
+            metrics aggregation mode
+        kwargs:
+            metric's computation arguments
+        """
+        super().__init__(mode=mode, metric_fn=max_deviation, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
+
+__all__ = ["MAE", "MSE", "RMSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign", "MaxDeviation"]

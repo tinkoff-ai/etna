@@ -8,13 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- `RMSE` metric & `rmse` functional metric ([#1051](https://github.com/tinkoff-ai/etna/pull/1051))
+- `MaxDeviation` metric & `max_deviation` functional metric ([#1061](https://github.com/tinkoff-ai/etna/pull/1061))
 -
 - Add `SaveModelPipelineMixin`, add `load`, add saving and loading for `Pipeline` and `AutoRegressivePipeline` ([#1036](https://github.com/tinkoff-ai/etna/pull/1036))
 - Add `SaveMixin` to models and transforms ([#1007](https://github.com/tinkoff-ai/etna/pull/1007))
-- Add `plot_change_points_interactive` ([#988](https://github.com/tinkoff-ai/etna/pull/988))
-- Add `experimental` module with `TimeSeriesBinaryClassifier` and `PredictabilityAnalyzer` ([#985](https://github.com/tinkoff-ai/etna/pull/985))
-- Inference track results: add `predict` method to pipelines, teach some models to work with context, change hierarchy of base models, update notebook examples ([#979](https://github.com/tinkoff-ai/etna/pull/979))
-- Add `get_ruptures_regularization` into `experimental` module ([#1001](https://github.com/tinkoff-ai/etna/pull/1001))
+-
 - Add `SaveEnsembleMixin`, add saving and loading for `VotingEnsemble`, `StackingEnsemble` and `DirectEnsemble` ([#1046](https://github.com/tinkoff-ai/etna/pull/1046))
 ### Changed
 -
@@ -29,14 +28,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Fixed
 -
--
-- Fix release docs and docker images cron job ([#982](https://github.com/tinkoff-ai/etna/pull/982))
--
--
 - Remove documentation warning about using pickle in saving/loading catboost ([#1020](https://github.com/tinkoff-ai/etna/pull/1020))
 - Fix saving/loading ProphetModel ([#1019](https://github.com/tinkoff-ai/etna/pull/1019))
 -
 -
+
+## [1.14.0] - 2022-12-16
+### Added
+- Add python 3.10 support ([#1005](https://github.com/tinkoff-ai/etna/pull/1005))
+- Add `SumTranform`([#1021](https://github.com/tinkoff-ai/etna/pull/1021))
+- Add `plot_change_points_interactive` ([#988](https://github.com/tinkoff-ai/etna/pull/988))
+- Add `experimental` module with `TimeSeriesBinaryClassifier` and `PredictabilityAnalyzer` ([#985](https://github.com/tinkoff-ai/etna/pull/985))
+- Inference track results: add `predict` method to pipelines, teach some models to work with context, change hierarchy of base models, update notebook examples ([#979](https://github.com/tinkoff-ai/etna/pull/979))
+- Add `get_ruptures_regularization` into `experimental` module ([#1001](https://github.com/tinkoff-ai/etna/pull/1001))
+- Add example `classification` notebook for experimental classification feature ([#997](https://github.com/tinkoff-ai/etna/pull/997)) 
+### Changed
+- Change returned model in get_model of BATSModel, TBATSModel ([#987](https://github.com/tinkoff-ai/etna/pull/987))
+- Add acf_plot, deprecated sample_acf_plot, sample_pacf_plot ([#1004](https://github.com/tinkoff-ai/etna/pull/1004))
+- Change returned model in `get_model` of `HoltWintersModel`, `HoltModel`, `SimpleExpSmoothingModel` ([#986](https://github.com/tinkoff-ai/etna/pull/986))
+### Fixed
+- Fix `MinMaxDifferenceTransform` import ([#1030](https://github.com/tinkoff-ai/etna/pull/1030))
+- Fix release docs and docker images cron job ([#982](https://github.com/tinkoff-ai/etna/pull/982))
+- Fix forecast first point with CatBoostPerSegmentModel ([#1010](https://github.com/tinkoff-ai/etna/pull/1010))
+- Fix hanging EDA notebook ([#1027](https://github.com/tinkoff-ai/etna/pull/1027))
+- Fix hanging EDA notebook v2 + cache clean script ([#1034](https://github.com/tinkoff-ai/etna/pull/1034))
+
 ## [1.13.0] - 2022-10-10
 ### Added
 - Add `greater_is_better` property for Metric ([#921](https://github.com/tinkoff-ai/etna/pull/921))
