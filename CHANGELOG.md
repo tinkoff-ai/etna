@@ -10,25 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `RMSE` metric & `rmse` functional metric ([#1051](https://github.com/tinkoff-ai/etna/pull/1051))
 - `MaxDeviation` metric & `max_deviation` functional metric ([#1061](https://github.com/tinkoff-ai/etna/pull/1061))
-- Add saving/loading for transforms, models, pipelines, ensembles; tutorial for saving/loading ([]())
-- Add `SaveModelPipelineMixin`, add `load`, add saving and loading for `Pipeline` and `AutoRegressivePipeline` ([#1036](https://github.com/tinkoff-ai/etna/pull/1036))
-- Add `SaveMixin` to models and transforms ([#1007](https://github.com/tinkoff-ai/etna/pull/1007))
+- Add saving/loading for transforms, models, pipelines, ensembles; tutorial for saving/loading ([#1068](https://github.com/tinkoff-ai/etna/pull/1068))
 -
-- Add `SaveEnsembleMixin`, add saving and loading for `VotingEnsemble`, `StackingEnsemble` and `DirectEnsemble` ([#1046](https://github.com/tinkoff-ai/etna/pull/1046))
+-
+-
+-
+-
+-
 ### Changed
 -
-- Notebook with inference demo ([#1065](https://github.com/tinkoff-ai/etna/pull/1065))
-- 
-- Add `SaveNNMixin` to fix saving/loading of NNs ([#1011](https://github.com/tinkoff-ai/etna/issues/1011))
+-
+-
+-
 -
 -
 ### Fixed
 -
-- Remove documentation warning about using pickle in saving/loading catboost ([#1020](https://github.com/tinkoff-ai/etna/pull/1020))
-- Fix saving/loading ProphetModel ([#1019](https://github.com/tinkoff-ai/etna/pull/1019))
 -
 -
-
+-
+-
+-
 ## [1.14.0] - 2022-12-16
 ### Added
 - Add python 3.10 support ([#1005](https://github.com/tinkoff-ai/etna/pull/1005))
