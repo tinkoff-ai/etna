@@ -119,7 +119,7 @@ def test_vote_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, 
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
     ensemble.fit(ts=simple_df)
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._forecast_pipeline)(pipeline=pipeline) for pipeline in ensemble.pipelines
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
     )
     forecast = ensemble._vote(forecasts=forecasts)
     np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
@@ -131,7 +131,7 @@ def test_vote_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, n
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
     ensemble.fit(ts=simple_df)
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._forecast_pipeline)(pipeline=pipeline) for pipeline in ensemble.pipelines
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
     )
     forecast = ensemble._vote(forecasts=forecasts)
     np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
@@ -143,7 +143,7 @@ def test_forecast_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline
     ensemble.fit(ts=example_tsds)
     ensemble._vote = MagicMock()
 
-    result = ensemble._forecast()
+    result = ensemble._forecast(ts=example_tsds)
 
     ensemble._vote.assert_called_once()
     assert result == ensemble._vote.return_value

@@ -5,7 +5,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
-from typing import cast
 
 import pandas as pd
 from joblib import Parallel
@@ -199,16 +198,13 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions.
 
         Compute weighted average of pipelines' forecasts
         """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
-
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
+            delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
         forecast = self._vote(forecasts=forecasts)
         return forecast
@@ -224,7 +220,6 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         if prediction_interval:
             raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
 
-        self.ts = cast(TSDataset, self.ts)
         predictions = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._predict_pipeline)(
                 ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp

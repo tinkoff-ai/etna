@@ -264,22 +264,20 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return quantiles
 
     @abstractmethod
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions."""
         pass
 
     def _forecast_prediction_interval(
-        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+        self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
-        forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
+            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
+        forecasts = TSDataset(df=forecasts, freq=ts.freq)
         residuals = (
             forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
+            - ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
         sigma = np.std(residuals.values, axis=0)
@@ -319,18 +317,21 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         :
             Dataset with predictions
         """
-        if self.ts is None:
-            raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                f"before calling forecast method."
-            )
+        if ts is None:
+            if self.ts is None:
+                raise ValueError(
+                    f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
+                    f"before calling forecast method."
+                )
+            ts = self.ts
+
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        predictions = self._forecast()
+        predictions = self._forecast(ts=ts)
         if prediction_interval:
             predictions = self._forecast_prediction_interval(
-                predictions=predictions, quantiles=quantiles, n_folds=n_folds
+                ts=ts, predictions=predictions, quantiles=quantiles, n_folds=n_folds
             )
         return predictions
 

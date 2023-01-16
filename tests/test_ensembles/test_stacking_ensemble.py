@@ -138,7 +138,7 @@ def test_make_features(
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     ).fit(example_tsds)
-    x, y = ensemble._make_features(forecasts_ts, train=True)
+    x, y = ensemble._make_features(ts=example_tsds, forecasts=forecasts_ts, train=True)
     features = set(x.columns.get_level_values("feature"))
     assert isinstance(x, pd.DataFrame)
     assert isinstance(y, pd.Series)
@@ -252,7 +252,7 @@ def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensembl
     naive_ensemble.fit(ts=example_tsds)
     naive_ensemble._process_forecasts = MagicMock()
 
-    result = naive_ensemble._forecast()
+    result = naive_ensemble._forecast(ts=example_tsds)
 
     naive_ensemble._process_forecasts.assert_called_once()
     assert result == naive_ensemble._process_forecasts.return_value
