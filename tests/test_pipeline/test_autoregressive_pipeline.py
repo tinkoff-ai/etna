@@ -75,7 +75,7 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
     with patch.object(TSDataset, "make_future", make_future):
         pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
         pipeline.fit(example_tsds)
-        _ = pipeline._forecast()
+        _ = pipeline._forecast(ts=example_tsds)
 
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step)
@@ -97,7 +97,7 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
     with patch.object(TSDataset, "make_future", make_future):
         pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
         pipeline.fit(example_tsds)
-        _ = pipeline._forecast()
+        _ = pipeline._forecast(ts=example_tsds)
 
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
