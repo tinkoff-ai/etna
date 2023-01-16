@@ -130,12 +130,18 @@ class AbstractPipeline(AbstractSaveable):
 
     @abstractmethod
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        ts: Optional[TSDataset] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
     ) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -289,12 +295,18 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return predictions
 
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        ts: Optional[TSDataset] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
     ) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
