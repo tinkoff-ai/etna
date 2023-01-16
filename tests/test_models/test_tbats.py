@@ -8,6 +8,7 @@ from etna.models.tbats import BATSModel
 from etna.models.tbats import TBATSModel
 from etna.transforms import LagTransform
 from tests.test_models.test_linear_model import linear_segments_by_parameters
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.fixture()
@@ -119,3 +120,9 @@ def test_prediction_interval(model, example_tsds):
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+
+@pytest.mark.long_2
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
+def test_save_load(model, example_tsds):
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)

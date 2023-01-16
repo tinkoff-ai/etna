@@ -10,6 +10,7 @@ from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import TheilSenTrendTransform
 from etna.transforms.decomposition.detrend import _OneSegmentLinearTrendBaseTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 DEFAULT_SEGMENT = "segment_1"
 
@@ -410,3 +411,12 @@ def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.Data
 )
 def test_fit_transform_with_nans(transformer, df_with_nans, decimal):
     _test_unbiased_fit_transform_many_segments(trend_transform=transformer, df=df_with_nans, decimal=decimal)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")],
+)
+def test_save_load(transform, df_two_segments_linear):
+    ts = TSDataset(df=df_two_segments_linear, freq="D")
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

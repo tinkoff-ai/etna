@@ -11,6 +11,7 @@ from etna.models import LinearPerSegmentModel
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms.encoders.categorical import LabelEncoderTransform
 from etna.transforms.encoders.categorical import OneHotEncoderTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def get_two_df_with_new_values(dtype: str = "int"):
@@ -271,3 +272,21 @@ def test_ohe_sanity(ts_for_ohe_sanity):
     forecast_ts = model.forecast(future_ts)
     r2 = R2()
     assert 1 - r2(test_ts, forecast_ts)["segment_0"] < 1e-5
+
+
+@pytest.mark.parametrize("dtype", ["float", "int", "str", "category"])
+def test_save_load_le(dtype):
+    df, answers = get_df_for_label_encoding(dtype=dtype)
+    ts = TSDataset(df=df, freq="D")
+    for i in range(3):
+        transform = LabelEncoderTransform(in_column=f"regressor_{i}", out_column="test")
+        assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize("dtype", ["float", "int", "str", "category"])
+def test_save_load_ohe(dtype):
+    df, answers = get_df_for_ohe_encoding(dtype=dtype)
+    ts = TSDataset(df=df, freq="D")
+    for i in range(3):
+        transform = OneHotEncoderTransform(in_column=f"regressor_{i}", out_column="test")
+        assert_transformation_equals_loaded_original(transform=transform, ts=ts)

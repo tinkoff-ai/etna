@@ -9,6 +9,7 @@ from sklearn.linear_model import LinearRegression
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.decomposition import TrendTransform
 from etna.transforms.decomposition.trend import _OneSegmentTrendTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 DEFAULT_SEGMENT = "segment_1"
 
@@ -138,3 +139,8 @@ def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans, model):
     transform = TrendTransform(in_column="target", detrend_model=model, model="rbf")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = transform.fit_transform(df=df_with_nans)
+
+
+def test_save_load(example_tsds):
+    transform = TrendTransform(in_column="target", detrend_model=LinearRegression(), model="ar")
+    assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)

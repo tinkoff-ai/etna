@@ -6,6 +6,7 @@ from etna.datasets import TSDataset
 from etna.metrics import R2
 from etna.models import LinearPerSegmentModel
 from etna.transforms.timestamp import FourierTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Series:
@@ -152,3 +153,8 @@ def test_forecast(ts_trend_seasonal):
     metric = R2("macro")
     r2 = metric(ts_test, ts_forecast)
     assert r2 > 0.95
+
+
+def test_save_load(ts_trend_seasonal):
+    transform = FourierTransform(period=7, order=3)
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_trend_seasonal)

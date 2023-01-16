@@ -14,6 +14,7 @@ from etna.transforms import RobustScalerTransform
 from etna.transforms import StandardScalerTransform
 from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 class DummySkTransform:
@@ -143,3 +144,23 @@ def test_inverse_transform_not_inplace(normal_distributed_df, scaler, mode):
 def test_fit_transform_with_nans(scaler, mode, ts_diff_endings):
     preprocess = scaler(in_column="target", mode=mode)
     ts_diff_endings.fit_transform([preprocess])
+
+
+@pytest.mark.parametrize(
+    "transform_constructor",
+    (
+        DummyTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ),
+)
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_save_load(transform_constructor, mode, normal_distributed_df):
+    ts = TSDataset(df=normal_distributed_df, freq="D")
+    transform = transform_constructor(in_column="target", mode=mode)
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

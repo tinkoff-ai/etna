@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms.timestamp import TimeFlagsTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 INIT_PARAMS_TEMPLATE = {
     "minute_in_hour_number": False,
@@ -214,3 +216,9 @@ def test_feature_values(
         true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
         result_df = result[seg].sort_index(axis=1)
         assert (true_df == result_df).all().all()
+
+
+def test_save_load(train_df):
+    ts = TSDataset(df=train_df, freq="D")
+    transform = TimeFlagsTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

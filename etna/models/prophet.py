@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 from typing import Dict
 from typing import Iterable
@@ -16,6 +17,8 @@ from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
+    from prophet.serialize import model_from_dict
+    from prophet.serialize import model_to_dict
 
 
 class _ProphetAdapter(BaseAdapter):
@@ -62,11 +65,16 @@ class _ProphetAdapter(BaseAdapter):
         self.stan_backend = stan_backend
         self.additional_seasonality_params = additional_seasonality_params
 
-        self.model = Prophet(
+        self.model = self._create_model()
+
+        self.regressor_columns: Optional[List[str]] = None
+
+    def _create_model(self) -> "Prophet":
+        model = Prophet(
             growth=self.growth,
-            changepoints=changepoints,
-            n_changepoints=n_changepoints,
-            changepoint_range=changepoint_range,
+            changepoints=self.changepoints,
+            n_changepoints=self.n_changepoints,
+            changepoint_range=self.changepoint_range,
             yearly_seasonality=self.yearly_seasonality,
             weekly_seasonality=self.weekly_seasonality,
             daily_seasonality=self.daily_seasonality,
@@ -84,7 +92,7 @@ class _ProphetAdapter(BaseAdapter):
         for seasonality_params in self.additional_seasonality_params:
             self.model.add_seasonality(**seasonality_params)
 
-        self.regressor_columns: Optional[List[str]] = None
+        return model
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetAdapter":
         """
@@ -153,6 +161,33 @@ class _ProphetAdapter(BaseAdapter):
            Internal model
         """
         return self.model
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        try:
+            model_dict = model_to_dict(self.model)
+            is_fitted = True
+        except ValueError:
+            is_fitted = False
+            model_dict = {}
+        del state["model"]
+        state["_is_fitted"] = is_fitted
+        state["_model_dict"] = model_dict
+        return state
+
+    def __setstate__(self, state):
+        local_state = deepcopy(state)
+        is_fitted = local_state["_is_fitted"]
+        model_dict = local_state["_model_dict"]
+        del local_state["_is_fitted"]
+        del local_state["_model_dict"]
+
+        self.__dict__.update(local_state)
+
+        if is_fitted:
+            self.model = model_from_dict(model_dict)
+        else:
+            self.model = self._create_model()
 
 
 class ProphetModel(

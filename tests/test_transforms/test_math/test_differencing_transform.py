@@ -13,6 +13,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 GeneralDifferencingTransform = Union[_SingleDifferencingTransform, DifferencingTransform]
 
@@ -456,3 +457,10 @@ def test_full_backtest_sanity(period, order, df_nans_with_noise):
     """Test that DifferencingTransform correctly works in backtest."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
     check_backtest_sanity(transform, df_nans_with_noise)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+def test_save_load(inplace, df_nans):
+    ts = TSDataset(df=df_nans, freq="D")
+    transform = DifferencingTransform(in_column="target", inplace=inplace)
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

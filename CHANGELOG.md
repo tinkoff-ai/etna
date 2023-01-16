@@ -10,22 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `RMSE` metric & `rmse` functional metric ([#1051](https://github.com/tinkoff-ai/etna/pull/1051))
 - `MaxDeviation` metric & `max_deviation` functional metric ([#1061](https://github.com/tinkoff-ai/etna/pull/1061))
+- Add saving/loading for transforms, models, pipelines, ensembles; tutorial for saving/loading ([#1068](https://github.com/tinkoff-ai/etna/pull/1068))
+-
+-
+-
 -
 -
 -
 ### Changed
 -
 -
-- 
-- 
-- 
+-
+-
+-
+-
 ### Fixed
 -
-- 
 -
 -
 -
-
+-
+-
 ## [1.14.0] - 2022-12-16
 ### Added
 - Add python 3.10 support ([#1005](https://github.com/tinkoff-ai/etna/pull/1005))

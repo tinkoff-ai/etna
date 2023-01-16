@@ -15,6 +15,7 @@ from ruptures.costs import CostRbf
 
 from etna.datasets import TSDataset
 from etna.transforms.decomposition import BinsegTrendTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def test_binseg_in_pipeline(example_tsds: TSDataset):
@@ -67,3 +68,8 @@ def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     transform = BinsegTrendTransform(in_column="target")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = transform.fit_transform(df=df_with_nans)
+
+
+def test_save_load(example_tsds):
+    transform = BinsegTrendTransform(in_column="target")
+    assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)
