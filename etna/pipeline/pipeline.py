@@ -100,8 +100,7 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
         if ts is None:
             if self.ts is None:
                 raise ValueError(
-                    f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                    f"before calling forecast method."
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
                 )
             ts = self.ts
         else:

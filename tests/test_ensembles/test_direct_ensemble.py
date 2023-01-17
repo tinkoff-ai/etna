@@ -9,6 +9,7 @@ from etna.ensembles import DirectEnsemble
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
 
 
 @pytest.fixture
@@ -69,3 +70,9 @@ def test_predict(direct_ensemble_pipeline, simple_ts_train):
 
 def test_save_load(direct_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecast_given_ts(direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_with_given_ts(
+        pipeline=direct_ensemble_pipeline, ts=example_tsds, segments_to_check=["segment_2"]
+    )

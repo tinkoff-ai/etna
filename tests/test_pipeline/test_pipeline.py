@@ -37,6 +37,7 @@ from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -460,10 +461,10 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
-def test_forecast_raise_error_if_not_fitted():
-    """Test that Pipeline raise error when calling forecast without being fit."""
+def test_forecast_raise_error_if_no_ts():
+    """Test that Pipeline raises error when calling forecast without ts."""
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    with pytest.raises(ValueError, match="Pipeline is not fitted!"):
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = pipeline.forecast()
 
 
@@ -744,3 +745,25 @@ def test_save_load(model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_with_given_ts(pipeline=pipeline, ts=example_tsds, segments_to_check=["segment_2"])
