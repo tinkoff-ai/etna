@@ -725,6 +725,7 @@ def test_predict(model, transforms, example_tsds):
     assert len(result_df) == len(example_tsds.segments) * num_points
 
 
+@pytest.mark.parametrize("load_ts", [True, False])
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -741,10 +742,10 @@ def test_predict(model, transforms, example_tsds):
         (ProphetModel(), []),
     ],
 )
-def test_save_load(model, transforms, example_tsds):
+def test_save_load(load_ts, model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
+    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
 
 
 @pytest.mark.parametrize(

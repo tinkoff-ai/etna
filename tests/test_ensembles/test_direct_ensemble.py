@@ -68,8 +68,9 @@ def test_predict(direct_ensemble_pipeline, simple_ts_train):
     pd.testing.assert_frame_equal(prediction.to_pandas(), expected_prediction.to_pandas())
 
 
-def test_save_load(direct_ensemble_pipeline, example_tsds):
-    assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds)
+@pytest.mark.parametrize("load_ts", [True, False])
+def test_save_load(load_ts, direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
 
 
 def test_forecast_given_ts(direct_ensemble_pipeline, example_tsds):
