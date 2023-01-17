@@ -8,7 +8,26 @@ import pandas as pd
 import pytest
 import torch
 
+from etna.datasets import TSDataset
+from etna.models.base import AbstractModel
 from etna.models.base import DeepBaseModel
+
+
+class DummyModel(AbstractModel):
+    @property
+    def context_size(self) -> int:
+        return 0
+
+    def fit(self, ts: TSDataset) -> "DummyModel":
+        return self
+
+    def get_model(self) -> int:
+        return 0
+
+
+def test_default_params_to_tune():
+    dummy = DummyModel()
+    assert dummy.params_to_tune() == {}
 
 
 @pytest.fixture()
