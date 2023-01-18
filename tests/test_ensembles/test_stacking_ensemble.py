@@ -322,3 +322,8 @@ def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
 
 def test_save_load(stacking_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+
+
+def test_params_to_tune_not_implemented(stacking_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="StackingEnsemble doesn't support this method"):
+        _ = stacking_ensemble_pipeline.params_to_tune()

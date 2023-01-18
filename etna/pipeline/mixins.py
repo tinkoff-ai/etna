@@ -3,6 +3,7 @@ import tempfile
 import zipfile
 from copy import deepcopy
 from typing import Any
+from typing import Dict
 from typing import Optional
 from typing import Sequence
 
@@ -10,6 +11,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import get_args
 
+from etna import SETTINGS
 from etna.core import SaveMixin
 from etna.core import load
 from etna.datasets import TSDataset
@@ -20,6 +22,9 @@ from etna.models import NonPredictionIntervalModelType
 from etna.models import PredictionIntervalContextIgnorantAbstractModel
 from etna.models import PredictionIntervalContextRequiredAbstractModel
 from etna.transforms import Transform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
 
 
 class ModelPipelinePredictMixin:
@@ -87,6 +92,19 @@ class ModelPipelinePredictMixin:
         else:
             raise NotImplementedError(f"Unknown model type: {self.model.__class__.__name__}!")
         return results
+
+    # TODO: remove
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
 
 
 class SaveModelPipelineMixin(SaveMixin):

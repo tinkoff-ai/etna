@@ -18,12 +18,16 @@ from sklearn.base import RegressorMixin
 from sklearn.linear_model import LinearRegression
 from typing_extensions import Literal
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.ensembles.mixins import EnsembleMixin
 from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
 
 
 class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
@@ -267,3 +271,15 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         )
         prediction = self._process_forecasts(forecasts=predictions)
         return prediction
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        Not implemented for this class.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")

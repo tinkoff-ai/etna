@@ -16,6 +16,7 @@ from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
 
+from etna import SETTINGS
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
@@ -23,6 +24,9 @@ from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
 
 Timestamp = Union[str, pd.Timestamp]
 
@@ -232,6 +236,16 @@ class AbstractPipeline(AbstractSaveable):
         -------
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
+        """
+
+    @abstractmethod
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
         """
 
 
