@@ -93,18 +93,36 @@ class ModelPipelinePredictMixin:
             raise NotImplementedError(f"Unknown model type: {self.model.__class__.__name__}!")
         return results
 
-    # TODO: remove
+
+class ModelPipelineParamsToTuneMixin:
+    """Mixin for pipelines with model inside with implementation of ``params_to_tune`` method."""
+
+    model: ModelType
+    transforms: Sequence[Transform]
+
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get hyperparameter grid to tune.
 
-        This is default implementation with empty grid.
+        Parameters for model has prefix "model.", e.g. "model.alpha".
+
+        Parameters for transforms has prefix "transforms.idx.", e.g. "transforms.0.mode".
 
         Returns
         -------
         :
-            Empty grid.
+            Grid with parameters from model and transforms.
         """
-        return {}
+        all_params = {}
+        for key, value in self.model.params_to_tune().items():
+            new_key = f"model.{key}"
+            all_params[new_key] = value
+
+        for i, transform in enumerate(self.transforms):
+            for key, value in transform.params_to_tune().items():
+                new_key = f"transforms.{i}.{key}"
+                all_params[new_key] = value
+
+        return all_params
 
 
 class SaveModelPipelineMixin(SaveMixin):
