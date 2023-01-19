@@ -1,3 +1,4 @@
+from typing import Optional
 from typing import Sequence
 from typing import cast
 
@@ -56,28 +57,34 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
         self.ts.inverse_transform()
         return self
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions."""
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
+        # because make_future uses `ts.transforms`
+        ts.transforms = self.transforms
 
         if isinstance(self.model, get_args(ContextRequiredModelType)):
             self.model = cast(ContextRequiredModelType, self.model)
-            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            future = ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
             predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
         else:
             self.model = cast(ContextIgnorantModelType, self.model)
-            future = self.ts.make_future(future_steps=self.horizon)
+            future = ts.make_future(future_steps=self.horizon)
             predictions = self.model.forecast(ts=future)
         return predictions
 
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        ts: Optional[TSDataset] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
     ) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -90,24 +97,29 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
         :
             Dataset with predictions
         """
-        if self.ts is None:
-            raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                f"before calling forecast method."
-            )
+        if ts is None:
+            if self.ts is None:
+                raise ValueError(
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                )
+            ts = self.ts
+        else:
+            # because make_future uses `ts.transforms`
+            ts.transforms = self.transforms
+
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
         if prediction_interval and isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
-            future = self.ts.make_future(future_steps=self.horizon)
+            future = ts.make_future(future_steps=self.horizon)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
-            future = self.ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            future = ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
             predictions = self.model.forecast(
                 ts=future, prediction_size=self.horizon, prediction_interval=prediction_interval, quantiles=quantiles
             )
         else:
             predictions = super().forecast(
-                prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
+                ts=ts, prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
             )
         return predictions

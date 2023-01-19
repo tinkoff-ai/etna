@@ -15,6 +15,7 @@ from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
 
 HORIZON = 7
 
@@ -138,7 +139,7 @@ def test_make_features(
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     ).fit(example_tsds)
-    x, y = ensemble._make_features(forecasts_ts, train=True)
+    x, y = ensemble._make_features(ts=example_tsds, forecasts=forecasts_ts, train=True)
     features = set(x.columns.get_level_values("feature"))
     assert isinstance(x, pd.DataFrame)
     assert isinstance(y, pd.Series)
@@ -252,7 +253,7 @@ def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensembl
     naive_ensemble.fit(ts=example_tsds)
     naive_ensemble._process_forecasts = MagicMock()
 
-    result = naive_ensemble._forecast()
+    result = naive_ensemble._forecast(ts=example_tsds)
 
     naive_ensemble._process_forecasts.assert_called_once()
     assert result == naive_ensemble._process_forecasts.return_value
@@ -314,11 +315,18 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
         assert isinstance(df, pd.DataFrame)
 
 
-def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
-    """Test that StackingEnsemble raise error when calling forecast without being fit."""
-    with pytest.raises(ValueError, match="StackingEnsemble is not fitted!"):
+def test_forecast_raise_error_if_no_ts(naive_ensemble: StackingEnsemble):
+    """Test that StackingEnsemble raises error when calling forecast without ts."""
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = naive_ensemble.forecast()
 
 
-def test_save_load(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+@pytest.mark.parametrize("load_ts", [True, False])
+def test_save_load(stacking_ensemble_pipeline, example_tsds, load_ts):
+    assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_given_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_with_given_ts(
+        pipeline=stacking_ensemble_pipeline, ts=example_tsds, segments_to_check=["segment_2"]
+    )

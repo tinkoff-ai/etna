@@ -16,6 +16,7 @@ from etna.ensembles.voting_ensemble import VotingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
 
 HORIZON = 7
 
@@ -119,7 +120,7 @@ def test_vote_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, 
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
     ensemble.fit(ts=simple_df)
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._forecast_pipeline)(pipeline=pipeline) for pipeline in ensemble.pipelines
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
     )
     forecast = ensemble._vote(forecasts=forecasts)
     np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
@@ -131,7 +132,7 @@ def test_vote_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, n
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
     ensemble.fit(ts=simple_df)
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._forecast_pipeline)(pipeline=pipeline) for pipeline in ensemble.pipelines
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
     )
     forecast = ensemble._vote(forecasts=forecasts)
     np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
@@ -143,7 +144,7 @@ def test_forecast_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline
     ensemble.fit(ts=example_tsds)
     ensemble._vote = MagicMock()
 
-    result = ensemble._forecast()
+    result = ensemble._forecast(ts=example_tsds)
 
     ensemble._vote.assert_called_once()
     assert result == ensemble._vote.return_value
@@ -197,5 +198,12 @@ def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSData
         assert isinstance(df, pd.DataFrame)
 
 
-def test_save_load(voting_ensemble_pipeline, example_tsds):
-    assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds)
+@pytest.mark.parametrize("load_ts", [True, False])
+def test_save_load(load_ts, voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_given_ts(voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_with_given_ts(
+        pipeline=voting_ensemble_pipeline, ts=example_tsds, segments_to_check=["segment_2"]
+    )

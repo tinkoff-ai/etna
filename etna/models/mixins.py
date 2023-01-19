@@ -324,11 +324,12 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         """
         result_list = list()
         df = ts.to_pandas()
-        for segment, model in self._get_model().items():
+        models = self._get_model()
+        for segment in ts.segments:
+            segment_model = models[segment]
             segment_predict = self._make_predictions_segment(
-                model=model, segment=segment, df=df, prediction_method=prediction_method, **kwargs
+                model=segment_model, segment=segment, df=df, prediction_method=prediction_method, **kwargs
             )
-
             result_list.append(segment_predict)
 
         result_df = pd.concat(result_list, ignore_index=True)

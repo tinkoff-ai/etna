@@ -37,6 +37,7 @@ from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -107,7 +108,7 @@ def test_private_forecast_context_ignorant_model(model_class):
 
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
-    _ = pipeline._forecast()
+    _ = pipeline._forecast(ts=ts)
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon)
     model.forecast.assert_called_with(ts=ts.make_future())
@@ -122,7 +123,7 @@ def test_private_forecast_context_required_model(model_class):
 
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
-    _ = pipeline._forecast()
+    _ = pipeline._forecast(ts=ts)
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
@@ -166,7 +167,7 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
-    base_forecast.assert_called_with(prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
+    base_forecast.assert_called_with(ts=ts, prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
 
 
 def test_forecast(example_tsds):
@@ -460,10 +461,10 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
-def test_forecast_raise_error_if_not_fitted():
-    """Test that Pipeline raise error when calling forecast without being fit."""
+def test_forecast_raise_error_if_no_ts():
+    """Test that Pipeline raises error when calling forecast without ts."""
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    with pytest.raises(ValueError, match="Pipeline is not fitted!"):
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = pipeline.forecast()
 
 
@@ -724,6 +725,7 @@ def test_predict(model, transforms, example_tsds):
     assert len(result_df) == len(example_tsds.segments) * num_points
 
 
+@pytest.mark.parametrize("load_ts", [True, False])
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -740,7 +742,29 @@ def test_predict(model, transforms, example_tsds):
         (ProphetModel(), []),
     ],
 )
-def test_save_load(model, transforms, example_tsds):
+def test_save_load(load_ts, model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
+    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_with_given_ts(pipeline=pipeline, ts=example_tsds, segments_to_check=["segment_2"])
