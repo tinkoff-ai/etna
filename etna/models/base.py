@@ -632,8 +632,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + prediction_size)
         for (segment, feature_nm), value in predictions.items():
             # we don't want to change dtype after assignment, but there can happen cast to float32
-            dtype = future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]]
-            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :].astype(dtype)
+            future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :].astype(np.float64)
 
         future_ts.inverse_transform()
 
