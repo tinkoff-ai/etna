@@ -276,6 +276,13 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
         )
 
+        self._forecast_borders(residuals=residuals, quantiles=quantiles, predictions=predictions)
+
+        return predictions
+
+    @staticmethod
+    def _forecast_borders(residuals: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset) -> None:
+        """Estimate prediction intervals and add to the forecasts."""
         sigma = np.std(residuals.values, axis=0)
         borders = []
         for quantile in quantiles:
@@ -285,8 +292,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             borders.append(border)
 
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
-
-        return predictions
 
     def forecast(
         self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
@@ -536,7 +541,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         test.df = test.df.loc[mask.target_timestamps]
 
         fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+        fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
         tslogger.finish_experiment()
