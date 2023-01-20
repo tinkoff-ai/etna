@@ -2,11 +2,13 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.transforms.utils import match_target_quantiles
 
 
 class BaseReconciliator(ABC, BaseMixin):
@@ -83,12 +85,29 @@ class BaseReconciliator(ABC, BaseMixin):
         current_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.source_level)
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
-        current_level_values = ts[:, current_level_segments, "target"].values
+        column_names = ts.columns.get_level_values(level=1)
+        target_names = tuple(match_target_quantiles(column_names))
+        target_names = target_names + ("target",)
+
+        num_target_names = len(target_names)
+        num_current_level_segments = len(current_level_segments)
+        num_target_level_segments = len(target_level_segments)
+
+        current_level_values = ts[:, current_level_segments, target_names].values
+
+        current_level_values = current_level_values.reshape((-1, num_current_level_segments, num_target_names))
+        current_level_values = np.swapaxes(current_level_values, 1, 2)
+        current_level_values = current_level_values.reshape((-1, num_current_level_segments))
+
         target_level_values = current_level_values @ self.mapping_matrix.T
+
+        target_level_values = target_level_values.reshape((-1, num_target_names, num_target_level_segments))
+        target_level_values = np.swapaxes(target_level_values, 1, 2)
+        target_level_values = target_level_values.reshape((-1, num_target_names * num_target_level_segments))
 
         df_reconciled = pd.DataFrame(
             target_level_values,
-            columns=pd.MultiIndex.from_product([target_level_segments, ["target"]], names=["segment", "feature"]),
+            columns=pd.MultiIndex.from_product([target_level_segments, target_names], names=["segment", "feature"]),
             index=ts.index,
         )
         ts_reconciled = TSDataset(

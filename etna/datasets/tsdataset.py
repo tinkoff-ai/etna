@@ -23,6 +23,7 @@ from typing_extensions import Literal
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import match_target_quantiles
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -1039,16 +1040,33 @@ class TSDataset:
                 target_level=target_level, source_level=self.current_df_level
             )
 
-            source_level_data = self[:, current_level_segments, "target"].values
+            column_names = self.columns.get_level_values(level=1)
+            target_names = tuple(match_target_quantiles(column_names))
+            target_names = target_names + ("target",)
+
+            num_target_names = len(target_names)
+            num_current_level_segments = len(current_level_segments)
+            num_target_level_segments = len(target_level_segments)
+
+            source_level_data = self[:, current_level_segments, target_names].values
+
+            source_level_data = source_level_data.reshape((-1, num_current_level_segments, num_target_names))
+            source_level_data = np.swapaxes(source_level_data, 1, 2)
+            source_level_data = source_level_data.reshape((-1, num_current_level_segments))
+
             target_level_data = source_level_data @ summing_matrix.T
 
+            target_level_data = target_level_data.reshape((-1, num_target_names, num_target_level_segments))
+            target_level_data = np.swapaxes(target_level_data, 1, 2)
+            target_level_data = target_level_data.reshape((-1, num_target_names * num_target_level_segments))
+
             target_level_segments = pd.MultiIndex.from_product(
-                [target_level_segments, ["target"]], names=["segment", "feature"]
+                [target_level_segments, target_names], names=["segment", "feature"]
             )
             target_level_df = pd.DataFrame(data=target_level_data, index=self.df.index, columns=target_level_segments)
 
         else:
-            target_level_df = self[..., "target"]
+            target_level_df = self[..., "target"].copy()
 
         return TSDataset(
             df=target_level_df,
