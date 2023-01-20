@@ -1,7 +1,9 @@
+import re
 from enum import Enum
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 
 import pandas as pd
 
@@ -175,3 +177,9 @@ def set_columns_wide(
     df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left
+
+
+def match_target_quantiles(features: Set[str]) -> Set[str]:
+    """Find quantiles in dataframe columns."""
+    pattern = re.compile("target_\d+\.\d+$")
+    return {i for i in list(features) if pattern.match(i) is not None}
