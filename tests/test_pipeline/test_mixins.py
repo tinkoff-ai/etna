@@ -14,6 +14,7 @@ from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
+from etna.pipeline.mixins import ModelPipelineParamsToTuneMixin
 from etna.pipeline.mixins import ModelPipelinePredictMixin
 from etna.pipeline.mixins import SaveModelPipelineMixin
 from etna.transforms import AddConstTransform
@@ -332,3 +333,26 @@ def test_save_mixin_load_warning(get_version_mock, save_version, load_version, e
     ):
         get_version_mock.return_value = load_version
         _ = Dummy.load(path)
+
+
+def test_param_to_tune_mixin():
+    mixin = ModelPipelineParamsToTuneMixin()
+    model = MagicMock()
+    model.params_to_tune.return_value = {"alpha": [1, 2, 3], "beta": [4, 5, 6]}
+    transform_1 = MagicMock()
+    transform_1.params_to_tune.return_value = {"param_1": ["option_1", "option_2"], "param_2": [False, True]}
+    transform_2 = MagicMock()
+    transform_2.params_to_tune.return_value = {"param_3": [1, 2]}
+    mixin.model = model
+    mixin.transforms = [transform_1, transform_2]
+
+    obtained_params_to_tune = mixin.params_to_tune()
+
+    expected_params_to_tune = {
+        "model.alpha": [1, 2, 3],
+        "model.beta": [4, 5, 6],
+        "transforms.0.param_1": ["option_1", "option_2"],
+        "transforms.0.param_2": [False, True],
+        "transforms.1.param_3": [1, 2],
+    }
+    assert obtained_params_to_tune == expected_params_to_tune

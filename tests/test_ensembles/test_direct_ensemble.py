@@ -69,3 +69,8 @@ def test_predict(direct_ensemble_pipeline, simple_ts_train):
 
 def test_save_load(direct_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds)
+
+
+def test_params_to_tune_not_implemented(direct_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="DirectEnsemble doesn't support this method"):
+        _ = direct_ensemble_pipeline.params_to_tune()

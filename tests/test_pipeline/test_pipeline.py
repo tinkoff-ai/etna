@@ -744,3 +744,22 @@ def test_save_load(model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "model, transforms, expected_params_to_tune",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+            {},
+        ),
+    ],
+)
+def test_params_to_tune(model, transforms, expected_params_to_tune):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+
+    obtained_params_to_tune = pipeline.params_to_tune()
+
+    assert obtained_params_to_tune == expected_params_to_tune

@@ -1,11 +1,16 @@
 from abc import abstractmethod
 from copy import deepcopy
+from typing import Dict
 
 import pandas as pd
 
+from etna import SETTINGS
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.core import SaveMixin
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
 
 
 class FutureMixin:
@@ -73,6 +78,18 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
         :
         """
         return df
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
 
 
 class PerSegmentWrapper(Transform):

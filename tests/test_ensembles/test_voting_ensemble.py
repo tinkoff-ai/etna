@@ -199,3 +199,8 @@ def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSData
 
 def test_save_load(voting_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds)
+
+
+def test_params_to_tune_not_implemented(voting_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="VotingEnsemble doesn't support this method"):
+        _ = voting_ensemble_pipeline.params_to_tune()
