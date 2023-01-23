@@ -421,11 +421,11 @@ class TestPredictSubsetSegments:
     def _test_predict_subset_segments(self, ts, model, transforms, segments, num_skip_points=50):
         # select subset of tsdataset
         segments = list(set(segments))
-        ts_subset = select_segments_subset(ts=deepcopy(ts), segments=segments)
+        subset_ts = select_segments_subset(ts=deepcopy(ts), segments=segments)
 
         # fitting
         ts.fit_transform(transforms)
-        ts_subset.transform(ts.transforms)
+        subset_ts.transform(ts.transforms)
         model.fit(ts)
 
         # forecasting full
@@ -440,9 +440,9 @@ class TestPredictSubsetSegments:
         # forecasting subset of segments
         torch.manual_seed(11)  # TODO: remove after fix at issue-802
 
-        ts_subset.df = ts_subset.df.iloc[(num_skip_points - model.context_size) :]
-        prediction_size = len(ts_subset.index) - num_skip_points
-        forecast_subset_ts = make_predict(model=model, ts=ts_subset, prediction_size=prediction_size)
+        subset_ts.df = subset_ts.df.iloc[(num_skip_points - model.context_size) :]
+        prediction_size = len(subset_ts.index) - num_skip_points
+        forecast_subset_ts = make_predict(model=model, ts=subset_ts, prediction_size=prediction_size)
 
         # checking
         forecast_full_df = forecast_full_ts.to_pandas()
