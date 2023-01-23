@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -31,6 +33,7 @@ from etna.transforms import PytorchForecastingTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
+from tests.test_models.test_inference.common import select_segments_subset
 from tests.test_models.test_inference.common import to_be_fixed
 
 
@@ -407,3 +410,103 @@ class TestPredictMixedInOutSample:
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
         self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
+
+
+class TestPredictSubsetSegments:
+    """Test predict on subset of segments on suffix of train dataset.
+
+    Expected that predictions on subset of segments match subset of predictions on full dataset.
+    """
+
+    def _test_predict_subset_segments(self, ts, model, transforms, segments, num_skip_points=50):
+        # select subset of tsdataset
+        segments = list(set(segments))
+        ts_subset = select_segments_subset(ts=deepcopy(ts), segments=segments)
+
+        # fitting
+        ts.fit_transform(transforms)
+        ts_subset.transform(ts.transforms)
+        model.fit(ts)
+
+        # forecasting full
+        import torch  # TODO: remove after fix at issue-802
+
+        torch.manual_seed(11)
+
+        ts.df = ts.df.iloc[(num_skip_points - model.context_size) :]
+        prediction_size = len(ts.index) - num_skip_points
+        forecast_full_ts = make_predict(model=model, ts=ts, prediction_size=prediction_size)
+
+        # forecasting subset of segments
+        torch.manual_seed(11)  # TODO: remove after fix at issue-802
+
+        ts_subset.df = ts_subset.df.iloc[(num_skip_points - model.context_size) :]
+        prediction_size = len(ts_subset.index) - num_skip_points
+        forecast_subset_ts = make_predict(model=model, ts=ts_subset, prediction_size=prediction_size)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_subset_df = forecast_subset_ts.to_pandas()
+        assert_frame_equal(forecast_subset_df, forecast_full_df.loc[:, pd.IndexSlice[segments, :]])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+        ],
+    )
+    def test_predict_subset_segments(self, model, transforms, example_tsds):
+        self._test_predict_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+            (
+                DeepARModel(max_epochs=5, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    )
+                ],
+            ),
+            (
+                TFTModel(max_epochs=1, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    )
+                ],
+            ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+        ],
+    )
+    def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
