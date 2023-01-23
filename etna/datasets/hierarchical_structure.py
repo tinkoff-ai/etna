@@ -4,6 +4,7 @@ from queue import Queue
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 from scipy.sparse import csr_matrix
 from scipy.sparse import lil_matrix
@@ -33,7 +34,9 @@ class HierarchicalStructure(BaseMixin):
         tree_depth = len(hierarchy_levels)
 
         self.level_names = self._get_level_names(level_names, tree_depth)
-        self._level_series: Dict[str, List[str]] = {self.level_names[i]: hierarchy_levels[i] for i in range(tree_depth)}
+        self._level_series: Dict[str, Tuple[str, ...]] = {
+            self.level_names[i]: tuple(hierarchy_levels[i]) for i in range(tree_depth)
+        }
         self._level_to_index: Dict[str, int] = {self.level_names[i]: i for i in range(tree_depth)}
 
         self._segment_num_reachable_leafs: Dict[str, int] = self._get_num_reachable_leafs(hierarchy_levels)
@@ -167,7 +170,7 @@ class HierarchicalStructure(BaseMixin):
 
         return summing_matrix.tocsr()
 
-    def get_level_segments(self, level_name: str) -> List[str]:
+    def get_level_segments(self, level_name: str) -> Tuple[str, ...]:
         """Get all segments from particular level."""
         try:
             return self._level_series[level_name]
