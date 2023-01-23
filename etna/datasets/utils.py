@@ -4,8 +4,11 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import Tuple
 
+import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from etna import SETTINGS
 
@@ -183,3 +186,54 @@ def match_target_quantiles(features: Set[str]) -> Set[str]:
     """Find quantiles in dataframe columns."""
     pattern = re.compile("target_\d+\.\d+$")
     return {i for i in list(features) if pattern.match(i) is not None}
+
+
+def get_level_dataframe(
+    df: pd.DataFrame,
+    mapping_matrix: csr_matrix,
+    target_names: Tuple[str, ...],
+    source_level_segments: Tuple[str, ...],
+    target_level_segments: Tuple[str, ...],
+):
+    """Perform mapping to dataframe at the target level.
+
+    Parameters
+    ----------
+    df:
+        dataframe at the source level
+    mapping_matrix:
+        mapping matrix between levels
+    target_names:
+        variables names for mapping
+    source_level_segments:
+        tuple of segments at the source level
+    target_level_segments:
+        tuple of segments at the target level
+
+    Returns
+    -------
+    :
+       dataframe at the target level
+    """
+    num_target_names = len(target_names)
+    num_source_level_segments = len(source_level_segments)
+    num_target_level_segments = len(target_level_segments)
+
+    source_level_data = df.values
+
+    source_level_data = source_level_data.reshape((-1, num_source_level_segments, num_target_names))
+    source_level_data = np.swapaxes(source_level_data, 1, 2)
+    source_level_data = source_level_data.reshape((-1, num_source_level_segments))
+
+    target_level_data = source_level_data @ mapping_matrix.T
+
+    target_level_data = target_level_data.reshape((-1, num_target_names, num_target_level_segments))
+    target_level_data = np.swapaxes(target_level_data, 1, 2)
+    target_level_data = target_level_data.reshape((-1, num_target_names * num_target_level_segments))
+
+    target_level_segments = pd.MultiIndex.from_product(
+        [target_level_segments, target_names], names=["segment", "feature"]
+    )
+    target_level_df = pd.DataFrame(data=target_level_data, index=df.index, columns=target_level_segments)
+
+    return target_level_df

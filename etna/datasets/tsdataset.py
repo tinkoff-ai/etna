@@ -23,6 +23,7 @@ from typing_extensions import Literal
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import match_target_quantiles
 from etna.loggers import tslogger
 
@@ -1035,38 +1036,25 @@ class TSDataset:
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
+        column_names = self.columns.get_level_values(level=1)
+        target_names = tuple(match_target_quantiles(column_names))
+        target_names = target_names + ("target",)
+
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
                 target_level=target_level, source_level=self.current_df_level
             )
 
-            column_names = self.columns.get_level_values(level=1)
-            target_names = tuple(match_target_quantiles(column_names))
-            target_names = target_names + ("target",)
-
-            num_target_names = len(target_names)
-            num_current_level_segments = len(current_level_segments)
-            num_target_level_segments = len(target_level_segments)
-
-            source_level_data = self[:, current_level_segments, target_names].values
-
-            source_level_data = source_level_data.reshape((-1, num_current_level_segments, num_target_names))
-            source_level_data = np.swapaxes(source_level_data, 1, 2)
-            source_level_data = source_level_data.reshape((-1, num_current_level_segments))
-
-            target_level_data = source_level_data @ summing_matrix.T
-
-            target_level_data = target_level_data.reshape((-1, num_target_names, num_target_level_segments))
-            target_level_data = np.swapaxes(target_level_data, 1, 2)
-            target_level_data = target_level_data.reshape((-1, num_target_names * num_target_level_segments))
-
-            target_level_segments = pd.MultiIndex.from_product(
-                [target_level_segments, target_names], names=["segment", "feature"]
+            target_level_df = get_level_dataframe(
+                df=self[:, current_level_segments, target_names],
+                mapping_matrix=summing_matrix,
+                target_names=target_names,
+                source_level_segments=current_level_segments,
+                target_level_segments=target_level_segments,
             )
-            target_level_df = pd.DataFrame(data=target_level_data, index=self.df.index, columns=target_level_segments)
 
         else:
-            target_level_df = self[..., "target"].copy()
+            target_level_df = self[..., target_names]
 
         return TSDataset(
             df=target_level_df,
