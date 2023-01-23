@@ -834,30 +834,6 @@ class TestForecastNewSegments:
     def test_forecast_new_segments(self, model, transforms, example_tsds):
         self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
 
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment models can't make predictions on new segments")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (AutoARIMAModel(), []),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-        ],
-    )
-    def test_forecast_new_segments_failed_not_implemented_per_segment(self, model, transforms, example_tsds):
-        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
-
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -890,6 +866,29 @@ class TestForecastNewSegments:
         ],
     )
     def test_forecast_new_segments_failed_encoding_error(self, model, transforms, example_tsds):
-        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
         with pytest.raises(KeyError, match="Unknown category"):
             self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+
+    @to_be_fixed(raises=NotImplementedError, match="Per-segment models can't make predictions on new segments")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+        ],
+    )
+    def test_forecast_new_segments_failed_not_implemented_per_segment(self, model, transforms, example_tsds):
+        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])

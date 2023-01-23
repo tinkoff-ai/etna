@@ -419,6 +419,8 @@ class TestPredictSubsetSegments:
     """
 
     def _test_predict_subset_segments(self, ts, model, transforms, segments, num_skip_points=50):
+        prediction_size = len(ts.index) - num_skip_points
+
         # select subset of tsdataset
         segments = list(set(segments))
         subset_ts = select_segments_subset(ts=deepcopy(ts), segments=segments)
@@ -434,14 +436,12 @@ class TestPredictSubsetSegments:
         torch.manual_seed(11)
 
         ts.df = ts.df.iloc[(num_skip_points - model.context_size) :]
-        prediction_size = len(ts.index) - num_skip_points
         forecast_full_ts = make_predict(model=model, ts=ts, prediction_size=prediction_size)
 
         # forecasting subset of segments
         torch.manual_seed(11)  # TODO: remove after fix at issue-802
 
         subset_ts.df = subset_ts.df.iloc[(num_skip_points - model.context_size) :]
-        prediction_size = len(subset_ts.index) - num_skip_points
         forecast_subset_ts = make_predict(model=model, ts=subset_ts, prediction_size=prediction_size)
 
         # checking
@@ -510,3 +510,115 @@ class TestPredictSubsetSegments:
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
         self._test_predict_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+
+
+class TestPredictNewSegments:
+    """Test predict on new segments on suffix of train dataset.
+
+    Expected that target values are filled after prediction.
+    """
+
+    def _test_predict_new_segments(self, ts, model, transforms, train_segments, num_skip_points=50):
+        # create tsdataset with new segments
+        train_segments = list(set(train_segments))
+        forecast_segments = list(set(ts.segments) - set(train_segments))
+        train_ts = select_segments_subset(ts=deepcopy(ts), segments=train_segments)
+        test_ts = select_segments_subset(ts=deepcopy(ts), segments=forecast_segments)
+
+        # fitting
+        train_ts.fit_transform(transforms)
+        test_ts.transform(train_ts.transforms)
+        model.fit(train_ts)
+
+        # forecasting
+        import torch  # TODO: remove after fix at issue-802
+
+        torch.manual_seed(11)
+
+        test_ts.df = test_ts.df.iloc[(num_skip_points - model.context_size) :]
+        prediction_size = len(ts.index) - num_skip_points
+        forecast_ts = make_predict(model=model, ts=test_ts, prediction_size=prediction_size)
+
+        # checking
+        forecast_df = forecast_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_df["target"].isna())
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+        ],
+    )
+    def test_predict_new_segments(self, model, transforms, example_tsds):
+        self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                DeepARModel(max_epochs=1, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    )
+                ],
+            ),
+            (
+                TFTModel(max_epochs=1, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    )
+                ],
+            ),
+        ],
+    )
+    def test_predict_new_segments_failed_encoding_error(self, model, transforms, example_tsds):
+        with pytest.raises(KeyError, match="Unknown category"):
+            self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+        ],
+    )
+    def test_predict_new_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+
+    @to_be_fixed(raises=NotImplementedError, match="Per-segment models can't make predictions on new segments")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+        ],
+    )
+    def test_predict_new_segments_failed_not_implemented_per_segment(self, model, transforms, example_tsds):
+        self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
