@@ -1,8 +1,1 @@
-import re
-from typing import Set
-
-
-def match_target_quantiles(features: Set[str]) -> Set[str]:
-    """Find quantiles in dataframe columns."""
-    pattern = re.compile("target_\d+\.\d+$")
-    return {i for i in list(features) if pattern.match(i) is not None}
+from etna.datasets.utils import match_target_quantiles  # noqa: F401
