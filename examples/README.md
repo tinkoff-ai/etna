@@ -56,3 +56,9 @@ We have prepared a set of tutorials for an easy introduction:
 #### 09. Hyperparameter search
 - [Optuna](https://github.com/tinkoff-ai/etna/tree/master/examples/optuna)
 - [WandB sweeps](https://github.com/tinkoff-ai/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)
+
+#### 10. [Hierarchical time series](https://github.com/tinkoff-ai/etna/tree/master/examples/hierarchical_pipeline.ipynb)
+- Hierarchical time series
+- Hierarchical structure
+- Reconciliation methods
+- Exogenous variables for hierarchical forecasts
