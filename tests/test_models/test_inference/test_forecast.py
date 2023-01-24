@@ -28,6 +28,7 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import MLPModel
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
@@ -85,10 +86,15 @@ class TestForecastInSampleFullNoTarget:
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @to_be_fixed(raises=AssertionError)
+    # Looks like a problem of current implementation of NNs
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed(self, model, transforms, example_tsds):
@@ -197,6 +203,19 @@ class TestForecastInSampleFull:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_failed_nans_lags_nns(self, model, transforms, example_tsds):
+        with pytest.raises(AssertionError):
+            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
             (MovingAverageModel(window=3), []),
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
@@ -291,6 +310,10 @@ class TestForecastInSampleSuffixNoTarget:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
@@ -362,6 +385,10 @@ class TestForecastInSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
         ],
     )
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
@@ -487,6 +514,10 @@ class TestForecastOutSamplePrefix:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
@@ -558,10 +589,15 @@ class TestForecastOutSampleSuffix:
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     @to_be_fixed(raises=AssertionError)
+    # Looks like a problem of current implementation of NNs
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_out_sample_suffix_failed(self, model, transforms, example_tsds):
@@ -650,6 +686,10 @@ class TestForecastMixedInOutSample:
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
@@ -764,16 +804,20 @@ class TestForecastSubsetSegments:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_subset_segments(self, model, transforms, example_tsds):
         self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
 
     @to_be_fixed(raises=AssertionError)
+    # This test fails for unknown reason
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            # this test fails for unknown reason
             (
                 DeepARModel(max_epochs=1, learning_rate=[0.01]),
                 [
@@ -829,6 +873,10 @@ class TestForecastNewSegments:
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_new_segments(self, model, transforms, example_tsds):

@@ -26,6 +26,7 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import MLPModel
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
@@ -122,6 +123,10 @@ class TestPredictInSampleFull:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -199,6 +204,10 @@ class TestPredictInSampleSuffix:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -295,6 +304,10 @@ class TestPredictOutSample:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -406,6 +419,10 @@ class TestPredictMixedInOutSample:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -506,6 +523,10 @@ class TestPredictSubsetSegments:
                 ],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -594,6 +615,10 @@ class TestPredictNewSegments:
         "model, transforms",
         [
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_predict_new_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
