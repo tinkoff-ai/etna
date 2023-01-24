@@ -309,7 +309,7 @@ def test_forecast_interval_presented(product_level_constant_hierarchical_ts, rec
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
-def test_forecast_interval(product_level_constant_hierarchical_ts, reconciliator):
+def test_forecast_prediction_intervals(product_level_constant_hierarchical_ts, reconciliator):
     ts = product_level_constant_hierarchical_ts
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=2)
@@ -322,26 +322,37 @@ def test_forecast_interval(product_level_constant_hierarchical_ts, reconciliator
         np.testing.assert_array_almost_equal(target, forecast[:, segment, "target_0.975"])
 
 
-def test_forecast_get_level(product_level_constant_hierarchical_ts):
+@pytest.mark.parametrize(
+    "quantiles",
+    ((0.25, 0.75), (0.1, 0.9)),
+)
+def test_forecast_get_level(product_level_constant_hierarchical_ts, quantiles):
     ts = product_level_constant_hierarchical_ts
     reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=2)
 
     pipeline.fit(ts=ts)
-    forecast = pipeline.forecast(prediction_interval=True, n_folds=1)
+    forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles, n_folds=1)
     np.testing.assert_array_almost_equal(forecast.get_level_dataset(target_level="total").df.values, 10)
 
 
-def test_forecast_reconcile(product_level_constant_hierarchical_ts):
+@pytest.mark.parametrize(
+    "quantiles,answer",
+    (
+        ((0.25, 0.75), np.array([[3.0, 3.0, 3.0, 7.0, 7.0, 7.0], [3.0, 3.0, 3.0, 7.0, 7.0, 7.0]])),
+        ((0.1, 0.9), np.array([[3.0, 3.0, 3.0, 7.0, 7.0, 7.0], [3.0, 3.0, 3.0, 7.0, 7.0, 7.0]])),
+    ),
+)
+def test_forecast_reconcile(product_level_constant_hierarchical_ts, quantiles, answer):
     ts = product_level_constant_hierarchical_ts
-    reconciliator = BottomUpReconciliator(target_level="total", source_level="product")
+    reconciliator = TopDownReconciliator(target_level="market", source_level="total", method="AHP", period=1)
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=2)
 
     pipeline.fit(ts=ts)
-    forecast = pipeline.raw_forecast(prediction_interval=True, n_folds=1)
-    np.testing.assert_array_almost_equal(pipeline.reconciliator.reconcile(ts=forecast).df.values, 10)
+    forecast = pipeline.raw_forecast(prediction_interval=True, quantiles=quantiles, n_folds=1)
+    np.testing.assert_array_almost_equal(pipeline.reconciliator.reconcile(ts=forecast).df.values, answer)
 
 
 @pytest.mark.parametrize(
