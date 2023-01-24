@@ -153,13 +153,7 @@ class HierarchicalPipeline(Pipeline):
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=self._fit_ts, metrics=[MAE()], n_folds=n_folds)
 
-        forecasts = TSDataset(df=forecasts, freq=self._fit_ts.freq)
-        residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
-        )
-
-        self._forecast_borders(residuals=residuals, quantiles=quantiles, predictions=predictions)
+        self._forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 

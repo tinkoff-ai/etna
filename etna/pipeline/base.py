@@ -270,19 +270,24 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
-        forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
-        residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
-        )
 
-        self._forecast_borders(residuals=residuals, quantiles=quantiles, predictions=predictions)
+        self._forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         return predictions
 
-    @staticmethod
-    def _forecast_borders(residuals: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset) -> None:
+    def _forecast_borders(
+        self, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
+    ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted!")
+
+        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
+        residuals = (
+            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
+            - self.ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
+        )
+
         sigma = np.std(residuals.values, axis=0)
         borders = []
         for quantile in quantiles:
