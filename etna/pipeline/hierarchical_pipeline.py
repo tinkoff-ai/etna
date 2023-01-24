@@ -4,9 +4,8 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
-import pandas as pd
-
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import get_target_column_names
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
@@ -14,7 +13,6 @@ from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
 from etna.reconciliation.base import BaseReconciliator
 from etna.transforms.base import Transform
-from etna.transforms.utils import match_target_quantiles
 
 
 class HierarchicalPipeline(Pipeline):
@@ -88,12 +86,10 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the source level
         """
         forecast = super().forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
-        column_names = forecast.columns.get_level_values(level=1)
-        target_columns = match_target_quantiles(column_names)
-        target_columns.add("target")
+        target_columns = tuple(get_target_column_names(columns=forecast.columns))
 
         hierarchical_forecast = TSDataset(
-            df=forecast[..., tuple(target_columns)],
+            df=forecast[..., target_columns],
             freq=forecast.freq,
             df_exog=forecast.df_exog,
             known_future=forecast.known_future,

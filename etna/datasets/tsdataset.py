@@ -24,7 +24,7 @@ from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
-from etna.datasets.utils import match_target_quantiles
+from etna.datasets.utils import get_target_column_names
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -1036,9 +1036,7 @@ class TSDataset:
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
-        column_names = self.columns.get_level_values(level=1)
-        target_names = tuple(match_target_quantiles(column_names))
-        target_names = target_names + ("target",)
+        target_names = tuple(get_target_column_names(columns=self.columns))
 
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
