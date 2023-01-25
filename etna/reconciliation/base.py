@@ -7,7 +7,6 @@ from scipy.sparse import csr_matrix
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.datasets.utils import get_level_dataframe
-from etna.datasets.utils import get_target_column_names
 
 
 class BaseReconciliator(ABC, BaseMixin):
@@ -84,12 +83,9 @@ class BaseReconciliator(ABC, BaseMixin):
         current_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.source_level)
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
-        target_names = tuple(get_target_column_names(columns=ts.columns))
-
         df_reconciled = get_level_dataframe(
-            df=ts[:, current_level_segments, target_names],
+            df=ts.df,
             mapping_matrix=self.mapping_matrix,
-            target_names=target_names,
             source_level_segments=current_level_segments,
             target_level_segments=target_level_segments,
         )

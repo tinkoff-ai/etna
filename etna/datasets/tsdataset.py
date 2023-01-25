@@ -1036,17 +1036,14 @@ class TSDataset:
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
-        target_names = tuple(get_target_column_names(columns=self.columns))
-
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
                 target_level=target_level, source_level=self.current_df_level
             )
 
             target_level_df = get_level_dataframe(
-                df=self[:, current_level_segments, target_names],
+                df=self.df,
                 mapping_matrix=summing_matrix,
-                target_names=target_names,
                 source_level_segments=current_level_segments,
                 target_level_segments=target_level_segments,
             )

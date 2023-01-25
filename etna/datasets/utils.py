@@ -200,7 +200,6 @@ def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
 def get_level_dataframe(
     df: pd.DataFrame,
     mapping_matrix: csr_matrix,
-    target_names: Tuple[str, ...],
     source_level_segments: Tuple[str, ...],
     target_level_segments: Tuple[str, ...],
 ):
@@ -212,8 +211,6 @@ def get_level_dataframe(
         dataframe at the source level
     mapping_matrix:
         mapping matrix between levels
-    target_names:
-        variables names for mapping
     source_level_segments:
         tuple of segments at the source level
     target_level_segments:
@@ -224,21 +221,45 @@ def get_level_dataframe(
     :
        dataframe at the target level
     """
+    target_names = tuple(get_target_with_quantiles(columns=df.columns))
+
+    if len(target_names) == 0:
+        raise ValueError("Provided dataframe has no columns with the target variable!")
+
+    df = df.loc[:, pd.IndexSlice[source_level_segments, target_names]]
+
+    if df.empty:
+        raise ValueError("Provided `source_level_segments` don't contain any valid segments!")
+
+    if len(set(df.columns.get_level_values(level="segment"))) != mapping_matrix.shape[1]:
+        raise ValueError("Number of source level segments do not match mapping matrix number of columns!")
+
+    if len(set(target_level_segments)) != mapping_matrix.shape[0]:
+        raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
+
     num_target_names = len(target_names)
     num_source_level_segments = len(source_level_segments)
     num_target_level_segments = len(target_level_segments)
 
-    source_level_data = df.values
+    source_level_data = df.values  # shape: (t, num_source_level_segments * num_target_names)
 
-    source_level_data = source_level_data.reshape((-1, num_source_level_segments, num_target_names))
-    source_level_data = np.swapaxes(source_level_data, 1, 2)
-    source_level_data = source_level_data.reshape((-1, num_source_level_segments))
+    source_level_data = source_level_data.reshape(
+        (-1, num_source_level_segments, num_target_names)
+    )  # shape: (t, num_source_level_segments, num_target_names)
+    source_level_data = np.swapaxes(source_level_data, 1, 2)  # shape: (t, num_target_names, num_source_level_segments)
+    source_level_data = source_level_data.reshape(
+        (-1, num_source_level_segments)
+    )  # shape: (t * num_target_names, num_source_level_segments)
 
     target_level_data = source_level_data @ mapping_matrix.T
 
-    target_level_data = target_level_data.reshape((-1, num_target_names, num_target_level_segments))
-    target_level_data = np.swapaxes(target_level_data, 1, 2)
-    target_level_data = target_level_data.reshape((-1, num_target_names * num_target_level_segments))
+    target_level_data = target_level_data.reshape(
+        (-1, num_target_names, num_target_level_segments)
+    )  # shape: (t, num_target_names, num_target_level_segments)
+    target_level_data = np.swapaxes(target_level_data, 1, 2)  # shape: (t, num_target_level_segments, num_target_names)
+    target_level_data = target_level_data.reshape(
+        (-1, num_target_names * num_target_level_segments)
+    )  # shape: (t, num_target_level_segments * num_target_names)
 
     target_level_segments = pd.MultiIndex.from_product(
         [target_level_segments, target_names], names=["segment", "feature"]
