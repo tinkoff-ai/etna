@@ -5,7 +5,7 @@ from typing import Optional
 from typing import Sequence
 
 from etna.datasets.tsdataset import TSDataset
-from etna.datasets.utils import get_target_column_names
+from etna.datasets.utils import get_target_with_quantiles
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
@@ -86,7 +86,7 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the source level
         """
         forecast = super().forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
-        target_columns = tuple(get_target_column_names(columns=forecast.columns))
+        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
 
         hierarchical_forecast = TSDataset(
             df=forecast[..., target_columns],
@@ -149,7 +149,7 @@ class HierarchicalPipeline(Pipeline):
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=self._fit_ts, metrics=[MAE()], n_folds=n_folds)
 
-        self._forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 

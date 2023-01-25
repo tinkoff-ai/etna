@@ -24,7 +24,7 @@ from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
-from etna.datasets.utils import get_target_column_names
+from etna.datasets.utils import get_target_with_quantiles
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -1052,7 +1052,8 @@ class TSDataset:
             )
 
         else:
-            target_level_df = self[..., target_names]
+            target_names = tuple(get_target_with_quantiles(columns=self.columns))
+            target_level_df = self[:, current_level_segments, target_names]
 
         return TSDataset(
             df=target_level_df,

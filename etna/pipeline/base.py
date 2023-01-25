@@ -271,11 +271,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
 
-        self._forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         return predictions
 
-    def _forecast_borders(
+    def _add_forecast_borders(
         self, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
     ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
