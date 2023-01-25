@@ -291,7 +291,7 @@ def test_top_down_reconcile_fit_w_nans(market_level_simple_hierarchical_ts_w_nan
     np.testing.assert_array_almost_equal(reconciler.mapping_matrix.toarray().round(5), answer, decimal=4)
 
 
-def test_forecast_reconcile(total_level_constant_forecast_w_quantiles, product_level_constant_hierarchical_ts):
+def test_reconcile_with_quantiles(total_level_constant_forecast_w_quantiles, product_level_constant_hierarchical_ts):
     answer = np.array([[3, 3, 3, 7, 7, 7], [3, 3, 3, 7, 7, 7]])
     ts = product_level_constant_hierarchical_ts
     forecast = total_level_constant_forecast_w_quantiles

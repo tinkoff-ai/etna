@@ -478,6 +478,6 @@ def test_get_level_dataset_lower_level_error(simple_hierarchical_ts):
         ("total", np.array([[10, 10, 10], [10, 10, 10]])),
     ),
 )
-def test_forecast_get_level(product_level_constant_forecast_w_quantiles, target_level, answer):
+def test_get_level_dataset_with_quantiles(product_level_constant_forecast_w_quantiles, target_level, answer):
     forecast = product_level_constant_forecast_w_quantiles
     np.testing.assert_array_almost_equal(forecast.get_level_dataset(target_level=target_level).df.values, answer)

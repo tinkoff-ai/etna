@@ -84,7 +84,7 @@ class BaseReconciliator(ABC, BaseMixin):
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
         df_reconciled = get_level_dataframe(
-            df=ts.df,
+            df=ts.to_pandas(),
             mapping_matrix=self.mapping_matrix,
             source_level_segments=current_level_segments,
             target_level_segments=target_level_segments,
