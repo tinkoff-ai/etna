@@ -1,10 +1,8 @@
 from unittest.mock import Mock
 
 import numpy as np
-import pandas as pd
 import pytest
 
-from etna.datasets import TSDataset
 from etna.datasets.utils import match_target_quantiles
 from etna.metrics import MAE
 from etna.metrics import Coverage
@@ -17,89 +15,6 @@ from etna.reconciliation import TopDownReconciliator
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
-
-
-@pytest.fixture
-def product_level_constant_hierarchical_df():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 4,
-            "segment": ["a"] * 4 + ["b"] * 4 + ["c"] * 4 + ["d"] * 4,
-            "target": [1, 1, 1, 1] + [2, 2, 2, 2] + [3, 3, 3, 3] + [4, 4, 4, 4],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
-def market_level_constant_hierarchical_df():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04"] * 2,
-            "segment": ["X"] * 4 + ["Y"] * 4,
-            "target": [3, 3, 3, 3] + [7, 7, 7, 7],
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
-def market_level_constant_hierarchical_df_exog():
-    df = pd.DataFrame(
-        {
-            "timestamp": ["2000-01-01", "2000-01-02", "2000-01-03", "2000-01-04", "2000-01-05", "2000-01-06"] * 2,
-            "segment": ["X"] * 6 + ["Y"] * 6,
-            "regressor": [1, 1, 1, 1, 1, 1] * 2,
-        }
-    )
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
-def market_level_constant_hierarchical_ts(market_level_constant_hierarchical_df, hierarchical_structure):
-    ts = TSDataset(df=market_level_constant_hierarchical_df, freq="D", hierarchical_structure=hierarchical_structure)
-    return ts
-
-
-@pytest.fixture
-def market_level_constant_hierarchical_ts_w_exog(
-    market_level_constant_hierarchical_df, market_level_constant_hierarchical_df_exog, hierarchical_structure
-):
-    ts = TSDataset(
-        df=market_level_constant_hierarchical_df,
-        df_exog=market_level_constant_hierarchical_df_exog,
-        freq="D",
-        hierarchical_structure=hierarchical_structure,
-        known_future="all",
-    )
-    return ts
-
-
-@pytest.fixture
-def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_df, hierarchical_structure):
-    ts = TSDataset(
-        df=product_level_constant_hierarchical_df,
-        freq="D",
-        hierarchical_structure=hierarchical_structure,
-    )
-    return ts
-
-
-@pytest.fixture
-def product_level_constant_hierarchical_ts_w_exog(
-    product_level_constant_hierarchical_df, market_level_constant_hierarchical_df_exog, hierarchical_structure
-):
-    ts = TSDataset(
-        df=product_level_constant_hierarchical_df,
-        df_exog=market_level_constant_hierarchical_df_exog,
-        freq="D",
-        hierarchical_structure=hierarchical_structure,
-        known_future="all",
-    )
-    return ts
 
 
 @pytest.mark.parametrize(
