@@ -238,22 +238,25 @@ def test_forecast_prediction_intervals(product_level_constant_hierarchical_ts, r
 
 
 @pytest.mark.parametrize(
-    "reconciliator",
+    "metric_type,reconciliator,answer",
     (
-        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
-        BottomUpReconciliator(target_level="total", source_level="market"),
+        (Width, TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"), 0),
+        (Width, BottomUpReconciliator(target_level="total", source_level="market"), 0),
+        (Coverage, TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"), 1),
+        (Coverage, BottomUpReconciliator(target_level="total", source_level="market"), 1),
     ),
 )
-def test_coverage_metric(product_level_constant_hierarchical_ts, reconciliator):
+def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, reconciliator, answer):
     ts = product_level_constant_hierarchical_ts
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
 
-    metrics, _, _ = pipeline.backtest(
+    metric = metric_type()
+    results, _, _ = pipeline.backtest(
         ts=ts,
-        metrics=[Coverage()],
+        metrics=[metric],
         n_folds=2,
         aggregate_metrics=True,
         forecast_params={"prediction_interval": True, "n_folds": 1},
     )
-    np.testing.assert_array_almost_equal(metrics["Coverage"], 1)
+    np.testing.assert_array_almost_equal(results[metric.name], answer)
