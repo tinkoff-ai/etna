@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 -
 -
--
+- Add more scenarios into tests for models ([#1082](https://github.com/tinkoff-ai/etna/pull/1082))
 -
 -
 -
