@@ -230,7 +230,7 @@ def get_level_dataframe(
         raise ValueError("Provided dataframe has no columns with the target variable!")
 
     if set(df.columns.get_level_values(level="segment")) != set(source_level_segments):
-        raise ValueError("Segments missmatch for provided dataframe and `source_level_segments`!")
+        raise ValueError("Segments mismatch for provided dataframe and `source_level_segments`!")
 
     if num_source_level_segments != mapping_matrix.shape[1]:
         raise ValueError("Number of source level segments do not match mapping matrix number of columns!")
