@@ -270,10 +270,22 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
-        forecasts = TSDataset(df=forecasts, freq=self.ts.freq)
+
+        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+
+        return predictions
+
+    def _add_forecast_borders(
+        self, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
+    ) -> None:
+        """Estimate prediction intervals and add to the forecasts."""
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted!")
+
+        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
         residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
+            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
+            - self.ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
         )
 
         sigma = np.std(residuals.values, axis=0)
@@ -285,8 +297,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             borders.append(border)
 
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
-
-        return predictions
 
     def forecast(
         self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
@@ -536,7 +546,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         test.df = test.df.loc[mask.target_timestamps]
 
         fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+        fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
         tslogger.finish_experiment()

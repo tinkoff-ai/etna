@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -467,3 +468,16 @@ def test_get_level_dataset_lower_level_error(simple_hierarchical_ts):
         ValueError, match="Target level should be higher in the hierarchy than the current level of dataframe!"
     ):
         simple_hierarchical_ts.get_level_dataset(target_level="product")
+
+
+@pytest.mark.parametrize(
+    "target_level,answer",
+    (
+        ("product", np.array([[1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]])),
+        ("market", np.array([[3, 3, 3, 7, 7, 7], [3, 3, 3, 7, 7, 7]])),
+        ("total", np.array([[10, 10, 10], [10, 10, 10]])),
+    ),
+)
+def test_get_level_dataset_with_quantiles(product_level_constant_forecast_w_quantiles, target_level, answer):
+    forecast = product_level_constant_forecast_w_quantiles
+    np.testing.assert_array_almost_equal(forecast.get_level_dataset(target_level=target_level).df.values, answer)

@@ -1,8 +1,13 @@
+from copy import deepcopy
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
 
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import get_target_with_quantiles
+from etna.loggers import tslogger
+from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
@@ -28,9 +33,15 @@ class HierarchicalPipeline(Pipeline):
             Sequence of the transforms
         horizon:
              Number of timestamps in the future for forecasting
+
+        Warnings
+        --------
+        Estimation of forecast intervals with `forecast(prediction_interval=True)` method and
+        `BottomUpReconciliator` may be not reliable.
         """
         super().__init__(model=model, transforms=transforms, horizon=horizon)
         self.reconciliator = reconciliator
+        self._fit_ts: Optional[TSDataset] = None
 
     def fit(self, ts: TSDataset) -> "HierarchicalPipeline":
         """Fit the HierarchicalPipeline.
@@ -48,6 +59,8 @@ class HierarchicalPipeline(Pipeline):
         :
             Fitted HierarchicalPipeline instance
         """
+        self._fit_ts = deepcopy(ts)
+
         self.reconciliator.fit(ts=ts)
         ts = self.reconciliator.aggregate(ts=ts)
         super().fit(ts=ts)
@@ -73,8 +86,10 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the source level
         """
         forecast = super().forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
+        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
+
         hierarchical_forecast = TSDataset(
-            df=forecast[..., "target"],
+            df=forecast[..., target_columns],
             freq=forecast.freq,
             df_exog=forecast.df_exog,
             known_future=forecast.known_future,
@@ -109,10 +124,33 @@ class HierarchicalPipeline(Pipeline):
         self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
     ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
-        y_true = y_true.get_level_dataset(self.reconciliator.target_level)
-        y_pred = y_pred.get_level_dataset(self.reconciliator.target_level)
+        if y_true.current_df_level != self.reconciliator.target_level:
+            y_true = y_true.get_level_dataset(self.reconciliator.target_level)
+
+        if y_pred.current_df_level == self.reconciliator.source_level:
+            y_pred = self.reconciliator.reconcile(y_pred)
 
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
+
+    def _forecast_prediction_interval(
+        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+    ) -> TSDataset:
+        """Add prediction intervals to the forecasts."""
+        self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
+
+        if self.ts is None or self._fit_ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+
+        # TODO: rework intervals estimation for `BottomUpReconciliator`
+
+        with tslogger.disable():
+            _, forecasts, _ = self.backtest(ts=self._fit_ts, metrics=[MAE()], n_folds=n_folds)
+
+        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+
+        self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
+
+        return predictions

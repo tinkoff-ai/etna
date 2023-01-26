@@ -23,6 +23,8 @@ from typing_extensions import Literal
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import get_level_dataframe
+from etna.datasets.utils import get_target_with_quantiles
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -1039,16 +1041,16 @@ class TSDataset:
                 target_level=target_level, source_level=self.current_df_level
             )
 
-            source_level_data = self[:, current_level_segments, "target"].values
-            target_level_data = source_level_data @ summing_matrix.T
-
-            target_level_segments = pd.MultiIndex.from_product(
-                [target_level_segments, ["target"]], names=["segment", "feature"]
+            target_level_df = get_level_dataframe(
+                df=self.df,
+                mapping_matrix=summing_matrix,
+                source_level_segments=current_level_segments,
+                target_level_segments=target_level_segments,
             )
-            target_level_df = pd.DataFrame(data=target_level_data, index=self.df.index, columns=target_level_segments)
 
         else:
-            target_level_df = self[..., "target"]
+            target_names = tuple(get_target_with_quantiles(columns=self.columns))
+            target_level_df = self[:, current_level_segments, target_names]
 
         return TSDataset(
             df=target_level_df,

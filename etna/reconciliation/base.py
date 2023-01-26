@@ -2,11 +2,11 @@ from abc import ABC
 from abc import abstractmethod
 from typing import Optional
 
-import pandas as pd
 from scipy.sparse import csr_matrix
 
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.datasets.utils import get_level_dataframe
 
 
 class BaseReconciliator(ABC, BaseMixin):
@@ -83,14 +83,13 @@ class BaseReconciliator(ABC, BaseMixin):
         current_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.source_level)
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
-        current_level_values = ts[:, current_level_segments, "target"].values
-        target_level_values = current_level_values @ self.mapping_matrix.T
-
-        df_reconciled = pd.DataFrame(
-            target_level_values,
-            columns=pd.MultiIndex.from_product([target_level_segments, ["target"]], names=["segment", "feature"]),
-            index=ts.index,
+        df_reconciled = get_level_dataframe(
+            df=ts.to_pandas(),
+            mapping_matrix=self.mapping_matrix,
+            source_level_segments=current_level_segments,
+            target_level_segments=target_level_segments,
         )
+
         ts_reconciled = TSDataset(
             df=df_reconciled,
             freq=ts.freq,
