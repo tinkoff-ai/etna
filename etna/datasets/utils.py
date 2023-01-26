@@ -222,23 +222,23 @@ def get_level_dataframe(
     """
     target_names = tuple(get_target_with_quantiles(columns=df.columns))
 
-    if len(target_names) == 0:
-        raise ValueError("Provided dataframe has no columns with the target variable!")
-
-    df = df.loc[:, pd.IndexSlice[source_level_segments, target_names]]
-
-    if df.empty:
-        raise ValueError("Provided `source_level_segments` don't contain any valid segments!")
-
-    if len(set(df.columns.get_level_values(level="segment"))) != mapping_matrix.shape[1]:
-        raise ValueError("Number of source level segments do not match mapping matrix number of columns!")
-
-    if len(set(target_level_segments)) != mapping_matrix.shape[0]:
-        raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
-
     num_target_names = len(target_names)
     num_source_level_segments = len(source_level_segments)
     num_target_level_segments = len(target_level_segments)
+
+    if len(target_names) == 0:
+        raise ValueError("Provided dataframe has no columns with the target variable!")
+
+    if set(df.columns.get_level_values(level="segment")) != set(source_level_segments):
+        raise ValueError("Segments missmatch for provided dataframe and `source_level_segments`!")
+
+    if num_source_level_segments != mapping_matrix.shape[1]:
+        raise ValueError("Number of source level segments do not match mapping matrix number of columns!")
+
+    if num_target_level_segments != mapping_matrix.shape[0]:
+        raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
+
+    df = df.loc[:, pd.IndexSlice[source_level_segments, target_names]]
 
     source_level_data = df.values  # shape: (t, num_source_level_segments * num_target_names)
 

@@ -217,8 +217,8 @@ def test_get_level_dataframe(product_level_simple_hierarchical_ts, target_level,
 @pytest.mark.parametrize(
     "source_level_segments,target_level_segments,message",
     (
-        (("ABC", "c1"), ("X", "Y"), "Provided `source_level_segments` don't contain any valid segments!"),
-        (("ABC", "a"), ("X", "Y"), "Number of source level segments do not match mapping matrix number of columns!"),
+        (("ABC", "c1"), ("X", "Y"), "Segments missmatch for provided dataframe and `source_level_segments`!"),
+        (("ABC", "a"), ("X", "Y"), "Segments missmatch for provided dataframe and `source_level_segments`!"),
         (
             ("a", "b", "c", "d"),
             ("X",),
