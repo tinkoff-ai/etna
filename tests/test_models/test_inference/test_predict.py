@@ -45,7 +45,7 @@ def make_predict(model, ts, prediction_size) -> TSDataset:
 class TestPredictInSampleFull:
     """Test predict on full train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @pytest.mark.parametrize(
@@ -144,7 +144,7 @@ class TestPredictInSampleFull:
 class TestPredictInSampleSuffix:
     """Test predict on suffix of train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @pytest.mark.parametrize(
@@ -225,13 +225,14 @@ class TestPredictInSampleSuffix:
 class TestPredictOutSample:
     """Test predict on future dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @staticmethod
     def _test_predict_out_sample(ts, model, transforms, prediction_size=5):
         train_ts, future_ts = ts.train_test_split(test_size=prediction_size)
         forecast_ts = TSDataset(df=ts.df, freq=ts.freq)
+        df = forecast_ts.to_pandas()
 
         # fitting
         train_ts.fit_transform(transforms)
@@ -246,6 +247,8 @@ class TestPredictOutSample:
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
         assert not np.any(forecast_df["target"].isna())
+        original_target = TSDataset.to_flatten(df.iloc[-to_remain:])["target"]
+        assert not forecast_df["target"].equals(original_target)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -536,7 +539,7 @@ class TestPredictSubsetSegments:
 class TestPredictNewSegments:
     """Test predict on new segments on suffix of train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     def _test_predict_new_segments(self, ts, model, transforms, train_segments, num_skip_points=50):
@@ -545,6 +548,7 @@ class TestPredictNewSegments:
         forecast_segments = list(set(ts.segments) - set(train_segments))
         train_ts = select_segments_subset(ts=deepcopy(ts), segments=train_segments)
         test_ts = select_segments_subset(ts=deepcopy(ts), segments=forecast_segments)
+        df = test_ts.to_pandas()
 
         # fitting
         train_ts.fit_transform(transforms)
@@ -563,6 +567,8 @@ class TestPredictNewSegments:
         # checking
         forecast_df = forecast_ts.to_pandas(flatten=True)
         assert not np.any(forecast_df["target"].isna())
+        original_target = TSDataset.to_flatten(df.iloc[(num_skip_points - model.context_size) :])["target"]
+        assert not forecast_df["target"].equals(original_target)
 
     @pytest.mark.parametrize(
         "model, transforms",

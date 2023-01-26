@@ -45,7 +45,7 @@ def make_forecast(model, ts, prediction_size) -> TSDataset:
 
 
 class TestForecastInSampleFullNoTarget:
-    """Test forecast on full train dataset with filling target with NaNs.
+    """Test forecast on full train dataset where target is filled with NaNs.
 
     Expected that NaNs are filled after prediction.
     """
@@ -167,7 +167,7 @@ class TestForecastInSampleFullNoTarget:
 class TestForecastInSampleFull:
     """Test forecast on full train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @pytest.mark.parametrize(
@@ -265,7 +265,7 @@ class TestForecastInSampleFull:
 
 
 class TestForecastInSampleSuffixNoTarget:
-    """Test forecast on suffix of train dataset with filling target with NaNs.
+    """Test forecast on suffix of train dataset where target is filled with NaNs.
 
     Expected that NaNs are filled after prediction.
     """
@@ -362,7 +362,7 @@ class TestForecastInSampleSuffixNoTarget:
 class TestForecastInSampleSuffix:
     """Test forecast on suffix of train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @pytest.mark.parametrize(
@@ -642,7 +642,7 @@ class TestForecastOutSampleSuffix:
 class TestForecastMixedInOutSample:
     """Test forecast on mixture of in-sample and out-sample.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @staticmethod
@@ -665,6 +665,8 @@ class TestForecastMixedInOutSample:
         # checking
         forecast_full_df = forecast_full_ts.to_pandas(flatten=True)
         assert not np.any(forecast_full_df["target"].isna())
+        original_target = TSDataset.to_flatten(df_full.iloc[(num_skip_points - model.context_size) :])["target"]
+        assert not forecast_full_df["target"].equals(original_target)
 
     @pytest.mark.parametrize(
         "model, transforms",

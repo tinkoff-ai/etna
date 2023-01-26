@@ -57,6 +57,8 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
     assert not np.any(forecast_df["target"].isna())
+    original_target = TSDataset.to_flatten(df)["target"]
+    assert not forecast_df["target"].equals(original_target)
 
 
 def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_skip_points):
@@ -76,3 +78,5 @@ def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_sk
     # checking
     forecast_df = forecast_ts.to_pandas(flatten=True)
     assert not np.any(forecast_df["target"].isna())
+    original_target = TSDataset.to_flatten(df.iloc[(num_skip_points - model.context_size) :])["target"]
+    assert not forecast_df["target"].equals(original_target)
