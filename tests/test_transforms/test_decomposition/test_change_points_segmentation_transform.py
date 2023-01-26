@@ -11,6 +11,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_segmentation import _OneSegmentChangePointsSegmentationTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 OUT_COLUMN = "result"
 N_BKPS = 5
@@ -122,3 +123,11 @@ def test_make_future(simple_ar_ts):
     future = simple_ar_ts.make_future(10)
     for seg in simple_ar_ts.segments:
         assert (future.to_pandas()[seg][OUT_COLUMN].astype(int) == 5).all()
+
+
+def test_save_load(simple_ar_ts):
+    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
+    transform = ChangePointsSegmentationTransform(
+        in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
+    )
+    assert_transformation_equals_loaded_original(transform=transform, ts=simple_ar_ts)

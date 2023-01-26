@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 from etna.datasets import TSDataset
 from etna.transforms.decomposition.change_points_trend import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_trend import _OneSegmentChangePointsTrendTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -178,3 +179,11 @@ def test_fit_transform_with_nans_in_middle_raise_error(df_with_nans):
     )
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         _ = bs.fit_transform(df=df_with_nans)
+
+
+def test_save_load(multitrend_df):
+    ts = TSDataset(df=multitrend_df, freq="D")
+    transform = ChangePointsTrendTransform(
+        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+    )
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

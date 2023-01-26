@@ -4,8 +4,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms.math import LogTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -103,3 +105,10 @@ def test_inverse_transform_out_column(positive_df_: pd.DataFrame):
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = LogTransform(in_column="target", inplace=True)
     ts_diff_endings.fit_transform([AddConstTransform(in_column="target", value=100)] + [transform])
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+def test_save_load(inplace, positive_df_):
+    ts = TSDataset(df=positive_df_, freq="D")
+    transform = LogTransform(in_column="target", inplace=inplace)
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

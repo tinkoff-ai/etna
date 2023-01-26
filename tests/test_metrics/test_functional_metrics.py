@@ -2,10 +2,12 @@ import pytest
 
 from etna.metrics import mae
 from etna.metrics import mape
+from etna.metrics import max_deviation
 from etna.metrics import medae
 from etna.metrics import mse
 from etna.metrics import msle
 from etna.metrics import r2_score
+from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
 
@@ -27,7 +29,17 @@ def y_pred_1d():
 
 @pytest.mark.parametrize(
     "metric, right_metrics_value",
-    ((mae, 1), (mse, 1), (mape, 100), (smape, 66.6666666667), (medae, 1), (r2_score, 0), (sign, -1)),
+    (
+        (mae, 1),
+        (mse, 1),
+        (rmse, 1),
+        (mape, 100),
+        (smape, 66.6666666667),
+        (medae, 1),
+        (r2_score, 0),
+        (sign, -1),
+        (max_deviation, 2),
+    ),
 )
 def test_all_1d_metrics(metric, right_metrics_value, y_true_1d, y_pred_1d):
     assert round(metric(y_true_1d, y_pred_1d), 10) == right_metrics_value
@@ -52,7 +64,17 @@ def y_pred_2d():
 
 @pytest.mark.parametrize(
     "metric, right_metrics_value",
-    ((mae, 1), (mse, 1), (mape, 100), (smape, 66.6666666667), (medae, 1), (r2_score, 0.0), (sign, -1)),
+    (
+        (mae, 1),
+        (mse, 1),
+        (rmse, 1),
+        (mape, 100),
+        (smape, 66.6666666667),
+        (medae, 1),
+        (r2_score, 0.0),
+        (sign, -1),
+        (max_deviation, 4),
+    ),
 )
 def test_all_2d_metrics(metric, right_metrics_value, y_true_2d, y_pred_2d):
     assert round(metric(y_true_2d, y_pred_2d), 10) == right_metrics_value

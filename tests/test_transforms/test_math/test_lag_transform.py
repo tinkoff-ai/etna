@@ -9,6 +9,7 @@ from numpy.testing import assert_almost_equal
 
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms.math import LagTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -116,3 +117,9 @@ def test_fit_transform_with_nans(ts_diff_endings):
     """Test that transform correctly works with NaNs at the end."""
     transform = LagTransform(in_column="target", lags=10)
     ts_diff_endings.fit_transform([transform])
+
+
+def test_save_load(int_df_two_segments):
+    ts = TSDataset(df=int_df_two_segments, freq="D")
+    transform = LagTransform(in_column="target", lags=10)
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)

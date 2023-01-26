@@ -1,3 +1,5 @@
+import pathlib
+from typing import Any
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -51,6 +53,13 @@ class DummyPipeline(BasePipeline):
 
     def _forecast(self) -> TSDataset:
         return self.ts
+
+    def save(self, path: pathlib.Path):
+        raise NotImplementedError()
+
+    @classmethod
+    def load(cls, path: pathlib.Path) -> Any:
+        raise NotImplementedError()
 
 
 @pytest.mark.parametrize(

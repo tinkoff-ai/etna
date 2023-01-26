@@ -1,7 +1,43 @@
 import inspect
+import json
+import pathlib
+import zipfile
 from copy import deepcopy
 from functools import wraps
+from typing import Any
 from typing import Callable
+
+from hydra_slayer import get_factory
+
+
+def load(path: pathlib.Path, **kwargs: Any) -> Any:
+    """Load saved object by path.
+
+    Parameters
+    ----------
+    path:
+        Path to load object from.
+    kwargs:
+        Parameters for loading specific for the loaded object.
+
+    Returns
+    -------
+    :
+        Loaded object.
+    """
+    with zipfile.ZipFile(path, "r") as archive:
+        # read object class
+        with archive.open("metadata.json", "r") as input_file:
+            metadata_bytes = input_file.read()
+        metadata_str = metadata_bytes.decode("utf-8")
+        metadata = json.loads(metadata_str)
+        object_class_name = metadata["class"]
+
+        # create object for that class
+        object_class = get_factory(object_class_name)
+        loaded_object = object_class.load(path=path, **kwargs)
+
+    return loaded_object
 
 
 def init_collector(init: Callable) -> Callable:

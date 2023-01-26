@@ -5,6 +5,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import generate_const_df
 from etna.transforms.timestamp import HolidayTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture()
@@ -175,3 +176,8 @@ def test_holidays_out_column_added_to_regressors(example_tsds, expected_regresso
     holidays_finder = HolidayTransform(out_column="regressor_holidays")
     example_tsds.fit_transform([holidays_finder])
     assert sorted(example_tsds.regressors) == sorted(expected_regressors)
+
+
+def test_save_load(example_tsds):
+    transform = HolidayTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)

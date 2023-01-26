@@ -7,10 +7,12 @@ We have prepared a set of tutorials for an easy introduction:
 - Forecast single time series - Simple forecast, Prophet, Catboost
 - Forecast multiple time series
 - Pipeline
+
 #### 02. [Backtest](https://github.com/tinkoff-ai/etna/tree/master/examples/backtest.ipynb)
 - What is backtest and how it works
 - How to run a validation
 - Validation visualisation
+
 #### 03. [EDA](https://github.com/tinkoff-ai/etna/tree/master/examples/EDA.ipynb) 
 - Visualization
     - Plot
@@ -24,6 +26,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Change Points
      - Change points plot
      - Interactive change points plot
+
 #### 04. [Outliers](https://github.com/tinkoff-ai/etna/tree/master/examples/outliers.ipynb) 
 - Point outliers
     - Median method
@@ -33,6 +36,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Sequence outliers
 - Interactive visualization
 - Outliers imputation
+
 #### 05. [Clustering](https://github.com/tinkoff-ai/etna/tree/master/examples/clustering.ipynb) 
 - Clustering pipeline
 - Custom Distance
@@ -57,7 +61,11 @@ We have prepared a set of tutorials for an easy introduction:
 - [Optuna](https://github.com/tinkoff-ai/etna/tree/master/examples/optuna)
 - [WandB sweeps](https://github.com/tinkoff-ai/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)
 
-#### 10. [Hierarchical time series](https://github.com/tinkoff-ai/etna/tree/master/examples/hierarchical_pipeline.ipynb)
+#### 10. [Inference: using saved pipeline on a new data](https://github.com/tinkoff-ai/etna/tree/master/examples/inference.ipynb) 
+- Fitting and saving pipeline
+- Using saved pipeline on a new data
+
+#### 11. [Hierarchical time series](https://github.com/tinkoff-ai/etna/tree/master/examples/hierarchical_pipeline.ipynb)
 - Hierarchical time series
 - Hierarchical structure
 - Reconciliation methods

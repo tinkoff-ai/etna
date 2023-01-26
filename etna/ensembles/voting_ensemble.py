@@ -15,13 +15,14 @@ from typing_extensions import Literal
 
 from etna.analysis.feature_relevance.relevance_table import TreeBasedRegressor
 from etna.datasets import TSDataset
-from etna.ensembles import EnsembleMixin
+from etna.ensembles.mixins import EnsembleMixin
+from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
-class VotingEnsemble(BasePipeline, EnsembleMixin):
+class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     """VotingEnsemble is a pipeline that forecast future values with weighted averaging of it's pipelines forecasts.
 
     Examples

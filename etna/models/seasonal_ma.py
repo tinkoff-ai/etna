@@ -93,7 +93,7 @@ class _SeasonalMovingAverageModel:
 
         history = df["target"][-expected_length:-prediction_size]
         if np.any(history.isnull()):
-            raise ValueError("There are NaNs in a forecast context, forecast method required context to filled!")
+            raise ValueError("There are NaNs in a forecast context, forecast method requires context to be filled!")
 
         res = np.append(history, np.zeros(prediction_size))
         for i in range(self.shift, len(res)):

@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.transforms.math import AddConstTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.mark.parametrize("value", (-3.14, 6, 9.99))
@@ -62,3 +63,9 @@ def test_inverse_transform_out_column(example_df_: pd.DataFrame):
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = AddConstTransform(in_column="target", value=10)
     ts_diff_endings.fit_transform([transform])
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+def test_save_load(inplace, example_tsds):
+    transform = AddConstTransform(in_column="target", value=10, inplace=inplace)
+    assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)

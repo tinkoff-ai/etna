@@ -5,6 +5,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def _check_forecast(ts, model, horizon):
@@ -127,3 +128,8 @@ def test_forecast_1_point(example_tsds):
     assert len(pred.df) == horizon
     pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
     assert len(pred_quantiles.df) == horizon
+
+
+def test_save_load(example_tsds):
+    model = SARIMAXModel()
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)

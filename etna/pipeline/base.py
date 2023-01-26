@@ -1,4 +1,3 @@
-from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
 from enum import Enum
@@ -17,6 +16,7 @@ from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
 
+from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.loggers import tslogger
@@ -109,7 +109,7 @@ class FoldMask(BaseMixin):
             raise ValueError(f"Last target timestamp should be not later than {dataset_last_target_timestamp}!")
 
 
-class AbstractPipeline(ABC):
+class AbstractPipeline(AbstractSaveable):
     """Interface for pipeline."""
 
     @abstractmethod

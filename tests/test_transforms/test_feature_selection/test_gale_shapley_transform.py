@@ -16,6 +16,7 @@ from etna.transforms.feature_selection.gale_shapley import BaseGaleShapley
 from etna.transforms.feature_selection.gale_shapley import FeatureGaleShapley
 from etna.transforms.feature_selection.gale_shapley import GaleShapleyMatcher
 from etna.transforms.feature_selection.gale_shapley import SegmentGaleShapley
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -608,3 +609,16 @@ def test_work_with_non_regressors(ts_with_exog):
         relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, features_to_use="all"
     )
     ts_with_exog.fit_transform([selector])
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        GaleShapleyFeatureSelectionTransform(
+            relevance_table=ModelRelevanceTable(), top_k=3, use_rank=False, model=RandomForestRegressor(random_state=42)
+        ),
+        GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False),
+    ],
+)
+def test_save_load(transform, ts_with_large_regressors_number):
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_large_regressors_number)

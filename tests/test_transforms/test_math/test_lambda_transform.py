@@ -8,6 +8,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import LagTransform
 from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -136,3 +137,22 @@ def test_inverse_transform(ts_range_const, function, inverse_function):
         np.testing.assert_allclose(
             ts_range_const[:, segment, check_column], original_df[(segment, check_column)], rtol=1e-9
         )
+
+
+def example_transform_func(x):
+    return x**2
+
+
+def example_inverse_transform_func(x):
+    return x ** (0.5)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+def test_save_load(inplace, ts_range_const):
+    transform = LambdaTransform(
+        in_column="target",
+        transform_func=example_transform_func,
+        inplace=True,
+        inverse_transform_func=example_inverse_transform_func,
+    )
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_range_const)

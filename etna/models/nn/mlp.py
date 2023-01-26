@@ -166,6 +166,7 @@ class MLPModel(DeepBaseModel):
         split_params: Optional[dict] = None,
     ):
         """Init MLP model.
+
         Parameters
         ----------
         input_size:
