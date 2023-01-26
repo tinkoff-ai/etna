@@ -170,10 +170,10 @@ class HierarchicalStructure(BaseMixin):
 
         return summing_matrix.tocsr()
 
-    def get_level_segments(self, level_name: str) -> Tuple[str, ...]:
+    def get_level_segments(self, level_name: str) -> List[str]:
         """Get all segments from particular level."""
         try:
-            return self._level_series[level_name]
+            return list(self._level_series[level_name])
         except KeyError:
             raise ValueError(f"Invalid level name: {level_name}")
 

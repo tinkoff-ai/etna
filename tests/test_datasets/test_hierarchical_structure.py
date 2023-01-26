@@ -243,7 +243,11 @@ def test_level_names_length_error(structure: Dict[str, List[str]], names: List[s
 
 @pytest.mark.parametrize(
     "level,answer",
-    (("l1", ("total",)), ("l2", ("X", "Y")), ("l3", ("a", "b", "c", "d"))),
+    (
+        ("l1", ["total"]),
+        ("l2", ["X", "Y"]),
+        ("l3", ["a", "b", "c", "d"]),
+    ),
 )
 def test_level_segments(simple_hierarchical_structure: HierarchicalStructure, level: str, answer: List[str]):
     assert simple_hierarchical_structure.get_level_segments(level) == answer

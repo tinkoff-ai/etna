@@ -4,7 +4,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -200,8 +199,8 @@ def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
 def get_level_dataframe(
     df: pd.DataFrame,
     mapping_matrix: csr_matrix,
-    source_level_segments: Tuple[str, ...],
-    target_level_segments: Tuple[str, ...],
+    source_level_segments: List[str],
+    target_level_segments: List[str],
 ):
     """Perform mapping to dataframe at the target level.
 
