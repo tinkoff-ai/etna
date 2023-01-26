@@ -230,7 +230,7 @@ class TestPredictOutSample:
 
     @staticmethod
     def _test_predict_out_sample(ts, model, transforms, prediction_size=5):
-        train_ts, future_ts = ts.train_test_split(test_size=prediction_size)
+        train_ts, _ = ts.train_test_split(test_size=prediction_size)
         forecast_ts = TSDataset(df=ts.df, freq=ts.freq)
         df = forecast_ts.to_pandas()
 
@@ -315,6 +315,207 @@ class TestPredictOutSample:
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
         self._test_predict_out_sample(example_tsds, model, transforms)
+
+
+class TestPredictOutSamplePrefix:
+    """Test predict on prefix of future dataset.
+
+    Expected that predictions on prefix match prefix of predictions on full future dataset.
+    """
+
+    @staticmethod
+    def _test_predict_out_sample_prefix(ts, model, transforms, full_prediction_size=5, prefix_prediction_size=3):
+        prediction_size_diff = full_prediction_size - prefix_prediction_size
+        train_ts, _ = ts.train_test_split(test_size=full_prediction_size)
+        forecast_full_ts = TSDataset(df=ts.df, freq=ts.freq)
+        forecast_prefix_ts = TSDataset(df=ts.df, freq=ts.freq)
+
+        # fitting
+        train_ts.fit_transform(transforms)
+        model.fit(train_ts)
+
+        # forecasting full
+        forecast_full_ts.transform(train_ts.transforms)
+        to_remain = model.context_size + full_prediction_size
+        forecast_full_ts.df = forecast_full_ts.df.iloc[-to_remain:]
+        forecast_full_ts = make_predict(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
+
+        # forecasting only prefix
+        forecast_prefix_ts.transform(train_ts.transforms)
+        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[-to_remain:-prediction_size_diff]
+        forecast_prefix_ts = make_predict(model=model, ts=forecast_prefix_ts, prediction_size=prefix_prediction_size)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_prefix_df = forecast_prefix_ts.to_pandas()
+        assert_frame_equal(forecast_prefix_df, forecast_full_df.iloc[:prefix_prediction_size])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+        ],
+    )
+    def test_predict_out_sample_prefix(self, model, transforms, example_tsds):
+        self._test_predict_out_sample_prefix(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+            (
+                DeepARModel(max_epochs=5, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    )
+                ],
+            ),
+            (
+                TFTModel(max_epochs=1, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    )
+                ],
+            ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+        ],
+    )
+    def test_predict_out_sample_prefix_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_out_sample_prefix(example_tsds, model, transforms)
+
+
+class TestPredictOutSampleSuffix:
+    """Test predict on suffix of future dataset.
+
+    Expected that predictions on suffix match suffix of predictions on full future dataset.
+    """
+
+    @staticmethod
+    def _test_predict_out_sample_suffix(ts, model, transforms, full_prediction_size=5, suffix_prediction_size=3):
+        prediction_size_diff = full_prediction_size - suffix_prediction_size
+        train_ts, _ = ts.train_test_split(test_size=full_prediction_size)
+        forecast_full_ts = TSDataset(df=ts.df, freq=ts.freq)
+        forecast_suffix_ts = TSDataset(df=ts.df, freq=ts.freq)
+
+        # fitting
+        train_ts.fit_transform(transforms)
+        model.fit(train_ts)
+
+        # forecasting full
+        forecast_full_ts.transform(train_ts.transforms)
+        to_remain = model.context_size + full_prediction_size
+        forecast_full_ts.df = forecast_full_ts.df.iloc[-to_remain:]
+        forecast_full_ts = make_predict(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
+
+        # forecasting only suffix
+        forecast_suffix_ts.transform(train_ts.transforms)
+        to_remain = model.context_size + suffix_prediction_size
+        forecast_suffix_ts.df = forecast_suffix_ts.df.iloc[-to_remain:]
+        forecast_suffix_ts = make_predict(model=model, ts=forecast_suffix_ts, prediction_size=suffix_prediction_size)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_suffix_df = forecast_suffix_ts.to_pandas()
+        assert_frame_equal(forecast_suffix_df, forecast_full_df.iloc[prediction_size_diff:])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+        ],
+    )
+    def test_predict_out_sample_suffix(self, model, transforms, example_tsds):
+        self._test_predict_out_sample_suffix(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+            (
+                DeepARModel(max_epochs=5, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    )
+                ],
+            ),
+            (
+                TFTModel(max_epochs=1, learning_rate=[0.01]),
+                [
+                    PytorchForecastingTransform(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    )
+                ],
+            ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+        ],
+    )
+    def test_predict_out_sample_suffix_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_out_sample_suffix(example_tsds, model, transforms)
 
 
 class TestPredictMixedInOutSample:
