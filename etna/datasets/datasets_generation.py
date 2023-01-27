@@ -230,7 +230,7 @@ def generate_hierarchical_df(
     Raises
     ------
     ValueError:
-        ``n_segments`` is not the length of ``n_levels``
+        ``n_segments`` is empty
     ValueError:
         ``n_segments`` contains not positive integers
     ValueError:
