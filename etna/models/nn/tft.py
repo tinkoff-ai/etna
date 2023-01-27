@@ -113,6 +113,7 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         self.trainer: Optional[pl.Trainer] = None
         self._last_train_timestamp = None
         self._freq: Optional[str] = None
+        self.kwargs = kwargs
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
