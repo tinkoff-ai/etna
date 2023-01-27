@@ -21,7 +21,10 @@ from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
 from etna import SETTINGS
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import get_level_dataframe
+from etna.datasets.utils import get_target_with_quantiles
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -82,6 +85,21 @@ class TSDataset:
     2021-01-03        0.48        0.47       -0.81       -1.56       -1.37   0.48
     2021-01-04       -0.59        2.44       -2.21       -1.21       -0.69  -0.59
     2021-01-05        0.28        0.58       -3.07       -1.45        0.77   0.28
+
+    >>> from etna.datasets import generate_hierarchical_df
+    >>> pd.options.display.width = 0
+    >>> df = generate_hierarchical_df(periods=100, n_segments=[2, 4], start_time="2021-01-01",)
+    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=["level_0", "level_1"])
+    >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    >>> tsdataset.df.head(5)
+    segment    l0s0_l1s3 l0s1_l1s0 l0s1_l1s1 l0s1_l1s2
+    feature       target    target    target    target
+    timestamp
+    2021-01-01      2.07      1.62     -0.45     -0.40
+    2021-01-02      0.59      1.01      0.78      0.42
+    2021-01-03     -0.24      0.48      1.18     -0.14
+    2021-01-04     -1.12     -0.59      1.77      1.82
+    2021-01-05     -1.40      0.28      0.68      0.48
     """
 
     idx = pd.IndexSlice
@@ -92,6 +110,7 @@ class TSDataset:
         freq: str,
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
+        hierarchical_structure: Optional[HierarchicalStructure] = None,
     ):
         """Init TSDataset.
 
@@ -106,6 +125,8 @@ class TSDataset:
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
+        hierarchical_structure:
+            Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
         self.raw_df = self._prepare_df(df)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
@@ -132,12 +153,35 @@ class TSDataset:
         self.known_future = self._check_known_future(known_future, df_exog)
         self._regressors = copy(self.known_future)
 
+        self.hierarchical_structure = hierarchical_structure
+        self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
+        self.current_df_exog_level: Optional[str] = None
+
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
-            self.df = self._merge_exog(self.df)
+            self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
+            if self.current_df_level == self.current_df_exog_level:
+                self.df = self._merge_exog(self.df)
 
         self.transforms: Optional[Sequence["Transform"]] = None
+
+    def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
+        """Return the level of the passed dataframe in hierarchical structure."""
+        if self.hierarchical_structure is None:
+            return None
+
+        df_segments = df.columns.get_level_values("segment").unique()
+        segment_levels = {self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments}
+        if len(segment_levels) != 1:
+            raise ValueError("Segments in dataframe are from more than 1 hierarchical levels!")
+
+        df_level = segment_levels.pop()
+        level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
+        if len(df_segments) != len(level_segments):
+            raise ValueError("Some segments of hierarchical level are missing in dataframe!")
+
+        return df_level
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
@@ -294,7 +338,7 @@ class TSDataset:
         df = self.raw_df.reindex(new_index)
         df.index.name = "timestamp"
 
-        if self.df_exog is not None:
+        if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
@@ -708,6 +752,78 @@ class TSDataset:
         df_copy = df_copy.sort_index(axis=1, level=(0, 1))
         return df_copy
 
+    @staticmethod
+    def _hierarchical_structure_from_level_columns(
+        df: pd.DataFrame, level_columns: List[str], sep: str
+    ) -> HierarchicalStructure:
+        """Create hierarchical structure from dataframe columns."""
+        df_level_columns = df[level_columns].astype("string")
+
+        prev_level_name = level_columns[0]
+        for cur_level_name in level_columns[1:]:
+            df_level_columns[cur_level_name] = (
+                df_level_columns[prev_level_name] + sep + df_level_columns[cur_level_name]
+            )
+            prev_level_name = cur_level_name
+
+        level_structure = {"total": list(df_level_columns[level_columns[0]].unique())}
+        cur_level_name = level_columns[0]
+        for next_level_name in level_columns[1:]:
+            cur_level_to_next_level_edges = df_level_columns[[cur_level_name, next_level_name]].drop_duplicates()
+            cur_level_to_next_level_adjacency_list = cur_level_to_next_level_edges.groupby(cur_level_name).agg(list)
+            level_structure.update(cur_level_to_next_level_adjacency_list.to_records())
+            cur_level_name = next_level_name
+
+        hierarchical_structure = HierarchicalStructure(
+            level_structure=level_structure, level_names=["total"] + level_columns
+        )
+        return hierarchical_structure
+
+    @staticmethod
+    def to_hierarchical_dataset(
+        df: pd.DataFrame,
+        level_columns: List[str],
+        keep_level_columns: bool = False,
+        sep: str = "_",
+        return_hierarchy: bool = True,
+    ) -> Tuple[pd.DataFrame, Optional[HierarchicalStructure]]:
+        """Convert pandas dataframe from long hierarchical to ETNA Dataset format.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in long hierarchical format with columns [timestamp, target] + [level_columns] + [other_columns]
+        level_columns:
+            Columns of dataframe defines the levels in the hierarchy in order
+            from top to bottom i.e [level_name_1, level_name_2, ...]. Names of the columns will be used as
+            names of the levels in hierarchy.
+        keep_level_columns:
+            If true, leave the level columns in the result dataframe.
+            By default level columns are concatenated into "segment" column and dropped
+        sep:
+            String to concatenated the level names with
+        return_hierarchy:
+            If true, returns the hierarchical structure
+
+        Returns
+        -------
+        :
+            Dataframe in wide format and optionally hierarchical structure
+        """
+        df_copy = df.copy(deep=True)
+        df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
+        if not keep_level_columns:
+            df_copy.drop(columns=level_columns, inplace=True)
+        df_copy = TSDataset.to_dataset(df_copy)
+
+        hierarchical_structure = None
+        if return_hierarchy:
+            hierarchical_structure = TSDataset._hierarchical_structure_from_level_columns(
+                df=df, level_columns=level_columns, sep=sep
+            )
+
+        return df_copy, hierarchical_structure
+
     def _find_all_borders(
         self,
         train_start: Optional[TTimestamp],
@@ -848,13 +964,25 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
+        train = TSDataset(
+            df=train_df,
+            df_exog=self.df_exog,
+            freq=self.freq,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
         train.raw_df = train_raw_df
         train._regressors = self.regressors
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
+        test = TSDataset(
+            df=test_df,
+            df_exog=self.df_exog,
+            freq=self.freq,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
         test.raw_df = test_raw_df
         test._regressors = self.regressors
 
@@ -870,6 +998,65 @@ class TSDataset:
             timestamp index of TSDataset
         """
         return self.df.index
+
+    def level_names(self) -> Optional[List[str]]:
+        """Return names of the levels in the hierarchical structure."""
+        if self.hierarchical_structure is None:
+            return None
+        return self.hierarchical_structure.level_names
+
+    def has_hierarchy(self) -> bool:
+        """Check whether dataset has hierarchical structure."""
+        return self.hierarchical_structure is not None
+
+    def get_level_dataset(self, target_level: str) -> "TSDataset":
+        """Generate new TSDataset on target level.
+
+        Parameters
+        ----------
+        target_level:
+            target level name
+
+        Returns
+        -------
+        TSDataset
+            generated dataset
+        """
+        if self.hierarchical_structure is None or self.current_df_level is None:
+            raise ValueError("Method could be applied only to instances with a hierarchy!")
+
+        current_level_segments = self.hierarchical_structure.get_level_segments(level_name=self.current_df_level)
+        target_level_segments = self.hierarchical_structure.get_level_segments(level_name=target_level)
+
+        current_level_index = self.hierarchical_structure.get_level_depth(self.current_df_level)
+        target_level_index = self.hierarchical_structure.get_level_depth(target_level)
+
+        if target_level_index > current_level_index:
+            raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
+
+        if target_level_index < current_level_index:
+            summing_matrix = self.hierarchical_structure.get_summing_matrix(
+                target_level=target_level, source_level=self.current_df_level
+            )
+
+            target_level_df = get_level_dataframe(
+                df=self.df,
+                mapping_matrix=summing_matrix,
+                source_level_segments=current_level_segments,
+                target_level_segments=target_level_segments,
+            )
+
+        else:
+            target_names = tuple(get_target_with_quantiles(columns=self.columns))
+            target_level_df = self[:, current_level_segments, target_names]
+
+        return TSDataset(
+            df=target_level_df,
+            freq=self.freq,
+            df_exog=self.df_exog,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
