@@ -88,10 +88,8 @@ class TSDataset:
 
     >>> from etna.datasets import generate_hierarchical_df
     >>> pd.options.display.width = 0
-    >>> n_segments = [2, 4]
-    >>> df = generate_hierarchical_df(periods=100, n_segments=n_segments, start_time="2021-01-01",)
-    >>> level_columns = [f"level_{idx}" for idx in range(len(n_segments))]
-    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=level_columns)
+    >>> df = generate_hierarchical_df(periods=100, n_levels=2, n_segments=[2, 4], start_time="2021-01-01",)
+    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=["level_0", "level_1"])
     >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     >>> tsdataset.df.head(5)
     segment    l0s0_l1s3 l0s1_l1s0 l0s1_l1s1 l0s1_l1s2

@@ -190,6 +190,7 @@ def generate_from_patterns_df(
 
 def generate_hierarchical_df(
     periods: int,
+    n_levels: int,
     n_segments: List[int],
     freq: str = "D",
     start_time: str = "2000-01-01",
@@ -203,6 +204,8 @@ def generate_hierarchical_df(
     ----------
     periods:
         number of timestamps
+    n_levels:
+        number of levels in hierarchy
     n_segments:
         number of segments on each level.
     freq:
@@ -220,9 +223,14 @@ def generate_hierarchical_df(
     -------
     :
         DataFrame at the bottom level of the hierarchy
+
+
     """
-    if len(n_segments) == 0:
-        raise ValueError("`n_segments` should contain at least one positive integer!")
+    if n_levels <= 0:
+        raise ValueError("`n_levels` should be strictly positive integer!")
+
+    if len(n_segments) != n_levels:
+        raise ValueError("`n_segments` should be the same length as `n_levels`!")
 
     if (np.less_equal(n_segments, 0)).any():
         raise ValueError("All `n_segments` elements should be positive!")
@@ -244,9 +252,8 @@ def generate_hierarchical_df(
 
     bottom_segments = np.unique(bottom_df["segment"])
 
-    num_levels = len(n_segments)
     child_to_parent = dict()
-    for level_id in range(1, num_levels):
+    for level_id in range(1, n_levels):
         prev_level_n_segments = n_segments[level_id - 1]
         cur_level_n_segments = n_segments[level_id]
 
@@ -262,10 +269,10 @@ def generate_hierarchical_df(
                 parent_id = rnd.choice(prev_level_n_segments, 1).item()
                 child_to_parent[f"l{level_id}s{child_id}"] = f"l{level_id - 1}s{parent_id}"
 
-    bottom_segments_map = {segment: f"l{num_levels - 1}s{idx}" for idx, segment in enumerate(bottom_segments)}
-    bottom_df[f"level_{num_levels - 1}"] = bottom_df["segment"].map(lambda x: bottom_segments_map[x])
+    bottom_segments_map = {segment: f"l{n_levels - 1}s{idx}" for idx, segment in enumerate(bottom_segments)}
+    bottom_df[f"level_{n_levels - 1}"] = bottom_df["segment"].map(lambda x: bottom_segments_map[x])
 
-    for level_id in range(num_levels - 2, -1, -1):
+    for level_id in range(n_levels - 2, -1, -1):
         bottom_df[f"level_{level_id}"] = bottom_df[f"level_{level_id + 1}"].map(lambda x: child_to_parent[x])
 
     bottom_df.drop(columns=["segment"], inplace=True)
