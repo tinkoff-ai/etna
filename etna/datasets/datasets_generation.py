@@ -201,9 +201,9 @@ def generate_hierarchical_df(
     Create DataFrame with hierarchical structure and AR process data.
 
     The hierarchical structure is generated as follows:
-    1. Number of levels in the structure is the same as length of ``n_segments`` parameter
-    2. Each level contains the number of segments set in ``n_segments``
-    3. Connections from parent to child level are generated randomly.
+        1. Number of levels in the structure is the same as length of ``n_segments`` parameter
+        2. Each level contains the number of segments set in ``n_segments``
+        3. Connections from parent to child level are generated randomly.
 
     Parameters
     ----------
