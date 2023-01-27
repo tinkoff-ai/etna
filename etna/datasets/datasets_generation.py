@@ -190,7 +190,6 @@ def generate_from_patterns_df(
 
 def generate_hierarchical_df(
     periods: int,
-    n_levels: int,
     n_segments: List[int],
     freq: str = "D",
     start_time: str = "2000-01-01",
@@ -198,14 +197,18 @@ def generate_hierarchical_df(
     sigma: float = 1,
     random_seed: int = 1,
 ) -> pd.DataFrame:
-    """Create DataFrame with hierarchical structure and AR process data.
+    """
+    Create DataFrame with hierarchical structure and AR process data.
+
+    The hierarchical structure is generated as follows:
+    1. Number of levels in the structure is the same as length of ``n_segments`` parameter
+    2. Each level contains the number of segments set in ``n_segments``
+    3. Connections from parent to child level are generated randomly.
 
     Parameters
     ----------
     periods:
         number of timestamps
-    n_levels:
-        number of levels in hierarchy
     n_segments:
         number of segments on each level.
     freq:
@@ -227,19 +230,14 @@ def generate_hierarchical_df(
     Raises
     ------
     ValueError:
-        ``n_levels`` is not positive integer
-    ValueError:
         ``n_segments`` is not the length of ``n_levels``
     ValueError:
         ``n_segments`` contains not positive integers
     ValueError:
         ``n_segments`` represents not non-decreasing sequence
     """
-    if n_levels <= 0:
-        raise ValueError("`n_levels` should be strictly positive integer!")
-
-    if len(n_segments) != n_levels:
-        raise ValueError("`n_segments` should be the length of `n_levels`!")
+    if len(n_segments) == 0:
+        raise ValueError("`n_segments` should contain at least one positive integer!")
 
     if (np.less_equal(n_segments, 0)).any():
         raise ValueError("All `n_segments` elements should be positive!")
@@ -261,6 +259,7 @@ def generate_hierarchical_df(
 
     bottom_segments = np.unique(bottom_df["segment"])
 
+    n_levels = len(n_segments)
     child_to_parent = dict()
     for level_id in range(1, n_levels):
         prev_level_n_segments = n_segments[level_id - 1]
