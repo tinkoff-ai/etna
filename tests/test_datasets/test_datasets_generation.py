@@ -101,7 +101,7 @@ def test_generate_hierarchical_df_incorrect_n_levels_error(n_levels):
 
 
 def test_generate_hierarchical_df_incorrect_b_segments_error():
-    with pytest.raises(ValueError, match="`n_segments` should be the same length as `n_levels`!"):
+    with pytest.raises(ValueError, match="`n_segments` should be the length of `n_levels`!"):
         generate_hierarchical_df(periods=2, n_levels=1, n_segments=[1, 2])
 
 
