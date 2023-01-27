@@ -224,13 +224,22 @@ def generate_hierarchical_df(
     :
         DataFrame at the bottom level of the hierarchy
 
-
+    Raises
+    ------
+    ValueError:
+        ``n_levels`` is not positive integer
+    ValueError:
+        ``n_segments`` is not the length of ``n_levels``
+    ValueError:
+        ``n_segments`` contains not positive integers
+    ValueError:
+        ``n_segments`` represents not non-decreasing sequence
     """
     if n_levels <= 0:
         raise ValueError("`n_levels` should be strictly positive integer!")
 
     if len(n_segments) != n_levels:
-        raise ValueError("`n_segments` should be the same length as `n_levels`!")
+        raise ValueError("`n_segments` should be the length of `n_levels`!")
 
     if (np.less_equal(n_segments, 0)).any():
         raise ValueError("All `n_segments` elements should be positive!")
