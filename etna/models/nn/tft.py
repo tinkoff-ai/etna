@@ -53,7 +53,6 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         loss: "MultiHorizonMetric" = None,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
         quantiles_kwargs: Optional[Dict[str, Any]] = None,
-        *args,
         **kwargs,
     ):
         """
