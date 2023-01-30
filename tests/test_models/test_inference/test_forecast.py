@@ -884,6 +884,7 @@ class TestForecastNewSegments:
     def test_forecast_new_segments(self, model, transforms, example_tsds):
         self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
 
+    @to_be_fixed(raises=KeyError, match="Unknown category")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -916,8 +917,7 @@ class TestForecastNewSegments:
         ],
     )
     def test_forecast_new_segments_failed_encoding_error(self, model, transforms, example_tsds):
-        with pytest.raises(KeyError, match="Unknown category"):
-            self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
 
     @to_be_fixed(raises=NotImplementedError, match="Per-segment models can't make predictions on new segments")
     @pytest.mark.parametrize(
