@@ -97,7 +97,7 @@ class TestForecastInSampleFullNoTarget:
             ),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_assertion_error(self, model, transforms, example_tsds):
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
@@ -600,7 +600,7 @@ class TestForecastOutSampleSuffix:
             ),
         ],
     )
-    def test_forecast_out_sample_suffix_failed(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_suffix_failed_assertion_error(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="You can only forecast from the next point after the last one")
