@@ -21,6 +21,7 @@ from etna.metrics.metrics import MSLE
 from etna.metrics.metrics import R2
 from etna.metrics.metrics import RMSE
 from etna.metrics.metrics import SMAPE
+from etna.metrics.metrics import WAPE
 from etna.metrics.metrics import MaxDeviation
 from etna.metrics.metrics import MedAE
 from etna.metrics.metrics import Sign
