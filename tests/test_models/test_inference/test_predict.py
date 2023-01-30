@@ -835,6 +835,18 @@ class TestPredictNewSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+        ],
+    )
+    def test_predict_new_segments_failed_not_implemented_per_segment(self, model, transforms, example_tsds):
+        self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
             (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
@@ -844,13 +856,10 @@ class TestPredictNewSegments:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
         ],
     )
-    def test_predict_new_segments_failed_not_implemented_per_segment(self, model, transforms, example_tsds):
-        self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+    def test_predict_new_segments_failed_per_segment(self, model, transforms, example_tsds):
+        with pytest.raises(NotImplementedError, match="Per-segment models can't make predictions on new segments"):
+            self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
