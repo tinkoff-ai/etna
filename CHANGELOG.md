@@ -5,35 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## Unreleased
+### Added
+
+-
+-
+### Changed
+
+-
+-
+### Fixed
+
+-
+-
+
+## [1.15.0] - 2023-01-31
 ### Added
 - `RMSE` metric & `rmse` functional metric ([#1051](https://github.com/tinkoff-ai/etna/pull/1051))
 - `MaxDeviation` metric & `max_deviation` functional metric ([#1061](https://github.com/tinkoff-ai/etna/pull/1061))
 - Add saving/loading for transforms, models, pipelines, ensembles; tutorial for saving/loading ([#1068](https://github.com/tinkoff-ai/etna/pull/1068))
 - Add hierarchical time series support([#1083](https://github.com/tinkoff-ai/etna/pull/1083))
-- 
-- 
-- 
 - Add `WAPE` metric & `wape` functional metric ([#1085](https://github.com/tinkoff-ai/etna/pull/1085))
-- 
-- 
-- 
-- 
-### Changed
--
--
--
--
--
--
 ### Fixed
--
 - Missed kwargs in TFT init([#1078](https://github.com/tinkoff-ai/etna/pull/1078))
--
--
--
--
+
 ## [1.14.0] - 2022-12-16
 ### Added
 - Add python 3.10 support ([#1005](https://github.com/tinkoff-ai/etna/pull/1005))
