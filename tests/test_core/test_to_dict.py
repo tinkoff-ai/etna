@@ -17,6 +17,7 @@ from etna.models import CatBoostModelPerSegment
 from etna.models import LinearPerSegmentModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
+from etna.models.nn import TFTModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import ChangePointsTrendTransform
@@ -98,10 +99,11 @@ def test_to_dict_transforms_with_expected(target_object, expected):
 @pytest.mark.parametrize(
     "target_model",
     [
-        pytest.param(DeepARModel(), marks=pytest.mark.xfail(reason="some bug")),
+        pytest.param(DeepARModel(), marks=pytest.mark.xfail(raises=AssertionError)),
         LinearPerSegmentModel(),
         CatBoostModelPerSegment(),
         AutoARIMAModel(),
+        pytest.param(TFTModel(max_epochs=2), marks=pytest.mark.xfail(raises=AssertionError)),
     ],
 )
 def test_to_dict_models(target_model):
