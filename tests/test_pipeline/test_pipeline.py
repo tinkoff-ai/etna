@@ -109,7 +109,7 @@ def test_private_forecast_context_ignorant_model(model_class):
     pipeline.fit(ts)
     _ = pipeline._forecast()
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
     model.forecast.assert_called_with(ts=ts.make_future())
 
 
@@ -124,7 +124,7 @@ def test_private_forecast_context_required_model(model_class):
     pipeline.fit(ts)
     _ = pipeline._forecast()
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=[], tail_steps=model.context_size)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
 
 
@@ -136,7 +136,7 @@ def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=[])
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975))
 
 
@@ -148,7 +148,7 @@ def test_forecast_with_intervals_prediction_interval_context_required_model():
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=[], tail_steps=model.context_size)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
     model.forecast.assert_called_with(
         ts=ts.make_future(), prediction_size=pipeline.horizon, prediction_interval=True, quantiles=(0.025, 0.975)
     )
@@ -167,6 +167,7 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
     base_forecast.assert_called_with(prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
+
 
 @pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(example_tsds):

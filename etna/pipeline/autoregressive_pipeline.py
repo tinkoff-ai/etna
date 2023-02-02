@@ -1,7 +1,9 @@
 import warnings
 from typing import Sequence
+from typing import cast
 
 import pandas as pd
+from typing_extensions import get_args
 
 from etna.datasets import TSDataset
 from etna.models.base import ContextIgnorantModelType

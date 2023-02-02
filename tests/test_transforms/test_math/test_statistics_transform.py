@@ -291,7 +291,7 @@ def test_min_max_diff_feature(
     ((10, 1, 0, np.array([-1, 0, 3, 3, 7, 16, 24, 29, 35, 35])),),
 )
 def test_sum_feature_with_nan(
-    ts_for_agg_with_nan: pd.DataFrame,
+    ts_for_agg_with_nan: TSDataset,
     window: int,
     periods: int,
     fill_na: float,
@@ -305,7 +305,7 @@ def test_sum_feature_with_nan(
         out_column="result",
     )
     res = transform.fit_transform(ts_for_agg_with_nan)
-    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+    np.testing.assert_array_almost_equal(expected, res.to_pandas()["segment_1"]["result"])
 
 
 @pytest.mark.parametrize(
@@ -334,7 +334,7 @@ def test_sum_feature(
     )
 
     res = transform.fit_transform(simple_ts_for_agg)
-    np.testing.assert_array_almost_equal(expected, res["segment_1"]["result"])
+    np.testing.assert_array_almost_equal(expected, res.to_pandas()["segment_1"]["result"])
 
 
 @pytest.mark.parametrize(
