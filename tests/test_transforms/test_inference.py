@@ -769,27 +769,6 @@ class TestTransformFutureNewSegments:
     Expected that transformation creates columns, removes columns and changes values.
     """
 
-    # def _test_transform_future_subset_segments(self, ts, transform, segments):
-    #     # select subset of tsdataset
-    #     history_ts, future_ts = ts.train_test_split(test_size=14)
-    #     segments = list(set(segments))
-    #     subset_future_ts = select_segments_subset(ts=deepcopy(future_ts), segments=segments)
-    #     train_df = history_ts.to_pandas()
-    #     future_df = future_ts.to_pandas()
-    #     subset_future_df = subset_future_ts.to_pandas()
-    #
-    #     # fitting
-    #     transform.fit(train_df)
-    #
-    #     # transform full
-    #     transformed_future_df = transform.transform(future_df)
-    #
-    #     # transform subset of segments
-    #     transformed_subset_future_df = transform.transform(subset_future_df)
-    #
-    #     # checking
-    #     assert_frame_equal(transformed_subset_future_df, transformed_future_df.loc[:, pd.IndexSlice[segments, :]])
-
     def _test_transform_future_new_segments(self, ts, transform, train_segments, expected_changes):
         # select subset of tsdataset
         train_segments = list(set(train_segments))
@@ -1077,3 +1056,162 @@ class TestTransformFutureNewSegments:
         self._test_transform_future_new_segments(
             ts, transform, train_segments=["segment_2"], expected_changes=expected_changes
         )
+
+
+class TestTransformFuturePrefix:
+    """Test transform on prefix of future dataset.
+
+    Expected that transformation on prefix match prefix of transformation on full future dataset.
+    """
+
+    def _test_transform_future_prefix(self, ts, transform, future_size=20, future_prefix_size=15):
+        # select subset of tsdataset
+        history_ts, full_future_ts = ts.train_test_split(test_size=future_size)
+        prefix_future_ts, _ = full_future_ts.train_test_split(test_size=future_size - future_prefix_size)
+        train_df = history_ts.to_pandas()
+        full_future_df = full_future_ts.to_pandas()
+        prefix_future_df = prefix_future_ts.to_pandas()
+
+        # fitting
+        transform.fit(train_df)
+
+        # transform future
+        transformed_full_future_df = transform.transform(full_future_df)
+
+        # transform prefix of future
+        transformed_prefix_future_df = transform.transform(prefix_future_df)
+
+        # checking
+        assert_frame_equal(
+            transformed_prefix_future_df, transformed_full_future_df.iloc[:future_prefix_size], check_categorical=False
+        )
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            # decomposition
+            (
+                ChangePointsSegmentationTransform(
+                    in_column="target",
+                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
+            (
+                ChangePointsTrendTransform(
+                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+                ),
+                "regular_ts",
+            ),
+            (BinsegTrendTransform(in_column="target"), "regular_ts"),
+            (LinearTrendTransform(in_column="target"), "regular_ts"),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts"),
+            (STLTransform(in_column="target", period=7), "regular_ts"),
+            (TrendTransform(in_column="target"), "regular_ts"),
+            # encoders
+            (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanSegmentEncoderTransform(), "regular_ts"),
+            (SegmentEncoderTransform(), "regular_ts"),
+            # feature_selection
+            (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
+            (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
+            (MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
+            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog"),
+            # math
+            (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
+            (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
+            (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
+                "regular_ts",
+            ),
+            (
+                LambdaTransform(
+                    in_column="target",
+                    transform_func=lambda x: x + 1,
+                    inverse_transform_func=lambda x: x - 1,
+                    inplace=True,
+                ),
+                "regular_ts",
+            ),
+            (LogTransform(in_column="target", inplace=False), "positive_ts"),
+            (LogTransform(in_column="target", inplace=True), "positive_ts"),
+            (DifferencingTransform(in_column="target", inplace=False), "regular_ts"),
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
+            (MADTransform(in_column="target", window=7), "regular_ts"),
+            (MaxTransform(in_column="target", window=7), "regular_ts"),
+            (MeanTransform(in_column="target", window=7), "regular_ts"),
+            (MedianTransform(in_column="target", window=7), "regular_ts"),
+            (MinMaxDifferenceTransform(in_column="target", window=7), "regular_ts"),
+            (MinTransform(in_column="target", window=7), "regular_ts"),
+            (QuantileTransform(in_column="target", quantile=0.9, window=7), "regular_ts"),
+            (StdTransform(in_column="target", window=7), "regular_ts"),
+            (SumTransform(in_column="target", window=7), "regular_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="macro", inplace=False), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            # missing_values
+            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill"),
+            # timestamp
+            (DateFlagsTransform(), "regular_ts"),
+            (FourierTransform(period=7, order=2), "regular_ts"),
+            (HolidayTransform(), "regular_ts"),
+            (SpecialDaysTransform(), "regular_ts"),
+            (TimeFlagsTransform(), "regular_ts"),
+        ],
+    )
+    def test_transform_future_prefix(self, transform, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_transform_future_prefix(ts, transform)
+
+    @to_be_fixed(raises=Exception)
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            # missing_values
+            # TODO: this should work
+            # TODO: not working without out column
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample",
+            ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample",
+            ),
+            # outliers
+            # TODO: this should work
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
+        ],
+    )
+    def test_transform_future_prefix_failed_error(self, transform, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self.test_transform_future_prefix(ts, transform)
