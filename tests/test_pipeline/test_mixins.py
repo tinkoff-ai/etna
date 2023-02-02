@@ -303,7 +303,6 @@ def test_save_mixin_load_ok_with_ts(example_tsds, recwarn, tmp_path):
     assert loaded_dummy.a == dummy.a
     assert loaded_dummy.b == dummy.b
     assert loaded_dummy.ts is not example_tsds
-    assert loaded_dummy.ts.transforms is loaded_dummy.transforms
     pd.testing.assert_frame_equal(loaded_dummy.ts.to_pandas(), dummy.ts.to_pandas())
     assert isinstance(loaded_dummy.model, NaiveModel)
     assert [transform.value for transform in loaded_dummy.transforms] == transform_values

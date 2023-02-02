@@ -78,7 +78,7 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
         _ = pipeline._forecast()
 
     assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=pipeline.step)
+    make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=())
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY)
 
@@ -100,7 +100,7 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
         _ = pipeline._forecast()
 
     assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
+    make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=(), tail_steps=model.context_size)
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 

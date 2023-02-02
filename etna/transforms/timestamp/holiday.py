@@ -27,7 +27,13 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         super().__init__(required_features=["target"])
         self.iso_code = iso_code
         self.holidays = holidays.CountryHoliday(iso_code)
-        self.out_column = out_column if out_column is not None else self.__repr__()
+        self.out_column = out_column
+
+    def _get_column_name(self) -> str:
+        if self.out_column:
+            return self.out_column
+        else:
+            return self.__repr__()
 
     def _fit(self, df: pd.DataFrame) -> "HolidayTransform":
         """
@@ -59,11 +65,12 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
         cols = df.columns.get_level_values("segment").unique()
 
+        out_column = self._get_column_name()
         encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)
         encoded_df = pd.DataFrame(
             encoded_matrix,
-            columns=pd.MultiIndex.from_product([cols, [self.out_column]], names=("segment", "feature")),
+            columns=pd.MultiIndex.from_product([cols, [out_column]], names=("segment", "feature")),
             index=df.index,
         )
         encoded_df = encoded_df.astype("category")
@@ -79,4 +86,4 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         :
             List with regressors created by the transform.
         """
-        return [self.out_column]
+        return [self._get_column_name()]

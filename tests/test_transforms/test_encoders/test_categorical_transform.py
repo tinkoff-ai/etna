@@ -327,6 +327,7 @@ def test_get_regressors_info_ohe(
     regressors_info = ohe.get_regressors_info()
     assert sorted(regressors_info) == sorted(expected_regressors)
 
+
 @pytest.mark.parametrize("dtype", ["float", "int", "str", "category"])
 def test_save_load_le(dtype):
     ts, answers = get_ts_for_label_encoding(dtype=dtype)

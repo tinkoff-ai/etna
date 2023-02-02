@@ -12,6 +12,18 @@ from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 
 
+def _get_default_dataset_builder(horizon: int):
+    return PytorchForecastingDatasetBuilder(
+        max_encoder_length=21,
+        min_encoder_length=21,
+        max_prediction_length=horizon,
+        time_varying_known_reals=["time_idx"],
+        time_varying_unknown_reals=["target"],
+        static_categoricals=["segment"],
+        target_normalizer=GroupNormalizer(groups=["segment"]),
+    )
+
+
 @pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8, 21])
 def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon, encoder_length=21):
@@ -42,9 +54,9 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon, encoder_leng
     ts_train.fit_transform([dft])
 
     model = DeepARModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=300, gradient_clip_val=0.1), lr=0.1)
-    ts_pred = ts_train.make_future(horizon, [dft], encoder_length)
+    ts_pred = ts_train.make_future(future_steps=horizon, transforms=[dft], tail_steps=encoder_length)
     model.fit(ts_train)
-    ts_pred = model.forecast(ts_pred, horizon=horizon)
+    ts_pred = model.forecast(ts=ts_pred, prediction_size=horizon)
 
     mae = MAE("macro")
 
@@ -78,9 +90,9 @@ def test_deepar_model_run_weekly_overfit_with_scaler(
     ts_train.fit_transform([std, dft])
 
     model = DeepARModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=300, gradient_clip_val=0.1), lr=0.1)
-    ts_pred = ts_train.make_future(horizon, [std, dft], encoder_length)
+    ts_pred = ts_train.make_future(future_steps=horizon, transforms=[std, dft], tail_steps=encoder_length)
     model.fit(ts_train)
-    ts_pred = model.forecast(ts_pred, horizon=horizon)
+    ts_pred = model.forecast(ts=ts_pred, prediction_size=horizon)
     ts_pred.inverse_transform([std, dft])
 
     mae = MAE("macro")
@@ -111,8 +123,8 @@ def test_prediction_interval_run_infuture(example_tsds):
     horizon = 10
     model = DeepARModel(encoder_length=horizon, decoder_length=horizon, trainer_params=dict(max_epochs=2), lr=0.01)
     model.fit(example_tsds)
-    future = example_tsds.make_future(horizon, tail_steps=horizon)
-    forecast = model.forecast(future, horizon=horizon, prediction_interval=True, quantiles=[0.025, 0.975])
+    future = example_tsds.make_future(future_steps=horizon, tail_steps=horizon)
+    forecast = model.forecast(ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.025, 0.975])
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
@@ -121,15 +133,54 @@ def test_prediction_interval_run_infuture(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
 
 
+def test_forecast_model_equals_pipeline(example_tsds):
+    horizon = 10
+    pfdb = _get_default_dataset_builder(horizon)
+
+    import torch  # TODO: remove after fix at issue-802
+
+    torch.manual_seed(11)
+    model = DeepARModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=2), lr=0.1)
+    model.fit(example_tsds)
+    future = example_tsds.make_future(future_steps=horizon, tail_steps=pfdb.max_encoder_length)
+    forecast_model = model.forecast(
+        ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.98]
+    )
+
+    torch.manual_seed(11)
+    model = DeepARModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=2), lr=0.1)
+    pipeline = Pipeline(model=model, transforms=[], horizon=horizon)
+    pipeline.fit(example_tsds)
+    forecast_pipeline = pipeline.forecast(prediction_interval=True, quantiles=[0.02, 0.98])
+
+    pd.testing.assert_frame_equal(forecast_model.to_pandas(), forecast_pipeline.to_pandas())
+
+
 def test_save_load(example_tsds):
     horizon = 3
-    model = DeepARModel(max_epochs=2, learning_rate=[0.01], gpus=0, batch_size=64)
-    transform = PytorchForecastingTransform(
-        max_encoder_length=horizon,
-        max_prediction_length=horizon,
-        time_varying_known_reals=["time_idx"],
-        time_varying_unknown_reals=["target"],
-        target_normalizer=GroupNormalizer(groups=["segment"]),
+    pfdb = _get_default_dataset_builder(horizon)
+    model = DeepARModel(
+        dataset_builder=pfdb,
+        lr=0.1,
+        trainer_params=dict(max_epochs=2),
+        train_batch_size=64,
     )
-    transforms = [transform]
-    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=horizon)
+
+
+def test_repr():
+    model = DeepARModel(
+        decoder_length=3, encoder_length=4, lr=0.1, trainer_params=dict(max_epochs=2, gpus=0), train_batch_size=64
+    )
+    assert (
+        repr(model) == "DeepARModel(decoder_length = 3, encoder_length = 4, "
+        "dataset_builder = PytorchForecastingDatasetBuilder(max_encoder_length = 4, min_encoder_length = 4, "
+        "min_prediction_idx = None, min_prediction_length = None, max_prediction_length = 3, static_categoricals = [], "
+        "static_reals = [], time_varying_known_categoricals = [], time_varying_known_reals = ['time_idx'], "
+        "time_varying_unknown_categoricals = [], time_varying_unknown_reals = ['target'], variable_groups = {}, "
+        "constant_fill_strategy = [], allow_missing_timesteps = True, lags = {}, add_relative_time_idx = True, "
+        "add_target_scales = True, add_encoder_length = True, target_normalizer = GroupNormalizer(groups=['segment']), "
+        "categorical_encoders = {}, scalers = {}, ), "
+        "train_batch_size = 64, test_batch_size = 64, lr = 0.1, cell_type = 'LSTM', hidden_size = 10, rnn_layers = 2, "
+        "dropout = 0.1, loss = NormalDistributionLoss(), trainer_params = {'max_epochs': 2, 'gpus': 0}, quantiles_kwargs = {}, )"
+    )

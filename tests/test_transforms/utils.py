@@ -19,7 +19,7 @@ def get_loaded_transform(transform: Transform) -> Transform:
 
 
 def assert_transformation_equals_loaded_original(transform: Transform, ts: TSDataset) -> Tuple[Transform, Transform]:
-    transform.fit(ts.to_pandas())
+    transform.fit(ts)
     loaded_transform = get_loaded_transform(transform)
     ts_1 = deepcopy(ts)
     ts_2 = deepcopy(ts)

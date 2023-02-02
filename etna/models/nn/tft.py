@@ -9,8 +9,7 @@ import pandas as pd
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers import tslogger
-from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.base import log_decorator
 from etna.models.mixins import SaveNNMixin
 from etna.models.nn.utils import PytorchForecastingDatasetBuilder
@@ -25,7 +24,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbstractModel):
+class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
     Notes
@@ -33,8 +32,6 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
     It`s not right pattern of using Transforms and TSDataset.
     """
-
-    context_size = 0
 
     def __init__(
         self,
@@ -123,7 +120,6 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
         self._last_train_timestamp = None
-        self._freq: Optional[str] = None
         self.kwargs = kwargs
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
@@ -145,11 +141,16 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
             loss=self.loss,
         )
 
+    @property
+    def context_size(self) -> int:
+        """Context size of the model."""
+        return self.encoder_length
+
     @log_decorator
     def forecast(
         self,
         ts: TSDataset,
-        horizon: int,
+        prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
     ) -> TSDataset:
@@ -161,6 +162,9 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -171,7 +175,7 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
         TSDataset
             TSDataset with predictions.
         """
-        ts, prediction_dataloader = self._make_target_prediction(ts, horizon)
+        ts, prediction_dataloader = self._make_target_prediction(ts, prediction_size)
 
         if prediction_interval:
             if not isinstance(self.loss, QuantileLoss):

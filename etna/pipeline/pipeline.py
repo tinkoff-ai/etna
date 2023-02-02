@@ -104,7 +104,9 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
             future = self.ts.make_future(future_steps=self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
-            future = self.ts.make_future(future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.context_size)
+            future = self.ts.make_future(
+                future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.context_size
+            )
             predictions = self.model.forecast(
                 ts=future, prediction_size=self.horizon, prediction_interval=prediction_interval, quantiles=quantiles
             )
