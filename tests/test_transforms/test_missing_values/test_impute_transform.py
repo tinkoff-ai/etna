@@ -346,8 +346,8 @@ def test_inverse_transform_in_forecast(ts_with_missing_range_x_index_two_segment
     model = NaiveModel()
     ts.fit_transform(transforms=[imputer])
     model.fit(ts)
-    ts_test = ts.make_future(future_steps=3, transforms=[imputer],  tail_steps=model.context_size)
-    assert np.all(ts_test[ts_test.index[-3]:, :, "target"].isna())
+    ts_test = ts.make_future(future_steps=3, transforms=[imputer], tail_steps=model.context_size)
+    assert np.all(ts_test[ts_test.index[-3] :, :, "target"].isna())
     ts_forecast = model.forecast(ts_test, prediction_size=3)
     ts_forecast.inverse_transform([imputer])
     for segment in ts.segments:

@@ -250,8 +250,8 @@ def test_acf_nan_end(ts_diff_endings):
     acf_plot(ts, partial=True)
 
 
-def test_acf_nan_middle(df_with_nans):
-    ts = TSDataset(df_with_nans, freq="H")
+def test_acf_nan_middle(ts_with_nans):
+    ts = ts_with_nans
     acf_plot(ts, partial=False)
     with pytest.raises(ValueError):
         acf_plot(ts, partial=True)

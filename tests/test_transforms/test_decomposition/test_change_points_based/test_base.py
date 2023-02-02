@@ -2,14 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from ruptures import Binseg
-from sklearn.linear_model import LinearRegression
 
 from etna.datasets import TSDataset
-from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 from etna.transforms.decomposition.change_points_based import ChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -164,7 +163,9 @@ def test_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df:
 def test_inverse_transform_post_history(multitrend_df: pd.DataFrame, post_multitrend_df: pd.DataFrame):
     """Check that inverse_transform works correctly in case of fully unseen post history data with offset."""
     bs = _OneSegmentChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=20
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=20),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
     transformed = bs.inverse_transform(post_multitrend_df["segment_1"])
@@ -209,6 +210,8 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
 def test_save_load(multitrend_df):
     ts = TSDataset(df=multitrend_df, freq="D")
     transform = ChangePointsTrendTransform(
-        in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+        per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)

@@ -111,11 +111,29 @@ def test_to_dict_transforms_with_expected(target_object, expected):
 @pytest.mark.parametrize(
     "target_model",
     [
-        pytest.param(DeepARModel(decoder_length=21, encoder_length=21), marks=pytest.mark.xfail(raises=AssertionError)),
+        pytest.param(
+            DeepARModel(
+                decoder_length=3,
+                encoder_length=4,
+                lr=0.1,
+                trainer_params=dict(max_epochs=2, gpus=0),
+                train_batch_size=64,
+            ),
+            marks=pytest.mark.xfail(raises=AssertionError),
+        ),
         LinearPerSegmentModel(),
         CatBoostModelPerSegment(),
         AutoARIMAModel(),
-        pytest.param(TFTModel(decoder_length=21, encoder_length=21, max_epochs=2), marks=pytest.mark.xfail(raises=AssertionError)),
+        pytest.param(
+            TFTModel(
+                decoder_length=3,
+                encoder_length=4,
+                lr=0.1,
+                trainer_params=dict(max_epochs=2, gpus=0),
+                train_batch_size=64,
+            ),
+            marks=pytest.mark.xfail(raises=AssertionError),
+        ),
     ],
 )
 def test_to_dict_models(target_model):

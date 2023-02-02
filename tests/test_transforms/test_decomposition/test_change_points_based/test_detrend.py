@@ -15,10 +15,10 @@ from ruptures.costs import CostRank
 from ruptures.costs import CostRbf
 
 from etna.datasets import TSDataset
-from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def test_binseg_in_pipeline(example_tsds: TSDataset):
@@ -83,6 +83,7 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     transform = ChangePointsTrendTransform(in_column="target")
     with pytest.raises(ValueError, match="The input column contains NaNs in the middle of the series!"):
         transform.fit_transform(ts=ts_with_nans)
+
 
 def test_get_features(example_tsds: TSDataset):
     """Check that _get_features method works correctly."""

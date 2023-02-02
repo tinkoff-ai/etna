@@ -190,8 +190,4 @@ class SaveModelPipelineMixin(SaveMixin):
 
                 obj.transforms = transforms
 
-                # set transforms in ts
-                if obj.ts is not None:
-                    obj.ts.transforms = transforms
-
         return obj

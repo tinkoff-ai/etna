@@ -114,7 +114,7 @@ def test_fit_transform_with_nans(ts_diff_endings):
 
 
 @pytest.mark.parametrize("inplace", [False, True])
-def test_save_load(inplace, positive_df_):
-    ts = TSDataset(df=positive_df_, freq="D")
+def test_save_load(inplace, positive_ts_):
+    ts = positive_ts_
     transform = LogTransform(in_column="target", inplace=inplace)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)

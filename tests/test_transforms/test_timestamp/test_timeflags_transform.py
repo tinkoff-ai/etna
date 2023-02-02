@@ -219,7 +219,7 @@ def test_feature_values(
         assert (true_df == result_df).all().all()
 
 
-def test_save_load(train_df):
-    ts = TSDataset(df=train_df, freq="D")
+def test_save_load(train_ts):
+    ts = train_ts
     transform = TimeFlagsTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)

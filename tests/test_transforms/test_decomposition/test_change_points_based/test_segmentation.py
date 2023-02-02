@@ -9,9 +9,9 @@ from etna.metrics import SMAPE
 from etna.models import CatBoostModelPerSegment
 from etna.pipeline import Pipeline
 from etna.transforms import ChangePointsSegmentationTransform
-from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.segmentation import _OneSegmentChangePointsSegmentationTransform
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 OUT_COLUMN = "result"
 N_BKPS = 5
@@ -126,8 +126,8 @@ def test_make_future(simple_ar_ts):
 
 
 def test_save_load(simple_ar_ts):
-    change_point_model = RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=N_BKPS)
+    change_points_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     transform = ChangePointsSegmentationTransform(
-        in_column="target", change_point_model=change_point_model, out_column=OUT_COLUMN
+        in_column="target", change_points_model=change_points_model, out_column=OUT_COLUMN
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=simple_ar_ts)
