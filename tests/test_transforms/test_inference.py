@@ -1659,6 +1659,3 @@ class TestTransformFutureWithoutTarget:
     def test_transform_future_without_target_failed_error(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_without_target(ts, transform, expected_changes=expected_changes)
-
-
-# TODO: нам ведь еще и тесты на inverse-transform нужны по идее
