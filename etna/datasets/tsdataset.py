@@ -588,6 +588,7 @@ class TSDataset:
         -------
         pd.DataFrame:
             dataframe with TSDataset data
+            The order of columns is (timestamp, segment, target (if provided), features in alphabetical order).
 
         Examples
         --------
@@ -605,12 +606,12 @@ class TSDataset:
         4  2021-06-05  segment_0    1.00
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> TSDataset.to_flatten(df_ts_format).head(5)
-           timestamp  target    segment
-        0 2021-06-01     1.0  segment_0
-        1 2021-06-02     1.0  segment_0
-        2 2021-06-03     1.0  segment_0
-        3 2021-06-04     1.0  segment_0
-        4 2021-06-05     1.0  segment_0
+           timestamp    segment  target
+        0 2021-06-01  segment_0    1.0
+        1 2021-06-02  segment_0    1.0
+        2 2021-06-03  segment_0    1.0
+        3 2021-06-04  segment_0    1.0
+        4 2021-06-05  segment_0    1.0
         """
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
@@ -618,8 +619,12 @@ class TSDataset:
         # flatten dataframe
         columns = df.columns.get_level_values("feature").unique()
         segments = df.columns.get_level_values("segment").unique()
+        has_target = "target" in columns
         df_dict = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
+        df_dict["segment"] = np.repeat(segments, len(df.index))
+        if has_target:
+            df_dict["target"] = 0 # will be overwritten in the following cycle
         for column in columns:
             df_cur = df.loc[:, pd.IndexSlice[:, column]]
             if column in category_columns:
@@ -628,7 +633,6 @@ class TSDataset:
                 stacked = df_cur.values.T.ravel()
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
                 df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
-        df_dict["segment"] = np.repeat(segments, len(df.index))
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
@@ -665,12 +669,12 @@ class TSDataset:
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df_ts_format, "D")
         >>> ts.to_pandas(True).head(5)
-           timestamp  target    segment
-        0 2021-06-01     1.0  segment_0
-        1 2021-06-02     1.0  segment_0
-        2 2021-06-03     1.0  segment_0
-        3 2021-06-04     1.0  segment_0
-        4 2021-06-05     1.0  segment_0
+            timestamp    segment  target
+        0  2021-06-01  segment_0    1.00
+        1  2021-06-02  segment_0    1.00
+        2  2021-06-03  segment_0    1.00
+        3  2021-06-04  segment_0    1.00
+        4  2021-06-05  segment_0    1.00
         >>> ts.to_pandas(False).head(5)
         segment    segment_0 segment_1
         feature       target    target
