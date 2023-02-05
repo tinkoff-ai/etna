@@ -578,6 +578,9 @@ class TSDataset:
     @staticmethod
     def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
+        
+        The order of columns is (timestamp, segment, target,
+        features in alphabetical order).
 
         Parameters
         ----------
@@ -588,7 +591,6 @@ class TSDataset:
         -------
         pd.DataFrame:
             dataframe with TSDataset data
-            The order of columns is (timestamp, segment, target (if provided), features in alphabetical order).
 
         Examples
         --------
@@ -645,7 +647,9 @@ class TSDataset:
         flatten:
             * If False, return pd.DataFrame with multiindex
 
-            * If True, return with flatten index
+            * If True, return with flatten index,
+            its order of columns is (timestamp, segment, target,
+            features in alphabetical order).
 
         Returns
         -------
