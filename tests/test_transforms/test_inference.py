@@ -295,10 +295,11 @@ class TestTransformTrainSubsetSegments:
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
             # missing_values
-            # TODO: not working without out column
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                    in_column="regressor_exog",
+                    distribution_column="target",
+                    inplace=False,
                 ),
                 "ts_to_resample",
             ),
@@ -454,7 +455,7 @@ class TestTransformFutureSubsetSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                    in_column="regressor_exog", distribution_column="target", inplace=False
                 ),
                 "ts_to_resample",
             ),
@@ -752,7 +753,7 @@ class TestTransformTrainNewSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                    in_column="regressor_exog", distribution_column="target", inplace=False
                 ),
                 "ts_to_resample",
             ),
@@ -1048,7 +1049,7 @@ class TestTransformFutureNewSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                    in_column="regressor_exog", distribution_column="target", inplace=False
                 ),
                 "ts_to_resample",
             ),
@@ -1349,7 +1350,7 @@ class TestTransformFutureWithTarget:
                     in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
                 ),
                 "ts_to_resample",
-                {"change": {"regressor_exog"}},
+                {"create": {"res"}},
             ),
             (
                 ResampleWithDistributionTransform(
@@ -1645,7 +1646,7 @@ class TestTransformFutureWithoutTarget:
                     in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
                 ),
                 "ts_to_resample",
-                {"change": {"regressor_exog"}},
+                {"create": {"res"}},
             ),
             (
                 ResampleWithDistributionTransform(
