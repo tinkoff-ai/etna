@@ -24,10 +24,12 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
-from etna.transforms import PytorchForecastingTransform
+
+# from etna.transforms import PytorchForecastingTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
@@ -93,21 +95,22 @@ class TestPredictInSampleFull:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                DeepARModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=1,
                         max_prediction_length=1,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
                         target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
                         min_encoder_length=21,
                         max_prediction_length=5,
@@ -115,8 +118,11 @@ class TestPredictInSampleFull:
                         time_varying_unknown_reals=["target"],
                         static_categoricals=["segment"],
                         target_normalizer=None,
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -170,21 +176,22 @@ class TestPredictInSampleSuffix:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                DeepARModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=1,
                         max_prediction_length=1,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
                         target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
                         min_encoder_length=21,
                         max_prediction_length=5,
@@ -192,8 +199,11 @@ class TestPredictInSampleSuffix:
                         time_varying_unknown_reals=["target"],
                         static_categoricals=["segment"],
                         target_normalizer=None,
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -226,7 +236,7 @@ class TestPredictOutSample:
         model.fit(train_ts)
 
         # forecasting
-        forecast_ts.transform(train_ts.transforms)
+        forecast_ts.transform(transforms)
         to_remain = model.context_size + prediction_size
         forecast_ts.df = forecast_ts.df.iloc[-to_remain:]
         forecast_ts = make_predict(model=model, ts=forecast_ts, prediction_size=prediction_size)
@@ -266,21 +276,22 @@ class TestPredictOutSample:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                DeepARModel(max_epochs=5, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=5,
                         max_prediction_length=5,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
                         target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
                         min_encoder_length=21,
                         max_prediction_length=5,
@@ -288,8 +299,11 @@ class TestPredictOutSample:
                         time_varying_unknown_reals=["target"],
                         static_categoricals=["segment"],
                         target_normalizer=None,
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -315,14 +329,14 @@ class TestPredictMixedInOutSample:
         # predicting mixed in-sample and out-sample
         df_full = pd.concat((train_df, future_df))
         forecast_full_ts = TSDataset(df=df_full, freq=ts.freq)
-        forecast_full_ts.transform(train_ts.transforms)
+        forecast_full_ts.transform(transforms)
         forecast_full_ts.df = forecast_full_ts.df.iloc[(num_skip_points - model.context_size) :]
         full_prediction_size = len(forecast_full_ts.index) - model.context_size
         forecast_full_ts = make_predict(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 
         # predicting only in sample
         forecast_in_sample_ts = TSDataset(train_df, freq=ts.freq)
-        forecast_in_sample_ts.transform(train_ts.transforms)
+        forecast_in_sample_ts.transform(transforms)
         to_skip = num_skip_points - model.context_size
         forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
         in_sample_prediction_size = len(forecast_in_sample_ts.index) - model.context_size
@@ -332,7 +346,7 @@ class TestPredictMixedInOutSample:
 
         # predicting only out sample
         forecast_out_sample_ts = TSDataset(df=df_full, freq=ts.freq)
-        forecast_out_sample_ts.transform(train_ts.transforms)
+        forecast_out_sample_ts.transform(transforms)
         to_remain = model.context_size + future_prediction_size
         forecast_out_sample_ts.df = forecast_out_sample_ts.df.iloc[-to_remain:]
         forecast_out_sample_ts = make_predict(
@@ -377,21 +391,22 @@ class TestPredictMixedInOutSample:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                DeepARModel(max_epochs=5, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=5,
                         max_prediction_length=5,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
                         target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
                         min_encoder_length=21,
                         max_prediction_length=5,
@@ -399,8 +414,11 @@ class TestPredictMixedInOutSample:
                         time_varying_unknown_reals=["target"],
                         static_categoricals=["segment"],
                         target_normalizer=None,
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
