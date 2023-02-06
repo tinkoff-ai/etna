@@ -1,3 +1,4 @@
+import pathlib
 from copy import deepcopy
 from typing import Dict
 from typing import List
@@ -154,3 +155,23 @@ class HierarchicalPipeline(Pipeline):
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
         return predictions
+
+    @classmethod
+    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> "HierarchicalPipeline":
+        """Load an object.
+
+        Parameters
+        ----------
+        path:
+            Path to load object from.
+        ts:
+            TSDataset to set into loaded pipeline.
+
+        Returns
+        -------
+        :
+            Loaded object.
+        """
+        obj = super().load(path=path)
+        obj.ts = obj.reconciliator.aggregate(ts=ts)
+        return obj

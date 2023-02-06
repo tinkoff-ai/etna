@@ -509,20 +509,20 @@ class TestForecastOutSamplePrefix:
                 [],
             ),
             (
-                    TFTModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=21,
-                            min_encoder_length=21,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            static_categoricals=["segment"],
-                            target_normalizer=None,
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
         ],
     )

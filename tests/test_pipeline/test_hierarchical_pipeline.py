@@ -7,14 +7,18 @@ from etna.datasets.utils import match_target_quantiles
 from etna.metrics import MAE
 from etna.metrics import Coverage
 from etna.metrics import Width
+from etna.models import CatBoostMultiSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
+from etna.models import ProphetModel
 from etna.pipeline.hierarchical_pipeline import HierarchicalPipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.reconciliation import TopDownReconciliator
+from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 
 
 @pytest.mark.parametrize(
@@ -260,3 +264,33 @@ def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, r
         forecast_params={"prediction_interval": True, "n_folds": 1},
     )
     np.testing.assert_array_almost_equal(results[metric.name], answer)
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (NaiveModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_save_load(model, transforms, reconciliator, product_level_constant_hierarchical_ts):
+    horizon = 1
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=product_level_constant_hierarchical_ts)
