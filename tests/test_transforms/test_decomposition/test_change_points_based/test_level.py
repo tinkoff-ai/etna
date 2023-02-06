@@ -9,6 +9,7 @@ from etna.datasets import TSDataset
 from etna.transforms import ChangePointsLevelTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import MeanPerIntervalModel
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture
@@ -60,3 +61,12 @@ def test_level_transform_inverse_transform(ts_with_local_levels: TSDataset):
     ts_with_local_levels.fit_transform(transforms=[transform])
     ts_with_local_levels.inverse_transform(transforms=[transform])
     np.testing.assert_array_almost_equal(ts_with_local_levels.df, original_ts.df)
+
+
+def test_save_load(ts_with_local_levels):
+    transform = ChangePointsLevelTransform(
+        in_column="target",
+        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="l2"), n_bkps=4),
+        per_interval_model=MeanPerIntervalModel(),
+    )
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_local_levels)
