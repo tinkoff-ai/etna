@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Changed
  
-- Impose specific order of columns after TSDataset.to_flatten ([#873](https://github.com/tinkoff-ai/etna/pull/873))
+- Impose specific order of columns on return value of TSDataset.to_flatten ([#873](https://github.com/tinkoff-ai/etna/pull/873))
 -
 ### Fixed
 

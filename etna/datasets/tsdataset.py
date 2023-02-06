@@ -578,7 +578,7 @@ class TSDataset:
     @staticmethod
     def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
-        
+
         The order of columns is (timestamp, segment, target,
         features in alphabetical order).
 
@@ -621,12 +621,14 @@ class TSDataset:
         # flatten dataframe
         columns = df.columns.get_level_values("feature").unique()
         segments = df.columns.get_level_values("segment").unique()
-        has_target = "target" in columns
+
         df_dict = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
         df_dict["segment"] = np.repeat(segments, len(df.index))
-        if has_target:
-            df_dict["target"] = 0 # will be overwritten in the following cycle
+        if "target" in columns:
+            # set this value to lock position of key "target" in output dataframe columns
+            # None is a placeholder, actual column value will be assigned in the following cycle
+            df_dict["target"] = None
         for column in columns:
             df_cur = df.loc[:, pd.IndexSlice[:, column]]
             if column in category_columns:
