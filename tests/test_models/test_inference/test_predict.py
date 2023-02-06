@@ -28,8 +28,6 @@ from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
-
-# from etna.transforms import PytorchForecastingTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
