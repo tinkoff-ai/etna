@@ -44,6 +44,11 @@ class SegmentEncoderTransform(Transform, FutureMixin):
         -------
         :
             result dataframe
+
+        Raises
+        ------
+        ValueError:
+            If there are segments that weren't present during training
         """
         segments = df.columns.get_level_values("segment").unique().tolist()
         new_segments = set(segments) - set(self._le.classes_)
