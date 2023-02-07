@@ -48,10 +48,17 @@ class SegmentEncoderTransform(Transform, FutureMixin):
         Raises
         ------
         ValueError:
-            If there are segments that weren't present during training
+            If transform isn't fitted.
+        ValueError:
+            If there are segments that weren't present during training.
         """
         segments = df.columns.get_level_values("segment").unique().tolist()
-        new_segments = set(segments) - set(self._le.classes_)
+
+        try:
+            new_segments = set(segments) - set(self._le.classes_)
+        except AttributeError:
+            raise ValueError("The transform isn't fitted!")
+
         if len(new_segments) > 0:
             raise ValueError(
                 f"This transform can't process segments that weren't present on train data: {new_segments}"

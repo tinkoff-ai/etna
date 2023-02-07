@@ -30,9 +30,18 @@ def test_subset_segments(dummy_df):
     transform.fit(train_df)
     transformed_test_df = transform.transform(test_df)
 
-    assert transformed_test_df.columns.get_level_values("segment").unique().tolist() == ["Omsk"]
+    segments = sorted(transformed_test_df.columns.get_level_values("segment").unique())
+    features = sorted(transformed_test_df.columns.get_level_values("feature").unique())
+    assert segments == ["Omsk"]
+    assert features == ["segment_code", "target"]
     values = transformed_test_df.loc[:, pd.IndexSlice[:, "segment_code"]]
     assert np.all(values == values.iloc[0])
+
+
+def test_not_fitted_error(dummy_df):
+    encoder = SegmentEncoderTransform()
+    with pytest.raises(ValueError, match="The transform isn't fitted"):
+        encoder.transform(dummy_df)
 
 
 def test_new_segments_error(dummy_df):
