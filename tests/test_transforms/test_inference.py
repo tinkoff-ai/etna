@@ -718,6 +718,11 @@ class TestTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
+            # missing_values
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
         ],
@@ -763,10 +768,6 @@ class TestTransformTrainNewSegments:
                 ),
                 "ts_to_resample",
             ),
-            (
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-            ),
         ],
     )
     def test_transform_train_new_segments_failed_per_segment(self, transform, dataset_name, request):
@@ -781,6 +782,7 @@ class TestTransformTrainNewSegments:
         "transform, dataset_name, expected_changes",
         [
             # encoders
+            # TODO: error should be understandable, not like now
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": "segment_code"}),
             # outliers
@@ -1014,6 +1016,11 @@ class TestTransformFutureNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
+            # missing_values
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
         ],
@@ -1059,10 +1066,6 @@ class TestTransformFutureNewSegments:
                 ),
                 "ts_to_resample",
             ),
-            (
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-            ),
         ],
     )
     def test_transform_future_new_segments_failed_per_segment(self, transform, dataset_name, request):
@@ -1077,6 +1080,7 @@ class TestTransformFutureNewSegments:
         "transform, dataset_name, expected_changes",
         [
             # encoders
+            # TODO: error should be understandable, not like now
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": "segment_code"}),
             # outliers
