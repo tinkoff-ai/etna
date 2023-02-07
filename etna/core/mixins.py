@@ -90,6 +90,46 @@ class BaseMixin:
         return params
 
 
+    def set_params(self, **params):
+        """Set the parameters of this estimator.
+        
+        The method works on simple estimators as well as on nested objects
+        (such as :class:`~etna.pipeline.Pipeline`). The latter have
+        parameters of the form ``<component>.<parameter>`` so that it's
+        possible to update each component of a nested object.
+        
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+        Returns
+        -------
+        self : estimator instance
+            Estimator instance.
+        """
+        for parameter, parameter_value in params.items():
+            # split specification into list of nested params, "model.depth" -> ["model", "depth"]
+            param_nested = parameter.split(".")
+            # all nested params except the last specify path to the estimator whose attribute will be set
+            # in the following cycle, we find this estimator
+            estimator = self
+            nesting_correct = True
+            for param_current_nesting_level in param_nested[:-1]:
+            	try:
+            	    estimator = estimator.__getattribute__(param_current_nesting_level)
+            	except AttributeError:
+            	    nesting_correct = False
+            	    break
+            if nesting_correct:
+                try:
+                    # if there is no such attribute, the first row will throw AttributeError
+                    estimator.__getattribute__(param_nested[-1])
+                    estimator.__setattr__(param_nested[-1], parameter_value)
+                except AttributeError:
+                    pass
+        return self
+
+
 class StringEnumWithRepr(str, Enum):
     """Base class for str enums, that has alternative __repr__ method."""
 

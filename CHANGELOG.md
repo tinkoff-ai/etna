@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 
--
+- `set_params` method to change parameters of ETNA objects [#1025](https://github.com/tinkoff-ai/etna/issues/1025)
 -
 ### Changed
 
