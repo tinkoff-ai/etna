@@ -89,15 +89,14 @@ class BaseMixin:
         params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
 
-
     def set_params(self, **params):
         """Set the parameters of this estimator.
-        
+
         The method works on simple estimators as well as on nested objects
         (such as :class:`~etna.pipeline.Pipeline`). The latter have
         parameters of the form ``<component>.<parameter>`` so that it's
         possible to update each component of a nested object.
-        
+
         Parameters
         ----------
         **params : dict
@@ -115,11 +114,11 @@ class BaseMixin:
             estimator = self
             nesting_correct = True
             for param_current_nesting_level in param_nested[:-1]:
-            	try:
-            	    estimator = estimator.__getattribute__(param_current_nesting_level)
-            	except AttributeError:
-            	    nesting_correct = False
-            	    break
+                try:
+                    estimator = estimator.__getattribute__(param_current_nesting_level)
+                except AttributeError:
+                    nesting_correct = False
+                    break
             if nesting_correct:
                 try:
                     # if there is no such attribute, the first row will throw AttributeError
