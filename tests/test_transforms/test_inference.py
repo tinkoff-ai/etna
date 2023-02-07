@@ -569,7 +569,7 @@ class TestTransformTrainNewSegments:
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features
+            # TODO: this should remove only 2 features, wait for fixing [#1097](https://github.com/tinkoff-ai/etna/issues/1097)
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
