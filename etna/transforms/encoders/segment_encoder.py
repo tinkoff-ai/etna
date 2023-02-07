@@ -45,11 +45,18 @@ class SegmentEncoderTransform(Transform, FutureMixin):
         :
             result dataframe
         """
-        encoded_matrix = self._le.transform(self._le.classes_)
-        encoded_matrix = encoded_matrix.reshape(len(self._le.classes_), -1).repeat(len(df), axis=1).T
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        new_segments = set(segments) - set(self._le.classes_)
+        if len(new_segments) > 0:
+            raise ValueError(
+                f"This transform can't process segments that weren't present on train data: {new_segments}"
+            )
+
+        encoded_matrix = self._le.transform(segments)
+        encoded_matrix = encoded_matrix.reshape(len(segments), -1).repeat(len(df), axis=1).T
         encoded_df = pd.DataFrame(
             encoded_matrix,
-            columns=pd.MultiIndex.from_product([self._le.classes_, ["segment_code"]], names=("segment", "feature")),
+            columns=pd.MultiIndex.from_product([segments, ["segment_code"]], names=("segment", "feature")),
             index=df.index,
         )
         encoded_df = encoded_df.astype("category")
