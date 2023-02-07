@@ -9,17 +9,47 @@ from etna.transforms import MeanSegmentEncoderTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
-@pytest.mark.parametrize("expected_global_means", ([[3, 30]]))
+@pytest.mark.parametrize("expected_global_means", [{"Moscow": 3, "Omsk": 30}])
 def test_mean_segment_encoder_fit(simple_df, expected_global_means):
     encoder = MeanSegmentEncoderTransform()
     encoder.fit(simple_df)
-    assert (encoder.global_means == expected_global_means).all()
+    assert encoder.global_means == expected_global_means
 
 
 def test_mean_segment_encoder_transform(simple_df, transformed_simple_df):
     encoder = MeanSegmentEncoderTransform()
     transformed_df = encoder.fit_transform(simple_df)
     pd.testing.assert_frame_equal(transformed_df, transformed_simple_df)
+
+
+def test_subset_segments(simple_df):
+    train_df = simple_df
+    test_df = simple_df.loc[:, pd.IndexSlice["Omsk", :]]
+    transform = MeanSegmentEncoderTransform()
+
+    transform.fit(train_df)
+    transformed_test_df = transform.transform(test_df)
+
+    segments = sorted(transformed_test_df.columns.get_level_values("segment").unique())
+    features = sorted(transformed_test_df.columns.get_level_values("feature").unique())
+    assert segments == ["Omsk"]
+    assert features == ["exog", "segment_mean", "target"]
+
+
+def test_not_fitted_error(simple_df):
+    encoder = MeanSegmentEncoderTransform()
+    with pytest.raises(ValueError, match="The transform isn't fitted"):
+        encoder.transform(simple_df)
+
+
+def test_new_segments_error(simple_df):
+    train_df = simple_df.loc[:, pd.IndexSlice["Moscow", :]]
+    test_df = simple_df.loc[:, pd.IndexSlice["Omsk", :]]
+    transform = MeanSegmentEncoderTransform()
+
+    transform.fit(train_df)
+    with pytest.raises(ValueError, match="This transform can't process segments that weren't present on train data"):
+        _ = transform.transform(test_df)
 
 
 @pytest.fixture
