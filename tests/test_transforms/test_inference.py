@@ -1249,11 +1249,31 @@ class TestTransformFutureWithTarget:
             (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {"create": {"res"}}),
             (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {"create": {"res"}}),
             (
+                BoxCoxTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "positive_ts",
+                {"create": {"res_target"}},
+            ),
+            (
+                BoxCoxTransform(in_column="target", mode="per-segment", inplace=True),
+                "positive_ts",
+                {"change": {"target"}},
+            ),
+            (
                 BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "positive_ts",
                 {"create": {"res_target"}},
             ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res_target"}},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (
                 MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
@@ -1261,6 +1281,16 @@ class TestTransformFutureWithTarget:
             ),
             (
                 MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res_target"}},
+            ),
+            (
+                MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True),
                 "regular_ts",
                 {"change": {"target"}},
             ),
@@ -1275,6 +1305,16 @@ class TestTransformFutureWithTarget:
                 {"change": {"target"}},
             ),
             (
+                RobustScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res_target"}},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
                 RobustScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
@@ -1285,12 +1325,32 @@ class TestTransformFutureWithTarget:
                 {"change": {"target"}},
             ),
             (
+                StandardScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res_target"}},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
                 StandardScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (
                 StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res_target"}},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True),
                 "regular_ts",
                 {"change": {"target"}},
             ),
@@ -1335,19 +1395,6 @@ class TestTransformFutureWithTarget:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # math
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts", {}),
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts", {}),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
             # missing_values
             (
                 ResampleWithDistributionTransform(
