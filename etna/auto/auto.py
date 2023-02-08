@@ -37,6 +37,22 @@ class _Initializer(Protocol):
         ...
 
 
+class AutoBase:
+    """Base Class for Auto"""
+    
+    def __init__():
+        pass
+        
+    def top_k(k: int):
+    	pass
+    	
+    def summary():
+        pass
+    
+    def objective():
+        pass
+
+
 class Auto:
     """Automatic pipeline selection via defined or custom pipeline pool."""
 
