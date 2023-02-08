@@ -1,3 +1,4 @@
+import reprlib
 from typing import Dict
 from typing import Optional
 
@@ -65,11 +66,10 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
         new_segments = set(segments) - self.global_means.keys()
         if len(new_segments) > 0:
             raise ValueError(
-                f"This transform can't process segments that weren't present on train data: {new_segments}"
+                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
             )
 
         df = self.mean_encoder.transform(df)
-        segments = df.columns.get_level_values("segment").unique()
         segment = segments[0]
         nan_timestamps = df[df.loc[:, self.idx[segment, "target"]].isna()].index
         df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = [self.global_means[x] for x in segments]
