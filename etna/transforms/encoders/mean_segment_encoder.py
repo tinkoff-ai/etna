@@ -1,4 +1,7 @@
-import numpy as np
+import reprlib
+from typing import Dict
+from typing import Optional
+
 import pandas as pd
 
 from etna.transforms import Transform
@@ -13,7 +16,7 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
 
     def __init__(self):
         self.mean_encoder = MeanTransform(in_column="target", window=-1, out_column="segment_mean")
-        self.global_means: np.ndarray[float] = None
+        self.global_means: Optional[Dict[str, float]] = None
 
     def fit(self, df: pd.DataFrame) -> "MeanSegmentEncoderTransform":
         """
@@ -30,7 +33,9 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
             Fitted transform
         """
         self.mean_encoder.fit(df)
-        self.global_means = df.loc[:, self.idx[:, "target"]].mean().values
+        mean_values = df.loc[:, self.idx[:, "target"]].mean().to_dict()
+        mean_values = {key[0]: value for key, value in mean_values.items()}
+        self.global_means = mean_values
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -46,9 +51,26 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
         -------
         :
             result dataframe
+
+        Raises
+        ------
+        ValueError:
+            If transform isn't fitted.
+        ValueError:
+            If there are segments that weren't present during training.
         """
+        if self.global_means is None:
+            raise ValueError("The transform isn't fitted!")
+
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        new_segments = set(segments) - self.global_means.keys()
+        if len(new_segments) > 0:
+            raise ValueError(
+                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+            )
+
         df = self.mean_encoder.transform(df)
-        segment = df.columns.get_level_values("segment").unique()[0]
+        segment = segments[0]
         nan_timestamps = df[df.loc[:, self.idx[segment, "target"]].isna()].index
-        df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = self.global_means
+        df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = [self.global_means[x] for x in segments]
         return df
