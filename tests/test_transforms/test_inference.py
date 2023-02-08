@@ -247,6 +247,8 @@ class TestTransformTrainSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanSegmentEncoderTransform(), "regular_ts"),
+            (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
             (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
@@ -330,9 +332,6 @@ class TestTransformTrainSubsetSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
-            # encoders
-            (MeanSegmentEncoderTransform(), "regular_ts"),
-            (SegmentEncoderTransform(), "regular_ts"),
             # math
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
@@ -405,6 +404,8 @@ class TestTransformFutureSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanSegmentEncoderTransform(), "regular_ts"),
+            (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
             (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
@@ -486,9 +487,6 @@ class TestTransformFutureSubsetSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
-            # encoders
-            (MeanSegmentEncoderTransform(), "regular_ts"),
-            (SegmentEncoderTransform(), "regular_ts"),
             # math
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
@@ -714,25 +712,6 @@ class TestTransformTrainNewSegments:
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
         )
 
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # missing_values
-            (
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-            ),
-            # timestamp
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_transform_train_new_segments_failed_not_implemeted_per_segment(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
-
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
@@ -755,6 +734,9 @@ class TestTransformTrainNewSegments:
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
             (TrendTransform(in_column="target"), "regular_ts"),
+            # encoders
+            (MeanSegmentEncoderTransform(), "regular_ts"),
+            (SegmentEncoderTransform(), "regular_ts"),
             # missing_values
             (
                 ResampleWithDistributionTransform(
@@ -770,21 +752,36 @@ class TestTransformTrainNewSegments:
             ),
         ],
     )
-    def test_transform_train_new_segments_failed_per_segment(self, transform, dataset_name, request):
+    def test_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(NotImplementedError, match="Per-segment transforms can't work on new segments"):
+        with pytest.raises(NotImplementedError):
             self._test_transform_train_new_segments(
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
+
+    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            # missing_values
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
+            # timestamp
+            (SpecialDaysTransform(), "regular_ts"),
+        ],
+    )
+    def test_transform_train_new_segments_failed_not_implemented(self, transform, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_transform_train_new_segments(
+            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
+        )
 
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # encoders
-            # TODO: error should be understandable, not like now
-            (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
-            (SegmentEncoderTransform(), "regular_ts", {"create": "segment_code"}),
             # outliers
             # TODO: error should be understandable, not like now
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -1012,25 +1009,6 @@ class TestTransformFutureNewSegments:
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
         )
 
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # missing_values
-            (
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-            ),
-            # timestamp
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_transform_future_new_segments_failed_not_implemeted_per_segment(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_future_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
-
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
@@ -1053,6 +1031,9 @@ class TestTransformFutureNewSegments:
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
             (TrendTransform(in_column="target"), "regular_ts"),
+            # encoders
+            (MeanSegmentEncoderTransform(), "regular_ts"),
+            (SegmentEncoderTransform(), "regular_ts"),
             # missing_values
             (
                 ResampleWithDistributionTransform(
@@ -1068,21 +1049,36 @@ class TestTransformFutureNewSegments:
             ),
         ],
     )
-    def test_transform_future_new_segments_failed_per_segment(self, transform, dataset_name, request):
+    def test_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(NotImplementedError, match="Per-segment transforms can't work on new segments"):
+        with pytest.raises(NotImplementedError):
             self._test_transform_future_new_segments(
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
+
+    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            # missing_values
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
+            # timestamp
+            (SpecialDaysTransform(), "regular_ts"),
+        ],
+    )
+    def test_transform_future_new_segments_failed_not_implemented(self, transform, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_transform_future_new_segments(
+            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
+        )
 
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # encoders
-            # TODO: error should be understandable, not like now
-            (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
-            (SegmentEncoderTransform(), "regular_ts", {"create": "segment_code"}),
             # outliers
             # TODO: error should be understandable, not like now
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),

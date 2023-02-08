@@ -56,7 +56,7 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
         ------
         ValueError:
             If transform isn't fitted.
-        ValueError:
+        NotImplementedError:
             If there are segments that weren't present during training.
         """
         if self.global_means is None:
@@ -65,7 +65,7 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
         segments = df.columns.get_level_values("segment").unique().tolist()
         new_segments = set(segments) - self.global_means.keys()
         if len(new_segments) > 0:
-            raise ValueError(
+            raise NotImplementedError(
                 f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
             )
 

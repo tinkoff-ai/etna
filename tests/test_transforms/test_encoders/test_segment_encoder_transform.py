@@ -50,7 +50,9 @@ def test_new_segments_error(dummy_df):
     transform = SegmentEncoderTransform()
 
     transform.fit(train_df)
-    with pytest.raises(ValueError, match="This transform can't process segments that weren't present on train data"):
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
         _ = transform.transform(test_df)
 
 
