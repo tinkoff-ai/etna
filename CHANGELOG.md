@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `set_params` method to change parameters of ETNA objects [#1025](https://github.com/tinkoff-ai/etna/issues/1025)
 -
 ### Changed
-
--
+ 
+- Impose specific order of columns on return value of TSDataset.to_flatten ([#1095](https://github.com/tinkoff-ai/etna/pull/1095))
 -
 ### Fixed
 
