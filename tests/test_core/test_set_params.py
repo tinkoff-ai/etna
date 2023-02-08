@@ -1,5 +1,3 @@
-import pytest
-
 from etna.models import CatBoostMultiSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
