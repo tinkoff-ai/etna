@@ -1,3 +1,6 @@
+import reprlib
+
+import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 
@@ -61,11 +64,11 @@ class SegmentEncoderTransform(Transform, FutureMixin):
 
         if len(new_segments) > 0:
             raise ValueError(
-                f"This transform can't process segments that weren't present on train data: {new_segments}"
+                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
             )
 
         encoded_matrix = self._le.transform(segments)
-        encoded_matrix = encoded_matrix.reshape(len(segments), -1).repeat(len(df), axis=1).T
+        encoded_matrix = np.tile(encoded_matrix, (len(df), 1))
         encoded_df = pd.DataFrame(
             encoded_matrix,
             columns=pd.MultiIndex.from_product([segments, ["segment_code"]], names=("segment", "feature")),
