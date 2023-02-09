@@ -145,17 +145,8 @@ class SklearnTransform(Transform):
             self.in_column = cast(List[str], self.in_column)
 
         df = df.sort_index(axis=1)
+        transformed = self._make_transform(df)
 
-        if self.mode == TransformMode.per_segment:
-            x = self._preprocess_per_segment(df)
-            transformed = self.transformer.transform(X=x)
-            transformed = self._postprocess_per_segment(df, transformed)
-        elif self.mode == TransformMode.macro:
-            x = self._preprocess_macro(df)
-            transformed = self.transformer.transform(X=x)
-            transformed = self._postprocess_macro(df, transformed)
-        else:
-            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
         if self.inplace:
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
         else:
@@ -204,51 +195,24 @@ class SklearnTransform(Transform):
 
         if self.inplace:
             quantiles_arrays: Dict[str, pd.DataFrame] = dict()
+            transformed = self._make_inverse_transform(df)
 
-            if self.mode == TransformMode.per_segment:
-                x = self._preprocess_per_segment(df)
-                transformed = self.transformer.inverse_transform(X=x)
-                transformed = self._postprocess_per_segment(df, transformed)
+            # quantiles inverse transformation
+            for quantile_column_nm in quantiles:
+                df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
+                df_slice_copy = set_columns_wide(
+                    df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
+                )
+                transformed_quantile = self._make_inverse_transform(df_slice_copy)
+                df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_quantile
+                quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
+                    columns={"target": quantile_column_nm}
+                )
 
-                # quantiles inverse transformation
-                for quantile_column_nm in quantiles:
-                    df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
-                    df_slice_copy = set_columns_wide(
-                        df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
-                    )
-                    df_slice_copy_preprocessed = self._preprocess_per_segment(df_slice_copy)
-                    transformed_quantile = self.transformer.inverse_transform(X=df_slice_copy_preprocessed)
-                    transformed_quantile = self._postprocess_per_segment(df_slice_copy, transformed_quantile)
-                    df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_quantile
-                    quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
-                        columns={"target": quantile_column_nm}
-                    )
-
-            elif self.mode == TransformMode.macro:
-                x = self._preprocess_macro(df)
-                transformed = self.transformer.inverse_transform(X=x)
-                transformed = self._postprocess_macro(df, transformed)
-
-                # quantiles inverse transformation
-                for quantile_column_nm in quantiles:
-                    df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
-                    df_slice_copy = set_columns_wide(
-                        df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
-                    )
-                    df_slice_copy_preprocessed = self._preprocess_macro(df_slice_copy)
-                    transformed_quantile = self.transformer.inverse_transform(X=df_slice_copy_preprocessed)
-                    transformed_quantile = self._postprocess_macro(df_slice_copy, transformed_quantile)
-                    df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_quantile
-                    quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
-                        columns={"target": quantile_column_nm}
-                    )
-
-            else:
-                raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
-
             for quantile_column_nm in quantiles:
                 df.loc[:, pd.IndexSlice[:, quantile_column_nm]] = quantiles_arrays[quantile_column_nm].values
+
         return df
 
     def _preprocess_macro(self, df: pd.DataFrame) -> np.ndarray:
@@ -291,3 +255,29 @@ class SklearnTransform(Transform):
         select_columns = np.tile(select_segments, (num_features, 1)).T.ravel()
         result = transformed[:, select_columns]
         return result
+
+    def _make_transform(self, df: pd.DataFrame) -> np.ndarray:
+        if self.mode == TransformMode.per_segment:
+            x = self._preprocess_per_segment(df)
+            transformed = self.transformer.transform(X=x)
+            transformed = self._postprocess_per_segment(df, transformed)
+        elif self.mode == TransformMode.macro:
+            x = self._preprocess_macro(df)
+            transformed = self.transformer.transform(X=x)
+            transformed = self._postprocess_macro(df, transformed)
+        else:
+            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
+        return transformed
+
+    def _make_inverse_transform(self, df: pd.DataFrame) -> np.ndarray:
+        if self.mode == TransformMode.per_segment:
+            x = self._preprocess_per_segment(df)
+            transformed = self.transformer.inverse_transform(X=x)
+            transformed = self._postprocess_per_segment(df, transformed)
+        elif self.mode == TransformMode.macro:
+            x = self._preprocess_macro(df)
+            transformed = self.transformer.inverse_transform(X=x)
+            transformed = self._postprocess_macro(df, transformed)
+        else:
+            raise ValueError(f"'{self.mode}' is not a valid TransformMode.")
+        return transformed
