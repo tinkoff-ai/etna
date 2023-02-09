@@ -1,3 +1,4 @@
+import reprlib
 import warnings
 from copy import deepcopy
 from typing import Dict
@@ -72,6 +73,7 @@ class SklearnTransform(Transform):
         self.out_column = out_column
 
         self.out_columns: Optional[List[str]] = None
+        self._segments = None
 
     def _get_column_name(self, in_column: str) -> str:
         if self.out_column is None:
@@ -104,6 +106,7 @@ class SklearnTransform(Transform):
         else:
             self.out_columns = [self._get_column_name(column) for column in self.in_column]
 
+        self._segments = df.columns.get_level_values("segment").unique()
         if self.mode == TransformMode.per_segment:
             x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
         elif self.mode == TransformMode.macro:
@@ -127,11 +130,28 @@ class SklearnTransform(Transform):
         -------
         :
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            If transform isn't fitted.
+        NotImplementedError:
+            If there are segments that weren't present during training.
         """
+        if self._segments is None:
+            raise ValueError("The transform isn't fitted!")
+
         df = df.sort_index(axis=1)
         segments = sorted(set(df.columns.get_level_values("segment")))
 
         if self.mode == TransformMode.per_segment:
+            new_segments = set(segments) - set(self._segments)
+            if len(new_segments) > 0:
+                raise NotImplementedError(
+                    f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+                )
+
+            # TODO: add processing
             x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
             transformed = self.transformer.transform(X=x)
 
@@ -166,10 +186,17 @@ class SklearnTransform(Transform):
         -------
         :
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            If transform isn't fitted.
+        NotImplementedError:
+            If there are segments that weren't present during training.
         """
+        if self._segments is None:
+            raise ValueError("The transform isn't fitted!")
         df = df.sort_index(axis=1)
-        if self.in_column is None:
-            raise ValueError("Transform is not fitted yet.")
 
         if "target" in self.in_column:
             quantiles = match_target_quantiles(set(df.columns.get_level_values("feature")))
@@ -180,6 +207,15 @@ class SklearnTransform(Transform):
             quantiles_arrays: Dict[str, pd.DataFrame] = dict()
 
             if self.mode == TransformMode.per_segment:
+                segments = df.columns.get_level_values("segment").unique()
+                new_segments = set(segments) - set(self._segments)
+                if len(new_segments) > 0:
+                    raise NotImplementedError(
+                        f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+                    )
+
+                # TODO: add processing
+
                 x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
                 transformed = self.transformer.inverse_transform(X=x)
 
