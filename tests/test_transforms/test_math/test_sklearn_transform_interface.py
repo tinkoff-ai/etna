@@ -354,9 +354,82 @@ def test_inverse_transform_not_fitted_fail(transform_constructor, mode, in_colum
         _ = transform.inverse_transform(df)
 
 
-# TODO: make this
-def test_subset_segments():
-    pass
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "macro",
+        "per-segment",
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_transform_subset_segments(transform_constructor, mode, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df
+    test_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_2"], :]]
+    transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    _ = transform.transform(test_df)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "macro",
+        "per-segment",
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_inverse_transform_subset_segments(transform_constructor, mode, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df
+    test_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_2"], :]]
+    transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    _ = transform.inverse_transform(test_df)
 
 
 @pytest.mark.parametrize("inplace", [False, True])
