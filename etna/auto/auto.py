@@ -26,6 +26,9 @@ from etna.metrics.utils import MetricAggregationStatistics
 from etna.metrics.utils import aggregate_metrics_df
 from etna.pipeline import Pipeline
 
+from abc import ABC
+from abc import abstractmethod
+
 
 class _Callback(Protocol):
     def __call__(self, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame) -> None:
@@ -38,22 +41,176 @@ class _Initializer(Protocol):
 
 
 class AutoBase:
-    """Base Class for Auto"""
+    """Base Class for Auto and Tune, implementing core logic behind these classes"""
     
-    def __init__():
-        pass
-        
-    def top_k(k: int):
-    	pass
-    	
-    def summary():
+    def fit(
+        self,
+        ts: TSDataset,
+        timeout: Optional[int] = None,
+        n_trials: Optional[int] = None,
+        initializer: Optional[_Initializer] = None,
+        callback: Optional[_Callback] = None,
+        **optuna_kwargs,
+    ) -> Pipeline:
+        """
+        Start automatic pipeline selection.
+
+        Parameters
+        ----------
+        ts:
+            tsdataset to fit on
+        timeout:
+            timeout for optuna. N.B. this is timeout for each worker
+        n_trials:
+            number of trials for optuna. N.B. this is number of trials for each worker
+        initializer:
+            is called before each pipeline backtest, can be used to initialize loggers
+        callback:
+            is called after each pipeline backtest, can be used to log extra metrics
+        optuna_kwargs:
+            additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`
+        """
+        if self._optuna is None:
+            self._optuna = self._init_optuna()
+
+        self._optuna.tune(
+            objective=self.objective(
+                ts=ts,
+                target_metric=self.target_metric,
+                metric_aggregation=self.metric_aggregation,
+                metrics=self.metrics,
+                backtest_params=self.backtest_params,
+                initializer=initializer,
+                callback=callback,
+            ),
+            runner=self.runner,
+            n_trials=n_trials,
+            timeout=timeout,
+            **optuna_kwargs,
+        )
+
+        return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
+
+    def summary(self) -> pd.DataFrame:
+        """Get Auto trials summary."""
+        if self._optuna is None:
+            self._optuna = self._init_optuna()
+
+        study = self._optuna.study.get_trials()
+
+        study_params = [
+            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
+            for trial in study
+        ]
+
+        return pd.DataFrame(study_params)
+
+    def top_k(self, k: int = 5) -> List[Pipeline]:
+        """
+        Get top k pipelines.
+
+        Parameters
+        ----------
+        k:
+            number of pipelines to return
+        """
+        summary = self.summary()
+        df = summary.sort_values(
+            by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
+            ascending=(not self.target_metric.greater_is_better),
+        )
+        return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
+
+
+class AutoAbstract(ABC):
+    """Interface for Auto object"""
+    
+    @abstractmethod
+    def fit(
+        self,
+        ts: TSDataset,
+        timeout: Optional[int] = None,
+        n_trials: Optional[int] = None,
+        initializer: Optional[_Initializer] = None,
+        callback: Optional[_Callback] = None,
+        **optuna_kwargs,
+    ) -> Pipeline:
+        """
+        Start automatic pipeline selection.
+
+        Parameters
+        ----------
+        ts:
+            tsdataset to fit on
+        timeout:
+            timeout for optuna. N.B. this is timeout for each worker
+        n_trials:
+            number of trials for optuna. N.B. this is number of trials for each worker
+        initializer:
+            is called before each pipeline backtest, can be used to initialize loggers
+        callback:
+            is called after each pipeline backtest, can be used to log extra metrics
+        optuna_kwargs:
+            additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`
+        """
         pass
     
-    def objective():
+    @abstractmethod
+    def _init_optuna(self):
+        """Initialize optuna."""
+    
+    @abstractmethod
+    def summary(self) -> pd.DataFrame:
+        """Get Auto trials summary."""
+        pass
+    
+    @abstractmethod 
+    def top_k(self, k: int = 5) -> List[Pipeline]:
+        """
+        Get top k pipelines.
+
+        Parameters
+        ----------
+        k:
+            number of pipelines to return
+        """
+        pass
+    
+    @abstractmethod
+    @staticmethod
+    def objective(
+        ts: TSDataset,
+        target_metric: Metric,
+        metric_aggregation: MetricAggregationStatistics,
+        metrics: List[Metric],
+        backtest_params: dict,
+        initializer: Optional[_Initializer] = None,
+        callback: Optional[_Callback] = None,
+    ) -> Callable[[Trial], float]:
+        """
+        Optuna objective wrapper.
+
+        Parameters
+        ----------
+        ts:
+            tsdataset to fit on
+        target_metric:
+            metric to optimize
+        metric_aggregation:
+            aggregation method for per-segment metrics
+        metrics:
+            list of metrics to compute
+        backtest_params:
+            custom parameters for backtest instead of default backtest parameters
+        initializer:
+            is called before each pipeline backtest, can be used to initialize loggers
+        callback:
+            is called after each pipeline backtest, can be used to log extra metrics
+        """
         pass
 
 
-class Auto:
+class Auto(AutoBase, AutoAbstract):
     """Automatic pipeline selection via defined or custom pipeline pool."""
 
     def __init__(
@@ -175,87 +332,3 @@ class Auto:
         )
         return optuna
 
-    def summary(self) -> pd.DataFrame:
-        """Get Auto trials summary."""
-        if self._optuna is None:
-            self._optuna = self._init_optuna()
-
-        study = self._optuna.study.get_trials()
-
-        study_params = [
-            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
-            for trial in study
-        ]
-
-        return pd.DataFrame(study_params)
-
-    def top_k(self, k: int = 5) -> List[Pipeline]:
-        """
-        Get top k pipelines.
-
-        Parameters
-        ----------
-        k:
-            number of pipelines to return
-        """
-        summary = self.summary()
-        df = summary.sort_values(
-            by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
-            ascending=(not self.target_metric.greater_is_better),
-        )
-        return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
-
-    @staticmethod
-    def objective(
-        ts: TSDataset,
-        target_metric: Metric,
-        metric_aggregation: MetricAggregationStatistics,
-        metrics: List[Metric],
-        backtest_params: dict,
-        initializer: Optional[_Initializer] = None,
-        callback: Optional[_Callback] = None,
-    ) -> Callable[[Trial], float]:
-        """
-        Optuna objective wrapper.
-
-        Parameters
-        ----------
-        ts:
-            tsdataset to fit on
-        target_metric:
-            metric to optimize
-        metric_aggregation:
-            aggregation method for per-segment metrics
-        metrics:
-            list of metrics to compute
-        backtest_params:
-            custom parameters for backtest instead of default backtest parameters
-        initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
-        callback:
-            is called after each pipeline backtest, can be used to log extra metrics
-        """
-
-        def _objective(trial: Trial) -> float:
-
-            pipeline_config = dict()
-            pipeline_config.update(trial.relative_params)
-            pipeline_config.update(trial.params)
-
-            pipeline: Pipeline = get_from_params(**pipeline_config)
-            if initializer is not None:
-                initializer(pipeline=pipeline)
-
-            metrics_df, forecast_df, fold_info_df = pipeline.backtest(ts, metrics=metrics, **backtest_params)
-
-            if callback is not None:
-                callback(metrics_df=metrics_df, forecast_df=forecast_df, fold_info_df=fold_info_df)
-
-            aggregated_metrics = aggregate_metrics_df(metrics_df)
-
-            for metric in aggregated_metrics:
-                trial.set_user_attr(metric, aggregated_metrics[metric])
-
-            return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
-
-        return _objective
