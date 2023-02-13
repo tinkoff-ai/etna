@@ -5,35 +5,33 @@ from pandas.util.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets import TSDataset
-from etna.models import (
-    AutoARIMAModel,
-    BATSModel,
-    CatBoostModelMultiSegment,
-    CatBoostModelPerSegment,
-    DeadlineMovingAverageModel,
-    ElasticMultiSegmentModel,
-    ElasticPerSegmentModel,
-    HoltModel,
-    HoltWintersModel,
-    LinearMultiSegmentModel,
-    LinearPerSegmentModel,
-    MovingAverageModel,
-    NaiveModel,
-    ProphetModel,
-    SARIMAXModel,
-    SeasonalMovingAverageModel,
-    SimpleExpSmoothingModel,
-    TBATSModel,
-)
-from etna.models.nn import DeepARModel, RNNModel, TFTModel
+from etna.models import AutoARIMAModel
+from etna.models import BATSModel
+from etna.models import CatBoostModelMultiSegment
+from etna.models import CatBoostModelPerSegment
+from etna.models import DeadlineMovingAverageModel
+from etna.models import ElasticMultiSegmentModel
+from etna.models import ElasticPerSegmentModel
+from etna.models import HoltModel
+from etna.models import HoltWintersModel
+from etna.models import LinearMultiSegmentModel
+from etna.models import LinearPerSegmentModel
+from etna.models import MovingAverageModel
+from etna.models import NaiveModel
+from etna.models import ProphetModel
+from etna.models import SARIMAXModel
+from etna.models import SeasonalMovingAverageModel
+from etna.models import SimpleExpSmoothingModel
+from etna.models import TBATSModel
+from etna.models.nn import DeepARModel
+from etna.models.nn import RNNModel
+from etna.models.nn import TFTModel
 from etna.models.nn.utils import PytorchForecastingDatasetBuilder
 from etna.transforms import LagTransform
-from tests.test_models.inference.common import (
-    _test_prediction_in_sample_full,
-    _test_prediction_in_sample_suffix,
-    make_prediction,
-    to_be_fixed,
-)
+from tests.test_models.inference.common import _test_prediction_in_sample_full
+from tests.test_models.inference.common import _test_prediction_in_sample_suffix
+from tests.test_models.inference.common import make_prediction
+from tests.test_models.inference.common import to_be_fixed
 
 
 def make_predict(model, ts, prediction_size) -> TSDataset:
