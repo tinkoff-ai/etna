@@ -9,7 +9,7 @@ from etna.datasets import generate_const_df
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
 
-collect_ignore = ["test_models/test_inference/"]
+collect_ignore = ["test_models/inference/"]
 
 
 @pytest.fixture(autouse=True)
