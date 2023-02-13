@@ -354,6 +354,12 @@ def test_inverse_transform_not_fitted_fail(transform_constructor, mode, in_colum
         _ = transform.inverse_transform(df)
 
 
+def _check_same_segments(df_1: pd.DataFrame, df_2: pd.DataFrame):
+    df_1_segments = set(df_1.columns.get_level_values("segment"))
+    df_2_segments = set(df_2.columns.get_level_values("segment"))
+    assert df_1_segments == df_2_segments
+
+
 @pytest.mark.parametrize("inplace", [False, True])
 @pytest.mark.parametrize(
     "in_column",
@@ -390,7 +396,9 @@ def test_transform_subset_segments(transform_constructor, mode, in_column, inpla
     transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
 
     transform.fit(train_df)
-    _ = transform.transform(test_df)
+    transformed_df = transform.transform(test_df)
+
+    _check_same_segments(transformed_df, test_df)
 
 
 @pytest.mark.parametrize("inplace", [False, True])
@@ -429,7 +437,9 @@ def test_inverse_transform_subset_segments(transform_constructor, mode, in_colum
     transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
 
     transform.fit(train_df)
-    _ = transform.inverse_transform(test_df)
+    inv_transformed_df = transform.inverse_transform(test_df)
+
+    _check_same_segments(inv_transformed_df, test_df)
 
 
 @pytest.mark.parametrize("inplace", [False, True])
@@ -461,7 +471,9 @@ def test_transform_new_segments_macro(transform_constructor, in_column, inplace,
     transform = transform_constructor(mode="macro", in_column=in_column, inplace=inplace)
 
     transform.fit(train_df)
-    _ = transform.transform(test_df)
+    transformed_df = transform.transform(test_df)
+
+    _check_same_segments(transformed_df, test_df)
 
 
 @pytest.mark.parametrize("inplace", [False, True])
@@ -528,7 +540,9 @@ def test_inverse_transform_new_segments_macro(transform_constructor, in_column, 
     transform = transform_constructor(mode="macro", in_column=in_column, inplace=inplace)
 
     transform.fit(train_df)
-    _ = transform.inverse_transform(test_df)
+    transformed_df = transform.inverse_transform(test_df)
+
+    _check_same_segments(transformed_df, test_df)
 
 
 @pytest.mark.parametrize(
@@ -559,7 +573,9 @@ def test_inverse_transform_new_segments_per_segment_non_inplace(transform_constr
     transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=False)
 
     transform.fit(train_df)
-    _ = transform.inverse_transform(test_df)
+    inv_transformed_df = transform.inverse_transform(test_df)
+
+    _check_same_segments(inv_transformed_df, test_df)
 
 
 @pytest.mark.parametrize(
