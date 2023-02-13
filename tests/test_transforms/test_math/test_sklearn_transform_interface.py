@@ -575,7 +575,7 @@ def test_inverse_transform_new_segments_per_segment_non_inplace(transform_constr
     transform.fit(train_df)
     inv_transformed_df = transform.inverse_transform(test_df)
 
-    _check_same_segments(inv_transformed_df, test_df)
+    pd.testing.assert_frame_equal(inv_transformed_df, test_df)
 
 
 @pytest.mark.parametrize(
