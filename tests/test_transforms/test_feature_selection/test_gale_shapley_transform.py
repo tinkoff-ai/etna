@@ -20,6 +20,32 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 
 @pytest.fixture
+def get_ts_with_exog_galeshapley(random_seed) -> TSDataset:
+    np.random.seed(random_seed)
+
+    periods = 30
+    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-15", periods=periods)})
+    df_1["segment"] = "segment_1"
+    df_1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-15", periods=periods)})
+    df_2["segment"] = "segment_2"
+    df_2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    df = pd.concat([df_1, df_2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    tsds = TSDataset(df, freq="D")
+    df = tsds.to_pandas(flatten=True)
+    df_exog = df.copy().drop(columns=["target"])
+    df_exog["weekday"] = df_exog["timestamp"].dt.weekday
+    df_exog["monthday"] = df_exog["timestamp"].dt.day
+    df_exog["month"] = df_exog["timestamp"].dt.month
+    df_exog["year"] = df_exog["timestamp"].dt.year
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    return ts
+
+
+@pytest.fixture
 def ts_with_large_regressors_number(random_seed) -> TSDataset:
     df = generate_periodic_df(periods=100, start_time="2020-01-01", n_segments=3, period=7, scale=10)
 
@@ -68,32 +94,14 @@ def segment() -> SegmentGaleShapley:
 @pytest.fixture
 def matcher() -> GaleShapleyMatcher:
     segments = [
-        SegmentGaleShapley(
-            name="segment_1",
-            ranked_candidates=["regressor_1", "regressor_2", "regressor_3"],
-        ),
-        SegmentGaleShapley(
-            name="segment_2",
-            ranked_candidates=["regressor_1", "regressor_3", "regressor_2"],
-        ),
-        SegmentGaleShapley(
-            name="segment_3",
-            ranked_candidates=["regressor_2", "regressor_3", "regressor_1"],
-        ),
+        SegmentGaleShapley(name="segment_1", ranked_candidates=["regressor_1", "regressor_2", "regressor_3"]),
+        SegmentGaleShapley(name="segment_2", ranked_candidates=["regressor_1", "regressor_3", "regressor_2"]),
+        SegmentGaleShapley(name="segment_3", ranked_candidates=["regressor_2", "regressor_3", "regressor_1"]),
     ]
     features = [
-        FeatureGaleShapley(
-            name="regressor_1",
-            ranked_candidates=["segment_3", "segment_1", "segment_2"],
-        ),
-        FeatureGaleShapley(
-            name="regressor_2",
-            ranked_candidates=["segment_2", "segment_3", "segment_1"],
-        ),
-        FeatureGaleShapley(
-            name="regressor_3",
-            ranked_candidates=["segment_1", "segment_2", "segment_3"],
-        ),
+        FeatureGaleShapley(name="regressor_1", ranked_candidates=["segment_3", "segment_1", "segment_2"]),
+        FeatureGaleShapley(name="regressor_2", ranked_candidates=["segment_2", "segment_3", "segment_1"]),
+        FeatureGaleShapley(name="regressor_3", ranked_candidates=["segment_1", "segment_2", "segment_3"]),
     ]
     gsh = GaleShapleyMatcher(segments=segments, features=features)
     return gsh
@@ -178,13 +186,7 @@ def test_get_ranked_list_features(relevance_matrix: pd.DataFrame, ascending: boo
 
 @pytest.mark.parametrize(
     "top_k,n_segments,n_features,expected",
-    (
-        (20, 10, 50, 2),
-        (27, 10, 40, 3),
-        (15, 4, 16, 4),
-        (7, 10, 50, 1),
-        (30, 5, 20, 1),
-    ),
+    ((20, 10, 50, 2), (27, 10, 40, 3), (15, 4, 16, 4), (7, 10, 50, 1), (30, 5, 20, 1)),
 )
 def test_compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_features: int, expected: int):
     result = GaleShapleyFeatureSelectionTransform._compute_gale_shapley_steps_number(
@@ -216,11 +218,7 @@ def test_compute_gale_shapley_steps_number(top_k: int, n_segments: int, n_featur
                 "segment_3": ["regressor_4", "regressor_3", "regressor_1", "regressor_2"],
             },
             ["regressor_2", "regressor_3", "regressor_1", "regressor_4"],
-            {
-                "segment_1": [],
-                "segment_2": [],
-                "segment_3": [],
-            },
+            {"segment_1": [], "segment_2": [], "segment_3": []},
         ),
     ),
 )
@@ -290,38 +288,30 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
         (
             [
                 SegmentGaleShapley(
-                    name="segment_1",
-                    ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"],
+                    name="segment_1", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
                 ),
                 SegmentGaleShapley(
-                    name="segment_2",
-                    ranked_candidates=["regressor_1", "regressor_3", "regressor_2", "regressor_4"],
+                    name="segment_2", ranked_candidates=["regressor_1", "regressor_3", "regressor_2", "regressor_4"]
                 ),
                 SegmentGaleShapley(
-                    name="segment_3",
-                    ranked_candidates=["regressor_2", "regressor_4", "regressor_1", "regressor_3"],
+                    name="segment_3", ranked_candidates=["regressor_2", "regressor_4", "regressor_1", "regressor_3"]
                 ),
                 SegmentGaleShapley(
-                    name="segment_4",
-                    ranked_candidates=["regressor_3", "regressor_1", "regressor_4", "regressor_2"],
+                    name="segment_4", ranked_candidates=["regressor_3", "regressor_1", "regressor_4", "regressor_2"]
                 ),
             ],
             [
                 FeatureGaleShapley(
-                    name="regressor_1",
-                    ranked_candidates=["segment_2", "segment_1", "segment_3", "segment_4"],
+                    name="regressor_1", ranked_candidates=["segment_2", "segment_1", "segment_3", "segment_4"]
                 ),
                 FeatureGaleShapley(
-                    name="regressor_2",
-                    ranked_candidates=["segment_1", "segment_2", "segment_3", "segment_4"],
+                    name="regressor_2", ranked_candidates=["segment_1", "segment_2", "segment_3", "segment_4"]
                 ),
                 FeatureGaleShapley(
-                    name="regressor_3",
-                    ranked_candidates=["segment_3", "segment_2", "segment_4", "segment_1"],
+                    name="regressor_3", ranked_candidates=["segment_3", "segment_2", "segment_4", "segment_1"]
                 ),
                 FeatureGaleShapley(
-                    name="regressor_4",
-                    ranked_candidates=["segment_3", "segment_1", "segment_4", "segment_2"],
+                    name="regressor_4", ranked_candidates=["segment_3", "segment_1", "segment_4", "segment_2"]
                 ),
             ],
             {
@@ -334,38 +324,30 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
         (
             [
                 SegmentGaleShapley(
-                    name="segment_1",
-                    ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"],
+                    name="segment_1", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
                 ),
                 SegmentGaleShapley(
-                    name="segment_2",
-                    ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"],
+                    name="segment_2", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
                 ),
                 SegmentGaleShapley(
-                    name="segment_3",
-                    ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"],
+                    name="segment_3", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
                 ),
                 SegmentGaleShapley(
-                    name="segment_4",
-                    ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"],
+                    name="segment_4", ranked_candidates=["regressor_1", "regressor_2", "regressor_3", "regressor_4"]
                 ),
             ],
             [
                 FeatureGaleShapley(
-                    name="regressor_1",
-                    ranked_candidates=["segment_2", "segment_1", "segment_3", "segment_4"],
+                    name="regressor_1", ranked_candidates=["segment_2", "segment_1", "segment_3", "segment_4"]
                 ),
                 FeatureGaleShapley(
-                    name="regressor_2",
-                    ranked_candidates=["segment_1", "segment_2", "segment_3", "segment_4"],
+                    name="regressor_2", ranked_candidates=["segment_1", "segment_2", "segment_3", "segment_4"]
                 ),
                 FeatureGaleShapley(
-                    name="regressor_3",
-                    ranked_candidates=["segment_3", "segment_2", "segment_4", "segment_1"],
+                    name="regressor_3", ranked_candidates=["segment_3", "segment_2", "segment_4", "segment_1"]
                 ),
                 FeatureGaleShapley(
-                    name="regressor_4",
-                    ranked_candidates=["segment_3", "segment_1", "segment_4", "segment_2"],
+                    name="regressor_4", ranked_candidates=["segment_3", "segment_1", "segment_4", "segment_2"]
                 ),
             ],
             {
@@ -391,39 +373,18 @@ def test_gale_shapley_matcher_break_match(matcher: GaleShapleyMatcher):
                 ),
             ],
             [
-                FeatureGaleShapley(
-                    name="regressor_1",
-                    ranked_candidates=["segment_3", "segment_1", "segment_2"],
-                ),
-                FeatureGaleShapley(
-                    name="regressor_2",
-                    ranked_candidates=["segment_3", "segment_2", "segment_1"],
-                ),
-                FeatureGaleShapley(
-                    name="regressor_3",
-                    ranked_candidates=["segment_3", "segment_1", "segment_2"],
-                ),
-                FeatureGaleShapley(
-                    name="regressor_4",
-                    ranked_candidates=["segment_1", "segment_2", "segment_3"],
-                ),
-                FeatureGaleShapley(
-                    name="regressor_5",
-                    ranked_candidates=["segment_1", "segment_3", "segment_2"],
-                ),
+                FeatureGaleShapley(name="regressor_1", ranked_candidates=["segment_3", "segment_1", "segment_2"]),
+                FeatureGaleShapley(name="regressor_2", ranked_candidates=["segment_3", "segment_2", "segment_1"]),
+                FeatureGaleShapley(name="regressor_3", ranked_candidates=["segment_3", "segment_1", "segment_2"]),
+                FeatureGaleShapley(name="regressor_4", ranked_candidates=["segment_1", "segment_2", "segment_3"]),
+                FeatureGaleShapley(name="regressor_5", ranked_candidates=["segment_1", "segment_3", "segment_2"]),
             ],
-            {
-                "segment_1": "regressor_5",
-                "segment_2": "regressor_2",
-                "segment_3": "regressor_1",
-            },
+            {"segment_1": "regressor_5", "segment_2": "regressor_2", "segment_3": "regressor_1"},
         ),
     ),
 )
 def test_gale_shapley_result(
-    segments: List[SegmentGaleShapley],
-    features: List[FeatureGaleShapley],
-    expected: Dict[str, str],
+    segments: List[SegmentGaleShapley], features: List[FeatureGaleShapley], expected: Dict[str, str]
 ):
     matcher = GaleShapleyMatcher(segments=segments, features=features)
     matches = matcher()
@@ -488,11 +449,7 @@ def test_gale_shapley_result(
                 "regressor_4": ["segment_1", "segment_2", "segment_3"],
                 "regressor_5": ["segment_1", "segment_3", "segment_2"],
             },
-            {
-                "segment_1": "regressor_5",
-                "segment_2": "regressor_2",
-                "segment_3": "regressor_1",
-            },
+            {"segment_1": "regressor_5", "segment_2": "regressor_2", "segment_3": "regressor_1"},
         ),
     ),
 )
@@ -510,41 +467,25 @@ def test_gale_shapley_transform_gale_shapley_iteration(
     "matches,n,greater_is_better,expected",
     (
         (
-            {
-                "segment_1": "regressor_4",
-                "segment_2": "regressor_7",
-                "segment_3": "regressor_5",
-            },
+            {"segment_1": "regressor_4", "segment_2": "regressor_7", "segment_3": "regressor_5"},
             2,
             False,
             ["regressor_5", "regressor_7"],
         ),
         (
-            {
-                "segment_1": "regressor_4",
-                "segment_2": "regressor_7",
-                "segment_3": "regressor_5",
-            },
+            {"segment_1": "regressor_4", "segment_2": "regressor_7", "segment_3": "regressor_5"},
             1,
             True,
             ["regressor_4"],
         ),
         (
-            {
-                "segment_1": "regressor_3",
-                "segment_2": "regressor_2",
-                "segment_3": "regressor_1",
-            },
+            {"segment_1": "regressor_3", "segment_2": "regressor_2", "segment_3": "regressor_1"},
             2,
             False,
             ["regressor_1", "regressor_2"],
         ),
         (
-            {
-                "segment_1": "regressor_3",
-                "segment_2": "regressor_2",
-                "segment_3": "regressor_1",
-            },
+            {"segment_1": "regressor_3", "segment_2": "regressor_2", "segment_3": "regressor_1"},
             3,
             False,
             ["regressor_1", "regressor_2", "regressor_3"],
@@ -622,3 +563,14 @@ def test_work_with_non_regressors(ts_with_exog):
 )
 def test_save_load(transform, ts_with_large_regressors_number):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_large_regressors_number)
+
+
+def test_right_number_features_with_integer_division(get_ts_with_exog_galeshapley):
+    top_k = len(get_ts_with_exog_galeshapley.segments)
+    transform = GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=top_k)
+
+    transform.fit(get_ts_with_exog_galeshapley.to_pandas())
+    df = transform.transform(get_ts_with_exog_galeshapley.to_pandas())
+
+    remaining_columns = df.columns.get_level_values("feature").unique().tolist()
+    assert len(remaining_columns) == top_k + 1

@@ -294,8 +294,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
     @staticmethod
     def _gale_shapley_iteration(
-        segment_features_ranking: Dict[str, List[str]],
-        feature_segments_ranking: Dict[str, List[str]],
+        segment_features_ranking: Dict[str, List[str]], feature_segments_ranking: Dict[str, List[str]]
     ) -> Dict[str, str]:
         """Build matching for all the segments.
 
@@ -310,10 +309,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             dict of segment x feature
         """
         gssegments = [
-            SegmentGaleShapley(
-                name=name,
-                ranked_candidates=ranked_candidates,
-            )
+            SegmentGaleShapley(name=name, ranked_candidates=ranked_candidates)
             for name, ranked_candidates in segment_features_ranking.items()
         ]
         gsfeatures = [
@@ -361,17 +357,14 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             table=relevance_table.T, ascending=not self.relevance_table.greater_is_better
         )
         gale_shapley_steps_number = self._compute_gale_shapley_steps_number(
-            top_k=self.top_k,
-            n_segments=len(segment_features_ranking),
-            n_features=len(feature_segments_ranking),
+            top_k=self.top_k, n_segments=len(segment_features_ranking), n_features=len(feature_segments_ranking)
         )
         last_step_features_number = self.top_k % len(segment_features_ranking)
         for step in range(gale_shapley_steps_number):
             matches = self._gale_shapley_iteration(
-                segment_features_ranking=segment_features_ranking,
-                feature_segments_ranking=feature_segments_ranking,
+                segment_features_ranking=segment_features_ranking, feature_segments_ranking=feature_segments_ranking
             )
-            if step == gale_shapley_steps_number - 1:
+            if step == gale_shapley_steps_number - 1 and last_step_features_number != 0:
                 selected_features = self._process_last_step(
                     matches=matches,
                     relevance_table=relevance_table,
