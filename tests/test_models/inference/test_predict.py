@@ -164,21 +164,14 @@ class TestPredictInSampleSuffix:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                DeepARModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                DeepARModel(trainer_params=dict(max_epochs=1), lr=0.01, encoder_length=1, decoder_length=1),
+                [],
             ),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                TFTModel(
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
                         min_encoder_length=21,
                         max_prediction_length=5,
@@ -186,8 +179,9 @@ class TestPredictInSampleSuffix:
                         time_varying_unknown_reals=["target"],
                         static_categoricals=["segment"],
                         target_normalizer=None,
-                    )
-                ],
+                    ),
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
