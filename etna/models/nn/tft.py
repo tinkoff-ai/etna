@@ -89,12 +89,11 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
         super().__init__()
         if loss is None:
             loss = QuantileLoss()
-        if (encoder_length is None or decoder_length is None) and dataset_builder is not None:
-
+        if dataset_builder is not None:
             self.encoder_length = dataset_builder.max_encoder_length
             self.decoder_length = dataset_builder.max_prediction_length
             self.dataset_builder = dataset_builder
-        elif (encoder_length is not None and decoder_length is not None) and dataset_builder is None:
+        elif encoder_length is not None and decoder_length is not None:
             self.encoder_length = encoder_length
             self.decoder_length = decoder_length
             self.dataset_builder = PytorchForecastingDatasetBuilder(
@@ -107,6 +106,7 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
             )
         else:
             raise ValueError("You should provide either dataset_builder or encoder_length and decoder_length")
+
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
         self.lr = lr
