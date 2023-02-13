@@ -252,7 +252,7 @@ class SklearnTransform(Transform):
         transform_segments = set(df.columns.get_level_values("segment"))
         select_segments = [segment in transform_segments for segment in self._fit_segments]
         # make a mask for columns to select
-        select_columns = np.tile(select_segments, (num_features, 1)).T.ravel()
+        select_columns = np.repeat(select_segments, num_features)
         result = transformed[:, select_columns]
         return result
 
