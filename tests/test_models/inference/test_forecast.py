@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset

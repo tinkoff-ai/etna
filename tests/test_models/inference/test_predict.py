@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets import TSDataset
 from etna.models import AutoARIMAModel
