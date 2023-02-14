@@ -498,7 +498,6 @@ class TestForecastOutSamplePrefix:
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=5,
                         max_prediction_length=5,
-                        min_prediction_length=1,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
                         target_normalizer=GroupNormalizer(groups=["segment"]),
