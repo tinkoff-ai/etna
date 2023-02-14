@@ -270,7 +270,7 @@ def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, r
 
 
 @patch("etna.pipeline.pipeline.Pipeline.save")
-def test_save(mocked_load, product_level_constant_hierarchical_ts, tmp_path):
+def test_save(save_mock, product_level_constant_hierarchical_ts, tmp_path):
     ts = product_level_constant_hierarchical_ts
     model = NaiveModel()
     reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
@@ -282,16 +282,16 @@ def test_save(mocked_load, product_level_constant_hierarchical_ts, tmp_path):
     def check_no_fit_ts(path):
         assert not hasattr(pipeline, "_fit_ts")
 
-    mocked_load.side_effect = check_no_fit_ts
+    save_mock.side_effect = check_no_fit_ts
 
     pipeline.save(path)
 
-    mocked_load.assert_called_once_with(path=path)
+    save_mock.assert_called_once_with(path=path)
     assert hasattr(pipeline, "_fit_ts")
 
 
 @patch("etna.pipeline.pipeline.Pipeline.load")
-def test_load_no_ts(mocked_load, product_level_constant_hierarchical_ts, tmp_path):
+def test_load_no_ts(load_mock, product_level_constant_hierarchical_ts, tmp_path):
     ts = product_level_constant_hierarchical_ts
     model = NaiveModel()
     reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
@@ -303,14 +303,14 @@ def test_load_no_ts(mocked_load, product_level_constant_hierarchical_ts, tmp_pat
     pipeline.save(path)
     loaded_pipeline = HierarchicalPipeline.load(path)
 
-    mocked_load.assert_called_once_with(path=path)
+    load_mock.assert_called_once_with(path=path)
     assert loaded_pipeline._fit_ts is None
     assert loaded_pipeline.ts is None
-    assert loaded_pipeline == mocked_load.return_value
+    assert loaded_pipeline == load_mock.return_value
 
 
 @patch("etna.pipeline.pipeline.Pipeline.load")
-def test_load_with_ts(mocked_load, product_level_constant_hierarchical_ts, tmp_path):
+def test_load_with_ts(load_mock, product_level_constant_hierarchical_ts, tmp_path):
     ts = product_level_constant_hierarchical_ts
     model = NaiveModel()
     reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
@@ -322,10 +322,10 @@ def test_load_with_ts(mocked_load, product_level_constant_hierarchical_ts, tmp_p
     pipeline.save(path)
     loaded_pipeline = HierarchicalPipeline.load(path, ts=ts)
 
-    mocked_load.assert_called_once_with(path=path)
-    mocked_load.return_value.reconciliator.aggregate.assert_called_once_with(ts=ts)
+    load_mock.assert_called_once_with(path=path)
+    load_mock.return_value.reconciliator.aggregate.assert_called_once_with(ts=ts)
     pd.testing.assert_frame_equal(loaded_pipeline._fit_ts.to_pandas(), ts.to_pandas())
-    assert loaded_pipeline.ts == mocked_load.return_value.reconciliator.aggregate.return_value
+    assert loaded_pipeline.ts == load_mock.return_value.reconciliator.aggregate.return_value
 
 
 @pytest.mark.parametrize(
