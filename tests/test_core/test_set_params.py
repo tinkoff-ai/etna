@@ -20,7 +20,9 @@ def test_base_mixin_set_params_changes_params_estimator():
 
 def test_base_mixin_set_params_changes_params_pipeline():
     pipeline = Pipeline(model=CatBoostMultiSegmentModel(iterations=1000, depth=10), transforms=(), horizon=5)
-    pipeline = pipeline.set_params(**{"model.learning_rate": 1e-3, "model.depth": 8, "transforms": AddConstTransform("column", 1)})
+    pipeline = pipeline.set_params(
+        **{"model.learning_rate": 1e-3, "model.depth": 8, "transforms": AddConstTransform("column", 1)}
+    )
     expected_dict = {
         "_target_": "etna.pipeline.pipeline.Pipeline",
         "horizon": 5,
