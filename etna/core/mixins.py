@@ -91,7 +91,7 @@ class BaseMixin:
         return params
 
     def set_params(self, **params: dict) -> "BaseMixin":
-        """Set the parameters of this estimator.
+        """Return copy of this estimator with given parameters set.
 
         The method works on simple estimators as well as on nested objects
         (such as :class:`~etna.pipeline.Pipeline`). The latter have
