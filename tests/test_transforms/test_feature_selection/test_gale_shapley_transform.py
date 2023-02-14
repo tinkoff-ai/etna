@@ -20,7 +20,7 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 
 @pytest.fixture
-def get_ts_with_exog_galeshapley(random_seed) -> TSDataset:
+def ts_with_exog_galeshapley(random_seed) -> TSDataset:
     np.random.seed(random_seed)
 
     periods = 30
@@ -650,12 +650,12 @@ def test_save_load(transform, ts_with_large_regressors_number):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_large_regressors_number)
 
 
-def test_right_number_features_with_integer_division(get_ts_with_exog_galeshapley):
-    top_k = len(get_ts_with_exog_galeshapley.segments)
+def test_right_number_features_with_integer_division(ts_with_exog_galeshapley):
+    top_k = len(ts_with_exog_galeshapley.segments)
     transform = GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=top_k)
 
-    transform.fit(get_ts_with_exog_galeshapley.to_pandas())
-    df = transform.transform(get_ts_with_exog_galeshapley.to_pandas())
+    transform.fit(ts_with_exog_galeshapley.to_pandas())
+    df = transform.transform(ts_with_exog_galeshapley.to_pandas())
 
     remaining_columns = df.columns.get_level_values("feature").unique().tolist()
     assert len(remaining_columns) == top_k + 1
