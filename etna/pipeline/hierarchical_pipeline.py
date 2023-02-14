@@ -156,6 +156,25 @@ class HierarchicalPipeline(Pipeline):
 
         return predictions
 
+    def save(self, path: pathlib.Path):
+        """Save the object.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        """
+        fit_ts = self._fit_ts
+
+        try:
+            # extract attributes we can't easily save
+            delattr(self, "_fit_ts")
+
+            # save the remaining part
+            super().save(path=path)
+        finally:
+            self._fit_ts = fit_ts
+
     @classmethod
     def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> "HierarchicalPipeline":
         """Load an object.
@@ -173,5 +192,9 @@ class HierarchicalPipeline(Pipeline):
             Loaded object.
         """
         obj = super().load(path=path)
-        obj.ts = obj.reconciliator.aggregate(ts=ts)
+        obj._fit_ts = deepcopy(ts)
+        if ts is not None:
+            obj.ts = obj.reconciliator.aggregate(ts=ts)
+        else:
+            obj.ts = None
         return obj
