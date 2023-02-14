@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 ### Changed
 
--
+- Create AutoBase and AutoAbstract classes, some of Auto class's logic moved there ([#1023](https://github.com/tinkoff-ai/etna/pull/1023))
 -
 ### Fixed
 
