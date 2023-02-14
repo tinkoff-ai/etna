@@ -14,6 +14,7 @@ from typing import Tuple
 from typing import cast
 
 from sklearn.base import BaseEstimator
+from copy import deepcopy
 
 
 class BaseMixin:
@@ -89,7 +90,7 @@ class BaseMixin:
         params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
 
-    def set_params(self, **params):
+    def set_params(self, **params: dict) -> "BaseMixin":
         """Set the parameters of this estimator.
 
         The method works on simple estimators as well as on nested objects
@@ -99,34 +100,33 @@ class BaseMixin:
 
         Parameters
         ----------
-        **params : dict
+        **params: dict
             Estimator parameters.
-        Returns
-        -------
-        self : estimator instance
-            Estimator instance.
+
         """
+        estimator_out = deepcopy(self)
         for parameter, parameter_value in params.items():
             # split specification into list of nested params, "model.depth" -> ["model", "depth"]
             param_nested = parameter.split(".")
             # all nested params except the last specify path to the estimator whose attribute will be set
             # in the following cycle, we find this estimator
-            estimator = self
+            estimator = estimator_out
             nesting_correct = True
             for param_current_nesting_level in param_nested[:-1]:
                 try:
-                    estimator = estimator.__getattribute__(param_current_nesting_level)
+                    estimator = getattr(estimator, param_current_nesting_level)
                 except AttributeError:
                     nesting_correct = False
                     break
             if nesting_correct:
                 try:
                     # if there is no such attribute, the first row will throw AttributeError
-                    estimator.__getattribute__(param_nested[-1])
-                    estimator.__setattr__(param_nested[-1], parameter_value)
+                    getattr(estimator, param_nested[-1])
+                    setattr(estimator, param_nested[-1], parameter_value)
+                    print("Set attribute", param_nested[-1], "to", parameter_value)
                 except AttributeError:
                     pass
-        return self
+        return estimator_out
 
 
 class StringEnumWithRepr(str, Enum):
