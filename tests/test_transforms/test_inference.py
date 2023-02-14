@@ -741,6 +741,10 @@ class TestTransformTrainNewSegments:
                 ),
                 "ts_to_resample",
             ),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
         ],
     )
     def test_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -754,11 +758,6 @@ class TestTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
-            # missing_values
-            (
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-            ),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
         ],
@@ -1037,6 +1036,10 @@ class TestTransformFutureNewSegments:
                 ),
                 "ts_to_resample",
             ),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
         ],
     )
     def test_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -1050,11 +1053,6 @@ class TestTransformFutureNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name",
         [
-            # missing_values
-            (
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-            ),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
         ],
