@@ -5,6 +5,7 @@ import pickle
 import sys
 import warnings
 import zipfile
+from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Callable
@@ -14,7 +15,6 @@ from typing import Tuple
 from typing import cast
 
 from sklearn.base import BaseEstimator
-from copy import deepcopy
 
 
 class BaseMixin:
