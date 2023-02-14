@@ -40,7 +40,7 @@ class _Initializer(Protocol):
 
 
 class AutoBase:
-    """Base Class for Auto and Tune, implementing core logic behind these classes"""
+    """Base Class for Auto and Tune, implementing core logic behind these classes."""
 
     def summary(self) -> pd.DataFrame:
         """Get Auto trials summary."""
@@ -74,7 +74,7 @@ class AutoBase:
 
 
 class AutoAbstract(ABC):
-    """Interface for Auto object"""
+    """Interface for Auto object."""
 
     @abstractmethod
     def fit(
