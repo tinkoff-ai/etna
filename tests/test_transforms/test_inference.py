@@ -137,44 +137,44 @@ def ts_to_fill(regular_ts) -> TSDataset:
 def ts_to_resample() -> TSDataset:
     df_1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=120),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df_2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=120),
             "segment": "segment_2",
-            "target": [1] + 23 * [0] + [1] + 23 * [0],
+            "target": ([1] + 23 * [0]) * 5,
         }
     )
     df_3 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=120),
             "segment": "segment_3",
-            "target": [4] + 23 * [0] + [4] + 23 * [0],
+            "target": ([4] + 23 * [0]) * 5,
         }
     )
     df = pd.concat([df_1, df_2, df_3], ignore_index=True)
 
     df_exog_1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=8),
             "segment": "segment_1",
             "regressor_exog": 2,
         }
     )
     df_exog_2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=8),
             "segment": "segment_2",
             "regressor_exog": 40,
         }
     )
     df_exog_3 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=8),
             "segment": "segment_3",
             "regressor_exog": 40,
         }
@@ -1087,7 +1087,7 @@ class TestTransformFutureWithTarget:
     Expected that transformation creates columns, removes columns and changes values.
     """
 
-    def _test_transform_future_with_target(self, ts, transform, expected_changes, gap_size=7, transform_size=28):
+    def _test_transform_future_with_target(self, ts, transform, expected_changes, gap_size=7, transform_size=50):
         # select subset of tsdataset
         history_ts, future_full_ts = ts.train_test_split(test_size=gap_size + transform_size)
         _, future_suffix_ts = future_full_ts.train_test_split(test_size=transform_size)
@@ -1154,7 +1154,7 @@ class TestTransformFutureWithTarget:
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year"}},
+                {"remove": {"month", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
@@ -1332,6 +1332,20 @@ class TestTransformFutureWithTarget:
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
             # missing_values
             (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample",
+                {"create": {"res"}},
+            ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample",
+                {"change": {"regressor_exog"}},
+            ),
+            (
                 # this behaviour can be unexpected for someone
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
@@ -1365,21 +1379,6 @@ class TestTransformFutureWithTarget:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # missing_values
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
-                ),
-                "ts_to_resample",
-                {"create": {"res"}},
-            ),
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=True
-                ),
-                "ts_to_resample",
-                {"change": {"regressor_exog"}},
-            ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -1624,6 +1623,20 @@ class TestTransformFutureWithoutTarget:
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {}),
             # missing_values
             (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample",
+                {"create": {"res"}},
+            ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample",
+                {"change": {"regressor_exog"}},
+            ),
+            (
                 # this behaviour can be unexpected for someone
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
@@ -1654,30 +1667,5 @@ class TestTransformFutureWithoutTarget:
         ],
     )
     def test_transform_future_without_target(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_future_without_target(ts, transform, expected_changes=expected_changes)
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # missing_values
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
-                ),
-                "ts_to_resample",
-                {"create": {"res"}},
-            ),
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=True
-                ),
-                "ts_to_resample",
-                {"change": {"regressor_exog"}},
-            ),
-        ],
-    )
-    def test_transform_future_without_target_failed_error(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_without_target(ts, transform, expected_changes=expected_changes)
