@@ -284,16 +284,28 @@ class TestTransformTrainSubsetSegments:
             (QuantileTransform(in_column="target", quantile=0.9, window=7), "regular_ts"),
             (StdTransform(in_column="target", window=7), "regular_ts"),
             (SumTransform(in_column="target", window=7), "regular_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
             # missing_values
@@ -325,29 +337,6 @@ class TestTransformTrainSubsetSegments:
         ],
     )
     def test_transform_train_subset_segments(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_train_subset_segments(ts, transform, segments=["segment_2"])
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # math
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-        ],
-    )
-    def test_transform_train_subset_segments_failed_error(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_train_subset_segments(ts, transform, segments=["segment_2"])
 
@@ -441,16 +430,28 @@ class TestTransformFutureSubsetSegments:
             (QuantileTransform(in_column="target", quantile=0.9, window=14), "regular_ts"),
             (StdTransform(in_column="target", window=14), "regular_ts"),
             (SumTransform(in_column="target", window=14), "regular_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
             # missing_values
@@ -480,29 +481,6 @@ class TestTransformFutureSubsetSegments:
         ],
     )
     def test_transform_future_subset_segments(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_future_subset_segments(ts, transform, segments=["segment_2"])
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # math
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
-        ],
-    )
-    def test_transform_future_subset_segments_failed_error(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_subset_segments(ts, transform, segments=["segment_2"])
 
@@ -737,6 +715,19 @@ class TestTransformTrainNewSegments:
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
+            # math
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             # missing_values
             (
                 ResampleWithDistributionTransform(
@@ -787,20 +778,6 @@ class TestTransformTrainNewSegments:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
-            # math
-            # TODO: error should be understandable, not like now
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts", {}),
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts", {}),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
         ],
     )
     def test_transform_train_new_segments_failed_error(self, transform, dataset_name, expected_changes, request):
@@ -1034,6 +1011,19 @@ class TestTransformFutureNewSegments:
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
+            # math
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
+            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
+            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
             # missing_values
             (
                 ResampleWithDistributionTransform(
@@ -1084,20 +1074,6 @@ class TestTransformFutureNewSegments:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
-            # math
-            # TODO: error should be understandable, not like now
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts", {}),
-            (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts", {}),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts", {}),
-            (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
         ],
     )
     def test_transform_future_new_segments_failed_error(self, transform, dataset_name, expected_changes, request):
