@@ -623,14 +623,13 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
     for column, dtype in dtypes.items():
         if dtype == "category":
             expected_df[column] = expected_df[column].astype(dtype)
-
+    # this logic wouldn't work in general case, here we use that all features' names start with 'r'
+    sorted_columns = ["timestamp", "segment", "target"] + sorted_columns[:-3]
+    # reindex df to assert correct columns order
+    expected_df = expected_df[sorted_columns]
     # get to_flatten result
-    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns].sort_values(
-        by=["segment", "timestamp"]
-    )
-    assert np.all(sorted_columns == obtained_df.columns)
-    assert np.all(expected_df.dtypes == obtained_df.dtypes)
-    assert expected_df.equals(obtained_df)
+    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))
+    pd.testing.assert_frame_equal(obtained_df, expected_df)
 
 
 def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
