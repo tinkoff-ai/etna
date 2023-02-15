@@ -174,10 +174,7 @@ class _OneSegmentTimeSeriesImputerTransform(OneSegmentTransform):
         if self.nan_timestamps is None:
             raise ValueError("Trying to apply the unfitted transform! First fit the transform.")
 
-        if (
-            self.strategy == ImputerMode.mean
-            or self.strategy == ImputerMode.constant
-        ):
+        if self.strategy == ImputerMode.mean or self.strategy == ImputerMode.constant:
             df = df.fillna(value=self.fill_value)
         elif self.strategy == ImputerMode.forward_fill:
             df = df.fillna(method="ffill")
