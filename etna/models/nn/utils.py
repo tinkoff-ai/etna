@@ -167,7 +167,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         return pf_dataset
 
     def create_inference_dataset(self, ts: TSDataset) -> TimeSeriesDataSet:
-        """Create train dataset.
+        """Create inference dataset.
 
         Parameters
         ----------
@@ -236,7 +236,33 @@ class PytorchForecastingMixin:
             raise ValueError("Trainer or model is None")
         return self
 
+    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> pd.Timestamp:
+        return ts.index[-horizon]
+
+    def _is_in_sample_prediction(self, ts: TSDataset, horizon: int) -> bool:
+        first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
+        return first_prediction_timestamp <= self._last_train_timestamp
+
+    def _is_prediction_with_gap(self, ts: TSDataset, horizon: int) -> bool:
+        first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
+        first_timestamp_after_train = pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]
+        return first_prediction_timestamp > first_timestamp_after_train
+
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
+        if self._is_in_sample_prediction(ts=ts, horizon=horizon):
+            raise NotImplementedError(
+                "It is not possible to make in-sample predictions with DeepAR model! "
+                "In-sample predictions aren't supported by current implementation."
+            )
+        elif self._is_prediction_with_gap(ts=ts, horizon=horizon):
+            first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
+            raise NotImplementedError(
+                "You can only forecast from the next point after the last one in the training dataset: "
+                f"last train timestamp: {self._last_train_timestamp}, first prediction timestamp is {first_prediction_timestamp}"
+            )
+        else:
+            pass
+
         if len(ts.df) != horizon + self.encoder_length:
             raise ValueError("Length of dataset must be equal to horizon + max_encoder_length")
 
