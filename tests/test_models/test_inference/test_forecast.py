@@ -817,7 +817,7 @@ class TestForecastSubsetSegments:
         self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
 
     @to_be_fixed(raises=AssertionError)
-    # This test fails for unknown reason
+    # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
     @pytest.mark.parametrize(
         "model, transforms",
         [
