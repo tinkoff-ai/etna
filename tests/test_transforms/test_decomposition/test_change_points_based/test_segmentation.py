@@ -6,7 +6,7 @@ from ruptures import Binseg
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.metrics import SMAPE
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
@@ -89,7 +89,7 @@ def test_transform_raise_error_if_not_fitted(pre_transformed_df: pd.DataFrame):
 
 
 def test_backtest(simple_ar_ts):
-    model = CatBoostModelPerSegment()
+    model = CatBoostPerSegmentModel()
     horizon = 3
     change_points_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(
