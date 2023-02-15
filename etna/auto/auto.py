@@ -41,17 +41,13 @@ class _Initializer(Protocol):
 
 class AutoBase:
     """Base Class for Auto and Tune, implementing core logic behind these classes."""
-    
-    def __init__(
-        self,
-        target_metric: Metric,
-        metric_aggregation: MetricAggregationStatistics = "mean"
-    ):
+
+    def __init__(self, target_metric: Metric, metric_aggregation: MetricAggregationStatistics = "mean"):
         # this code is never executed, its single purpose is to help linter (and user reading code) infer parameters types
         self.target_metric: Metric = target_metric
         self.metric_aggregation: MetricAggregationStatistics = metric_aggregation
         self._optuna: Optional[Optuna] = None
-    
+
     def summary(self) -> pd.DataFrame:
         """Get Auto trials summary."""
         if self._optuna is None:
