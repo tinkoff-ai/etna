@@ -1,4 +1,3 @@
-import warnings
 from enum import Enum
 from typing import List
 from typing import Optional
@@ -13,7 +12,6 @@ from etna.transforms.base import ReversiblePerSegmentWrapper
 class ImputerMode(str, Enum):
     """Enum for different imputation strategy."""
 
-    zero = "zero"
     mean = "mean"
     running_mean = "running_mean"
     forward_fill = "forward_fill"
@@ -50,8 +48,6 @@ class _OneSegmentTimeSeriesImputerTransform(OneSegmentTransform):
             name of processed column
         strategy:
             filling value in missing timestamps:
-
-            - If "zero", then replace missing dates with zeros
 
             - If "mean", then replace missing dates using the mean in fit stage.
 
@@ -110,13 +106,6 @@ class _OneSegmentTimeSeriesImputerTransform(OneSegmentTransform):
             raise ValueError("Series hasn't non NaN values which means it is empty and can't be filled.")
         series = raw_series[raw_series.first_valid_index() :]
         self.nan_timestamps = series[series.isna()].index
-        if self.strategy == ImputerMode.zero:
-            warnings.warn(
-                "zero strategy will be removed in etna 2.0.0. Use constant strategy instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.fill_value = 0
         if self.strategy == ImputerMode.constant:
             self.fill_value = self.constant_value
         elif self.strategy == ImputerMode.mean:
@@ -186,8 +175,7 @@ class _OneSegmentTimeSeriesImputerTransform(OneSegmentTransform):
             raise ValueError("Trying to apply the unfitted transform! First fit the transform.")
 
         if (
-            self.strategy == ImputerMode.zero
-            or self.strategy == ImputerMode.mean
+            self.strategy == ImputerMode.mean
             or self.strategy == ImputerMode.constant
         ):
             df = df.fillna(value=self.fill_value)
@@ -240,8 +228,6 @@ class TimeSeriesImputerTransform(ReversiblePerSegmentWrapper):
             name of processed column
         strategy:
             filling value in missing timestamps:
-
-            - If "zero", then replace missing dates with zeros
 
             - If "mean", then replace missing dates using the mean in fit stage.
 
