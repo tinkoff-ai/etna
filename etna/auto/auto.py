@@ -72,6 +72,23 @@ class AutoBase:
         )
         return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
 
+    def _init_optuna(self):
+        """Initialize optuna."""
+        if isinstance(self.pool, Pool):
+            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
+        else:
+            pool = self.pool
+
+        pool_ = [pipeline.to_dict() for pipeline in pool]
+
+        optuna = Optuna(
+            direction="maximize" if self.target_metric.greater_is_better else "minimize",
+            study_name=self.experiment_folder,
+            storage=self.storage,
+            sampler=ConfigSampler(configs=pool_),
+        )
+        return optuna
+
 
 class AutoAbstract(ABC):
     """Interface for Auto object."""
@@ -319,20 +336,3 @@ class Auto(AutoBase, AutoAbstract):
             return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
 
         return _objective
-
-    def _init_optuna(self):
-        """Initialize optuna."""
-        if isinstance(self.pool, Pool):
-            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
-        else:
-            pool = self.pool
-
-        pool_ = [pipeline.to_dict() for pipeline in pool]
-
-        optuna = Optuna(
-            direction="maximize" if self.target_metric.greater_is_better else "minimize",
-            study_name=self.experiment_folder,
-            storage=self.storage,
-            sampler=ConfigSampler(configs=pool_),
-        )
-        return optuna
