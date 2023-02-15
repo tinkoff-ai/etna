@@ -38,7 +38,7 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
 
     # forecasting
     forecast_ts = TSDataset(df, freq="D")
-    forecast_ts.transform(ts.transforms)
+    forecast_ts.transform(transforms)
     prediction_size = len(forecast_ts.index)
     forecast_ts = make_prediction(model=model, ts=forecast_ts, prediction_size=prediction_size, method_name=method_name)
 
@@ -56,7 +56,7 @@ def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_sk
 
     # forecasting
     forecast_ts = TSDataset(df, freq="D")
-    forecast_ts.transform(ts.transforms)
+    forecast_ts.transform(transforms)
     forecast_ts.df = forecast_ts.df.iloc[(num_skip_points - model.context_size) :]
     prediction_size = len(forecast_ts.index) - num_skip_points
     forecast_ts = make_prediction(model=model, ts=forecast_ts, prediction_size=prediction_size, method_name=method_name)
