@@ -1,6 +1,4 @@
 from copy import deepcopy
-from typing import Set
-from typing import Tuple
 
 import pandas as pd
 import pytest
@@ -58,6 +56,7 @@ from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
+from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
@@ -374,21 +373,6 @@ class TestTransformFutureSubsetSegments:
     def test_transform_future_subset_segments(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_subset_segments(ts, transform, segments=["segment_2"])
-
-
-def find_columns_diff(df_before: pd.DataFrame, df_after: pd.DataFrame) -> Tuple[Set[str], Set[str], Set[str]]:
-    columns_before_transform = set(df_before.columns)
-    columns_after_transform = set(df_after.columns)
-    created_columns = columns_after_transform - columns_before_transform
-    removed_columns = columns_before_transform - columns_after_transform
-
-    columns_to_check_changes = columns_after_transform.intersection(columns_before_transform)
-    changed_columns = set()
-    for column in columns_to_check_changes:
-        if not df_before[column].equals(df_after[column]):
-            changed_columns.add(column)
-
-    return created_columns, removed_columns, changed_columns
 
 
 class TestTransformTrainNewSegments:
