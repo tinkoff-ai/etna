@@ -39,65 +39,8 @@ class _Initializer(Protocol):
         ...
 
 
-class AutoBase:
-    """Base Class for Auto and Tune, implementing core logic behind these classes."""
-
-    def __init__(self, target_metric: Metric, metric_aggregation: MetricAggregationStatistics = "mean"):
-        # this code is never executed, its single purpose is to help linter (and user reading code) infer parameters types
-        self.target_metric: Metric = target_metric
-        self.metric_aggregation: MetricAggregationStatistics = metric_aggregation
-        self._optuna: Optional[Optuna] = None
-
-    def summary(self) -> pd.DataFrame:
-        """Get Auto trials summary."""
-        if self._optuna is None:
-            self._optuna = self._init_optuna()
-
-        study = self._optuna.study.get_trials()
-
-        study_params = [
-            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
-            for trial in study
-        ]
-
-        return pd.DataFrame(study_params)
-
-    def top_k(self, k: int = 5) -> List[Pipeline]:
-        """
-        Get top k pipelines.
-
-        Parameters
-        ----------
-        k:
-            number of pipelines to return
-        """
-        summary = self.summary()
-        df = summary.sort_values(
-            by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
-            ascending=(not self.target_metric.greater_is_better),
-        )
-        return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
-
-    def _init_optuna(self):
-        """Initialize optuna."""
-        if isinstance(self.pool, Pool):
-            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
-        else:
-            pool = self.pool
-
-        pool_ = [pipeline.to_dict() for pipeline in pool]
-
-        optuna = Optuna(
-            direction="maximize" if self.target_metric.greater_is_better else "minimize",
-            study_name=self.experiment_folder,
-            storage=self.storage,
-            sampler=ConfigSampler(configs=pool_),
-        )
-        return optuna
-
-
 class AutoAbstract(ABC):
-    """Interface for Auto object."""
+    """Interface for ``Auto`` object."""
 
     @abstractmethod
     def fit(
@@ -184,7 +127,53 @@ class AutoAbstract(ABC):
         pass
 
 
-class Auto(AutoBase, AutoAbstract):
+class AutoBase(AutoAbstract):
+    """Base Class for ``Auto`` and ``Tune``, implementing core logic behind these classes."""
+
+    def __init__(self, target_metric: Metric, metric_aggregation: MetricAggregationStatistics = "mean"):
+        # this code is never executed, its single purpose is to help linter (and the user reading code) infer parameters types
+        self.target_metric: Metric = target_metric
+        self.metric_aggregation: MetricAggregationStatistics = metric_aggregation
+        self._optuna: Optional[Optuna] = None
+
+    def summary(self) -> pd.DataFrame:
+        """Get Auto trials summary.
+
+        Returns
+        -------
+        study_dataframe:
+            dataframe with detailed info on each performed trial
+        """
+        if self._optuna is None:
+            self._optuna = self._init_optuna()
+
+        study = self._optuna.study.get_trials()
+
+        study_params = [
+            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
+            for trial in study
+        ]
+
+        return pd.DataFrame(study_params)
+
+    def top_k(self, k: int = 5) -> List[Pipeline]:
+        """
+        Get top k pipelines.
+
+        Parameters
+        ----------
+        k:
+            number of pipelines to return
+        """
+        summary = self.summary()
+        df = summary.sort_values(
+            by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
+            ascending=(not self.target_metric.greater_is_better),
+        )
+        return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
+
+
+class Auto(AutoBase):
     """Automatic pipeline selection via defined or custom pipeline pool."""
 
     def __init__(
@@ -342,3 +331,20 @@ class Auto(AutoBase, AutoAbstract):
             return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
 
         return _objective
+
+    def _init_optuna(self):
+        """Initialize optuna."""
+        if isinstance(self.pool, Pool):
+            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
+        else:
+            pool = self.pool
+
+        pool_ = [pipeline.to_dict() for pipeline in pool]
+
+        optuna = Optuna(
+            direction="maximize" if self.target_metric.greater_is_better else "minimize",
+            study_name=self.experiment_folder,
+            storage=self.storage,
+            sampler=ConfigSampler(configs=pool_),
+        )
+        return optuna
