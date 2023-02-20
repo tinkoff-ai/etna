@@ -5,7 +5,6 @@ import pickle
 import sys
 import warnings
 import zipfile
-from copy import deepcopy
 from enum import Enum
 from typing import Any
 from typing import Callable
@@ -14,6 +13,7 @@ from typing import List
 from typing import Tuple
 from typing import cast
 
+import hydra_slayer
 from sklearn.base import BaseEstimator
 
 
@@ -91,7 +91,7 @@ class BaseMixin:
         return params
 
     def set_params(self, **params: dict) -> "BaseMixin":
-        """Return copy of this estimator with given parameters set.
+        """Return estimator instance with modified parameters.
 
         The method works on simple estimators as well as on nested objects
         (such as :class:`~etna.pipeline.Pipeline`). The latter have
@@ -104,7 +104,8 @@ class BaseMixin:
             Estimator parameters.
 
         """
-        estimator_out = deepcopy(self)
+        estimator_out = hydra_slayer.get_from_params(**self.to_dict())
+
         for parameter, parameter_value in params.items():
             # split specification into list of nested params, "model.depth" -> ["model", "depth"]
             param_nested = parameter.split(".")
@@ -123,7 +124,6 @@ class BaseMixin:
                     # if there is no such attribute, the first row will throw AttributeError
                     getattr(estimator, param_nested[-1])
                     setattr(estimator, param_nested[-1], parameter_value)
-                    print("Set attribute", param_nested[-1], "to", parameter_value)
                 except AttributeError:
                     pass
         return estimator_out
