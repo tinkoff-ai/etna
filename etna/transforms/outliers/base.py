@@ -81,7 +81,8 @@ class OutliersTransform(Transform, ABC):
         if self.outliers_timestamps is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         result_df = df.copy()
-        for segment in df.columns.get_level_values("segment").unique():
+        segments = df.columns.get_level_values("segment").unique()
+        for segment in segments:
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
 
@@ -102,7 +103,8 @@ class OutliersTransform(Transform, ABC):
         if self.original_values is None or self.outliers_timestamps is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         result = df.copy()
-        for segment in self.original_values.keys():
+        segments = df.columns.get_level_values("segment").unique()
+        for segment in segments:
             segment_ts = result[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
         return result

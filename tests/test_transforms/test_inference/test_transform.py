@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Set
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
@@ -61,140 +60,6 @@ from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
-
-
-@pytest.fixture
-def regular_ts(random_seed) -> TSDataset:
-    periods = 100
-    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    df_1["segment"] = "segment_1"
-    df_1["target"] = np.random.uniform(10, 20, size=periods)
-
-    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    df_2["segment"] = "segment_2"
-    df_2["target"] = np.random.uniform(-15, 5, size=periods)
-
-    df_3 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    df_3["segment"] = "segment_3"
-    df_3["target"] = np.random.uniform(-5, 5, size=periods)
-
-    df = pd.concat([df_1, df_2, df_3]).reset_index(drop=True)
-    df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
-
-    return tsds
-
-
-@pytest.fixture
-def ts_with_exog(regular_ts) -> TSDataset:
-    df = regular_ts.to_pandas(flatten=True)
-    df_exog = df.copy().drop(columns=["target"])
-    df_exog["weekday"] = df_exog["timestamp"].dt.weekday
-    df_exog["monthday"] = df_exog["timestamp"].dt.day
-    df_exog["month"] = df_exog["timestamp"].dt.month
-    df_exog["year"] = df_exog["timestamp"].dt.year
-    ts = TSDataset(df=TSDataset.to_dataset(df).iloc[5:-5], df_exog=TSDataset.to_dataset(df_exog), freq="D")
-    return ts
-
-
-@pytest.fixture
-def positive_ts() -> TSDataset:
-    periods = 100
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="D")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="D")})
-    df_3 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="D")})
-    generator = np.random.RandomState(seed=1)
-
-    df_1["segment"] = "segment_1"
-    df_1["target"] = np.abs(generator.normal(loc=10, scale=1, size=len(df_1))) + 1
-
-    df_2["segment"] = "segment_2"
-    df_2["target"] = np.abs(generator.normal(loc=20, scale=1, size=len(df_2))) + 1
-
-    df_3["segment"] = "segment_3"
-    df_3["target"] = np.abs(generator.normal(loc=30, scale=1, size=len(df_2))) + 1
-
-    classic_df = pd.concat([df_1, df_2, df_3], ignore_index=True)
-    wide_df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df=wide_df, freq="D")
-    return ts
-
-
-@pytest.fixture
-def ts_to_fill(regular_ts) -> TSDataset:
-    df = regular_ts.to_pandas()
-    df.iloc[5, 0] = np.NaN
-    df.iloc[10, 1] = np.NaN
-    df.iloc[20, 2] = np.NaN
-    df.iloc[-5, 0] = np.NaN
-    df.iloc[-10, 1] = np.NaN
-    df.iloc[-20, 2] = np.NaN
-    ts = TSDataset(df=df, freq="D")
-    return ts
-
-
-@pytest.fixture
-def ts_to_resample() -> TSDataset:
-    df_1 = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=120),
-            "segment": "segment_1",
-            "target": 1,
-        }
-    )
-    df_2 = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=120),
-            "segment": "segment_2",
-            "target": ([1] + 23 * [0]) * 5,
-        }
-    )
-    df_3 = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=120),
-            "segment": "segment_3",
-            "target": ([4] + 23 * [0]) * 5,
-        }
-    )
-    df = pd.concat([df_1, df_2, df_3], ignore_index=True)
-
-    df_exog_1 = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=8),
-            "segment": "segment_1",
-            "regressor_exog": 2,
-        }
-    )
-    df_exog_2 = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=8),
-            "segment": "segment_2",
-            "regressor_exog": 40,
-        }
-    )
-    df_exog_3 = pd.DataFrame(
-        {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=8),
-            "segment": "segment_3",
-            "regressor_exog": 40,
-        }
-    )
-    df_exog = pd.concat([df_exog_1, df_exog_2, df_exog_3], ignore_index=True)
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
-    return ts
-
-
-@pytest.fixture
-def ts_with_outliers(regular_ts) -> TSDataset:
-    df = regular_ts.to_pandas()
-    df.iloc[5, 0] *= 100
-    df.iloc[10, 1] *= 100
-    df.iloc[20, 2] *= 100
-    df.iloc[-5, 0] *= 100
-    df.iloc[-10, 1] *= 100
-    df.iloc[-20, 2] *= 100
-    ts = TSDataset(df=df, freq="D")
-    return ts
 
 
 class TestTransformTrainSubsetSegments:
@@ -403,6 +268,7 @@ class TestTransformFutureSubsetSegments:
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
+            (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog"),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
@@ -417,10 +283,21 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (
+                LambdaTransform(
+                    in_column="positive",
+                    transform_func=lambda x: x + 1,
+                    inverse_transform_func=lambda x: x - 1,
+                    inplace=True,
+                ),
+                "ts_with_exog",
+            ),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
+            (LogTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (DifferencingTransform(in_column="target", inplace=False), "regular_ts"),
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (MADTransform(in_column="target", window=14), "regular_ts"),
             (MaxTransform(in_column="target", window=14), "regular_ts"),
             (MeanTransform(in_column="target", window=14), "regular_ts"),
@@ -432,32 +309,46 @@ class TestTransformFutureSubsetSegments:
             (SumTransform(in_column="target", window=14), "regular_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
+            (BoxCoxTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts"),
+            (BoxCoxTransform(in_column="positive", mode="macro", inplace=True), "ts_with_exog"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True), "ts_with_exog"),
             (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (MinMaxScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="positive", mode="macro", inplace=True), "ts_with_exog"),
             (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (RobustScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="positive", mode="macro", inplace=True), "ts_with_exog"),
             (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (StandardScalerTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="positive", mode="macro", inplace=True), "ts_with_exog"),
             (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="positive", mode="macro", inplace=True), "ts_with_exog"),
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False
+                    in_column="regressor_exog",
+                    distribution_column="target",
+                    inplace=False,
                 ),
                 "ts_to_resample",
             ),
@@ -549,17 +440,17 @@ class TestTransformTrainNewSegments:
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year", "month", "monthday"}},
+                {"remove": {"weekday", "year", "month", "monthday", "positive"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "monthday"}},
+                {"remove": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
-                {"remove": {"year", "month"}},
+                {"remove": {"year", "month", "weekday"}},
             ),
             # math
             (
@@ -844,17 +735,17 @@ class TestTransformFutureNewSegments:
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year", "month", "monthday"}},
+                {"remove": {"weekday", "year", "month", "monthday", "positive"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "monthday"}},
+                {"remove": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
-                {"remove": {"year", "month"}},
+                {"remove": {"year", "month", "weekday"}},
             ),
             # math
             (
@@ -863,6 +754,7 @@ class TestTransformFutureNewSegments:
                 {"create": {"res"}},
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
+            (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
@@ -883,14 +775,26 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
+            (
+                LambdaTransform(
+                    in_column="positive",
+                    transform_func=lambda x: x + 1,
+                    inverse_transform_func=lambda x: x - 1,
+                    inplace=True,
+                ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {}),
+            (LogTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 DifferencingTransform(in_column="target", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res"}},
             ),
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (MADTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MaxTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MeanTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
@@ -915,6 +819,11 @@ class TestTransformFutureNewSegments:
             ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {}),
             (
+                BoxCoxTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
@@ -923,6 +832,11 @@ class TestTransformFutureNewSegments:
                 MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
                 "regular_ts",
                 {},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
             ),
             (
                 MinMaxScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
@@ -935,6 +849,11 @@ class TestTransformFutureNewSegments:
                 {},
             ),
             (
+                MinMaxScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 RobustScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
@@ -943,6 +862,11 @@ class TestTransformFutureNewSegments:
                 RobustScalerTransform(in_column="target", mode="macro", inplace=True),
                 "regular_ts",
                 {},
+            ),
+            (
+                RobustScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
             ),
             (
                 StandardScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
@@ -955,11 +879,21 @@ class TestTransformFutureNewSegments:
                 {},
             ),
             (
+                StandardScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {}),
+            (
+                YeoJohnsonTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
@@ -1013,16 +947,22 @@ class TestTransformFutureNewSegments:
             # math
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
+            (BoxCoxTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MaxAbsScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (MinMaxScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (RobustScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (RobustScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (StandardScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (StandardScalerTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
             (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts"),
+            (YeoJohnsonTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
             # missing_values
             (
                 ResampleWithDistributionTransform(
@@ -1154,17 +1094,17 @@ class TestTransformFutureWithTarget:
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"month", "year"}},
+                {"remove": {"month", "year", "positive"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "monthday"}},
+                {"remove": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
-                {"remove": {"year", "month"}},
+                {"remove": {"year", "month", "weekday"}},
             ),
             # math
             (
@@ -1469,17 +1409,17 @@ class TestTransformFutureWithoutTarget:
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"month", "year"}},
+                {"remove": {"month", "year", "weekday"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "monthday"}},
+                {"remove": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
-                {"remove": {"year", "month"}},
+                {"remove": {"year", "month", "weekday"}},
             ),
             # math
             (
@@ -1488,6 +1428,7 @@ class TestTransformFutureWithoutTarget:
                 {"create": {"res"}},
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
+            (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
@@ -1508,14 +1449,26 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
+            (
+                LambdaTransform(
+                    in_column="positive",
+                    transform_func=lambda x: x + 1,
+                    inverse_transform_func=lambda x: x - 1,
+                    inplace=True,
+                ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {}),
+            (LogTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 DifferencingTransform(in_column="target", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res"}},
             ),
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (MADTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MaxTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MeanTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
@@ -1534,23 +1487,38 @@ class TestTransformFutureWithoutTarget:
             (StdTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (SumTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (
-                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
-                "positive_ts",
-                {"create": {"res_target"}},
-            ),
-            (
                 BoxCoxTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "positive_ts",
                 {"create": {"res_target"}},
             ),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts", {}),
+            (
+                BoxCoxTransform(in_column="positive", mode="per-segment", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {"create": {"res_target"}},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {}),
+            (
+                BoxCoxTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (
                 MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
+            (
+                MaxAbsScalerTransform(in_column="positive", mode="per-segment", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (
                 MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
@@ -1562,11 +1530,21 @@ class TestTransformFutureWithoutTarget:
                 {},
             ),
             (
+                MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
+            (
+                MinMaxScalerTransform(in_column="positive", mode="per-segment", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (
                 MinMaxScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
@@ -1578,11 +1556,21 @@ class TestTransformFutureWithoutTarget:
                 {},
             ),
             (
+                MinMaxScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 RobustScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (RobustScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
+            (
+                RobustScalerTransform(in_column="positive", mode="per-segment", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (
                 RobustScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
@@ -1594,11 +1582,21 @@ class TestTransformFutureWithoutTarget:
                 {},
             ),
             (
+                RobustScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 StandardScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (StandardScalerTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
+            (
+                StandardScalerTransform(in_column="positive", mode="per-segment", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (
                 StandardScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
@@ -1610,17 +1608,32 @@ class TestTransformFutureWithoutTarget:
                 {},
             ),
             (
+                StandardScalerTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True), "regular_ts", {}),
             (
+                YeoJohnsonTransform(in_column="positive", mode="per-segment", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
                 YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {}),
+            (
+                YeoJohnsonTransform(in_column="positive", mode="macro", inplace=True),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             # missing_values
             (
                 ResampleWithDistributionTransform(
