@@ -1,25 +1,8 @@
-import functools
-from typing import List
-
 import numpy as np
-import pandas as pd
-import pytest
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
 from etna.models import ContextRequiredModelType
-
-
-def to_be_fixed(raises, match=None):
-    def to_be_fixed_concrete(func):
-        @functools.wraps(func)
-        def wrapped_test(*args, **kwargs):
-            with pytest.raises(raises, match=match):
-                return func(*args, **kwargs)
-
-        return wrapped_test
-
-    return to_be_fixed_concrete
 
 
 def make_prediction(model, ts, prediction_size, method_name) -> TSDataset:
@@ -29,16 +12,6 @@ def make_prediction(model, ts, prediction_size, method_name) -> TSDataset:
     else:
         ts = method(ts)
     return ts
-
-
-def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
-    df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]]
-    df_exog = ts.df_exog
-    if df_exog is not None:
-        df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]]
-    known_future = ts.known_future
-    freq = ts.freq
-    return TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
 
 
 def _test_prediction_in_sample_full(ts, model, transforms, method_name):
