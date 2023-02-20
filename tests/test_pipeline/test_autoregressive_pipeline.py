@@ -23,6 +23,7 @@ from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import AutoRegressivePipeline
+from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
@@ -138,7 +139,7 @@ def test_forecast_one_step(example_tsds):
 
     # make predictions in AutoRegressivePipeline
     model = LinearPerSegmentModel()
-    transforms = [LagTransform(in_column="target", lags=[1])]
+    transforms = [AddConstTransform(in_column="target", value=10), LagTransform(in_column="target", lags=[1])]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast()
