@@ -13,7 +13,7 @@ from etna.libs.pytorch_lightning.callbacks import EarlyStopping
 from etna.metrics import MAE
 from etna.metrics import SMAPE
 from etna.models import AutoARIMAModel
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
@@ -30,7 +30,7 @@ from etna.transforms.decomposition.change_points_based import SklearnRegressionP
 
 def ensemble_samples():
     pipeline1 = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[
             AddConstTransform(in_column="target", value=10),
             ChangePointsTrendTransform(
@@ -122,7 +122,7 @@ def test_to_dict_transforms_with_expected(target_object, expected):
             marks=pytest.mark.xfail(raises=AssertionError),
         ),
         LinearPerSegmentModel(),
-        CatBoostModelPerSegment(),
+        CatBoostPerSegmentModel(),
         AutoARIMAModel(),
         pytest.param(
             TFTModel(
@@ -147,7 +147,7 @@ def test_to_dict_models(target_model):
     "target_object",
     [
         Pipeline(
-            model=CatBoostModelPerSegment(),
+            model=CatBoostPerSegmentModel(),
             transforms=[
                 AddConstTransform(in_column="target", value=10),
                 ChangePointsTrendTransform(

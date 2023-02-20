@@ -7,8 +7,8 @@ from pytorch_forecasting.data import GroupNormalizer
 from etna.datasets import TSDataset
 from etna.models import AutoARIMAModel
 from etna.models import BATSModel
-from etna.models import CatBoostModelMultiSegment
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostMultiSegmentModel
+from etna.models import CatBoostPerSegmentModel
 from etna.models import DeadlineMovingAverageModel
 from etna.models import ElasticMultiSegmentModel
 from etna.models import ElasticPerSegmentModel
@@ -47,8 +47,8 @@ class TestPredictInSampleFull:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
@@ -146,8 +146,8 @@ class TestPredictInSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
             (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
             (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
@@ -246,8 +246,8 @@ class TestPredictOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
@@ -361,8 +361,8 @@ class TestPredictMixedInOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
