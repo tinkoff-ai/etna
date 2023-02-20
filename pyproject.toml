@@ -196,8 +196,6 @@ filterwarnings = [
     "ignore: Some regressors don't have enough values in segment",
     "ignore: Segments contains NaNs in the last timestamps.",
     "ignore: pandas.util.testing is deprecated. Use the functions in the public API",
-    "ignore: Call to deprecated class CatBoostModelPerSegment.", # OK
-    "ignore: Call to deprecated class CatBoostModelMultiSegment.", # OK
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
     "ignore: Columns from feature_to_use which are out of dataframe columns will",
     "ignore: Comparison of Timestamp with datetime.date is deprecated in order to",
