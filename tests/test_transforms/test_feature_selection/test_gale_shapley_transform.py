@@ -20,6 +20,32 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 
 @pytest.fixture
+def ts_with_exog_galeshapley(random_seed) -> TSDataset:
+    np.random.seed(random_seed)
+
+    periods = 30
+    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-15", periods=periods)})
+    df_1["segment"] = "segment_1"
+    df_1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-15", periods=periods)})
+    df_2["segment"] = "segment_2"
+    df_2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    df = pd.concat([df_1, df_2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    tsds = TSDataset(df, freq="D")
+    df = tsds.to_pandas(flatten=True)
+    df_exog = df.copy().drop(columns=["target"])
+    df_exog["weekday"] = df_exog["timestamp"].dt.weekday
+    df_exog["monthday"] = df_exog["timestamp"].dt.day
+    df_exog["month"] = df_exog["timestamp"].dt.month
+    df_exog["year"] = df_exog["timestamp"].dt.year
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    return ts
+
+
+@pytest.fixture
 def ts_with_large_regressors_number(random_seed) -> TSDataset:
     df = generate_periodic_df(periods=100, start_time="2020-01-01", n_segments=3, period=7, scale=10)
 
@@ -622,3 +648,14 @@ def test_work_with_non_regressors(ts_with_exog):
 )
 def test_save_load(transform, ts_with_large_regressors_number):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_large_regressors_number)
+
+
+def test_right_number_features_with_integer_division(ts_with_exog_galeshapley):
+    top_k = len(ts_with_exog_galeshapley.segments)
+    transform = GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=top_k)
+
+    transform.fit(ts_with_exog_galeshapley.to_pandas())
+    df = transform.transform(ts_with_exog_galeshapley.to_pandas())
+
+    remaining_columns = df.columns.get_level_values("feature").unique().tolist()
+    assert len(remaining_columns) == top_k + 1
