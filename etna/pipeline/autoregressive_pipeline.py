@@ -145,7 +145,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
                     self.model = cast(ContextIgnorantModelType, self.model)
                     current_ts_forecast = current_ts.make_future(future_steps=current_step, transforms=self.transforms)
                     current_ts_future = self.model.forecast(ts=current_ts_forecast)
-
+            current_ts_future.inverse_transform(self.transforms)
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features
