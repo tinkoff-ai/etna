@@ -594,16 +594,19 @@ class TestForecastOutSampleSuffix:
     def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
-    @to_be_fixed(raises=AssertionError)
-    # Looks like a problem of current implementation of NNs
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
-    def test_forecast_out_sample_suffix_failed_assertion_error(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+    def test_forecast_out_sample_suffix_failed_rnn(self, model, transforms, example_tsds):
+        """This test is expected to fail due to autoregression in RNN.
+
+        More about it in issue: https://github.com/tinkoff-ai/etna/issues/1087
+        """
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="You can only forecast from the next point after the last one")
     @pytest.mark.parametrize(
