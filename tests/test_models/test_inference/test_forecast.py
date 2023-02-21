@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
+from pytorch_forecasting.data import NaNLabelEncoder
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
@@ -36,8 +37,8 @@ from etna.transforms import PytorchForecastingTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
-from tests.test_models.test_inference.common import select_segments_subset
-from tests.test_models.test_inference.common import to_be_fixed
+from tests.utils import select_segments_subset
+from tests.utils import to_be_fixed
 
 
 def make_forecast(model, ts, prediction_size) -> TSDataset:
@@ -817,7 +818,7 @@ class TestForecastSubsetSegments:
         self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
 
     @to_be_fixed(raises=AssertionError)
-    # This test fails for unknown reason
+    # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -880,15 +881,6 @@ class TestForecastNewSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
-        ],
-    )
-    def test_forecast_new_segments(self, model, transforms, example_tsds):
-        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
-
-    @to_be_fixed(raises=KeyError, match="Unknown category")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
             (
                 DeepARModel(max_epochs=1, learning_rate=[0.01]),
                 [
@@ -897,6 +889,7 @@ class TestForecastNewSegments:
                         max_prediction_length=5,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
                         target_normalizer=GroupNormalizer(groups=["segment"]),
                     )
                 ],
@@ -910,6 +903,7 @@ class TestForecastNewSegments:
                         max_prediction_length=5,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
                         static_categoricals=["segment"],
                         target_normalizer=None,
                     )
@@ -917,7 +911,7 @@ class TestForecastNewSegments:
             ),
         ],
     )
-    def test_forecast_new_segments_failed_encoding_error(self, model, transforms, example_tsds):
+    def test_forecast_new_segments(self, model, transforms, example_tsds):
         self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
 
     @to_be_fixed(raises=NotImplementedError, match="Per-segment models can't make predictions on new segments")

@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
+from pytorch_forecasting.data import NaNLabelEncoder
 
 from etna.datasets import TSDataset
 from etna.models import AutoARIMAModel
@@ -34,8 +35,8 @@ from etna.transforms import PytorchForecastingTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
-from tests.test_models.test_inference.common import select_segments_subset
-from tests.test_models.test_inference.common import to_be_fixed
+from tests.utils import select_segments_subset
+from tests.utils import to_be_fixed
 
 
 def make_predict(model, ts, prediction_size) -> TSDataset:
@@ -782,7 +783,7 @@ class TestPredictNewSegments:
     def test_predict_new_segments(self, model, transforms, example_tsds):
         self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
 
-    @to_be_fixed(raises=KeyError, match="Unknown category")
+    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -794,6 +795,7 @@ class TestPredictNewSegments:
                         max_prediction_length=5,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
                         target_normalizer=GroupNormalizer(groups=["segment"]),
                     )
                 ],
@@ -807,20 +809,12 @@ class TestPredictNewSegments:
                         max_prediction_length=5,
                         time_varying_known_reals=["time_idx"],
                         time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
                         static_categoricals=["segment"],
                         target_normalizer=None,
                     )
                 ],
             ),
-        ],
-    )
-    def test_predict_new_segments_failed_encoding_error(self, model, transforms, example_tsds):
-        self._test_predict_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
-
-    @to_be_fixed(raises=NotImplementedError, match="Method predict isn't currently implemented")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
