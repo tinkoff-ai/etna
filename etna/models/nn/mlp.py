@@ -66,6 +66,11 @@ class MLPNet(DeepBaseNet):
         layers.append(nn.Linear(in_features=hidden_size[-1], out_features=1))
         self.mlp = nn.Sequential(*layers)
 
+    @staticmethod
+    def _validate_batch(batch: MLPBatch):
+        if batch["decoder_real"].isnan().sum().item():
+            raise ValueError("There are NaNs in features, this model can't work with them!")
+
     def forward(self, batch: MLPBatch):  # type: ignore
         """Forward pass.
 
@@ -78,9 +83,8 @@ class MLPNet(DeepBaseNet):
         :
             forecast
         """
+        self._validate_batch(batch)
         decoder_real = batch["decoder_real"].float()
-        if decoder_real.isnan().sum().item():
-            raise ValueError("There are NaNs in features, this model can't work with them!")
         return self.mlp(decoder_real)
 
     def step(self, batch: MLPBatch, *args, **kwargs):  # type: ignore
@@ -95,10 +99,9 @@ class MLPNet(DeepBaseNet):
         :
             loss, true_target, prediction_target
         """
+        self._validate_batch(batch)
         decoder_real = batch["decoder_real"].float()
         decoder_target = batch["decoder_target"].float()
-        if decoder_real.isnan().sum().item():
-            raise ValueError("There are NaNs in features, this model can't work with them!")
 
         output = self.mlp(decoder_real)
         loss = self.loss(output, decoder_target)
