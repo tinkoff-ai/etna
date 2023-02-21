@@ -130,10 +130,54 @@ class AutoAbstract(ABC):
 class AutoBase(AutoAbstract):
     """Base Class for ``Auto`` and ``Tune``, implementing core logic behind these classes."""
 
-    def __init__(self, target_metric: Metric, metric_aggregation: MetricAggregationStatistics = "mean"):
-        # this code is never executed, its single purpose is to help linter (and the user reading code) infer parameters types
-        self.target_metric: Metric = target_metric
+    def __init__(
+        self,
+        target_metric: Metric,
+        horizon: int,
+        metric_aggregation: MetricAggregationStatistics = "mean",
+        backtest_params: Optional[dict] = None,
+        experiment_folder: Optional[str] = None,
+        runner: Optional[AbstractRunner] = None,
+        storage: Optional[BaseStorage] = None,
+        metrics: Optional[List[Metric]] = None,
+    ):
+        """
+        Initialize AutoBase class.
+
+        Parameters
+        ----------
+        target_metric:
+            metric to optimize
+        horizon:
+            horizon to forecast for
+        metric_aggregation:
+            aggregation method for per-segment metrics
+        backtest_params:
+            custom parameters for backtest instead of default backtest parameters
+        experiment_folder:
+            folder to store experiment results and name for optuna study
+        runner:
+            runner to use for distributed training
+        storage:
+            optuna storage to use
+        metrics:
+            list of metrics to compute
+        """
+        if target_metric.greater_is_better is None:
+            raise ValueError("target_metric.greater_is_better is None")
+        self.target_metric = target_metric
+        self.horizon = horizon
         self.metric_aggregation: MetricAggregationStatistics = metric_aggregation
+        self.backtest_params = {} if backtest_params is None else backtest_params
+        self.experiment_folder = experiment_folder
+
+        self.runner = LocalRunner() if runner is None else runner
+        self.storage = RDBStorage("sqlite:///etna-auto.db") if storage is None else storage
+
+        metrics = [Sign(), SMAPE(), MAE(), MSE(), MedAE()] if metrics is None else metrics
+        if str(target_metric) not in [str(metric) for metric in metrics]:
+            metrics.append(target_metric)
+        self.metrics = metrics
         self._optuna: Optional[Optuna] = None
 
     def summary(self) -> pd.DataFrame:
@@ -212,23 +256,10 @@ class Auto(AutoBase):
         metrics:
             list of metrics to compute
         """
-        if target_metric.greater_is_better is None:
-            raise ValueError("target_metric.greater_is_better is None")
-        self.target_metric = target_metric
-
-        self.metric_aggregation = metric_aggregation
-        self.backtest_params = {} if backtest_params is None else backtest_params
-        self.horizon = horizon
-        self.experiment_folder = experiment_folder
-        self.pool = pool
-        self.runner = LocalRunner() if runner is None else runner
-        self.storage = RDBStorage("sqlite:///etna-auto.db") if storage is None else storage
-
-        metrics = [Sign(), SMAPE(), MAE(), MSE(), MedAE()] if metrics is None else metrics
-        if str(target_metric) not in [str(metric) for metric in metrics]:
-            metrics.append(target_metric)
-        self.metrics = metrics
-        self._optuna: Optional[Optuna] = None
+        super().__init__(
+            target_metric, horizon, metric_aggregation, backtest_params, experiment_folder, runner, storage, metrics
+        )
+        self.pool = poolS
 
     def fit(
         self,
@@ -290,6 +321,7 @@ class Auto(AutoBase):
     ) -> Callable[[Trial], float]:
         """
         Optuna objective wrapper.
+
         Parameters
         ----------
         ts:
