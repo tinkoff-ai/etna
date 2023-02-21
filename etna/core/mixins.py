@@ -91,7 +91,7 @@ class BaseMixin:
         return params
 
     def set_params(self, **params: dict) -> "BaseMixin":
-        """Return estimator instance with modified parameters.
+        """Return new object instance with modified parameters.
 
         The method works on simple estimators as well as on nested objects
         (such as :class:`~etna.pipeline.Pipeline`). The latter have
@@ -104,28 +104,20 @@ class BaseMixin:
             Estimator parameters.
 
         """
-        estimator_out = hydra_slayer.get_from_params(**self.to_dict())
+        params_dict = self.to_dict()
 
-        for parameter, parameter_value in params.items():
-            # split specification into list of nested params, "model.depth" -> ["model", "depth"]
-            param_nested = parameter.split(".")
-            # all nested params except the last specify path to the estimator whose attribute will be set
-            # in the following cycle, we find this estimator
-            estimator = estimator_out
-            nesting_correct = True
-            for param_current_nesting_level in param_nested[:-1]:
-                try:
-                    estimator = getattr(estimator, param_current_nesting_level)
-                except AttributeError:
-                    nesting_correct = False
-                    break
-            if nesting_correct:
-                try:
-                    # if there is no such attribute, the first row will throw AttributeError
-                    getattr(estimator, param_nested[-1])
-                    setattr(estimator, param_nested[-1], parameter_value)
-                except AttributeError:
-                    pass
+        # we need to change specification into list of nested params, "model.depth" to nested structure
+        # the code below updates public_params by params
+        for param, param_value in params.items():
+            *param_nesting, param_attr = param.split(".")
+            cycle_dict = params_dict
+            for param_nested in param_nesting:
+                if cycle_dict.get(param_nested, -1) == -1:
+                    cycle_dict[param_nested] = {}
+                cycle_dict = cycle_dict[param_nested]
+            cycle_dict[param_attr] = param_value
+
+        estimator_out = hydra_slayer.get_from_params(**params_dict)
         return estimator_out
 
 
