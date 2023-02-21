@@ -259,7 +259,7 @@ class Auto(AutoBase):
         super().__init__(
             target_metric, horizon, metric_aggregation, backtest_params, experiment_folder, runner, storage, metrics
         )
-        self.pool = poolS
+        self.pool = pool
 
     def fit(
         self,
