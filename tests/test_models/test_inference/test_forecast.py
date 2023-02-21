@@ -95,8 +95,21 @@ class TestForecastInSampleFullNoTarget:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_nans_lags(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_no_target_failed_nans_nn(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="There are NaNs in features"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
@@ -112,20 +125,6 @@ class TestForecastInSampleFullNoTarget:
     def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
-
-    @to_be_fixed(raises=AssertionError)
-    # Looks like a problem of current implementation of NNs
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (
-                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[5, 6])],
-            ),
-        ],
-    )
-    def test_forecast_in_sample_full_no_target_failed_assertion_error(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
@@ -196,8 +195,21 @@ class TestForecastInSampleFull:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_forecast_in_sample_full_failed_nans_lags(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_failed_nans_nn(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="There are NaNs in features"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(
@@ -207,6 +219,7 @@ class TestForecastInSampleFull:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -217,13 +230,7 @@ class TestForecastInSampleFull:
     # Looks like a problem of current implementation of NNs
     @pytest.mark.parametrize(
         "model, transforms",
-        [
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (
-                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[2, 3])],
-            ),
-        ],
+        [],
     )
     def test_forecast_in_sample_full_failed_nans_lags_nns(self, model, transforms, example_tsds):
         _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
