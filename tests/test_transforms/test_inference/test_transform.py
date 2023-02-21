@@ -249,10 +249,20 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (
+                ChangePointsTrendTransform(
+                    in_column="positive", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+                ),
+                "ts_with_exog",
+            ),
             (BinsegTrendTransform(in_column="target"), "regular_ts"),
+            (BinsegTrendTransform(in_column="positive"), "ts_with_exog"),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
+            (LinearTrendTransform(in_column="positive"), "ts_with_exog"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
+            (TheilSenTrendTransform(in_column="positive"), "ts_with_exog"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (STLTransform(in_column="positive", period=7), "ts_with_exog"),
             (TrendTransform(in_column="target"), "regular_ts"),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -682,8 +692,8 @@ class TestTransformFutureNewSegments:
         transform.fit(train_df)
 
         # prepare df without transform
-        non_transformed_test_ts = test_ts_without_transform.make_future(future_steps=horizon)
-        non_transformed_test_df = non_transformed_test_ts.to_pandas()
+        test_ts = test_ts_without_transform.make_future(future_steps=horizon)
+        test_df = test_ts.to_pandas()
 
         # transform
         transformed_test_ts = test_ts_with_transform.make_future(future_steps=horizon)
@@ -693,11 +703,9 @@ class TestTransformFutureNewSegments:
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_non_transformed_test_df = TSDataset.to_flatten(non_transformed_test_df)
+        flat_test_df = TSDataset.to_flatten(test_df)
         flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
-        created_columns, removed_columns, changed_columns = find_columns_diff(
-            flat_non_transformed_test_df, flat_transformed_test_df
-        )
+        created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
@@ -1014,25 +1022,23 @@ class TestTransformFutureWithTarget:
     def _test_transform_future_with_target(self, ts, transform, expected_changes, gap_size=7, transform_size=50):
         # select subset of tsdataset
         history_ts, future_full_ts = ts.train_test_split(test_size=gap_size + transform_size)
-        _, future_suffix_ts = future_full_ts.train_test_split(test_size=transform_size)
+        _, test_ts = future_full_ts.train_test_split(test_size=transform_size)
         train_df = history_ts.to_pandas()
-        future_suffix_df = future_suffix_ts.to_pandas()
+        test_df = test_ts.to_pandas()
 
         # fitting
         transform.fit(train_df)
 
         # transform
-        transformed_future_suffix_df = transform.transform(future_suffix_df.copy())
+        transformed_test_df = transform.transform(test_df.copy())
 
         # checking
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_future_suffix_df = TSDataset.to_flatten(future_suffix_df)
-        flat_transformed_future_suffix_df = TSDataset.to_flatten(transformed_future_suffix_df)
-        created_columns, removed_columns, changed_columns = find_columns_diff(
-            flat_future_suffix_df, flat_transformed_future_suffix_df
-        )
+        flat_test_df = TSDataset.to_flatten(test_df)
+        flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
+        created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
@@ -1322,33 +1328,31 @@ class TestTransformFutureWithoutTarget:
 
     def _test_transform_future_without_target(self, ts, transform, expected_changes, gap_size=28, transform_size=7):
         # select subset of tsdataset
-        history_ts, test_ts = ts.train_test_split(test_size=gap_size)
-        test_ts_without_transform = test_ts
-        test_ts_with_transform = deepcopy(test_ts)
-        test_ts_without_transform.transforms = []
-        test_ts_with_transform.transforms = [transform]
+        history_ts, future_ts = ts.train_test_split(test_size=gap_size)
+        future_ts_without_transform = future_ts
+        future_ts_with_transform = deepcopy(future_ts)
+        future_ts_without_transform.transforms = []
+        future_ts_with_transform.transforms = [transform]
         train_df = history_ts.to_pandas()
 
         # fitting
         transform.fit(train_df)
 
         # prepare df without transform
-        non_transformed_test_ts = test_ts_without_transform.make_future(future_steps=transform_size)
-        non_transformed_test_df = non_transformed_test_ts.to_pandas()
+        test_ts = future_ts_without_transform.make_future(future_steps=transform_size)
+        test_df = test_ts.to_pandas()
 
         # transform
-        transformed_test_ts = test_ts_with_transform.make_future(future_steps=transform_size)
+        transformed_test_ts = future_ts_with_transform.make_future(future_steps=transform_size)
         transformed_test_df = transformed_test_ts.to_pandas()
 
         # checking
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_non_transformed_test_df = TSDataset.to_flatten(non_transformed_test_df)
+        flat_test_df = TSDataset.to_flatten(test_df)
         flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
-        created_columns, removed_columns, changed_columns = find_columns_diff(
-            flat_non_transformed_test_df, flat_transformed_test_df
-        )
+        created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
@@ -1374,10 +1378,21 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
+            (
+                ChangePointsTrendTransform(
+                    in_column="positive", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+                ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (BinsegTrendTransform(in_column="target"), "regular_ts", {}),
+            (BinsegTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (LinearTrendTransform(in_column="target"), "regular_ts", {}),
+            (LinearTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {}),
+            (TheilSenTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {}),
+            (STLTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
             (TrendTransform(in_column="target", out_column="res"), "regular_ts", {"create": {"res"}}),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
