@@ -14,6 +14,7 @@ from etna.models.base import DeepBaseModel
 @pytest.fixture()
 def deep_base_model_mock():
     model = MagicMock()
+    model.encoder_length = 10
     model.train_batch_size = 32
     model.train_dataloader_params = {}
     model.val_dataloader_params = {}
@@ -143,6 +144,12 @@ def test_deep_base_model_forecast_inverse_transform_call_check(deep_base_model_m
     horizon = 7
     DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts, prediction_size=horizon)
     ts.tsdataset_idx_slice.return_value.inverse_transform.assert_called_once()
+
+
+def test_deep_base_model_forecast_fail_not_enough_context(deep_base_model_mock, sized_torch_dataset_mock):
+    horizon = len(sized_torch_dataset_mock)
+    with pytest.raises(ValueError, match="Given context isn't big enough"):
+        _ = DeepBaseModel.forecast(self=deep_base_model_mock, ts=sized_torch_dataset_mock, prediction_size=horizon)
 
 
 def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock):

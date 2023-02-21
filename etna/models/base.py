@@ -622,6 +622,12 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         :
             Dataset with predictions
         """
+        expected_length = prediction_size + self.encoder_length
+        if len(ts.index) < expected_length:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataset!"
+            )
+
         test_dataset = ts.to_torch_dataset(
             make_samples=functools.partial(
                 self.net.make_samples, encoder_length=self.encoder_length, decoder_length=prediction_size
