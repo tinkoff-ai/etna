@@ -90,6 +90,29 @@ class BaseMixin:
         params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
 
+    def _update_nested_dict_with_flat_dict(self, params_dict: dict, flat_dict: dict):
+        """Change flat specification into dict of nested params.
+
+        Parameters
+        ----------
+        **params_dict: dict
+            dict with nested parameters structure, e.g {"model": {"learning_rate": value1}}
+        **flat_dict: dict
+            dict with flat paratemers structure, e.g. {"model.depth": value2}
+
+        Returns
+        -------
+        **nested_dict: dict
+            dict with nested parameters structure, containing all the nested keys of two given dicts,
+            e.g. {"model": {"depth": value1, "learning_rate": value2}}
+        """
+        for param, param_value in flat_dict.items():
+            *param_nesting, param_attr = param.split(".")
+            cycle_dict = params_dict
+            for param_nested in param_nesting:
+                cycle_dict = cycle_dict.setdefault(param_nested, {})
+            cycle_dict[param_attr] = param_value
+
     def set_params(self, **params: dict) -> "BaseMixin":
         """Return new object instance with modified parameters.
 
@@ -106,16 +129,7 @@ class BaseMixin:
         """
         params_dict = self.to_dict()
 
-        # we need to change specification into list of nested params, "model.depth" to nested structure
-        # the code below updates public_params by params
-        for param, param_value in params.items():
-            *param_nesting, param_attr = param.split(".")
-            cycle_dict = params_dict
-            for param_nested in param_nesting:
-                if cycle_dict.get(param_nested, -1) == -1:
-                    cycle_dict[param_nested] = {}
-                cycle_dict = cycle_dict[param_nested]
-            cycle_dict[param_attr] = param_value
+        self._update_nested_dict_with_flat_dict(params_dict, params)
 
         estimator_out = hydra_slayer.get_from_params(**params_dict)
         return estimator_out

@@ -23,7 +23,7 @@ def test_base_mixin_set_params_changes_params_estimator():
 def test_base_mixin_set_params_changes_params_pipeline():
     pipeline = Pipeline(model=CatBoostMultiSegmentModel(iterations=1000, depth=10), transforms=(), horizon=5)
     pipeline = pipeline.set_params(
-        **{"model.learning_rate": 1e-3, "model.depth": 8, "transforms": AddConstTransform("column", 1)}
+        **{"model.learning_rate": 1e-3, "model.depth": 8, "transforms": [AddConstTransform("column", 1)]}
     )
     expected_dict = {
         "_target_": "etna.pipeline.pipeline.Pipeline",
@@ -36,12 +36,14 @@ def test_base_mixin_set_params_changes_params_pipeline():
             "learning_rate": 0.001,
             "logging_level": "Silent",
         },
-        "transforms": {
-            "_target_": "etna.transforms.math.add_constant.AddConstTransform",
-            "in_column": "column",
-            "inplace": True,
-            "value": 1,
-        },
+        "transforms": [
+            {
+                "_target_": "etna.transforms.math.add_constant.AddConstTransform",
+                "in_column": "column",
+                "inplace": True,
+                "value": 1,
+            }
+        ],
     }
     obtained_dict = pipeline.to_dict()
     assert obtained_dict == expected_dict
@@ -83,16 +85,24 @@ def test_base_mixin_set_params_doesnt_change_params_inplace_pipeline():
 def test_base_mixin_set_params_with_nonexistent_attributes_estimator():
     catboost_model = CatBoostMultiSegmentModel(iterations=1000, depth=10)
     with pytest.raises(TypeError, match=".*got an unexpected keyword argument.*"):
-        catboost_model.set_params(**{"incorrect_attribute_1": 1e-3, "incorrect_attribute_2": 8})
+        catboost_model.set_params(**{"incorrect_attribute": 1e-3})
 
 
-def test_base_mixin_set_params_with_nonexistent_attributes_pipeline():
+def test_base_mixin_set_params_with_nonexistent_not_nested_attribute_pipeline():
     pipeline = Pipeline(model=CatBoostMultiSegmentModel(iterations=1000, depth=10), transforms=(), horizon=5)
     with pytest.raises(TypeError, match=".*got an unexpected keyword argument.*"):
         pipeline.set_params(
             **{
                 "incorrect_estimator": "value",
+            }
+        )
+
+
+def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
+    pipeline = Pipeline(model=CatBoostMultiSegmentModel(iterations=1000, depth=10), transforms=(), horizon=5)
+    with pytest.raises(TypeError, match=".*got an unexpected keyword argument.*"):
+        pipeline.set_params(
+            **{
                 "model.incorrect_attribute": "value",
-                "model.incorrect_nesting.depth": "value",
             }
         )
