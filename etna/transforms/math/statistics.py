@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC
 from abc import abstractmethod
 from typing import List
@@ -7,6 +8,7 @@ import bottleneck as bn
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.transforms.base import IrreversibleTransform
 
 
@@ -49,6 +51,13 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
         self.min_periods = min_periods
         self.fillna = fillna
         self.kwargs = kwargs
+        self.in_column_regressor: Optional[bool] = None
+
+    def fit(self, ts: TSDataset) -> "WindowStatisticsTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
 
     def _fit(self, df: pd.DataFrame) -> "WindowStatisticsTransform":
         """Fits transform."""
@@ -100,7 +109,9 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        return [self.out_column_name]
+        if self.in_column_regressor is None:
+            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+        return [self.out_column_name] if self.in_column_regressor else []
 
 
 class MeanTransform(WindowStatisticsTransform):
