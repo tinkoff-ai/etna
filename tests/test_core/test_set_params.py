@@ -1,5 +1,6 @@
 import pytest
 
+from etna.core import BaseMixin
 from etna.models import CatBoostMultiSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
@@ -106,3 +107,51 @@ def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
                 "model.incorrect_attribute": "value",
             }
         )
+
+
+def test_update_nested_dict_with_flat_dict_empty_flat_dict_returns_nested_dict():
+    nested_dict = {"learning_rate": 1e-3}
+    flat_dict = {}
+    BaseMixin._update_nested_dict_with_flat_dict(nested_dict, flat_dict)
+    expected_dict = {"learning_rate": 1e-3}
+    assert nested_dict == expected_dict
+
+
+def test_update_nested_dict_with_flat_dict_empty_nested_dict_no_nesting_in_flat_dict():
+    nested_dict = {}
+    flat_dict = {"depth": 8}
+    BaseMixin._update_nested_dict_with_flat_dict(nested_dict, flat_dict)
+    expected_dict = {"depth": 8}
+    assert nested_dict == expected_dict
+
+
+def test_update_nested_dict_with_flat_dict_empty_nested_dict_nesting_in_flat_dict():
+    nested_dict = {}
+    flat_dict = {"model.depth": 8}
+    BaseMixin._update_nested_dict_with_flat_dict(nested_dict, flat_dict)
+    expected_dict = {"model": {"depth": 8}}
+    assert nested_dict == expected_dict
+
+
+def test_update_nested_dict_with_flat_dict_no_nesting_in_flat_dict():
+    nested_dict = {"learning_rate": 1e-3}
+    flat_dict = {"depth": 8}
+    BaseMixin._update_nested_dict_with_flat_dict(nested_dict, flat_dict)
+    expected_dict = {"learning_rate": 1e-3, "depth": 8}
+    assert nested_dict == expected_dict
+
+
+def test_update_nested_dict_with_flat_dict_nesting_in_flat_dict():
+    nested_dict = {"model": {"learning_rate": 1e-3}}
+    flat_dict = {"model.depth": 8}
+    BaseMixin._update_nested_dict_with_flat_dict(nested_dict, flat_dict)
+    expected_dict = {"model": {"learning_rate": 1e-3, "depth": 8}}
+    assert nested_dict == expected_dict
+
+
+def test_update_nested_dict_with_flat_dict_prioritizes_flat_dict_params():
+    nested_dict = {"learning_rate": 1e-3}
+    flat_dict = {"learning_rate": 3e-4}
+    BaseMixin._update_nested_dict_with_flat_dict(nested_dict, flat_dict)
+    expected_dict = {"learning_rate": 3e-4}
+    assert nested_dict == expected_dict
