@@ -13,6 +13,7 @@ from typing import List
 from typing import Tuple
 from typing import cast
 
+import hydra_slayer
 from sklearn.base import BaseEstimator
 
 
@@ -88,6 +89,51 @@ class BaseMixin:
             params[arg] = BaseMixin._parse_value(value=value)
         params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
+
+    @staticmethod
+    def _update_nested_dict_with_flat_dict(params_dict: dict, flat_dict: dict):
+        """Update nested dict with flat dict.
+
+        The method updates ``params_dict`` with values from ``flat_dict``,
+        so that ``params_dict`` contains all the nested keys of two given dicts,
+        e.g. for ``params_dict = {"model": {"learning_rate": value1}}``
+        and ``flat_dict = {"model.depth": value2}``
+        resulting ``params_dict`` will be
+        ``{"model": {"depth": value1, "learning_rate": value2}}``
+
+        Parameters
+        ----------
+        **params_dict: dict
+            dict with nested parameters structure, e.g ``{"model": {"learning_rate": value1}}``
+        **flat_dict: dict
+            dict with flat paratemers structure, e.g. ``{"model.depth": value2}``
+
+        """
+        for param, param_value in flat_dict.items():
+            *param_nesting, param_attr = param.split(".")
+            cycle_dict = params_dict
+            for param_nested in param_nesting:
+                cycle_dict = cycle_dict.setdefault(param_nested, {})
+            cycle_dict[param_attr] = param_value
+
+    def set_params(self, **params: dict) -> "BaseMixin":
+        """Return new object instance with modified parameters.
+
+        The method works on simple estimators as well as on nested objects
+        (such as :class:`~etna.pipeline.Pipeline`). The latter have
+        parameters of the form ``<component>.<parameter>`` so that it's
+        possible to update each component of a nested object.
+
+        Parameters
+        ----------
+        **params: dict
+            Estimator parameters.
+
+        """
+        params_dict = self.to_dict()
+        self._update_nested_dict_with_flat_dict(params_dict, params)
+        estimator_out = hydra_slayer.get_from_params(**params_dict)
+        return estimator_out
 
 
 class StringEnumWithRepr(str, Enum):
