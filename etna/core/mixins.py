@@ -94,8 +94,8 @@ class BaseMixin:
     def _update_nested_dict_with_flat_dict(params_dict: dict, flat_dict: dict):
         """Update nested dict with flat dict.
 
-        The method updates params_dict with values from flat_dict,
-        so that params_dict contains all the nested keys of two given dicts,
+        The method updates ``params_dict`` with values from ``flat_dict``,
+        so that ``params_dict`` contains all the nested keys of two given dicts,
         e.g. for ``params_dict = {"model": {"learning_rate": value1}}``
         and ``flat_dict = {"model.depth": value2}``
         resulting ``params_dict`` will be
