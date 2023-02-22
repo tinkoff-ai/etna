@@ -60,8 +60,6 @@ from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
-# TODO: а нам точно нужно копирования датафрейма перед передачей внутрь transform, inverse_transform?
-
 
 class TestInverseTransformTrainSubsetSegments:
     """Test inverse transform on train part of subset of segments.
@@ -699,6 +697,22 @@ class TestInverseTransformTrainNewSegments:
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
         )
 
+    # TODO: remove
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            # timestamp
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
+        ],
+    )
+    def test_inverse_transform_train_new_segments_failed_not_implemented(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_train_new_segments(
+            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
+        )
+
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -1056,7 +1070,7 @@ class TestInverseTransformFutureNewSegments:
         "transform, dataset_name, expected_changes",
         [
             # feature_selection
-            # TODO: not working correctly
+            # TODO: working incorrectly, should fail
             (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
             (
                 GaleShapleyFeatureSelectionTransform(
@@ -1828,6 +1842,7 @@ class TestInverseTransformFutureWithoutTarget:
         "transform, dataset_name, expected_changes",
         [
             (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
         ],
     )
     def test_inverse_transform_future_without_target_fail_difference(
@@ -1864,8 +1879,6 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {"create": {"year", "month", "weekday"}},
             ),
-            # math
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
             # missing_values
             (
                 ResampleWithDistributionTransform(
