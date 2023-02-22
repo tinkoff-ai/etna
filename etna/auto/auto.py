@@ -257,10 +257,10 @@ class Auto(AutoBase):
             list of metrics to compute
         """
         super().__init__(
-            target_metric=target_matric,
+            target_metric=target_metric,
             horizon=horizon,
             metric_aggregation=metric_aggregation,
-            backtest_param=backtest_params,
+            backtest_params=backtest_params,
             experiment_folder=experiment_folder,
             runner=runner,
             storage=storage,
