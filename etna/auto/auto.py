@@ -264,7 +264,7 @@ class Auto(AutoBase):
             experiment_folder=experiment_folder,
             runner=runner,
             storage=storage,
-            metrics=metrics
+            metrics=metrics,
         )
         self.pool = pool
 
