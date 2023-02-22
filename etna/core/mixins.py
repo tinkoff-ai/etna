@@ -90,21 +90,22 @@ class BaseMixin:
         params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
 
-    def _update_nested_dict_with_flat_dict(self, params_dict: dict, flat_dict: dict):
+    @staticmethod
+    def _update_nested_dict_with_flat_dict(params_dict: dict, flat_dict: dict):
         """Change flat specification into dict of nested params.
 
         Parameters
         ----------
         **params_dict: dict
-            dict with nested parameters structure, e.g {"model": {"learning_rate": value1}}
+            dict with nested parameters structure, e.g ``{"model": {"learning_rate": value1}}``
         **flat_dict: dict
-            dict with flat paratemers structure, e.g. {"model.depth": value2}
+            dict with flat paratemers structure, e.g. ``{"model.depth": value2}``
 
         Returns
         -------
         **nested_dict: dict
             dict with nested parameters structure, containing all the nested keys of two given dicts,
-            e.g. {"model": {"depth": value1, "learning_rate": value2}}
+            e.g. ``{"model": {"depth": value1, "learning_rate": value2}}``
         """
         for param, param_value in flat_dict.items():
             *param_nesting, param_attr = param.split(".")
@@ -128,9 +129,7 @@ class BaseMixin:
 
         """
         params_dict = self.to_dict()
-
         self._update_nested_dict_with_flat_dict(params_dict, params)
-
         estimator_out = hydra_slayer.get_from_params(**params_dict)
         return estimator_out
 
