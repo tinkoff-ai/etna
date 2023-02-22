@@ -92,7 +92,14 @@ class BaseMixin:
 
     @staticmethod
     def _update_nested_dict_with_flat_dict(params_dict: dict, flat_dict: dict):
-        """Change flat specification into dict of nested params.
+        """Update nested dict with flat dict.
+
+        The method updates params_dict with values from flat_dict,
+        so that params_dict contains all the nested keys of two given dicts,
+        e.g. for ``params_dict = {"model": {"learning_rate": value1}}``
+        and ``flat_dict = {"model.depth": value2}``
+        resulting ``params_dict`` will be
+        ``{"model": {"depth": value1, "learning_rate": value2}}``
 
         Parameters
         ----------
@@ -101,11 +108,6 @@ class BaseMixin:
         **flat_dict: dict
             dict with flat paratemers structure, e.g. ``{"model.depth": value2}``
 
-        Returns
-        -------
-        **nested_dict: dict
-            dict with nested parameters structure, containing all the nested keys of two given dicts,
-            e.g. ``{"model": {"depth": value1, "learning_rate": value2}}``
         """
         for param, param_value in flat_dict.items():
             *param_nesting, param_attr = param.split(".")
