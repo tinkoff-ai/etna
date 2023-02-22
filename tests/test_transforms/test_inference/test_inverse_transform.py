@@ -697,22 +697,6 @@ class TestInverseTransformTrainNewSegments:
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
         )
 
-    # TODO: remove
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # timestamp
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
-        ],
-    )
-    def test_inverse_transform_train_new_segments_failed_not_implemented(
-        self, transform, dataset_name, expected_changes, request
-    ):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
-        )
-
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
