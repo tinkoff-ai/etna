@@ -187,6 +187,11 @@ def match_target_quantiles(features: Set[str]) -> Set[str]:
     return {i for i in list(features) if pattern.match(i) is not None}
 
 
+def match_target_components(features: Set[str]) -> Set[str]:
+    """Find target components in dataframe columns."""
+    return set(filter(lambda f: f.startswith("target_component_"), features))
+
+
 def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
     """Find "target" column and target quantiles among dataframe columns."""
     column_names = set(columns.get_level_values(level="feature"))
