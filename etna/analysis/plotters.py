@@ -1965,7 +1965,7 @@ class ComponentsMode(str, Enum):
     """Enum for components plotting modes."""
 
     per_component = "per-component"
-    together = "together"
+    joint = "joint"
 
     @classmethod
     def _missing_(cls, value):
@@ -1977,7 +1977,7 @@ class ComponentsMode(str, Enum):
 def plot_forecast_decomposition(
     forecast_ts: "TSDataset",
     test_ts: Optional["TSDataset"] = None,
-    mode: Union[Literal["per-component"], Literal["together"]] = "per-component",
+    mode: Union[Literal["per-component"], Literal["joint"]] = "per-component",
     segments: Optional[List[str]] = None,
     columns_num: int = 1,
     figsize: Tuple[int, int] = (10, 5),
@@ -1997,7 +1997,7 @@ def plot_forecast_decomposition(
 
         #. ``per-component`` -- plot each component in separate axes
 
-        #. ``together`` -- plot all the components in the same axis
+        #. ``joint`` -- plot all the components in the same axis
 
     segments:
         segments to plot; if not given plot all the segments
@@ -2026,10 +2026,10 @@ def plot_forecast_decomposition(
     if len(components) == 0:
         raise ValueError("No components were detected in the provided `forecast_ts`.")
 
-    if components_mode == ComponentsMode.together:
+    if components_mode == ComponentsMode.joint:
         num_plots = len(segments)
     else:
-        # separate chart for target/forecast
+        # plotting target and forecast separately from components, thus +1 for each segment
         num_plots = math.ceil(len(segments) / columns_num) * columns_num * (len(components) + 1)
 
     _, ax = prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize, set_grid=show_grid)
@@ -2037,7 +2037,7 @@ def plot_forecast_decomposition(
     if test_ts is not None:
         test_ts.df.sort_values(by="timestamp", inplace=True)
 
-    alpha = 0.5 if components_mode == ComponentsMode.together else 1.0
+    alpha = 0.5 if components_mode == ComponentsMode.joint else 1.0
     ax_array = np.asarray(ax).reshape(-1, columns_num).T.ravel()
 
     i = 0
