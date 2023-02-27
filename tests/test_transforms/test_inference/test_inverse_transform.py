@@ -1430,11 +1430,11 @@ class TestInverseTransformFutureWithTarget:
         with pytest.raises(ValueError, match="Test should go after the train without gaps"):
             self._test_inverse_transform_future_with_target(ts, transform, expected_changes=expected_changes)
 
-    @to_be_fixed(raises=Exception)
+    # It is the only transform that doesn't change values back during `inverse_transform`
+    @to_be_fixed(raises=AssertionError)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # missing_values
             (
                 ResampleWithDistributionTransform(
                     in_column="regressor_exog", distribution_column="target", inplace=True
@@ -1442,6 +1442,18 @@ class TestInverseTransformFutureWithTarget:
                 "ts_to_resample",
                 {"change": {"regressor_exog"}},
             ),
+        ],
+    )
+    def test_inverse_transform_future_with_target_fail_resample(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_future_with_target(ts, transform, expected_changes=expected_changes)
+
+    @to_be_fixed(raises=Exception)
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -1836,6 +1848,26 @@ class TestInverseTransformFutureWithoutTarget:
         with pytest.raises(ValueError, match="Test should go after the train without gaps"):
             self._test_inverse_transform_future_without_target(ts, transform, expected_changes=expected_changes)
 
+    # It is the only transform that doesn't change values back during `inverse_transform`
+    @to_be_fixed(AssertionError)
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample",
+                {"change": {"regressor_exog"}},
+            ),
+        ],
+    )
+    def test_inverse_transform_future_without_target_fail_resample(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_future_without_target(ts, transform, expected_changes=expected_changes)
+
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -1862,14 +1894,6 @@ class TestInverseTransformFutureWithoutTarget:
                 ),
                 "ts_with_exog",
                 {"create": {"year", "month", "weekday"}},
-            ),
-            # missing_values
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=True
-                ),
-                "ts_to_resample",
-                {"change": {"regressor_exog"}},
             ),
         ],
     )
