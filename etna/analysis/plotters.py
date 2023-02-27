@@ -2028,11 +2028,9 @@ def plot_forecast_decomposition(
 
     if components_mode == ComponentsMode.together:
         num_plots = len(segments)
-        columns_num = columns_num
     else:
         # separate chart for target/forecast
         num_plots = math.ceil(len(segments) / columns_num) * columns_num * (len(components) + 1)
-        columns_num = columns_num
 
     _, ax = prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize, set_grid=show_grid)
 
