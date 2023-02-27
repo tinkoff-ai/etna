@@ -167,7 +167,7 @@ class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
         if self.inplace:
             return []
         if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return [self.out_column] if self.in_column_regressor else []
 
     def fit(self, ts: TSDataset) -> "ResampleWithDistributionTransform":

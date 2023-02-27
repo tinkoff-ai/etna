@@ -254,6 +254,5 @@ class SklearnTransform(ReversibleTransform):
         if self.inplace:
             return []
         if self.out_column_regressors is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
-            return []
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return self.out_column_regressors

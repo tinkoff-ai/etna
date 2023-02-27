@@ -1,4 +1,3 @@
-import warnings
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -84,7 +83,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
         if self.inplace:
             return []
         if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return [self._get_column_name()] if self.in_column_regressor else []
 
     def fit(self, ts: TSDataset) -> "_SingleDifferencingTransform":
@@ -362,7 +361,7 @@ class DifferencingTransform(ReversibleTransform):
         if self.inplace:
             return []
         if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return [self._get_column_name()] if self.in_column_regressor else []
 
     def fit(self, ts: TSDataset) -> "DifferencingTransform":
