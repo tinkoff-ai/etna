@@ -1981,7 +1981,7 @@ def plot_forecast_decomposition(
     segments: Optional[List[str]] = None,
     columns_num: int = 1,
     figsize: Tuple[int, int] = (10, 5),
-    show_grid: bool = False
+    show_grid: bool = False,
 ):
     """
     Plot of prediction and its components.
@@ -2038,7 +2038,7 @@ def plot_forecast_decomposition(
         test_ts.df.sort_values(by="timestamp", inplace=True)
 
     alpha = 0.5 if components_mode == ComponentsMode.together else 1.0
-    ax = ax.reshape(-1, columns_num).T.ravel()
+    ax_array = np.asarray(ax).reshape(-1, columns_num).T.ravel()
 
     i = 0
     for segment in segments:
@@ -2049,26 +2049,26 @@ def plot_forecast_decomposition(
 
         segment_forecast_df = forecast_ts[:, segment, :][segment].sort_values(by="timestamp")
 
-        ax[i].set_title(segment)
+        ax_array[i].set_title(segment)
 
-        ax[i].plot(segment_forecast_df.index.values, segment_forecast_df["target"].values, label="forecast")
+        ax_array[i].plot(segment_forecast_df.index.values, segment_forecast_df["target"].values, label="forecast")
 
         if test_ts is not None:
-            ax[i].plot(segment_test_df.index.values, segment_test_df["target"].values, label="target")
+            ax_array[i].plot(segment_test_df.index.values, segment_test_df["target"].values, label="target")
         else:
             # skip color for target
-            next(ax[i]._get_lines.prop_cycler)
+            next(ax_array[i]._get_lines.prop_cycler)
 
         for component in components:
             if components_mode == ComponentsMode.per_component:
-                ax[i].legend(loc="upper left")
-                ax[i].set_xticklabels([])
+                ax_array[i].legend(loc="upper left")
+                ax_array[i].set_xticklabels([])
                 i += 1
 
-            ax[i].plot(
+            ax_array[i].plot(
                 segment_forecast_df.index.values, segment_forecast_df[component].values, label=component, alpha=alpha
             )
 
-        ax[i].tick_params("x", rotation=45)
-        ax[i].legend(loc="upper left")
+        ax_array[i].tick_params("x", rotation=45)
+        ax_array[i].legend(loc="upper left")
         i += 1
