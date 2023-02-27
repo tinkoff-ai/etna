@@ -1,7 +1,9 @@
 from typing import Iterable
 from typing import Optional
 from typing import Tuple
+from warnings import warn
 
+import numpy as np
 import pandas as pd
 from tbats.abstract import ContextInterface
 from tbats.abstract import Estimator
@@ -82,6 +84,128 @@ class _TBATSAdapter(BaseAdapter):
            Internal model
         """
         return self._fitted_model
+
+    def forecast_components(self, df: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            data for estimation forecast components
+        horizon:
+            forecast horizon
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        self._check_components()
+        raw_components = self._decompose_forecast(horizon=horizon)
+        components = self._named_components(raw_components=raw_components)
+
+        return pd.DataFrame(data=components)
+
+    def predict_components(self, df: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            data for estimation prediction components
+        horizon:
+            forecast horizon
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        raise NotImplementedError("Prediction decomposition isn't currently implemented!")
+
+    def _check_components(self):
+        """Compare fitted model params with the initial params."""
+        fitted_model_params = self._fitted_model.params.components
+
+        seasonal_periods = self._model.seasonal_periods
+        if (
+            seasonal_periods is not None
+            and len(seasonal_periods) > 0
+            and len(fitted_model_params.seasonal_periods) == 0
+        ):
+            warn("Seasonal components is not fitted!")
+
+        if self._model.use_arma_errors and not fitted_model_params.use_arma_errors:
+            warn("ARMA components is not fitted!")
+
+        if self._model.use_box_cox and not fitted_model_params.use_box_cox:
+            warn("Box-Cox transform is not fitted!")
+
+        if self._model.use_trend and not fitted_model_params.use_trend:
+            warn("Trend is not fitted!")
+
+    def _decompose_forecast(self, horizon):
+        """Estimate raw forecast components."""
+        model = self._fitted_model
+        state_matrix = model.matrix.make_F_matrix()
+        component_weights = model.matrix.make_w_vector()
+
+        state = model.x_last
+        components = []
+        for _ in range(horizon):
+            components.append(component_weights * state)
+            state = state_matrix @ state
+
+        components = np.stack(components, axis=0)
+
+        if model.params.components.use_box_cox:
+            transformed_pred = np.sum(components, axis=1)
+            pred = model._inv_boxcox(transformed_pred)
+            components = components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
+
+        return components
+
+    def _named_components(self, raw_components):
+        """Prepare components with names."""
+        params_components = self._fitted_model.params.components
+        named_components = dict()
+
+        named_components["local_level"] = raw_components[:, 0]
+
+        component_idx = 1
+        if params_components.use_trend:
+            named_components["trend"] = raw_components[:, component_idx]
+            component_idx += 1
+
+        if len(params_components.seasonal_periods) != 0:
+            seasonal_periods = params_components.seasonal_periods
+
+            if hasattr(params_components, "seasonal_harmonics"):
+                seasonal_harmonics = params_components.seasonal_harmonics
+                for seasonal_period, seasonal_harmonic in zip(seasonal_periods, seasonal_harmonics):
+                    named_components[f"seasonal(s={seasonal_period})"] = np.sum(
+                        raw_components[:, component_idx : component_idx + 2 * seasonal_harmonic], axis=1
+                    )
+                    component_idx += 2 * seasonal_harmonic
+
+            else:
+                component_idx -= 1
+                for seasonal_period in seasonal_periods:
+                    component_idx += seasonal_period
+                    named_components[f"seasonal(s={seasonal_period})"] = raw_components[:, component_idx]
+
+            component_idx += 1
+
+        if params_components.p > 0 or params_components.q > 0:
+            p, q = params_components.p, params_components.q
+            named_components[f"arma(p={p},q={q})"] = np.sum(
+                raw_components[:, component_idx : component_idx + p + q], axis=1
+            )
+
+        return named_components
 
 
 class BATSModel(
