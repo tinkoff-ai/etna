@@ -164,11 +164,10 @@ def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
-def test_forecast_decompose_not_fitted(periodic_ts):
-    train, test = periodic_ts
+def test_forecast_decompose_not_fitted():
     model = _TBATSAdapter(model=BATS())
     with pytest.raises(ValueError, match="Model is not fitted!"):
-        model.forecast_components(train.df, horizon=5)
+        model.forecast_components(horizon=5)
 
 
 @pytest.mark.long_2
@@ -208,7 +207,7 @@ def test_fitted_components_warnings(data, estimator, params, message, request):
 
     with pytest.warns(Warning, match=message):
         for segment in test.columns.get_level_values("segment"):
-            model._models[segment].forecast_components(df=train.df, horizon=3)
+            model._models[segment].forecast_components(horizon=3)
 
 
 @pytest.mark.long_2
@@ -253,6 +252,6 @@ def test_forecast_decompose(periodic_ts, estimator, params):
     y_pred = model.forecast(future_ts)
 
     for segment in y_pred.columns.get_level_values("segment"):
-        components = model._models[segment].forecast_components(df=train.df, horizon=14)
+        components = model._models[segment].forecast_components(horizon=14)
         y_hat_pred = np.sum(components.values, axis=1)
         np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)

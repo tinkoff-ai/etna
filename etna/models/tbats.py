@@ -85,13 +85,11 @@ class _TBATSAdapter(BaseAdapter):
         """
         return self._fitted_model
 
-    def forecast_components(self, df: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
+    def forecast_components(self, horizon: int = 1) -> pd.DataFrame:
         """Estimate forecast components.
 
         Parameters
         ----------
-        df:
-            data for estimation forecast components
         horizon:
             forecast horizon
 
@@ -109,13 +107,11 @@ class _TBATSAdapter(BaseAdapter):
 
         return pd.DataFrame(data=components)
 
-    def predict_components(self, df: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
+    def predict_components(self, horizon: int = 1) -> pd.DataFrame:
         """Estimate prediction components.
 
         Parameters
         ----------
-        df:
-            data for estimation prediction components
         horizon:
             forecast horizon
 
