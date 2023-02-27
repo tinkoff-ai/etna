@@ -251,8 +251,8 @@ class SklearnTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        if self.inplace:
-            return []
         if self.out_column_regressors is None:
             raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
         return self.out_column_regressors

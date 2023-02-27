@@ -80,10 +80,10 @@ class _SingleDifferencingTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        if self.inplace:
-            return []
         if self.in_column_regressor is None:
             raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
         return [self._get_column_name()] if self.in_column_regressor else []
 
     def fit(self, ts: TSDataset) -> "_SingleDifferencingTransform":
@@ -358,10 +358,10 @@ class DifferencingTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        if self.inplace:
-            return []
         if self.in_column_regressor is None:
             raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
         return [self._get_column_name()] if self.in_column_regressor else []
 
     def fit(self, ts: TSDataset) -> "DifferencingTransform":

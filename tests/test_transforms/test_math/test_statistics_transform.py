@@ -66,9 +66,7 @@ def test_get_regressors_info(example_reg_tsds, in_column, expected_regressors):
 
 def test_get_regressors_info_not_fitted():
     transform = DummyWindowStatisticsTransform(in_column="target", out_column="out_column", window=1)
-    with pytest.warns(
-        UserWarning, match="Regressors info might be incorrect. Fit the transform to get the correct regressors info."
-    ):
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
 
 
