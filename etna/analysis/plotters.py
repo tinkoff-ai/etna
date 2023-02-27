@@ -1977,10 +1977,11 @@ class ComponentsMode(str, Enum):
 def plot_forecast_decomposition(
     forecast_ts: "TSDataset",
     test_ts: Optional["TSDataset"] = None,
-    mode: str = ComponentsMode.per_component,
+    mode: Union[Literal["per-component"], Literal["together"]] = "per-component",
     segments: Optional[List[str]] = None,
     columns_num: int = 1,
     figsize: Tuple[int, int] = (10, 5),
+    show_grid: bool = False
 ):
     """
     Plot of prediction and its components.
@@ -2004,6 +2005,8 @@ def plot_forecast_decomposition(
         number of graphics columns; when mode=``per-component`` all plots will be in the single column
     figsize:
         size of the figure per subplot with one segment in inches
+    show_grid:
+        whether to show grid for each chart
 
     Raises
     ------
@@ -2028,15 +2031,16 @@ def plot_forecast_decomposition(
         columns_num = columns_num
     else:
         # separate chart for target/forecast
-        num_plots = len(segments) * (len(components) + 1)
-        columns_num = 1
+        num_plots = math.ceil(len(segments) / columns_num) * columns_num * (len(components) + 1)
+        columns_num = columns_num
 
-    _, ax = prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize)
+    _, ax = prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize, set_grid=show_grid)
 
     if test_ts is not None:
         test_ts.df.sort_values(by="timestamp", inplace=True)
 
     alpha = 0.5 if components_mode == ComponentsMode.together else 1.0
+    ax = ax.reshape(-1, columns_num).T.ravel()
 
     i = 0
     for segment in segments:
@@ -2046,6 +2050,8 @@ def plot_forecast_decomposition(
             segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
         segment_forecast_df = forecast_ts[:, segment, :][segment].sort_values(by="timestamp")
+
+        ax[i].set_title(segment)
 
         ax[i].plot(segment_forecast_df.index.values, segment_forecast_df["target"].values, label="forecast")
 
@@ -2057,16 +2063,14 @@ def plot_forecast_decomposition(
 
         for component in components:
             if components_mode == ComponentsMode.per_component:
-                ax[i].set_title(segment)
-                ax[i].tick_params("x", rotation=45)
                 ax[i].legend(loc="upper left")
+                ax[i].set_xticklabels([])
                 i += 1
 
             ax[i].plot(
                 segment_forecast_df.index.values, segment_forecast_df[component].values, label=component, alpha=alpha
             )
 
-        ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend(loc="upper left")
         i += 1

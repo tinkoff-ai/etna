@@ -188,7 +188,7 @@ def match_target_quantiles(features: Set[str]) -> Set[str]:
 
 
 def match_target_components(features: Set[str]) -> Set[str]:
-    """Find target components in dataframe columns."""
+    """Find target components in a set of features."""
     return set(filter(lambda f: f.startswith("target_component_"), features))
 
 
