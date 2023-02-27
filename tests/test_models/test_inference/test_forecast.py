@@ -875,6 +875,9 @@ class TestForecastNewSegments:
             (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -917,9 +920,6 @@ class TestForecastNewSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
         ],
     )
