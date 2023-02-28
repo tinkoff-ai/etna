@@ -244,7 +244,7 @@ def test_named_components_output_format(small_periodic_ts, estimator):
         (
             "sinusoid_ts",
             {"use_box_cox": False, "use_trend": False, "use_arma_errors": False, "seasonal_periods": [7, 14]},
-            "Seasonal components is not fitted!",
+            "Seasonal",
         ),
         (
             "periodic_ts",
@@ -255,7 +255,7 @@ def test_named_components_output_format(small_periodic_ts, estimator):
                 "use_arma_errors": True,
                 "seasonal_periods": [7, 14],
             },
-            "ARMA components is not fitted!",
+            "ARMA",
         ),
     ),
 )
@@ -265,13 +265,15 @@ def test_fitted_components_warnings(data, estimator, params, message, request):
     model = estimator(**params)
     model.fit(train)
 
-    with pytest.warns(Warning, match=message):
+    future = train.make_future(3).to_pandas(flatten=True)
+
+    with pytest.warns(Warning, match=f"Following components are not fitted: {message}!"):
         for segment in test.columns.get_level_values("segment"):
-            model._models[segment].forecast_components(horizon=3)
+            model._models[segment].forecast_components(df=future)
 
 
 @pytest.mark.long_2
-@pytest.mark.filterwarnings("ignore:.* is not fitted!$")
+@pytest.mark.filterwarnings("ignore:.*not fitted.*")
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -303,7 +305,7 @@ def test_fitted_components_warnings(data, estimator, params, message, request):
         },
     ),
 )
-def test_forecast_decompose(periodic_ts, estimator, params):
+def test_forecast_decompose_sum_up_to_target(periodic_ts, estimator, params):
     train, test = periodic_ts
 
     horizon = 14
@@ -313,6 +315,6 @@ def test_forecast_decompose(periodic_ts, estimator, params):
     y_pred = model.forecast(future_ts)
 
     for segment in y_pred.columns.get_level_values("segment"):
-        components = model._models[segment].forecast_components(horizon=horizon)
+        components = model._models[segment].forecast_components(df=future_ts.to_pandas(flatten=True))
         y_hat_pred = np.sum(components.values, axis=1)
         np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
