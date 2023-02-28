@@ -10,7 +10,6 @@ from etna.models.deadline_ma import _DeadlineMovingAverageModel
 from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
-from etna.models.seasonal_ma import _SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 
@@ -207,19 +206,20 @@ def test_seasonal_moving_average_forecast_correct(simple_df):
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
-    df1["target"] = np.arange(35, 42)
+    df1["target"] = np.arange(35, 42, dtype=float)
     df1["segment"] = "A"
     df1["timestamp"] = pd.date_range(start="2020-02-19", periods=7)
 
     df2 = pd.DataFrame()
-    df2["target"] = [0, 2, 4, 6, 8, 10, 12]
+    df2["target"] = [0.0, 2, 4, 6, 8, 10, 12]
     df2["segment"] = "B"
     df2["timestamp"] = pd.date_range(start="2020-02-19", periods=7)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
-    assert np.all(res.values == answer.values)
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_naive_forecast_correct(simple_df):
@@ -230,20 +230,20 @@ def test_naive_forecast_correct(simple_df):
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
-    df1["target"] = [46, 47, 48] * 2 + [46]
+    df1["target"] = [46.0, 47, 48] * 2 + [46]
     df1["segment"] = "A"
     df1["timestamp"] = pd.date_range(start="2020-02-19", periods=7)
 
     df2 = pd.DataFrame()
-    df2["target"] = [8, 10, 12] * 2 + [8]
+    df2["target"] = [8.0, 10, 12] * 2 + [8]
     df2["segment"] = "B"
     df2["timestamp"] = pd.date_range(start="2020-02-19", periods=7)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
 
-    assert np.all(res.values == answer.values)
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_moving_average_forecast_correct(simple_df):
@@ -254,7 +254,7 @@ def test_moving_average_forecast_correct(simple_df):
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
-    tmp = np.arange(44, 49)
+    tmp = np.arange(44, 49, dtype=float)
     for i in range(7):
         tmp = np.append(tmp, [tmp[-5:].mean()])
     df1["target"] = tmp[-7:]
@@ -262,7 +262,7 @@ def test_moving_average_forecast_correct(simple_df):
     df1["timestamp"] = pd.date_range(start="2020-02-19", periods=7)
 
     df2 = pd.DataFrame()
-    tmp = np.arange(0, 13, 2)
+    tmp = np.arange(0, 13, 2, dtype=float)
     for i in range(7):
         tmp = np.append(tmp, [tmp[-5:].mean()])
     df2["target"] = tmp[-7:]
@@ -270,10 +270,10 @@ def test_moving_average_forecast_correct(simple_df):
     df2["timestamp"] = pd.date_range(start="2020-02-19", periods=7)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
 
-    assert np.all(res.values == answer.values)
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_deadline_moving_average_forecast_correct(df):
@@ -340,9 +340,10 @@ def test_deadline_moving_average_forecast_correct(df):
     df2["timestamp"] = pd.date_range(start="2020-05-20", periods=20)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
-    assert np.all(res.values == answer.values)
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_seasonal_moving_average_predict_correct(simple_df):
@@ -352,19 +353,20 @@ def test_seasonal_moving_average_predict_correct(simple_df):
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
-    df1["target"] = np.arange(39, 46)
+    df1["target"] = np.arange(39, 46, dtype=float)
     df1["segment"] = "A"
     df1["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
 
     df2 = pd.DataFrame()
-    df2["target"] = [8, 10, 5, 7, 2, 4, 6]
+    df2["target"] = [8.0, 10, 5, 7, 2, 4, 6]
     df2["segment"] = "B"
     df2["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
-    assert np.all(res.values == answer.values)
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_naive_predict_correct(simple_df):
@@ -374,20 +376,20 @@ def test_naive_predict_correct(simple_df):
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
-    df1["target"] = np.arange(39, 46)
+    df1["target"] = np.arange(39, 46, dtype=float)
     df1["segment"] = "A"
     df1["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
 
     df2 = pd.DataFrame()
-    df2["target"] = [8, 10, 12, 0, 2, 4, 6]
+    df2["target"] = [8.0, 10, 12, 0, 2, 4, 6]
     df2["segment"] = "B"
     df2["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
 
-    assert np.all(res.values == answer.values)
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_moving_average_predict_correct(simple_df):
@@ -397,7 +399,7 @@ def test_moving_average_predict_correct(simple_df):
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
-    df1["target"] = np.arange(39, 46)
+    df1["target"] = np.arange(39, 46, dtype=float)
     df1["segment"] = "A"
     df1["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
 
@@ -407,10 +409,10 @@ def test_moving_average_predict_correct(simple_df):
     df2["timestamp"] = pd.date_range(start="2020-02-12", periods=7)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
 
-    assert np.all(res.values == answer.values)
+    pd.testing.assert_frame_equal(res, answer)
 
 
 def test_deadline_moving_average_predict_correct(df):
@@ -476,9 +478,10 @@ def test_deadline_moving_average_predict_correct(df):
     df2["timestamp"] = pd.date_range(start="2020-04-30", periods=20)
 
     answer = pd.concat([df2, df1], axis=0, ignore_index=True)
-    res = res.sort_values(by=["segment", "timestamp"])
-    answer = answer.sort_values(by=["segment", "timestamp"])
-    assert np.all(res.values == answer.values)
+    res = res.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+    answer = answer.sort_values(by=["segment", "timestamp"]).reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(res, answer)
 
 
 @pytest.mark.parametrize(
@@ -530,7 +533,7 @@ def test_context_size_deadline_ma(model, freq, expected_context_size):
 
 @pytest.mark.parametrize(
     "etna_model_class",
-    (SeasonalMovingAverageModel, MovingAverageModel, NaiveModel, DeadlineMovingAverageModel),
+    [DeadlineMovingAverageModel],
 )
 def test_get_model_before_training(etna_model_class):
     """Check that get_model method throws an error if per-segment model is not fitted yet."""
@@ -541,12 +544,7 @@ def test_get_model_before_training(etna_model_class):
 
 @pytest.mark.parametrize(
     "etna_model_class,expected_class",
-    (
-        (NaiveModel, _SeasonalMovingAverageModel),
-        (SeasonalMovingAverageModel, _SeasonalMovingAverageModel),
-        (MovingAverageModel, _SeasonalMovingAverageModel),
-        (DeadlineMovingAverageModel, _DeadlineMovingAverageModel),
-    ),
+    ((DeadlineMovingAverageModel, _DeadlineMovingAverageModel),),
 )
 def test_get_model_after_training(example_tsds, etna_model_class, expected_class):
     """Check that get_model method returns dict of objects of _SeasonalMovingAverageModel class."""
@@ -556,6 +554,21 @@ def test_get_model_after_training(example_tsds, etna_model_class, expected_class
     assert isinstance(models_dict, dict)
     for segment in example_tsds.segments:
         assert isinstance(models_dict[segment], expected_class)
+
+
+@pytest.mark.parametrize(
+    "etna_model_class",
+    (
+        NaiveModel,
+        SeasonalMovingAverageModel,
+        MovingAverageModel,
+    ),
+)
+def test_get_model(example_tsds, etna_model_class):
+    pipeline = Pipeline(model=etna_model_class())
+    pipeline.fit(ts=example_tsds)
+    model = pipeline.model.get_model()
+    assert isinstance(model, etna_model_class)
 
 
 @pytest.fixture

@@ -778,6 +778,9 @@ class TestPredictNewSegments:
             (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
         ],
     )
     def test_predict_new_segments(self, model, transforms, example_tsds):
@@ -829,9 +832,6 @@ class TestPredictNewSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
         ],
     )
