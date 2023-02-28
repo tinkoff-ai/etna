@@ -622,6 +622,12 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         :
             Dataset with predictions
         """
+        expected_length = prediction_size + self.encoder_length
+        if len(ts.index) < expected_length:
+            raise ValueError(
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataset!"
+            )
+
         test_dataset = ts.to_torch_dataset(
             make_samples=functools.partial(
                 self.net.make_samples, encoder_length=self.encoder_length, decoder_length=prediction_size
@@ -629,7 +635,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        future_ts = ts.tsdataset_idx_slice(start_idx=self.encoder_length, end_idx=self.encoder_length + prediction_size)
+        end_idx = len(ts.index)
+        future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
         for (segment, feature_nm), value in predictions.items():
             # we don't want to change dtype after assignment, but there can happen cast to float32
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :].astype(np.float64)

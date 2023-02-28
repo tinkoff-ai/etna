@@ -119,7 +119,7 @@ class _DeadlineMovingAverageModel:
         # if we have len(history_timestamps) == 0, then len(df) <= prediction_size
         if len(history_timestamps) == 0:
             raise ValueError(
-                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataframe!"
             )
 
         if seasonality is SeasonalityMode.month:
@@ -130,7 +130,7 @@ class _DeadlineMovingAverageModel:
 
         if first_index < history_timestamps.iloc[0]:
             raise ValueError(
-                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataframe!"
             )
 
         return first_index

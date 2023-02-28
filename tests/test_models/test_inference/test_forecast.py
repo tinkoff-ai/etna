@@ -86,21 +86,6 @@ class TestForecastInSampleFullNoTarget:
     def test_forecast_in_sample_full_no_target(self, model, transforms, example_tsds):
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
-    @to_be_fixed(raises=AssertionError)
-    # Looks like a problem of current implementation of NNs
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (
-                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[5, 6])],
-            ),
-        ],
-    )
-    def test_forecast_in_sample_full_no_target_failed_assertion_error(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
-
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -110,8 +95,21 @@ class TestForecastInSampleFullNoTarget:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_nans_lags(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_no_target_failed_nans_nn(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="There are NaNs in features"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
@@ -121,6 +119,7 @@ class TestForecastInSampleFullNoTarget:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -182,7 +181,6 @@ class TestForecastInSampleFull:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full(self, model, transforms, example_tsds):
@@ -197,7 +195,7 @@ class TestForecastInSampleFull:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_forecast_in_sample_full_failed_nans_lags(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
@@ -210,8 +208,8 @@ class TestForecastInSampleFull:
             ),
         ],
     )
-    def test_forecast_in_sample_full_failed_nans_lags_nns(self, model, transforms, example_tsds):
-        with pytest.raises(AssertionError):
+    def test_forecast_in_sample_full_failed_nans_nn(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="There are NaNs in features"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(
@@ -221,11 +219,21 @@ class TestForecastInSampleFull:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+
+    @to_be_fixed(raises=AssertionError)
+    # Looks like a problem of current implementation of NNs
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [],
+    )
+    def test_forecast_in_sample_full_failed_nans_lags_nns(self, model, transforms, example_tsds):
+        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
     @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
@@ -549,7 +557,7 @@ class TestForecastOutSampleSuffix:
             # firstly we should forecast prefix to use it as a context
             forecast_prefix_ts = deepcopy(forecast_gap_ts)
             forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-suffix_prediction_size]
-            model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
+            forecast_prefix_ts = model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
             forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
 
             # forecast suffix with known context for it
@@ -584,25 +592,28 @@ class TestForecastOutSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
-        ],
-    )
-    def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
-
-    @to_be_fixed(raises=AssertionError)
-    # Looks like a problem of current implementation of NNs
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
         ],
     )
-    def test_forecast_out_sample_suffix_failed_assertion_error(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_rnn(self, model, transforms, example_tsds):
+        """This test is expected to fail due to autoregression in RNN.
+
+        More about it in issue: https://github.com/tinkoff-ai/etna/issues/1087
+        """
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="You can only forecast from the next point after the last one")
     @pytest.mark.parametrize(

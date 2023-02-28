@@ -88,7 +88,7 @@ class _SeasonalMovingAverageModel:
         expected_length = prediction_size + self.shift
         if len(df) < expected_length:
             raise ValueError(
-                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataframe!"
             )
 
         history = df["target"][-expected_length:-prediction_size]
@@ -127,7 +127,7 @@ class _SeasonalMovingAverageModel:
         expected_length = prediction_size + self.shift
         if len(df) < expected_length:
             raise ValueError(
-                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataframe!"
             )
 
         context = df["target"][-expected_length:].values
