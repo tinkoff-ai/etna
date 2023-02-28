@@ -1,8 +1,10 @@
+import reprlib
 from abc import ABC
 from abc import abstractmethod
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -26,6 +28,7 @@ class OutliersTransform(Transform, ABC):
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
         self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self._fit_segments: Optional[List[str]] = None
 
     def _save_original_values(self, ts: TSDataset):
         """
@@ -61,8 +64,17 @@ class OutliersTransform(Transform, ABC):
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
         self.outliers_timestamps = self.detect_outliers(ts)
         self._save_original_values(ts)
+        self._fit_segments = ts.segments
 
         return self
+
+    def _validate_segments(self, segments: List[str]):
+        self._fit_segments = cast(List[str], self._fit_segments)
+        new_segments = set(segments) - set(self._fit_segments)
+        if len(new_segments) > 0:
+            raise NotImplementedError(
+                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+            )
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -75,13 +87,21 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             dataframe with in_column series with filled with NaNs
+
+        Raises
+        ------
+        ValueError:
+            If transform isn't fitted.
+        NotImplementedError:
+            If there are segments that weren't present during training.
         """
         if self.outliers_timestamps is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         result_df = df.copy()
-        segments = df.columns.get_level_values("segment").unique()
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        self._validate_segments(segments)
         for segment in segments:
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
@@ -97,13 +117,21 @@ class OutliersTransform(Transform, ABC):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             data with reconstructed values
+
+        Raises
+        ------
+        ValueError:
+            If transform isn't fitted.
+        NotImplementedError:
+            If there are segments that weren't present during training.
         """
         if self.original_values is None or self.outliers_timestamps is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         result = df.copy()
-        segments = df.columns.get_level_values("segment").unique()
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        self._validate_segments(segments)
         for segment in segments:
             segment_ts = result[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
