@@ -115,11 +115,16 @@ class PerSegmentWrapper(Transform):
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse_transform to each segment."""
         results = []
-        for key, value in self.segment_transforms.items():
-            seg_df = value.inverse_transform(df[key])
+        segments = set(df.columns.get_level_values("segment"))
+        for segment in segments:
+            if segment not in self.segment_transforms:
+                raise NotImplementedError("Per-segment transforms can't work on new segments!")
+
+            segment_transform = self.segment_transforms[segment]
+            seg_df = segment_transform.inverse_transform(df[segment])
 
             _idx = seg_df.columns.to_frame()
-            _idx.insert(0, "segment", key)
+            _idx.insert(0, "segment", segment)
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
 
             results.append(seg_df)

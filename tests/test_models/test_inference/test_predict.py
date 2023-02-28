@@ -74,7 +74,7 @@ class TestPredictInSampleFull:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_predict_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
+    def test_predict_in_sample_full_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="predict")
 
