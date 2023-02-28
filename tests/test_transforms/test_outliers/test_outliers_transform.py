@@ -163,6 +163,46 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
         PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
     ),
 )
+def test_transform_new_segments_fail(transform, outliers_solid_tsds):
+    df = outliers_solid_tsds.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice["1", :]]
+    test_df = df.loc[:, pd.IndexSlice["2", :]]
+
+    transform.fit(train_df)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.transform(test_df)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+    ),
+)
+def test_inverse_transform_new_segments_fail(transform, outliers_solid_tsds):
+    df = outliers_solid_tsds.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice["1", :]]
+    test_df = df.loc[:, pd.IndexSlice["2", :]]
+
+    transform.fit(train_df)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.inverse_transform(test_df)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+    ),
+)
 def test_fit_transform_with_nans(transform, ts_diff_endings):
     ts_diff_endings.fit_transform([transform])
 
