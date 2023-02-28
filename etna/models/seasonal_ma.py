@@ -45,7 +45,7 @@ class SeasonalMovingAverageModel(
         Returns
         -------
         :
-           Internal model
+           Itself
         """
         return self
 

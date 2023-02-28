@@ -889,6 +889,7 @@ class TestForecastNewSegments:
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -925,16 +926,6 @@ class TestForecastNewSegments:
         ],
     )
     def test_forecast_new_segments(self, model, transforms, example_tsds):
-        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
-
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment models can't make predictions on new segments")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (DeadlineMovingAverageModel(window=1), []),
-        ],
-    )
-    def test_forecast_new_segments_failed_not_implemented_per_segment(self, model, transforms, example_tsds):
         self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
 
     @pytest.mark.parametrize(
