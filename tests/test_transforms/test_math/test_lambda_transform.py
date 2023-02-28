@@ -158,3 +158,9 @@ def test_save_load(inplace, ts_range_const):
         inverse_transform_func=example_inverse_transform_func,
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_range_const)
+
+
+def test_get_regressors_info_not_fitted():
+    transform = LambdaTransform(in_column="target", inplace=False, transform_func=lambda x: x)
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()

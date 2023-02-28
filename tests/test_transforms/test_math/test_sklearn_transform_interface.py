@@ -277,3 +277,23 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
         df_multi = transformed_df.loc[:, pd.IndexSlice[segments, column_multi]]
         df_single = transformed_dfs_one_column[i].loc[:, pd.IndexSlice[segments, column_single]]
         assert np.all(df_multi.values == df_single.values)
+
+
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_get_regressors_info_not_fitted(transform_constructor):
+    transform = transform_constructor(in_column="target")
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()

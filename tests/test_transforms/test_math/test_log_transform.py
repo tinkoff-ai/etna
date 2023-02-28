@@ -118,3 +118,9 @@ def test_save_load(inplace, positive_ts_):
     ts = positive_ts_
     transform = LogTransform(in_column="target", inplace=inplace)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_get_regressors_info_not_fitted():
+    transform = LogTransform(in_column="target")
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()

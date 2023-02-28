@@ -14,6 +14,7 @@ from etna.transforms.math import MinTransform
 from etna.transforms.math import QuantileTransform
 from etna.transforms.math import StdTransform
 from etna.transforms.math import SumTransform
+from etna.transforms.math import WindowStatisticsTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -48,6 +49,25 @@ def ts_for_agg_with_nan() -> TSDataset:
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
+
+
+class DummyWindowStatisticsTransform(WindowStatisticsTransform):
+    def _aggregate(self, series: np.ndarray):
+        return None
+
+
+@pytest.mark.parametrize("in_column,expected_regressors", (("target", []), ("regressor_exog_weekend", ["out_column"])))
+def test_get_regressors_info(example_reg_tsds, in_column, expected_regressors):
+    transform = DummyWindowStatisticsTransform(in_column=in_column, out_column="out_column", window=1)
+    transform.fit(ts=example_reg_tsds)
+    out_regressors = transform.get_regressors_info()
+    assert out_regressors == expected_regressors
+
+
+def test_get_regressors_info_not_fitted():
+    transform = DummyWindowStatisticsTransform(in_column="target", out_column="out_column", window=1)
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()
 
 
 @pytest.mark.parametrize(
