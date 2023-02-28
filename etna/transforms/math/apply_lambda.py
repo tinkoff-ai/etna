@@ -154,5 +154,5 @@ class LambdaTransform(ReversibleTransform):
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return [self.change_column] if self.in_column_regressor and not self.inplace else []

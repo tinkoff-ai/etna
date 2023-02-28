@@ -342,3 +342,11 @@ def test_save_load_ohe(dtype):
     for i in range(3):
         transform = OneHotEncoderTransform(in_column=f"regressor_{i}", out_column="test")
         assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize(
+    "transform", (OneHotEncoderTransform(in_column="regressor_0"), LabelEncoderTransform(in_column="regressor_0"))
+)
+def test_get_regressors_info_not_fitted(transform):
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()

@@ -121,3 +121,9 @@ def test_save_load(inplace, out_column, daily_exog_ts):
         in_column="regressor_exog", inplace=inplace, distribution_column="target", out_column=out_column
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=daily_exog_ts)
+
+
+def test_get_regressors_info_not_fitted():
+    transform = ResampleWithDistributionTransform(in_column="regressor_exog", distribution_column="target")
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()

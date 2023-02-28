@@ -1,4 +1,3 @@
-import warnings
 from enum import Enum
 from typing import List
 from typing import Optional
@@ -78,7 +77,7 @@ class LabelEncoderTransform(IrreversibleTransform):
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return [self._get_column_name()] if self.in_column_regressor else []
 
     def _fit(self, df: pd.DataFrame) -> "LabelEncoderTransform":
@@ -159,7 +158,7 @@ class OneHotEncoderTransform(IrreversibleTransform):
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         if self.in_column_regressor is None:
-            warnings.warn("Regressors info might be incorrect. Fit the transform to get the correct regressors info.")
+            raise ValueError("Fit the transform to get the correct regressors info!")
         return self._get_out_column_names() if self.in_column_regressor else []
 
     def _fit(self, df: pd.DataFrame) -> "OneHotEncoderTransform":
