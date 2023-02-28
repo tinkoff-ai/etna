@@ -178,6 +178,66 @@ def test_forecast_decompose_not_fitted():
         TBATSModel,
     ),
 )
+def test_predict_components_not_implemented(periodic_ts, estimator):
+    train, test = periodic_ts
+    model = estimator()
+    model.fit(train)
+
+    with pytest.raises(NotImplementedError, match="Prediction decomposition isn't currently implemented!"):
+        for segment in test.columns.get_level_values("segment"):
+            model._models[segment].predict_components(horizon=3)
+
+
+@pytest.mark.long_2
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATSModel,
+        TBATSModel,
+    ),
+)
+def test_decompose_forecast_output_format(periodic_ts, estimator):
+    horizon = 5
+    train, test = periodic_ts
+    model = estimator()
+    model.fit(train)
+
+    for segment in test.columns.get_level_values("segment"):
+        components = model._models[segment]._decompose_forecast(horizon=horizon)
+        assert isinstance(components, np.ndarray)
+        assert components.shape[0] == horizon
+
+
+@pytest.mark.long_2
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATSModel,
+        TBATSModel,
+    ),
+)
+def test_named_components_output_format(periodic_ts, estimator):
+    horizon = 5
+    train, test = periodic_ts
+    model = estimator()
+    model.fit(train)
+
+    for segment in test.columns.get_level_values("segment"):
+        components = model._models[segment]._decompose_forecast(horizon=horizon)
+        named_components = model._models[segment]._named_components(raw_components=components)
+
+        for component in named_components.values():
+            assert len(component) == horizon
+
+
+@pytest.mark.long_2
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATSModel,
+        TBATSModel,
+    ),
+)
 @pytest.mark.parametrize(
     "data,params,message",
     (
@@ -246,12 +306,13 @@ def test_fitted_components_warnings(data, estimator, params, message, request):
 def test_forecast_decompose(periodic_ts, estimator, params):
     train, test = periodic_ts
 
+    horizon = 14
     model = estimator(**params)
     model.fit(train)
-    future_ts = train.make_future(14)
+    future_ts = train.make_future(horizon)
     y_pred = model.forecast(future_ts)
 
     for segment in y_pred.columns.get_level_values("segment"):
-        components = model._models[segment].forecast_components(horizon=14)
+        components = model._models[segment].forecast_components(horizon=horizon)
         y_hat_pred = np.sum(components.values, axis=1)
         np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)

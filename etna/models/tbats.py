@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import Iterable
 from typing import Optional
 from typing import Tuple
@@ -98,9 +99,6 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
-        if self._fitted_model is None or self._freq is None:
-            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
-
         self._check_components()
         raw_components = self._decompose_forecast(horizon=horizon)
         components = self._named_components(raw_components=raw_components)
@@ -143,8 +141,11 @@ class _TBATSAdapter(BaseAdapter):
         if self._model.use_trend and not fitted_model_params.use_trend:
             warn("Trend is not fitted!")
 
-    def _decompose_forecast(self, horizon):
+    def _decompose_forecast(self, horizon: int) -> np.ndarray:
         """Estimate raw forecast components."""
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
         model = self._fitted_model
         state_matrix = model.matrix.make_F_matrix()
         component_weights = model.matrix.make_w_vector()
@@ -164,9 +165,9 @@ class _TBATSAdapter(BaseAdapter):
 
         return components
 
-    def _named_components(self, raw_components):
+    def _named_components(self, raw_components: np.ndarray) -> Dict[str, np.ndarray]:
         """Prepare components with names."""
-        params_components = self._fitted_model.params.components
+        params_components = self._fitted_model.params.components  # type: ignore
         named_components = dict()
 
         named_components["local_level"] = raw_components[:, 0]
