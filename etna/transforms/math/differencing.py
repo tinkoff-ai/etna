@@ -184,6 +184,7 @@ class _SingleDifferencingTransform(Transform):
             to_transform = df.loc[:, pd.IndexSlice[segments, column]].copy()
             init_df = self._test_init_df.copy()  # type: ignore
             init_df.columns.set_levels([column], level="feature", inplace=True)
+            init_df = init_df[segments]
             to_transform = pd.concat([init_df, to_transform])
 
             # validate values inside the series to transform
