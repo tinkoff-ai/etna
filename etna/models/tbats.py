@@ -172,14 +172,14 @@ class _TBATSAdapter(BaseAdapter):
             components.append(component_weights * state)
             state = state_matrix @ state
 
-        components = np.stack(components, axis=0)
+        raw_components = np.stack(components, axis=0)
 
         if model.params.components.use_box_cox:
-            transformed_pred = np.sum(components, axis=1)
+            transformed_pred = np.sum(raw_components, axis=1)
             pred = model._inv_boxcox(transformed_pred)
-            components = components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
+            raw_components = raw_components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
 
-        return components
+        return raw_components
 
     def _select_components(self, raw_components: np.ndarray) -> pd.DataFrame:
         """Select meaningful components and assign names to them."""
