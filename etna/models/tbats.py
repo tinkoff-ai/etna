@@ -1,4 +1,3 @@
-from typing import Dict
 from typing import Iterable
 from typing import Optional
 from typing import Tuple
@@ -78,13 +77,13 @@ class _TBATSAdapter(BaseAdapter):
         """
         return self._fitted_model
 
-    def forecast_components(self, horizon: int = 1) -> pd.DataFrame:
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
         """Estimate forecast components.
 
         Parameters
         ----------
-        horizon:
-            forecast horizon
+        df:
+            features dataframe
 
         Returns
         -------
@@ -98,18 +97,17 @@ class _TBATSAdapter(BaseAdapter):
 
         horizon = self._get_steps_to_forecast(df=df)
         raw_components = self._decompose_forecast(horizon=horizon)
-        components = self._named_components(raw_components=raw_components)
-        self._check_components()
+        components = self._select_components(raw_components=raw_components)
 
-        return pd.DataFrame(data=components)
+        return components
 
-    def predict_components(self, horizon: int = 1) -> pd.DataFrame:
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
         """Estimate prediction components.
 
         Parameters
         ----------
-        horizon:
-            forecast horizon
+        df:
+            features dataframe
 
         Returns
         -------
@@ -183,9 +181,12 @@ class _TBATSAdapter(BaseAdapter):
 
         return components
 
-    def _named_components(self, raw_components: np.ndarray) -> Dict[str, np.ndarray]:
-        """Prepare components with names."""
-        params_components = self._fitted_model.params.components  # type: ignore
+    def _select_components(self, raw_components: np.ndarray) -> pd.DataFrame:
+        """Select meaningful components and assign names to them."""
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
+
+        params_components = self._fitted_model.params.components
         named_components = dict()
 
         named_components["local_level"] = raw_components[:, 0]
@@ -199,6 +200,7 @@ class _TBATSAdapter(BaseAdapter):
             seasonal_periods = params_components.seasonal_periods
 
             if hasattr(params_components, "seasonal_harmonics"):
+                # TBATS
                 seasonal_harmonics = params_components.seasonal_harmonics
                 for seasonal_period, seasonal_harmonic in zip(seasonal_periods, seasonal_harmonics):
                     named_components[f"seasonal(s={seasonal_period})"] = np.sum(
@@ -207,6 +209,7 @@ class _TBATSAdapter(BaseAdapter):
                     component_idx += 2 * seasonal_harmonic
 
             else:
+                # BATS
                 component_idx -= 1
                 for seasonal_period in seasonal_periods:
                     component_idx += seasonal_period
@@ -220,7 +223,7 @@ class _TBATSAdapter(BaseAdapter):
                 raw_components[:, component_idx : component_idx + p + q], axis=1
             )
 
-        return named_components
+        return pd.DataFrame(data=named_components)
 
 
 class BATSModel(
