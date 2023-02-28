@@ -8,6 +8,7 @@ from etna.datasets import generate_ar_df
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import get_target_with_quantiles
+from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
 
 
@@ -186,6 +187,7 @@ def test_set_columns_wide(
         ({"a", "b", "target"}, {"target"}),
         ({"a", "b", "target", "target_0.5"}, {"target", "target_0.5"}),
         ({"a", "b", "target", "target_0.5", "target1"}, {"target", "target_0.5"}),
+        ({"target_component_a", "a", "b", "target_component_c", "target", "target_0.95"}, {"target", "target_0.95"}),
     ),
 )
 def test_get_target_with_quantiles(segments, columns, answer):
@@ -242,3 +244,19 @@ def test_get_level_dataframe_segm_errors(
             source_level_segments=source_level_segments,
             target_level_segments=target_level_segments,
         )
+
+
+@pytest.mark.parametrize(
+    "features,answer",
+    (
+        (set(), set()),
+        ({"a", "b"}, set()),
+        (
+            {"target_component_a", "a", "b", "target_component_c", "target", "target_0.95"},
+            {"target_component_a", "target_component_c"},
+        ),
+    ),
+)
+def test_match_target_components(features, answer):
+    components = match_target_components(features)
+    assert components == answer
