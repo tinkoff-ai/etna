@@ -78,7 +78,7 @@ class SeasonalMovingAverageModel(
 
         if len(df) < expected_length:
             raise ValueError(
-                "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
+                "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataframe!"
             )
 
     def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
