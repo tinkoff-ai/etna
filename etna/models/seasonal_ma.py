@@ -72,7 +72,8 @@ class SeasonalMovingAverageModel(
             )
         return self
 
-    def _validate_prediction_size(self, df: pd.DataFrame, prediction_size: int):
+    def _validate_context(self, df: pd.DataFrame, prediction_size: int):
+        """Validate that we have enough context to make prediction with given parameters."""
         expected_length = prediction_size + self.context_size
 
         if len(df) < expected_length:
@@ -81,7 +82,8 @@ class SeasonalMovingAverageModel(
             )
 
     def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
-        self._validate_prediction_size(df=df, prediction_size=prediction_size)
+        """Make autoregressive forecasts on a wide dataframe."""
+        self._validate_context(df=df, prediction_size=prediction_size)
 
         expected_length = prediction_size + self.context_size
         history = df.loc[:, pd.IndexSlice[:, "target"]].values
@@ -129,7 +131,8 @@ class SeasonalMovingAverageModel(
         return ts
 
     def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
-        self._validate_prediction_size(df=df, prediction_size=prediction_size)
+        """Make predictions on a wide dataframe using true values as autoregression context."""
+        self._validate_context(df=df, prediction_size=prediction_size)
 
         expected_length = prediction_size + self.context_size
         context = df.loc[:, pd.IndexSlice[:, "target"]].values
