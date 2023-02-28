@@ -99,9 +99,9 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
-        self._check_components()
         raw_components = self._decompose_forecast(horizon=horizon)
         components = self._named_components(raw_components=raw_components)
+        self._check_components()
 
         return pd.DataFrame(data=components)
 
