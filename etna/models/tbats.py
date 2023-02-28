@@ -42,15 +42,7 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        if df["timestamp"].min() <= self._last_train_timestamp:
-            raise NotImplementedError(
-                "It is not possible to make in-sample predictions with BATS/TBATS model! "
-                "In-sample predictions aren't supported by current implementation."
-            )
-
-        steps_to_forecast = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
-        )
+        steps_to_forecast = self._get_steps_to_forecast(df=df)
         steps_to_skip = steps_to_forecast - df.shape[0]
 
         y_pred = pd.DataFrame()
@@ -99,6 +91,12 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        self._check_components()
+
+        horizon = self._get_steps_to_forecast(df=df)
         raw_components = self._decompose_forecast(horizon=horizon)
         components = self._named_components(raw_components=raw_components)
         self._check_components()
@@ -120,31 +118,51 @@ class _TBATSAdapter(BaseAdapter):
         """
         raise NotImplementedError("Prediction decomposition isn't currently implemented!")
 
+    def _get_steps_to_forecast(self, df: pd.DataFrame) -> int:
+        if self._freq is None:
+            raise ValueError("Data frequency is not set!")
+
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise NotImplementedError(
+                "It is not possible to make in-sample predictions with BATS/TBATS model! "
+                "In-sample predictions aren't supported by current implementation."
+            )
+
+        steps_to_forecast = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
+        )
+        return steps_to_forecast
+
     def _check_components(self):
-        """Compare fitted model params with the initial params."""
+        """Compare fitted model params with the initial params.
+
+        TBATS tries different models and selects best based on AIC.
+        That's why some components may not be present in fitted model.
+        """
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
+
         fitted_model_params = self._fitted_model.params.components
 
+        not_fitted_components = []
         seasonal_periods = self._model.seasonal_periods
         if (
             seasonal_periods is not None
             and len(seasonal_periods) > 0
             and len(fitted_model_params.seasonal_periods) == 0
         ):
-            warn("Seasonal components is not fitted!")
+            not_fitted_components.append("Seasonal")
 
         if self._model.use_arma_errors and not fitted_model_params.use_arma_errors:
-            warn("ARMA components is not fitted!")
+            not_fitted_components.append("ARMA")
 
-        if self._model.use_box_cox and not fitted_model_params.use_box_cox:
-            warn("Box-Cox transform is not fitted!")
-
-        if self._model.use_trend and not fitted_model_params.use_trend:
-            warn("Trend is not fitted!")
+        if len(not_fitted_components) > 0:
+            warn(f"Following components are not fitted: {', '.join(not_fitted_components)}!")
 
     def _decompose_forecast(self, horizon: int) -> np.ndarray:
         """Estimate raw forecast components."""
-        if self._fitted_model is None or self._freq is None:
-            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
 
         model = self._fitted_model
         state_matrix = model.matrix.make_F_matrix()
