@@ -80,7 +80,7 @@ class SeasonalMovingAverageModel(
                 "Given context isn't big enough, try to decrease context_size, prediction_size of increase length of given dataframe!"
             )
 
-    def _forecast_df(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+    def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         self._validate_prediction_size(df=df, prediction_size=prediction_size)
 
         expected_length = prediction_size + self.context_size
@@ -123,12 +123,12 @@ class SeasonalMovingAverageModel(
             if forecast context contains NaNs
         """
         df = ts.to_pandas()
-        new_df = self._forecast_df(df=df, prediction_size=prediction_size)
+        new_df = self._forecast(df=df, prediction_size=prediction_size)
         ts.df = new_df
         ts.inverse_transform()
         return ts
 
-    def _predict_df(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+    def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         self._validate_prediction_size(df=df, prediction_size=prediction_size)
 
         expected_length = prediction_size + self.context_size
@@ -171,7 +171,7 @@ class SeasonalMovingAverageModel(
             if forecast context contains NaNs
         """
         df = ts.to_pandas()
-        new_df = self._predict_df(df=df, prediction_size=prediction_size)
+        new_df = self._predict(df=df, prediction_size=prediction_size)
         ts.df = new_df
         ts.inverse_transform()
         return ts
