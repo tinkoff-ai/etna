@@ -260,7 +260,7 @@ filterwarnings = [
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: The default method 'yw' can produce PACF values outside",
     "ignore: All-NaN slice encountered",
-    "ignore: Deprecated call to `pkg_resources.declare_namespace"
+    "ignore: Deprecated call to /`pkg_resources.declare_namespace"
 ]
 markers = [
     "smoke",
