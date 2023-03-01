@@ -1,8 +1,10 @@
+import reprlib
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -63,6 +65,7 @@ class _SingleDifferencingTransform(Transform):
         self.inplace = inplace
         self.out_column = out_column
 
+        self._fit_segments: Optional[List[str]] = None
         self._train_timestamp: Optional[pd.DatetimeIndex] = None
         self._train_init_dict: Optional[Dict[str, pd.Series]] = None
         self._test_init_df: Optional[pd.DataFrame] = None
@@ -72,6 +75,14 @@ class _SingleDifferencingTransform(Transform):
             return self.__repr__()
         else:
             return self.out_column
+
+    def _validate_segments(self, segments: List[str]):
+        self._fit_segments = cast(List[str], self._fit_segments)
+        new_segments = set(segments) - set(self._fit_segments)
+        if len(new_segments) > 0:
+            raise NotImplementedError(
+                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+            )
 
     def fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
         """Fit the transform.
@@ -101,6 +112,7 @@ class _SingleDifferencingTransform(Transform):
         self._test_init_df = fit_df.iloc[-self.period :, :]
         # make multiindex levels consistent
         self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
+        self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -113,11 +125,16 @@ class _SingleDifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
         """
         if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise AttributeError("Transform is not fitted")
+            raise ValueError("Transform is not fitted")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
         transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
@@ -207,14 +224,24 @@ class _SingleDifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
         """
         if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise AttributeError("Transform is not fitted")
+            raise ValueError("Transform is not fitted")
 
         if not self.inplace:
             return df
+
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        self._validate_segments(segments=segments)
 
         columns_to_inverse = {self.in_column}
 
@@ -349,8 +376,13 @@ class DifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
         """
         result_df = df.copy()
         for transform in self._differencing_transforms:
@@ -367,8 +399,15 @@ class DifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
         """
         if not self.inplace:
             return df

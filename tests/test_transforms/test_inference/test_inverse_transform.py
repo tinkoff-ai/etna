@@ -645,6 +645,7 @@ class TestInverseTransformTrainNewSegments:
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
@@ -701,9 +702,6 @@ class TestInverseTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # math
-            # TODO: error should be understandable, not like now
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
             # outliers
             # TODO: error should be understandable, not like now
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -991,6 +989,8 @@ class TestInverseTransformFutureNewSegments:
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (BoxCoxTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
@@ -1077,10 +1077,6 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {"create": {"year", "month", "weekday"}},
             ),
-            # math
-            # TODO: error should be understandable, not like now
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
-            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
             # outliers
             # TODO: error should be understandable, not like now
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
