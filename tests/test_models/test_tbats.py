@@ -250,7 +250,6 @@ def test_components_names(periodic_ts, estimator, params, components_names):
         assert set(components_df.columns) == components_names
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -258,38 +257,35 @@ def test_components_names(periodic_ts, estimator, params, components_names):
         TBATSModel,
     ),
 )
+def test_seasonal_components_not_fitted(small_periodic_ts, estimator):
+    model = estimator(seasonal_periods=[7, 14], use_arma_errors=False)
+    model.fit(small_periodic_ts)
+
+    future = small_periodic_ts.make_future(3).to_pandas(flatten=True)
+    segment_model = model._models["segment_1"]
+    segment_model._fitted_model.params.components.seasonal_periods = []
+
+    with pytest.warns(Warning, match=f"Following components are not fitted: Seasonal!"):
+        segment_model.forecast_components(df=future)
+
+
 @pytest.mark.parametrize(
-    "data,params,message",
+    "estimator",
     (
-        (
-            "sinusoid_ts",
-            {"use_box_cox": False, "use_trend": False, "use_arma_errors": False, "seasonal_periods": [7, 14]},
-            "Seasonal",
-        ),
-        (
-            "periodic_ts",
-            {
-                "use_box_cox": True,
-                "use_trend": True,
-                "use_damped_trend": True,
-                "use_arma_errors": True,
-                "seasonal_periods": [7, 14],
-            },
-            "ARMA",
-        ),
+        BATSModel,
+        TBATSModel,
     ),
 )
-def test_fitted_components_warnings(data, estimator, params, message, request):
-    train, test = request.getfixturevalue(data)
+def test_arma_component_not_fitted(small_periodic_ts, estimator):
+    model = estimator(use_arma_errors=True, seasonal_periods=[])
+    model.fit(small_periodic_ts)
 
-    model = estimator(**params)
-    model.fit(train)
+    future = small_periodic_ts.make_future(3).to_pandas(flatten=True)
+    segment_model = model._models["segment_1"]
+    segment_model._fitted_model.params.components.use_arma_errors = False
 
-    future = train.make_future(3).to_pandas(flatten=True)
-
-    with pytest.warns(Warning, match=f"Following components are not fitted: {message}!"):
-        for segment in test.columns.get_level_values("segment"):
-            model._models[segment].forecast_components(df=future)
+    with pytest.warns(Warning, match=f"Following components are not fitted: ARMA!"):
+        segment_model.forecast_components(df=future)
 
 
 @pytest.mark.long_2
