@@ -4,13 +4,23 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
-from typing import cast
 
 import numpy as np
 import pandas as pd
 
 from etna.transforms.base import Transform
 from etna.transforms.utils import match_target_quantiles
+
+
+def _validate_segments(transform_segments: List[str], fit_segments: Optional[List[str]] = None):
+    if fit_segments is None:
+        raise ValueError("Transform is not fitted")
+
+    new_segments = set(transform_segments) - set(fit_segments)
+    if len(new_segments) > 0:
+        raise NotImplementedError(
+            f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+        )
 
 
 class _SingleDifferencingTransform(Transform):
@@ -75,14 +85,6 @@ class _SingleDifferencingTransform(Transform):
             return self.__repr__()
         else:
             return self.out_column
-
-    def _validate_segments(self, segments: List[str]):
-        self._fit_segments = cast(List[str], self._fit_segments)
-        new_segments = set(segments) - set(self._fit_segments)
-        if len(new_segments) > 0:
-            raise NotImplementedError(
-                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
-            )
 
     def fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
         """Fit the transform.
@@ -241,7 +243,7 @@ class _SingleDifferencingTransform(Transform):
             return df
 
         segments = df.columns.get_level_values("segment").unique().tolist()
-        self._validate_segments(segments=segments)
+        _validate_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
         columns_to_inverse = {self.in_column}
 
@@ -339,6 +341,7 @@ class DifferencingTransform(Transform):
             self._differencing_transforms.append(
                 _SingleDifferencingTransform(in_column=result_out_column, period=self.period, inplace=True)
             )
+        self._fit_segments: Optional[List[str]] = None
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -364,6 +367,7 @@ class DifferencingTransform(Transform):
         result_df = df.copy()
         for transform in self._differencing_transforms:
             result_df = transform.fit_transform(result_df)
+        self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -383,7 +387,15 @@ class DifferencingTransform(Transform):
         ------
         ValueError:
             if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
         """
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        # validation is here because with `order=2, inplace=False` the second underlying transform is always inplace,
+        # and we don't want to fail on it
+        if self.inplace:
+            _validate_segments(transform_segments=segments, fit_segments=self._fit_segments)
+
         result_df = df.copy()
         for transform in self._differencing_transforms:
             result_df = transform.transform(result_df)

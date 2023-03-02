@@ -480,7 +480,6 @@ class TestTransformTrainNewSegments:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
             (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {"create": {"res"}}),
@@ -601,6 +600,7 @@ class TestTransformTrainNewSegments:
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
@@ -785,8 +785,6 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
-            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (MADTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MaxTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
             (MeanTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}}),
@@ -937,6 +935,8 @@ class TestTransformFutureNewSegments:
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (BoxCoxTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
