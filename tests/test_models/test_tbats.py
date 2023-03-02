@@ -232,6 +232,34 @@ def test_named_components_output_format(small_periodic_ts, estimator):
 
 @pytest.mark.long_2
 @pytest.mark.parametrize(
+    "estimator,params,components_names",
+    (
+        (
+            BATSModel,
+            {"use_box_cox": False, "use_trend": True, "use_arma_errors": True, "seasonal_periods": [7, 14]},
+            {"local_level", "trend", "arma(p=1,q=1)", "seasonal(s=7)", "seasonal(s=14)"},
+        ),
+        (
+            TBATSModel,
+            {"use_box_cox": False, "use_trend": True, "use_arma_errors": False, "seasonal_periods": [7, 14]},
+            {"local_level", "trend", "seasonal(s=7.0)", "seasonal(s=14.0)"},
+        ),
+    ),
+)
+def test_components_names(periodic_ts, estimator, params, components_names):
+    train, test = periodic_ts
+    model = estimator(**params)
+    model.fit(train)
+
+    future = train.make_future(3).to_pandas(flatten=True)
+
+    for segment in test.columns.get_level_values("segment"):
+        components_df = model._models[segment].forecast_components(df=future)
+        assert set(components_df.columns) == components_names
+
+
+@pytest.mark.long_2
+@pytest.mark.parametrize(
     "estimator",
     (
         BATSModel,
