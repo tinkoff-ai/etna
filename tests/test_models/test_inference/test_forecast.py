@@ -485,10 +485,9 @@ class TestForecastOutSamplePrefix:
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
-    # if we ignore this warning there is assertion error
     @to_be_fixed(
-        raises=UserWarning,
-        match="Min encoder length and/or min_prediction_idx and/or min prediction length and/or lags are too large",
+        raises=AssertionError,
+        match="filters should not remove entries all entries - check encoder/decoder lengths and lags",
     )
     @pytest.mark.parametrize(
         "model, transforms",
@@ -609,8 +608,8 @@ class TestForecastOutSampleSuffix:
 
     # it even can't reach NotImplementedError
     @to_be_fixed(
-        raises=UserWarning,
-        match="Min encoder length and/or min_prediction_idx and/or min prediction length and/or lags are too large",
+        raises=AssertionError,
+        match="filters should not remove entries all entries - check encoder/decoder lengths and lags",
     )
     @pytest.mark.parametrize(
         "model, transforms",
