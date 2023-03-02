@@ -675,6 +675,10 @@ class TestInverseTransformTrainNewSegments:
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
         ],
     )
     def test_inverse_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -698,24 +702,28 @@ class TestInverseTransformTrainNewSegments:
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
         )
 
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # outliers
-            # TODO: error should be understandable, not like now
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
-        ],
-    )
-    def test_inverse_transform_train_new_segments_failed_error(
-        self, transform, dataset_name, expected_changes, request
-    ):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
-        )
+# TODO: look here
+    # @to_be_fixed(raises=Exception)
+    # @pytest.mark.parametrize(
+    #     "transform, dataset_name, expected_changes",
+    #     [
+    #         # math
+    #         # TODO: error should be understandable, not like now
+    #         (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
+    #         # outliers
+    #         # TODO: error should be understandable, not like now
+    #         (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
+    #         (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
+    #         (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
+    #     ],
+    # )
+    # def test_inverse_transform_train_new_segments_failed_error(
+    #     self, transform, dataset_name, expected_changes, request
+    # ):
+    #     ts = request.getfixturevalue(dataset_name)
+    #     self._test_inverse_transform_train_new_segments(
+    #         ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
+    #     )
 
 
 class TestInverseTransformFutureNewSegments:
@@ -1026,6 +1034,10 @@ class TestInverseTransformFutureNewSegments:
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
         ],
     )
     def test_inverse_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -1077,11 +1089,16 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {"create": {"year", "month", "weekday"}},
             ),
+            # TODO: look here
             # outliers
             # TODO: error should be understandable, not like now
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
+            # math
+            # TODO: error should be understandable, not like now
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
         ],
     )
     def test_inverse_transform_future_new_segments_failed_error(

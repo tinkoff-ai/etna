@@ -3,10 +3,10 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models.deadline_ma import DeadlineMovingAverageModel
 from etna.models.deadline_ma import SeasonalityMode
-from etna.models.deadline_ma import _DeadlineMovingAverageModel
 from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
@@ -123,9 +123,10 @@ def test_sma_model_predict_fail_nans_in_context(simple_df):
     ],
 )
 def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size, seasonality, window, expected):
-    df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
+    timestamp = pd.date_range(start=start, periods=periods, freq=freq)
+    df = pd.DataFrame({"target": 1}, index=timestamp)
 
-    obtained = _DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
+    obtained = DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
 
     assert obtained == expected
 
@@ -150,10 +151,11 @@ def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size
 def test_deadline_get_context_beginning_fail_not_enough_context(
     freq, periods, start, prediction_size, seasonality, window
 ):
-    df = pd.DataFrame({"timestamp": pd.date_range(start=start, periods=periods, freq=freq)})
+    timestamp = pd.date_range(start=start, periods=periods, freq=freq)
+    df = pd.DataFrame({"target": 1}, index=timestamp)
 
     with pytest.raises(ValueError, match="Given context isn't big enough"):
-        _ = _DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
+        _ = DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
@@ -164,6 +166,14 @@ def test_deadline_model_forecast(simple_df, model):
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_predict(simple_df, model):
     _check_predict(ts=simple_df, model=model(window=1), prediction_size=7)
+
+
+def test_deadline_model_fit_fail_not_supported_freq():
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="2D")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="2D")
+    model = DeadlineMovingAverageModel(window=1000)
+    with pytest.raises(ValueError, match="Freq 2D is not supported"):
+        model.fit(ts)
 
 
 def test_deadline_model_forecast_fail_not_enough_context(simple_df):
@@ -178,7 +188,7 @@ def test_deadline_model_predict_fail_not_enough_context(simple_df):
     model = DeadlineMovingAverageModel(window=1000)
     model.fit(simple_df)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
-        _ = model.forecast(simple_df, prediction_size=7)
+        _ = model.predict(simple_df, prediction_size=7)
 
 
 def test_deadline_model_forecast_fail_nans_in_context(simple_df):
@@ -195,6 +205,25 @@ def test_deadline_model_predict_fail_nans_in_context(simple_df):
     model.fit(simple_df)
     simple_df.df.iloc[-1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a target column"):
+        _ = model.predict(simple_df, prediction_size=7)
+
+
+def test_deadline_model_context_size_fail_not_fitted(simple_df):
+    model = DeadlineMovingAverageModel(window=1000)
+    with pytest.raises(ValueError, match="Model is not fitted"):
+        _ = model.context_size
+
+
+def test_deadline_model_forecast_fail_not_fitted(simple_df):
+    model = DeadlineMovingAverageModel(window=1000)
+    future_ts = simple_df.make_future(future_steps=7, tail_steps=100)
+    with pytest.raises(ValueError, match="Model is not fitted"):
+        _ = model.forecast(future_ts, prediction_size=7)
+
+
+def test_deadline_model_predict_fail_not_fitted(simple_df):
+    model = DeadlineMovingAverageModel(window=1000)
+    with pytest.raises(ValueError, match="Model is not fitted"):
         _ = model.predict(simple_df, prediction_size=7)
 
 
@@ -533,35 +562,11 @@ def test_context_size_deadline_ma(model, freq, expected_context_size):
 
 @pytest.mark.parametrize(
     "etna_model_class",
-    [DeadlineMovingAverageModel],
-)
-def test_get_model_before_training(etna_model_class):
-    """Check that get_model method throws an error if per-segment model is not fitted yet."""
-    etna_model = etna_model_class()
-    with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):
-        _ = etna_model.get_model()
-
-
-@pytest.mark.parametrize(
-    "etna_model_class,expected_class",
-    ((DeadlineMovingAverageModel, _DeadlineMovingAverageModel),),
-)
-def test_get_model_after_training(example_tsds, etna_model_class, expected_class):
-    """Check that get_model method returns dict of objects of _SeasonalMovingAverageModel class."""
-    pipeline = Pipeline(model=etna_model_class())
-    pipeline.fit(ts=example_tsds)
-    models_dict = pipeline.model.get_model()
-    assert isinstance(models_dict, dict)
-    for segment in example_tsds.segments:
-        assert isinstance(models_dict[segment], expected_class)
-
-
-@pytest.mark.parametrize(
-    "etna_model_class",
     (
         NaiveModel,
         SeasonalMovingAverageModel,
         MovingAverageModel,
+        DeadlineMovingAverageModel,
     ),
 )
 def test_get_model(example_tsds, etna_model_class):
