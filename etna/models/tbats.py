@@ -97,7 +97,7 @@ class _TBATSAdapter(BaseAdapter):
 
         horizon = self._get_steps_to_forecast(df=df)
         raw_components = self._decompose_forecast(horizon=horizon)
-        components = self._select_components(raw_components=raw_components)
+        components = self._process_components(raw_components=raw_components)
 
         return components
 
@@ -181,7 +181,7 @@ class _TBATSAdapter(BaseAdapter):
 
         return raw_components
 
-    def _select_components(self, raw_components: np.ndarray) -> pd.DataFrame:
+    def _process_components(self, raw_components: np.ndarray) -> pd.DataFrame:
         """Select meaningful components and assign names to them."""
         if self._fitted_model is None:
             raise ValueError("Fitted model is not set!")
