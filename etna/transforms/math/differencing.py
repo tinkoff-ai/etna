@@ -1,4 +1,3 @@
-import reprlib
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -9,18 +8,8 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms.base import Transform
+from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
-
-
-def _validate_segments(transform_segments: List[str], fit_segments: Optional[List[str]] = None):
-    if fit_segments is None:
-        raise ValueError("Transform is not fitted")
-
-    new_segments = set(transform_segments) - set(fit_segments)
-    if len(new_segments) > 0:
-        raise NotImplementedError(
-            f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
-        )
 
 
 class _SingleDifferencingTransform(Transform):
@@ -243,7 +232,7 @@ class _SingleDifferencingTransform(Transform):
             return df
 
         segments = df.columns.get_level_values("segment").unique().tolist()
-        _validate_segments(transform_segments=segments, fit_segments=self._fit_segments)
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
         columns_to_inverse = {self.in_column}
 
@@ -394,7 +383,7 @@ class DifferencingTransform(Transform):
         # validation is here because with `order=2, inplace=False` the second underlying transform is always inplace,
         # and we don't want to fail on it
         if self.inplace:
-            _validate_segments(transform_segments=segments, fit_segments=self._fit_segments)
+            check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
         result_df = df.copy()
         for transform in self._differencing_transforms:

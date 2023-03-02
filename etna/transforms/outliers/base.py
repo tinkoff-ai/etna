@@ -1,16 +1,15 @@
-import reprlib
 from abc import ABC
 from abc import abstractmethod
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import cast
 
 import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.transforms.base import Transform
+from etna.transforms.utils import check_new_segments
 
 
 class OutliersTransform(Transform, ABC):
@@ -68,14 +67,6 @@ class OutliersTransform(Transform, ABC):
 
         return self
 
-    def _validate_segments(self, segments: List[str]):
-        self._fit_segments = cast(List[str], self._fit_segments)
-        new_segments = set(segments) - set(self._fit_segments)
-        if len(new_segments) > 0:
-            raise NotImplementedError(
-                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
-            )
-
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Replace found outliers with NaNs.
@@ -101,7 +92,7 @@ class OutliersTransform(Transform, ABC):
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         result_df = df.copy()
         segments = df.columns.get_level_values("segment").unique().tolist()
-        self._validate_segments(segments)
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
         for segment in segments:
             result_df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
@@ -131,7 +122,7 @@ class OutliersTransform(Transform, ABC):
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         result = df.copy()
         segments = df.columns.get_level_values("segment").unique().tolist()
-        self._validate_segments(segments)
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
         for segment in segments:
             segment_ts = result[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
