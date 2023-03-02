@@ -630,6 +630,10 @@ class TestTransformTrainNewSegments:
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
         ],
     )
     def test_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -651,23 +655,6 @@ class TestTransformTrainNewSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_train_new_segments(
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # outliers
-            # TODO: error should be understandable, not like now
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
-        ],
-    )
-    def test_transform_train_new_segments_failed_error(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
         )
 
 
@@ -972,6 +959,10 @@ class TestTransformFutureNewSegments:
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
         ],
     )
     def test_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -993,23 +984,6 @@ class TestTransformFutureNewSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_new_segments(
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # outliers
-            # TODO: error should be understandable, not like now
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
-        ],
-    )
-    def test_transform_future_new_segments_failed_error(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_future_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
         )
 
 

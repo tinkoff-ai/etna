@@ -674,6 +674,10 @@ class TestInverseTransformTrainNewSegments:
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
         ],
     )
     def test_inverse_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -704,11 +708,6 @@ class TestInverseTransformTrainNewSegments:
             # math
             # TODO: error should be understandable, not like now
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
-            # outliers
-            # TODO: error should be understandable, not like now
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
         ],
     )
     def test_inverse_transform_train_new_segments_failed_error(
@@ -1026,6 +1025,10 @@ class TestInverseTransformFutureNewSegments:
                 TimeSeriesImputerTransform(in_column="target"),
                 "ts_to_fill",
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
         ],
     )
     def test_inverse_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -1081,11 +1084,6 @@ class TestInverseTransformFutureNewSegments:
             # TODO: error should be understandable, not like now
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
             (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
-            # outliers
-            # TODO: error should be understandable, not like now
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
         ],
     )
     def test_inverse_transform_future_new_segments_failed_error(
