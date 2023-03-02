@@ -82,7 +82,7 @@ def periodic_ts():
 def small_periodic_ts(periodic_ts):
     df = periodic_ts[0].df.loc[:, pd.IndexSlice["segment_1", :]].iloc[-10:]
     ts = TSDataset(df, freq="D")
-    return ts.train_test_split(test_size=3)
+    return ts
 
 
 @pytest.mark.parametrize(
@@ -172,24 +172,19 @@ def test_save_load(model, example_tsds):
 
 
 def test_forecast_decompose_not_fitted(small_periodic_ts):
-    train, test = small_periodic_ts
-    future = train.make_future(3).to_pandas(flatten=True)
     model = _TBATSAdapter(model=BATS())
 
     with pytest.raises(ValueError, match="Model is not fitted!"):
-        model.forecast_components(df=future)
+        model.forecast_components(df=small_periodic_ts.df)
 
 
 def test_predict_components_not_implemented(small_periodic_ts):
-    train, test = small_periodic_ts
-    future = train.make_future(3).to_pandas(flatten=True)
     model = _TBATSAdapter(model=BATS())
 
     with pytest.raises(NotImplementedError, match="Prediction decomposition isn't currently implemented!"):
-        model.predict_components(df=future)
+        model.predict_components(df=small_periodic_ts.df)
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -199,16 +194,14 @@ def test_predict_components_not_implemented(small_periodic_ts):
 )
 def test_decompose_forecast_output_format(small_periodic_ts, estimator):
     horizon = 3
-    train, test = small_periodic_ts
     model = estimator()
-    model.fit(train)
+    model.fit(small_periodic_ts)
 
     components = model._models["segment_1"]._decompose_forecast(horizon=horizon)
     assert isinstance(components, np.ndarray)
     assert components.shape[0] == horizon
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -218,13 +211,12 @@ def test_decompose_forecast_output_format(small_periodic_ts, estimator):
 )
 def test_named_components_output_format(small_periodic_ts, estimator):
     horizon = 3
-    train, test = small_periodic_ts
     model = estimator()
-    model.fit(train)
+    model.fit(small_periodic_ts)
 
     segment_model = model._models["segment_1"]
     components = segment_model._decompose_forecast(horizon=horizon)
-    components = segment_model._select_components(raw_components=components)
+    components = segment_model._process_components(raw_components=components)
 
     assert isinstance(components, pd.DataFrame)
     assert len(components) == horizon
