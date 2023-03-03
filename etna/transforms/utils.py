@@ -12,7 +12,7 @@ def match_target_quantiles(features: Set[str]) -> Set[str]:
 
 
 def check_new_segments(transform_segments: List[str], fit_segments: Optional[List[str]]):
-    """Check is there are any new segments that weren't present during training."""
+    """Check if there are any new segments that weren't present during training."""
     if fit_segments is None:
         raise ValueError("Transform is not fitted!")
 

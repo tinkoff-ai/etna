@@ -230,9 +230,9 @@ class SklearnTransform(Transform):
         return transformed
 
     def _preprocess_per_segment(self, df: pd.DataFrame) -> np.ndarray:
+        self._fit_segments = cast(List[str], self._fit_segments)
         transform_segments = df.columns.get_level_values("segment").unique().tolist()
         check_new_segments(transform_segments=transform_segments, fit_segments=self._fit_segments)
-        self._fit_segments = cast(List[str], self._fit_segments)
 
         df = df.loc[:, pd.IndexSlice[:, self.in_column]]
         to_add_segments = set(self._fit_segments) - set(transform_segments)
