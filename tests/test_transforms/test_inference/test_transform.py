@@ -1255,6 +1255,10 @@ class TestTransformFutureWithTarget:
                 "ts_to_fill",
                 {},
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
+            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
@@ -1276,20 +1280,6 @@ class TestTransformFutureWithTarget:
         ],
     )
     def test_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_future_with_target(ts, transform, expected_changes=expected_changes)
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # outliers
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
-            (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
-        ],
-    )
-    def test_transform_future_with_target_failed_error(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_with_target(ts, transform, expected_changes=expected_changes)
 
