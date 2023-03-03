@@ -426,18 +426,20 @@ def ts_diff_endings(example_reg_tsds):
 
 
 @pytest.fixture
-def df_with_nans_in_tails(example_df):
+def ts_with_nans_in_tails(example_df):
     df = TSDataset.to_dataset(example_df)
     df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
     df.loc[-3:, pd.IndexSlice["segment_1", "target"]] = None
-    return df
+    ts = TSDataset(df, freq="H")
+    return ts
 
 
 @pytest.fixture
-def df_with_nans(df_with_nans_in_tails):
-    df = df_with_nans_in_tails
+def ts_with_nans(ts_with_nans_in_tails):
+    df = ts_with_nans_in_tails.to_pandas()
     df.loc[[df.index[5], df.index[8]], pd.IndexSlice["segment_1", "target"]] = None
-    return df
+    ts = TSDataset(df, freq="H")
+    return ts
 
 
 @pytest.fixture
@@ -453,7 +455,9 @@ def toy_dataset_equal_targets_and_quantiles():
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
         "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
-    return TSDataset.to_dataset(pd.DataFrame(df))
+    df = TSDataset.to_dataset(pd.DataFrame(df))
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture
@@ -473,7 +477,9 @@ def toy_dataset_with_mean_shift_in_target():
         ),
         "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
-    return TSDataset.to_dataset(pd.DataFrame(df))
+    df = TSDataset.to_dataset(pd.DataFrame(df))
+    ts = TSDataset(df, freq="1D")
+    return ts
 
 
 @pytest.fixture

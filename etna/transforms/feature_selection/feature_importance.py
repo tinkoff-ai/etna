@@ -91,7 +91,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         idx_selected = idx_sort[:top_k]
         return keys[idx_selected].tolist()
 
-    def fit(self, df: pd.DataFrame) -> "TreeFeatureSelectionTransform":
+    def _fit(self, df: pd.DataFrame) -> "TreeFeatureSelectionTransform":
         """
         Fit the model and remember features to select.
 
@@ -165,7 +165,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.atol = atol
         self.relevance_params = relevance_params
 
-    def fit(self, df: pd.DataFrame) -> "MRMRFeatureSelectionTransform":
+    def _fit(self, df: pd.DataFrame) -> "MRMRFeatureSelectionTransform":
         """
         Fit the method and remember features to select.
 

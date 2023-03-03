@@ -36,9 +36,10 @@ def test_rnn_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
     model = RNNModel(
         input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=100)
     )
-    future = ts_train.make_future(horizon, encoder_length)
+    future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
     future = model.forecast(future, prediction_size=horizon)
+    future.inverse_transform([std])
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 0.06

@@ -23,6 +23,7 @@ from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import AutoRegressivePipeline
+from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
@@ -78,7 +79,7 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
         _ = pipeline._forecast()
 
     assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=pipeline.step)
+    make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=())
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY)
 
@@ -100,7 +101,7 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
         _ = pipeline._forecast()
 
     assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
+    make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=(), tail_steps=model.context_size)
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 
@@ -138,7 +139,7 @@ def test_forecast_one_step(example_tsds):
 
     # make predictions in AutoRegressivePipeline
     model = LinearPerSegmentModel()
-    transforms = [LagTransform(in_column="target", lags=[1])]
+    transforms = [AddConstTransform(in_column="target", value=10), LagTransform(in_column="target", lags=[1])]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast()
@@ -152,8 +153,9 @@ def test_forecast_one_step(example_tsds):
         cur_ts = TSDataset(df, freq=original_ts.freq)
         # these transform don't fit and we can fit_transform them at each step
         cur_ts.transform(transforms)
-        cur_forecast_ts = cur_ts.make_future(1)
+        cur_forecast_ts = cur_ts.make_future(1, transforms=transforms)
         cur_future_ts = model.forecast(cur_forecast_ts)
+        cur_future_ts.inverse_transform(transforms)
         to_add_df = cur_future_ts.to_pandas()
         df = pd.concat([df, to_add_df[df.columns]])
 

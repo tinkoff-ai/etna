@@ -10,7 +10,7 @@ pipeline:
   _target_: etna.pipeline.Pipeline
   horizon: 14
   model:
-    _target_: etna.models.CatBoostModelMultiSegment
+    _target_: etna.models.CatBoostMultiSegmentModel
     iterations: ${iterations}
     depth: ${depth}
   transforms:

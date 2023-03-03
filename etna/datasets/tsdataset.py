@@ -11,7 +11,6 @@ from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -164,8 +163,6 @@ class TSDataset:
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(self.df)
 
-        self.transforms: Optional[Sequence["Transform"]] = None
-
     def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
         """Return the level of the passed dataframe in hierarchical structure."""
         if self.hierarchical_structure is None:
@@ -186,24 +183,16 @@ class TSDataset:
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings(warning=True)
-        self.transforms = transforms
-        for transform in self.transforms:
+        for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-            columns_before = set(self.columns.get_level_values("feature"))
-            self.df = transform.transform(self.df)
-            columns_after = set(self.columns.get_level_values("feature"))
-            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+            transform.transform(self)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings(warning=True)
-        self.transforms = transforms
-        for transform in self.transforms:
+        for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-            columns_before = set(self.columns.get_level_values("feature"))
-            self.df = transform.fit_transform(self.df)
-            columns_after = set(self.columns.get_level_values("feature"))
-            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+            transform.fit_transform(self)
 
     @staticmethod
     def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -213,60 +202,6 @@ class TSDataset:
         columns_frame["segment"] = columns_frame["segment"].astype(str)
         df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
         return df_copy
-
-    def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
-        from etna.transforms import OneHotEncoderTransform
-        from etna.transforms.base import FutureMixin
-
-        # intersect list of regressors with columns after the transform
-        self._regressors = list(set(self._regressors).intersection(columns_after))
-
-        unseen_columns = list(columns_after - columns_before)
-
-        if len(unseen_columns) == 0:
-            return
-
-        new_regressors = []
-
-        if isinstance(transform, FutureMixin):
-            # Every column from FutureMixin is regressor
-            out_columns = list(columns_after - columns_before)
-            new_regressors = out_columns
-        elif isinstance(transform, OneHotEncoderTransform):
-            # Only the columns created with OneHotEncoderTransform from regressor are regressors
-            in_column = transform.in_column
-            out_columns = list(columns_after - columns_before)
-            if in_column in self.regressors:
-                new_regressors = out_columns
-        elif hasattr(transform, "in_column"):
-            # Only the columns created with the other transforms from regressors are regressors
-            in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
-            if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
-                # User defined out_columns in sklearn
-                # TODO: remove this case after fixing the out_column attribute in SklearnTransform
-                out_columns = transform.out_columns  # type: ignore
-                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
-                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
-            elif hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
-                # User defined out_columns
-                out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
-                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
-                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
-            else:
-                # Default out_columns
-                out_columns = list(columns_after - columns_before)
-                regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
-                new_regressors = [
-                    out_column
-                    for out_column in out_columns
-                    if np.any([regressor in out_column for regressor in regressors_in_column])
-                ]
-
-        else:
-            raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
-
-        new_regressors = [regressor for regressor in new_regressors if regressor not in self.regressors]
-        self._regressors.extend(new_regressors)
 
     def __repr__(self):
         return self.df.__repr__()
@@ -287,13 +222,17 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int, tail_steps: int = 0) -> "TSDataset":
+    def make_future(
+        self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
+    ) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
         ----------
         future_steps:
             number of timestamp in the future to build features for.
+        transforms:
+            sequence of transforms to be applied.
         tail_steps:
             number of timestamp for context to build features for.
 
@@ -351,10 +290,12 @@ class TSDataset:
                             f"NaN-s will be used for missing values"
                         )
 
-        if self.transforms is not None:
-            for transform in self.transforms:
-                tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-                df = transform.transform(df)
+        # Here only df is required, other metadata is not necessary to build the dataset
+        ts = TSDataset(df=df, freq=self.freq)
+        for transform in transforms:
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
+            transform.transform(ts)
+        df = ts.to_pandas()
 
         future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
 
@@ -362,9 +303,8 @@ class TSDataset:
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts.known_future = self.known_future
-        future_ts._regressors = self.regressors
-        future_ts.transforms = self.transforms
+        future_ts.known_future = deepcopy(self.known_future)
+        future_ts._regressors = deepcopy(self.regressors)
         future_ts.df_exog = self.df_exog
         return future_ts
 
@@ -388,7 +328,6 @@ class TSDataset:
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
-        tsdataset_slice.transforms = deepcopy(self.transforms)
         tsdataset_slice.df_exog = self.df_exog
         return tsdataset_slice
 
@@ -468,16 +407,15 @@ class TSDataset:
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
-    def inverse_transform(self):
+    def inverse_transform(self, transforms: Sequence["Transform"]):
         """Apply inverse transform method of transforms to the data.
 
         Applied in reversed order.
         """
         # TODO: return regressors after inverse_transform
-        if self.transforms is not None:
-            for transform in reversed(self.transforms):
-                tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
-                self.df = transform.inverse_transform(self.df)
+        for transform in reversed(transforms):
+            tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
+            transform.inverse_transform(self)
 
     @property
     def segments(self) -> List[str]:
@@ -576,7 +514,7 @@ class TSDataset:
             ax[i].grid()
 
     @staticmethod
-    def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
+    def to_flatten(df: pd.DataFrame, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
 
         The order of columns is (timestamp, segment, target,
@@ -586,7 +524,10 @@ class TSDataset:
         ----------
         df:
             DataFrame in ETNA format.
-
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
+            Always return columns with timestamp and segemnt.
         Returns
         -------
         pd.DataFrame:
@@ -615,13 +556,17 @@ class TSDataset:
         3 2021-06-04  segment_0    1.0
         4 2021-06-05  segment_0    1.0
         """
+        segments = df.columns.get_level_values("segment").unique()
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
+        if isinstance(features, str):
+            if features != "all":
+                raise ValueError("The only possible literal is 'all'")
+        else:
+            df = df.loc[:, pd.IndexSlice[segments, features]].copy()
+        columns = df.columns.get_level_values("feature").unique()
 
         # flatten dataframe
-        columns = df.columns.get_level_values("feature").unique()
-        segments = df.columns.get_level_values("segment").unique()
-
         df_dict = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
         df_dict["segment"] = np.repeat(segments, len(df.index))
@@ -641,7 +586,7 @@ class TSDataset:
 
         return df_flat
 
-    def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
+    def to_pandas(self, flatten: bool = False, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame.
 
         Parameters
@@ -652,7 +597,9 @@ class TSDataset:
             * If True, return with flatten index,
             its order of columns is (timestamp, segment, target,
             features in alphabetical order).
-
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
         Returns
         -------
         pd.DataFrame
@@ -692,8 +639,13 @@ class TSDataset:
         2021-06-05      1.00      1.00
         """
         if not flatten:
-            return self.df.copy()
-        return self.to_flatten(self.df)
+            if isinstance(features, str):
+                if features == "all":
+                    return self.df.copy()
+                raise ValueError("The only possible literal is 'all'")
+            segments = self.columns.get_level_values("segment").unique().tolist()
+            return self.df.loc[:, self.idx[segments, features]].copy()
+        return self.to_flatten(self.df, features=features)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
@@ -997,6 +949,73 @@ class TSDataset:
         test._regressors = self.regressors
 
         return train, test
+
+    def update_columns_from_pandas(self, df_update: pd.DataFrame):
+        """Update the existing columns in the dataset with the new values from pandas dataframe.
+
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+        Columns in df_exog are not updated. If you wish to update the df_exog, create the new
+        instance of TSDataset.
+
+        Parameters
+        ----------
+        df_update:
+            Dataframe with new values in wide ETNA format.
+        """
+        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
+            : self.df.index.max(), self.idx[self.segments, columns_to_update]
+        ]
+
+    def add_columns_from_pandas(
+        self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
+    ):
+        """Update the dataset with the new columns from pandas dataframe.
+
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+
+        Parameters
+        ----------
+        df_update:
+            Dataframe with the new columns in wide ETNA format.
+        update_exog:
+             If True, update columns also in df_exog.
+             If you wish to add new regressors in the dataset it is recommended to turn on this flag.
+        regressors:
+            List of regressors in the passed dataframe.
+        """
+        self.df = pd.concat((self.df, df_update[: self.df.index.max()]), axis=1).sort_index(axis=1)
+        if update_exog:
+            if self.df_exog is None:
+                self.df_exog = df_update
+            else:
+                self.df_exog = pd.concat((self.df_exog, df_update), axis=1).sort_index(axis=1)
+        if regressors is not None:
+            self._regressors = list(set(self._regressors) | set(regressors))
+
+    def drop_features(self, features: List[str], drop_from_exog: bool = False):
+        """Drop columns with features from the dataset.
+
+        Parameters
+        ----------
+        features:
+            List of features to drop.
+        drop_from_exog:
+            * If False, drop features only from df. Features will appear again in df after make_future.
+            * If True, drop features from df and df_exog. Features won't appear in df after make_future.
+        """
+        dfs = [("df", self.df)]
+        if drop_from_exog:
+            dfs.append(("df_exog", self.df_exog))
+
+        for name, df in dfs:
+            columns_in_df = df.columns.get_level_values("feature")
+            columns_to_remove = list(set(columns_in_df) & set(features))
+            unknown_columns = set(features) - set(columns_to_remove)
+            if len(unknown_columns) != 0:
+                warnings.warn(f"Features {unknown_columns} are not present in {name}!")
+            df.drop(columns=columns_to_remove, level="feature", inplace=True)
+        self._regressors = list(set(self._regressors) - set(features))
 
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
