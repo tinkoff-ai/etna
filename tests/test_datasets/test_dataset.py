@@ -428,6 +428,12 @@ def test_train_test_split_pass_regressors_to_output(df_and_regressors):
     assert test.regressors == ts.regressors
 
 
+def test_train_test_split_pass_target_components_to_output(ts_with_target_components):
+    train, test = ts_with_target_components.train_test_split(test_size=5)
+    assert sorted(train.target_components) == sorted(ts_with_target_components.target_components)
+    assert sorted(test.target_components) == sorted(ts_with_target_components.target_components)
+
+
 def test_dataset_datetime_conversion():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["timestamp"] = classic_df["timestamp"].astype(str)
@@ -833,6 +839,11 @@ def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     assert ts_slice.regressors == tsdf_with_exog.regressors
     pd.testing.assert_frame_equal(ts_slice.df, tsdf_with_exog.df.iloc[start_idx:end_idx])
     pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
+
+
+def test_tsdataset_idx_slice_pass_target_components_to_output(ts_with_target_components):
+    ts_slice = ts_with_target_components.tsdataset_idx_slice(start_idx=1, end_idx=2)
+    assert sorted(ts_slice.target_components) == sorted(ts_with_target_components.target_components)
 
 
 def test_to_torch_dataset_without_drop(tsdf_with_exog):

@@ -331,6 +331,7 @@ class TSDataset:
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
         tsdataset_slice.df_exog = self.df_exog
+        tsdataset_slice._target_components = self._target_components
         return tsdataset_slice
 
     @staticmethod
@@ -942,6 +943,7 @@ class TSDataset:
         )
         train.raw_df = train_raw_df
         train._regressors = self.regressors
+        train._target_components = self.target_components
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
@@ -954,7 +956,7 @@ class TSDataset:
         )
         test.raw_df = test_raw_df
         test._regressors = self.regressors
-
+        test._target_components = self.target_components
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
@@ -1086,13 +1088,15 @@ class TSDataset:
             target_names = tuple(get_target_with_quantiles(columns=self.columns))
             target_level_df = self[:, current_level_segments, target_names]
 
-        return TSDataset(
+        ts = TSDataset(
             df=target_level_df,
             freq=self.freq,
             df_exog=self.df_exog,
             known_future=self.known_future,
             hierarchical_structure=self.hierarchical_structure,
         )
+        ts._target_components = self._target_components
+        return ts
 
     def get_target_components(self) -> Optional[pd.DataFrame]:
         """Get DataFrame with target components.
