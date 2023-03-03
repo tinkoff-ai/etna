@@ -104,8 +104,8 @@ class OutliersTransform(Transform, ABC):
         self._validate_segments(segments)
         for segment in segments:
             # to locate only present indices
-            index_to_check = result_df.index.intersection(self.outliers_timestamps[segment])
-            result_df.loc[index_to_check, pd.IndexSlice[segment, self.in_column]] = np.NaN
+            segment_outliers_timestamps = result_df.index.intersection(self.outliers_timestamps[segment])
+            result_df.loc[segment_outliers_timestamps, pd.IndexSlice[segment, self.in_column]] = np.NaN
         return result_df
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
