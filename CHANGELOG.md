@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `SegmentEncoderTransform` to work with subset of segments and raise error on new segments ([#1103](https://github.com/tinkoff-ai/etna/pull/1103))
 - Fix `SklearnTransform` in per-segment mode to work on subset of segments and raise error on new segments ([#1107](https://github.com/tinkoff-ai/etna/pull/1107))
 - Fix `OutliersTransform` and its children to raise error on new segments ([#1139](https://github.com/tinkoff-ai/etna/pull/1139))
-- Fix `DifferencingTransform` to raise error on new segments during `inverse_transform` in inplace mode ([#1141](https://github.com/tinkoff-ai/etna/pull/1141))
+- Fix `DifferencingTransform` to raise error on new segments during `transform` and `inverse_transform` in inplace mode ([#1141](https://github.com/tinkoff-ai/etna/pull/1141))
 ## [1.14.0] - 2022-12-16
 ### Added
 - Add python 3.10 support ([#1005](https://github.com/tinkoff-ai/etna/pull/1005))
