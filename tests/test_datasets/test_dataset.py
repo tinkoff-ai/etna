@@ -972,6 +972,11 @@ def test_drop_features_update_regressors(df_and_regressors, features, expected_r
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 
+def test_drop_features_throw_error_on_target_components(ts_with_target_components):
+    with pytest.raises(ValueError, match="Target components can't be dropped from the dataset!"):
+        ts_with_target_components.drop_features(features=ts_with_target_components.target_components)
+
+
 def test_get_target_components_on_dataset_without_components(example_tsds):
     target_components = example_tsds.get_target_components()
     assert target_components is None

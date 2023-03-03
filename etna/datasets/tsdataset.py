@@ -1013,6 +1013,12 @@ class TSDataset:
             * If False, drop features only from df. Features will appear again in df after make_future.
             * If True, drop features from df and df_exog. Features won't appear in df after make_future.
         """
+        features_contain_target_components = (self.target_components is not None) and (
+            len(set(features).intersection(self.target_components)) != 0
+        )
+        if features_contain_target_components:
+            raise ValueError("Target components can't be dropped from the dataset!")
+
         dfs = [("df", self.df)]
         if drop_from_exog:
             dfs.append(("df_exog", self.df_exog))
