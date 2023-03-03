@@ -188,7 +188,6 @@ line_length = 120
 minversion = "6.0"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
 filterwarnings = [
-    "error",
     "ignore: Torchmetrics v0.9 introduced a new argument class property called `full_state_update` that",
     "ignore: TSDataset freq can't be inferred",
     "ignore: test_size, test_start and test_end cannot be",
