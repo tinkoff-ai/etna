@@ -265,7 +265,8 @@ doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
 markers = [
     "smoke",
     "long_1",
-    "long_2"
+    "long_2",
+    "long_3"
 ]
 
 [tool.mypy]
