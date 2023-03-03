@@ -1094,6 +1094,18 @@ class TSDataset:
             hierarchical_structure=self.hierarchical_structure,
         )
 
+    def get_target_components(self) -> Optional[pd.DataFrame]:
+        """Get DataFrame with target components.
+
+        Returns
+        -------
+        :
+            Dataframe with target components
+        """
+        if self._target_components is None:
+            return None
+        return self.to_pandas(features=self._target_components)
+
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
         """Return columns of ``self.df``.

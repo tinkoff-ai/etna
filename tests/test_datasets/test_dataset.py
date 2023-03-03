@@ -170,6 +170,18 @@ def df_segments_int():
     return df
 
 
+@pytest.fixture
+def ts_with_target_components():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df = pd.DataFrame(
+        {"timestamp": timestamp, "target": 3, "target_component_a": 1, "target_component_b": 2, "segment": 1}
+    )
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+    ts._target_components = ["target_component_a", "target_component_b"]
+    return ts
+
+
 def test_check_endings_error():
     """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -947,3 +959,16 @@ def test_drop_features_update_regressors(df_and_regressors, features, expected_r
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=False)
     assert sorted(ts.regressors) == sorted(expected_regressors)
+
+
+def test_get_target_components_on_dataset_without_components(example_tsds):
+    target_components = example_tsds.get_target_components()
+    assert target_components is None
+
+
+def test_get_target_components(
+    ts_with_target_components, expected_components=["target_component_a", "target_component_b"]
+):
+    expected_target_components_df = ts_with_target_components.to_pandas(features=expected_components)
+    target_components_df = ts_with_target_components.get_target_components()
+    pd.testing.assert_frame_equal(target_components_df, expected_target_components_df)
