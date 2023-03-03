@@ -289,6 +289,26 @@ def test_arma_component_not_fitted(small_periodic_ts, estimator):
         segment_model.forecast_components(df=future)
 
 
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATSModel,
+        TBATSModel,
+    ),
+)
+def test_arma_w_seasonal_components_not_fitted(small_periodic_ts, estimator):
+    model = estimator(use_arma_errors=True, seasonal_periods=[2, 3])
+    model.fit(small_periodic_ts)
+
+    future = small_periodic_ts.make_future(3).to_pandas(flatten=True)
+    segment_model = model._models["segment_1"]
+    segment_model._fitted_model.params.components.use_arma_errors = False
+    segment_model._fitted_model.params.components.seasonal_periods = []
+
+    with pytest.warns(Warning, match=f"Following components are not fitted: Seasonal, ARMA!"):
+        segment_model.forecast_components(df=future)
+
+
 @pytest.mark.long_2
 @pytest.mark.filterwarnings("ignore:.*not fitted.*")
 @pytest.mark.parametrize(
