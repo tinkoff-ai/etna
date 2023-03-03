@@ -144,3 +144,79 @@ def test_save_load(model, example_tsds):
     horizon = 3
     transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+@pytest.fixture()
+def ar_dataset_w_exog():
+    df = generate_ar_df(start_time="2021-01-01", periods=100, n_segments=2)
+    df_exog = df.copy()
+    df_exog["f1"] = np.sin(df_exog["target"])
+    df_exog["f2"] = np.cos(df_exog["target"])
+    df_exog.drop(columns=["target"], inplace=True)
+
+    df = TSDataset.to_dataset(df)
+    df_exog = TSDataset.to_dataset(df_exog)
+
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    return ts
+
+
+def test_forecast_prediction_components_equal(ar_dataset_w_exog):
+    train, test = ar_dataset_w_exog.train_test_split(test_size=5)
+    future = train.make_future(5)
+
+    model = CatBoostPerSegmentModel(iterations=10)
+    model.fit(train)
+
+    for segment in test.columns.get_level_values("segment"):
+        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
+        prediction_components = model._models[segment].predict_components(df=segment_future)
+        forecast_components = model._models[segment].forecast_components(df=segment_future)
+        pd.testing.assert_frame_equal(prediction_components, forecast_components)
+
+
+def test_forecast_components_names(ar_dataset_w_exog):
+    answer = {"target_component_f1", "target_component_f2"}
+
+    train, test = ar_dataset_w_exog.train_test_split(test_size=5)
+    future = train.make_future(5)
+
+    model = CatBoostPerSegmentModel(iterations=10)
+    model.fit(train)
+
+    for segment in test.columns.get_level_values("segment"):
+        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
+        components = model._models[segment].predict_components(df=segment_future)
+        assert set(components.columns) == answer
+
+
+def test_per_segment_decomposition_sums_to_target(ar_dataset_w_exog):
+    ts = ar_dataset_w_exog
+    train, test = ts.train_test_split(test_size=5)
+    future = train.make_future(5)
+
+    model = CatBoostPerSegmentModel(iterations=10)
+    model.fit(train)
+
+    y_pred = model.forecast(future)
+    for segment in test.columns.get_level_values("segment"):
+        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
+        components = model._models[segment].predict_components(df=segment_future)
+        y_hat_pred = np.sum(components.values, axis=1)
+        np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
+
+
+def test_multi_segment_decomposition_sums_to_target(ar_dataset_w_exog):
+    ts = ar_dataset_w_exog
+    train, test = ts.train_test_split(test_size=5)
+    future = train.make_future(5)
+
+    model = CatBoostMultiSegmentModel(iterations=10)
+    model.fit(train)
+
+    y_pred = model.forecast(future)
+    for segment in test.columns.get_level_values("segment"):
+        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
+        components = model._base_model.predict_components(df=segment_future)
+        y_hat_pred = np.sum(components.values, axis=1)
+        np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
