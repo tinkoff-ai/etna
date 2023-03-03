@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Methods `save` and `load` to HierarchicalPipeline ([#1096](https://github.com/tinkoff-ai/etna/pull/1096))
-- New data access methods in TSDataset : `update_columns_from_pandas`, `add_columns_from_pandas`, `drop_features` ([#809](https://github.com/tinkoff-ai/etna/pull/809))
-- `PytorchForecastingDatasetBuiler` for natural networks from Pytorch Forecasting ([#971](https://github.com/tinkoff-ai/etna/pull/971))
+- New data access methods in `TSDataset` : `update_columns_from_pandas`, `add_columns_from_pandas`, `drop_features` ([#809](https://github.com/tinkoff-ai/etna/pull/809))
+- `PytorchForecastingDatasetBuiler` for neural networks from Pytorch Forecasting ([#971](https://github.com/tinkoff-ai/etna/pull/971))
 - New base classes for per-segment and multi-segment transforms `IrreversiblePersegmentWrapper`, `ReversiblePersegmentWrapper`, `IrreversibleTransform`, `ReversibleTransform` ([#835](https://github.com/tinkoff-ai/etna/pull/835))
 - New base class for one segment transforms `OneSegmentTransform` ([#894](https://github.com/tinkoff-ai/etna/pull/894))
 - `ChangePointsLevelTransform` and base classes `PerIntervalModel`, `BaseChangePointsModelAdapter` for per-interval transforms ([#998](https://github.com/tinkoff-ai/etna/pull/998))
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add optional `features` parameter in the signature of `TSDataset.to_pandas`, `TSDataset.to_flatten` ([#809](https://github.com/tinkoff-ai/etna/pull/809))
 - Signature of the constructor of `TFTModel`, `DeepARModel` ([#1110](https://github.com/tinkoff-ai/etna/pull/1110))
 - Interface of `Transform` and `PerSegmentWrapper` ([#835](https://github.com/tinkoff-ai/etna/pull/835))
-- Signature of TSDataset methods `inverse_transform` and `make_future` now has `transforms` parameter. Remove transforms and regressors updating logic from TSDataset. Forecasts from the models are not internally inverse transformed. Methods `fit`,`transform`,`inverse_transform`  of `Transform` now works with `TSDataset` ([#956](https://github.com/tinkoff-ai/etna/pull/956))
+- Signature of `TSDataset` methods `inverse_transform` and `make_future` now has `transforms` parameter. Remove transforms and regressors updating logic from TSDataset. Forecasts from the models are not internally inverse transformed. Methods `fit`,`transform`,`inverse_transform`  of `Transform` now works with `TSDataset` ([#956](https://github.com/tinkoff-ai/etna/pull/956))
 - Create `AutoBase` and `AutoAbstract` classes, some of `Auto` class's logic moved there ([#1114](https://github.com/tinkoff-ai/etna/pull/1114)) 
 - Impose specific order of columns on return value of `TSDataset.to_flatten` ([#1095](https://github.com/tinkoff-ai/etna/pull/1095))
 ### Fixed
