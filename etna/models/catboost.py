@@ -39,6 +39,26 @@ class _CatBoostAdapter(BaseAdapter):
     def _prepare_float_category_columns(self, df: pd.DataFrame):
         df[self._float_category_columns] = df[self._float_category_columns].astype(str).astype("category")
 
+    def _prepare_train_pool(self, features: pd.DataFrame, target: np.ndarray) -> Pool:
+        """Prepare training pool for CatBoost model."""
+        columns_dtypes = features.dtypes
+        category_columns_dtypes = columns_dtypes[columns_dtypes == "category"]
+        self._categorical = category_columns_dtypes.index.tolist()
+
+        # select only columns with float categories
+        float_category_columns_dtypes_indices = [
+            idx
+            for idx, x in enumerate(category_columns_dtypes)
+            if issubclass(x.categories.dtype.type, (float, np.floating))
+        ]
+        float_category_columns_dtypes = category_columns_dtypes.iloc[float_category_columns_dtypes_indices]
+        float_category_columns = float_category_columns_dtypes.index
+        self._float_category_columns = float_category_columns
+        self._prepare_float_category_columns(features)
+
+        train_pool = Pool(features, target, cat_features=self._categorical)
+        return train_pool
+
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_CatBoostAdapter":
         """
         Fit Catboost model.
@@ -57,22 +77,7 @@ class _CatBoostAdapter(BaseAdapter):
         """
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
-        columns_dtypes = features.dtypes
-        category_columns_dtypes = columns_dtypes[columns_dtypes == "category"]
-        self._categorical = category_columns_dtypes.index.tolist()
-
-        # select only columns with float categories
-        float_category_columns_dtypes_indices = [
-            idx
-            for idx, x in enumerate(category_columns_dtypes)
-            if issubclass(x.categories.dtype.type, (float, np.floating))
-        ]
-        float_category_columns_dtypes = category_columns_dtypes.iloc[float_category_columns_dtypes_indices]
-        float_category_columns = float_category_columns_dtypes.index
-        self._float_category_columns = float_category_columns
-        self._prepare_float_category_columns(features)
-
-        train_pool = Pool(features, target.values, cat_features=self._categorical)
+        train_pool = self._prepare_train_pool(features, target.values)
         self.model.fit(train_pool)
         return self
 
@@ -105,6 +110,47 @@ class _CatBoostAdapter(BaseAdapter):
            Internal model
         """
         return self.model
+
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        return self.predict_components(df=df)
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        features = df.drop(columns=["timestamp", "target"])
+
+        prediction = self.model.predict(features)
+        pool = self._prepare_train_pool(features, prediction)
+        shap_values = self.model.get_feature_importance(pool, type="ShapValues")
+
+        # encapsulate expected contribution into components
+        components = shap_values[:, :-1] + shap_values[:, -1, np.newaxis] / (shap_values.shape[1] - 1)
+
+        component_names = [f"target_component_{name}" for name in features.columns]
+
+        return pd.DataFrame(data=components, columns=component_names)
 
 
 class CatBoostPerSegmentModel(
