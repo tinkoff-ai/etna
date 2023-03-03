@@ -186,7 +186,7 @@ def test_forecast_components_names(ar_dataset_w_exog):
 
     for segment in test.columns.get_level_values("segment"):
         segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        components = model._models[segment].predict_components(df=segment_future)
+        components = model._models[segment].forecast_components(df=segment_future)
         assert set(components.columns) == answer
 
 
@@ -201,7 +201,7 @@ def test_per_segment_decomposition_sums_to_target(ar_dataset_w_exog):
     y_pred = model.forecast(future)
     for segment in test.columns.get_level_values("segment"):
         segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        components = model._models[segment].predict_components(df=segment_future)
+        components = model._models[segment].forecast_components(df=segment_future)
         y_hat_pred = np.sum(components.values, axis=1)
         np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
 
@@ -217,6 +217,6 @@ def test_multi_segment_decomposition_sums_to_target(ar_dataset_w_exog):
     y_pred = model.forecast(future)
     for segment in test.columns.get_level_values("segment"):
         segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        components = model._base_model.predict_components(df=segment_future)
+        components = model._base_model.forecast_components(df=segment_future)
         y_hat_pred = np.sum(components.values, axis=1)
         np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
