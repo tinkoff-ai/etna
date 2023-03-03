@@ -163,6 +163,8 @@ class TSDataset:
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(self.df)
 
+        self._target_components: Optional[List[str]] = None
+
     def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
         """Return the level of the passed dataframe in hierarchical structure."""
         if self.hierarchical_structure is None:
@@ -463,6 +465,11 @@ class TSDataset:
         ['regressor_1']
         """
         return self._regressors
+
+    @property
+    def target_components(self) -> Optional[List[str]]:
+        """Get list of target components. Target components sum up to target."""
+        return self._target_components
 
     def plot(
         self,
