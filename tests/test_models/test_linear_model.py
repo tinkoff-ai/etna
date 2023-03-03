@@ -89,7 +89,7 @@ def test_not_fitted(model, linear_segments_ts_unique):
     lags = LagTransform(in_column="target", lags=[3, 4, 5])
     train.fit_transform([lags])
 
-    to_forecast = train.make_future(3)
+    to_forecast = train.make_future(3, transforms=[lags])
     with pytest.raises(ValueError, match="model is not fitted!"):
         model.forecast(to_forecast)
 
@@ -138,8 +138,9 @@ def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
 
     model.fit(train)
 
-    to_forecast = train.make_future(horizon)
+    to_forecast = train.make_future(horizon, transforms=[lags])
     res = model.forecast(to_forecast)
+    res.inverse_transform([lags])
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
@@ -161,8 +162,9 @@ def test_model_multi_segment(linear_segments_ts_common, num_lags, model):
 
     model.fit(train)
 
-    to_forecast = train.make_future(horizon)
+    to_forecast = train.make_future(horizon, transforms=[lags])
     res = model.forecast(to_forecast)
+    res.inverse_transform([lags])
 
     for segment in res.segments:
         assert np.allclose(test[:, segment, "target"], res[:, segment, "target"], atol=1)
@@ -192,7 +194,7 @@ def test_no_warning_on_categorical_features(example_tsds, model):
         == 0
     )
 
-    to_forecast = example_tsds.make_future(horizon)
+    to_forecast = example_tsds.make_future(horizon, transforms=[lags, dateflags])
     with pytest.warns(None) as record:
         _ = model.forecast(to_forecast)
     assert (

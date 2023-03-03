@@ -342,7 +342,6 @@ class PerSegmentModelMixin(ModelForecastingMixin):
 
         df = TSDataset.to_dataset(df)
         ts.df = df
-        ts.inverse_transform()
 
         prediction_size = kwargs.get("prediction_size")
         if prediction_size is not None:
@@ -417,7 +416,6 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         # TODO: make it work with prediction intervals and context
         y = prediction_method(self=self._base_model, df=x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
         return ts
 
     @log_decorator

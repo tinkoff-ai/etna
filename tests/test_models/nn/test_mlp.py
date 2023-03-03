@@ -29,7 +29,8 @@ def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
     lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 4)))
     fourier = FourierTransform(period=7, order=3)
     std = StandardScalerTransform(in_column="target")
-    ts_train.fit_transform([std, lag, fourier])
+    transforms = [std, lag, fourier]
+    ts_train.fit_transform(transforms)
 
     decoder_length = 14
     model = MLPModel(
@@ -39,9 +40,10 @@ def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
         decoder_length=decoder_length,
         trainer_params=dict(max_epochs=100),
     )
-    future = ts_train.make_future(horizon)
+    future = ts_train.make_future(horizon, transforms=transforms)
     model.fit(ts_train)
     future = model.forecast(future, prediction_size=horizon)
+    future.inverse_transform(transforms)
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 0.05

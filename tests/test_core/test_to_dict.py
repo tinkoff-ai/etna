@@ -13,7 +13,7 @@ from etna.libs.pytorch_lightning.callbacks import EarlyStopping
 from etna.metrics import MAE
 from etna.metrics import SMAPE
 from etna.models import AutoARIMAModel
-from etna.models import CatBoostModelPerSegment
+from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
@@ -24,15 +24,19 @@ from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
+from etna.transforms.decomposition.change_points_based import RupturesChangePointsModel
+from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
 
 
 def ensemble_samples():
     pipeline1 = Pipeline(
-        model=CatBoostModelPerSegment(),
+        model=CatBoostPerSegmentModel(),
         transforms=[
             AddConstTransform(in_column="target", value=10),
             ChangePointsTrendTransform(
-                in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(Binseg(model="l2", min_size=2, jump=5), n_bkps=50),
+                per_interval_model=SklearnRegressionPerIntervalModel(),
             ),
         ],
         horizon=5,
@@ -41,7 +45,11 @@ def ensemble_samples():
         model=LinearPerSegmentModel(),
         transforms=[
             ChangePointsTrendTransform(
-                in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="l2", min_size=2, jump=5), n_bkps=50
+                ),
+                per_interval_model=SklearnRegressionPerIntervalModel(),
             ),
             LogTransform(in_column="target"),
         ],
@@ -55,7 +63,11 @@ def ensemble_samples():
     [
         AddConstTransform(in_column="target", value=10),
         ChangePointsTrendTransform(
-            in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
+            in_column="target",
+            change_points_model=RupturesChangePointsModel(
+                change_points_model=Binseg(model="l2", min_size=2, jump=5), n_bkps=50
+            ),
+            per_interval_model=SklearnRegressionPerIntervalModel(model=LinearRegression()),
         ),
         pytest.param(
             DensityOutliersTransform("target", distance_coef=6),
@@ -99,11 +111,29 @@ def test_to_dict_transforms_with_expected(target_object, expected):
 @pytest.mark.parametrize(
     "target_model",
     [
-        pytest.param(DeepARModel(), marks=pytest.mark.xfail(raises=AssertionError)),
+        pytest.param(
+            DeepARModel(
+                decoder_length=3,
+                encoder_length=4,
+                lr=0.1,
+                trainer_params=dict(max_epochs=2, gpus=0),
+                train_batch_size=64,
+            ),
+            marks=pytest.mark.xfail(raises=AssertionError),
+        ),
         LinearPerSegmentModel(),
-        CatBoostModelPerSegment(),
+        CatBoostPerSegmentModel(),
         AutoARIMAModel(),
-        pytest.param(TFTModel(max_epochs=2), marks=pytest.mark.xfail(raises=AssertionError)),
+        pytest.param(
+            TFTModel(
+                decoder_length=3,
+                encoder_length=4,
+                lr=0.1,
+                trainer_params=dict(max_epochs=2, gpus=0),
+                train_batch_size=64,
+            ),
+            marks=pytest.mark.xfail(raises=AssertionError),
+        ),
     ],
 )
 def test_to_dict_models(target_model):
@@ -117,11 +147,15 @@ def test_to_dict_models(target_model):
     "target_object",
     [
         Pipeline(
-            model=CatBoostModelPerSegment(),
+            model=CatBoostPerSegmentModel(),
             transforms=[
                 AddConstTransform(in_column="target", value=10),
                 ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=50
+                    in_column="target",
+                    per_interval_model=SklearnRegressionPerIntervalModel(),
+                    change_points_model=RupturesChangePointsModel(
+                        change_points_model=Binseg(model="l2", min_size=2, jump=5), n_bkps=50
+                    ),
                 ),
             ],
             horizon=5,

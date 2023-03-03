@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List
 from typing import Tuple
 
@@ -9,12 +8,6 @@ from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms import AddConstTransform
-from etna.transforms import FilterFeaturesTransform
-from etna.transforms import LagTransform
-from etna.transforms import MaxAbsScalerTransform
-from etna.transforms import OneHotEncoderTransform
-from etna.transforms import SegmentEncoderTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -39,7 +32,7 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     return ts
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
@@ -56,7 +49,67 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
     return df, df_exog, ["regressor_1", "regressor_2"]
 
 
-@pytest.fixture()
+@pytest.fixture
+def df_update_add_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-12")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "new_column": 200, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def df_update_update_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-12")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 200, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def df_updated_add_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "new_column": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "new_column": 200, "segment": "2"})
+    df_2.loc[:4, "target"] = None
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset(df=TSDataset.to_dataset(df), freq="D").df
+    return df
+
+
+@pytest.fixture
+def df_updated_update_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 200, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset(df=TSDataset.to_dataset(df), freq="D").df
+    return df
+
+
+@pytest.fixture
+def df_exog_updated_add_column() -> pd.DataFrame:
+    timestamp = pd.date_range("2020-12-01", "2021-02-12")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "new_column": 100, "segment": "1"})
+    df_1.iloc[-1:, df_1.columns.get_loc("regressor_1")] = None
+    df_1.iloc[-1:, df_1.columns.get_loc("regressor_2")] = None
+    df_1.iloc[:31, df_1.columns.get_loc("new_column")] = None
+    df_2 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 3, "regressor_2": 4, "new_column": 200, "segment": "2"})
+    df_2.iloc[:5, df_2.columns.get_loc("regressor_1")] = None
+    df_2.iloc[:5, df_2.columns.get_loc("regressor_2")] = None
+    df_2.iloc[-1:, df_2.columns.get_loc("regressor_1")] = None
+    df_2.iloc[-1:, df_2.columns.get_loc("regressor_2")] = None
+    df_2.iloc[:31, df_2.columns.get_loc("new_column")] = None
+    df_exog = pd.concat([df_1, df_2], ignore_index=True)
+    df_exog = TSDataset.to_dataset(df_exog)
+    df_exog = TSDataset(df=df_exog, freq="D").df
+    return df_exog
+
+
+@pytest.fixture
 def df_and_regressors_flat() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Return flat versions of df and df_exog."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -409,8 +462,8 @@ def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
 def test_make_future_with_imputer(ts_diff_endings, ts_future):
     imputer = TimeSeriesImputerTransform(in_column="target")
     ts_diff_endings.fit_transform([imputer])
-    future = ts_diff_endings.make_future(10)
-    assert_frame_equal(future.df, ts_future.df)
+    future = ts_diff_endings.make_future(10, transforms=[imputer])
+    assert_frame_equal(future.to_pandas(), ts_future.to_pandas())
 
 
 def test_make_future():
@@ -632,6 +685,49 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
     pd.testing.assert_frame_equal(obtained_df, expected_df)
 
 
+@pytest.mark.parametrize(
+    "features, expected_columns",
+    (
+        ("all", ["timestamp", "target", "segment", "regressor_1", "regressor_2"]),
+        (["regressor_2"], ["timestamp", "segment", "regressor_2"]),
+    ),
+)
+def test_to_flatten_correct_columns(df_and_regressors, features, expected_columns):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    flattened_df = ts.to_flatten(ts.df, features=features)
+    assert sorted(flattened_df.columns) == sorted(expected_columns)
+
+
+def test_to_flatten_raise_error_incorrect_literal(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.raises(ValueError, match="The only possible literal is 'all'"):
+        _ = ts.to_flatten(ts.df, features="incorrect")
+
+
+@pytest.mark.parametrize(
+    "features, expected_columns",
+    (
+        ("all", ["target", "regressor_1", "regressor_2"]),
+        (["regressor_2"], ["regressor_2"]),
+    ),
+)
+def test_to_pandas_correct_columns(df_and_regressors, features, expected_columns):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    pandas_df = ts.to_pandas(flatten=False, features=features)
+    got_columns = set(pandas_df.columns.get_level_values("feature"))
+    assert sorted(got_columns) == sorted(expected_columns)
+
+
+def test_to_pandas_raise_error_incorrect_literal(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.raises(ValueError, match="The only possible literal is 'all'"):
+        _ = ts.to_pandas(flatten=False, features="incorrect")
+
+
 def test_transform_raise_warning_on_diff_endings(ts_diff_endings):
     with pytest.warns(Warning, match="Segments contains NaNs in the last timestamps."):
         ts_diff_endings.transform([])
@@ -710,135 +806,6 @@ def ts_with_regressors(df_and_regressors):
     return ts
 
 
-def _test_update_regressors_transform(ts, transforms, expected_regressors):
-    fitted_transforms = [transform.fit(ts.df) for transform in transforms]
-    ts.transform(fitted_transforms)
-    regressors = ts.regressors
-    assert sorted(regressors) == sorted(expected_regressors)
-
-
-def _test_update_regressors_fit_transform(ts, transforms, expected_regressors):
-    ts.fit_transform(transforms)
-    regressors = ts.regressors
-    assert sorted(regressors) == sorted(expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        ([SegmentEncoderTransform()], ["regressor_1", "regressor_2", "segment_code"]),
-        (
-            [LagTransform(in_column="target", lags=[1, 2], out_column="regressor_lag")],
-            ["regressor_1", "regressor_2", "regressor_lag_1", "regressor_lag_2"],
-        ),
-    ),
-)
-def test_update_regressors_with_futuremixin_transform(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [OneHotEncoderTransform(in_column="regressor", out_column="regressor_ohe")],
-            ["regressor_ohe_0", "regressor_ohe_1", "regressor"],
-        ),
-        ([OneHotEncoderTransform(in_column="not_regressor")], ["regressor"]),
-    ),
-)
-def test_update_regressors_with_onehotencoder_transform(ts_with_categoricals, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_categoricals), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [MaxAbsScalerTransform(in_column="regressor_1", inplace=False, out_column="scaled")],
-            ["regressor_1", "regressor_2", "scaled_regressor_1"],
-        ),
-        (
-            [MaxAbsScalerTransform(in_column=["regressor_1", "regressor_2"], inplace=False, out_column=None)],
-            [
-                "regressor_1",
-                "regressor_2",
-                MaxAbsScalerTransform(in_column=["regressor_1"], inplace=False, out_column=None).__repr__(),
-                MaxAbsScalerTransform(in_column=["regressor_2"], inplace=False, out_column=None).__repr__(),
-            ],
-        ),
-        (
-            [
-                AddConstTransform(
-                    in_column="regressor_1", value=2, inplace=False, out_column="regressor_add_constant_regressor_1"
-                )
-            ],
-            ["regressor_1", "regressor_2", "regressor_add_constant_regressor_1"],
-        ),
-    ),
-)
-def test_update_regressors_with_regressor_in_column(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [MaxAbsScalerTransform(in_column="target", inplace=False, out_column="scaled_target")],
-            ["regressor_1", "regressor_2"],
-        ),
-        (
-            [AddConstTransform(in_column="target", value=2, inplace=False, out_column="add_constant_target")],
-            ["regressor_1", "regressor_2"],
-        ),
-    ),
-)
-def test_update_regressors_not_add_not_regressors(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.parametrize(
-    "transforms, expected_regressors",
-    (
-        (
-            [FilterFeaturesTransform(exclude=["regressor_1"])],
-            ["regressor_2"],
-        ),
-        (
-            [FilterFeaturesTransform(exclude=["regressor_1", "regressor_2"])],
-            [],
-        ),
-    ),
-)
-def test_update_regressors_after_filter(ts_with_regressors, transforms, expected_regressors):
-    _test_update_regressors_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-    _test_update_regressors_fit_transform(deepcopy(ts_with_regressors), deepcopy(transforms), expected_regressors)
-
-
-@pytest.mark.xfail
-@pytest.mark.parametrize("return_features", [True, False])
-@pytest.mark.parametrize(
-    "columns",
-    [
-        ([]),
-        (["target"]),
-        (["exog_1", "exog_2"]),
-        (["target", "exog_1", "exog_2"]),
-    ],
-)
-def test_inverse_transform_back_included_columns(ts_with_features, columns, return_features):
-    original_regressors = ts_with_features.regressors
-    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
-    ts_with_features.fit_transform([transform])
-    ts_with_features.inverse_transform()
-    assert set(original_regressors) == set(ts_with_features.regressors)
-
-
 def test_to_dataset_not_modify_dataframe():
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
     df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": 1})
@@ -852,7 +819,6 @@ def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
     assert ts_slice.known_future == tsdf_with_exog.known_future
     assert ts_slice.regressors == tsdf_with_exog.regressors
-    assert ts_slice.transforms == tsdf_with_exog.transforms
     pd.testing.assert_frame_equal(ts_slice.df, tsdf_with_exog.df.iloc[start_idx:end_idx])
     pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
 
@@ -887,3 +853,97 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     np.testing.assert_array_equal(
         torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
     )
+
+
+def test_add_columns_from_pandas_update_df(df_and_regressors, df_update_add_column, df_updated_add_column):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=False)
+    pd.testing.assert_frame_equal(ts.df, df_updated_add_column)
+
+
+def test_add_columns_from_pandas_update_df_exog(df_and_regressors, df_update_add_column, df_exog_updated_add_column):
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True)
+    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_column)
+
+
+@pytest.mark.parametrize(
+    "known_future, regressors, expected_regressors",
+    (
+        ([], ["regressor_1"], ["regressor_1"]),
+        (["regressor_1"], ["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
+    ),
+)
+def test_add_columns_from_pandas_update_regressors(
+    df_and_regressors, df_update_add_column, known_future, regressors, expected_regressors
+):
+    df, df_exog, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
+    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True, regressors=regressors)
+    assert sorted(ts.regressors) == sorted(expected_regressors)
+
+
+def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, df_updated_update_column):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    ts.update_columns_from_pandas(df_update=df_update_update_column)
+    pd.testing.assert_frame_equal(ts.df, df_updated_update_column)
+
+
+@pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in")
+@pytest.mark.parametrize(
+    "features, drop_from_exog, df_expected_columns, df_exog_expected_columns",
+    (
+        (
+            ["regressor_2"],
+            False,
+            ["timestamp", "segment", "target", "regressor_1"],
+            ["timestamp", "segment", "regressor_1", "regressor_2"],
+        ),
+        (
+            ["regressor_2"],
+            True,
+            ["timestamp", "segment", "target", "regressor_1"],
+            ["timestamp", "segment", "regressor_1"],
+        ),
+        (
+            ["regressor_2", "out_of_dataset_column"],
+            True,
+            ["timestamp", "segment", "target", "regressor_1"],
+            ["timestamp", "segment", "regressor_1"],
+        ),
+    ),
+)
+def test_drop_features(df_and_regressors, features, drop_from_exog, df_expected_columns, df_exog_expected_columns):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts.drop_features(features=features, drop_from_exog=drop_from_exog)
+    df_columns, df_exog_columns = ts.to_flatten(ts.df).columns, ts.to_flatten(ts.df_exog).columns
+    assert sorted(df_columns) == sorted(df_expected_columns)
+    assert sorted(df_exog_columns) == sorted(df_exog_expected_columns)
+
+
+def test_drop_features_raise_warning_on_unknown_columns(
+    df_and_regressors, features=["regressor_2", "out_of_dataset_column"]
+):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.warns(UserWarning, match="Features {'out_of_dataset_column'} are not present in df!"):
+        ts.drop_features(features=features, drop_from_exog=False)
+
+
+@pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in")
+@pytest.mark.parametrize(
+    "features, expected_regressors",
+    (
+        (["target", "regressor_2"], ["regressor_1"]),
+        (["out_of_dataset_column"], ["regressor_1", "regressor_2"]),
+    ),
+)
+def test_drop_features_update_regressors(df_and_regressors, features, expected_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts.drop_features(features=features, drop_from_exog=False)
+    assert sorted(ts.regressors) == sorted(expected_regressors)

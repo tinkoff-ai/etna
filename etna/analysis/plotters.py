@@ -987,7 +987,6 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     new_ts = TSDataset(df=true_df, freq=ts.freq)
     new_ts.known_future = ts.known_future
     new_ts._regressors = ts.regressors
-    new_ts.transforms = ts.transforms
     new_ts.df_exog = ts.df_exog
     return new_ts
 
@@ -1131,7 +1130,7 @@ def plot_trend(
     if not isinstance(trend_transform, list):
         trend_transform = [trend_transform]
 
-    df_detrend = [transform.fit_transform(df.copy()) for transform in trend_transform]
+    df_detrend = [transform.fit_transform(deepcopy(ts)).to_pandas() for transform in trend_transform]
     labels, linear_coeffs = _get_labels_names(trend_transform, segments)
 
     for i, segment in enumerate(segments):
@@ -1320,7 +1319,7 @@ def plot_imputation(
     _, ax = prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     ts_after = deepcopy(ts)
-    ts_after.fit_transform(transforms=[imputer])
+    imputer.fit_transform(ts_after)
     feature_name = imputer.in_column
 
     for i, segment in enumerate(segments):

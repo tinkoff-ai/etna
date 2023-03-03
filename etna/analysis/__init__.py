@@ -7,8 +7,6 @@ from etna.analysis.eda_utils import cross_corr_plot
 from etna.analysis.eda_utils import distribution_plot
 from etna.analysis.eda_utils import prediction_actual_scatter_plot
 from etna.analysis.eda_utils import qq_plot
-from etna.analysis.eda_utils import sample_acf_plot
-from etna.analysis.eda_utils import sample_pacf_plot
 from etna.analysis.eda_utils import seasonal_plot
 from etna.analysis.eda_utils import stl_plot
 from etna.analysis.feature_relevance.relevance import ModelRelevanceTable
