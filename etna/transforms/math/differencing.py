@@ -16,7 +16,8 @@ from etna.transforms.utils import match_target_quantiles
 class _SingleDifferencingTransform(Transform):
     """Calculate a time series differences of order 1.
 
-    This transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``transform`` and ``inverse_transform`` there is no special treatment of NaNs.
 
     Notes
     -----
@@ -86,6 +87,11 @@ class _SingleDifferencingTransform(Transform):
         Returns
         -------
         result: _SingleDifferencingTransform
+
+        Raises
+        ------
+        ValueError:
+            if NaNs are present inside the segment
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
         fit_df = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
@@ -124,11 +130,8 @@ class _SingleDifferencingTransform(Transform):
         transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
         for current_segment in segments:
             to_transform = transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]]
-            start_idx = to_transform.first_valid_index()
             # make a differentiation
-            transformed.loc[start_idx:, pd.IndexSlice[current_segment, self.in_column]] = to_transform.loc[
-                start_idx:
-            ].diff(periods=self.period)
+            transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]] = to_transform.diff(periods=self.period)
 
         if self.inplace:
             result_df = df.copy()
@@ -188,10 +191,6 @@ class _SingleDifferencingTransform(Transform):
             init_df = init_df[segments]
             to_transform = pd.concat([init_df, to_transform])
 
-            # validate values inside the series to transform
-            if to_transform.isna().sum().sum() > 0:
-                raise ValueError(f"There should be no NaNs inside the segments")
-
             # run reconstruction and save the result
             to_transform = self._make_inv_diff(to_transform)
             result_df.loc[:, pd.IndexSlice[segments, column]] = to_transform
@@ -241,7 +240,8 @@ class _SingleDifferencingTransform(Transform):
 class DifferencingTransform(Transform):
     """Calculate a time series differences.
 
-    This transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``transform`` and ``inverse_transform`` there is no special treatment of NaNs.
 
     Notes
     -----
@@ -334,6 +334,11 @@ class DifferencingTransform(Transform):
         Returns
         -------
         result: DifferencingTransform
+
+        Raises
+        ------
+        ValueError:
+            if NaNs are present inside the segment
         """
         # this is made because transforms of high order may need some columns created by transforms of lower order
         result_df = df.copy()

@@ -466,30 +466,6 @@ def test_full_inverse_transform_inplace_train(period, order, df_nans):
     check_inverse_transform_inplace_train(transform, df_nans)
 
 
-@pytest.mark.parametrize(
-    "transform",
-    [
-        _SingleDifferencingTransform(in_column="target", period=1, inplace=True),
-        DifferencingTransform(in_column="target", period=1, order=1, inplace=True),
-    ],
-)
-def test_general_inverse_transform_inplace_test_fail_nans(transform, df_nans):
-    """Test that differencing transform fails to make inverse_transform on test data if there are NaNs."""
-    ts = TSDataset(df_nans, freq="D")
-    ts_train, ts_test = ts.train_test_split(test_size=20)
-
-    ts_train.fit_transform(transforms=[transform])
-
-    # make predictions by hand only on one segment
-    future_ts = ts_train.make_future(20)
-    future_ts.df.loc[:, pd.IndexSlice["1", "target"]] = np.NaN
-    future_ts.df.loc[:, pd.IndexSlice["2", "target"]] = 2
-
-    # check fail on inverse_transform
-    with pytest.raises(ValueError, match="There should be no NaNs inside the segments"):
-        future_ts.inverse_transform()
-
-
 @pytest.mark.parametrize("period", [1, 7])
 def test_single_inverse_transform_inplace_test(period, df_nans):
     """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data in inplace mode."""
