@@ -223,7 +223,7 @@ def test_named_components_output_format(small_periodic_ts, estimator):
     assert len(components) == horizon
 
 
-@pytest.mark.long_3
+@pytest.mark.long_1
 @pytest.mark.parametrize(
     "estimator,params,components_names",
     (
@@ -309,7 +309,7 @@ def test_arma_w_seasonal_components_not_fitted(small_periodic_ts, estimator):
         segment_model.forecast_components(df=future)
 
 
-@pytest.mark.long_3
+@pytest.mark.long_1
 @pytest.mark.filterwarnings("ignore:.*not fitted.*")
 @pytest.mark.parametrize(
     "estimator",
