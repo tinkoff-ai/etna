@@ -65,7 +65,6 @@ class _SingleDifferencingTransform(Transform):
         self.inplace = inplace
         self.out_column = out_column
 
-        self._fit_segments: Optional[List[str]] = None
         self._train_timestamp: Optional[pd.DatetimeIndex] = None
         self._train_init_dict: Optional[Dict[str, pd.Series]] = None
         self._test_init_df: Optional[pd.DataFrame] = None
@@ -91,8 +90,7 @@ class _SingleDifferencingTransform(Transform):
         segments = sorted(set(df.columns.get_level_values("segment")))
         fit_df = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
 
-        self._train_timestamp = fit_df.index
-        self._train_init_dict = {}
+        train_init_dict = {}
         for current_segment in segments:
             cur_series = fit_df.loc[:, pd.IndexSlice[current_segment, self.in_column]]
             cur_series = cur_series.loc[cur_series.first_valid_index() :]
@@ -100,11 +98,13 @@ class _SingleDifferencingTransform(Transform):
             if cur_series.isna().sum() > 0:
                 raise ValueError(f"There should be no NaNs inside the segments")
 
-            self._train_init_dict[current_segment] = cur_series[: self.period]
+            train_init_dict[current_segment] = cur_series[: self.period]
+
+        self._train_init_dict = train_init_dict
+        self._train_timestamp = fit_df.index
         self._test_init_df = fit_df.iloc[-self.period :, :]
         # make multiindex levels consistent
         self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
-        self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
