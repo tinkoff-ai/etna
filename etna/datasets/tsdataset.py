@@ -1012,6 +1012,11 @@ class TSDataset:
         drop_from_exog:
             * If False, drop features only from df. Features will appear again in df after make_future.
             * If True, drop features from df and df_exog. Features won't appear in df after make_future.
+
+        Raises
+        ------
+        ValueError:
+            If ``features`` list contains target components
         """
         features_contain_target_components = (self.target_components is not None) and (
             len(set(features).intersection(self.target_components)) != 0
@@ -1103,6 +1108,43 @@ class TSDataset:
         )
         ts._target_components = self._target_components
         return ts
+
+    def add_target_components(self, target_components_df: pd.DataFrame):
+        """Add target components into dataset.
+
+        Parameters
+        ----------
+        target_components_df:
+            Dataframe in etna wide format with target components
+
+        Raises
+        ------
+        ValueError:
+            If dataset already contains target components
+        ValueError:
+            If target components names differs between segments
+        ValueError:
+            If components don't sum up to target
+        """
+        if self._target_components is not None:
+            raise ValueError("Dataset already contains target components!")
+
+        components_names = set(target_components_df.columns.get_level_values("feature"))
+        for segment in self.segments:
+            components_names_segment = set(target_components_df[segment].columns.get_level_values("feature"))
+            if components_names != components_names_segment:
+                raise ValueError("Set of target components differs between segments!")
+
+        components_sum = target_components_df.sum(axis=1, level="segment")
+        if not np.array_equal(components_sum.values, self[..., "target"].values):
+            raise ValueError("Components don't sum up to target!")
+
+        self._target_components = sorted(components_names)
+        self.df = (
+            pd.concat((self.df, target_components_df), axis=1)
+            .loc[self.df.index]
+            .sort_index(axis=1, level=("segment", "feature"))
+        )
 
     def get_target_components(self) -> Optional[pd.DataFrame]:
         """Get DataFrame with target components.

@@ -171,11 +171,48 @@ def df_segments_int():
 
 
 @pytest.fixture
+def target_components_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 1, "target_component_b": 2, "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 3, "target_component_b": 4, "segment": 2})
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def inconsistent_target_components_names_df(target_components_df):
+    target_components_df = target_components_df.drop(columns=[("2", "target_component_a")])
+    return target_components_df
+
+
+@pytest.fixture
+def inconsistent_target_components_values_df(target_components_df):
+    target_components_df.loc[10, pd.IndexSlice["1", "target_component_a"]] = 100
+    return target_components_df
+
+
+@pytest.fixture
+def ts_without_target_components():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 7, "segment": 2})
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+    return ts
+
+
+@pytest.fixture
 def ts_with_target_components():
     timestamp = pd.date_range("2021-01-01", "2021-01-15")
-    df = pd.DataFrame(
+    df_1 = pd.DataFrame(
         {"timestamp": timestamp, "target": 3, "target_component_a": 1, "target_component_b": 2, "segment": 1}
     )
+    df_2 = pd.DataFrame(
+        {"timestamp": timestamp, "target": 7, "target_component_a": 3, "target_component_b": 4, "segment": 2}
+    )
+    df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
     ts._target_components = ["target_component_a", "target_component_b"]
@@ -988,3 +1025,31 @@ def test_get_target_components(
     expected_target_components_df = ts_with_target_components.to_pandas(features=expected_components)
     target_components_df = ts_with_target_components.get_target_components()
     pd.testing.assert_frame_equal(target_components_df, expected_target_components_df)
+
+
+def test_add_target_components_throw_error_adding_components_second_time(
+    ts_with_target_components, target_components_df
+):
+    with pytest.raises(ValueError, match="Dataset already contains target components!"):
+        ts_with_target_components.add_target_components(target_components_df=target_components_df)
+
+
+def test_add_target_components_throw_error_inconsistent_components_names(
+    ts_without_target_components, inconsistent_target_components_names_df
+):
+    with pytest.raises(ValueError, match="Set of target components differs between segments!"):
+        ts_without_target_components.add_target_components(target_components_df=inconsistent_target_components_names_df)
+
+
+def test_add_target_components_throw_error_inconsistent_components_values(
+    ts_without_target_components, inconsistent_target_components_values_df
+):
+    with pytest.raises(ValueError, match="Components don't sum up to target!"):
+        ts_without_target_components.add_target_components(
+            target_components_df=inconsistent_target_components_values_df
+        )
+
+
+def test_add_target_components(ts_without_target_components, ts_with_target_components, target_components_df):
+    ts_without_target_components.add_target_components(target_components_df=target_components_df)
+    pd.testing.assert_frame_equal(ts_with_target_components.to_pandas(), ts_with_target_components.to_pandas())
