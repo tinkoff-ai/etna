@@ -645,6 +645,7 @@ class TestInverseTransformTrainNewSegments:
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False), "regular_ts"),
@@ -699,23 +700,6 @@ class TestInverseTransformTrainNewSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_train_new_segments(
             ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # math
-            # TODO: error should be understandable, not like now
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
-        ],
-    )
-    def test_inverse_transform_train_new_segments_failed_error(
-        self, transform, dataset_name, expected_changes, request
-    ):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
         )
 
 
@@ -990,6 +974,8 @@ class TestInverseTransformFutureNewSegments:
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
+            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=False), "positive_ts"),
             (BoxCoxTransform(in_column="target", mode="per-segment", inplace=True), "positive_ts"),
             (BoxCoxTransform(in_column="positive", mode="per-segment", inplace=True), "ts_with_exog"),
@@ -1080,10 +1066,6 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {"create": {"year", "month", "weekday"}},
             ),
-            # math
-            # TODO: error should be understandable, not like now
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
-            (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
         ],
     )
     def test_inverse_transform_future_new_segments_failed_error(

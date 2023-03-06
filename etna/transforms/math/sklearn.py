@@ -1,4 +1,3 @@
-import reprlib
 import warnings
 from copy import deepcopy
 from typing import Dict
@@ -14,6 +13,7 @@ from sklearn.base import TransformerMixin
 from etna.core import StringEnumWithRepr
 from etna.datasets import set_columns_wide
 from etna.transforms.base import Transform
+from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -231,12 +231,8 @@ class SklearnTransform(Transform):
 
     def _preprocess_per_segment(self, df: pd.DataFrame) -> np.ndarray:
         self._fit_segments = cast(List[str], self._fit_segments)
-        transform_segments = df.columns.get_level_values("segment").unique()
-        new_segments = set(transform_segments) - set(self._fit_segments)
-        if len(new_segments) > 0:
-            raise NotImplementedError(
-                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
-            )
+        transform_segments = df.columns.get_level_values("segment").unique().tolist()
+        check_new_segments(transform_segments=transform_segments, fit_segments=self._fit_segments)
 
         df = df.loc[:, pd.IndexSlice[:, self.in_column]]
         to_add_segments = set(self._fit_segments) - set(transform_segments)

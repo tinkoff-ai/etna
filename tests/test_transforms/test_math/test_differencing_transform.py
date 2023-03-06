@@ -1,4 +1,5 @@
 from typing import List
+from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -37,6 +38,14 @@ def df_nans() -> pd.DataFrame:
     df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(df)
     return df
+
+
+@pytest.fixture
+def df_segments_split(df_nans) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Create a pair of DataFrames with different segments."""
+    train_df = df_nans.loc[:, pd.IndexSlice["1", :]]
+    test_df = df_nans.loc[:, pd.IndexSlice["2", :]]
+    return train_df, test_df
 
 
 @pytest.fixture
@@ -82,10 +91,16 @@ def check_interface_transform_autogenerate_column_regressor(
 
 
 def check_transform(
-    transform: GeneralDifferencingTransform, period: int, order: int, out_column: str, df: pd.DataFrame
+    transform: GeneralDifferencingTransform,
+    period: int,
+    order: int,
+    out_column: str,
+    fit_df: pd.DataFrame,
+    df: pd.DataFrame,
 ):
     """Check that differencing transform generates correct values in transform."""
-    transformed_df = transform.fit_transform(df)
+    transform.fit(fit_df)
+    transformed_df = transform.transform(df)
 
     for segment in df.columns.get_level_values("segment").unique():
         series_init = df.loc[:, pd.IndexSlice[segment, "target"]]
@@ -102,9 +117,12 @@ def check_transform(
         assert np.all(series_init == series_transformed)
 
 
-def check_inverse_transform_not_inplace(transform: GeneralDifferencingTransform, df: pd.DataFrame):
+def check_inverse_transform_not_inplace(
+    transform: GeneralDifferencingTransform, train_df: pd.DataFrame, test_df: pd.DataFrame
+):
     """Check that differencing transform does nothing during inverse_transform in non-inplace mode."""
-    transformed_df = transform.fit_transform(df)
+    transform.fit_transform(train_df)
+    transformed_df = transform.transform(test_df)
     inverse_transformed_df = transform.inverse_transform(transformed_df)
     assert transformed_df.equals(inverse_transformed_df)
 
@@ -257,7 +275,7 @@ def test_general_interface_transform_inplace(transform, df_nans):
         DifferencingTransform(in_column="target", period=1, order=1, inplace=False, out_column="diff"),
     ],
 )
-def test_general_transform_not_inplace(transform, df_nans):
+def test_general_interface_transform_not_inplace(transform, df_nans):
     """Test that differencing transform doesn't change in_column in transform in non-inplace mode."""
     transformed_df = transform.fit_transform(df_nans)
 
@@ -281,17 +299,31 @@ def test_general_fit_fail_nans(transform, df_nans):
         transform.fit(df_nans)
 
 
-@pytest.mark.parametrize(
-    "transform",
-    [
-        _SingleDifferencingTransform(in_column="target", period=1, inplace=False, out_column="diff"),
-        DifferencingTransform(in_column="target", period=1, order=1, inplace=False, out_column="diff"),
-    ],
-)
-def test_general_transform_fail_not_fitted(transform, df_nans):
-    """Test that differencing transform fails to make transform before fitting."""
-    with pytest.raises(AttributeError, match="Transform is not fitted"):
+@pytest.mark.parametrize("inplace, out_column", [(False, "diff"), (True, "target")])
+def test_full_transform_fail_not_fitted(inplace, out_column, df_nans):
+    """Test that DifferencingTransform transform fails to make transform before fitting."""
+    transform = DifferencingTransform(in_column="target", inplace=inplace, out_column=out_column)
+    with pytest.raises(ValueError, match="Transform is not fitted"):
         _ = transform.transform(df_nans)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_transform_inplace_new_segments(period, df_segments_split):
+    """Test that _SingleDifferencingTransform generates correct values in transform on new segments in inplace mode."""
+    train_df, test_df = df_segments_split
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
+    check_transform(transform, period, 1, "target", train_df, test_df)
+
+
+def test_full_transform_inplace_fail_new_segments(df_segments_split):
+    """Test that DifferencingTransform transform fails to make transform if new segments are present in inplace mode."""
+    train_df, test_df = df_segments_split
+    transform = DifferencingTransform(in_column="target", period=1, order=1, inplace=True)
+    transform.fit(train_df)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.transform(test_df)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -299,7 +331,7 @@ def test_general_transform_fail_not_fitted(transform, df_nans):
 def test_single_transform(period, inplace, out_column, df_nans):
     """Test that _SingleDifferencingTransform generates correct values in transform."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=inplace, out_column=out_column)
-    check_transform(transform, period, 1, out_column, df_nans)
+    check_transform(transform, period, 1, out_column, df_nans, df_nans)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -310,20 +342,47 @@ def test_full_transform(period, order, inplace, out_column, df_nans):
     transform = DifferencingTransform(
         in_column="target", period=period, order=order, inplace=inplace, out_column=out_column
     )
-    check_transform(transform, period, order, out_column, df_nans)
+    check_transform(transform, period, order, out_column, df_nans, df_nans)
 
 
-@pytest.mark.parametrize(
-    "transform",
-    [
-        _SingleDifferencingTransform(in_column="target", period=1, inplace=True),
-        DifferencingTransform(in_column="target", period=1, order=1, inplace=True),
-    ],
-)
-def test_general_inverse_transform_fail_not_fitted(transform, df_nans):
-    """Test that differencing transform fails to make inverse_transform before fitting."""
-    with pytest.raises(AttributeError, match="Transform is not fitted"):
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_transform_not_inplace_new_segments(period, df_segments_split):
+    """Test that _SingleDifferencingTransform generates correct values in transform on new segments in non-inplace mode."""
+    train_df, test_df = df_segments_split
+    out_column = "diff"
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False, out_column=out_column)
+    check_transform(transform, period, 1, out_column, train_df, test_df)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+@pytest.mark.parametrize("order", [1, 2])
+def test_full_transform_not_inplace_new_segments(period, order, df_segments_split):
+    """Test that DifferencingTransform generates correct values in transform on new segments in non-inplace mode."""
+    train_df, test_df = df_segments_split
+    out_column = "diff"
+    transform = DifferencingTransform(
+        in_column="target", period=period, order=order, inplace=False, out_column=out_column
+    )
+    check_transform(transform, period, order, out_column, train_df, test_df)
+
+
+@pytest.mark.parametrize("inplace, out_column", [(False, "diff"), (True, "target")])
+def test_full_inverse_transform_fail_not_fitted(inplace, out_column, df_nans):
+    """Test that DifferencingTransform fails to make inverse_transform before fitting."""
+    transform = DifferencingTransform(in_column="target", inplace=inplace, out_column=out_column)
+    with pytest.raises(ValueError, match="Transform is not fitted"):
         _ = transform.inverse_transform(df_nans)
+
+
+def test_full_inverse_transform_inplace_fail_new_segments(df_segments_split):
+    """Test that DifferencingTransform fails to make inverse_transform if new segments are present in inplace mode."""
+    train_df, test_df = df_segments_split
+    transform = DifferencingTransform(in_column="target", period=1, order=1, inplace=True)
+    transform.fit(train_df)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.inverse_transform(test_df)
 
 
 @pytest.mark.parametrize(
@@ -364,7 +423,7 @@ def test_general_inverse_transform_fail_test_not_right_after_train(transform, df
 def test_single_inverse_transform_not_inplace(period, df_nans):
     """Test that _SingleDifferencingTransform does nothing during inverse_transform in non-inplace mode."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False, out_column="diff")
-    check_inverse_transform_not_inplace(transform, df_nans)
+    check_inverse_transform_not_inplace(transform, df_nans, df_nans)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -372,7 +431,24 @@ def test_single_inverse_transform_not_inplace(period, df_nans):
 def test_full_inverse_transform_not_inplace(period, order, df_nans):
     """Test that DifferencingTransform does nothing during inverse_transform in non-inplace mode."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=False, out_column="diff")
-    check_inverse_transform_not_inplace(transform, df_nans)
+    check_inverse_transform_not_inplace(transform, df_nans, df_nans)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_inverse_transform_not_inplace_new_segments(period, df_segments_split):
+    """Test that _SingleDifferencingTransform does nothing during inverse_transform on new segments in non-inplace mode."""
+    train_df, test_df = df_segments_split
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False, out_column="diff")
+    check_inverse_transform_not_inplace(transform, train_df, test_df)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+@pytest.mark.parametrize("order", [1, 2])
+def test_full_inverse_transform_not_inplace_new_segments(period, order, df_segments_split):
+    """Test that DifferencingTransform does nothing during inverse_transform on new segments in non-inplace mode."""
+    train_df, test_df = df_segments_split
+    transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=False, out_column="diff")
+    check_inverse_transform_not_inplace(transform, train_df, test_df)
 
 
 @pytest.mark.parametrize("period", [1, 7])

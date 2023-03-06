@@ -3,11 +3,13 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
 from etna.transforms.base import Transform
+from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -88,8 +90,7 @@ class _SingleDifferencingTransform(Transform):
         segments = sorted(set(df.columns.get_level_values("segment")))
         fit_df = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
 
-        self._train_timestamp = fit_df.index
-        self._train_init_dict = {}
+        train_init_dict = {}
         for current_segment in segments:
             cur_series = fit_df.loc[:, pd.IndexSlice[current_segment, self.in_column]]
             cur_series = cur_series.loc[cur_series.first_valid_index() :]
@@ -97,7 +98,10 @@ class _SingleDifferencingTransform(Transform):
             if cur_series.isna().sum() > 0:
                 raise ValueError(f"There should be no NaNs inside the segments")
 
-            self._train_init_dict[current_segment] = cur_series[: self.period]
+            train_init_dict[current_segment] = cur_series[: self.period]
+
+        self._train_init_dict = train_init_dict
+        self._train_timestamp = fit_df.index
         self._test_init_df = fit_df.iloc[-self.period :, :]
         # make multiindex levels consistent
         self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
@@ -113,12 +117,9 @@ class _SingleDifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
         """
-        if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise AttributeError("Transform is not fitted")
-
         segments = sorted(set(df.columns.get_level_values("segment")))
         transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
         for current_segment in segments:
@@ -207,11 +208,11 @@ class _SingleDifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             transformed DataFrame.
         """
-        if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise AttributeError("Transform is not fitted")
+        # we assume this to be fitted
+        self._train_timestamp = cast(pd.DatetimeIndex, self._train_timestamp)
 
         if not self.inplace:
             return df
@@ -312,6 +313,7 @@ class DifferencingTransform(Transform):
             self._differencing_transforms.append(
                 _SingleDifferencingTransform(in_column=result_out_column, period=self.period, inplace=True)
             )
+        self._fit_segments: Optional[List[str]] = None
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -337,7 +339,12 @@ class DifferencingTransform(Transform):
         result_df = df.copy()
         for transform in self._differencing_transforms:
             result_df = transform.fit_transform(result_df)
+        self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
+
+    def _check_is_fitted(self):
+        if self._fit_segments is None:
+            raise ValueError("Transform is not fitted!")
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Make a differencing transformation.
@@ -349,9 +356,21 @@ class DifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
         """
+        self._check_is_fitted()
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        if self.inplace:
+            check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
+
         result_df = df.copy()
         for transform in self._differencing_transforms:
             result_df = transform.transform(result_df)
@@ -367,11 +386,22 @@ class DifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
         """
+        self._check_is_fitted()
         if not self.inplace:
             return df
+
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
         result_df = df.copy()
         for transform in self._differencing_transforms[::-1]:
