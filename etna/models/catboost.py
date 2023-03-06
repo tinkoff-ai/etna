@@ -39,8 +39,8 @@ class _CatBoostAdapter(BaseAdapter):
     def _prepare_float_category_columns(self, df: pd.DataFrame):
         df[self._float_category_columns] = df[self._float_category_columns].astype(str).astype("category")
 
-    def _prepare_train_pool(self, features: pd.DataFrame, target: np.ndarray) -> Pool:
-        """Prepare training pool for CatBoost model."""
+    def _prepare_pool(self, features: pd.DataFrame, target: np.ndarray) -> Pool:
+        """Prepare pool for CatBoost model."""
         columns_dtypes = features.dtypes
         category_columns_dtypes = columns_dtypes[columns_dtypes == "category"]
         self._categorical = category_columns_dtypes.index.tolist()
@@ -77,7 +77,7 @@ class _CatBoostAdapter(BaseAdapter):
         """
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
-        train_pool = self._prepare_train_pool(features, target.values)
+        train_pool = self._prepare_pool(features, target.values)
         self.model.fit(train_pool)
         return self
 
@@ -142,7 +142,7 @@ class _CatBoostAdapter(BaseAdapter):
         features = df.drop(columns=["timestamp", "target"])
 
         prediction = self.model.predict(features)
-        pool = self._prepare_train_pool(features, prediction)
+        pool = self._prepare_pool(features, prediction)
         shap_values = self.model.get_feature_importance(pool, type="ShapValues")
 
         # encapsulate expected contribution into components
