@@ -481,3 +481,11 @@ def test_get_level_dataset_lower_level_error(simple_hierarchical_ts):
 def test_get_level_dataset_with_quantiles(product_level_constant_forecast_w_quantiles, target_level, answer):
     forecast = product_level_constant_forecast_w_quantiles
     np.testing.assert_array_almost_equal(forecast.get_level_dataset(target_level=target_level).df.values, answer)
+
+
+def test_get_level_dataset_pass_target_components_to_output(simple_hierarchical_ts):
+    simple_hierarchical_ts._target_components = ["target_component_a", "target_component_b"]
+    simple_hierarchical_ts_aggregated = simple_hierarchical_ts.get_level_dataset(target_level="market")
+    assert sorted(simple_hierarchical_ts_aggregated.target_components) == sorted(
+        simple_hierarchical_ts.target_components
+    )
