@@ -55,7 +55,11 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._forecast(ts=ts)
+        forecast = self._forecast(ts=ts)
+        if return_components:
+            forecast_components_df = self._forecast_components(ts=ts)
+            forecast.add_target_components(target_components_df=forecast_components_df)
+        return forecast
 
     def predict(self, ts: TSDataset, return_components: bool = False) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
@@ -72,7 +76,11 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._predict(ts=ts)
+        prediction = self._predict(ts=ts)
+        if return_components:
+            prediction_components_df = self._predict_components(ts=ts)
+            prediction.add_target_components(target_components_df=prediction_components_df)
+        return prediction
 
 
 class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
@@ -96,7 +104,11 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._forecast(ts=ts, prediction_size=prediction_size)
+        forecast = self._forecast(ts=ts, prediction_size=prediction_size)
+        if return_components:
+            forecast_components_df = self._forecast_components(ts=ts)
+            forecast.add_target_components(target_components_df=forecast_components_df)
+        return forecast
 
     def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
@@ -116,7 +128,11 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._predict(ts=ts, prediction_size=prediction_size)
+        prediction = self._predict(ts=ts, prediction_size=prediction_size)
+        if return_components:
+            prediction_components_df = self._predict_components(ts=ts)
+            prediction.add_target_components(target_components_df=prediction_components_df)
+        return prediction
 
 
 class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
@@ -147,7 +163,11 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        forecast = self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        if return_components:
+            forecast_components_df = self._forecast_components(ts=ts)
+            forecast.add_target_components(target_components_df=forecast_components_df)
+        return forecast
 
     def predict(
         self,
@@ -174,7 +194,11 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        prediction = self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        if return_components:
+            prediction_components_df = self._predict_components(ts=ts)
+            prediction.add_target_components(target_components_df=prediction_components_df)
+        return prediction
 
 
 class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
@@ -209,9 +233,13 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._forecast(
+        forecast = self._forecast(
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
+        if return_components:
+            forecast_components_df = self._forecast_components(ts=ts)
+            forecast.add_target_components(target_components_df=forecast_components_df)
+        return forecast
 
     def predict(
         self,
@@ -242,9 +270,13 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        return self._predict(
+        prediction = self._predict(
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
+        if return_components:
+            prediction_components_df = self._predict_components(ts=ts)
+            prediction.add_target_components(target_components_df=prediction_components_df)
+        return prediction
 
 
 class PerSegmentModelMixin(ModelForecastingMixin):
