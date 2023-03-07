@@ -311,6 +311,7 @@ class TestInverseTransformFutureSubsetSegments:
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (DifferencingTransform(in_column="target", inplace=False), "regular_ts"),
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
             (DifferencingTransform(in_column="positive", inplace=True), "ts_with_exog"),
             (MADTransform(in_column="target", window=14), "regular_ts"),
             (MaxTransform(in_column="target", window=14), "regular_ts"),
@@ -386,17 +387,6 @@ class TestInverseTransformFutureSubsetSegments:
         ],
     )
     def test_inverse_transform_future_subset_segments(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_future_subset_segments(ts, transform, segments=["segment_2"])
-
-    @to_be_fixed(ValueError, match="There should be no NaNs inside the segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts"),
-        ],
-    )
-    def test_inverse_transform_future_subset_difference_fail(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_future_subset_segments(ts, transform, segments=["segment_2"])
 
