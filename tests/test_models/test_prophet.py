@@ -201,3 +201,16 @@ def test_setstate_fitted(example_tsds):
 def test_save_load(example_tsds):
     model = ProphetModel()
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+@pytest.mark.parametrize(
+    "custom_seasonality",
+    (
+        [{"name": "s1", "period": 14, "fourier_order": 3}],
+        [{"name": "s1", "period": 14, "fourier_order": 3}, {"name": "s2", "period": 10, "fourier_order": 3}],
+    ),
+)
+def test_custom_seasonality(custom_seasonality):
+    model = ProphetModel(additional_seasonality_params=custom_seasonality)
+    for seasonality in custom_seasonality:
+        assert seasonality["name"] in model._base_model.model.seasonalities
