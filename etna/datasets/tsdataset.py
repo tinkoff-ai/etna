@@ -163,6 +163,8 @@ class TSDataset:
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(self.df)
 
+        self._target_components: Optional[List[str]] = None
+
     def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
         """Return the level of the passed dataframe in hierarchical structure."""
         if self.hierarchical_structure is None:
@@ -329,6 +331,7 @@ class TSDataset:
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
         tsdataset_slice.df_exog = self.df_exog
+        tsdataset_slice._target_components = self._target_components
         return tsdataset_slice
 
     @staticmethod
@@ -463,6 +466,11 @@ class TSDataset:
         ['regressor_1']
         """
         return self._regressors
+
+    @property
+    def target_components(self) -> Optional[List[str]]:
+        """Get list of target components. Components sum up to target. If there are no components, None is returned."""
+        return self._target_components
 
     def plot(
         self,
@@ -935,6 +943,7 @@ class TSDataset:
         )
         train.raw_df = train_raw_df
         train._regressors = self.regressors
+        train._target_components = self.target_components
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
@@ -947,7 +956,7 @@ class TSDataset:
         )
         test.raw_df = test_raw_df
         test._regressors = self.regressors
-
+        test._target_components = self.target_components
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
@@ -1003,7 +1012,18 @@ class TSDataset:
         drop_from_exog:
             * If False, drop features only from df. Features will appear again in df after make_future.
             * If True, drop features from df and df_exog. Features won't appear in df after make_future.
+
+        Raises
+        ------
+        ValueError:
+            If ``features`` list contains target components
         """
+        features_contain_target_components = (self.target_components is not None) and (
+            len(set(features).intersection(self.target_components)) != 0
+        )
+        if features_contain_target_components:
+            raise ValueError("Target components can't be dropped from the dataset!")
+
         dfs = [("df", self.df)]
         if drop_from_exog:
             dfs.append(("df_exog", self.df_exog))
@@ -1079,13 +1099,66 @@ class TSDataset:
             target_names = tuple(get_target_with_quantiles(columns=self.columns))
             target_level_df = self[:, current_level_segments, target_names]
 
-        return TSDataset(
+        ts = TSDataset(
             df=target_level_df,
             freq=self.freq,
             df_exog=self.df_exog,
             known_future=self.known_future,
             hierarchical_structure=self.hierarchical_structure,
         )
+        ts._target_components = self._target_components
+        return ts
+
+    def add_target_components(self, target_components_df: pd.DataFrame):
+        """Add target components into dataset.
+
+        Parameters
+        ----------
+        target_components_df:
+            Dataframe in etna wide format with target components
+
+        Raises
+        ------
+        ValueError:
+            If dataset already contains target components
+        ValueError:
+            If target components names differs between segments
+        ValueError:
+            If components don't sum up to target
+        """
+        if self._target_components is not None:
+            raise ValueError("Dataset already contains target components!")
+
+        components_names = sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
+        for segment in self.segments:
+            components_names_segment = sorted(target_components_df[segment].columns.get_level_values("feature"))
+            if components_names != components_names_segment:
+                raise ValueError(
+                    f"Set of target components differs between segments '{self.segments[0]}' and '{segment}'!"
+                )
+
+        components_sum = target_components_df.sum(axis=1, level="segment")
+        if not np.array_equal(components_sum.values, self[..., "target"].values):
+            raise ValueError("Components don't sum up to target!")
+
+        self._target_components = components_names
+        self.df = (
+            pd.concat((self.df, target_components_df), axis=1)
+            .loc[self.df.index]
+            .sort_index(axis=1, level=("segment", "feature"))
+        )
+
+    def get_target_components(self) -> Optional[pd.DataFrame]:
+        """Get DataFrame with target components.
+
+        Returns
+        -------
+        :
+            Dataframe with target components
+        """
+        if self._target_components is None:
+            return None
+        return self.to_pandas(features=self._target_components)
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
