@@ -1133,7 +1133,9 @@ class TSDataset:
         for segment in self.segments:
             components_names_segment = sorted(target_components_df[segment].columns.get_level_values("feature"))
             if components_names != components_names_segment:
-                raise ValueError("Set of target components differs between segments!")
+                raise ValueError(
+                    f"Set of target components differs between segments '{self.segments[0]}' and '{segment}'!"
+                )
 
         components_sum = target_components_df.sum(axis=1, level="segment")
         if not np.array_equal(components_sum.values, self[..., "target"].values):

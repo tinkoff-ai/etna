@@ -1050,7 +1050,7 @@ def test_add_target_components_throw_error_inconsistent_components_names(
     ts_without_target_components, inconsistent_target_components_names_fixture, request
 ):
     inconsistent_target_components_names_df = request.getfixturevalue(inconsistent_target_components_names_fixture)
-    with pytest.raises(ValueError, match="Set of target components differs between segments!"):
+    with pytest.raises(ValueError, match="Set of target components differs between segments '1' and '2'!"):
         ts_without_target_components.add_target_components(target_components_df=inconsistent_target_components_names_df)
 
 
