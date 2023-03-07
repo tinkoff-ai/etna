@@ -1,6 +1,7 @@
 import json
 import pathlib
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 from zipfile import ZipFile
 
@@ -8,12 +9,17 @@ import dill
 import pytest
 
 from etna import SETTINGS
+from etna.datasets import TSDataset
 
 if SETTINGS.torch_required:
     import torch
 
 from etna.models.mixins import MultiSegmentModelMixin
+from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
 from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PredictionIntervalContextRequiredModelMixin
 from etna.models.mixins import SaveNNMixin
 
 
@@ -124,3 +130,97 @@ def test_save_mixin_load_warning(get_version_mock, save_version, load_version, t
     ):
         get_version_mock.return_value = load_version
         _ = DummyNN.load(path)
+
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (PredictionIntervalContextIgnorantModelMixin, {}),
+        (NonPredictionIntervalContextIgnorantModelMixin, {}),
+        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_calls_forecast_components_in_forecast(mixin_constructor, call_params):
+    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
+        ts = Mock()
+        forecast_ts = Mock(spec=TSDataset)
+        target_components_df = Mock()
+        mixin = mixin_constructor()
+        mixin._forecast = Mock(return_value=forecast_ts)
+        mixin._forecast_components = Mock(return_value=target_components_df)
+
+        _ = mixin.forecast(ts=ts, return_components=True, **call_params)
+
+        mixin._forecast_components.assert_called_with(ts=ts)
+        forecast_ts.add_target_components.assert_called_with(target_components_df=target_components_df)
+
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (PredictionIntervalContextIgnorantModelMixin, {}),
+        (NonPredictionIntervalContextIgnorantModelMixin, {}),
+        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_not_calls_forecast_components_in_forecast(mixin_constructor, call_params):
+    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
+        ts = Mock()
+        forecast_ts = Mock(spec=TSDataset)
+        target_components_df = Mock()
+        mixin = mixin_constructor()
+        mixin._forecast = Mock(return_value=forecast_ts)
+        mixin._forecast_components = Mock(return_value=target_components_df)
+
+        _ = mixin.forecast(ts=ts, return_components=False, **call_params)
+
+        mixin._forecast_components.assert_not_called()
+        forecast_ts.add_target_components.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (PredictionIntervalContextIgnorantModelMixin, {}),
+        (NonPredictionIntervalContextIgnorantModelMixin, {}),
+        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_calls_predict_components_in_predict(mixin_constructor, call_params):
+    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
+        ts = Mock()
+        predict_ts = Mock(spec=TSDataset)
+        target_components_df = Mock()
+        mixin = mixin_constructor()
+        mixin._predict = Mock(return_value=predict_ts)
+        mixin._predict_components = Mock(return_value=target_components_df)
+        _ = mixin.predict(ts=ts, return_components=True, **call_params)
+
+        mixin._predict_components.assert_called_with(ts=ts)
+        predict_ts.add_target_components.assert_called_with(target_components_df=target_components_df)
+
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (PredictionIntervalContextIgnorantModelMixin, {}),
+        (NonPredictionIntervalContextIgnorantModelMixin, {}),
+        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_not_calls_predict_components_in_predict(mixin_constructor, call_params):
+    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
+        ts = Mock()
+        predict_ts = Mock(spec=TSDataset)
+        target_components_df = Mock()
+        mixin = mixin_constructor()
+        mixin._predict = Mock(return_value=predict_ts)
+        mixin._predict_components = Mock(return_value=target_components_df)
+        _ = mixin.predict(ts=ts, return_components=False, **call_params)
+
+        mixin._predict_components.assert_not_called()
+        predict_ts.add_target_components.assert_not_called()
