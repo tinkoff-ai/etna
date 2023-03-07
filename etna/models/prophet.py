@@ -90,7 +90,7 @@ class _ProphetAdapter(BaseAdapter):
         )
 
         for seasonality_params in self.additional_seasonality_params:
-            self.model.add_seasonality(**seasonality_params)
+            model.add_seasonality(**seasonality_params)
 
         return model
 
