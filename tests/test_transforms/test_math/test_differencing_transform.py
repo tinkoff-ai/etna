@@ -41,6 +41,18 @@ def df_nans() -> pd.DataFrame:
 
 
 @pytest.fixture
+def df_nans_middle() -> pd.DataFrame:
+    """Create DataFrame with nans in the middle of the segment."""
+    timestamp = pd.date_range("2021-01-01", "2021-04-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": np.arange(timestamp.shape[0]), "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": np.arange(timestamp.shape[0]) * 2, "segment": "2"})
+    df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+    df.iloc[5:10, 0] = np.NaN
+    return df
+
+
+@pytest.fixture
 def df_segments_split(df_nans) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Create a pair of DataFrames with different segments."""
     train_df = df_nans.loc[:, pd.IndexSlice["1", :]]
@@ -106,15 +118,10 @@ def check_transform(
         series_init = df.loc[:, pd.IndexSlice[segment, "target"]]
         series_transformed = transformed_df.loc[:, pd.IndexSlice[segment, out_column]]
 
-        series_init = series_init.loc[series_init.first_valid_index() :]
-        series_transformed = series_transformed.loc[series_transformed.first_valid_index() :]
-
-        assert series_init.shape[0] == series_transformed.shape[0] + order * period
-
         for _ in range(order):
-            series_init = series_init.diff(periods=period).iloc[period:]
+            series_init = series_init.diff(periods=period)
 
-        assert np.all(series_init == series_transformed)
+        assert series_init.equals(series_transformed)
 
 
 def check_inverse_transform_not_inplace(
@@ -134,10 +141,10 @@ def check_inverse_transform_inplace_train(transform: GeneralDifferencingTransfor
     assert inverse_transformed_df.equals(df)
 
 
-def check_inverse_transform_inplace_test(
+def check_inverse_transform_inplace_filled_test(
     transform: GeneralDifferencingTransform, period: int, order: int, df: pd.DataFrame
 ):
-    """Check that differencing transform correctly makes inverse_transform on test data in inplace mode."""
+    """Check that differencing transform correctly makes inverse_transform on filled test data in inplace mode."""
     ts = TSDataset(df, freq="D")
     ts_train, ts_test = ts.train_test_split(test_size=20)
     ts_train.fit_transform(transforms=[transform])
@@ -156,6 +163,19 @@ def check_inverse_transform_inplace_test(
     # check values from inverse_transform
     future_ts.inverse_transform()
     assert np.all(future_ts.to_pandas() == ts_test.to_pandas())
+
+
+def check_inverse_transform_inplace_unfilled_test(transform: GeneralDifferencingTransform, df: pd.DataFrame):
+    """Check that differencing transform correctly makes inverse_transform on unfilled test data in inplace mode."""
+    ts = TSDataset(df, freq="D")
+    ts_train, ts_test = ts.train_test_split(test_size=20)
+    ts_train.fit_transform(transforms=[transform])
+
+    future_ts = ts_train.make_future(20)
+
+    # check values from inverse_transform
+    future_ts.inverse_transform()
+    assert future_ts.to_pandas().isna().all().all()
 
 
 def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencingTransform, df: pd.DataFrame):
@@ -346,6 +366,25 @@ def test_full_transform(period, order, inplace, out_column, df_nans):
 
 
 @pytest.mark.parametrize("period", [1, 7])
+@pytest.mark.parametrize("inplace, out_column", [(False, "diff"), (True, "target")])
+def test_single_transform_nans_middle(period, inplace, out_column, df_nans, df_nans_middle):
+    """Test that _SingleDifferencingTransform generates correct values in transform with NaNs in the middle."""
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=inplace, out_column=out_column)
+    check_transform(transform, period, 1, out_column, df_nans, df_nans_middle)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("inplace, out_column", [(False, "diff"), (True, "target")])
+def test_full_transform_nans_middle(period, order, inplace, out_column, df_nans, df_nans_middle):
+    """Test that DifferencingTransform generates correct values in transform with NaNs in the middle."""
+    transform = DifferencingTransform(
+        in_column="target", period=period, order=order, inplace=inplace, out_column=out_column
+    )
+    check_transform(transform, period, order, out_column, df_nans, df_nans_middle)
+
+
+@pytest.mark.parametrize("period", [1, 7])
 def test_single_transform_not_inplace_new_segments(period, df_segments_split):
     """Test that _SingleDifferencingTransform generates correct values in transform on new segments in non-inplace mode."""
     train_df, test_df = df_segments_split
@@ -467,18 +506,33 @@ def test_full_inverse_transform_inplace_train(period, order, df_nans):
 
 
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_inverse_transform_inplace_test(period, df_nans):
-    """Test that _SingleDifferencingTransform correctly makes inverse_transform on test data in inplace mode."""
+def test_single_inverse_transform_inplace_filled_test(period, df_nans):
+    """Test that _SingleDifferencingTransform correctly makes inverse_transform on filled test data in inplace mode."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_inverse_transform_inplace_test(transform, period, 1, df_nans)
+    check_inverse_transform_inplace_filled_test(transform, period, 1, df_nans)
 
 
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
 def test_full_inverse_transform_inplace_test(period, order, df_nans):
-    """Test that DifferencingTransform correctly makes inverse_transform on test data in inplace mode."""
+    """Test that DifferencingTransform correctly makes inverse_transform on filled test data in inplace mode."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
-    check_inverse_transform_inplace_test(transform, period, order, df_nans)
+    check_inverse_transform_inplace_filled_test(transform, period, order, df_nans)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+def test_single_inverse_transform_inplace_test(period, df_nans):
+    """Test that _SingleDifferencingTransform correctly makes inverse_transform on unfilled test data in inplace mode."""
+    transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
+    check_inverse_transform_inplace_unfilled_test(transform, df_nans)
+
+
+@pytest.mark.parametrize("period", [1, 7])
+@pytest.mark.parametrize("order", [1, 2])
+def test_full_inverse_transform_inplace_test(period, order, df_nans):
+    """Test that DifferencingTransform correctly makes inverse_transform on unfilled test data in inplace mode."""
+    transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
+    check_inverse_transform_inplace_unfilled_test(transform, df_nans)
 
 
 @pytest.mark.parametrize("period", [1, 7])

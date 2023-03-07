@@ -209,6 +209,13 @@ class _SingleDifferencingTransform(Transform):
         -------
         result:
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            if inverse transform is applied not to full train nor to test that goes after train
+        ValueError:
+            if inverse transform is applied to test that goes after train with gap
         """
         # we assume this to be fitted
         self._train_timestamp = cast(pd.DatetimeIndex, self._train_timestamp)
@@ -400,6 +407,10 @@ class DifferencingTransform(Transform):
             if transform isn't fitted
         NotImplementedError:
             if there are segments that weren't present during training
+        ValueError:
+            if inverse transform is applied not to full train nor to test that goes after train
+        ValueError:
+            if inverse transform is applied to test that goes after train with gap
         """
         self._check_is_fitted()
         if not self.inplace:
