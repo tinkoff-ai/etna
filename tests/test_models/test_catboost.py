@@ -8,6 +8,7 @@ from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models import CatBoostMultiSegmentModel
 from etna.models import CatBoostPerSegmentModel
+from etna.models.catboost import _CatBoostAdapter
 from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LabelEncoderTransform
@@ -146,69 +147,47 @@ def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
 
 
-@pytest.fixture
-def ts_w_exog(simple_df_relevance):
-    df, df_exog = simple_df_relevance
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
-    return ts
+@pytest.fixture()
+def dfs_w_exog():
+    df = generate_ar_df(start_time="2021-01-01", periods=105, n_segments=1)
+    df["f1"] = np.sin(df["target"])
+    df["f2"] = np.cos(df["target"])
+
+    df.drop(columns=["segment"], inplace=True)
+    train = df.iloc[:-5]
+    test = df.iloc[-5:]
+    return train, test
 
 
-def test_forecast_components_equal_predict_components(ts_w_exog):
-    train, test = ts_w_exog.train_test_split(test_size=5)
-    future = train.make_future(5)
+def test_forecast_components_equal_predict_components(dfs_w_exog):
+    train, test = dfs_w_exog
 
-    model = CatBoostPerSegmentModel(iterations=10)
-    model.fit(train)
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
 
-    for segment in test.columns.get_level_values("segment"):
-        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        prediction_components = model._models[segment].predict_components(df=segment_future)
-        forecast_components = model._models[segment].forecast_components(df=segment_future)
-        pd.testing.assert_frame_equal(prediction_components, forecast_components)
+    prediction_components = model.predict_components(df=test)
+    forecast_components = model.forecast_components(df=test)
+    pd.testing.assert_frame_equal(prediction_components, forecast_components)
 
 
-def test_forecast_components_names(ts_w_exog):
-    answer = {"target_component_regressor_2", "target_component_regressor_1"}
+def test_forecast_components_names(dfs_w_exog, answer=("target_component_f1", "target_component_f2")):
+    train, test = dfs_w_exog
 
-    train, test = ts_w_exog.train_test_split(test_size=5)
-    future = train.make_future(5)
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
 
-    model = CatBoostPerSegmentModel(iterations=10)
-    model.fit(train)
-
-    for segment in test.columns.get_level_values("segment"):
-        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        components = model._models[segment].forecast_components(df=segment_future)
-        assert set(components.columns) == answer
+    components = model.forecast_components(df=test)
+    assert set(components.columns) == set(answer)
 
 
-def test_per_segment_decomposition_sums_to_target(ts_w_exog):
-    ts = ts_w_exog
-    train, test = ts.train_test_split(test_size=5)
-    future = train.make_future(5)
+def test_decomposition_sums_to_target(dfs_w_exog):
+    train, test = dfs_w_exog
 
-    model = CatBoostPerSegmentModel(iterations=10)
-    model.fit(train)
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
 
-    y_pred = model.forecast(future)
-    for segment in test.columns.get_level_values("segment"):
-        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        components = model._models[segment].forecast_components(df=segment_future)
-        y_hat_pred = np.sum(components.values, axis=1)
-        np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
+    y_pred = model.predict(test)
+    components = model.forecast_components(df=test)
 
-
-def test_multi_segment_decomposition_sums_to_target(ts_w_exog):
-    ts = ts_w_exog
-    train, test = ts.train_test_split(test_size=5)
-    future = train.make_future(5)
-
-    model = CatBoostMultiSegmentModel(iterations=10)
-    model.fit(train)
-
-    y_pred = model.forecast(future)
-    for segment in test.columns.get_level_values("segment"):
-        segment_future = future[:, segment, :].droplevel("segment", axis=1).reset_index()
-        components = model._base_model.forecast_components(df=segment_future)
-        y_hat_pred = np.sum(components.values, axis=1)
-        np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, y_pred)
