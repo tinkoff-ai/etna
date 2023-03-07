@@ -13,7 +13,7 @@ from etna.models.base import DeepBaseModel
 
 @pytest.fixture()
 def deep_base_model_mock():
-    model = MagicMock()
+    model = MagicMock(spec=DeepBaseModel)
     model.train_batch_size = 32
     model.train_dataloader_params = {}
     model.val_dataloader_params = {}
@@ -156,3 +156,8 @@ def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock):
     np.testing.assert_allclose(
         future.df.loc[:, pd.IndexSlice["B", "target"]], raw_predict[("B", "target")][:horizon, 0]
     )
+
+
+def test_deep_base_model_forecast_throw_error_on_return_components():
+    with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
+        DeepBaseModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)

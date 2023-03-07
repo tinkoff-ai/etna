@@ -630,7 +630,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         return predictions_dict
 
     @log_decorator
-    def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+    def forecast(self, ts: "TSDataset", prediction_size: int, return_components: bool = False) -> "TSDataset":
         """Make predictions.
 
         This method will make autoregressive predictions.
@@ -642,12 +642,17 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
         """
+        if return_components:
+            raise NotImplementedError("This mode isn't currently implemented!")
+
         test_dataset = ts.to_torch_dataset(
             make_samples=functools.partial(
                 self.net.make_samples, encoder_length=self.encoder_length, decoder_length=prediction_size
@@ -662,7 +667,12 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         return future_ts
 
     @log_decorator
-    def predict(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+    def predict(
+        self,
+        ts: "TSDataset",
+        prediction_size: int,
+        return_components: bool = False,
+    ) -> "TSDataset":
         """Make predictions.
 
         This method will make predictions using true values instead of predicted on a previous step.
@@ -675,6 +685,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
