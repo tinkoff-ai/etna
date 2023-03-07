@@ -8,6 +8,7 @@ from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models import CatBoostMultiSegmentModel
 from etna.models import CatBoostPerSegmentModel
+from etna.models.catboost import _CatBoostAdapter
 from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LabelEncoderTransform
@@ -144,3 +145,49 @@ def test_save_load(model, example_tsds):
     horizon = 3
     transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+@pytest.fixture()
+def dfs_w_exog():
+    df = generate_ar_df(start_time="2021-01-01", periods=105, n_segments=1)
+    df["f1"] = np.sin(df["target"])
+    df["f2"] = np.cos(df["target"])
+
+    df.drop(columns=["segment"], inplace=True)
+    train = df.iloc[:-5]
+    test = df.iloc[-5:]
+    return train, test
+
+
+def test_forecast_components_equal_predict_components(dfs_w_exog):
+    train, test = dfs_w_exog
+
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
+
+    prediction_components = model.predict_components(df=test)
+    forecast_components = model.forecast_components(df=test)
+    pd.testing.assert_frame_equal(prediction_components, forecast_components)
+
+
+def test_forecast_components_names(dfs_w_exog, answer=("target_component_f1", "target_component_f2")):
+    train, test = dfs_w_exog
+
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
+
+    components = model.forecast_components(df=test)
+    assert set(components.columns) == set(answer)
+
+
+def test_decomposition_sums_to_target(dfs_w_exog):
+    train, test = dfs_w_exog
+
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
+
+    y_pred = model.predict(test)
+    components = model.forecast_components(df=test)
+
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, y_pred)
