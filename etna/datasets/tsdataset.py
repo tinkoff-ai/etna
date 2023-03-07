@@ -469,7 +469,7 @@ class TSDataset:
 
     @property
     def target_components(self) -> Optional[List[str]]:
-        """Get list of target components. Target components sum up to target."""
+        """Get list of target components. Components sum up to target. If there are no components, None is returned."""
         return self._target_components
 
     def plot(
@@ -1129,9 +1129,9 @@ class TSDataset:
         if self._target_components is not None:
             raise ValueError("Dataset already contains target components!")
 
-        components_names = set(target_components_df.columns.get_level_values("feature"))
+        components_names = sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
         for segment in self.segments:
-            components_names_segment = set(target_components_df[segment].columns.get_level_values("feature"))
+            components_names_segment = sorted(target_components_df[segment].columns.get_level_values("feature"))
             if components_names != components_names_segment:
                 raise ValueError("Set of target components differs between segments!")
 
@@ -1139,7 +1139,7 @@ class TSDataset:
         if not np.array_equal(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
-        self._target_components = sorted(components_names)
+        self._target_components = components_names
         self.df = (
             pd.concat((self.df, target_components_df), axis=1)
             .loc[self.df.index]

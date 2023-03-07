@@ -187,6 +187,14 @@ def inconsistent_target_components_names_df(target_components_df):
 
 
 @pytest.fixture
+def inconsistent_target_components_names_duplication_df(target_components_df):
+    target_components_df = pd.concat(
+        (target_components_df, target_components_df.loc[pd.IndexSlice[:], pd.IndexSlice["1", :]]), axis=1
+    )
+    return target_components_df
+
+
+@pytest.fixture
 def inconsistent_target_components_values_df(target_components_df):
     target_components_df.loc[10, pd.IndexSlice["1", "target_component_a"]] = 100
     return target_components_df
@@ -1034,9 +1042,14 @@ def test_add_target_components_throw_error_adding_components_second_time(
         ts_with_target_components.add_target_components(target_components_df=target_components_df)
 
 
+@pytest.mark.parametrize(
+    "inconsistent_target_components_names_fixture",
+    [("inconsistent_target_components_names_df"), ("inconsistent_target_components_names_duplication_df")],
+)
 def test_add_target_components_throw_error_inconsistent_components_names(
-    ts_without_target_components, inconsistent_target_components_names_df
+    ts_without_target_components, inconsistent_target_components_names_fixture, request
 ):
+    inconsistent_target_components_names_df = request.getfixturevalue(inconsistent_target_components_names_fixture)
     with pytest.raises(ValueError, match="Set of target components differs between segments!"):
         ts_without_target_components.add_target_components(target_components_df=inconsistent_target_components_names_df)
 
@@ -1052,4 +1065,4 @@ def test_add_target_components_throw_error_inconsistent_components_values(
 
 def test_add_target_components(ts_without_target_components, ts_with_target_components, target_components_df):
     ts_without_target_components.add_target_components(target_components_df=target_components_df)
-    pd.testing.assert_frame_equal(ts_with_target_components.to_pandas(), ts_with_target_components.to_pandas())
+    pd.testing.assert_frame_equal(ts_without_target_components.to_pandas(), ts_with_target_components.to_pandas())
