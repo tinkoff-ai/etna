@@ -48,9 +48,7 @@ def autoregression_base_model_mock():
 @pytest.fixture
 def target_components_df():
     timestamp = pd.date_range("2021-01-01", "2021-01-15")
-    df_1 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 1, "target_component_b": 2, "segment": 1})
-    df_2 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 3, "target_component_b": 4, "segment": 2})
-    df = pd.concat([df_1, df_2])
+    df = pd.DataFrame({"timestamp": timestamp, "target_component_a": 1, "target_component_b": 2, "segment": 1})
     df = TSDataset.to_dataset(df)
     return df
 
@@ -58,9 +56,7 @@ def target_components_df():
 @pytest.fixture
 def ts_without_target_components():
     timestamp = pd.date_range("2021-01-01", "2021-01-15")
-    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
-    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 7, "segment": 2})
-    df = pd.concat([df_1, df_2])
+    df = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
     return ts
@@ -249,9 +245,29 @@ def test_model_mixins_not_calls_predict_components_in_predict(mixin_constructor,
         predict_ts.add_target_components.assert_not_called()
 
 
+@pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin])
+def test_make_prediction_segment_with_components(mixin_constructor, target_components_df, ts_without_target_components):
+    mixin = mixin_constructor(base_model=Mock())
+    target_components_df_model_format = TSDataset.to_flatten(target_components_df).drop(columns=["segment"])
+    prediction_method = Mock(return_value=target_components_df_model_format)
+
+    target_components_pred = mixin._make_predictions_segment(
+        model=mixin._base_model,
+        segment="1",
+        df=ts_without_target_components.to_pandas(),
+        prediction_method=prediction_method,
+    )
+
+    pd.testing.assert_frame_equal(
+        target_components_pred.set_index(["timestamp", "segment"]),
+        TSDataset.to_flatten(target_components_df).set_index(["timestamp", "segment"]),
+    )
+
+
 @pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin, MultiSegmentModelMixin])
 def test_make_components_prediction(mixin_constructor, target_components_df, ts_without_target_components):
     mixin = mixin_constructor(base_model=Mock())
+    mixin.fit(ts_without_target_components)
     target_components_df_model_format = TSDataset.to_flatten(target_components_df).drop(columns=["segment"])
     prediction_method = Mock(return_value=target_components_df_model_format)
 

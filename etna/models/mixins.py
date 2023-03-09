@@ -414,6 +414,33 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             ts.df = ts.df.iloc[-prediction_size:]
         return ts
 
+    def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
+        """Make target component predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_method:
+            Method for making components predictions
+
+        Returns
+        -------
+        :
+            Dataset with predicted components
+        """
+        features_df = ts.to_pandas()
+        result_list = list()
+        for segment, model in self._get_model().items():
+            segment_predict = self._make_predictions_segment(
+                model=model, segment=segment, df=features_df, prediction_method=prediction_method, **kwargs
+            )
+            result_list.append(segment_predict)
+
+        target_components_df = pd.concat(result_list, ignore_index=True)
+        target_components_df = TSDataset.to_dataset(target_components_df)
+        return target_components_df
+
     @log_decorator
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         if hasattr(self._base_model, "forecast"):
@@ -425,14 +452,20 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
 
     @log_decorator
-    def _forecast_components(self, **kwargs) -> pd.DataFrame:
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
         if hasattr(self._base_model, "forecast_components"):
-            return self._base_model.forecast_components()
-        return self._base_model.predict_components()
+            return self._make_component_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
+            )
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
 
     @log_decorator
-    def _predict_components(self, **kwargs) -> pd.DataFrame:
-        return self._base_model.predict_components()
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
 
 
 class MultiSegmentModelMixin(ModelForecastingMixin):
@@ -512,7 +545,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         features_df = ts.to_pandas(flatten=True)
         segment_column = features_df["segment"].values
         features_df = features_df.drop(["segment"], axis=1)
-
+        # TODO: make it work with prediction intervals and context
         target_components_df = prediction_method(self=self._base_model, df=features_df, **kwargs)
         target_components_df["segment"] = segment_column
         target_components_df = TSDataset.to_dataset(target_components_df)
