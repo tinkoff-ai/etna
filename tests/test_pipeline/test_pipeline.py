@@ -557,6 +557,7 @@ def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
     assert test.index.max() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(4, "D")
 
 
+# TODO: replace
 @pytest.mark.parametrize(
     "mask,expected",
     (
@@ -573,6 +574,66 @@ def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, Li
     fold = pipeline._run_fold(train, test, 1, mask, [MAE()], forecast_params=dict())
     for seg in fold["metrics"]["MAE"].keys():
         assert fold["metrics"]["MAE"][seg] == expected[seg]
+
+
+def test_make_backtest_fold_groups_refit_true():
+    masks = [MagicMock() for _ in range(2)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=True)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0],
+            "forecast_masks": [masks[0]],
+        },
+        {
+            "train_fold_number": 1,
+            "train_mask": masks[1],
+            "forecast_fold_numbers": [1],
+            "forecast_masks": [masks[1]],
+        },
+    ]
+    assert obtained_results == expected_results
+
+
+def test_make_backtest_fold_groups_refit_false():
+    masks = [MagicMock() for _ in range(2)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=False)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0, 1],
+            "forecast_masks": [masks[0], masks[1]],
+        }
+    ]
+    assert obtained_results == expected_results
+
+
+def test_make_backtest_fold_groups_refit_int():
+    masks = [MagicMock() for _ in range(5)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=2)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0, 1],
+            "forecast_masks": [masks[0], masks[1]],
+        },
+        {
+            "train_fold_number": 2,
+            "train_mask": masks[2],
+            "forecast_fold_numbers": [2, 3],
+            "forecast_masks": [masks[2], masks[3]],
+        },
+        {
+            "train_fold_number": 4,
+            "train_mask": masks[4],
+            "forecast_fold_numbers": [4],
+            "forecast_masks": [masks[4]],
+        },
+    ]
+    assert obtained_results == expected_results
 
 
 @pytest.mark.parametrize(

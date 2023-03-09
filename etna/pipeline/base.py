@@ -1,3 +1,4 @@
+import math
 from abc import abstractmethod
 from copy import deepcopy
 from enum import Enum
@@ -15,6 +16,7 @@ import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
+from typing_extensions import TypedDict
 
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
@@ -210,6 +212,7 @@ class AbstractPipeline(AbstractSaveable):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
+        refit: Union[bool, int] = True,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -229,6 +232,15 @@ class AbstractPipeline(AbstractSaveable):
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
             Number of jobs to run in parallel
+        refit:
+            Determines how often pipeline should be retrained during iteration over folds.
+
+            * If ``True``: pipeline is retrained on each fold.
+
+            * If ``False``: pipeline is trained on the first fold, and on future folds trained pipeline is used.
+
+            * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
+
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
         forecast_params:
@@ -239,6 +251,15 @@ class AbstractPipeline(AbstractSaveable):
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
+
+
+class FoldParallelGroup(TypedDict):
+    """Group for parallel fold processing."""
+
+    train_fold_number: int
+    train_mask: FoldMask
+    forecast_fold_numbers: List[int]
+    forecast_masks: List[FoldMask]
 
 
 class BasePipeline(AbstractPipeline, BaseMixin):
@@ -522,6 +543,55 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
+    # TODO: write tests (?), мб и не стоит
+    def _fit_backtest_pipeline(
+        self,
+        ts: TSDataset,
+    ) -> "BasePipeline":
+        """Fit pipeline for a given data in backtest."""
+        pipeline = deepcopy(self)
+        pipeline.fit(ts=ts)
+        return pipeline
+
+    # TODO: write tests (?), мб и не стоит
+    def _forecast_backtest_pipeline(
+        self, pipeline: "BasePipeline", ts: TSDataset, forecast_params: Dict[str, Any]
+    ) -> TSDataset:
+        """Make a forecast with a given pipeline in backtest."""
+        forecast = pipeline.forecast(ts=ts, **forecast_params)
+        return forecast
+
+    # TODO: replace test for run_fold
+    def _process_fold_forecast(
+        self,
+        forecast: TSDataset,
+        train: TSDataset,
+        test: TSDataset,
+        fold_number: int,
+        mask: FoldMask,
+        metrics: List[Metric],
+    ) -> Dict[str, Any]:
+        """Process forecast made for a fold."""
+        tslogger.start_experiment(job_type="crossval", group=str(fold_number))
+
+        fold: Dict[str, Any] = {}
+        for stage_name, stage_df in zip(("train", "test"), (train, test)):
+            fold[f"{stage_name}_timerange"] = {}
+            fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
+            fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
+
+        forecast.df = forecast.df.loc[mask.target_timestamps]
+        test.df = test.df.loc[mask.target_timestamps]
+
+        fold["forecast"] = forecast
+        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+
+        tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
+        tslogger.finish_experiment()
+
+        return fold
+
+    # TODO: remove
     def _run_fold(
         self,
         train: TSDataset,
@@ -620,6 +690,105 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             mask.validate_on_dataset(ts=ts, horizon=self.horizon)
         return masks
 
+    # TODO: write tests
+    @staticmethod
+    def _make_backtest_fold_groups(masks: List[FoldMask], refit: Union[bool, int]) -> List[FoldParallelGroup]:
+        """Make groups of folds for backtest."""
+        if not refit:
+            refit = len(masks)
+
+        grouped_folds = []
+        num_groups = math.ceil(len(masks) / refit)
+        for group_id in range(num_groups):
+            train_fold_number = group_id * refit
+            forecast_fold_numbers = [train_fold_number + i for i in range(refit) if train_fold_number + i < len(masks)]
+            cur_group: FoldParallelGroup
+            cur_group = {
+                "train_fold_number": train_fold_number,
+                "train_mask": masks[train_fold_number],
+                "forecast_fold_numbers": forecast_fold_numbers,
+                "forecast_masks": [masks[i] for i in forecast_fold_numbers],
+            }
+            grouped_folds.append(cur_group)
+
+        return grouped_folds
+
+    def _run_all_folds(
+        self,
+        masks: List[FoldMask],
+        ts: TSDataset,
+        metrics: List[Metric],
+        n_jobs: int,
+        refit: Union[bool, int],
+        joblib_params: Dict[str, Any],
+        forecast_params: Dict[str, Any],
+    ) -> Dict[int, Any]:
+        """Run pipeline on all folds."""
+        fold_groups = self._make_backtest_fold_groups(masks=masks, refit=refit)
+
+        with Parallel(n_jobs=n_jobs, **joblib_params) as parallel:
+            # run fit tasks
+            fit_masks = [group["train_mask"] for group in fold_groups]
+            fit_datasets = (
+                train for train, _ in self._generate_folds_datasets(ts=ts, masks=fit_masks, horizon=self.horizon)
+            )
+            pipelines = parallel(
+                delayed(self._fit_backtest_pipeline)(
+                    ts=fit_ts,
+                )
+                for fit_ts in fit_datasets
+            )
+
+            # run forecast tasks
+            forecast_masks = [group["forecast_masks"] for group in fold_groups]
+            forecast_datasets = (
+                (
+                    train
+                    for train, _ in self._generate_folds_datasets(
+                        ts=ts, masks=group_forecast_masks, horizon=self.horizon
+                    )
+                )
+                for group_forecast_masks in forecast_masks
+            )
+            forecasts = [
+                parallel(
+                    delayed(self._forecast_backtest_pipeline)(
+                        ts=forecast_ts,
+                        pipeline=pipeline,
+                        forecast_params=forecast_params,
+                    )
+                    for forecast_ts in group_forecast_datasets
+                )
+                for pipeline, group_forecast_datasets in zip(pipelines, forecast_datasets)
+            ]
+
+            # process forecasts
+            fold_process_datasets = (
+                self._generate_folds_datasets(ts=ts, masks=group_forecast_masks, horizon=self.horizon)
+                for group_forecast_masks in forecast_masks
+            )
+            fold_results = [
+                parallel(
+                    delayed(self._process_fold_forecast)(
+                        forecast=forecasts[group_idx][idx],
+                        train=train,
+                        test=test,
+                        fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
+                        mask=fold_groups[group_idx]["forecast_masks"][idx],
+                        metrics=metrics,
+                    )
+                    for idx, (train, test) in enumerate(group_fold_process_datasets)
+                )
+                for group_idx, group_fold_process_datasets in enumerate(fold_process_datasets)
+            ]
+
+        results = {
+            fold_groups[group_idx]["forecast_fold_numbers"][idx]: fold_results[group_idx][idx]
+            for group_idx in range(len(fold_results))
+            for idx in range(len(fold_results[group_idx]))
+        }
+        return results
+
     def backtest(
         self,
         ts: TSDataset,
@@ -628,6 +797,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         mode: str = "expand",
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
+        refit: Union[bool, int] = True,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -647,6 +817,14 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
             Number of jobs to run in parallel
+        refit:
+            Determines how often pipeline should be retrained during iteration over folds.
+
+            * If ``True``: pipeline is retrained on each fold.
+
+            * If ``False``: pipeline is trained on the first fold, and on future folds trained pipeline is used.
+
+            * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
         forecast_params:
@@ -666,21 +844,15 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self._init_backtest()
         self._validate_backtest_metrics(metrics=metrics)
         masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode)
-
-        folds = Parallel(n_jobs=n_jobs, **joblib_params)(
-            delayed(self._run_fold)(
-                train=train,
-                test=test,
-                fold_number=fold_number,
-                mask=masks[fold_number],
-                metrics=metrics,
-                forecast_params=forecast_params,
-            )
-            for fold_number, (train, test) in enumerate(
-                self._generate_folds_datasets(ts=ts, masks=masks, horizon=self.horizon)
-            )
+        self._folds = self._run_all_folds(
+            masks=masks,
+            ts=ts,
+            metrics=metrics,
+            n_jobs=n_jobs,
+            refit=refit,
+            joblib_params=joblib_params,
+            forecast_params=forecast_params,
         )
-        self._folds = {i: fold for i, fold in enumerate(folds)}
 
         metrics_df = self._get_backtest_metrics(aggregate_metrics=aggregate_metrics)
         forecast_df = self._get_backtest_forecasts()
