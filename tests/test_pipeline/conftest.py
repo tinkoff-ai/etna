@@ -218,7 +218,7 @@ def masked_ts() -> TSDataset:
 
 
 @pytest.fixture
-def ts_run_fold() -> TSDataset:
+def ts_process_fold_forecast() -> TSDataset:
     timerange = pd.date_range(start="2020-01-01", periods=11).to_list()
     df = pd.DataFrame({"timestamp": timerange + timerange})
     df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11

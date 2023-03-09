@@ -543,7 +543,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
-    # TODO: write tests (?), мб и не стоит
     def _fit_backtest_pipeline(
         self,
         ts: TSDataset,
@@ -553,7 +552,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         pipeline.fit(ts=ts)
         return pipeline
 
-    # TODO: write tests (?), мб и не стоит
     def _forecast_backtest_pipeline(
         self, pipeline: "BasePipeline", ts: TSDataset, forecast_params: Dict[str, Any]
     ) -> TSDataset:
@@ -561,7 +559,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         forecast = pipeline.forecast(ts=ts, **forecast_params)
         return forecast
 
-    # TODO: replace test for run_fold
     def _process_fold_forecast(
         self,
         forecast: TSDataset,
@@ -574,39 +571,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Process forecast made for a fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
 
-        fold: Dict[str, Any] = {}
-        for stage_name, stage_df in zip(("train", "test"), (train, test)):
-            fold[f"{stage_name}_timerange"] = {}
-            fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
-            fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
-
-        forecast.df = forecast.df.loc[mask.target_timestamps]
-        test.df = test.df.loc[mask.target_timestamps]
-
-        fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
-
-        tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
-        tslogger.finish_experiment()
-
-        return fold
-
-    # TODO: remove
-    def _run_fold(
-        self,
-        train: TSDataset,
-        test: TSDataset,
-        fold_number: int,
-        mask: FoldMask,
-        metrics: List[Metric],
-        forecast_params: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """Run fit-forecast pipeline of model for one fold."""
-        tslogger.start_experiment(job_type="crossval", group=str(fold_number))
-
-        pipeline = deepcopy(self)
-        pipeline.fit(ts=train)
-        forecast = pipeline.forecast(**forecast_params)
         fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
@@ -690,7 +654,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             mask.validate_on_dataset(ts=ts, horizon=self.horizon)
         return masks
 
-    # TODO: write tests
     @staticmethod
     def _make_backtest_fold_groups(masks: List[FoldMask], refit: Union[bool, int]) -> List[FoldParallelGroup]:
         """Make groups of folds for backtest."""
