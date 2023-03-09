@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Target components logic base classes of models ([#1158](https://github.com/tinkoff-ai/etna/pull/1158))
 - Target components logic to TSDataset ([#1153](https://github.com/tinkoff-ai/etna/pull/1153))
 - Methods `save` and `load` to HierarchicalPipeline ([#1096](https://github.com/tinkoff-ai/etna/pull/1096))
 - New data access methods in `TSDataset` : `update_columns_from_pandas`, `add_columns_from_pandas`, `drop_features` ([#809](https://github.com/tinkoff-ai/etna/pull/809))
