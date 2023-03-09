@@ -424,6 +424,16 @@ class PerSegmentModelMixin(ModelForecastingMixin):
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
         return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
 
+    @log_decorator
+    def _forecast_components(self, **kwargs) -> pd.DataFrame:
+        if hasattr(self._base_model, "forecast_components"):
+            return self._base_model.forecast_components()
+        return self._base_model.predict_components()
+
+    @log_decorator
+    def _predict_components(self, **kwargs) -> pd.DataFrame:
+        return self._base_model.predict_components()
+
 
 class MultiSegmentModelMixin(ModelForecastingMixin):
     """Mixin for holding methods for multi-segment prediction.
@@ -484,6 +494,30 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
         return ts
 
+    def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
+        """Make target component predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_method:
+            Method for making components predictions
+
+        Returns
+        -------
+        :
+            Dataset with predicted components
+        """
+        features_df = ts.to_pandas(flatten=True)
+        segment_column = features_df["segment"].values
+        features_df = features_df.drop(["segment"], axis=1)
+
+        target_components_df = prediction_method(self=self._base_model, df=features_df, **kwargs)
+        target_components_df["segment"] = segment_column
+        target_components_df = TSDataset.to_dataset(target_components_df)
+        return target_components_df
+
     @log_decorator
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         if hasattr(self._base_model, "forecast"):
@@ -493,6 +527,22 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
     @log_decorator
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
         return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
+
+    @log_decorator
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        if hasattr(self._base_model, "forecast_components"):
+            return self._make_component_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
+            )
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
+
+    @log_decorator
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
 
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.
