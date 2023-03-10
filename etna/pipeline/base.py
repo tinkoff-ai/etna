@@ -775,6 +775,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
+        If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
+
         Parameters
         ----------
         ts:
@@ -806,6 +808,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         -------
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
+
+        Raises
+        ------
+        Exception:
+
         """
         if joblib_params is None:
             joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
