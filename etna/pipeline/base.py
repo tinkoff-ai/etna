@@ -726,8 +726,16 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             ]
 
             # process forecasts
-            fold_process_datasets = (
-                self._generate_folds_datasets(ts=ts, masks=group_forecast_masks, horizon=self.horizon)
+            fold_process_train_datasets = (
+                train for train, _ in self._generate_folds_datasets(ts=ts, masks=fit_masks, horizon=self.horizon)
+            )
+            fold_process_test_datasets = (
+                (
+                    test
+                    for _, test in self._generate_folds_datasets(
+                        ts=ts, masks=group_forecast_masks, horizon=self.horizon
+                    )
+                )
                 for group_forecast_masks in forecast_masks
             )
             fold_results = [
@@ -740,9 +748,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                         mask=fold_groups[group_idx]["forecast_masks"][idx],
                         metrics=metrics,
                     )
-                    for idx, (train, test) in enumerate(group_fold_process_datasets)
+                    for idx, test in enumerate(group_fold_process_test_datasets)
                 )
-                for group_idx, group_fold_process_datasets in enumerate(fold_process_datasets)
+                for group_idx, (train, group_fold_process_test_datasets) in enumerate(
+                    zip(fold_process_train_datasets, fold_process_test_datasets)
+                )
             ]
 
         results = {

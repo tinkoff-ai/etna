@@ -1,3 +1,4 @@
+import math
 from copy import deepcopy
 from datetime import datetime
 from typing import Dict
@@ -440,6 +441,56 @@ def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     assert expected_columns == sorted(info_df.columns)
 
 
+def test_get_fold_info_refit_true(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Check that Pipeline.backtest returns info dataframe with correct train with regular refit."""
+    _, _, info_df = catboost_pipeline.backtest(
+        ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=5, refit=True
+    )
+    assert info_df["train_start_time"].nunique() == 1
+    assert info_df["train_end_time"].nunique() == len(info_df)
+    assert info_df["test_start_time"].nunique() == len(info_df)
+    assert info_df["test_end_time"].nunique() == len(info_df)
+
+
+def test_get_fold_info_refit_false(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Check that Pipeline.backtest returns info dataframe with correct train with no refit."""
+    _, _, info_df = catboost_pipeline.backtest(
+        ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=5, refit=False
+    )
+    assert info_df["train_start_time"].nunique() == 1
+    assert info_df["train_end_time"].nunique() == 1
+    assert info_df["test_start_time"].nunique() == len(info_df)
+    assert info_df["test_end_time"].nunique() == len(info_df)
+
+
+@pytest.mark.parametrize(
+    "n_folds, refit",
+    [
+        (1, 1),
+        (1, 2),
+        (3, 1),
+        (3, 2),
+        (3, 3),
+        (3, 4),
+        (4, 1),
+        (4, 2),
+        (4, 3),
+        (4, 4),
+        (4, 5),
+    ],
+)
+def test_get_fold_info_refit_int(n_folds, refit, catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Check that Pipeline.backtest returns info dataframe with correct train with rare refit."""
+    _, _, info_df = catboost_pipeline.backtest(
+        ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=refit
+    )
+    expected_refits = math.ceil(n_folds / refit)
+    assert info_df["train_start_time"].nunique() == 1
+    assert info_df["train_end_time"].nunique() == expected_refits
+    assert info_df["test_start_time"].nunique() == len(info_df)
+    assert info_df["test_end_time"].nunique() == len(info_df)
+
+
 def test_backtest_refit_success(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that backtest with rare refit works on pipeline that supports it."""
     _ = catboost_pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
@@ -654,6 +705,29 @@ def test_make_backtest_fold_groups_refit_int():
         },
     ]
     assert obtained_results == expected_results
+
+
+@pytest.mark.parametrize(
+    "n_folds, refit",
+    [
+        (1, 1),
+        (1, 2),
+        (3, 1),
+        (3, 2),
+        (3, 3),
+        (3, 4),
+        (4, 1),
+        (4, 2),
+        (4, 3),
+        (4, 4),
+        (4, 5),
+    ],
+)
+def test_make_backtest_fold_groups_length_refit_int(n_folds, refit):
+    masks = [MagicMock() for _ in range(n_folds)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=refit)
+    expected_length = math.ceil(n_folds / refit)
+    assert len(obtained_results) == expected_length
 
 
 @pytest.mark.parametrize(
