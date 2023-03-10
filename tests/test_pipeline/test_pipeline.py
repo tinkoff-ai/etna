@@ -1,4 +1,3 @@
-import math
 from copy import deepcopy
 from datetime import datetime
 from typing import Dict
@@ -464,27 +463,25 @@ def test_get_fold_info_refit_false(example_tsdf: TSDataset):
 
 
 @pytest.mark.parametrize(
-    "n_folds, refit",
+    "n_folds, refit, expected_refits",
     [
-        (1, 1),
-        (1, 2),
-        (3, 1),
-        (3, 2),
-        (3, 3),
-        (3, 4),
-        (4, 1),
-        (4, 2),
-        (4, 3),
-        (4, 4),
-        (4, 5),
+        (1, 1, 1),
+        (1, 2, 1),
+        (3, 1, 3),
+        (3, 2, 2),
+        (3, 3, 1),
+        (3, 4, 1),
+        (4, 1, 4),
+        (4, 2, 2),
+        (4, 3, 2),
+        (4, 4, 1),
+        (4, 5, 1),
     ],
 )
-def test_get_fold_info_refit_int(n_folds, refit, example_tsdf: TSDataset):
+def test_get_fold_info_refit_int(n_folds, refit, expected_refits, example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe with correct train with rare refit."""
-    n_folds = 5
     pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
     _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=refit)
-    expected_refits = math.ceil(n_folds / refit)
     assert info_df["train_start_time"].nunique() == 1
     assert info_df["train_end_time"].nunique() == expected_refits
     assert info_df["test_start_time"].nunique() == n_folds
@@ -709,26 +706,25 @@ def test_make_backtest_fold_groups_refit_int():
 
 
 @pytest.mark.parametrize(
-    "n_folds, refit",
+    "n_folds, refit, expected_refits",
     [
-        (1, 1),
-        (1, 2),
-        (3, 1),
-        (3, 2),
-        (3, 3),
-        (3, 4),
-        (4, 1),
-        (4, 2),
-        (4, 3),
-        (4, 4),
-        (4, 5),
+        (1, 1, 1),
+        (1, 2, 1),
+        (3, 1, 3),
+        (3, 2, 2),
+        (3, 3, 1),
+        (3, 4, 1),
+        (4, 1, 4),
+        (4, 2, 2),
+        (4, 3, 2),
+        (4, 4, 1),
+        (4, 5, 1),
     ],
 )
-def test_make_backtest_fold_groups_length_refit_int(n_folds, refit):
+def test_make_backtest_fold_groups_length_refit_int(n_folds, refit, expected_refits):
     masks = [MagicMock() for _ in range(n_folds)]
     obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=refit)
-    expected_length = math.ceil(n_folds / refit)
-    assert len(obtained_results) == expected_length
+    assert len(obtained_results) == expected_refits
 
 
 @pytest.mark.parametrize(
