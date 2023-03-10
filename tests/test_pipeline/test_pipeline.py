@@ -441,26 +441,26 @@ def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     assert expected_columns == sorted(info_df.columns)
 
 
-def test_get_fold_info_refit_true(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+def test_get_fold_info_refit_true(example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe with correct train with regular refit."""
-    _, _, info_df = catboost_pipeline.backtest(
-        ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=5, refit=True
-    )
+    n_folds = 5
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=True)
     assert info_df["train_start_time"].nunique() == 1
-    assert info_df["train_end_time"].nunique() == len(info_df)
-    assert info_df["test_start_time"].nunique() == len(info_df)
-    assert info_df["test_end_time"].nunique() == len(info_df)
+    assert info_df["train_end_time"].nunique() == n_folds
+    assert info_df["test_start_time"].nunique() == n_folds
+    assert info_df["test_end_time"].nunique() == n_folds
 
 
-def test_get_fold_info_refit_false(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+def test_get_fold_info_refit_false(example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe with correct train with no refit."""
-    _, _, info_df = catboost_pipeline.backtest(
-        ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=5, refit=False
-    )
+    n_folds = 5
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=False)
     assert info_df["train_start_time"].nunique() == 1
     assert info_df["train_end_time"].nunique() == 1
-    assert info_df["test_start_time"].nunique() == len(info_df)
-    assert info_df["test_end_time"].nunique() == len(info_df)
+    assert info_df["test_start_time"].nunique() == n_folds
+    assert info_df["test_end_time"].nunique() == n_folds
 
 
 @pytest.mark.parametrize(
@@ -479,25 +479,25 @@ def test_get_fold_info_refit_false(catboost_pipeline: Pipeline, example_tsdf: TS
         (4, 5),
     ],
 )
-def test_get_fold_info_refit_int(n_folds, refit, catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+def test_get_fold_info_refit_int(n_folds, refit, example_tsdf: TSDataset):
     """Check that Pipeline.backtest returns info dataframe with correct train with rare refit."""
-    _, _, info_df = catboost_pipeline.backtest(
-        ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=refit
-    )
+    n_folds = 5
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=refit)
     expected_refits = math.ceil(n_folds / refit)
     assert info_df["train_start_time"].nunique() == 1
     assert info_df["train_end_time"].nunique() == expected_refits
-    assert info_df["test_start_time"].nunique() == len(info_df)
-    assert info_df["test_end_time"].nunique() == len(info_df)
+    assert info_df["test_start_time"].nunique() == n_folds
+    assert info_df["test_end_time"].nunique() == n_folds
 
 
 def test_backtest_refit_success(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
-    """Check that backtest with rare refit works on pipeline that supports it."""
+    """Check that backtest without refit works on pipeline that supports it."""
     _ = catboost_pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
 
 
 def test_backtest_refit_fail(big_example_tsdf: TSDataset):
-    """Check that backtest with rare refit doesn't work on pipeline that doesn't support it."""
+    """Check that backtest without refit doesn't work on pipeline that doesn't support it."""
     pipeline = Pipeline(
         model=NaiveModel(lag=7),
         transforms=[DifferencingTransform(in_column="target", inplace=True)],
@@ -639,7 +639,8 @@ def test_process_fold_forecast(ts_process_fold_forecast, mask: FoldMask, expecte
     )
 
     pipeline = Pipeline(model=NaiveModel(lag=5), transforms=[], horizon=4)
-    forecast = pipeline.forecast(ts=train)
+    pipeline = pipeline.fit(ts=train)
+    forecast = pipeline.forecast()
     fold = pipeline._process_fold_forecast(
         forecast=forecast, train=train, test=test, fold_number=1, mask=mask, metrics=[MAE()]
     )

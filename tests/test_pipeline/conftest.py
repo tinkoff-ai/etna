@@ -8,6 +8,7 @@ from scipy.stats import norm
 
 from etna.datasets import TSDataset
 from etna.models import CatBoostPerSegmentModel
+from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 
@@ -20,6 +21,16 @@ def catboost_pipeline() -> Pipeline:
     pipeline = Pipeline(
         model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="regressor_lag_feature")],
+        horizon=7,
+    )
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = Pipeline(
+        model=NaiveModel(lag=7),
         horizon=7,
     )
     return pipeline
