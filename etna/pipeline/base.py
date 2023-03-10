@@ -665,8 +665,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         for group_id in range(num_groups):
             train_fold_number = group_id * refit
             forecast_fold_numbers = [train_fold_number + i for i in range(refit) if train_fold_number + i < len(masks)]
-            cur_group: FoldParallelGroup
-            cur_group = {
+            cur_group: FoldParallelGroup = {
                 "train_fold_number": train_fold_number,
                 "train_mask": masks[train_fold_number],
                 "forecast_fold_numbers": forecast_fold_numbers,
