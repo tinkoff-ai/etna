@@ -795,7 +795,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
             * If ``True``: pipeline is retrained on each fold.
 
-            * If ``False``: pipeline is trained on the first fold, and on future folds trained pipeline is used.
+            * If ``False``: pipeline is trained only on the first fold, and on future folds trained pipeline is used.
 
             * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
         joblib_params:
