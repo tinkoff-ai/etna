@@ -574,7 +574,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         metrics: List[Metric],
     ) -> Dict[str, Any]:
         """Process forecast made for a fold."""
-        tslogger.start_experiment(job_type="metrics", group=str(fold_number))
+        tslogger.start_experiment(job_type="crossval", group=str(fold_number))
 
         fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
