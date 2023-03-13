@@ -160,19 +160,23 @@ def test_save_mixin_load_warning(get_version_mock, save_version, load_version, t
         (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
     ],
 )
-def test_model_mixins_calls_forecast_components_in_forecast(mixin_constructor, call_params):
+@pytest.mark.parametrize("return_components", (True, False))
+def test_model_mixins_calls_add_target_components_in_forecast(mixin_constructor, return_components, call_params):
     with patch.multiple(mixin_constructor, __abstractmethods__=set()):
         ts = Mock()
         forecast_ts = Mock(spec=TSDataset)
-        target_components_df = Mock()
         mixin = mixin_constructor()
         mixin._forecast = Mock(return_value=forecast_ts)
-        mixin._forecast_components = Mock(return_value=target_components_df)
+        mixin._add_target_components = Mock()
 
-        _ = mixin.forecast(ts=ts, return_components=True, **call_params)
+        _ = mixin.forecast(ts=ts, return_components=return_components, **call_params)
 
-        mixin._forecast_components.assert_called_with(ts=ts)
-        forecast_ts.add_target_components.assert_called_with(target_components_df=target_components_df)
+        mixin._add_target_components.assert_called_with(
+            ts=ts,
+            predictions=forecast_ts,
+            components_prediction_method=mixin._forecast_components,
+            return_components=return_components,
+        )
 
 
 @pytest.mark.parametrize(
@@ -184,65 +188,22 @@ def test_model_mixins_calls_forecast_components_in_forecast(mixin_constructor, c
         (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
     ],
 )
-def test_model_mixins_not_calls_forecast_components_in_forecast(mixin_constructor, call_params):
-    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
-        ts = Mock()
-        forecast_ts = Mock(spec=TSDataset)
-        target_components_df = Mock()
-        mixin = mixin_constructor()
-        mixin._forecast = Mock(return_value=forecast_ts)
-        mixin._forecast_components = Mock(return_value=target_components_df)
-
-        _ = mixin.forecast(ts=ts, return_components=False, **call_params)
-
-        mixin._forecast_components.assert_not_called()
-        forecast_ts.add_target_components.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "mixin_constructor, call_params",
-    [
-        (PredictionIntervalContextIgnorantModelMixin, {}),
-        (NonPredictionIntervalContextIgnorantModelMixin, {}),
-        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-    ],
-)
-def test_model_mixins_calls_predict_components_in_predict(mixin_constructor, call_params):
+@pytest.mark.parametrize("return_components", (True, False))
+def test_model_mixins_calls_add_target_components_in_predict(mixin_constructor, return_components, call_params):
     with patch.multiple(mixin_constructor, __abstractmethods__=set()):
         ts = Mock()
         predict_ts = Mock(spec=TSDataset)
-        target_components_df = Mock()
         mixin = mixin_constructor()
         mixin._predict = Mock(return_value=predict_ts)
-        mixin._predict_components = Mock(return_value=target_components_df)
-        _ = mixin.predict(ts=ts, return_components=True, **call_params)
+        mixin._add_target_components = Mock()
+        _ = mixin.predict(ts=ts, return_components=return_components, **call_params)
 
-        mixin._predict_components.assert_called_with(ts=ts)
-        predict_ts.add_target_components.assert_called_with(target_components_df=target_components_df)
-
-
-@pytest.mark.parametrize(
-    "mixin_constructor, call_params",
-    [
-        (PredictionIntervalContextIgnorantModelMixin, {}),
-        (NonPredictionIntervalContextIgnorantModelMixin, {}),
-        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-    ],
-)
-def test_model_mixins_not_calls_predict_components_in_predict(mixin_constructor, call_params):
-    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
-        ts = Mock()
-        predict_ts = Mock(spec=TSDataset)
-        target_components_df = Mock()
-        mixin = mixin_constructor()
-        mixin._predict = Mock(return_value=predict_ts)
-        mixin._predict_components = Mock(return_value=target_components_df)
-        _ = mixin.predict(ts=ts, return_components=False, **call_params)
-
-        mixin._predict_components.assert_not_called()
-        predict_ts.add_target_components.assert_not_called()
+        mixin._add_target_components.assert_called_with(
+            ts=ts,
+            predictions=predict_ts,
+            components_prediction_method=mixin._predict_components,
+            return_components=return_components,
+        )
 
 
 @pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin])

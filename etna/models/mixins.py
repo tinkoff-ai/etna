@@ -36,6 +36,13 @@ class ModelForecastingMixin(ABC):
     def _predict_components(self, **kwargs) -> pd.DataFrame:
         pass
 
+    def _add_target_components(
+        self, ts: TSDataset, predictions: TSDataset, components_prediction_method: Callable, return_components: bool
+    ):
+        if return_components:
+            target_components_df = components_prediction_method(self=self, ts=ts)
+            predictions.add_target_components(target_components_df=target_components_df)
+
 
 class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     """Mixin for models that don't support prediction intervals and don't need context for prediction."""
@@ -56,9 +63,12 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         forecast = self._forecast(ts=ts)
-        if return_components:
-            forecast_components_df = self._forecast_components(ts=ts)
-            forecast.add_target_components(target_components_df=forecast_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
         return forecast
 
     def predict(self, ts: TSDataset, return_components: bool = False) -> TSDataset:
@@ -77,9 +87,12 @@ class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         prediction = self._predict(ts=ts)
-        if return_components:
-            prediction_components_df = self._predict_components(ts=ts)
-            prediction.add_target_components(target_components_df=prediction_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
         return prediction
 
 
@@ -105,9 +118,12 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         forecast = self._forecast(ts=ts, prediction_size=prediction_size)
-        if return_components:
-            forecast_components_df = self._forecast_components(ts=ts)
-            forecast.add_target_components(target_components_df=forecast_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
         return forecast
 
     def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
@@ -129,9 +145,12 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         prediction = self._predict(ts=ts, prediction_size=prediction_size)
-        if return_components:
-            prediction_components_df = self._predict_components(ts=ts)
-            prediction.add_target_components(target_components_df=prediction_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
         return prediction
 
 
@@ -164,9 +183,12 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         forecast = self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
-        if return_components:
-            forecast_components_df = self._forecast_components(ts=ts)
-            forecast.add_target_components(target_components_df=forecast_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
         return forecast
 
     def predict(
@@ -195,9 +217,12 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
             Dataset with predictions
         """
         prediction = self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
-        if return_components:
-            prediction_components_df = self._predict_components(ts=ts)
-            prediction.add_target_components(target_components_df=prediction_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
         return prediction
 
 
@@ -236,9 +261,12 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         forecast = self._forecast(
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
-        if return_components:
-            forecast_components_df = self._forecast_components(ts=ts)
-            forecast.add_target_components(target_components_df=forecast_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
         return forecast
 
     def predict(
@@ -273,9 +301,12 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         prediction = self._predict(
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
-        if return_components:
-            prediction_components_df = self._predict_components(ts=ts)
-            prediction.add_target_components(target_components_df=prediction_components_df)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
         return prediction
 
 
@@ -427,7 +458,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         Returns
         -------
         :
-            Dataset with predicted components
+            DataFrame with predicted components
         """
         features_df = ts.to_pandas()
         result_list = list()
@@ -540,7 +571,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         Returns
         -------
         :
-            Dataset with predicted components
+            DataFrame with predicted components
         """
         features_df = ts.to_pandas(flatten=True)
         segment_column = features_df["segment"].values

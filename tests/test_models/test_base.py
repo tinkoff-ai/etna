@@ -13,7 +13,7 @@ from etna.models.base import DeepBaseModel
 
 @pytest.fixture()
 def deep_base_model_mock():
-    model = MagicMock(spec=DeepBaseModel)
+    model = MagicMock()
     model.train_batch_size = 32
     model.train_dataloader_params = {}
     model.val_dataloader_params = {}
