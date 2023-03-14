@@ -9,6 +9,7 @@ from pandas.testing import assert_frame_equal
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import TimeSeriesImputerTransform
+from etna.transforms import AddConstTransform
 
 
 @pytest.fixture()
@@ -177,6 +178,30 @@ def target_components_df():
     df_2 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 3, "target_component_b": 4, "segment": 2})
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
+    return df
+
+@pytest.fixture
+def inverse_transformed_components_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 1 * (3 + 10) / 3,
+            "target_component_b": 2 * (3 + 10) / 3,
+            "segment": 1,
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 3 * (7 + 10) / 7,
+            "target_component_b": 4 * (7 + 10) / 7,
+            "segment": 2,
+        }
+    )
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    df.index.freq = "D"
     return df
 
 
@@ -1066,3 +1091,22 @@ def test_add_target_components_throw_error_inconsistent_components_values(
 def test_add_target_components(ts_without_target_components, ts_with_target_components, target_components_df):
     ts_without_target_components.add_target_components(target_components_df=target_components_df)
     pd.testing.assert_frame_equal(ts_without_target_components.to_pandas(), ts_with_target_components.to_pandas())
+
+def test_drop_target_componetns(ts_with_target_components, ts_without_target_components):
+    ts_with_target_components.drop_target_components()
+    assert ts_with_target_components.target_components is None
+    pd.testing.assert_frame_equal(ts_with_target_components.to_pandas(), ts_without_target_components.to_pandas(),)
+
+def test_inverse_transform_target_components(ts_with_target_components, inverse_transformed_components_df):
+    transform = AddConstTransform(in_column="target", value=-10)
+    transform.fit(ts=ts_with_target_components)
+    ts_with_target_components.inverse_transform([transform])
+    assert sorted(ts_with_target_components.target_components) == sorted(set(inverse_transformed_components_df.columns.get_level_values("feature")))
+    pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
+
+def test_inverse_transform_with_target_components(ts_with_target_components, inverse_transformed_components_df):
+    transform = AddConstTransform(in_column="target", value=-10)
+    transform.fit(ts=ts_with_target_components)
+    ts_with_target_components.inverse_transform([transform])
+    assert sorted(ts_with_target_components.target_components) == sorted(set(inverse_transformed_components_df.columns.get_level_values("feature")))
+    pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
