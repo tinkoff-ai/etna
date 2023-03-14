@@ -32,6 +32,7 @@ from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
@@ -439,15 +440,80 @@ def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf
     assert expected_columns == sorted(info_df.columns)
 
 
+def test_get_fold_info_refit_true(example_tsdf: TSDataset):
+    """Check that Pipeline.backtest returns info dataframe with correct train with regular refit."""
+    n_folds = 5
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=True)
+    assert info_df["train_start_time"].nunique() == 1
+    assert info_df["train_end_time"].nunique() == n_folds
+    assert info_df["test_start_time"].nunique() == n_folds
+    assert info_df["test_end_time"].nunique() == n_folds
+
+
+def test_get_fold_info_refit_false(example_tsdf: TSDataset):
+    """Check that Pipeline.backtest returns info dataframe with correct train with no refit."""
+    n_folds = 5
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=False)
+    assert info_df["train_start_time"].nunique() == 1
+    assert info_df["train_end_time"].nunique() == 1
+    assert info_df["test_start_time"].nunique() == n_folds
+    assert info_df["test_end_time"].nunique() == n_folds
+
+
+@pytest.mark.parametrize(
+    "n_folds, refit, expected_refits",
+    [
+        (1, 1, 1),
+        (1, 2, 1),
+        (3, 1, 3),
+        (3, 2, 2),
+        (3, 3, 1),
+        (3, 4, 1),
+        (4, 1, 4),
+        (4, 2, 2),
+        (4, 3, 2),
+        (4, 4, 1),
+        (4, 5, 1),
+    ],
+)
+def test_get_fold_info_refit_int(n_folds, refit, expected_refits, example_tsdf: TSDataset):
+    """Check that Pipeline.backtest returns info dataframe with correct train with rare refit."""
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=n_folds, refit=refit)
+    assert info_df["train_start_time"].nunique() == 1
+    assert info_df["train_end_time"].nunique() == expected_refits
+    assert info_df["test_start_time"].nunique() == n_folds
+    assert info_df["test_end_time"].nunique() == n_folds
+
+
+def test_backtest_refit_success(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
+    """Check that backtest without refit works on pipeline that supports it."""
+    _ = catboost_pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
+
+
+def test_backtest_refit_fail(big_example_tsdf: TSDataset):
+    """Check that backtest without refit doesn't work on pipeline that doesn't support it."""
+    pipeline = Pipeline(
+        model=NaiveModel(lag=7),
+        transforms=[DifferencingTransform(in_column="target", inplace=True)],
+        horizon=7,
+    )
+    with pytest.raises(ValueError, match="Test should go after the train without gaps"):
+        _ = pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
+
+
 @pytest.mark.long_1
-def test_backtest_with_n_jobs(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
+@pytest.mark.parametrize("refit", [True, False, 2])
+def test_backtest_with_n_jobs(refit, catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that Pipeline.backtest gives the same results in case of single and multiple jobs modes."""
     ts1 = deepcopy(big_example_tsdf)
     ts2 = deepcopy(big_example_tsdf)
     pipeline_1 = deepcopy(catboost_pipeline)
     pipeline_2 = deepcopy(catboost_pipeline)
-    _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, metrics=DEFAULT_METRICS)
-    _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, metrics=DEFAULT_METRICS)
+    _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)
+    _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)
     assert (forecast_1 == forecast_2).all().all()
 
 
@@ -564,15 +630,101 @@ def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
         (FoldMask("2020-01-01", "2020-01-07", ["2020-01-08", "2020-01-11"]), {"segment_0": 95.5, "segment_1": 5}),
     ),
 )
-def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, List[float]]):
-    train, test = ts_run_fold.train_test_split(
+def test_process_fold_forecast(ts_process_fold_forecast, mask: FoldMask, expected: Dict[str, List[float]]):
+    train, test = ts_process_fold_forecast.train_test_split(
         train_start=mask.first_train_timestamp, train_end=mask.last_train_timestamp
     )
 
     pipeline = Pipeline(model=NaiveModel(lag=5), transforms=[], horizon=4)
-    fold = pipeline._run_fold(train, test, 1, mask, [MAE()], forecast_params=dict())
+    pipeline = pipeline.fit(ts=train)
+    forecast = pipeline.forecast()
+    fold = pipeline._process_fold_forecast(
+        forecast=forecast, train=train, test=test, fold_number=1, mask=mask, metrics=[MAE()]
+    )
     for seg in fold["metrics"]["MAE"].keys():
         assert fold["metrics"]["MAE"][seg] == expected[seg]
+
+
+def test_make_backtest_fold_groups_refit_true():
+    masks = [MagicMock() for _ in range(2)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=True)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0],
+            "forecast_masks": [masks[0]],
+        },
+        {
+            "train_fold_number": 1,
+            "train_mask": masks[1],
+            "forecast_fold_numbers": [1],
+            "forecast_masks": [masks[1]],
+        },
+    ]
+    assert obtained_results == expected_results
+
+
+def test_make_backtest_fold_groups_refit_false():
+    masks = [MagicMock() for _ in range(2)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=False)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0, 1],
+            "forecast_masks": [masks[0], masks[1]],
+        }
+    ]
+    assert obtained_results == expected_results
+
+
+def test_make_backtest_fold_groups_refit_int():
+    masks = [MagicMock() for _ in range(5)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=2)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0, 1],
+            "forecast_masks": [masks[0], masks[1]],
+        },
+        {
+            "train_fold_number": 2,
+            "train_mask": masks[2],
+            "forecast_fold_numbers": [2, 3],
+            "forecast_masks": [masks[2], masks[3]],
+        },
+        {
+            "train_fold_number": 4,
+            "train_mask": masks[4],
+            "forecast_fold_numbers": [4],
+            "forecast_masks": [masks[4]],
+        },
+    ]
+    assert obtained_results == expected_results
+
+
+@pytest.mark.parametrize(
+    "n_folds, refit, expected_refits",
+    [
+        (1, 1, 1),
+        (1, 2, 1),
+        (3, 1, 3),
+        (3, 2, 2),
+        (3, 3, 1),
+        (3, 4, 1),
+        (4, 1, 4),
+        (4, 2, 2),
+        (4, 3, 2),
+        (4, 4, 1),
+        (4, 5, 1),
+    ],
+)
+def test_make_backtest_fold_groups_length_refit_int(n_folds, refit, expected_refits):
+    masks = [MagicMock() for _ in range(n_folds)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=refit)
+    assert len(obtained_results) == expected_refits
 
 
 @pytest.mark.parametrize(

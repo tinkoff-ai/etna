@@ -8,6 +8,7 @@ from scipy.stats import norm
 
 from etna.datasets import TSDataset
 from etna.models import CatBoostPerSegmentModel
+from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 
@@ -20,6 +21,16 @@ def catboost_pipeline() -> Pipeline:
     pipeline = Pipeline(
         model=CatBoostPerSegmentModel(),
         transforms=[LagTransform(in_column="target", lags=[10, 11, 12], out_column="regressor_lag_feature")],
+        horizon=7,
+    )
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = Pipeline(
+        model=NaiveModel(lag=7),
         horizon=7,
     )
     return pipeline
@@ -218,7 +229,7 @@ def masked_ts() -> TSDataset:
 
 
 @pytest.fixture
-def ts_run_fold() -> TSDataset:
+def ts_process_fold_forecast() -> TSDataset:
     timerange = pd.date_range(start="2020-01-01", periods=11).to_list()
     df = pd.DataFrame({"timestamp": timerange + timerange})
     df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
