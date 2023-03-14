@@ -24,6 +24,39 @@ from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PredictionIntervalContextRequiredModelMixin
 from etna.models.mixins import SaveNNMixin
 
+class DummyModelBase:
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+        ts.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 100
+        return ts
+
+    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
+        ts.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 200
+        return ts
+
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        df = ts.to_pandas(flatten=True, features=["target"])
+        df["target_component_a"] = 10
+        df["target_component_b"] = 90
+        df = df.drop(columns=["target"])
+        df = TSDataset.to_dataset(df)
+        return df
+
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        df = ts.to_pandas(flatten=True, features=["target"])
+        df["target_component_a"] = 20
+        df["target_component_b"] = 180
+        df = df.drop(columns=["target"])
+        df = TSDataset.to_dataset(df)
+        return df
+
+class NonPredictionIntervalContextIgnorantDummyModel(DummyModelBase, NonPredictionIntervalContextIgnorantModelMixin):
+    pass
+class NonPredictionIntervalContextRequiredDummyModel(DummyModelBase, NonPredictionIntervalContextRequiredModelMixin):
+    pass
+class PredictionIntervalContextIgnorantDummyModel(DummyModelBase, PredictionIntervalContextIgnorantModelMixin):
+    pass
+class PredictionIntervalContextRequiredDummyModel(DummyModelBase, PredictionIntervalContextRequiredModelMixin):
+    pass
 
 @pytest.fixture()
 def regression_base_model_mock():
@@ -151,61 +184,6 @@ def test_save_mixin_load_warning(get_version_mock, save_version, load_version, t
         _ = DummyNN.load(path)
 
 
-@pytest.mark.parametrize(
-    "mixin_constructor, call_params",
-    [
-        (PredictionIntervalContextIgnorantModelMixin, {}),
-        (NonPredictionIntervalContextIgnorantModelMixin, {}),
-        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-    ],
-)
-@pytest.mark.parametrize("return_components", (True, False))
-def test_model_mixins_calls_add_target_components_in_forecast(mixin_constructor, return_components, call_params):
-    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
-        ts = Mock()
-        forecast_ts = Mock(spec=TSDataset)
-        mixin = mixin_constructor()
-        mixin._forecast = Mock(return_value=forecast_ts)
-        mixin._add_target_components = Mock()
-
-        _ = mixin.forecast(ts=ts, return_components=return_components, **call_params)
-
-        mixin._add_target_components.assert_called_with(
-            ts=ts,
-            predictions=forecast_ts,
-            components_prediction_method=mixin._forecast_components,
-            return_components=return_components,
-        )
-
-
-@pytest.mark.parametrize(
-    "mixin_constructor, call_params",
-    [
-        (PredictionIntervalContextIgnorantModelMixin, {}),
-        (NonPredictionIntervalContextIgnorantModelMixin, {}),
-        (PredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-        (NonPredictionIntervalContextRequiredModelMixin, {"prediction_size": 10}),
-    ],
-)
-@pytest.mark.parametrize("return_components", (True, False))
-def test_model_mixins_calls_add_target_components_in_predict(mixin_constructor, return_components, call_params):
-    with patch.multiple(mixin_constructor, __abstractmethods__=set()):
-        ts = Mock()
-        predict_ts = Mock(spec=TSDataset)
-        mixin = mixin_constructor()
-        mixin._predict = Mock(return_value=predict_ts)
-        mixin._add_target_components = Mock()
-        _ = mixin.predict(ts=ts, return_components=return_components, **call_params)
-
-        mixin._add_target_components.assert_called_with(
-            ts=ts,
-            predictions=predict_ts,
-            components_prediction_method=mixin._predict_components,
-            return_components=return_components,
-        )
-
-
 @pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin])
 def test_make_prediction_segment_with_components(mixin_constructor, target_components_df, ts_without_target_components):
     mixin = mixin_constructor(base_model=Mock())
@@ -236,3 +214,67 @@ def test_make_components_prediction(mixin_constructor, target_components_df, ts_
         ts=ts_without_target_components, prediction_method=prediction_method
     )
     pd.testing.assert_frame_equal(target_components_pred, target_components_df)
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (NonPredictionIntervalContextIgnorantDummyModel, {}),
+        (NonPredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+        (PredictionIntervalContextIgnorantDummyModel, {}),
+        (PredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_forecast_without_target_components(ts_without_target_components, mixin_constructor, call_params, expected_target=100, expected_columns=["timestamp", "segment", "target"]):
+    mixin = mixin_constructor()
+    forecast = mixin.forecast(ts=ts_without_target_components, return_components=False, **call_params).to_pandas(flatten=True)
+    assert sorted(forecast.columns) == sorted(expected_columns)
+    assert (forecast["target"] == expected_target).all()
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (NonPredictionIntervalContextIgnorantDummyModel, {}),
+        (NonPredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+        (PredictionIntervalContextIgnorantDummyModel, {}),
+        (PredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_predict_without_target_components(ts_without_target_components, mixin_constructor, call_params, expected_target=200, expected_columns=["timestamp", "segment", "target"]):
+    mixin = mixin_constructor()
+    forecast = mixin.predict(ts=ts_without_target_components, return_components=False, **call_params).to_pandas(flatten=True)
+    assert sorted(forecast.columns) == sorted(expected_columns)
+    assert (forecast["target"] == expected_target).all()
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (NonPredictionIntervalContextIgnorantDummyModel, {}),
+        (NonPredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+        (PredictionIntervalContextIgnorantDummyModel, {}),
+        (PredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_forecast_with_target_components(ts_without_target_components, mixin_constructor, call_params, expected_target=100, expected_component_a=10, expected_component_b=90, expected_columns=["timestamp", "segment", "target", "target_component_a", "target_component_b"]):
+    mixin = mixin_constructor()
+    forecast = mixin.forecast(ts=ts_without_target_components, return_components=True, **call_params).to_pandas(flatten=True)
+    assert sorted(forecast.columns) == sorted(expected_columns)
+    assert (forecast["target"] == expected_target).all()
+    assert (forecast["target_component_a"] == expected_component_a).all()
+    assert (forecast["target_component_b"] == expected_component_b).all()
+
+@pytest.mark.parametrize(
+    "mixin_constructor, call_params",
+    [
+        (NonPredictionIntervalContextIgnorantDummyModel, {}),
+        (NonPredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+        (PredictionIntervalContextIgnorantDummyModel, {}),
+        (PredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
+    ],
+)
+def test_model_mixins_predict_with_target_components(ts_without_target_components, mixin_constructor, call_params, expected_target=200, expected_component_a=20, expected_component_b=180, expected_columns=["timestamp", "segment", "target", "target_component_a", "target_component_b"]):
+    mixin = mixin_constructor()
+    forecast = mixin.predict(ts=ts_without_target_components, return_components=True, **call_params).to_pandas(flatten=True)
+    assert sorted(forecast.columns) == sorted(expected_columns)
+    assert (forecast["target"] == expected_target).all()
+    assert (forecast["target_component_a"] == expected_component_a).all()
+    assert (forecast["target_component_b"] == expected_component_b).all()
