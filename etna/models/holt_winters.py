@@ -277,6 +277,126 @@ class _HoltWintersAdapter(BaseAdapter):
         """
         return self._result
 
+    def _check_mul_components(self):
+        """Raise error if model has multiplicative components."""
+        model = self._model
+
+        if model is None:
+            raise ValueError("This model is not fitted!")
+
+        if (model.trend is not None and model.trend == "mul") or (
+            model.seasonal is not None and model.seasonal == "mul"
+        ):
+            raise ValueError("Forecast decomposition is only supported for additive components!")
+
+    def _rescale_components(self, df: pd.DataFrame, components: pd.DataFrame) -> pd.DataFrame:
+        """Rescale components when Box-Cox transform used."""
+        pred = np.sum(components.values, axis=1)
+        transformed_pred = self.predict(df=df)
+        components *= (transformed_pred / pred).reshape((-1, 1))
+        return components
+
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        model = self._model
+        fit_result = self._result
+
+        if fit_result is None or model is None:
+            raise ValueError("This model is not fitted!")
+
+        self._check_mul_components()
+        self._check_df(df)
+
+        horizon = df["timestamp"].nunique()
+        horizon_steps = np.arange(1, horizon + 1)
+
+        components = {"target_component_level": fit_result.level[-1] * np.ones(horizon)}
+
+        if model.trend is not None:
+            t = horizon_steps.copy()
+
+            if model.damped_trend:
+                t = np.cumsum(fit_result.params["damping_trend"] ** t)
+
+            components["target_component_trend"] = fit_result.trend[-1] * t
+
+        if model.seasonal is not None:
+            last_period = len(fit_result.season)
+
+            seasonal_periods = fit_result.model.seasonal_periods
+            k = (horizon_steps / seasonal_periods).astype(int)
+
+            components["target_component_seasonality"] = fit_result.season.values[
+                last_period + horizon_steps - seasonal_periods * (k + 1) - 1
+            ]
+
+        components_df = pd.DataFrame(data=components)
+
+        if model._use_boxcox:
+            components_df = self._rescale_components(df=df, components=components_df)
+
+        return components_df
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        model = self._model
+        fit_result = self._result
+
+        if fit_result is None or model is None:
+            raise ValueError("This model is not fitted!")
+
+        self._check_mul_components()
+        self._check_df(df)
+
+        components = {
+            "target_component_level": np.concatenate(
+                [[fit_result.params["initial_level"]], fit_result.level.values[:-1]]
+            ),
+        }
+
+        if model.trend is not None:
+            trend = np.concatenate([[fit_result.params["initial_trend"]], fit_result.trend.values[:-1]])
+
+            if model.damped_trend:
+                trend *= fit_result.params["damping_trend"]
+
+            components["target_component_trend"] = trend
+
+        if model.seasonal is not None:
+            seasonal_periods = model.seasonal_periods
+            components["target_component_seasonality"] = np.concatenate(
+                [fit_result.params["initial_seasons"], fit_result.season.values[:-seasonal_periods]]
+            )
+
+        components_df = pd.DataFrame(data=components)
+
+        if model._use_boxcox:
+            components_df = self._rescale_components(df=df, components=components_df)
+
+        return components_df
+
 
 class HoltWintersModel(
     PerSegmentModelMixin,
