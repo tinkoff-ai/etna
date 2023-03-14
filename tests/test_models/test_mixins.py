@@ -27,7 +27,7 @@ from etna.models.mixins import SaveNNMixin
 
 
 class DummyPredictAdapter(BaseAdapter):
-    def fit(self, df: pd.DataFrame, **kwargs) -> "DummyAdapter":
+    def fit(self, df: pd.DataFrame, **kwargs) -> "DummyPredictAdapter":
         return self
 
     def predict(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
@@ -40,12 +40,12 @@ class DummyPredictAdapter(BaseAdapter):
         df = df.drop(columns=["target"])
         return df
 
-    def get_model(self) -> "DummyAdapter":
+    def get_model(self) -> "DummyPredictAdapter":
         return self
 
 
 class DummyForecastPredictAdapter(DummyPredictAdapter):
-    def fit(self, df: pd.DataFrame, **kwargs) -> "DummyAdapter":
+    def fit(self, df: pd.DataFrame, **kwargs) -> "DummyForecastPredictAdapter":
         return self
 
     def forecast(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
