@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 from etna.transforms import IrreversibleTransform
 from etna.transforms import ReversibleTransform
+from etna.transforms import AddConstTransform
 
 
 class TransformMock(IrreversibleTransform):
@@ -165,3 +166,9 @@ def test_inverse_transform_request_update_dataset(remove_columns_df):
     transform._update_dataset.assert_called_with(
         ts=ts, columns_before=columns_before, df_transformed=expected_df_transformed
     )
+
+def test_inverse_transform_with_target_components(ts_with_target_components, inverse_transformed_components_df):
+    transform = AddConstTransform(in_column="target", value=-10)
+    transform.inverse_transform(ts=ts_with_target_components)
+    assert sorted(ts_with_target_components.target_components) == sorted(set(inverse_transformed_components_df.columns.get_level_values("feature")))
+    pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
