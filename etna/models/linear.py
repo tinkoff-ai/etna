@@ -1,8 +1,42 @@
+import numpy as np
+import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
 from etna.models.sklearn import SklearnMultiSegmentModel
 from etna.models.sklearn import SklearnPerSegmentModel
+from etna.models.sklearn import _SklearnAdapter
+
+
+class _LinearAdapter(_SklearnAdapter):
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        if self.regressor_columns is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        component_names = [f"target_component_{component_name}" for component_name in self.regressor_columns]
+        target_components = df[self.regressor_columns]
+        components_coefs = self.model.coef_
+
+        if self.model.fit_intercept:
+            component_names.append("target_components_intercept")
+            target_components["intercept"] = 1
+            components_coefs = np.hstack((components_coefs, np.ones((len(df), 1))))
+
+        target_components = components_coefs * target_components.values
+        target_components = pd.DataFrame(target_components, columns=component_names)
+        return target_components
 
 
 class LinearPerSegmentModel(SklearnPerSegmentModel):
