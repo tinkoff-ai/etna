@@ -40,7 +40,7 @@ class ModelForecastingMixin(ABC):
         self, ts: TSDataset, predictions: TSDataset, components_prediction_method: Callable, return_components: bool
     ):
         if return_components:
-            target_components_df = components_prediction_method(self=self, ts=ts)
+            target_components_df = components_prediction_method(ts=ts)
             predictions.add_target_components(target_components_df=target_components_df)
 
 

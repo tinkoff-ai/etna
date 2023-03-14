@@ -5,6 +5,7 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 import dill
+import numpy as np
 import pytest
 
 from etna import SETTINGS
@@ -29,13 +30,13 @@ class DummyAdapter(BaseAdapter):
     def fit(self, df: pd.DataFrame, **kwargs) -> "DummyAdapter":
         return self
 
-    def forecast(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def forecast(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
         df["target"] = 100
-        return df
+        return df["target"].values
 
-    def predict(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame, **kwargs) -> np.ndarray:
         df["target"] = 200
-        return df
+        return df["target"].values
 
     def forecast_components(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         df["target_component_a"] = 10
