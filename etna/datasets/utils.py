@@ -292,20 +292,7 @@ def inverse_transform_target_components(
     :
        Dataframe with inverse transformed target components
     """
-    segments = set(target_components_df.columns.get_level_values("segment"))
-    scale_coef = inverse_transformed_target_df / target_df
-
-    inverse_transformed_target_components = []
-    for segment in segments:
-        seg_df = target_components_df[segment] * scale_coef[segment].values
-
-        _idx = seg_df.columns.to_frame()
-        _idx.insert(0, "segment", segment)
-        seg_df.columns = pd.MultiIndex.from_frame(_idx)
-
-        inverse_transformed_target_components.append(seg_df)
-
-    inverse_transformed_target_components_df = pd.concat(inverse_transformed_target_components, axis=1)
-    inverse_transformed_target_components_df = inverse_transformed_target_components_df.sort_index(axis=1)
-    inverse_transformed_target_components_df.columns.names = ["segment", "feature"]
+    components_number = len(set(target_components_df.columns.get_level_values("feature")))
+    scale_coef = np.repeat((inverse_transformed_target_df / target_df).values, repeats=components_number, axis=1)
+    inverse_transformed_target_components_df = target_components_df * scale_coef
     return inverse_transformed_target_components_df
