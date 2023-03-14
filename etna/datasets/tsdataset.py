@@ -1035,7 +1035,9 @@ class TSDataset:
             len(set(features).intersection(self.target_components)) != 0
         )
         if features_contain_target_components:
-            raise ValueError("Target components can't be dropped from the dataset!")
+            raise ValueError(
+                "Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!"
+            )
 
         dfs = [("df", self.df)]
         if drop_from_exog:

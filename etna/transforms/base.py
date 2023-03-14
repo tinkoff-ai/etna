@@ -236,13 +236,18 @@ class ReversibleTransform(Transform):
             TSDataset after applying inverse transformation.
         """
         required_features = self._get_inverse_transform_required_features(ts)
+        inverse_transform_target_components_flg = "target" in required_features and ts.target_components is not None
+        target_df = None
+        if inverse_transform_target_components_flg:
+            target_df = ts.to_pandas(flatten=False, features=["target"])
+
         df = ts.to_pandas(flatten=False, features=required_features)
         columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._inverse_transform(df=df)
+        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
 
-        if "target" in required_features and ts.target_components is not None:
-            target_df = ts.to_pandas(flatten=False, features=["target"])
-            inverse_transformed_target_df = df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]]
+        if inverse_transform_target_components_flg:
+            inverse_transformed_target_df = df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]]
             inverse_transformed_target_components_df = inverse_transform_target_components(
                 target_components_df=ts.get_target_components(),
                 target_df=target_df,
@@ -251,7 +256,6 @@ class ReversibleTransform(Transform):
             ts.drop_target_components()
             ts.add_target_components(target_components_df=inverse_transformed_target_components_df)
 
-        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
 
 
