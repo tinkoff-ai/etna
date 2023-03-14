@@ -1,7 +1,6 @@
 import json
 import pathlib
 from unittest.mock import MagicMock
-from unittest.mock import Mock
 from unittest.mock import patch
 from zipfile import ZipFile
 
@@ -23,6 +22,34 @@ from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PredictionIntervalContextRequiredModelMixin
 from etna.models.mixins import SaveNNMixin
+from etna.models.base import BaseAdapter
+
+class DummyAdapter(BaseAdapter):
+    def fit(self, df: pd.DataFrame, **kwargs) -> "DummyAdapter":
+        return self
+
+    def forecast(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        df["target"] = 100
+        return df
+
+    def predict(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        df["target"] = 200
+        return df
+
+    def forecast_components(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        df["target_component_a"] = 10
+        df["target_component_b"] = 90
+        df = df.drop(columns=["target"])
+        return df
+
+    def predict_components(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        df["target_component_a"] = 20
+        df["target_component_b"] = 180
+        df = df.drop(columns=["target"])
+        return df
+
+    def get_model(self) -> "DummyAdapter":
+        return self
 
 class DummyModelBase:
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
@@ -76,23 +103,6 @@ def autoregression_base_model_mock():
     model = MagicMock()
     model.__class__ = cls
     return model
-
-
-@pytest.fixture
-def target_components_df():
-    timestamp = pd.date_range("2021-01-01", "2021-01-15")
-    df = pd.DataFrame({"timestamp": timestamp, "target_component_a": 1, "target_component_b": 2, "segment": 1})
-    df = TSDataset.to_dataset(df)
-    return df
-
-
-@pytest.fixture
-def ts_without_target_components():
-    timestamp = pd.date_range("2021-01-01", "2021-01-15")
-    df = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
-    df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
-    return ts
 
 
 @pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin, MultiSegmentModelMixin])
@@ -184,37 +194,6 @@ def test_save_mixin_load_warning(get_version_mock, save_version, load_version, t
         _ = DummyNN.load(path)
 
 
-@pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin])
-def test_make_prediction_segment_with_components(mixin_constructor, target_components_df, ts_without_target_components):
-    mixin = mixin_constructor(base_model=Mock())
-    target_components_df_model_format = TSDataset.to_flatten(target_components_df).drop(columns=["segment"])
-    prediction_method = Mock(return_value=target_components_df_model_format)
-
-    target_components_pred = mixin._make_predictions_segment(
-        model=mixin._base_model,
-        segment="1",
-        df=ts_without_target_components.to_pandas(),
-        prediction_method=prediction_method,
-    )
-
-    pd.testing.assert_frame_equal(
-        target_components_pred.set_index(["timestamp", "segment"]),
-        TSDataset.to_flatten(target_components_df).set_index(["timestamp", "segment"]),
-    )
-
-
-@pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin, MultiSegmentModelMixin])
-def test_make_components_prediction(mixin_constructor, target_components_df, ts_without_target_components):
-    mixin = mixin_constructor(base_model=Mock())
-    mixin.fit(ts_without_target_components)
-    target_components_df_model_format = TSDataset.to_flatten(target_components_df).drop(columns=["segment"])
-    prediction_method = Mock(return_value=target_components_df_model_format)
-
-    target_components_pred = mixin._make_component_predictions(
-        ts=ts_without_target_components, prediction_method=prediction_method
-    )
-    pd.testing.assert_frame_equal(target_components_pred, target_components_df)
-
 @pytest.mark.parametrize(
     "mixin_constructor, call_params",
     [
@@ -271,10 +250,32 @@ def test_model_mixins_forecast_with_target_components(ts_without_target_componen
         (PredictionIntervalContextRequiredDummyModel, {"prediction_size": 10}),
     ],
 )
-def test_model_mixins_predict_with_target_components(ts_without_target_components, mixin_constructor, call_params, expected_target=200, expected_component_a=20, expected_component_b=180, expected_columns=["timestamp", "segment", "target", "target_component_a", "target_component_b"]):
+def test_model_mixins_predict_with_target_components(example_tsds, mixin_constructor, call_params, expected_target=200, expected_component_a=20, expected_component_b=180, expected_columns=["timestamp", "segment", "target", "target_component_a", "target_component_b"]):
     mixin = mixin_constructor()
-    forecast = mixin.predict(ts=ts_without_target_components, return_components=True, **call_params).to_pandas(flatten=True)
+    forecast = mixin.predict(ts=example_tsds, return_components=True, **call_params).to_pandas(flatten=True)
     assert sorted(forecast.columns) == sorted(expected_columns)
     assert (forecast["target"] == expected_target).all()
+    assert (forecast["target_component_a"] == expected_component_a).all()
+    assert (forecast["target_component_b"] == expected_component_b).all()
+
+
+@pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin, MultiSegmentModelMixin])
+@pytest.mark.parametrize("method_name, expected_target", [("_forecast", 100), ("_predict", 200)])
+def test_mixin_implementations_prediction_methods(example_tsds, mixin_constructor, method_name, expected_target, expected_columns=["timestamp", "segment", "target"]):
+    mixin = mixin_constructor(base_model=DummyAdapter())
+    mixin = mixin.fit(ts=example_tsds)
+    to_call = getattr(mixin, method_name)
+    forecast = to_call(ts=example_tsds).to_pandas(flatten=True)
+    assert sorted(forecast.columns) == sorted(expected_columns)
+    assert (forecast["target"] == expected_target).all()
+
+@pytest.mark.parametrize("mixin_constructor", [PerSegmentModelMixin, MultiSegmentModelMixin])
+@pytest.mark.parametrize("method_name, expected_component_a, expected_component_b", [("_forecast_components", 10, 90), ("_predict_components", 20, 180)])
+def test_mixin_implementations_prediction_components_methods(example_tsds, mixin_constructor, method_name, expected_component_a, expected_component_b, expected_columns=["timestamp", "segment", "target_component_a", "target_component_b"]):
+    mixin = mixin_constructor(base_model=DummyAdapter())
+    mixin = mixin.fit(ts=example_tsds)
+    to_call = getattr(mixin, method_name)
+    forecast = TSDataset.to_flatten(to_call(ts=example_tsds))
+    assert sorted(forecast.columns) == sorted(expected_columns)
     assert (forecast["target_component_a"] == expected_component_a).all()
     assert (forecast["target_component_b"] == expected_component_b).all()
