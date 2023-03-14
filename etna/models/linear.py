@@ -3,8 +3,10 @@ import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
-from etna.models.sklearn import SklearnMultiSegmentModel
-from etna.models.sklearn import SklearnPerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.mixins import MultiSegmentModelMixin
+from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PerSegmentModelMixin
 from etna.models.sklearn import _SklearnAdapter
 
 
@@ -39,7 +41,11 @@ class _LinearAdapter(_SklearnAdapter):
         return target_components
 
 
-class LinearPerSegmentModel(SklearnPerSegmentModel):
+class LinearPerSegmentModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class holding per segment :py:class:`sklearn.linear_model.LinearRegression`."""
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
@@ -54,10 +60,16 @@ class LinearPerSegmentModel(SklearnPerSegmentModel):
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
-        super().__init__(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        super().__init__(
+            base_model=_LinearAdapter(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        )
 
 
-class ElasticPerSegmentModel(SklearnPerSegmentModel):
+class ElasticPerSegmentModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`."""
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
@@ -89,16 +101,22 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
         super().__init__(
-            regressor=ElasticNet(
-                alpha=self.alpha,
-                l1_ratio=self.l1_ratio,
-                fit_intercept=self.fit_intercept,
-                **self.kwargs,
+            base_model=_LinearAdapter(
+                regressor=ElasticNet(
+                    alpha=self.alpha,
+                    l1_ratio=self.l1_ratio,
+                    fit_intercept=self.fit_intercept,
+                    **self.kwargs,
+                )
             )
         )
 
 
-class LinearMultiSegmentModel(SklearnMultiSegmentModel):
+class LinearMultiSegmentModel(
+    MultiSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments."""
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
@@ -113,10 +131,16 @@ class LinearMultiSegmentModel(SklearnMultiSegmentModel):
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
-        super().__init__(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        super().__init__(
+            base_model=_LinearAdapter(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        )
 
 
-class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
+class ElasticMultiSegmentModel(
+    MultiSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments."""
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
@@ -148,10 +172,12 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
         super().__init__(
-            regressor=ElasticNet(
-                alpha=self.alpha,
-                l1_ratio=self.l1_ratio,
-                fit_intercept=self.fit_intercept,
-                **self.kwargs,
+            base_model=_LinearAdapter(
+                regressor=ElasticNet(
+                    alpha=self.alpha,
+                    l1_ratio=self.l1_ratio,
+                    fit_intercept=self.fit_intercept,
+                    **self.kwargs,
+                )
             )
         )
