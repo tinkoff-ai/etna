@@ -417,21 +417,25 @@ class TSDataset:
         Applied in reversed order.
         """
         # TODO: return regressors after inverse_transform
-        target_df = self.to_pandas(features=["target"])
-        target_components_df = self.get_target_components()
-        self.drop_target_components()
+        inverse_transform_target_components_flg = self.target_components is not None
+        target_df, target_components_df = None, None
+        if inverse_transform_target_components_flg:
+            target_df = self.to_pandas(features=["target"])
+            target_components_df = self.get_target_components()
+            self.drop_target_components()
 
         for transform in reversed(transforms):
             tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
             transform.inverse_transform(self)
 
-        inverse_transformed_target_df = self.to_pandas(features=["target"])
-        inverse_transformed_target_components_df = inverse_transform_target_components(
-            target_components_df=target_components_df,
-            target_df=target_df,
-            inverse_transformed_target_df=inverse_transformed_target_df,
-        )
-        self.add_target_components(target_components_df=inverse_transformed_target_components_df)
+        if inverse_transform_target_components_flg:
+            inverse_transformed_target_df = self.to_pandas(features=["target"])
+            inverse_transformed_target_components_df = inverse_transform_target_components(
+                target_components_df=target_components_df,
+                target_df=target_df,
+                inverse_transformed_target_df=inverse_transformed_target_df,
+            )
+            self.add_target_components(target_components_df=inverse_transformed_target_components_df)
 
     @property
     def segments(self) -> List[str]:
