@@ -218,6 +218,8 @@ class AbstractPipeline(AbstractSaveable):
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
 
+        If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
+
         Parameters
         ----------
         ts:
@@ -237,7 +239,7 @@ class AbstractPipeline(AbstractSaveable):
 
             * If ``True``: pipeline is retrained on each fold.
 
-            * If ``False``: pipeline is trained on the first fold, and on future folds trained pipeline is used.
+            * If ``False``: pipeline is trained only on the first fold.
 
             * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
 
@@ -796,9 +798,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
             * If ``True``: pipeline is retrained on each fold.
 
-            * If ``False``: pipeline is trained only on the first fold, and on future folds trained pipeline is used.
+            * If ``False``: pipeline is trained only on the first fold.
 
             * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
+
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
         forecast_params:
@@ -808,11 +811,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         -------
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
-
-        Raises
-        ------
-        Exception:
-
         """
         if joblib_params is None:
             joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
