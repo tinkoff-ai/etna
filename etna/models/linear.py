@@ -32,9 +32,9 @@ class _LinearAdapter(_SklearnAdapter):
         components_coefs = self.model.coef_
 
         if self.model.fit_intercept:
-            component_names.append("target_components_intercept")
+            component_names.append("target_component_intercept")
             target_components["intercept"] = 1
-            components_coefs = np.hstack((components_coefs, np.ones((len(df), 1))))
+            components_coefs = np.hstack((components_coefs, [self.model.intercept_]))
 
         target_components = components_coefs * target_components.values
         target_components = pd.DataFrame(target_components, columns=component_names)
