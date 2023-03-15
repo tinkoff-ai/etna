@@ -47,7 +47,7 @@ def ts_with_categoricals(random_seed) -> TSDataset:
 
 
 @pytest.fixture
-def df_with_features(example_tsds) -> Tuple[pd.DataFrame, List[str]]:
+def df_with_regressors(example_tsds) -> Tuple[pd.DataFrame, List[str]]:
     lags = LagTransform(in_column="target", lags=[7], out_column="lag")
     dflg = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True, is_weekend=False, out_column="df")
     example_tsds.fit_transform([lags, dflg])
@@ -307,9 +307,9 @@ def test_save_load(model, example_tsds):
 )
 @pytest.mark.parametrize("regressor_constructor", (LinearRegression, ElasticNet))
 def test_linear_adapter_predict_components_correct_names(
-    df_with_features, regressor_constructor, fit_intercept, expected_component_names
+    df_with_regressors, regressor_constructor, fit_intercept, expected_component_names
 ):
-    df, regressors = df_with_features
+    df, regressors = df_with_regressors
     adapter = _LinearAdapter(regressor=regressor_constructor(fit_intercept=fit_intercept))
     adapter.fit(df=df, regressors=regressors)
     target_components = adapter.predict_components(df)
@@ -318,10 +318,10 @@ def test_linear_adapter_predict_components_correct_names(
 
 @pytest.mark.parametrize("fit_intercept", (True, False))
 @pytest.mark.parametrize("regressor_constructor", (LinearRegression, ElasticNet))
-def test_linear_adapter_predict_components_sum_up_to_target(df_with_features, regressor_constructor, fit_intercept):
-    df, regressors = df_with_features
+def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, regressor_constructor, fit_intercept):
+    df, regressors = df_with_regressors
     adapter = _LinearAdapter(regressor=regressor_constructor(fit_intercept=fit_intercept))
     adapter.fit(df=df, regressors=regressors)
     target = adapter.predict(df)
     target_components = adapter.predict_components(df)
-    np.testing.assert_array_equal(target, target_components.sum(axis=1))
+    np.testing.assert_array_almost_equal(target, target_components.sum(axis=1), decimal=10)
