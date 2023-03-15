@@ -230,7 +230,7 @@ class AbstractPipeline(AbstractSaveable):
         n_folds:
             Number of folds or the list of fold masks
         mode:
-            One of 'expand', 'constant' -- train generation policy
+            One of 'expand', 'constant' -- train generation policy, ignored if ``n_folds`` is a list of masks
         aggregate_metrics:
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
@@ -780,7 +780,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         }
         return results
 
-    # TODO: add tests on stride
+    # TODO: inconsistency between mode and stride
     def backtest(
         self,
         ts: TSDataset,
@@ -807,7 +807,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         n_folds:
             Number of folds or the list of fold masks
         mode:
-            One of 'expand', 'constant' -- train generation policy, ignored if n_folds is a list of masks
+            One of 'expand', 'constant' -- train generation policy, ignored if ``n_folds`` is a list of masks
         aggregate_metrics:
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:

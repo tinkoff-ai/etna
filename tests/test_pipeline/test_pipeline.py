@@ -378,13 +378,27 @@ def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
 
-# TODO: add tests on custom masks
-# TODO: Разобраться что происходит с refit внутри FoldMask
 @pytest.mark.parametrize(
     "n_folds, horizon, expected_timestamps",
     [
         (2, 3, [-6, -5, -4, -3, -2, -1]),
         (2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+        (
+            [
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 14:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 17:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 19:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 22:00")],
+                ),
+            ],
+            5,
+            [-8, -3],
+        ),
     ],
 )
 def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, example_tsdf):
@@ -434,7 +448,6 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
     assert expected_columns == sorted(info_df.columns)
 
 
-# TODO: add tests on custom masks
 @pytest.mark.parametrize(
     "mode, n_folds, refit, stride, expected_train_starts, expected_train_ends, expected_test_starts, expected_test_ends",
     [
@@ -476,6 +489,79 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
         ("constant", 4, 3, None, [0, 0, 0, 21], [-29, -29, -29, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
         ("constant", 4, 4, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
         ("constant", 4, 5, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        (
+            "expand",
+            [
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 10:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 14:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 17:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 21:00")],
+                ),
+            ],
+            True,
+            None,
+            [0, 0],
+            [-15, -8],
+            [-14, -7],
+            [-8, -1],
+        ),
+        (
+            "expand",
+            [
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01 1:00"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 10:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 14:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01 8:00"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 17:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 21:00")],
+                ),
+            ],
+            True,
+            None,
+            [1, 8],
+            [-15, -8],
+            [-14, -7],
+            [-8, -1],
+        ),
+        (
+            "expand",
+            [
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-30 20:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 00:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 03:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 07:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 10:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 14:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 17:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 21:00")],
+                ),
+            ],
+            2,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -15, -15],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
     ],
 )
 def test_backtest_fold_info_timestamps(
