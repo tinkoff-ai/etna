@@ -322,10 +322,14 @@ class _HoltWintersAdapter(BaseAdapter):
         self._check_mul_components()
         self._check_df(df)
 
+        level = fit_result.level.values
+        trend = fit_result.trend.values
+        season = fit_result.season.values
+
         horizon = df["timestamp"].nunique()
         horizon_steps = np.arange(1, horizon + 1)
 
-        components = {"target_component_level": fit_result.level[-1] * np.ones(horizon)}
+        components = {"target_component_level": level[-1] * np.ones(horizon)}
 
         if model.trend is not None:
             t = horizon_steps.copy()
@@ -333,15 +337,15 @@ class _HoltWintersAdapter(BaseAdapter):
             if model.damped_trend:
                 t = np.cumsum(fit_result.params["damping_trend"] ** t)
 
-            components["target_component_trend"] = fit_result.trend[-1] * t
+            components["target_component_trend"] = trend[-1] * t
 
         if model.seasonal is not None:
-            last_period = len(fit_result.season)
+            last_period = len(season)
 
             seasonal_periods = fit_result.model.seasonal_periods
             k = horizon_steps // seasonal_periods
 
-            components["target_component_seasonality"] = fit_result.season.values[
+            components["target_component_seasonality"] = season[
                 last_period + horizon_steps - seasonal_periods * (k + 1) - 1
             ]
 
@@ -374,14 +378,16 @@ class _HoltWintersAdapter(BaseAdapter):
         self._check_mul_components()
         self._check_df(df)
 
+        level = fit_result.level.values
+        trend = fit_result.trend.values
+        season = fit_result.season.values
+
         components = {
-            "target_component_level": np.concatenate(
-                [[fit_result.params["initial_level"]], fit_result.level.values[:-1]]
-            ),
+            "target_component_level": np.concatenate([[fit_result.params["initial_level"]], level[:-1]]),
         }
 
         if model.trend is not None:
-            trend = np.concatenate([[fit_result.params["initial_trend"]], fit_result.trend.values[:-1]])
+            trend = np.concatenate([[fit_result.params["initial_trend"]], trend[:-1]])
 
             if model.damped_trend:
                 trend *= fit_result.params["damping_trend"]
@@ -391,7 +397,7 @@ class _HoltWintersAdapter(BaseAdapter):
         if model.seasonal is not None:
             seasonal_periods = model.seasonal_periods
             components["target_component_seasonality"] = np.concatenate(
-                [fit_result.params["initial_seasons"], fit_result.season.values[:-seasonal_periods]]
+                [fit_result.params["initial_seasons"], season[:-seasonal_periods]]
             )
 
         components_df = pd.DataFrame(data=components)
