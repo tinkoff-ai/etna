@@ -638,7 +638,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     tmp_df[f"{stage_name}_{border}_time"] = [fold_info[f"{stage_name}_timerange"][border]]
             tmp_df[self._fold_column] = fold_number
             timerange_dfs.append(tmp_df)
-        timerange_df = pd.concat(timerange_dfs)
+        timerange_df = pd.concat(timerange_dfs, ignore_index=True)
         return timerange_df
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:

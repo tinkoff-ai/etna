@@ -1,5 +1,4 @@
 from copy import deepcopy
-from datetime import datetime
 from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
@@ -380,6 +379,7 @@ def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
 
 
 # TODO: add tests on custom masks
+# TODO: Разобраться что происходит с refit внутри FoldMask
 @pytest.mark.parametrize(
     "n_folds, horizon, expected_timestamps",
     [
@@ -393,7 +393,7 @@ def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, ex
     _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds)
     timestamp = example_tsdf.index
 
-    assert (forecast.index == timestamp[expected_timestamps]).all()
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
 
 
 @pytest.mark.parametrize(
@@ -410,7 +410,7 @@ def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, exp
     _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
     timestamp = example_tsdf.index
 
-    assert (forecast.index == timestamp[expected_timestamps]).all()
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
 
 
 @pytest.mark.parametrize(
@@ -422,17 +422,19 @@ def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, exp
         ("example_tsdf", 2),
     ],
 )
-def test_backtest_fold_info_shape(ts_fixture, n_folds, request):
+def test_backtest_fold_info_format(ts_fixture, n_folds, request):
     """Check that Pipeline.backtest returns info dataframe in correct format."""
     ts = request.getfixturevalue(ts_fixture)
     pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
     _, _, info_df = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)
 
-    assert len(info_df) == n_folds
+    expected_folds = pd.Series(np.arange(n_folds))
+    pd.testing.assert_series_equal(info_df["fold_number"], expected_folds, check_names=False)
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
     assert expected_columns == sorted(info_df.columns)
 
 
+# TODO: add tests on custom masks
 @pytest.mark.parametrize(
     "mode, n_folds, refit, stride, expected_train_starts, expected_train_ends, expected_test_starts, expected_test_ends",
     [
@@ -494,10 +496,10 @@ def test_backtest_fold_info_timestamps(
     )
     timestamp = example_tsdf.index
 
-    assert (info_df["train_start_time"] == timestamp[expected_train_starts]).all()
-    assert (info_df["train_end_time"] == timestamp[expected_train_ends]).all()
-    assert (info_df["test_start_time"] == timestamp[expected_test_starts]).all()
-    assert (info_df["test_end_time"] == timestamp[expected_test_ends]).all()
+    np.testing.assert_array_equal(info_df["train_start_time"], timestamp[expected_train_starts])
+    np.testing.assert_array_equal(info_df["train_end_time"], timestamp[expected_train_ends])
+    np.testing.assert_array_equal(info_df["test_start_time"], timestamp[expected_test_starts])
+    np.testing.assert_array_equal(info_df["test_end_time"], timestamp[expected_test_ends])
 
 
 def test_backtest_refit_success(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
