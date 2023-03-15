@@ -9,6 +9,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from scipy.special import inv_boxcox
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
@@ -289,10 +290,13 @@ class _HoltWintersAdapter(BaseAdapter):
         ):
             raise ValueError("Forecast decomposition is only supported for additive components!")
 
-    def _rescale_components(self, df: pd.DataFrame, components: pd.DataFrame) -> pd.DataFrame:
+    def _rescale_components(self, components: pd.DataFrame) -> pd.DataFrame:
         """Rescale components when Box-Cox transform used."""
+        if self._result is None:
+            raise ValueError("This model is not fitted!")
+
         pred = np.sum(components.values, axis=1)
-        transformed_pred = self.predict(df=df)
+        transformed_pred = inv_boxcox(pred, self._result.params["lamda"])
         components *= (transformed_pred / pred).reshape((-1, 1))
         return components
 
@@ -344,7 +348,7 @@ class _HoltWintersAdapter(BaseAdapter):
         components_df = pd.DataFrame(data=components)
 
         if model._use_boxcox:
-            components_df = self._rescale_components(df=df, components=components_df)
+            components_df = self._rescale_components(components=components_df)
 
         return components_df
 
@@ -393,7 +397,7 @@ class _HoltWintersAdapter(BaseAdapter):
         components_df = pd.DataFrame(data=components)
 
         if model._use_boxcox:
-            components_df = self._rescale_components(df=df, components=components_df)
+            components_df = self._rescale_components(components=components_df)
 
         return components_df
 
