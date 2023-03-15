@@ -339,7 +339,7 @@ class _HoltWintersAdapter(BaseAdapter):
             last_period = len(fit_result.season)
 
             seasonal_periods = fit_result.model.seasonal_periods
-            k = (horizon_steps / seasonal_periods).astype(int)
+            k = horizon_steps // seasonal_periods
 
             components["target_component_seasonality"] = fit_result.season.values[
                 last_period + horizon_steps - seasonal_periods * (k + 1) - 1
