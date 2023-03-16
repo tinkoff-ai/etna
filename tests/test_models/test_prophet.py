@@ -249,7 +249,7 @@ def prophet_dfs(dfs_w_exog):
 def test_check_mul_components_not_fitted_error():
     model = _ProphetAdapter()
     with pytest.raises(ValueError, match="This model is not fitted!"):
-        model._check_mul_components()
+        model._check_mul_components(set())
 
 
 def test_check_mul_components(prophet_dfs):
