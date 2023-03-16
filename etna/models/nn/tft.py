@@ -153,6 +153,7 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -169,12 +170,17 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         TSDataset
             TSDataset with predictions.
         """
+        if return_components:
+            raise NotImplementedError("This mode isn't currently implemented!")
+
         ts, prediction_dataloader = self._make_target_prediction(ts, prediction_size)
 
         if prediction_interval:
@@ -232,6 +238,7 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -249,6 +256,8 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
