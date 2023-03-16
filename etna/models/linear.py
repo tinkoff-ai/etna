@@ -27,17 +27,15 @@ class _LinearAdapter(_SklearnAdapter):
         if self.regressor_columns is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
-        component_names = [f"target_component_{component_name}" for component_name in self.regressor_columns]
-        target_components = df[self.regressor_columns]
+        target_components = df[self.model.feature_names_in_].apply(pd.to_numeric)
         components_coefs = self.model.coef_
 
         if self.model.fit_intercept:
-            component_names.append("target_component_intercept")
             target_components["intercept"] = 1
             components_coefs = np.hstack((components_coefs, [self.model.intercept_]))
 
-        target_components = components_coefs * target_components.values
-        target_components = pd.DataFrame(target_components, columns=component_names)
+        target_components = components_coefs * target_components
+        target_components = target_components.add_prefix("target_component_")
         return target_components
 
 
@@ -46,7 +44,13 @@ class LinearPerSegmentModel(
     NonPredictionIntervalContextIgnorantModelMixin,
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
-    """Class holding per segment :py:class:`sklearn.linear_model.LinearRegression`."""
+    """
+    Class holding per segment :py:class:`sklearn.linear_model.LinearRegression`.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
         """
@@ -70,7 +74,13 @@ class ElasticPerSegmentModel(
     NonPredictionIntervalContextIgnorantModelMixin,
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
-    """Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`."""
+    """
+    Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """
@@ -117,7 +127,13 @@ class LinearMultiSegmentModel(
     NonPredictionIntervalContextIgnorantModelMixin,
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
-    """Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments."""
+    """
+    Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
         """
@@ -141,7 +157,13 @@ class ElasticMultiSegmentModel(
     NonPredictionIntervalContextIgnorantModelMixin,
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
-    """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments."""
+    """
+    Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """
