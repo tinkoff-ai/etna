@@ -271,6 +271,12 @@ class ProphetModel(
     Original Prophet can use features 'cap' and 'floor',
     they should be added to the known_future list on dataset initialization.
 
+    This model supports in-sample and out-of-sample forecast decomposition. The number
+    of components in the decomposition depends on model parameters. Main components are:
+    trend, seasonality, holiday and exogenous effects. Seasonal components will be decomposed
+    down to individual periods if fitted. Holiday and exogenous will be present in decomposition
+    if fitted.Corresponding components are obtained directly from the model.
+
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
