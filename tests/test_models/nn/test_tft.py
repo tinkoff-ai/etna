@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pandas as pd
 import pytest
 
@@ -189,3 +191,8 @@ def test_repr():
         "attention_head_size = 4, dropout = 0.1, hidden_continuous_size = 8, "
         "loss = QuantileLoss(), trainer_params = {'max_epochs': 2, 'gpus': 0}, quantiles_kwargs = {}, )"
     )
+
+
+def test_tft_forecast_throw_error_on_return_components():
+    with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
+        TFTModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)

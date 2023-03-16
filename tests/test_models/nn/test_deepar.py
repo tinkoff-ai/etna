@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pandas as pd
 import pytest
 from pytorch_forecasting.data import GroupNormalizer
@@ -184,3 +186,8 @@ def test_repr():
         "train_batch_size = 64, test_batch_size = 64, lr = 0.1, cell_type = 'LSTM', hidden_size = 10, rnn_layers = 2, "
         "dropout = 0.1, loss = NormalDistributionLoss(), trainer_params = {'max_epochs': 2, 'gpus': 0}, quantiles_kwargs = {}, )"
     )
+
+
+def test_deepar_forecast_throw_error_on_return_components():
+    with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
+        DeepARModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)
