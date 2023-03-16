@@ -1,3 +1,6 @@
+from typing import List
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,6 +12,7 @@ from etna.models.linear import ElasticMultiSegmentModel
 from etna.models.linear import ElasticPerSegmentModel
 from etna.models.linear import LinearMultiSegmentModel
 from etna.models.linear import LinearPerSegmentModel
+from etna.models.linear import _LinearAdapter
 from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 from etna.transforms.timestamp import DateFlagsTransform
@@ -40,6 +44,14 @@ def ts_with_categoricals(random_seed) -> TSDataset:
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
 
     return ts
+
+
+@pytest.fixture
+def df_with_regressors(example_tsds) -> Tuple[pd.DataFrame, List[str]]:
+    lags = LagTransform(in_column="target", lags=[7], out_column="lag")
+    dflg = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True, is_weekend=False, out_column="df")
+    example_tsds.fit_transform([lags, dflg])
+    return example_tsds.to_pandas(flatten=True).dropna(), example_tsds.regressors
 
 
 def linear_segments_by_parameters(alpha_values, intercept_values):
@@ -269,3 +281,47 @@ def test_save_load(model, example_tsds):
     horizon = 3
     transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "fit_intercept, expected_component_names",
+    [
+        (
+            True,
+            [
+                "target_component_lag_7",
+                "target_component_df_day_number_in_week",
+                "target_component_df_day_number_in_month",
+                "target_component_intercept",
+            ],
+        ),
+        (
+            False,
+            [
+                "target_component_lag_7",
+                "target_component_df_day_number_in_week",
+                "target_component_df_day_number_in_month",
+            ],
+        ),
+    ],
+)
+@pytest.mark.parametrize("regressor_constructor", (LinearRegression, ElasticNet))
+def test_linear_adapter_predict_components_correct_names(
+    df_with_regressors, regressor_constructor, fit_intercept, expected_component_names
+):
+    df, regressors = df_with_regressors
+    adapter = _LinearAdapter(regressor=regressor_constructor(fit_intercept=fit_intercept))
+    adapter.fit(df=df, regressors=regressors)
+    target_components = adapter.predict_components(df)
+    assert sorted(target_components.columns) == sorted(expected_component_names)
+
+
+@pytest.mark.parametrize("fit_intercept", (True, False))
+@pytest.mark.parametrize("regressor_constructor", (LinearRegression, ElasticNet))
+def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, regressor_constructor, fit_intercept):
+    df, regressors = df_with_regressors
+    adapter = _LinearAdapter(regressor=regressor_constructor(fit_intercept=fit_intercept))
+    adapter.fit(df=df, regressors=regressors)
+    target = adapter.predict(df)
+    target_components = adapter.predict_components(df)
+    np.testing.assert_array_almost_equal(target, target_components.sum(axis=1), decimal=10)
