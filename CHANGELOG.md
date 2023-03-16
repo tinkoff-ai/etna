@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Target components logic into base classes of models ([#1158](https://github.com/tinkoff-ai/etna/pull/1158))
 - Target components logic to TSDataset ([#1153](https://github.com/tinkoff-ai/etna/pull/1153))
 - Methods `save` and `load` to HierarchicalPipeline ([#1096](https://github.com/tinkoff-ai/etna/pull/1096))
 - New data access methods in `TSDataset` : `update_columns_from_pandas`, `add_columns_from_pandas`, `drop_features` ([#809](https://github.com/tinkoff-ai/etna/pull/809))
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Function `plot_forecast_decomposition` ([#1129](https://github.com/tinkoff-ai/etna/pull/1129))
 - Method `forecast_components` for forecast decomposition in `_TBATSAdapter` [#1125](https://github.com/tinkoff-ai/etna/issues/1125)
 - Methods `forecast_components` and `predict_components` for forecast decomposition in `_CatBoostAdapter` [#1135](https://github.com/tinkoff-ai/etna/issues/1135)
+- Methods `forecast_components` and `predict_components` for forecast decomposition in `_HoltWintersAdapter ` ([#1146](https://github.com/tinkoff-ai/etna/issues/1146))
 - Methods `predict_components` for forecast decomposition in `_ProphetAdapter` [#1161](https://github.com/tinkoff-ai/etna/issues/1161)
 - 
 ### Changed
