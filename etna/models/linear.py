@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
@@ -27,14 +26,11 @@ class _LinearAdapter(_SklearnAdapter):
         if self.regressor_columns is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
-        target_components = df[self.model.feature_names_in_].apply(pd.to_numeric)
         components_coefs = self.model.coef_
-
-        if self.model.fit_intercept:
-            target_components["intercept"] = 1
-            components_coefs = np.hstack((components_coefs, [self.model.intercept_]))
-
+        target_components = df[self.model.feature_names_in_].apply(pd.to_numeric)
         target_components = components_coefs * target_components
+        if self.model.fit_intercept:
+            target_components["intercept"] = self.model.intercept_
         target_components = target_components.add_prefix("target_component_")
         return target_components
 
