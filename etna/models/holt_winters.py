@@ -419,6 +419,11 @@ class HoltWintersModel(
     Notes
     -----
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for Holt-Winters model are: level, trend and seasonality.
+    For in-sample decomposition, components are obtained directly from the fitted model. For out-of-sample,
+    components estimated using an analytical form of the prediction function.
     """
 
     def __init__(
@@ -616,6 +621,11 @@ class HoltModel(HoltWintersModel):
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     They implement :py:class:`statsmodels.tsa.holtwinters.Holt` model
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for Holt model are: level and trend.
+    For in-sample decomposition, components are obtained directly from the fitted model. For out-of-sample,
+    components estimated using an analytical form of the prediction function.
     """
 
     def __init__(
@@ -713,6 +723,10 @@ class SimpleExpSmoothingModel(HoltWintersModel):
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    For in-sample decomposition, level component is obtained directly from the fitted model. For out-of-sample,
+    it estimated using an analytical form of the prediction function.
     """
 
     def __init__(
