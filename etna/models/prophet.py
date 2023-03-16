@@ -7,6 +7,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
+import bottleneck as bn
 import pandas as pd
 
 from etna import SETTINGS
@@ -68,6 +69,14 @@ class _ProphetAdapter(BaseAdapter):
         self.model = self._create_model()
 
         self.regressor_columns: Optional[List[str]] = None
+
+        # aggregation of corresponding model terms, e.g. sum
+        self._aggregated_components = {
+            "additive_terms",
+            "multiplicative_terms",
+            "extra_regressors_additive",
+            "extra_regressors_multiplicative",
+        }
 
     def _create_model(self) -> "Prophet":
         model = Prophet(
@@ -151,6 +160,68 @@ class _ProphetAdapter(BaseAdapter):
         }
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
+
+    def _check_mul_components(self):
+        """Raise error if model contains multiplicative components."""
+        components_modes = self.model.component_modes
+        if components_modes is None:
+            raise ValueError("This model is not fitted!")
+
+        mul_components = set(self.model.component_modes["multiplicative"])
+        if len(mul_components - self._aggregated_components) > 0:
+            raise ValueError("Forecast decomposition is only supported for additive components!")
+
+    def _predict_seasonal_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate seasonal, holidays and exogenous components."""
+        model = self.model
+
+        seasonal_features, _, component_cols, _ = model.make_all_seasonality_features(df)
+
+        holiday_names = set(model.train_holiday_names) if model.train_holiday_names is not None else set()
+
+        components_data = {}
+        for component_name in component_cols.columns:
+            if component_name in self._aggregated_components or component_name in holiday_names:
+                continue
+
+            beta_c = model.params["beta"] * component_cols[component_name].values
+            comp = seasonal_features.values @ beta_c.T
+
+            # apply rescaling for additive components
+            comp *= model.y_scale
+
+            components_data[component_name] = bn.nanmean(comp, axis=1)
+
+        return pd.DataFrame(data=components_data)
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        self._check_mul_components()
+
+        df = df.reset_index()
+        prophet_df = pd.DataFrame()
+        prophet_df["y"] = df["target"]
+        prophet_df["ds"] = df["timestamp"]
+        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+
+        prophet_df = self.model.setup_dataframe(prophet_df)
+        trend = self.model.predict_trend(df=prophet_df)
+        components = self._predict_seasonal_components(df=prophet_df)
+
+        components["trend"] = trend
+
+        return components.add_prefix("target_component_")
 
     def get_model(self) -> Prophet:
         """Get internal prophet.Prophet model that is used inside etna class.
