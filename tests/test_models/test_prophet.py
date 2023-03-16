@@ -214,3 +214,139 @@ def test_custom_seasonality(custom_seasonality):
     model = ProphetModel(additional_seasonality_params=custom_seasonality)
     for seasonality in custom_seasonality:
         assert seasonality["name"] in model._base_model.model.seasonalities
+
+
+@pytest.fixture
+def prophet_dfs(dfs_w_exog):
+    df = pd.concat(dfs_w_exog, axis=0)
+    df["cap"] = 4.0
+
+    h1_mask = np.arange(len(df)) % 3 == 0
+    h2_mask = np.arange(len(df)) % 5 == 0
+
+    h1 = pd.DataFrame(
+        {
+            "holiday": "h1",
+            "ds": df["timestamp"][h1_mask],
+            "lower_window": 0,
+            "upper_window": 1,
+        }
+    )
+
+    h2 = pd.DataFrame(
+        {
+            "holiday": "h2",
+            "ds": df["timestamp"][h2_mask],
+            "lower_window": 0,
+            "upper_window": 1,
+        }
+    )
+    holidays = pd.concat([h1, h2]).reset_index(drop=True)
+
+    return df.iloc[-60:-20], df.iloc[-20:], holidays
+
+
+def test_check_mul_components_not_fitted_error():
+    model = _ProphetAdapter()
+    with pytest.raises(ValueError, match="This model is not fitted!"):
+        model._check_mul_components()
+
+
+def test_check_mul_components(prophet_dfs):
+    _, test, _ = prophet_dfs
+
+    model = _ProphetAdapter(seasonality_mode="multiplicative")
+    model.fit(df=test, regressors=["f1", "f2"])
+
+    with pytest.raises(ValueError, match="Forecast decomposition is only supported for additive components!"):
+        model.predict_components(df=test)
+
+
+@pytest.mark.parametrize(
+    "regressors,regressors_comps", ((["f1", "f2", "cap"], ["target_component_f1", "target_component_f2"]), ([], []))
+)
+@pytest.mark.parametrize(
+    "custom_seas,custom_seas_comp",
+    (
+        ([{"name": "s1", "period": 14, "fourier_order": 1}], ["target_component_s1"]),
+        ([], []),
+    ),
+)
+@pytest.mark.parametrize("use_holidays,holidays_comp", ((True, ["target_component_holidays"]), (False, [])))
+@pytest.mark.parametrize("daily,daily_comp", ((True, ["target_component_daily"]), (False, [])))
+@pytest.mark.parametrize("weekly,weekly_comp", ((True, ["target_component_weekly"]), (False, [])))
+@pytest.mark.parametrize("yearly,yearly_comp", ((True, ["target_component_yearly"]), (False, [])))
+def test_predict_components_names(
+    prophet_dfs,
+    regressors,
+    regressors_comps,
+    use_holidays,
+    holidays_comp,
+    daily,
+    daily_comp,
+    weekly,
+    weekly_comp,
+    yearly,
+    yearly_comp,
+    custom_seas,
+    custom_seas_comp,
+):
+    _, test, holidays = prophet_dfs
+
+    if not use_holidays:
+        holidays = None
+
+    expected_columns = set(
+        regressors_comps
+        + holidays_comp
+        + daily_comp
+        + weekly_comp
+        + yearly_comp
+        + custom_seas_comp
+        + ["target_component_trend"]
+    )
+
+    model = _ProphetAdapter(
+        holidays=holidays,
+        daily_seasonality=daily,
+        weekly_seasonality=weekly,
+        yearly_seasonality=yearly,
+        additional_seasonality_params=custom_seas,
+    )
+    model.fit(df=test, regressors=regressors)
+
+    components = model.predict_components(df=test)
+
+    assert set(components.columns) == expected_columns
+
+
+@pytest.mark.long_1
+@pytest.mark.parametrize("growth,cap", (("linear", []), ("logistic", ["cap"])))
+@pytest.mark.parametrize("regressors", (["f1", "f2"], []))
+@pytest.mark.parametrize("custom_seas", ([{"name": "s1", "period": 14, "fourier_order": 1}], []))
+@pytest.mark.parametrize("use_holidays", (True, False))
+@pytest.mark.parametrize("daily", (True, False))
+@pytest.mark.parametrize("weekly", (True, False))
+@pytest.mark.parametrize("yearly", (True, False))
+def test_predict_components_sum_up_to_target(
+    prophet_dfs, regressors, use_holidays, daily, weekly, yearly, custom_seas, growth, cap
+):
+    train, test, holidays = prophet_dfs
+
+    if not use_holidays:
+        holidays = None
+
+    model = _ProphetAdapter(
+        growth=growth,
+        holidays=holidays,
+        daily_seasonality=daily,
+        weekly_seasonality=weekly,
+        yearly_seasonality=yearly,
+        additional_seasonality_params=custom_seas,
+    )
+    model.fit(df=train, regressors=regressors + cap)
+
+    components = model.predict_components(df=test)
+    pred = model.predict(df=test, prediction_interval=False, quantiles=[])
+
+    np.testing.assert_allclose(np.sum(components, axis=1), pred["target"].values)
