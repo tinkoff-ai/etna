@@ -194,7 +194,7 @@ def ts_with_target_components():
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
-    ts._target_components = ["target_component_a", "target_component_b"]
+    ts._target_components_names = ["target_component_a", "target_component_b"]
     return ts
 
 

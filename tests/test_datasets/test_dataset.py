@@ -249,7 +249,7 @@ def ts_with_target_components():
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq="D")
-    ts._target_components = ["target_component_a", "target_component_b"]
+    ts._target_components_names = ["target_component_a", "target_component_b"]
     return ts
 
 
@@ -501,8 +501,8 @@ def test_train_test_split_pass_regressors_to_output(df_and_regressors):
 
 def test_train_test_split_pass_target_components_to_output(ts_with_target_components):
     train, test = ts_with_target_components.train_test_split(test_size=5)
-    assert sorted(train.target_components) == sorted(ts_with_target_components.target_components)
-    assert sorted(test.target_components) == sorted(ts_with_target_components.target_components)
+    assert sorted(train.target_components_names) == sorted(ts_with_target_components.target_components_names)
+    assert sorted(test.target_components_names) == sorted(ts_with_target_components.target_components_names)
 
 
 def test_dataset_datetime_conversion():
@@ -914,7 +914,7 @@ def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
 
 def test_tsdataset_idx_slice_pass_target_components_to_output(ts_with_target_components):
     ts_slice = ts_with_target_components.tsdataset_idx_slice(start_idx=1, end_idx=2)
-    assert sorted(ts_slice.target_components) == sorted(ts_with_target_components.target_components)
+    assert sorted(ts_slice.target_components_names) == sorted(ts_with_target_components.target_components_names)
 
 
 def test_to_torch_dataset_without_drop(tsdf_with_exog):
@@ -1048,12 +1048,12 @@ def test_drop_features_throw_error_on_target_components(ts_with_target_component
         ValueError,
         match="Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!",
     ):
-        ts_with_target_components.drop_features(features=ts_with_target_components.target_components)
+        ts_with_target_components.drop_features(features=ts_with_target_components.target_components_names)
 
 
 def test_get_target_components_on_dataset_without_components(example_tsds):
-    target_components = example_tsds.get_target_components()
-    assert target_components is None
+    target_components_names = example_tsds.get_target_components()
+    assert target_components_names is None
 
 
 def test_get_target_components(
@@ -1097,9 +1097,9 @@ def test_add_target_components(ts_without_target_components, ts_with_target_comp
     pd.testing.assert_frame_equal(ts_without_target_components.to_pandas(), ts_with_target_components.to_pandas())
 
 
-def test_drop_target_componetns(ts_with_target_components, ts_without_target_components):
+def test_drop_target_components(ts_with_target_components, ts_without_target_components):
     ts_with_target_components.drop_target_components()
-    assert ts_with_target_components.target_components is None
+    assert ts_with_target_components.target_components_names is None
     pd.testing.assert_frame_equal(
         ts_with_target_components.to_pandas(),
         ts_without_target_components.to_pandas(),
@@ -1110,7 +1110,7 @@ def test_inverse_transform_target_components(ts_with_target_components, inverse_
     transform = AddConstTransform(in_column="target", value=-10)
     transform.fit(ts=ts_with_target_components)
     ts_with_target_components.inverse_transform([transform])
-    assert sorted(ts_with_target_components.target_components) == sorted(
+    assert sorted(ts_with_target_components.target_components_names) == sorted(
         set(inverse_transformed_components_df.columns.get_level_values("feature"))
     )
     pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
