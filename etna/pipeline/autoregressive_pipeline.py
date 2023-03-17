@@ -110,10 +110,12 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         prediction_df.index.name = "timestamp"
         return prediction_df
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, return_components: bool) -> TSDataset:
         """Make predictions."""
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
+        if return_components:
+            raise NotImplementedError("Target components logic is not currently implemented!")
         prediction_df = self._create_predictions_template()
 
         for idx_start in range(0, self.horizon, self.step):
