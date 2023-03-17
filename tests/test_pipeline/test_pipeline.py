@@ -28,6 +28,7 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
+from etna.pipeline.base import CrossValidationMode
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DifferencingTransform
@@ -293,7 +294,7 @@ def test_invalid_n_folds(catboost_pipeline: Pipeline, n_folds: int, example_tsdf
         (28, 10, 2, 3),
     ],
 )
-def test_validate_backtest_dataset(min_size, n_folds, horizon, stride):
+def test_invalid_backtest_dataset_size(min_size, n_folds, horizon, stride):
     """Test Pipeline.backtest behavior in case of too small dataframe for given number of folds."""
     df = generate_ar_df(start_time="2020-01-01", periods=100, n_segments=2, freq="D")
     df_wide = TSDataset.to_dataset(df)
@@ -318,7 +319,25 @@ def test_invalid_backtest_metrics_macro(catboost_pipeline: Pipeline, example_tsd
         _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=[MAE(mode=MetricAggregationMode.macro)], n_folds=2)
 
 
-def test_invalid_backtest_stride(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+def test_invalid_backtest_mode_set_on_fold_mask(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior on setting mode with fold masks."""
+    masks = [
+        FoldMask(
+            first_train_timestamp="2020-01-01",
+            last_train_timestamp="2020-04-03",
+            target_timestamps=["2020-04-04", "2020-04-05", "2020-04-06"],
+        ),
+        FoldMask(
+            first_train_timestamp="2020-01-01",
+            last_train_timestamp="2020-04-06",
+            target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+        ),
+    ]
+    with pytest.raises(ValueError, match="Mode shouldn't be set if n_folds are fold masks"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, n_folds=masks, mode="expand", metrics=DEFAULT_METRICS)
+
+
+def test_invalid_backtest_stride_set_on_fold_mask(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
     """Test Pipeline.backtest behavior on setting stride with fold masks."""
     masks = [
         FoldMask(
@@ -332,8 +351,15 @@ def test_invalid_backtest_stride(catboost_pipeline: Pipeline, example_tsdf: TSDa
             target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
         ),
     ]
-    with pytest.raises(ValueError, match=""):
+    with pytest.raises(ValueError, match="Stride shouldn't be set if n_folds are fold masks"):
         _ = catboost_pipeline.backtest(ts=example_tsdf, n_folds=masks, stride=2, metrics=DEFAULT_METRICS)
+
+
+@pytest.mark.parametrize("stride", [-1, 0])
+def test_invalid_backtest_stride_not_positive(stride, catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior on setting not positive stride."""
+    with pytest.raises(ValueError, match="Stride should be a positive number, .* given"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, n_folds=3, stride=stride, metrics=DEFAULT_METRICS)
 
 
 @pytest.mark.parametrize(
@@ -490,7 +516,7 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
         ("constant", 4, 4, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
         ("constant", 4, 5, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
         (
-            "expand",
+            None,
             [
                 FoldMask(
                     first_train_timestamp=None,
@@ -512,7 +538,7 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
             [-8, -1],
         ),
         (
-            "expand",
+            None,
             [
                 FoldMask(
                     first_train_timestamp=pd.Timestamp("2020-01-01 1:00"),
@@ -534,7 +560,7 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
             [-8, -1],
         ),
         (
-            "expand",
+            None,
             [
                 FoldMask(
                     first_train_timestamp=None,
@@ -653,7 +679,7 @@ def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
             2,
             3,
             3,
-            "expand",
+            CrossValidationMode.expand,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -671,7 +697,7 @@ def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
             2,
             3,
             1,
-            "expand",
+            CrossValidationMode.expand,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -689,7 +715,7 @@ def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
             2,
             3,
             5,
-            "expand",
+            CrossValidationMode.expand,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -707,7 +733,7 @@ def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
             2,
             3,
             3,
-            "constant",
+            CrossValidationMode.constant,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -725,7 +751,7 @@ def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
             2,
             3,
             1,
-            "constant",
+            CrossValidationMode.constant,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -743,7 +769,7 @@ def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
             2,
             3,
             5,
-            "constant",
+            CrossValidationMode.constant,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",

@@ -35,6 +35,12 @@ class CrossValidationMode(Enum):
     expand = "expand"
     constant = "constant"
 
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} modes allowed"
+        )
+
 
 class FoldMask(BaseMixin):
     """Container to hold the description of the fold mask.
@@ -209,7 +215,7 @@ class AbstractPipeline(AbstractSaveable):
         ts: TSDataset,
         metrics: List[Metric],
         n_folds: Union[int, List[FoldMask]] = 5,
-        mode: str = "expand",
+        mode: Optional[str] = None,
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
         refit: Union[bool, int] = True,
@@ -230,7 +236,8 @@ class AbstractPipeline(AbstractSaveable):
         n_folds:
             Number of folds or the list of fold masks
         mode:
-            One of 'expand', 'constant' -- train generation policy, ignored if ``n_folds`` is a list of masks
+            Train generation policy: 'expand' or 'constant'. Works only if ``n_folds`` is integer.
+            By default, is set to 'expand'.
         aggregate_metrics:
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
@@ -461,12 +468,27 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             raise ValueError(f"Folds number should be a positive number, {n_folds} given")
 
     @staticmethod
-    def _validate_backtest_stride(n_folds: Union[int, List[FoldMask]], stride: int):
+    def _validate_backtest_mode(n_folds: Union[int, List[FoldMask]], mode: Optional[str]) -> CrossValidationMode:
+        if mode is None:
+            return CrossValidationMode.expand
+
+        if not isinstance(n_folds, int):
+            raise ValueError("Mode shouldn't be set if n_folds are fold masks!")
+
+        return CrossValidationMode(mode.lower())
+
+    @staticmethod
+    def _validate_backtest_stride(n_folds: Union[int, List[FoldMask]], horizon: int, stride: Optional[int]) -> int:
+        if stride is None:
+            return horizon
+
         if not isinstance(n_folds, int):
             raise ValueError("Stride shouldn't be set if n_folds are fold masks!")
 
         if stride < 1:
-            raise ValueError(f"Stride should be a positive number, {stride} given")
+            raise ValueError(f"Stride should be a positive number, {stride} given!")
+
+        return stride
 
     @staticmethod
     def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int, stride: int):
@@ -482,15 +504,15 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     f"series {segment} does not."
                 )
 
+    # TODO: make a trick with assert_never
     @staticmethod
     def _generate_masks_from_n_folds(
-        ts: TSDataset, n_folds: int, horizon: int, stride: int, mode: str
+        ts: TSDataset, n_folds: int, horizon: int, mode: CrossValidationMode, stride: int
     ) -> List[FoldMask]:
         """Generate fold masks from n_folds."""
-        mode_enum = CrossValidationMode(mode.lower())
-        if mode_enum == CrossValidationMode.expand:
+        if mode is CrossValidationMode.expand:
             constant_history_length = 0
-        elif mode_enum == CrossValidationMode.constant:
+        elif mode is CrossValidationMode.constant:
             constant_history_length = 1
         else:
             raise NotImplementedError(
@@ -662,7 +684,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return forecasts
 
     def _prepare_fold_masks(
-        self, ts: TSDataset, masks: Union[int, List[FoldMask]], mode: str, stride: int
+        self, ts: TSDataset, masks: Union[int, List[FoldMask]], mode: CrossValidationMode, stride: int
     ) -> List[FoldMask]:
         """Prepare and validate fold masks."""
         if isinstance(masks, int):
@@ -780,13 +802,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         }
         return results
 
-    # TODO: inconsistency between mode and stride
     def backtest(
         self,
         ts: TSDataset,
         metrics: List[Metric],
         n_folds: Union[int, List[FoldMask]] = 5,
-        mode: str = "expand",
+        mode: Optional[str] = None,
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
         refit: Union[bool, int] = True,
@@ -807,7 +828,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         n_folds:
             Number of folds or the list of fold masks
         mode:
-            One of 'expand', 'constant' -- train generation policy, ignored if ``n_folds`` is a list of masks
+            Train generation policy: 'expand' or 'constant'. Works only if ``n_folds`` is integer.
+            By default, is set to 'expand'.
         aggregate_metrics:
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
@@ -836,12 +858,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         Raises
         ------
         ValueError:
+            If ``mode`` is set when ``n_folds`` are ``List[FoldMask]``.
+        ValueError:
             If ``stride`` is set when ``n_folds`` are ``List[FoldMask]``.
         """
-        if stride is None:
-            stride = self.horizon
-        else:
-            self._validate_backtest_stride(n_folds, stride)
+        mode_enum = self._validate_backtest_mode(n_folds=n_folds, mode=mode)
+        stride = self._validate_backtest_stride(n_folds=n_folds, horizon=self.horizon, stride=stride)
 
         if joblib_params is None:
             joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
@@ -851,7 +873,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         self._init_backtest()
         self._validate_backtest_metrics(metrics=metrics)
-        masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode, stride=stride)
+        masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode_enum, stride=stride)
         self._folds = self._run_all_folds(
             masks=masks,
             ts=ts,
