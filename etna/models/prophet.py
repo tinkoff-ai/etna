@@ -225,10 +225,9 @@ class _ProphetAdapter(BaseAdapter):
         prophet_df = self._prepare_prophet_df(df=df)
 
         prophet_df = self.model.setup_dataframe(prophet_df)
-        trend = self.model.predict_trend(df=prophet_df)
-        components = self._predict_seasonal_components(df=prophet_df, ignore_components=aggregated_components)
 
-        components["trend"] = trend
+        components = self._predict_seasonal_components(df=prophet_df)
+        components["trend"] = self.model.predict_trend(df=prophet_df)
 
         return components.add_prefix("target_component_")
 

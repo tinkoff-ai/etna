@@ -259,7 +259,18 @@ def test_prepare_prophet_df_regressors_not_set_error(prophet_dfs):
         model._prepare_prophet_df(df=test)
 
 
-    model = _ProphetAdapter(seasonality_mode="multiplicative")
+@pytest.mark.parametrize(
+    "seasonality_mode,custom_seasonality",
+    (
+        ("multiplicative", [{"name": "s1", "period": 14, "fourier_order": 1, "mode": "additive"}]),
+        ("multiplicative", []),
+        ("additive", [{"name": "s1", "period": 14, "fourier_order": 1, "mode": "multiplicative"}]),
+    ),
+)
+def test_check_mul_components(prophet_dfs, seasonality_mode, custom_seasonality):
+    _, test, _ = prophet_dfs
+
+    model = _ProphetAdapter(seasonality_mode=seasonality_mode, additional_seasonality_params=custom_seasonality)
     model.fit(df=test, regressors=["f1", "f2"])
 
     with pytest.raises(ValueError, match="Forecast decomposition is only supported for additive components!"):
