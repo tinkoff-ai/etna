@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import List
 from typing import Tuple
 
@@ -9,6 +10,7 @@ from pandas.testing import assert_frame_equal
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 from etna.transforms import AddConstTransform
+from etna.transforms import DifferencingTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -1114,3 +1116,10 @@ def test_inverse_transform_target_components(ts_with_target_components, inverse_
         set(inverse_transformed_components_df.columns.get_level_values("feature"))
     )
     pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
+
+
+def test_inverse_transform_with_target_components_fails_leave_target_components(ts_with_target_components):
+    transform = DifferencingTransform(in_column="target")
+    with suppress(AttributeError):
+        ts_with_target_components.inverse_transform(transforms=[transform])
+    assert ts_with_target_components.target_components_names is not None

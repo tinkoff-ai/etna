@@ -435,12 +435,17 @@ class TSDataset:
             target_components_df = self.get_target_components()
             self.drop_target_components()
 
-        for transform in reversed(transforms):
-            tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
-            transform.inverse_transform(self)
+        try:
+            for transform in reversed(transforms):
+                tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
+                transform.inverse_transform(self)
 
-        if target_components_present:
-            self._inverse_transform_target_components(target_components_df=target_components_df, target_df=target_df)
+            if target_components_present:
+                self._inverse_transform_target_components(
+                    target_components_df=target_components_df, target_df=target_df
+                )
+        finally:
+            self.add_target_components(target_components_df=target_components_df)
 
     @property
     def segments(self) -> List[str]:
