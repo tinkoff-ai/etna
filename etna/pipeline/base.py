@@ -17,6 +17,7 @@ from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
 from typing_extensions import TypedDict
+from typing_extensions import assert_never
 
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
@@ -504,7 +505,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     f"series {segment} does not."
                 )
 
-    # TODO: make a trick with assert_never
     @staticmethod
     def _generate_masks_from_n_folds(
         ts: TSDataset, n_folds: int, horizon: int, mode: CrossValidationMode, stride: int
@@ -515,9 +515,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         elif mode is CrossValidationMode.constant:
             constant_history_length = 1
         else:
-            raise NotImplementedError(
-                f"Only '{CrossValidationMode.expand}' and '{CrossValidationMode.constant}' modes allowed"
-            )
+            assert_never(mode)
 
         masks = []
         dataset_timestamps = list(ts.index)
