@@ -130,7 +130,11 @@ class AbstractPipeline(AbstractSaveable):
 
     @abstractmethod
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3, return_components: bool = False
+        self,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -160,7 +164,7 @@ class AbstractPipeline(AbstractSaveable):
         end_timestamp: Optional[pd.Timestamp] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
-        return_components: bool = False
+        return_components: bool = False,
     ) -> TSDataset:
         """Make in-sample predictions on dataset in a given range.
 
@@ -263,7 +267,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return quantiles
 
     @abstractmethod
-    def _forecast(self, return_components: bool = False) -> TSDataset:
+    def _forecast(self, return_components: bool) -> TSDataset:
         """Make predictions."""
         pass
 
@@ -304,7 +308,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
 
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3, return_components: bool = False
+        self,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -332,7 +340,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        predictions = self._forecast()
+        predictions = self._forecast(return_components=return_components)
         if prediction_interval:
             predictions = self._forecast_prediction_interval(
                 predictions=predictions, quantiles=quantiles, n_folds=n_folds
@@ -371,8 +379,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         end_timestamp: Optional[pd.Timestamp],
         prediction_interval: bool,
         quantiles: Sequence[float],
-        return_components: bool = False
+        return_components: bool,
     ) -> TSDataset:
+        pass
 
     def predict(
         self,
@@ -381,7 +390,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         end_timestamp: Optional[pd.Timestamp] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
-        return_components: bool = False
+        return_components: bool = False,
     ) -> TSDataset:
         """Make in-sample predictions on dataset in a given range.
 
@@ -430,6 +439,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             end_timestamp=end_timestamp,
             prediction_interval=prediction_interval,
             quantiles=quantiles,
+            return_components=return_components,
         )
         return result
 
