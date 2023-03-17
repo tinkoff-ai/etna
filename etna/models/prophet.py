@@ -108,10 +108,7 @@ class _ProphetAdapter(BaseAdapter):
             List of the columns with regressors
         """
         self.regressor_columns = regressors
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
         for regressor in self.regressor_columns:
             if regressor not in self.predefined_regressors_names:
                 self.model.add_regressor(regressor)
@@ -137,10 +134,7 @@ class _ProphetAdapter(BaseAdapter):
             DataFrame with predictions
         """
         df = df.reset_index()
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
         forecast = self.model.predict(prophet_df)
         y_pred = pd.DataFrame(forecast["yhat"])
         if prediction_interval:
@@ -154,17 +148,41 @@ class _ProphetAdapter(BaseAdapter):
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
 
-    def _check_mul_components(self, ignore_components: Set[str]):
+    def _prepare_prophet_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Prepare dataframe for fit and predict."""
+        if self.regressor_columns is None:
+            raise ValueError("List of regressor is not set!")
+
+        prophet_df = pd.DataFrame()
+        prophet_df["y"] = df["target"]
+        prophet_df["ds"] = df["timestamp"]
+        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        return prophet_df
+
+    @staticmethod
+    def _filter_aggregated_components(components: Iterable[str]) -> Set[str]:
+        """Filter out aggregated components."""
+        # aggregation of corresponding model terms, e.g. sum
+        aggregated_components = {
+            "additive_terms",
+            "multiplicative_terms",
+            "extra_regressors_additive",
+            "extra_regressors_multiplicative",
+        }
+
+        return set(components) - aggregated_components
+
+    def _check_mul_components(self):
         """Raise error if model contains multiplicative components."""
         components_modes = self.model.component_modes
         if components_modes is None:
             raise ValueError("This model is not fitted!")
 
-        mul_components = set(self.model.component_modes["multiplicative"])
-        if len(mul_components - ignore_components) > 0:
+        mul_components = self._filter_aggregated_components(self.model.component_modes["multiplicative"])
+        if len(mul_components) > 0:
             raise ValueError("Forecast decomposition is only supported for additive components!")
 
-    def _predict_seasonal_components(self, df: pd.DataFrame, ignore_components: Set[str]) -> pd.DataFrame:
+    def _predict_seasonal_components(self, df: pd.DataFrame) -> pd.DataFrame:
         """Estimate seasonal, holidays and exogenous components."""
         model = self.model
 
@@ -173,8 +191,9 @@ class _ProphetAdapter(BaseAdapter):
         holiday_names = set(model.train_holiday_names) if model.train_holiday_names is not None else set()
 
         components_data = {}
-        for component_name in component_cols.columns:
-            if component_name in ignore_components or component_name in holiday_names:
+        components_names = self._filter_aggregated_components(component_cols.columns)
+        for component_name in components_names:
+            if component_name in holiday_names:
                 continue
 
             beta_c = model.params["beta"] * component_cols[component_name].values
@@ -200,21 +219,10 @@ class _ProphetAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
-        # aggregation of corresponding model terms, e.g. sum
-        aggregated_components = {
-            "additive_terms",
-            "multiplicative_terms",
-            "extra_regressors_additive",
-            "extra_regressors_multiplicative",
-        }
-
-        self._check_mul_components(aggregated_components)
+        self._check_mul_components()
 
         df = df.reset_index()
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
 
         prophet_df = self.model.setup_dataframe(prophet_df)
         trend = self.model.predict_trend(df=prophet_df)

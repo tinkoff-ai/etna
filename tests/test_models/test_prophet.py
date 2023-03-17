@@ -249,11 +249,15 @@ def prophet_dfs(dfs_w_exog):
 def test_check_mul_components_not_fitted_error():
     model = _ProphetAdapter()
     with pytest.raises(ValueError, match="This model is not fitted!"):
-        model._check_mul_components(set())
+        model._check_mul_components()
 
 
-def test_check_mul_components(prophet_dfs):
+def test_prepare_prophet_df_regressors_not_set_error(prophet_dfs):
     _, test, _ = prophet_dfs
+    model = _ProphetAdapter()
+    with pytest.raises(ValueError, match="List of regressor is not set!"):
+        model._prepare_prophet_df(df=test)
+
 
     model = _ProphetAdapter(seasonality_mode="multiplicative")
     model.fit(df=test, regressors=["f1", "f2"])
