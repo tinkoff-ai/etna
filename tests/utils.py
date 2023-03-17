@@ -1,7 +1,22 @@
+import functools
+
 import numpy as np
+import pytest
 
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+
+
+def to_be_fixed(raises, match=None):
+    def to_be_fixed_concrete(func):
+        @functools.wraps(func)
+        def wrapped_test(*args, **kwargs):
+            with pytest.raises(raises, match=match):
+                return func(*args, **kwargs)
+
+        return wrapped_test
+
+    return to_be_fixed_concrete
 
 
 def create_dummy_functional_metric(alpha: float = 1.0):

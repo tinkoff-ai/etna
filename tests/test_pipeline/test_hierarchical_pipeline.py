@@ -22,6 +22,7 @@ from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.utils import to_be_fixed
 
 
 @pytest.mark.parametrize(
@@ -356,3 +357,21 @@ def test_save_load(model, transforms, reconciliator, product_level_constant_hier
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=product_level_constant_hierarchical_ts)
+
+
+@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+def test_forecast_with_return_components(product_level_constant_hierarchical_ts):
+    pipeline = HierarchicalPipeline(
+        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
+    )
+    pipeline.fit(product_level_constant_hierarchical_ts)
+    pipeline.forecast(return_components=True)
+
+
+@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+def test_raw_forecast_with_return_components(product_level_constant_hierarchical_ts):
+    pipeline = HierarchicalPipeline(
+        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
+    )
+    pipeline.fit(product_level_constant_hierarchical_ts)
+    pipeline.raw_forecast(return_components=True)

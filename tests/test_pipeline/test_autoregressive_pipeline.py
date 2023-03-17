@@ -28,6 +28,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.utils import to_be_fixed
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -297,3 +298,37 @@ def test_save_load(model, transforms, example_tsds):
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
+
+
+@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_forecast_return_components(example_tsds, model_fixture, request):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = AutoRegressivePipeline(model=model, horizon=10)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.forecast(return_components=True)
+
+
+@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_predict_return_components(example_tsds, model_fixture, request):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = AutoRegressivePipeline(model=model, horizon=10)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.predict(ts=example_tsds, return_components=True)

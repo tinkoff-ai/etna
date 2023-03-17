@@ -160,3 +160,23 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         prediction_ts.df = prediction_ts.df.tail(self.horizon)
         prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
         return prediction_ts
+
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+        return_components: bool = False,
+    ) -> TSDataset:
+        if return_components:
+            raise NotImplementedError("Target components logic is not currently implemented!")
+        return super()._predict(
+            ts=ts,
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+            return_components=return_components,
+        )
