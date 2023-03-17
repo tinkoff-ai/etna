@@ -322,3 +322,15 @@ def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
 
 def test_save_load(stacking_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecast_with_return_components_fails(example_tsds, naive_ensemble):
+    naive_ensemble.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Target components logic is not currently implemented!"):
+        naive_ensemble.forecast(return_components=True)
+
+
+def test_predict_with_return_components_fails(example_tsds, naive_ensemble):
+    naive_ensemble.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Target components logic is not currently implemented!"):
+        naive_ensemble.predict(ts=example_tsds, return_components=True)

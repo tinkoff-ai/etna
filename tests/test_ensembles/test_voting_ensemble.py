@@ -199,3 +199,15 @@ def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSData
 
 def test_save_load(voting_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecast_with_return_components_fails(example_tsds, voting_ensemble_naive):
+    voting_ensemble_naive.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Target components logic is not currently implemented!"):
+        voting_ensemble_naive.forecast(return_components=True)
+
+
+def test_predict_with_return_components_fails(example_tsds, voting_ensemble_naive):
+    voting_ensemble_naive.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Target components logic is not currently implemented!"):
+        voting_ensemble_naive.predict(ts=example_tsds, return_components=True)
