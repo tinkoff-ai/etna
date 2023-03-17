@@ -155,7 +155,7 @@ def test_predict_mixin_predict_fail_doesnt_support_prediction_interval(model_cla
         )
 
 
-def _check_predict_called(spec, prediction_interval, quantiles, check_keys):
+def _check_predict_called(spec, prediction_interval, quantiles, return_components, check_keys):
     ts = MagicMock()
     model = MagicMock(spec=spec)
     mixin = make_mixin(model=model)
@@ -166,6 +166,7 @@ def _check_predict_called(spec, prediction_interval, quantiles, check_keys):
         end_timestamp=pd.Timestamp("2020-01-02"),
         prediction_interval=prediction_interval,
         quantiles=quantiles,
+        return_components=return_components,
     )
 
     expected_ts = mixin._create_ts.return_value
@@ -175,49 +176,62 @@ def _check_predict_called(spec, prediction_interval, quantiles, check_keys):
         prediction_size=expected_prediction_size,
         prediction_interval=prediction_interval,
         quantiles=quantiles,
+        return_components=return_components,
     )
     called_with = {key: value for key, value in called_with_full.items() if key in check_keys}
     mixin.model.predict.assert_called_once_with(**called_with)
     assert result == mixin.model.predict.return_value
 
 
-def test_predict_mixin_predict_called_non_prediction_interval_context_ignorant():
+@pytest.mark.parametrize("return_components", [False, True])
+def test_predict_mixin_predict_called_non_prediction_interval_context_ignorant(return_components):
     _check_predict_called(
         spec=NonPredictionIntervalContextIgnorantAbstractModel,
         prediction_interval=False,
         quantiles=(),
-        check_keys=["ts"],
+        return_components=return_components,
+        check_keys=["ts", "return_components"],
     )
 
 
-def test_predict_mixin_predict_called_non_prediction_interval_context_required():
+@pytest.mark.parametrize("return_components", [False, True])
+def test_predict_mixin_predict_called_non_prediction_interval_context_required(return_components):
     _check_predict_called(
         spec=NonPredictionIntervalContextRequiredAbstractModel,
         prediction_interval=False,
         quantiles=(),
-        check_keys=["ts", "prediction_size"],
+        return_components=return_components,
+        check_keys=["ts", "prediction_size", "return_components"],
     )
 
 
 @pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,), ()])
 @pytest.mark.parametrize("prediction_interval", [False, True])
-def test_predict_mixin_predict_called_prediction_interval_context_ignorant(prediction_interval, quantiles):
+@pytest.mark.parametrize("return_components", [False, True])
+def test_predict_mixin_predict_called_prediction_interval_context_ignorant(
+    prediction_interval, quantiles, return_components
+):
     _check_predict_called(
         spec=PredictionIntervalContextIgnorantAbstractModel,
         prediction_interval=False,
         quantiles=(),
-        check_keys=["ts", "prediction_interval", "quantiles"],
+        return_components=return_components,
+        check_keys=["ts", "prediction_interval", "quantiles", "return_components"],
     )
 
 
 @pytest.mark.parametrize("quantiles", [(0.025, 0.975), (0.5,), ()])
 @pytest.mark.parametrize("prediction_interval", [False, True])
-def test_predict_mixin_predict_called_prediction_interval_context_required(prediction_interval, quantiles):
+@pytest.mark.parametrize("return_components", [False, True])
+def test_predict_mixin_predict_called_prediction_interval_context_required(
+    prediction_interval, quantiles, return_components
+):
     _check_predict_called(
         spec=PredictionIntervalContextRequiredAbstractModel,
         prediction_interval=False,
         quantiles=(),
-        check_keys=["ts", "prediction_size", "prediction_interval", "quantiles"],
+        return_components=return_components,
+        check_keys=["ts", "prediction_size", "prediction_interval", "quantiles", "return_components"],
     )
 
 

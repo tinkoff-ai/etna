@@ -252,7 +252,7 @@ def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensembl
     naive_ensemble.fit(ts=example_tsds)
     naive_ensemble._process_forecasts = MagicMock()
 
-    result = naive_ensemble._forecast()
+    result = naive_ensemble._forecast(return_components=False)
 
     naive_ensemble._process_forecasts.assert_called_once()
     assert result == naive_ensemble._process_forecasts.return_value
@@ -268,6 +268,7 @@ def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble
         end_timestamp=example_tsds.index[30],
         prediction_interval=False,
         quantiles=(),
+        return_components=False,
     )
 
     naive_ensemble._process_forecasts.assert_called_once()

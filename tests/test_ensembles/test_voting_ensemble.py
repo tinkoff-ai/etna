@@ -143,7 +143,7 @@ def test_forecast_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline
     ensemble.fit(ts=example_tsds)
     ensemble._vote = MagicMock()
 
-    result = ensemble._forecast()
+    result = ensemble._forecast(return_components=False)
 
     ensemble._vote.assert_called_once()
     assert result == ensemble._vote.return_value
@@ -160,6 +160,7 @@ def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline,
         end_timestamp=example_tsds.index[30],
         prediction_interval=False,
         quantiles=(),
+        return_components=False,
     )
 
     ensemble._vote.assert_called_once()
