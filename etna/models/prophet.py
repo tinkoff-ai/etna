@@ -8,7 +8,6 @@ from typing import Sequence
 from typing import Set
 from typing import Union
 
-import bottleneck as bn
 import pandas as pd
 
 from etna import SETTINGS
@@ -133,7 +132,6 @@ class _ProphetAdapter(BaseAdapter):
         :
             DataFrame with predictions
         """
-        df = df.reset_index()
         prophet_df = self._prepare_prophet_df(df=df)
         forecast = self.model.predict(prophet_df)
         y_pred = pd.DataFrame(forecast["yhat"])
@@ -152,6 +150,8 @@ class _ProphetAdapter(BaseAdapter):
         """Prepare dataframe for fit and predict."""
         if self.regressor_columns is None:
             raise ValueError("List of regressor is not set!")
+
+        df = df.reset_index()
 
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
@@ -190,21 +190,17 @@ class _ProphetAdapter(BaseAdapter):
 
         holiday_names = set(model.train_holiday_names) if model.train_holiday_names is not None else set()
 
-        components_data = {}
-        components_names = self._filter_aggregated_components(component_cols.columns)
-        for component_name in components_names:
-            if component_name in holiday_names:
-                continue
+        components_names = list(
+            filter(lambda v: v not in holiday_names, self._filter_aggregated_components(component_cols.columns))
+        )
 
-            beta_c = model.params["beta"] * component_cols[component_name].values
-            comp = seasonal_features.values @ beta_c.T
+        beta_c = model.params["beta"].T * component_cols[components_names].values
+        comp = seasonal_features.values @ beta_c
 
-            # apply rescaling for additive components
-            comp *= model.y_scale
+        # apply rescaling for additive components
+        comp *= model.y_scale
 
-            components_data[component_name] = bn.nanmean(comp, axis=1)
-
-        return pd.DataFrame(data=components_data)
+        return pd.DataFrame(data=comp, columns=components_names)
 
     def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
         """Estimate prediction components.
@@ -221,7 +217,6 @@ class _ProphetAdapter(BaseAdapter):
         """
         self._check_mul_components()
 
-        df = df.reset_index()
         prophet_df = self._prepare_prophet_df(df=df)
 
         prophet_df = self.model.setup_dataframe(prophet_df)
