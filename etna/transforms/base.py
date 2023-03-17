@@ -14,7 +14,6 @@ from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
-from etna.transforms.utils import inverse_transform_target_components
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -247,14 +246,9 @@ class ReversibleTransform(Transform):
         ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
 
         if target_components_present:
-            inverse_transformed_target_df = df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]]
-            inverse_transformed_target_components_df = inverse_transform_target_components(
-                target_components_df=ts.get_target_components(),
-                target_df=target_df,
-                inverse_transformed_target_df=inverse_transformed_target_df,
+            ts._inverse_transform_target_components(
+                target_components_df=ts.get_target_components(), target_df=target_df
             )
-            ts.drop_target_components()
-            ts.add_target_components(target_components_df=inverse_transformed_target_components_df)
 
         return ts
 

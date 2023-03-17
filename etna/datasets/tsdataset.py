@@ -411,6 +411,17 @@ class TSDataset:
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
+    def _inverse_transform_target_components(self, target_components_df: pd.DataFrame, target_df: pd.DataFrame):
+        """Inverse transform target components in dataset with inverse transformed target."""
+        if self.target_components_names is not None:
+            self.drop_target_components()
+        inverse_transformed_target_components_df = inverse_transform_target_components(
+            target_components_df=target_components_df,
+            target_df=target_df,
+            inverse_transformed_target_df=self.to_pandas(features=["target"]),
+        )
+        self.add_target_components(target_components_df=inverse_transformed_target_components_df)
+
     def inverse_transform(self, transforms: Sequence["Transform"]):
         """Apply inverse transform method of transforms to the data.
 
@@ -429,13 +440,7 @@ class TSDataset:
             transform.inverse_transform(self)
 
         if target_components_present:
-            inverse_transformed_target_df = self.to_pandas(features=["target"])
-            inverse_transformed_target_components_df = inverse_transform_target_components(
-                target_components_df=target_components_df,
-                target_df=target_df,
-                inverse_transformed_target_df=inverse_transformed_target_df,
-            )
-            self.add_target_components(target_components_df=inverse_transformed_target_components_df)
+            self._inverse_transform_target_components(target_components_df=target_components_df, target_df=target_df)
 
     @property
     def segments(self) -> List[str]:
