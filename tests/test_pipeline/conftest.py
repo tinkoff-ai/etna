@@ -8,6 +8,14 @@ from scipy.stats import norm
 
 from etna.datasets import TSDataset
 from etna.models import CatBoostPerSegmentModel
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
+from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PredictionIntervalContextRequiredModelMixin
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 
@@ -226,3 +234,87 @@ def ts_run_fold() -> TSDataset:
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
+
+
+class DummyModelBase:
+    def fit(self, ts: TSDataset):
+        return self
+
+    def get_model(self) -> "DummyModelBase":
+        return self
+
+    @property
+    def context_size(self) -> int:
+        return 0
+
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+        ts.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 100
+        return ts
+
+    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
+        ts.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 200
+        return ts
+
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        df = ts.to_pandas(flatten=True, features=["target"])
+        df["target_component_a"] = 10
+        df["target_component_b"] = 90
+        df = df.drop(columns=["target"])
+        df = TSDataset.to_dataset(df)
+        return df
+
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        df = ts.to_pandas(flatten=True, features=["target"])
+        df["target_component_a"] = 20
+        df["target_component_b"] = 180
+        df = df.drop(columns=["target"])
+        df = TSDataset.to_dataset(df)
+        return df
+
+
+class NonPredictionIntervalContextIgnorantDummyModel(
+    DummyModelBase, NonPredictionIntervalContextIgnorantModelMixin, NonPredictionIntervalContextIgnorantAbstractModel
+):
+    pass
+
+
+class NonPredictionIntervalContextRequiredDummyModel(
+    DummyModelBase, NonPredictionIntervalContextRequiredModelMixin, NonPredictionIntervalContextRequiredAbstractModel
+):
+    pass
+
+
+class PredictionIntervalContextIgnorantDummyModel(
+    DummyModelBase, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
+    pass
+
+
+class PredictionIntervalContextRequiredDummyModel(
+    DummyModelBase, PredictionIntervalContextRequiredModelMixin, PredictionIntervalContextRequiredAbstractModel
+):
+    pass
+
+
+@pytest.fixture
+def non_prediction_interval_context_ignorant_dummy_model():
+    model = NonPredictionIntervalContextIgnorantDummyModel()
+    return model
+
+
+@pytest.fixture
+def non_prediction_interval_context_required_dummy_model():
+    model = NonPredictionIntervalContextRequiredDummyModel()
+    return model
+
+
+@pytest.fixture
+def prediction_interval_context_ignorant_dummy_model():
+    model = PredictionIntervalContextIgnorantDummyModel()
+    return model
+
+
+@pytest.fixture
+def prediction_interval_context_required_dummy_model():
+    model = PredictionIntervalContextRequiredDummyModel()
+    return model
