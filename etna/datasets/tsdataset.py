@@ -413,8 +413,7 @@ class TSDataset:
 
     def _inverse_transform_target_components(self, target_components_df: pd.DataFrame, target_df: pd.DataFrame):
         """Inverse transform target components in dataset with inverse transformed target."""
-        if self.target_components_names is not None:
-            self.drop_target_components()
+        self.drop_target_components()
         inverse_transformed_target_components_df = inverse_transform_target_components(
             target_components_df=target_components_df,
             target_df=target_df,
@@ -428,6 +427,8 @@ class TSDataset:
         Applied in reversed order.
         """
         # TODO: return regressors after inverse_transform
+        # Logic with target components is here for performance reasons.
+        # This way we avoid doing the inverse transformation for components several times.
         target_components_present = self.target_components_names is not None
         target_df, target_components_df = None, None
         if target_components_present:
@@ -494,7 +495,7 @@ class TSDataset:
 
     @property
     def target_components_names(self) -> Optional[List[str]]:
-        """Get list of target components. Components sum up to target. If there are no components, None is returned."""
+        """Get list of target components names. Components sum up to target. If there are no components, None is returned."""
         return self._target_components_names
 
     def plot(

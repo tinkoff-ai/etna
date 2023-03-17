@@ -1118,7 +1118,7 @@ def test_inverse_transform_target_components(ts_with_target_components, inverse_
     pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
 
 
-def test_inverse_transform_with_target_components_fails_leave_target_components(ts_with_target_components):
+def test_inverse_transform_with_target_components_fails_keep_target_components(ts_with_target_components):
     transform = DifferencingTransform(in_column="target")
     with suppress(AttributeError):
         ts_with_target_components.inverse_transform(transforms=[transform])
