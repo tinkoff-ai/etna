@@ -5,6 +5,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.transforms import SegmentEncoderTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import select_segments_subset
 
 
 def test_segment_encoder_transform(simple_ts):
@@ -47,10 +48,8 @@ def test_not_fitted_error(simple_ts):
 
 
 def test_new_segments_error(simple_ts):
-    train_df = simple_ts.loc[:, pd.IndexSlice["Moscow", :]]
-    train_ts = TSDataset(df=train_df, freq=simple_ts.freq)
-    test_df = simple_ts.loc[:, pd.IndexSlice["Omsk", :]]
-    test_ts = TSDataset(df=test_df, freq=simple_ts.freq)
+    train_ts = select_segments_subset(ts=simple_ts, segments=["Moscow"])
+    test_ts = select_segments_subset(ts=simple_ts, segments=["Omsk"])
     transform = SegmentEncoderTransform()
 
     transform.fit(train_ts)
