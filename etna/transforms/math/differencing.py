@@ -10,7 +10,6 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
-from etna.transforms.base import Transform
 from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
 
