@@ -16,6 +16,7 @@ from etna.transforms import LagTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import select_segments_subset
 
 GeneralDifferencingTransform = Union[_SingleDifferencingTransform, DifferencingTransform]
 
@@ -84,10 +85,8 @@ def ts_nans_middle() -> TSDataset:
 @pytest.fixture
 def ts_segments_split(ts_nans) -> Tuple[TSDataset, TSDataset]:
     """Create a pair of datasets with different segments."""
-    train_df = ts_nans.loc[:, pd.IndexSlice["1", :]]
-    train_ts = TSDataset(df=train_df, freq=ts_nans.freq)
-    test_df = ts_nans.loc[:, pd.IndexSlice["2", :]]
-    test_ts = TSDataset(df=test_df, freq=ts_nans.freq)
+    train_ts = select_segments_subset(ts=ts_nans, segments=["1"])
+    test_ts = select_segments_subset(ts=ts_nans, segments=["2"])
     return train_ts, test_ts
 
 
