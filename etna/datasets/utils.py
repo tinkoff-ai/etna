@@ -225,14 +225,10 @@ def get_level_dataframe(
     :
        dataframe at the target level
     """
-    target_names = tuple(get_target_with_quantiles(columns=df.columns))
-
-    num_target_names = len(target_names)
+    column_names = sorted(set(df.columns.get_level_values("feature")))
+    num_columns = len(column_names)
     num_source_level_segments = len(source_level_segments)
     num_target_level_segments = len(target_level_segments)
-
-    if len(target_names) == 0:
-        raise ValueError("Provided dataframe has no columns with the target variable!")
 
     if set(df.columns.get_level_values(level="segment")) != set(source_level_segments):
         raise ValueError("Segments mismatch for provided dataframe and `source_level_segments`!")
@@ -243,30 +239,28 @@ def get_level_dataframe(
     if num_target_level_segments != mapping_matrix.shape[0]:
         raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
 
-    df = df.loc[:, pd.IndexSlice[source_level_segments, target_names]]
-
-    source_level_data = df.values  # shape: (t, num_source_level_segments * num_target_names)
+    source_level_data = df.values  # shape: (t, num_source_level_segments * num_columns)
 
     source_level_data = source_level_data.reshape(
-        (-1, num_source_level_segments, num_target_names)
-    )  # shape: (t, num_source_level_segments, num_target_names)
-    source_level_data = np.swapaxes(source_level_data, 1, 2)  # shape: (t, num_target_names, num_source_level_segments)
+        (-1, num_source_level_segments, num_columns)
+    )  # shape: (t, num_source_level_segments, num_columns)
+    source_level_data = np.swapaxes(source_level_data, 1, 2)  # shape: (t, num_columns, num_source_level_segments)
     source_level_data = source_level_data.reshape(
         (-1, num_source_level_segments)
-    )  # shape: (t * num_target_names, num_source_level_segments)
+    )  # shape: (t * num_columns, num_source_level_segments)
 
     target_level_data = source_level_data @ mapping_matrix.T
 
     target_level_data = target_level_data.reshape(
-        (-1, num_target_names, num_target_level_segments)
-    )  # shape: (t, num_target_names, num_target_level_segments)
-    target_level_data = np.swapaxes(target_level_data, 1, 2)  # shape: (t, num_target_level_segments, num_target_names)
+        (-1, num_columns, num_target_level_segments)
+    )  # shape: (t, num_columns, num_target_level_segments)
+    target_level_data = np.swapaxes(target_level_data, 1, 2)  # shape: (t, num_target_level_segments, num_columns)
     target_level_data = target_level_data.reshape(
-        (-1, num_target_names * num_target_level_segments)
-    )  # shape: (t, num_target_level_segments * num_target_names)
+        (-1, num_columns * num_target_level_segments)
+    )  # shape: (t, num_target_level_segments * num_columns)
 
     target_level_segments = pd.MultiIndex.from_product(
-        [target_level_segments, target_names], names=["segment", "feature"]
+        [target_level_segments, column_names], names=["segment", "feature"]
     )
     target_level_df = pd.DataFrame(data=target_level_data, index=df.index, columns=target_level_segments)
 
