@@ -9,7 +9,7 @@ from etna.transforms import MeanSegmentEncoderTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
-@pytest.mark.parametrize("expected_global_means", ([[3, 30]]))
+@pytest.mark.parametrize("expected_global_means", [{"Moscow": 3, "Omsk": 30}])
 def test_mean_segment_encoder_fit(simple_ts, expected_global_means):
     encoder = MeanSegmentEncoderTransform()
     encoder.fit(simple_ts)
@@ -19,18 +19,18 @@ def test_mean_segment_encoder_fit(simple_ts, expected_global_means):
 def test_mean_segment_encoder_transform(simple_ts, transformed_simple_df):
     encoder = MeanSegmentEncoderTransform()
     transformed_df = encoder.fit_transform(simple_ts).to_pandas()
-    # TODO: fix this
     transformed_simple_df.index.freq = "D"
     pd.testing.assert_frame_equal(transformed_simple_df, transformed_df)
 
 
-def test_subset_segments(simple_df):
-    train_df = simple_df
-    test_df = simple_df.loc[:, pd.IndexSlice["Omsk", :]]
+def test_subset_segments(simple_ts):
+    train_ts = simple_ts
+    test_df = simple_ts.loc[:, pd.IndexSlice["Omsk", :]]
+    test_ts = TSDataset(df=test_df, freq=simple_ts.freq)
     transform = MeanSegmentEncoderTransform()
 
-    transform.fit(train_df)
-    transformed_test_df = transform.transform(test_df)
+    transform.fit(train_ts)
+    transformed_test_df = transform.transform(test_ts).to_pandas()
 
     segments = sorted(transformed_test_df.columns.get_level_values("segment").unique())
     features = sorted(transformed_test_df.columns.get_level_values("feature").unique())
@@ -38,22 +38,24 @@ def test_subset_segments(simple_df):
     assert features == ["exog", "segment_mean", "target"]
 
 
-def test_not_fitted_error(simple_df):
+def test_not_fitted_error(simple_ts):
     encoder = MeanSegmentEncoderTransform()
     with pytest.raises(ValueError, match="The transform isn't fitted"):
-        encoder.transform(simple_df)
+        encoder.transform(simple_ts)
 
 
-def test_new_segments_error(simple_df):
-    train_df = simple_df.loc[:, pd.IndexSlice["Moscow", :]]
-    test_df = simple_df.loc[:, pd.IndexSlice["Omsk", :]]
+def test_new_segments_error(simple_ts):
+    train_df = simple_ts.loc[:, pd.IndexSlice["Moscow", :]]
+    train_ts = TSDataset(df=train_df, freq=simple_ts.freq)
+    test_df = simple_ts.loc[:, pd.IndexSlice["Omsk", :]]
+    test_ts = TSDataset(df=test_df, freq=simple_ts.freq)
     transform = MeanSegmentEncoderTransform()
 
-    transform.fit(train_df)
+    transform.fit(train_ts)
     with pytest.raises(
         NotImplementedError, match="This transform can't process segments that weren't present on train data"
     ):
-        _ = transform.transform(test_df)
+        _ = transform.transform(test_ts)
 
 
 @pytest.fixture

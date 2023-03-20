@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms import SegmentEncoderTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
@@ -22,38 +23,41 @@ def test_segment_encoder_transform(simple_ts):
     assert codes == {0, 1}, "Codes are not 0 and 1"
 
 
-def test_subset_segments(dummy_df):
-    train_df = dummy_df
-    test_df = dummy_df.loc[:, pd.IndexSlice["Omsk", :]]
+def test_subset_segments(simple_ts):
+    train_ts = simple_ts
+    test_df = simple_ts.loc[:, pd.IndexSlice["Omsk", :]]
+    test_ts = TSDataset(df=test_df, freq=simple_ts.freq)
     transform = SegmentEncoderTransform()
 
-    transform.fit(train_df)
-    transformed_test_df = transform.transform(test_df)
+    transform.fit(train_ts)
+    transformed_test_df = transform.transform(test_ts).to_pandas()
 
     segments = sorted(transformed_test_df.columns.get_level_values("segment").unique())
     features = sorted(transformed_test_df.columns.get_level_values("feature").unique())
     assert segments == ["Omsk"]
-    assert features == ["segment_code", "target"]
+    assert features == ["exog", "segment_code", "target"]
     values = transformed_test_df.loc[:, pd.IndexSlice[:, "segment_code"]]
     assert np.all(values == values.iloc[0])
 
 
-def test_not_fitted_error(dummy_df):
+def test_not_fitted_error(simple_ts):
     encoder = SegmentEncoderTransform()
     with pytest.raises(ValueError, match="The transform isn't fitted"):
-        encoder.transform(dummy_df)
+        encoder.transform(simple_ts)
 
 
-def test_new_segments_error(dummy_df):
-    train_df = dummy_df.loc[:, pd.IndexSlice["Moscow", :]]
-    test_df = dummy_df.loc[:, pd.IndexSlice["Omsk", :]]
+def test_new_segments_error(simple_ts):
+    train_df = simple_ts.loc[:, pd.IndexSlice["Moscow", :]]
+    train_ts = TSDataset(df=train_df, freq=simple_ts.freq)
+    test_df = simple_ts.loc[:, pd.IndexSlice["Omsk", :]]
+    test_ts = TSDataset(df=test_df, freq=simple_ts.freq)
     transform = SegmentEncoderTransform()
 
-    transform.fit(train_df)
+    transform.fit(train_ts)
     with pytest.raises(
         NotImplementedError, match="This transform can't process segments that weren't present on train data"
     ):
-        _ = transform.transform(test_df)
+        _ = transform.transform(test_ts)
 
 
 def test_save_load(example_tsds):

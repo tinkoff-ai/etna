@@ -72,7 +72,7 @@ class MeanSegmentEncoderTransform(IrreversibleTransform, FutureMixin):
                 f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
             )
 
-        df = self.mean_encoder.transform(df)
+        df = self.mean_encoder._transform(df)
         segment = segments[0]
         nan_timestamps = df[df.loc[:, self.idx[segment, "target"]].isna()].index
         df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = [self.global_means[x] for x in segments]
