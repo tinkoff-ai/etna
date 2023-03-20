@@ -202,7 +202,7 @@ class DeadlineMovingAverageModel(
         df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
         return df
 
-    def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make autoregressive forecasts.
 
         Parameters
@@ -212,6 +212,8 @@ class DeadlineMovingAverageModel(
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -220,6 +222,8 @@ class DeadlineMovingAverageModel(
 
         Raises
         ------
+        NotImplementedError:
+            if return_components mode is used
         ValueError:
             if model isn't fitted
         ValueError:
@@ -227,11 +231,13 @@ class DeadlineMovingAverageModel(
         ValueError:
             if forecast context contains NaNs
         """
+        if return_components:
+            raise NotImplementedError("This mode isn't currently implemented!")
         self._validate_fitted()
+
         df = ts.to_pandas()
         new_df = self._forecast(df=df, prediction_size=prediction_size)
         ts.df = new_df
-        ts.inverse_transform()
         return ts
 
     def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
@@ -257,7 +263,7 @@ class DeadlineMovingAverageModel(
         df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
         return df
 
-    def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+    def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions using true values as autoregression context (teacher forcing).
 
         Parameters
@@ -267,6 +273,8 @@ class DeadlineMovingAverageModel(
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
@@ -275,6 +283,8 @@ class DeadlineMovingAverageModel(
 
         Raises
         ------
+        NotImplementedError:
+            if return_components mode is used
         ValueError:
             if model isn't fitted
         ValueError:
@@ -282,11 +292,13 @@ class DeadlineMovingAverageModel(
         ValueError:
             if forecast context contains NaNs
         """
+        if return_components:
+            raise NotImplementedError("This mode isn't currently implemented!")
         self._validate_fitted()
+
         df = ts.to_pandas()
         new_df = self._predict(df=df, prediction_size=prediction_size)
         ts.df = new_df
-        ts.inverse_transform()
         return ts
 
 
