@@ -93,13 +93,15 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
         return 0
 
     @abstractmethod
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, return_components: bool = False) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -109,13 +111,15 @@ class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):
         pass
 
     @abstractmethod
-    def predict(self, ts: TSDataset) -> TSDataset:
+    def predict(self, ts: TSDataset, return_components: bool = False) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
         ts:
             Dataset with features
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
@@ -129,7 +133,7 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
     """Interface for models that don't support prediction intervals and need context for prediction."""
 
     @abstractmethod
-    def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -139,6 +143,8 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -148,7 +154,7 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
         pass
 
     @abstractmethod
-    def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+    def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
@@ -158,6 +164,8 @@ class NonPredictionIntervalContextRequiredAbstractModel(AbstractModel):
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
@@ -180,7 +188,11 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
     @abstractmethod
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -192,6 +204,8 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -202,7 +216,11 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
 
     @abstractmethod
     def predict(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
@@ -214,6 +232,8 @@ class PredictionIntervalContextIgnorantAbstractModel(AbstractModel):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
@@ -233,6 +253,7 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -247,6 +268,8 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -262,6 +285,7 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
@@ -276,6 +300,8 @@ class PredictionIntervalContextRequiredAbstractModel(AbstractModel):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
@@ -604,7 +630,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         return predictions_dict
 
     @log_decorator
-    def forecast(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+    def forecast(self, ts: "TSDataset", prediction_size: int, return_components: bool = False) -> "TSDataset":
         """Make predictions.
 
         This method will make autoregressive predictions.
@@ -616,12 +642,17 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
         """
+        if return_components:
+            raise NotImplementedError("This mode isn't currently implemented!")
+
         expected_length = prediction_size + self.encoder_length
         if len(ts.index) < expected_length:
             raise ValueError(
@@ -641,12 +672,15 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
             # we don't want to change dtype after assignment, but there can happen cast to float32
             future_ts.df.loc[:, pd.IndexSlice[segment, feature_nm]] = value[:prediction_size, :].astype(np.float64)
 
-        future_ts.inverse_transform()
-
         return future_ts
 
     @log_decorator
-    def predict(self, ts: "TSDataset", prediction_size: int) -> "TSDataset":
+    def predict(
+        self,
+        ts: "TSDataset",
+        prediction_size: int,
+        return_components: bool = False,
+    ) -> "TSDataset":
         """Make predictions.
 
         This method will make predictions using true values instead of predicted on a previous step.
@@ -659,6 +693,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalCon
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------

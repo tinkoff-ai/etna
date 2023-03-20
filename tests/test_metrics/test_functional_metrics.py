@@ -10,6 +10,7 @@ from etna.metrics import r2_score
 from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
+from etna.metrics import wape
 
 
 @pytest.fixture()
@@ -39,6 +40,7 @@ def y_pred_1d():
         (r2_score, 0),
         (sign, -1),
         (max_deviation, 2),
+        (wape, 1),
     ),
 )
 def test_all_1d_metrics(metric, right_metrics_value, y_true_1d, y_pred_1d):
@@ -74,6 +76,7 @@ def y_pred_2d():
         (r2_score, 0.0),
         (sign, -1),
         (max_deviation, 4),
+        (wape, 1),
     ),
 )
 def test_all_2d_metrics(metric, right_metrics_value, y_true_2d, y_pred_2d):

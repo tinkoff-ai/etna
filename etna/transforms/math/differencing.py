@@ -8,12 +8,14 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
+from etna.transforms.base import ReversibleTransform
 from etna.transforms.base import Transform
 from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
 
 
-class _SingleDifferencingTransform(Transform):
+class _SingleDifferencingTransform(ReversibleTransform):
     """Calculate a time series differences of order 1.
 
     During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
@@ -57,6 +59,7 @@ class _SingleDifferencingTransform(Transform):
         ValueError:
             if period is not integer >= 1
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
 
         if not isinstance(period, int) or period < 1:
@@ -69,14 +72,31 @@ class _SingleDifferencingTransform(Transform):
         self._train_timestamp: Optional[pd.DatetimeIndex] = None
         self._train_init_dict: Optional[Dict[str, pd.Series]] = None
         self._test_init_df: Optional[pd.DataFrame] = None
+        self.in_column_regressor: Optional[bool] = None
 
     def _get_column_name(self) -> str:
+        if self.inplace:
+            return self.in_column
         if self.out_column is None:
             return self.__repr__()
         else:
             return self.out_column
 
-    def fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
+        return [self._get_column_name()] if self.in_column_regressor else []
+
+    def fit(self, ts: TSDataset) -> "_SingleDifferencingTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
         """Fit the transform.
 
         Parameters
@@ -113,7 +133,7 @@ class _SingleDifferencingTransform(Transform):
         self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Make a differencing transformation.
 
         Parameters
@@ -127,14 +147,14 @@ class _SingleDifferencingTransform(Transform):
             transformed dataframe
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
-        transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
+        transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]]
         for current_segment in segments:
             to_transform = transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]]
             # make a differentiation
             transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]] = to_transform.diff(periods=self.period)
 
         if self.inplace:
-            result_df = df.copy()
+            result_df = df
             result_df.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed
         else:
             transformed_features = pd.DataFrame(
@@ -197,7 +217,22 @@ class _SingleDifferencingTransform(Transform):
 
         return result_df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Fit and transform dataframe.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to transform.
+
+        Returns
+        -------
+        :
+            Transformed dataframe.
+        """
+        return self._fit(df=df)._transform(df=df)
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
         Parameters
@@ -244,7 +279,7 @@ class _SingleDifferencingTransform(Transform):
         return result_df
 
 
-class DifferencingTransform(Transform):
+class DifferencingTransform(ReversibleTransform):
     """Calculate a time series differences.
 
     During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
@@ -293,6 +328,7 @@ class DifferencingTransform(Transform):
         ValueError:
             if order is not integer >= 1
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
 
         if not isinstance(period, int) or period < 1:
@@ -321,6 +357,7 @@ class DifferencingTransform(Transform):
                 _SingleDifferencingTransform(in_column=result_out_column, period=self.period, inplace=True)
             )
         self._fit_segments: Optional[List[str]] = None
+        self.in_column_regressor: Optional[bool] = None
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -330,7 +367,21 @@ class DifferencingTransform(Transform):
         else:
             return self.out_column
 
-    def fit(self, df: pd.DataFrame) -> "DifferencingTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
+        return [self._get_column_name()] if self.in_column_regressor else []
+
+    def fit(self, ts: TSDataset) -> "DifferencingTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _fit(self, df: pd.DataFrame) -> "DifferencingTransform":
         """Fit the transform.
 
         Parameters
@@ -350,7 +401,7 @@ class DifferencingTransform(Transform):
         # this is made because transforms of high order may need some columns created by transforms of lower order
         result_df = df.copy()
         for transform in self._differencing_transforms:
-            result_df = transform.fit_transform(result_df)
+            result_df = transform._fit_transform(result_df)
         self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
 
@@ -358,7 +409,7 @@ class DifferencingTransform(Transform):
         if self._fit_segments is None:
             raise ValueError("Transform is not fitted!")
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Make a differencing transformation.
 
         Parameters
@@ -383,12 +434,12 @@ class DifferencingTransform(Transform):
         if self.inplace:
             check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
-        result_df = df.copy()
+        result_df = df
         for transform in self._differencing_transforms:
-            result_df = transform.transform(result_df)
+            result_df = transform._transform(result_df)
         return result_df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
         Parameters
@@ -419,7 +470,7 @@ class DifferencingTransform(Transform):
         segments = df.columns.get_level_values("segment").unique().tolist()
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
-        result_df = df.copy()
+        result_df = df
         for transform in self._differencing_transforms[::-1]:
-            result_df = transform.inverse_transform(result_df)
+            result_df = transform._inverse_transform(result_df)
         return result_df

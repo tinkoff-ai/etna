@@ -147,3 +147,34 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike) -> float:
 
 
 rmse = partial(mse, squared=False)
+
+
+def wape(y_true: ArrayLike, y_pred: ArrayLike) -> float:
+    """Weighted average percentage Error metric.
+
+    .. math::
+        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=0}^{n}|y\\_true_i|}
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    Returns
+    -------
+    float
+        A floating point value (the best value is 0.0).
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    return np.sum(np.abs(y_true_array - y_pred_array)) / np.sum(np.abs(y_true_array))

@@ -22,7 +22,7 @@ mypy-check:
 	mypy
 
 spell-check:
-	codespell etna/ *.md tests/ -L mape,hist
+	codespell etna/ *.md tests/ -L mape,hist,lamda
 	python -m scripts.notebook_codespell
 
 imported-deps-check:

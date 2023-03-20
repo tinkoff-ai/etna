@@ -1,22 +1,25 @@
 import reprlib
+from typing import List
 
 import numpy as np
+
 import pandas as pd
 from sklearn import preprocessing
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class SegmentEncoderTransform(Transform, FutureMixin):
+class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
     """Encode segment label to categorical. Creates column 'segment_code'."""
 
     idx = pd.IndexSlice
 
     def __init__(self):
+        super().__init__(required_features=["target"])
         self._le = preprocessing.LabelEncoder()
 
-    def fit(self, df: pd.DataFrame) -> "SegmentEncoderTransform":
+    def _fit(self, df: pd.DataFrame) -> "SegmentEncoderTransform":
         """
         Fit encoder on existing segment labels.
 
@@ -34,7 +37,7 @@ class SegmentEncoderTransform(Transform, FutureMixin):
         self._le.fit(segment_columns)
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Get encoded (categorical) for each segment.
 
@@ -78,3 +81,7 @@ class SegmentEncoderTransform(Transform, FutureMixin):
         df = df.join(encoded_df)
         df = df.sort_index(axis=1)
         return df
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return ["segment_code"]

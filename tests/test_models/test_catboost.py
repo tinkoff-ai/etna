@@ -8,6 +8,7 @@ from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models import CatBoostMultiSegmentModel
 from etna.models import CatBoostPerSegmentModel
+from etna.models.catboost import _CatBoostAdapter
 from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LabelEncoderTransform
@@ -27,8 +28,9 @@ def test_run(catboostmodel, new_format_df):
 
     model = catboostmodel()
     model.fit(ts)
-    future_ts = ts.make_future(3)
+    future_ts = ts.make_future(3, transforms=[lags])
     model.forecast(future_ts)
+    future_ts.inverse_transform([lags])
     if not future_ts.isnull().values.any():
         assert True
     else:
@@ -45,13 +47,14 @@ def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
 
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
     lags_exog = LagTransform(lags=[3, 4, 5, 6], in_column="regressor_exog")
-
-    ts.fit_transform([lags, lags_exog])
+    transforms = [lags, lags_exog]
+    ts.fit_transform(transforms)
 
     model = catboostmodel()
     model.fit(ts)
-    future_ts = ts.make_future(3)
+    future_ts = ts.make_future(3, transforms=transforms)
     model.forecast(future_ts)
+    future_ts.inverse_transform(transforms)
     if not future_ts.isnull().values.any():
         assert True
     else:
@@ -81,11 +84,12 @@ def test_catboost_multi_segment_forecast(constant_ts):
 
     lags = LagTransform(in_column="target", lags=[10, 11, 12])
     train.fit_transform([lags])
-    future = train.make_future(horizon)
+    future = train.make_future(horizon, transforms=[lags])
 
     model = CatBoostMultiSegmentModel()
     model.fit(train)
     forecast = model.forecast(future)
+    forecast.inverse_transform([lags])
 
     for segment in forecast.segments:
         assert np.allclose(test[:, segment, "target"], forecast[:, segment, "target"])
@@ -141,3 +145,37 @@ def test_save_load(model, example_tsds):
     horizon = 3
     transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+def test_forecast_components_equal_predict_components(dfs_w_exog):
+    train, test = dfs_w_exog
+
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
+
+    prediction_components = model.predict_components(df=test)
+    forecast_components = model.forecast_components(df=test)
+    pd.testing.assert_frame_equal(prediction_components, forecast_components)
+
+
+def test_forecast_components_names(dfs_w_exog, answer=("target_component_f1", "target_component_f2")):
+    train, test = dfs_w_exog
+
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
+
+    components = model.forecast_components(df=test)
+    assert set(components.columns) == set(answer)
+
+
+def test_decomposition_sums_to_target(dfs_w_exog):
+    train, test = dfs_w_exog
+
+    model = _CatBoostAdapter(iterations=10)
+    model.fit(train, [])
+
+    y_pred = model.predict(test)
+    components = model.forecast_components(df=test)
+
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, y_pred)
