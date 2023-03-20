@@ -196,18 +196,18 @@ def test_get_target_with_quantiles(segments, columns, answer):
     assert targets_names == answer
 
 
-@pytest.mark.parametrize("target_level,answer_name", (("market", "market_level_df"), ("total", "total_level_df")))
-def test_get_level_dataframe(product_level_simple_hierarchical_ts, target_level, answer_name, request):
-    ts = product_level_simple_hierarchical_ts
-    answer = request.getfixturevalue(answer_name)
+@pytest.mark.parametrize("target_level, answer_name", (("market", "market_level_constant_forecast_w_quantiles"), ("total", "total_level_constant_forecast_w_quantiles")))
+def test_get_level_dataframe(product_level_constant_forecast_w_quantiles, target_level, answer_name, request):
+    ts = product_level_constant_forecast_w_quantiles
+    answer = request.getfixturevalue(answer_name).to_pandas()
     answer.index.freq = "D"
 
-    mapping_matrix = product_level_simple_hierarchical_ts.hierarchical_structure.get_summing_matrix(
+    mapping_matrix = ts.hierarchical_structure.get_summing_matrix(
         target_level=target_level, source_level=ts.current_df_level
     )
 
     target_level_df = get_level_dataframe(
-        df=ts.df,
+        df=ts.to_pandas(),
         mapping_matrix=mapping_matrix,
         source_level_segments=ts.hierarchical_structure.get_level_segments(level_name=ts.current_df_level),
         target_level_segments=ts.hierarchical_structure.get_level_segments(level_name=target_level),
