@@ -98,13 +98,16 @@ class HierarchicalPipeline(Pipeline):
         )
         return hierarchical_forecast
 
+    # TODO: fix ignoring ts
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self, ts: Optional[TSDataset] = None, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
     ) -> TSDataset:
         """Make a prediction for target at the source level of hierarchy and make reconciliation to target level.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -136,8 +139,9 @@ class HierarchicalPipeline(Pipeline):
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
+    # TODO: it works wrong
     def _forecast_prediction_interval(
-        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+        self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
@@ -147,6 +151,7 @@ class HierarchicalPipeline(Pipeline):
 
         # TODO: rework intervals estimation for `BottomUpReconciliator`
 
+        # TODO: check this, it looks wrong
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=self._fit_ts, metrics=[MAE()], n_folds=n_folds)
 

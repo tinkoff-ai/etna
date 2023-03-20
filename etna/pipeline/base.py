@@ -610,12 +610,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         tslogger.finish_experiment()
         return forecast
 
-    # TODO: fix with compute metrics
     def _process_fold_forecast(
         self,
         forecast: TSDataset,
         train: TSDataset,
         test: TSDataset,
+        pipeline: "BasePipeline",
         fold_number: int,
         mask: FoldMask,
         metrics: List[Metric],
@@ -633,7 +633,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         test.df = test.df.loc[mask.target_timestamps]
 
         fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+        fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
         tslogger.finish_experiment()
@@ -795,6 +795,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     forecast=forecasts_flat[group_idx * refit + idx],
                     train=train,
                     test=test,
+                    pipeline=pipelines[group_idx],
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     mask=fold_groups[group_idx]["forecast_masks"][idx],
                     metrics=metrics,
