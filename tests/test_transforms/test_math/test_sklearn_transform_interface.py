@@ -13,6 +13,7 @@ from etna.transforms import MinMaxScalerTransform
 from etna.transforms import RobustScalerTransform
 from etna.transforms import StandardScalerTransform
 from etna.transforms import YeoJohnsonTransform
+from tests.utils import select_segments_subset
 
 
 @pytest.fixture
@@ -408,8 +409,8 @@ def _check_same_segments(df_1: pd.DataFrame, df_2: pd.DataFrame):
 )
 def test_transform_subset_segments(transform_constructor, mode, in_column, inplace, multicolumn_ts):
     train_ts = multicolumn_ts
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_2"], :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_2"])
+    test_df = test_ts.to_pandas()
     transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
 
     transform.fit(train_ts)
@@ -449,8 +450,8 @@ def test_transform_subset_segments(transform_constructor, mode, in_column, inpla
 )
 def test_inverse_transform_subset_segments(transform_constructor, mode, in_column, inplace, multicolumn_ts):
     train_ts = multicolumn_ts
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_2"], :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_2"])
+    test_df = test_ts.to_pandas()
     transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
 
     transform.fit(train_ts)
@@ -482,10 +483,9 @@ def test_inverse_transform_subset_segments(transform_constructor, mode, in_colum
     ],
 )
 def test_transform_new_segments_macro(transform_constructor, in_column, inplace, multicolumn_ts):
-    train_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
-    train_ts = TSDataset(df=train_df, freq=multicolumn_ts.freq)
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice["segment_2", :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    train_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_1"])
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_2"])
+    test_df = test_ts.to_pandas()
     transform = transform_constructor(mode="macro", in_column=in_column, inplace=inplace)
 
     transform.fit(train_ts)
@@ -517,10 +517,8 @@ def test_transform_new_segments_macro(transform_constructor, in_column, inplace,
     ],
 )
 def test_transform_new_segments_per_segment_fail(transform_constructor, in_column, inplace, multicolumn_ts):
-    train_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
-    train_ts = TSDataset(df=train_df, freq=multicolumn_ts.freq)
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice["segment_2", :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    train_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_1"])
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_2"])
     transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=inplace)
 
     transform.fit(train_ts)
@@ -553,10 +551,9 @@ def test_transform_new_segments_per_segment_fail(transform_constructor, in_colum
     ],
 )
 def test_inverse_transform_new_segments_macro(transform_constructor, in_column, inplace, multicolumn_ts):
-    train_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
-    train_ts = TSDataset(df=train_df, freq=multicolumn_ts.freq)
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice["segment_2", :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    train_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_1"])
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_2"])
+    test_df = test_ts.to_pandas()
     transform = transform_constructor(mode="macro", in_column=in_column, inplace=inplace)
 
     transform.fit(train_ts)
@@ -587,10 +584,9 @@ def test_inverse_transform_new_segments_macro(transform_constructor, in_column, 
     ],
 )
 def test_inverse_transform_new_segments_per_segment_non_inplace(transform_constructor, in_column, multicolumn_ts):
-    train_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
-    train_ts = TSDataset(df=train_df, freq=multicolumn_ts.freq)
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice["segment_2", :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    train_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_1"])
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_2"])
+    test_df = test_ts.to_pandas()
     transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=False)
 
     transform.fit(train_ts)
@@ -621,10 +617,8 @@ def test_inverse_transform_new_segments_per_segment_non_inplace(transform_constr
     ],
 )
 def test_inverse_transform_new_segments_per_segment_inplace_fail(transform_constructor, in_column, multicolumn_ts):
-    train_df = multicolumn_ts.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
-    train_ts = TSDataset(df=train_df, freq=multicolumn_ts.freq)
-    test_df = multicolumn_ts.loc[:, pd.IndexSlice["segment_2", :]]
-    test_ts = TSDataset(df=test_df, freq=multicolumn_ts.freq)
+    train_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_0", "segment_1"])
+    test_ts = select_segments_subset(ts=multicolumn_ts, segments=["segment_2"])
     transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=True)
 
     transform.fit(train_ts)
