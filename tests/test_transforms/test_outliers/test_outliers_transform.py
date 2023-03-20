@@ -164,15 +164,16 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
     ),
 )
 def test_transform_new_segments_fail(transform, outliers_solid_tsds):
-    df = outliers_solid_tsds.to_pandas()
-    train_df = df.loc[:, pd.IndexSlice["1", :]]
-    test_df = df.loc[:, pd.IndexSlice["2", :]]
+    train_df = outliers_solid_tsds.loc[:, pd.IndexSlice["1", :]]
+    train_ts = TSDataset(df=train_df, freq=outliers_solid_tsds.freq)
+    test_df = outliers_solid_tsds.loc[:, pd.IndexSlice["2", :]]
+    test_ts = TSDataset(df=test_df, freq=outliers_solid_tsds.freq)
 
-    transform.fit(train_df)
+    transform.fit(train_ts)
     with pytest.raises(
         NotImplementedError, match="This transform can't process segments that weren't present on train data"
     ):
-        _ = transform.transform(test_df)
+        _ = transform.transform(test_ts)
 
 
 @pytest.mark.parametrize(
@@ -184,15 +185,16 @@ def test_transform_new_segments_fail(transform, outliers_solid_tsds):
     ),
 )
 def test_inverse_transform_new_segments_fail(transform, outliers_solid_tsds):
-    df = outliers_solid_tsds.to_pandas()
-    train_df = df.loc[:, pd.IndexSlice["1", :]]
-    test_df = df.loc[:, pd.IndexSlice["2", :]]
+    train_df = outliers_solid_tsds.loc[:, pd.IndexSlice["1", :]]
+    train_ts = TSDataset(df=train_df, freq=outliers_solid_tsds.freq)
+    test_df = outliers_solid_tsds.loc[:, pd.IndexSlice["2", :]]
+    test_ts = TSDataset(df=test_df, freq=outliers_solid_tsds.freq)
 
-    transform.fit(train_df)
+    transform.fit(train_ts)
     with pytest.raises(
         NotImplementedError, match="This transform can't process segments that weren't present on train data"
     ):
-        _ = transform.inverse_transform(test_df)
+        _ = transform.inverse_transform(test_ts)
 
 
 @pytest.mark.parametrize(
