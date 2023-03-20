@@ -12,6 +12,7 @@ from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import select_segments_subset
 
 
 @pytest.fixture()
@@ -164,10 +165,8 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
     ),
 )
 def test_transform_new_segments_fail(transform, outliers_solid_tsds):
-    train_df = outliers_solid_tsds.loc[:, pd.IndexSlice["1", :]]
-    train_ts = TSDataset(df=train_df, freq=outliers_solid_tsds.freq)
-    test_df = outliers_solid_tsds.loc[:, pd.IndexSlice["2", :]]
-    test_ts = TSDataset(df=test_df, freq=outliers_solid_tsds.freq)
+    train_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["1"])
+    test_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["2"])
 
     transform.fit(train_ts)
     with pytest.raises(
@@ -185,10 +184,8 @@ def test_transform_new_segments_fail(transform, outliers_solid_tsds):
     ),
 )
 def test_inverse_transform_new_segments_fail(transform, outliers_solid_tsds):
-    train_df = outliers_solid_tsds.loc[:, pd.IndexSlice["1", :]]
-    train_ts = TSDataset(df=train_df, freq=outliers_solid_tsds.freq)
-    test_df = outliers_solid_tsds.loc[:, pd.IndexSlice["2", :]]
-    test_ts = TSDataset(df=test_df, freq=outliers_solid_tsds.freq)
+    train_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["1"])
+    test_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["2"])
 
     transform.fit(train_ts)
     with pytest.raises(
