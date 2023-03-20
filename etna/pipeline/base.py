@@ -308,8 +308,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Add prediction intervals to the forecasts."""
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
-            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
 
         self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
@@ -635,7 +633,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         test.df = test.df.loc[mask.target_timestamps]
 
         fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
         tslogger.finish_experiment()
