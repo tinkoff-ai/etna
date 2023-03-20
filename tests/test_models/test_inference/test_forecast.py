@@ -230,16 +230,6 @@ class TestForecastInSampleFull:
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
-    # TODO: remove
-    @to_be_fixed(raises=AssertionError)
-    # Looks like a problem of current implementation of NNs
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [],
-    )
-    def test_forecast_in_sample_full_failed_nans_lags_nns(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
-
     @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
     @pytest.mark.parametrize(
         "model, transforms",
@@ -518,6 +508,10 @@ class TestForecastOutSamplePrefix:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
@@ -559,11 +553,6 @@ class TestForecastOutSamplePrefix:
                     lr=0.01,
                 ),
                 [],
-            ),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (
-                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[5, 6])],
             ),
         ],
     )
@@ -801,7 +790,6 @@ class TestForecastMixedInOutSample:
         self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
 
-# TODO: check this
 class TestForecastSubsetSegments:
     """Test forecast on subset of segments.
 
@@ -815,7 +803,6 @@ class TestForecastSubsetSegments:
 
         # fitting
         ts.fit_transform(transforms)
-        subset_ts.transform(ts.transforms)
         model.fit(ts)
 
         # forecasting full
@@ -823,13 +810,13 @@ class TestForecastSubsetSegments:
 
         torch.manual_seed(11)
 
-        forecast_full_ts = ts.make_future(future_steps=prediction_size, tail_steps=model.context_size)
+        forecast_full_ts = ts.make_future(future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms)
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=prediction_size)
 
         # forecasting subset of segments
         torch.manual_seed(11)  # TODO: remove after fix at issue-802
 
-        forecast_subset_ts = subset_ts.make_future(future_steps=prediction_size, tail_steps=model.context_size)
+        forecast_subset_ts = subset_ts.make_future(future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms)
         forecast_subset_ts = make_forecast(model=model, ts=forecast_subset_ts, prediction_size=prediction_size)
 
         # checking
@@ -840,8 +827,8 @@ class TestForecastSubsetSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
@@ -859,18 +846,20 @@ class TestForecastSubsetSegments:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    )
-                ],
+                    TFTModel(
+                        dataset_builder=PytorchForecastingDatasetBuilder(
+                            max_encoder_length=21,
+                            min_encoder_length=21,
+                            max_prediction_length=5,
+                            time_varying_known_reals=["time_idx"],
+                            time_varying_unknown_reals=["target"],
+                            static_categoricals=["segment"],
+                            target_normalizer=None,
+                        ),
+                        trainer_params=dict(max_epochs=1),
+                        lr=0.01,
+                    ),
+                    [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
@@ -888,16 +877,18 @@ class TestForecastSubsetSegments:
         "model, transforms",
         [
             (
-                DeepARModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                    DeepARModel(
+                        dataset_builder=PytorchForecastingDatasetBuilder(
+                            max_encoder_length=5,
+                            max_prediction_length=5,
+                            time_varying_known_reals=["time_idx"],
+                            time_varying_unknown_reals=["target"],
+                            target_normalizer=GroupNormalizer(groups=["segment"]),
+                        ),
+                        trainer_params=dict(max_epochs=1),
+                        lr=0.01,
+                    ),
+                    [],
             ),
         ],
     )
@@ -905,7 +896,6 @@ class TestForecastSubsetSegments:
         self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
 
 
-# TODO: check this
 class TestForecastNewSegments:
     """Test forecast on new segments.
 
@@ -921,7 +911,6 @@ class TestForecastNewSegments:
 
         # fitting
         train_ts.fit_transform(transforms)
-        test_ts.transform(train_ts.transforms)
         model.fit(train_ts)
 
         # forecasting
@@ -929,7 +918,7 @@ class TestForecastNewSegments:
 
         torch.manual_seed(11)
 
-        forecast_ts = test_ts.make_future(future_steps=prediction_size, tail_steps=model.context_size)
+        forecast_ts = test_ts.make_future(future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms)
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
 
         # checking
@@ -939,7 +928,7 @@ class TestForecastNewSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelMultiSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (MovingAverageModel(window=3), []),
@@ -952,22 +941,23 @@ class TestForecastNewSegments:
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
             (
-                DeepARModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    )
-                ],
+                    DeepARModel(
+                        dataset_builder=PytorchForecastingDatasetBuilder(
+                            max_encoder_length=5,
+                            max_prediction_length=5,
+                            time_varying_known_reals=["time_idx"],
+                            time_varying_unknown_reals=["target"],
+                            categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
+                            target_normalizer=GroupNormalizer(groups=["segment"]),
+                        ),
+                        trainer_params=dict(max_epochs=1),
+                        lr=0.01,
+                    ),
+                    [],
             ),
             (
-                TFTModel(max_epochs=1, learning_rate=[0.01]),
-                [
-                    PytorchForecastingTransform(
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
                         min_encoder_length=21,
                         max_prediction_length=5,
@@ -976,8 +966,11 @@ class TestForecastNewSegments:
                         categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
                         static_categoricals=["segment"],
                         target_normalizer=None,
-                    )
-                ],
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
         ],
     )
@@ -987,7 +980,7 @@ class TestForecastNewSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (CatBoostModelPerSegment(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (AutoARIMAModel(), []),
