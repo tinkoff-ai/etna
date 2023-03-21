@@ -1,9 +1,8 @@
-from etna.datasets.utils import match_target_quantiles  # noqa: F401
-import re
 import reprlib
 from typing import List
 from typing import Optional
-from typing import Set
+
+from etna.datasets.utils import match_target_quantiles  # noqa: F401
 
 
 def check_new_segments(transform_segments: List[str], fit_segments: Optional[List[str]]):
