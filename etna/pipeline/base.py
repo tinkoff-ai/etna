@@ -307,7 +307,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
         with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
+            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
         self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
@@ -321,11 +321,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             raise ValueError("Pipeline is not fitted!")
 
         backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
-            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
         residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
             backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
             - self.ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
         )
@@ -619,6 +615,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         forecast: TSDataset,
         train: TSDataset,
         test: TSDataset,
+        pipeline: "BasePipeline",
         fold_number: int,
         mask: FoldMask,
         metrics: List[Metric],
@@ -798,6 +795,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     forecast=forecasts_flat[group_idx * refit + idx],
                     train=train,
                     test=test,
+                    pipeline=pipelines[group_idx],
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     mask=fold_groups[group_idx]["forecast_masks"][idx],
                     metrics=metrics,

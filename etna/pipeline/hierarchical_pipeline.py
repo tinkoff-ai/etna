@@ -1,3 +1,4 @@
+import pathlib
 from copy import deepcopy
 from typing import Dict
 from typing import List
@@ -67,12 +68,18 @@ class HierarchicalPipeline(Pipeline):
         return self
 
     def raw_forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.25, 0.75), n_folds: int = 3
+        self,
+        ts: TSDataset,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.25, 0.75),
+        n_folds: int = 3,
     ) -> TSDataset:
         """Make a prediction for target at the source level of hierarchy.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -85,9 +92,15 @@ class HierarchicalPipeline(Pipeline):
         :
             Dataset with predictions at the source level
         """
-        forecast = super().forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
-        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
+        # handle `prediction_interval=True` separately
+        source_ts = self.reconciliator.aggregate(ts=ts)
+        forecast = super().forecast(ts=source_ts, prediction_interval=False, n_folds=n_folds)
+        if prediction_interval:
+            forecast = self._forecast_prediction_interval(
+                ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
+            )
 
+        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
         hierarchical_forecast = TSDataset(
             df=forecast[..., target_columns],
             freq=forecast.freq,
@@ -98,12 +111,18 @@ class HierarchicalPipeline(Pipeline):
         return hierarchical_forecast
 
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        ts: Optional[TSDataset] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
     ) -> TSDataset:
         """Make a prediction for target at the source level of hierarchy and make reconciliation to target level.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -116,7 +135,16 @@ class HierarchicalPipeline(Pipeline):
         :
             Dataset with predictions at the target level of hierarchy.
         """
-        forecast = self.raw_forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
+        if ts is None:
+            if self._fit_ts is None:
+                raise ValueError(
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                )
+            ts = self._fit_ts
+
+        forecast = self.raw_forecast(
+            ts=ts, prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
+        )
         forecast_reconciled = self.reconciliator.reconcile(forecast)
         return forecast_reconciled
 
@@ -136,9 +164,10 @@ class HierarchicalPipeline(Pipeline):
         return metrics_values
 
     def _forecast_prediction_interval(
-        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+        self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
+        # TODO: fix this: what if during backtest KeyboardInterrupt is raised
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
         if self.ts is None or self._fit_ts is None:
@@ -147,10 +176,53 @@ class HierarchicalPipeline(Pipeline):
         # TODO: rework intervals estimation for `BottomUpReconciliator`
 
         with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=self._fit_ts, metrics=[MAE()], n_folds=n_folds)
+            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
         self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
         return predictions
+
+    def save(self, path: pathlib.Path):
+        """Save the object.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        """
+        fit_ts = self._fit_ts
+
+        try:
+            # extract attributes we can't easily save
+            delattr(self, "_fit_ts")
+
+            # save the remaining part
+            super().save(path=path)
+        finally:
+            self._fit_ts = fit_ts
+
+    @classmethod
+    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> "HierarchicalPipeline":
+        """Load an object.
+
+        Parameters
+        ----------
+        path:
+            Path to load object from.
+        ts:
+            TSDataset to set into loaded pipeline.
+
+        Returns
+        -------
+        :
+            Loaded object.
+        """
+        obj = super().load(path=path)
+        obj._fit_ts = deepcopy(ts)
+        if ts is not None:
+            obj.ts = obj.reconciliator.aggregate(ts=ts)
+        else:
+            obj.ts = None
+        return obj
