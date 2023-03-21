@@ -6,6 +6,8 @@ from etna.datasets import TSDataset
 from etna.datasets import duplicate_data
 from etna.datasets import generate_ar_df
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import get_level_dataframe
+from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import set_columns_wide
 
 
@@ -174,3 +176,69 @@ def test_set_columns_wide(
 
     # compare values
     pd.testing.assert_frame_equal(df_obtained, df_expected)
+
+
+@pytest.mark.parametrize("segments", (["s1"], ["s1", "s2"]))
+@pytest.mark.parametrize(
+    "columns,answer",
+    (
+        ({"a", "b"}, set()),
+        ({"a", "b", "target"}, {"target"}),
+        ({"a", "b", "target", "target_0.5"}, {"target", "target_0.5"}),
+        ({"a", "b", "target", "target_0.5", "target1"}, {"target", "target_0.5"}),
+    ),
+)
+def test_get_target_with_quantiles(segments, columns, answer):
+    columns = pd.MultiIndex.from_product([segments, columns], names=["segment", "feature"])
+    targets_names = get_target_with_quantiles(columns)
+    assert targets_names == answer
+
+
+@pytest.mark.parametrize("target_level,answer_name", (("market", "market_level_df"), ("total", "total_level_df")))
+def test_get_level_dataframe(product_level_simple_hierarchical_ts, target_level, answer_name, request):
+    ts = product_level_simple_hierarchical_ts
+    answer = request.getfixturevalue(answer_name)
+    answer.index.freq = "D"
+
+    mapping_matrix = product_level_simple_hierarchical_ts.hierarchical_structure.get_summing_matrix(
+        target_level=target_level, source_level=ts.current_df_level
+    )
+
+    target_level_df = get_level_dataframe(
+        df=ts.df,
+        mapping_matrix=mapping_matrix,
+        source_level_segments=ts.hierarchical_structure.get_level_segments(level_name=ts.current_df_level),
+        target_level_segments=ts.hierarchical_structure.get_level_segments(level_name=target_level),
+    )
+
+    pd.testing.assert_frame_equal(target_level_df, answer)
+
+
+@pytest.mark.parametrize(
+    "source_level_segments,target_level_segments,message",
+    (
+        (("ABC", "c1"), ("X", "Y"), "Segments mismatch for provided dataframe and `source_level_segments`!"),
+        (("ABC", "a"), ("X", "Y"), "Segments mismatch for provided dataframe and `source_level_segments`!"),
+        (
+            ("a", "b", "c", "d"),
+            ("X",),
+            "Number of target level segments do not match mapping matrix number of columns!",
+        ),
+    ),
+)
+def test_get_level_dataframe_segm_errors(
+    product_level_simple_hierarchical_ts, source_level_segments, target_level_segments, message
+):
+    ts = product_level_simple_hierarchical_ts
+
+    mapping_matrix = product_level_simple_hierarchical_ts.hierarchical_structure.get_summing_matrix(
+        target_level="market", source_level=ts.current_df_level
+    )
+
+    with pytest.raises(ValueError, match=message):
+        get_level_dataframe(
+            df=ts.df,
+            mapping_matrix=mapping_matrix,
+            source_level_segments=source_level_segments,
+            target_level_segments=target_level_segments,
+        )

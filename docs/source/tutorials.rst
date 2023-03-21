@@ -16,3 +16,4 @@ Tutorials
    tutorials/ensembles
    tutorials/NN_examples
    tutorials/classification
+   tutorials/hierarchical_pipeline
