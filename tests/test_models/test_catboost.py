@@ -147,18 +147,6 @@ def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
 
 
-@pytest.fixture()
-def dfs_w_exog():
-    df = generate_ar_df(start_time="2021-01-01", periods=105, n_segments=1)
-    df["f1"] = np.sin(df["target"])
-    df["f2"] = np.cos(df["target"])
-
-    df.drop(columns=["segment"], inplace=True)
-    train = df.iloc[:-5]
-    test = df.iloc[-5:]
-    return train, test
-
-
 def test_forecast_components_equal_predict_components(dfs_w_exog):
     train, test = dfs_w_exog
 

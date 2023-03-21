@@ -271,3 +271,28 @@ def get_level_dataframe(
     target_level_df = pd.DataFrame(data=target_level_data, index=df.index, columns=target_level_segments)
 
     return target_level_df
+
+
+def inverse_transform_target_components(
+    target_components_df: pd.DataFrame, target_df: pd.DataFrame, inverse_transformed_target_df: pd.DataFrame
+) -> pd.DataFrame:
+    """Inverse transform target components.
+
+    Parameters
+    ----------
+    target_components_df:
+        Dataframe with target components
+    target_df:
+        Dataframe with transformed target
+    inverse_transformed_target_df:
+        Dataframe with inverse_transformed target
+
+    Returns
+    -------
+    :
+       Dataframe with inverse transformed target components
+    """
+    components_number = len(set(target_components_df.columns.get_level_values("feature")))
+    scale_coef = np.repeat((inverse_transformed_target_df / target_df).values, repeats=components_number, axis=1)
+    inverse_transformed_target_components_df = target_components_df * scale_coef
+    return inverse_transformed_target_components_df

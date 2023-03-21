@@ -5,6 +5,7 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Union
 
 import pandas as pd
@@ -106,10 +107,7 @@ class _ProphetAdapter(BaseAdapter):
             List of the columns with regressors
         """
         self.regressor_columns = regressors
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
         for regressor in self.regressor_columns:
             if regressor not in self.predefined_regressors_names:
                 self.model.add_regressor(regressor)
@@ -134,11 +132,7 @@ class _ProphetAdapter(BaseAdapter):
         :
             DataFrame with predictions
         """
-        df = df.reset_index()
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
         forecast = self.model.predict(prophet_df)
         y_pred = pd.DataFrame(forecast["yhat"])
         if prediction_interval:
@@ -151,6 +145,86 @@ class _ProphetAdapter(BaseAdapter):
         }
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
+
+    def _prepare_prophet_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Prepare dataframe for fit and predict."""
+        if self.regressor_columns is None:
+            raise ValueError("List of regressor is not set!")
+
+        df = df.reset_index()
+
+        prophet_df = pd.DataFrame()
+        prophet_df["y"] = df["target"]
+        prophet_df["ds"] = df["timestamp"]
+        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        return prophet_df
+
+    @staticmethod
+    def _filter_aggregated_components(components: Iterable[str]) -> Set[str]:
+        """Filter out aggregated components."""
+        # aggregation of corresponding model terms, e.g. sum
+        aggregated_components = {
+            "additive_terms",
+            "multiplicative_terms",
+            "extra_regressors_additive",
+            "extra_regressors_multiplicative",
+        }
+
+        return set(components) - aggregated_components
+
+    def _check_mul_components(self):
+        """Raise error if model contains multiplicative components."""
+        components_modes = self.model.component_modes
+        if components_modes is None:
+            raise ValueError("This model is not fitted!")
+
+        mul_components = self._filter_aggregated_components(self.model.component_modes["multiplicative"])
+        if len(mul_components) > 0:
+            raise ValueError("Forecast decomposition is only supported for additive components!")
+
+    def _predict_seasonal_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate seasonal, holidays and exogenous components."""
+        model = self.model
+
+        seasonal_features, _, component_cols, _ = model.make_all_seasonality_features(df)
+
+        holiday_names = set(model.train_holiday_names) if model.train_holiday_names is not None else set()
+
+        components_names = list(
+            filter(lambda v: v not in holiday_names, self._filter_aggregated_components(component_cols.columns))
+        )
+
+        beta_c = model.params["beta"].T * component_cols[components_names].values
+        comp = seasonal_features.values @ beta_c
+
+        # apply rescaling for additive components
+        comp *= model.y_scale
+
+        return pd.DataFrame(data=comp, columns=components_names)
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        self._check_mul_components()
+
+        prophet_df = self._prepare_prophet_df(df=df)
+
+        prophet_df = self.model.setup_dataframe(prophet_df)
+
+        components = self._predict_seasonal_components(df=prophet_df)
+        components["trend"] = self.model.predict_trend(df=prophet_df)
+
+        return components.add_prefix("target_component_")
 
     def get_model(self) -> Prophet:
         """Get internal prophet.Prophet model that is used inside etna class.
@@ -199,6 +273,12 @@ class ProphetModel(
     -----
     Original Prophet can use features 'cap' and 'floor',
     they should be added to the known_future list on dataset initialization.
+
+    This model supports in-sample and out-of-sample forecast decomposition. The number
+    of components in the decomposition depends on model parameters. Main components are:
+    trend, seasonality, holiday and exogenous effects. Seasonal components will be decomposed
+    down to individual periods if fitted. Holiday and exogenous will be present in decomposition
+    if fitted.Corresponding components are obtained directly from the model.
 
     Examples
     --------

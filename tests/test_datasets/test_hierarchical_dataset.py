@@ -484,8 +484,8 @@ def test_get_level_dataset_with_quantiles(product_level_constant_forecast_w_quan
 
 
 def test_get_level_dataset_pass_target_components_to_output(simple_hierarchical_ts):
-    simple_hierarchical_ts._target_components = ["target_component_a", "target_component_b"]
+    simple_hierarchical_ts._target_components_names = ["target_component_a", "target_component_b"]
     simple_hierarchical_ts_aggregated = simple_hierarchical_ts.get_level_dataset(target_level="market")
-    assert sorted(simple_hierarchical_ts_aggregated.target_components) == sorted(
-        simple_hierarchical_ts.target_components
+    assert sorted(simple_hierarchical_ts_aggregated.target_components_names) == sorted(
+        simple_hierarchical_ts.target_components_names
     )
