@@ -6,10 +6,12 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
+from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
@@ -211,6 +213,126 @@ class _SARIMAXBaseAdapter(BaseAdapter):
            Internal model
         """
         return self._fit_results
+
+    @staticmethod
+    def _prepare_components_df(components: np.ndarray, model: SARIMAX) -> pd.DataFrame:
+        """Prepare `pd.DataFrame` with components."""
+        if model.exog_names is not None:
+            components_names = model.exog_names[:]
+        else:
+            components_names = []
+
+        if model.seasonal_periods == 0:
+            components_names.append("arima")
+        else:
+            components_names.append("sarima")
+
+        df = pd.DataFrame(data=components, columns=components_names)
+        return df.add_prefix("target_component_")
+
+    @staticmethod
+    def _prepare_design_matrix(ssm: SimulationSmoother) -> np.ndarray:
+        """Extract design matrix from state space model."""
+        design_mat = ssm["design"]
+        if len(design_mat.shape) == 2:
+            design_mat = design_mat[..., np.newaxis]
+
+        return design_mat
+
+    def _mle_regression_decomposition(self, state: np.ndarray, ssm: SimulationSmoother, exog: np.ndarray) -> np.ndarray:
+        """Estimate SARIMAX components for MLE regression case."""
+        design_mat = self._prepare_design_matrix(ssm)
+
+        components = np.sum(design_mat * state, axis=1).T
+
+        if len(exog) > 0:
+            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]))[0]
+            weighted_exog = exog * exog_params[np.newaxis]
+            components = np.concatenate([weighted_exog, components], axis=1)
+
+        return components
+
+    def _state_regression_decomposition(self, state: np.ndarray, ssm: SimulationSmoother, k_exog: int) -> np.ndarray:
+        """Estimate SARIMAX components for state regression case."""
+        design_mat = self._prepare_design_matrix(ssm)
+
+        if k_exog > 0:
+            sarima = np.sum(design_mat[:, :-k_exog] * state[:-k_exog], axis=1)
+            weighted_exog = np.squeeze(design_mat[:, -k_exog:] * state[-k_exog:])
+            components = np.concatenate([weighted_exog, sarima], axis=0).T
+        else:
+            components = np.sum(design_mat * state, axis=1).T
+
+        return components
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        fit_results = self._fit_results
+        model = fit_results.model
+
+        if model.hamilton_representation:
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of an ARMA!")
+
+        state = fit_results.predicted_state[:, :-1]
+
+        if model.mle_regression:
+            components = self._mle_regression_decomposition(state=state, ssm=model.ssm, exog=model.exog)
+
+        else:
+            components = self._state_regression_decomposition(state=state, ssm=model.ssm, k_exog=model.k_exog)
+
+        return self._prepare_components_df(components=components, model=model)
+
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        fit_results = self._fit_results
+
+        model = fit_results.model
+        if model.hamilton_representation:
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of an ARMA!")
+
+        horizon = len(df)
+        self._encode_categoricals(df)
+        self._check_df(df, horizon)
+
+        exog_future = self._select_regressors(df)
+
+        forecast_results = fit_results.get_forecast(horizon, exog=exog_future).prediction_results.results
+        state = forecast_results.predicted_state[:, :-1]
+
+        if model.mle_regression:
+            components = self._mle_regression_decomposition(
+                state=state, ssm=forecast_results.model, exog=exog_future.values  # type: ignore
+            )
+
+        else:
+            components = self._state_regression_decomposition(
+                state=state, ssm=forecast_results.model, k_exog=model.k_exog
+            )
+
+        return self._prepare_components_df(components=components, model=model)
 
 
 class _SARIMAXAdapter(_SARIMAXBaseAdapter):
