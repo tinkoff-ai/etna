@@ -1,3 +1,4 @@
+from etna.datasets.utils import inverse_transform_target_components  # noqa: F401
 import reprlib
 from typing import List
 from typing import Optional
