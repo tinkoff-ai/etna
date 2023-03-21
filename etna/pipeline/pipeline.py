@@ -59,9 +59,6 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
 
     def _forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions."""
-        # because make_future uses `ts.transforms`
-        ts.transforms = self.transforms
-
         if isinstance(self.model, get_args(ContextRequiredModelType)):
             self.model = cast(ContextRequiredModelType, self.model)
             future = ts.make_future(
@@ -105,9 +102,6 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
                     "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
                 )
             ts = self.ts
-        else:
-            # because make_future uses `ts.transforms`
-            ts.transforms = self.transforms
 
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
