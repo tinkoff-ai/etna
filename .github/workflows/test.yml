@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install poetry
+          pip install poetry==1.4.0
           poetry --version
           poetry config virtualenvs.in-project true
           poetry install -E style --no-root
