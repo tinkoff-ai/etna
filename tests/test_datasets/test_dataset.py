@@ -1120,6 +1120,6 @@ def test_inverse_transform_target_components(ts_with_target_components, inverse_
 
 def test_inverse_transform_with_target_components_fails_keep_target_components(ts_with_target_components):
     transform = DifferencingTransform(in_column="target")
-    with suppress(AttributeError):
+    with suppress(ValueError):
         ts_with_target_components.inverse_transform(transforms=[transform])
     assert ts_with_target_components.target_components_names is not None
