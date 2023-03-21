@@ -140,14 +140,14 @@ class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
         self.in_column = in_column
         self.distribution_column = distribution_column
         self.inplace = inplace
-        self.out_column = out_column
+        self.out_column = self._get_out_column(out_column)
         self.in_column_regressor: Optional[bool] = None
         super().__init__(
             transform=_OneSegmentResampleWithDistributionTransform(
                 in_column=in_column,
                 distribution_column=distribution_column,
                 inplace=inplace,
-                out_column=self._get_out_column(self.out_column),
+                out_column=self.out_column,
             ),
             required_features=[in_column, distribution_column],
         )

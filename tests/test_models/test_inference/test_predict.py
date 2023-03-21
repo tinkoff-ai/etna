@@ -27,8 +27,8 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
-from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import MLPModel
+from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.transforms import LagTransform
@@ -394,34 +394,34 @@ class TestPredictOutSamplePrefix:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (
-                    DeepARModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=5,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            target_normalizer=GroupNormalizer(groups=["segment"]),
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (
-                    TFTModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=21,
-                            min_encoder_length=21,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            static_categoricals=["segment"],
-                            target_normalizer=None,
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
@@ -513,20 +513,20 @@ class TestPredictOutSampleSuffix:
                 [],
             ),
             (
-                    TFTModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=21,
-                            min_encoder_length=21,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            static_categoricals=["segment"],
-                            target_normalizer=None,
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
@@ -632,20 +632,20 @@ class TestPredictMixedInOutSample:
                 [],
             ),
             (
-                    TFTModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=21,
-                            min_encoder_length=21,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            static_categoricals=["segment"],
-                            target_normalizer=None,
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
@@ -740,20 +740,20 @@ class TestPredictSubsetSegments:
                 [],
             ),
             (
-                    TFTModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=21,
-                            min_encoder_length=21,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            static_categoricals=["segment"],
-                            target_normalizer=None,
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
@@ -820,36 +820,36 @@ class TestPredictNewSegments:
         "model, transforms",
         [
             (
-                    DeepARModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=5,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                            target_normalizer=GroupNormalizer(groups=["segment"]),
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (
-                    TFTModel(
-                        dataset_builder=PytorchForecastingDatasetBuilder(
-                            max_encoder_length=21,
-                            min_encoder_length=21,
-                            max_prediction_length=5,
-                            time_varying_known_reals=["time_idx"],
-                            time_varying_unknown_reals=["target"],
-                            categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                            static_categoricals=["segment"],
-                            target_normalizer=None,
-                        ),
-                        trainer_params=dict(max_epochs=1),
-                        lr=0.01,
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
                     ),
-                    [],
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (

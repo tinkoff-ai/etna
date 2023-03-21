@@ -109,14 +109,13 @@ def check_interface_transform_autogenerate_column_non_regressor(transform: Gener
     assert new_columns == {repr(transform)}
 
 
-def check_interface_transform_autogenerate_column_regressor(
-    transform: GeneralDifferencingTransform, ts: TSDataset
-):
+def check_interface_transform_autogenerate_column_regressor(transform: GeneralDifferencingTransform, ts: TSDataset):
     """Check that differencing transform generates regressor column in transform according to repr."""
     df = ts.to_pandas()
     transformed_df = transform.fit_transform(ts).to_pandas()
     new_columns = set(extract_new_features_columns(transformed_df, df))
     assert new_columns == {repr(transform)}
+
 
 def check_transform(
     transform: GeneralDifferencingTransform,
@@ -180,6 +179,7 @@ def check_inverse_transform_inplace_filled_test(
     # check values from inverse_transform
     future_ts.inverse_transform([transform])
     assert np.all(future_ts.to_pandas() == ts_test.to_pandas())
+
 
 def check_inverse_transform_inplace_unfilled_test(transform: GeneralDifferencingTransform, ts: TSDataset):
     """Check that differencing transform correctly makes inverse_transform on unfilled test data in inplace mode."""
@@ -380,6 +380,7 @@ def test_full_transform(period, order, inplace, out_column, ts_nans):
         in_column="target", period=period, order=order, inplace=inplace, out_column=out_column
     )
     check_transform(transform, period, order, out_column, ts_nans, ts_nans)
+
 
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("inplace, out_column", [(False, "diff"), (True, "target")])

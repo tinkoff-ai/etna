@@ -100,7 +100,11 @@ class HierarchicalPipeline(Pipeline):
 
     # TODO: fix ignoring ts
     def forecast(
-        self, ts: Optional[TSDataset] = None, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        ts: Optional[TSDataset] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
     ) -> TSDataset:
         """Make a prediction for target at the source level of hierarchy and make reconciliation to target level.
 

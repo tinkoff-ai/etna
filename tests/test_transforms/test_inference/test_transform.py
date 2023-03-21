@@ -9,8 +9,8 @@ from sklearn.tree import DecisionTreeRegressor
 from etna.analysis import StatisticsRelevanceTable
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
-from etna.transforms import ChangePointsLevelTransform
 from etna.transforms import BoxCoxTransform
+from etna.transforms import ChangePointsLevelTransform
 from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import DateFlagsTransform
@@ -96,19 +96,22 @@ class TestTransformTrainSubsetSegments:
                 "regular_ts",
             ),
             (
-                ChangePointsTrendTransform(in_column="target",),
+                ChangePointsTrendTransform(
+                    in_column="target",
+                ),
                 "regular_ts",
             ),
-            (
-                ChangePointsLevelTransform(in_column="target"), "regular_ts"
-            ),
+            (ChangePointsLevelTransform(in_column="target"), "regular_ts"),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
-            (TrendTransform(in_column="target",
-                            change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5)),
-             "regular_ts"),
-
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -242,19 +245,19 @@ class TestTransformFutureSubsetSegments:
                 "regular_ts",
             ),
             (
-                    ChangePointsTrendTransform(in_column="target"),
-                    "regular_ts",
-            ),
-            (
-                    ChangePointsTrendTransform(in_column="positive"),
-                    "ts_with_exog",
-            ),
-            (
-                    ChangePointsLevelTransform(in_column="target"),
+                ChangePointsTrendTransform(in_column="target"),
                 "regular_ts",
             ),
             (
-                    ChangePointsLevelTransform(in_column="positive"),
+                ChangePointsTrendTransform(in_column="positive"),
+                "ts_with_exog",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="positive"),
                 "ts_with_exog",
             ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
@@ -263,7 +266,13 @@ class TestTransformFutureSubsetSegments:
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
             (STLTransform(in_column="positive", period=7), "ts_with_exog"),
-            (TrendTransform(in_column="target", change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5)), "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -420,11 +429,10 @@ class TestTransformTrainNewSegments:
         "transform, dataset_name, expected_changes",
         [
             (
-                    AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
-                    "regular_ts",
-                    {"create": {"res"}},
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
             ),
-
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -589,8 +597,8 @@ class TestTransformTrainNewSegments:
                 "regular_ts",
             ),
             (
-                    ChangePointsTrendTransform(in_column="target"),
-                    "regular_ts",
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
             ),
             (
                 ChangePointsLevelTransform(in_column="target"),
@@ -599,9 +607,13 @@ class TestTransformTrainNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
-            (TrendTransform(in_column="target",
-                            change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5)),
-             "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
@@ -907,8 +919,8 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
             ),
             (
-                    ChangePointsTrendTransform(in_column="target"),
-                    "regular_ts",
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
             ),
             (
                 ChangePointsLevelTransform(in_column="target"),
@@ -917,9 +929,13 @@ class TestTransformFutureNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
-            (TrendTransform(in_column="target",
-                            change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5)),
-             "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
@@ -1032,9 +1048,9 @@ class TestTransformFutureWithTarget:
                 {"create": {"res"}},
             ),
             (
-                    ChangePointsTrendTransform(in_column="target"),
-                    "regular_ts",
-                    {"change": {"target"}},
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
             ),
             (
                 ChangePointsLevelTransform(in_column="target"),
@@ -1044,9 +1060,15 @@ class TestTransformFutureWithTarget:
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
-            (TrendTransform(in_column="target",
-                            change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                            out_column="res"), "regular_ts", {"create": {"res"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -1332,16 +1354,15 @@ class TestTransformFutureWithoutTarget:
                 {"create": {"res"}},
             ),
             (
-                    ChangePointsTrendTransform(in_column="target"),
-                    "regular_ts",
-                    {},
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {},
             ),
             (
-                    ChangePointsTrendTransform(in_column="positive"),
-                    "ts_with_exog",
-                    {"change": {"positive"}},
+                ChangePointsTrendTransform(in_column="positive"),
+                "ts_with_exog",
+                {"change": {"positive"}},
             ),
-
             (
                 ChangePointsLevelTransform(in_column="target"),
                 "regular_ts",
@@ -1358,7 +1379,15 @@ class TestTransformFutureWithoutTarget:
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {}),
             (STLTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
-            (TrendTransform(in_column="target", change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5), out_column="res"), "regular_ts", {"create": {"res"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (

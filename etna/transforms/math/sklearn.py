@@ -13,8 +13,8 @@ from sklearn.base import TransformerMixin
 from etna.core import StringEnumWithRepr
 from etna.datasets import TSDataset
 from etna.datasets import set_columns_wide
-from etna.transforms.utils import check_new_segments
 from etna.transforms.base import ReversibleTransform
+from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
 
 
