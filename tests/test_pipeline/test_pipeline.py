@@ -825,7 +825,7 @@ def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work without first date."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant", stride=-1)[0]
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
     train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
     assert train.index.min() == np.datetime64(ts.index.min())
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
