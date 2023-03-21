@@ -331,6 +331,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        NotImplementedError:
+            Adding target components is not currently implemented
         """
         if self.ts is None:
             raise ValueError(
@@ -428,6 +433,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             Value of ``start_timestamp`` goes before point where each segment started.
         ValueError:
             Value of ``end_timestamp`` goes after the last timestamp.
+        NotImplementedError:
+            Adding target components is not currently implemented
         """
         start_timestamp, end_timestamp = self._make_predict_timestamps(
             ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
