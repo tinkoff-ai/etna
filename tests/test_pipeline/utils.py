@@ -8,6 +8,7 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.pipeline.base import AbstractPipeline
+from tests.utils import select_segments_subset
 
 
 def get_loaded_pipeline(pipeline: AbstractPipeline, ts: TSDataset = None) -> AbstractPipeline:
@@ -20,16 +21,6 @@ def get_loaded_pipeline(pipeline: AbstractPipeline, ts: TSDataset = None) -> Abs
         else:
             loaded_pipeline = pipeline.load(path, ts=ts)
     return loaded_pipeline
-
-
-def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
-    df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]]
-    df_exog = ts.df_exog
-    if df_exog is not None:
-        df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]]
-    known_future = ts.known_future
-    freq = ts.freq
-    return TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
 
 
 def assert_pipeline_equals_loaded_original(

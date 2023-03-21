@@ -1,4 +1,5 @@
 import pathlib
+from copy import deepcopy
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -86,7 +87,7 @@ def test_raw_forecast_correctness(market_level_constant_hierarchical_ts, reconci
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=market_level_constant_hierarchical_ts)
-    forecast = pipeline.raw_forecast()
+    forecast = pipeline.raw_forecast(ts=market_level_constant_hierarchical_ts)
     np.testing.assert_array_almost_equal(forecast[..., "target"].values, answer)
 
 
@@ -101,7 +102,7 @@ def test_raw_forecast_level(market_level_simple_hierarchical_ts, reconciliator):
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=market_level_simple_hierarchical_ts)
-    forecast = pipeline.raw_forecast()
+    forecast = pipeline.raw_forecast(ts=market_level_simple_hierarchical_ts)
     assert forecast.current_df_level == pipeline.reconciliator.source_level
 
 
@@ -356,3 +357,50 @@ def test_save_load(model, transforms, reconciliator, product_level_constant_hier
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=product_level_constant_hierarchical_ts)
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (NaiveModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts(model, transforms, reconciliator, product_level_constant_hierarchical_ts):
+    """Test that forecast makes forecasts with given ts.
+
+    We don't use :py:func:`tests.test_pipeline.utils.assert_pipeline_forecasts_with_given_ts` here,
+    because it is difficult to set it up for hierarchy.
+    """
+    horizon = 1
+    ts = product_level_constant_hierarchical_ts
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+
+    subset_ts = deepcopy(ts)
+    subset_ts.df = subset_ts.df.iloc[:-horizon]
+
+    pipeline.fit(ts)
+    forecast_full = pipeline.forecast()
+    forecast_subset = pipeline.forecast(ts=subset_ts)
+
+    expected_segments = forecast_full.segments
+    expected_index = forecast_full.index - pd.DateOffset(days=horizon)
+    assert forecast_subset.segments == expected_segments
+    pd.testing.assert_index_equal(forecast_subset.index, expected_index)
