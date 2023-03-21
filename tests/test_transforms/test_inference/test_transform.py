@@ -430,11 +430,10 @@ class TestTransformTrainNewSegments:
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features, wait for fixing [#1097](https://github.com/tinkoff-ai/etna/issues/1097)
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year", "month", "monthday", "positive"}},
+                {"remove": {"weekday", "year", "month"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
@@ -710,11 +709,10 @@ class TestTransformFutureNewSegments:
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year", "month", "monthday", "positive"}},
+                {"remove": {"weekday", "year", "month"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
@@ -1054,7 +1052,6 @@ class TestTransformFutureWithTarget:
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
