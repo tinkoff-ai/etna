@@ -6,6 +6,7 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
+from etna.transforms import AddConstTransform
 from etna.transforms import IrreversibleTransform
 from etna.transforms import ReversibleTransform
 
@@ -165,3 +166,71 @@ def test_inverse_transform_request_update_dataset(remove_columns_df):
     transform._update_dataset.assert_called_with(
         ts=ts, columns_before=columns_before, df_transformed=expected_df_transformed
     )
+
+
+@pytest.fixture
+def ts_with_target_components():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target": 3,
+            "target_component_a": 1,
+            "target_component_b": 2,
+            "exog": 10,
+            "segment": 1,
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target": 7,
+            "target_component_a": 3,
+            "target_component_b": 4,
+            "exog": 10,
+            "segment": 2,
+        }
+    )
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+    ts._target_components_names = ["target_component_a", "target_component_b"]
+    return ts
+
+
+@pytest.fixture
+def inverse_transformed_components_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 1 * (3 + 10) / 3,
+            "target_component_b": 2 * (3 + 10) / 3,
+            "segment": 1,
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 3 * (7 + 10) / 7,
+            "target_component_b": 4 * (7 + 10) / 7,
+            "segment": 2,
+        }
+    )
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    df.index.freq = "D"
+    return df
+
+
+def test_inverse_transform_with_target_components(ts_with_target_components, inverse_transformed_components_df):
+    transform = AddConstTransform(in_column="target", value=-10)
+    transform.inverse_transform(ts=ts_with_target_components)
+    pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), inverse_transformed_components_df)
+
+
+def test_inverse_transform_with_target_components_target_not_in_required_features(ts_with_target_components):
+    target_components_before = ts_with_target_components.get_target_components()
+    transform = AddConstTransform(in_column="exog", value=-10)
+    transform.inverse_transform(ts=ts_with_target_components)
+    pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), target_components_before)
