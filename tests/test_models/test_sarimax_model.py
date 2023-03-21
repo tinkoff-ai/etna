@@ -217,8 +217,6 @@ def test_components_sum_up_to_target(
     train, test = dfs_w_exog
 
     model = _SARIMAXAdapter(
-        order=(1, 1, 1),
-        seasonal_order=(1, 1, 0, 2),
         trend=trend,
         mle_regression=mle_regression,
         time_varying_regression=time_varying_regression,
