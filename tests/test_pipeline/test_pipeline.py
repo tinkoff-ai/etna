@@ -84,7 +84,7 @@ def test_fit(example_tsds):
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
     pipeline.fit(example_tsds)
     original_ts.fit_transform(transforms)
-    original_ts.inverse_transform()
+    original_ts.inverse_transform(transforms)
     assert np.all(original_ts.df.values == pipeline.ts.df.values)
 
 
@@ -110,7 +110,7 @@ def test_private_forecast_context_ignorant_model(model_class):
     pipeline.fit(ts)
     _ = pipeline._forecast(ts=ts)
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
     model.forecast.assert_called_with(ts=ts.make_future())
 
 
@@ -125,7 +125,7 @@ def test_private_forecast_context_required_model(model_class):
     pipeline.fit(ts)
     _ = pipeline._forecast(ts=ts)
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
 
 
@@ -137,7 +137,7 @@ def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975))
 
 
@@ -149,7 +149,7 @@ def test_forecast_with_intervals_prediction_interval_context_required_model():
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
-    ts.make_future.assert_called_with(future_steps=pipeline.horizon, tail_steps=model.context_size)
+    ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
     model.forecast.assert_called_with(
         ts=ts.make_future(), prediction_size=pipeline.horizon, prediction_interval=True, quantiles=(0.025, 0.975)
     )
@@ -170,6 +170,7 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     base_forecast.assert_called_with(ts=ts, prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
 
 
+@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(example_tsds):
     """Test that the forecast from the Pipeline is correct."""
     original_ts = deepcopy(example_tsds)
@@ -182,8 +183,9 @@ def test_forecast(example_tsds):
 
     original_ts.fit_transform(transforms)
     model.fit(original_ts)
-    future = original_ts.make_future(5)
+    future = original_ts.make_future(5, transforms=transforms)
     forecast_manual = model.forecast(future)
+    forecast_manual.inverse_transform(transforms)
 
     assert np.all(forecast_pipeline.df.values == forecast_manual.df.values)
 
@@ -664,10 +666,10 @@ def test_forecast_raise_error_if_no_ts():
         _ = pipeline.forecast()
 
 
-def test_forecast_pipeline_with_nan_at_the_end(df_with_nans_in_tails):
+def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
     pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
-    pipeline.fit(TSDataset(df_with_nans_in_tails, freq="1H"))
+    pipeline.fit(ts_with_nans_in_tails)
     forecast = pipeline.forecast()
     assert len(forecast.df) == 5
 
@@ -805,7 +807,7 @@ def test_generate_folds_datasets(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant", stride=-1)[0]
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
     train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
     assert train.index.min() == np.datetime64(mask.first_train_timestamp)
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
@@ -847,7 +849,7 @@ def test_process_fold_forecast(ts_process_fold_forecast, mask: FoldMask, expecte
     pipeline = pipeline.fit(ts=train)
     forecast = pipeline.forecast()
     fold = pipeline._process_fold_forecast(
-        forecast=forecast, train=train, test=test, fold_number=1, mask=mask, metrics=[MAE()]
+        forecast=forecast, train=train, test=test, pipeline=pipeline, fold_number=1, mask=mask, metrics=[MAE()]
     )
     for seg in fold["metrics"]["MAE"].keys():
         assert fold["metrics"]["MAE"][seg] == expected[seg]

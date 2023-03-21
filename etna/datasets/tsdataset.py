@@ -11,7 +11,6 @@ from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -21,7 +20,11 @@ from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
 from etna import SETTINGS
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import get_level_dataframe
+from etna.datasets.utils import get_target_with_quantiles
+from etna.datasets.utils import inverse_transform_target_components
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -82,6 +85,21 @@ class TSDataset:
     2021-01-03        0.48        0.47       -0.81       -1.56       -1.37   0.48
     2021-01-04       -0.59        2.44       -2.21       -1.21       -0.69  -0.59
     2021-01-05        0.28        0.58       -3.07       -1.45        0.77   0.28
+
+    >>> from etna.datasets import generate_hierarchical_df
+    >>> pd.options.display.width = 0
+    >>> df = generate_hierarchical_df(periods=100, n_segments=[2, 4], start_time="2021-01-01",)
+    >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=["level_0", "level_1"])
+    >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    >>> tsdataset.df.head(5)
+    segment    l0s0_l1s3 l0s1_l1s0 l0s1_l1s1 l0s1_l1s2
+    feature       target    target    target    target
+    timestamp
+    2021-01-01      2.07      1.62     -0.45     -0.40
+    2021-01-02      0.59      1.01      0.78      0.42
+    2021-01-03     -0.24      0.48      1.18     -0.14
+    2021-01-04     -1.12     -0.59      1.77      1.82
+    2021-01-05     -1.40      0.28      0.68      0.48
     """
 
     idx = pd.IndexSlice
@@ -92,6 +110,7 @@ class TSDataset:
         freq: str,
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
+        hierarchical_structure: Optional[HierarchicalStructure] = None,
     ):
         """Init TSDataset.
 
@@ -106,6 +125,8 @@ class TSDataset:
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
+        hierarchical_structure:
+            Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
         self.raw_df = self._prepare_df(df)
         self.raw_df.index = pd.to_datetime(self.raw_df.index)
@@ -132,34 +153,49 @@ class TSDataset:
         self.known_future = self._check_known_future(known_future, df_exog)
         self._regressors = copy(self.known_future)
 
+        self.hierarchical_structure = hierarchical_structure
+        self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
+        self.current_df_exog_level: Optional[str] = None
+
         if df_exog is not None:
             self.df_exog = df_exog.copy(deep=True)
             self.df_exog.index = pd.to_datetime(self.df_exog.index)
-            self.df = self._merge_exog(self.df)
+            self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
+            if self.current_df_level == self.current_df_exog_level:
+                self.df = self._merge_exog(self.df)
 
-        self.transforms: Optional[Sequence["Transform"]] = None
+        self._target_components_names: Optional[List[str]] = None
+
+    def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
+        """Return the level of the passed dataframe in hierarchical structure."""
+        if self.hierarchical_structure is None:
+            return None
+
+        df_segments = df.columns.get_level_values("segment").unique()
+        segment_levels = {self.hierarchical_structure.get_segment_level(segment=segment) for segment in df_segments}
+        if len(segment_levels) != 1:
+            raise ValueError("Segments in dataframe are from more than 1 hierarchical levels!")
+
+        df_level = segment_levels.pop()
+        level_segments = self.hierarchical_structure.get_level_segments(level_name=df_level)
+        if len(df_segments) != len(level_segments):
+            raise ValueError("Some segments of hierarchical level are missing in dataframe!")
+
+        return df_level
 
     def transform(self, transforms: Sequence["Transform"]):
         """Apply given transform to the data."""
         self._check_endings(warning=True)
-        self.transforms = transforms
-        for transform in self.transforms:
+        for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-            columns_before = set(self.columns.get_level_values("feature"))
-            self.df = transform.transform(self.df)
-            columns_after = set(self.columns.get_level_values("feature"))
-            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+            transform.transform(self)
 
     def fit_transform(self, transforms: Sequence["Transform"]):
         """Fit and apply given transforms to the data."""
         self._check_endings(warning=True)
-        self.transforms = transforms
-        for transform in self.transforms:
+        for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-            columns_before = set(self.columns.get_level_values("feature"))
-            self.df = transform.fit_transform(self.df)
-            columns_after = set(self.columns.get_level_values("feature"))
-            self._update_regressors(transform=transform, columns_before=columns_before, columns_after=columns_after)
+            transform.fit_transform(self)
 
     @staticmethod
     def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -169,60 +205,6 @@ class TSDataset:
         columns_frame["segment"] = columns_frame["segment"].astype(str)
         df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
         return df_copy
-
-    def _update_regressors(self, transform: "Transform", columns_before: Set[str], columns_after: Set[str]):
-        from etna.transforms import OneHotEncoderTransform
-        from etna.transforms.base import FutureMixin
-
-        # intersect list of regressors with columns after the transform
-        self._regressors = list(set(self._regressors).intersection(columns_after))
-
-        unseen_columns = list(columns_after - columns_before)
-
-        if len(unseen_columns) == 0:
-            return
-
-        new_regressors = []
-
-        if isinstance(transform, FutureMixin):
-            # Every column from FutureMixin is regressor
-            out_columns = list(columns_after - columns_before)
-            new_regressors = out_columns
-        elif isinstance(transform, OneHotEncoderTransform):
-            # Only the columns created with OneHotEncoderTransform from regressor are regressors
-            in_column = transform.in_column
-            out_columns = list(columns_after - columns_before)
-            if in_column in self.regressors:
-                new_regressors = out_columns
-        elif hasattr(transform, "in_column"):
-            # Only the columns created with the other transforms from regressors are regressors
-            in_columns = transform.in_column if isinstance(transform.in_column, list) else [transform.in_column]  # type: ignore
-            if hasattr(transform, "out_columns") and transform.out_columns is not None:  # type: ignore
-                # User defined out_columns in sklearn
-                # TODO: remove this case after fixing the out_column attribute in SklearnTransform
-                out_columns = transform.out_columns  # type: ignore
-                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
-                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
-            elif hasattr(transform, "out_column") and transform.out_column is not None:  # type: ignore
-                # User defined out_columns
-                out_columns = transform.out_column if isinstance(transform.out_column, list) else [transform.out_column]  # type: ignore
-                regressors_in_column_ids = [i for i, in_column in enumerate(in_columns) if in_column in self.regressors]
-                new_regressors = [out_columns[i] for i in regressors_in_column_ids]
-            else:
-                # Default out_columns
-                out_columns = list(columns_after - columns_before)
-                regressors_in_column = [in_column for in_column in in_columns if in_column in self.regressors]
-                new_regressors = [
-                    out_column
-                    for out_column in out_columns
-                    if np.any([regressor in out_column for regressor in regressors_in_column])
-                ]
-
-        else:
-            raise ValueError("Transform is not FutureMixin and does not have in_column attribute!")
-
-        new_regressors = [regressor for regressor in new_regressors if regressor not in self.regressors]
-        self._regressors.extend(new_regressors)
 
     def __repr__(self):
         return self.df.__repr__()
@@ -243,13 +225,17 @@ class TSDataset:
         df = df.loc[first_valid_idx:]
         return df
 
-    def make_future(self, future_steps: int, tail_steps: int = 0) -> "TSDataset":
+    def make_future(
+        self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
+    ) -> "TSDataset":
         """Return new TSDataset with future steps.
 
         Parameters
         ----------
         future_steps:
             number of timestamp in the future to build features for.
+        transforms:
+            sequence of transforms to be applied.
         tail_steps:
             number of timestamp for context to build features for.
 
@@ -294,7 +280,7 @@ class TSDataset:
         df = self.raw_df.reindex(new_index)
         df.index.name = "timestamp"
 
-        if self.df_exog is not None:
+        if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df)
 
             # check if we have enough values in regressors
@@ -307,10 +293,12 @@ class TSDataset:
                             f"NaN-s will be used for missing values"
                         )
 
-        if self.transforms is not None:
-            for transform in self.transforms:
-                tslogger.log(f"Transform {repr(transform)} is applied to dataset")
-                df = transform.transform(df)
+        # Here only df is required, other metadata is not necessary to build the dataset
+        ts = TSDataset(df=df, freq=self.freq)
+        for transform in transforms:
+            tslogger.log(f"Transform {repr(transform)} is applied to dataset")
+            transform.transform(ts)
+        df = ts.to_pandas()
 
         future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
 
@@ -318,9 +306,8 @@ class TSDataset:
         future_ts = TSDataset(df=future_dataset, freq=self.freq)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts.known_future = self.known_future
-        future_ts._regressors = self.regressors
-        future_ts.transforms = self.transforms
+        future_ts.known_future = deepcopy(self.known_future)
+        future_ts._regressors = deepcopy(self.regressors)
         future_ts.df_exog = self.df_exog
         return future_ts
 
@@ -344,8 +331,8 @@ class TSDataset:
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
-        tsdataset_slice.transforms = deepcopy(self.transforms)
         tsdataset_slice.df_exog = self.df_exog
+        tsdataset_slice._target_components_names = self._target_components_names
         return tsdataset_slice
 
     @staticmethod
@@ -424,16 +411,40 @@ class TSDataset:
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
-    def inverse_transform(self):
+    def _inverse_transform_target_components(self, target_components_df: pd.DataFrame, target_df: pd.DataFrame):
+        """Inverse transform target components in dataset with inverse transformed target."""
+        self.drop_target_components()
+        inverse_transformed_target_components_df = inverse_transform_target_components(
+            target_components_df=target_components_df,
+            target_df=target_df,
+            inverse_transformed_target_df=self.to_pandas(features=["target"]),
+        )
+        self.add_target_components(target_components_df=inverse_transformed_target_components_df)
+
+    def inverse_transform(self, transforms: Sequence["Transform"]):
         """Apply inverse transform method of transforms to the data.
 
         Applied in reversed order.
         """
         # TODO: return regressors after inverse_transform
-        if self.transforms is not None:
-            for transform in reversed(self.transforms):
+        # Logic with target components is here for performance reasons.
+        # This way we avoid doing the inverse transformation for components several times.
+        target_components_present = self.target_components_names is not None
+        target_df, target_components_df = None, None
+        if target_components_present:
+            target_df = self.to_pandas(features=["target"])
+            target_components_df = self.get_target_components()
+            self.drop_target_components()
+
+        try:
+            for transform in reversed(transforms):
                 tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
-                self.df = transform.inverse_transform(self.df)
+                transform.inverse_transform(self)
+        finally:
+            if target_components_present:
+                self._inverse_transform_target_components(
+                    target_components_df=target_components_df, target_df=target_df
+                )
 
     @property
     def segments(self) -> List[str]:
@@ -481,6 +492,11 @@ class TSDataset:
         ['regressor_1']
         """
         return self._regressors
+
+    @property
+    def target_components_names(self) -> Optional[List[str]]:
+        """Get list of target components names. Components sum up to target. If there are no components, None is returned."""
+        return self._target_components_names
 
     def plot(
         self,
@@ -532,14 +548,20 @@ class TSDataset:
             ax[i].grid()
 
     @staticmethod
-    def to_flatten(df: pd.DataFrame) -> pd.DataFrame:
+    def to_flatten(df: pd.DataFrame, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame with flatten index.
+
+        The order of columns is (timestamp, segment, target,
+        features in alphabetical order).
 
         Parameters
         ----------
         df:
             DataFrame in ETNA format.
-
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
+            Always return columns with timestamp and segemnt.
         Returns
         -------
         pd.DataFrame:
@@ -561,21 +583,31 @@ class TSDataset:
         4  2021-06-05  segment_0    1.00
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> TSDataset.to_flatten(df_ts_format).head(5)
-           timestamp  target    segment
-        0 2021-06-01     1.0  segment_0
-        1 2021-06-02     1.0  segment_0
-        2 2021-06-03     1.0  segment_0
-        3 2021-06-04     1.0  segment_0
-        4 2021-06-05     1.0  segment_0
+           timestamp    segment  target
+        0 2021-06-01  segment_0    1.0
+        1 2021-06-02  segment_0    1.0
+        2 2021-06-03  segment_0    1.0
+        3 2021-06-04  segment_0    1.0
+        4 2021-06-05  segment_0    1.0
         """
+        segments = df.columns.get_level_values("segment").unique()
         dtypes = df.dtypes
         category_columns = dtypes[dtypes == "category"].index.get_level_values(1).unique()
+        if isinstance(features, str):
+            if features != "all":
+                raise ValueError("The only possible literal is 'all'")
+        else:
+            df = df.loc[:, pd.IndexSlice[segments, features]].copy()
+        columns = df.columns.get_level_values("feature").unique()
 
         # flatten dataframe
-        columns = df.columns.get_level_values("feature").unique()
-        segments = df.columns.get_level_values("segment").unique()
         df_dict = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
+        df_dict["segment"] = np.repeat(segments, len(df.index))
+        if "target" in columns:
+            # set this value to lock position of key "target" in output dataframe columns
+            # None is a placeholder, actual column value will be assigned in the following cycle
+            df_dict["target"] = None
         for column in columns:
             df_cur = df.loc[:, pd.IndexSlice[:, column]]
             if column in category_columns:
@@ -584,12 +616,11 @@ class TSDataset:
                 stacked = df_cur.values.T.ravel()
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
                 df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
-        df_dict["segment"] = np.repeat(segments, len(df.index))
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
 
-    def to_pandas(self, flatten: bool = False) -> pd.DataFrame:
+    def to_pandas(self, flatten: bool = False, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
         """Return pandas DataFrame.
 
         Parameters
@@ -597,8 +628,12 @@ class TSDataset:
         flatten:
             * If False, return pd.DataFrame with multiindex
 
-            * If True, return with flatten index
-
+            * If True, return with flatten index,
+            its order of columns is (timestamp, segment, target,
+            features in alphabetical order).
+        features:
+            List of features to return.
+            If "all", return all the features in the dataset.
         Returns
         -------
         pd.DataFrame
@@ -621,12 +656,12 @@ class TSDataset:
         >>> df_ts_format = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df_ts_format, "D")
         >>> ts.to_pandas(True).head(5)
-           timestamp  target    segment
-        0 2021-06-01     1.0  segment_0
-        1 2021-06-02     1.0  segment_0
-        2 2021-06-03     1.0  segment_0
-        3 2021-06-04     1.0  segment_0
-        4 2021-06-05     1.0  segment_0
+            timestamp    segment  target
+        0  2021-06-01  segment_0    1.00
+        1  2021-06-02  segment_0    1.00
+        2  2021-06-03  segment_0    1.00
+        3  2021-06-04  segment_0    1.00
+        4  2021-06-05  segment_0    1.00
         >>> ts.to_pandas(False).head(5)
         segment    segment_0 segment_1
         feature       target    target
@@ -638,8 +673,13 @@ class TSDataset:
         2021-06-05      1.00      1.00
         """
         if not flatten:
-            return self.df.copy()
-        return self.to_flatten(self.df)
+            if isinstance(features, str):
+                if features == "all":
+                    return self.df.copy()
+                raise ValueError("The only possible literal is 'all'")
+            segments = self.columns.get_level_values("segment").unique().tolist()
+            return self.df.loc[:, self.idx[segments, features]].copy()
+        return self.to_flatten(self.df, features=features)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
@@ -707,6 +747,78 @@ class TSDataset:
         df_copy.columns.names = ["segment", "feature"]
         df_copy = df_copy.sort_index(axis=1, level=(0, 1))
         return df_copy
+
+    @staticmethod
+    def _hierarchical_structure_from_level_columns(
+        df: pd.DataFrame, level_columns: List[str], sep: str
+    ) -> HierarchicalStructure:
+        """Create hierarchical structure from dataframe columns."""
+        df_level_columns = df[level_columns].astype("string")
+
+        prev_level_name = level_columns[0]
+        for cur_level_name in level_columns[1:]:
+            df_level_columns[cur_level_name] = (
+                df_level_columns[prev_level_name] + sep + df_level_columns[cur_level_name]
+            )
+            prev_level_name = cur_level_name
+
+        level_structure = {"total": list(df_level_columns[level_columns[0]].unique())}
+        cur_level_name = level_columns[0]
+        for next_level_name in level_columns[1:]:
+            cur_level_to_next_level_edges = df_level_columns[[cur_level_name, next_level_name]].drop_duplicates()
+            cur_level_to_next_level_adjacency_list = cur_level_to_next_level_edges.groupby(cur_level_name).agg(list)
+            level_structure.update(cur_level_to_next_level_adjacency_list.to_records())
+            cur_level_name = next_level_name
+
+        hierarchical_structure = HierarchicalStructure(
+            level_structure=level_structure, level_names=["total"] + level_columns
+        )
+        return hierarchical_structure
+
+    @staticmethod
+    def to_hierarchical_dataset(
+        df: pd.DataFrame,
+        level_columns: List[str],
+        keep_level_columns: bool = False,
+        sep: str = "_",
+        return_hierarchy: bool = True,
+    ) -> Tuple[pd.DataFrame, Optional[HierarchicalStructure]]:
+        """Convert pandas dataframe from long hierarchical to ETNA Dataset format.
+
+        Parameters
+        ----------
+        df:
+            Dataframe in long hierarchical format with columns [timestamp, target] + [level_columns] + [other_columns]
+        level_columns:
+            Columns of dataframe defines the levels in the hierarchy in order
+            from top to bottom i.e [level_name_1, level_name_2, ...]. Names of the columns will be used as
+            names of the levels in hierarchy.
+        keep_level_columns:
+            If true, leave the level columns in the result dataframe.
+            By default level columns are concatenated into "segment" column and dropped
+        sep:
+            String to concatenated the level names with
+        return_hierarchy:
+            If true, returns the hierarchical structure
+
+        Returns
+        -------
+        :
+            Dataframe in wide format and optionally hierarchical structure
+        """
+        df_copy = df.copy(deep=True)
+        df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
+        if not keep_level_columns:
+            df_copy.drop(columns=level_columns, inplace=True)
+        df_copy = TSDataset.to_dataset(df_copy)
+
+        hierarchical_structure = None
+        if return_hierarchy:
+            hierarchical_structure = TSDataset._hierarchical_structure_from_level_columns(
+                df=df, level_columns=level_columns, sep=sep
+            )
+
+        return df_copy, hierarchical_structure
 
     def _find_all_borders(
         self,
@@ -848,17 +960,110 @@ class TSDataset:
 
         train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
         train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(df=train_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
+        train = TSDataset(
+            df=train_df,
+            df_exog=self.df_exog,
+            freq=self.freq,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
         train.raw_df = train_raw_df
         train._regressors = self.regressors
+        train._target_components_names = self.target_components_names
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(df=test_df, df_exog=self.df_exog, freq=self.freq, known_future=self.known_future)
+        test = TSDataset(
+            df=test_df,
+            df_exog=self.df_exog,
+            freq=self.freq,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
         test.raw_df = test_raw_df
         test._regressors = self.regressors
-
+        test._target_components_names = self.target_components_names
         return train, test
+
+    def update_columns_from_pandas(self, df_update: pd.DataFrame):
+        """Update the existing columns in the dataset with the new values from pandas dataframe.
+
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+        Columns in df_exog are not updated. If you wish to update the df_exog, create the new
+        instance of TSDataset.
+
+        Parameters
+        ----------
+        df_update:
+            Dataframe with new values in wide ETNA format.
+        """
+        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
+            : self.df.index.max(), self.idx[self.segments, columns_to_update]
+        ]
+
+    def add_columns_from_pandas(
+        self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
+    ):
+        """Update the dataset with the new columns from pandas dataframe.
+
+        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
+
+        Parameters
+        ----------
+        df_update:
+            Dataframe with the new columns in wide ETNA format.
+        update_exog:
+             If True, update columns also in df_exog.
+             If you wish to add new regressors in the dataset it is recommended to turn on this flag.
+        regressors:
+            List of regressors in the passed dataframe.
+        """
+        self.df = pd.concat((self.df, df_update[: self.df.index.max()]), axis=1).sort_index(axis=1)
+        if update_exog:
+            if self.df_exog is None:
+                self.df_exog = df_update
+            else:
+                self.df_exog = pd.concat((self.df_exog, df_update), axis=1).sort_index(axis=1)
+        if regressors is not None:
+            self._regressors = list(set(self._regressors) | set(regressors))
+
+    def drop_features(self, features: List[str], drop_from_exog: bool = False):
+        """Drop columns with features from the dataset.
+
+        Parameters
+        ----------
+        features:
+            List of features to drop.
+        drop_from_exog:
+            * If False, drop features only from df. Features will appear again in df after make_future.
+            * If True, drop features from df and df_exog. Features won't appear in df after make_future.
+
+        Raises
+        ------
+        ValueError:
+            If ``features`` list contains target components
+        """
+        features_contain_target_components = (self.target_components_names is not None) and (
+            len(set(features).intersection(self.target_components_names)) != 0
+        )
+        if features_contain_target_components:
+            raise ValueError(
+                "Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!"
+            )
+
+        dfs = [("df", self.df)]
+        if drop_from_exog:
+            dfs.append(("df_exog", self.df_exog))
+
+        for name, df in dfs:
+            columns_in_df = df.columns.get_level_values("feature")
+            columns_to_remove = list(set(columns_in_df) & set(features))
+            unknown_columns = set(features) - set(columns_to_remove)
+            if len(unknown_columns) != 0:
+                warnings.warn(f"Features {unknown_columns} are not present in {name}!")
+            df.drop(columns=columns_to_remove, level="feature", inplace=True)
+        self._regressors = list(set(self._regressors) - set(features))
 
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
@@ -870,6 +1075,124 @@ class TSDataset:
             timestamp index of TSDataset
         """
         return self.df.index
+
+    def level_names(self) -> Optional[List[str]]:
+        """Return names of the levels in the hierarchical structure."""
+        if self.hierarchical_structure is None:
+            return None
+        return self.hierarchical_structure.level_names
+
+    def has_hierarchy(self) -> bool:
+        """Check whether dataset has hierarchical structure."""
+        return self.hierarchical_structure is not None
+
+    def get_level_dataset(self, target_level: str) -> "TSDataset":
+        """Generate new TSDataset on target level.
+
+        Parameters
+        ----------
+        target_level:
+            target level name
+
+        Returns
+        -------
+        TSDataset
+            generated dataset
+        """
+        if self.hierarchical_structure is None or self.current_df_level is None:
+            raise ValueError("Method could be applied only to instances with a hierarchy!")
+
+        current_level_segments = self.hierarchical_structure.get_level_segments(level_name=self.current_df_level)
+        target_level_segments = self.hierarchical_structure.get_level_segments(level_name=target_level)
+
+        current_level_index = self.hierarchical_structure.get_level_depth(self.current_df_level)
+        target_level_index = self.hierarchical_structure.get_level_depth(target_level)
+
+        if target_level_index > current_level_index:
+            raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
+
+        if target_level_index < current_level_index:
+            summing_matrix = self.hierarchical_structure.get_summing_matrix(
+                target_level=target_level, source_level=self.current_df_level
+            )
+
+            target_level_df = get_level_dataframe(
+                df=self.df,
+                mapping_matrix=summing_matrix,
+                source_level_segments=current_level_segments,
+                target_level_segments=target_level_segments,
+            )
+
+        else:
+            target_names = tuple(get_target_with_quantiles(columns=self.columns))
+            target_level_df = self[:, current_level_segments, target_names]
+
+        ts = TSDataset(
+            df=target_level_df,
+            freq=self.freq,
+            df_exog=self.df_exog,
+            known_future=self.known_future,
+            hierarchical_structure=self.hierarchical_structure,
+        )
+        ts._target_components_names = self._target_components_names
+        return ts
+
+    def add_target_components(self, target_components_df: pd.DataFrame):
+        """Add target components into dataset.
+
+        Parameters
+        ----------
+        target_components_df:
+            Dataframe in etna wide format with target components
+
+        Raises
+        ------
+        ValueError:
+            If dataset already contains target components
+        ValueError:
+            If target components names differs between segments
+        ValueError:
+            If components don't sum up to target
+        """
+        if self._target_components_names is not None:
+            raise ValueError("Dataset already contains target components!")
+
+        components_names = sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
+        for segment in self.segments:
+            components_names_segment = sorted(target_components_df[segment].columns.get_level_values("feature"))
+            if components_names != components_names_segment:
+                raise ValueError(
+                    f"Set of target components differs between segments '{self.segments[0]}' and '{segment}'!"
+                )
+
+        components_sum = target_components_df.sum(axis=1, level="segment")
+        if not np.array_equal(components_sum.values, self[..., "target"].values):
+            raise ValueError("Components don't sum up to target!")
+
+        self._target_components_names = components_names
+        self.df = (
+            pd.concat((self.df, target_components_df), axis=1)
+            .loc[self.df.index]
+            .sort_index(axis=1, level=("segment", "feature"))
+        )
+
+    def get_target_components(self) -> Optional[pd.DataFrame]:
+        """Get DataFrame with target components.
+
+        Returns
+        -------
+        :
+            Dataframe with target components
+        """
+        if self._target_components_names is None:
+            return None
+        return self.to_pandas(features=self._target_components_names)
+
+    def drop_target_components(self):
+        """Drop target components from dataset."""
+        if self._target_components_names is not None:
+            self.df.drop(columns=self.target_components_names, level="feature", inplace=True)
+            self._target_components_names = None
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:

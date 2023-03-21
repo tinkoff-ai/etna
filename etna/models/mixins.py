@@ -28,45 +28,78 @@ class ModelForecastingMixin(ABC):
     def _predict(self, **kwargs) -> TSDataset:
         pass
 
+    @abstractmethod
+    def _forecast_components(self, **kwargs) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def _predict_components(self, **kwargs) -> pd.DataFrame:
+        pass
+
+    def _add_target_components(
+        self, ts: TSDataset, predictions: TSDataset, components_prediction_method: Callable, return_components: bool
+    ):
+        if return_components:
+            target_components_df = components_prediction_method(ts=ts)
+            predictions.add_target_components(target_components_df=target_components_df)
+
 
 class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     """Mixin for models that don't support prediction intervals and don't need context for prediction."""
 
-    def forecast(self, ts: TSDataset) -> TSDataset:
+    def forecast(self, ts: TSDataset, return_components: bool = False) -> TSDataset:
         """Make predictions.
 
         Parameters
         ----------
         ts:
             Dataset with features
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._forecast(ts=ts)
+        forecast = self._forecast(ts=ts)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
+        return forecast
 
-    def predict(self, ts: TSDataset) -> TSDataset:
+    def predict(self, ts: TSDataset, return_components: bool = False) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
         ----------
         ts:
             Dataset with features
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._predict(ts=ts)
+        prediction = self._predict(ts=ts)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
+        return prediction
 
 
 class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
     """Mixin for models that don't support prediction intervals and need context for prediction."""
 
-    def forecast(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+    def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions.
 
         Parameters
@@ -76,15 +109,24 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._forecast(ts=ts, prediction_size=prediction_size)
+        forecast = self._forecast(ts=ts, prediction_size=prediction_size)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
+        return forecast
 
-    def predict(self, ts: TSDataset, prediction_size: int) -> TSDataset:
+    def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
         Parameters
@@ -94,20 +136,33 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         prediction_size:
             Number of last timestamps to leave after making prediction.
             Previous timestamps will be used as a context for models that require it.
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._predict(ts=ts, prediction_size=prediction_size)
+        prediction = self._predict(ts=ts, prediction_size=prediction_size)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
+        return prediction
 
 
 class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
     """Mixin for models that support prediction intervals and don't need context for prediction."""
 
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -119,16 +174,29 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        forecast = self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
+        return forecast
 
     def predict(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
@@ -140,13 +208,22 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        prediction = self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
+        return prediction
 
 
 class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
@@ -158,6 +235,7 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -172,15 +250,24 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._forecast(
+        forecast = self._forecast(
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
+        self._add_target_components(
+            ts=ts,
+            predictions=forecast,
+            components_prediction_method=self._forecast_components,
+            return_components=return_components,
+        )
+        return forecast
 
     def predict(
         self,
@@ -188,6 +275,7 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions with using true values as autoregression context if possible (teacher forcing).
 
@@ -202,15 +290,24 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------
         :
             Dataset with predictions
         """
-        return self._predict(
+        prediction = self._predict(
             ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
         )
+        self._add_target_components(
+            ts=ts,
+            predictions=prediction,
+            components_prediction_method=self._predict_components,
+            return_components=return_components,
+        )
+        return prediction
 
 
 class PerSegmentModelMixin(ModelForecastingMixin):
@@ -345,12 +442,38 @@ class PerSegmentModelMixin(ModelForecastingMixin):
 
         df = TSDataset.to_dataset(df)
         ts.df = df
-        ts.inverse_transform()
 
         prediction_size = kwargs.get("prediction_size")
         if prediction_size is not None:
             ts.df = ts.df.iloc[-prediction_size:]
         return ts
+
+    def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
+        """Make target component predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_method:
+            Method for making components predictions
+
+        Returns
+        -------
+        :
+            DataFrame with predicted components
+        """
+        features_df = ts.to_pandas()
+        result_list = list()
+        for segment, model in self._get_model().items():
+            segment_predict = self._make_predictions_segment(
+                model=model, segment=segment, df=features_df, prediction_method=prediction_method, **kwargs
+            )
+            result_list.append(segment_predict)
+
+        target_components_df = pd.concat(result_list, ignore_index=True)
+        target_components_df = TSDataset.to_dataset(target_components_df)
+        return target_components_df
 
     @log_decorator
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
@@ -361,6 +484,22 @@ class PerSegmentModelMixin(ModelForecastingMixin):
     @log_decorator
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
         return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
+
+    @log_decorator
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        if hasattr(self._base_model, "forecast_components"):
+            return self._make_component_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
+            )
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
+
+    @log_decorator
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
 
 
 class MultiSegmentModelMixin(ModelForecastingMixin):
@@ -420,8 +559,31 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         # TODO: make it work with prediction intervals and context
         y = prediction_method(self=self._base_model, df=x, **kwargs).reshape(-1, horizon).T
         ts.loc[:, pd.IndexSlice[:, "target"]] = y
-        ts.inverse_transform()
         return ts
+
+    def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
+        """Make target component predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features
+        prediction_method:
+            Method for making components predictions
+
+        Returns
+        -------
+        :
+            DataFrame with predicted components
+        """
+        features_df = ts.to_pandas(flatten=True)
+        segment_column = features_df["segment"].values
+        features_df = features_df.drop(["segment"], axis=1)
+        # TODO: make it work with prediction intervals and context
+        target_components_df = prediction_method(self=self._base_model, df=features_df, **kwargs)
+        target_components_df["segment"] = segment_column
+        target_components_df = TSDataset.to_dataset(target_components_df)
+        return target_components_df
 
     @log_decorator
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
@@ -432,6 +594,22 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
     @log_decorator
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
         return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
+
+    @log_decorator
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        if hasattr(self._base_model, "forecast_components"):
+            return self._make_component_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
+            )
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
+
+    @log_decorator
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
 
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.

@@ -4,15 +4,13 @@ import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
 from ruptures import Binseg
-from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 
 from etna.analysis import StatisticsRelevanceTable
-from etna.datasets import TSDataset
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
-from etna.transforms import BinsegTrendTransform
 from etna.transforms import BoxCoxTransform
+from etna.transforms import ChangePointsLevelTransform
 from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import DateFlagsTransform
@@ -60,6 +58,8 @@ from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
+# TODO: figure out what happened to TrendTransform
+
 
 class TestTransformTrainSubsetSegments:
     """Test transform on train part of subset of segments.
@@ -68,22 +68,20 @@ class TestTransformTrainSubsetSegments:
     """
 
     def _test_transform_train_subset_segments(self, ts, transform, segments):
-        # select subset of tsdataset
+        # prepare data
         segments = list(set(segments))
-        subset_ts = select_segments_subset(ts=deepcopy(ts), segments=segments)
-        df = ts.to_pandas()
-        subset_df = subset_ts.to_pandas()
+        subset_ts = select_segments_subset(ts=ts, segments=segments)
 
-        # fitting
-        transform.fit(df)
+        # fit
+        transform.fit(ts)
 
         # transform full
-        transformed_df = transform.transform(df)
+        transformed_df = transform.transform(ts).to_pandas()
 
         # transform subset of segments
-        transformed_subset_df = transform.transform(subset_df)
+        transformed_subset_df = transform.transform(subset_ts).to_pandas()
 
-        # checking
+        # check
         assert_frame_equal(transformed_subset_df, transformed_df.loc[:, pd.IndexSlice[segments, :]])
 
     @pytest.mark.parametrize(
@@ -93,21 +91,27 @@ class TestTransformTrainSubsetSegments:
             (
                 ChangePointsSegmentationTransform(
                     in_column="target",
-                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                 ),
                 "regular_ts",
             ),
             (
                 ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
+                    in_column="target",
                 ),
                 "regular_ts",
             ),
-            (BinsegTrendTransform(in_column="target"), "regular_ts"),
+            (ChangePointsLevelTransform(in_column="target"), "regular_ts"),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
-            (TrendTransform(in_column="target"), "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -212,22 +216,19 @@ class TestTransformFutureSubsetSegments:
     """
 
     def _test_transform_future_subset_segments(self, ts, transform, segments, horizon=7):
-        # select subset of tsdataset
-        subset_ts = select_segments_subset(ts=deepcopy(ts), segments=segments)
-        train_df = ts.to_pandas()
-        ts.transforms = [transform]
-        subset_ts.transforms = [transform]
+        # prepare data
+        subset_ts = select_segments_subset(ts=ts, segments=segments)
 
-        # fitting
-        transform.fit(train_df)
+        # fit
+        transform.fit(ts)
 
         # transform full
-        transformed_future_ts = ts.make_future(future_steps=horizon)
+        transformed_future_ts = ts.make_future(future_steps=horizon, transforms=[transform])
 
         # transform subset of segments
-        transformed_subset_future_ts = subset_ts.make_future(future_steps=horizon)
+        transformed_subset_future_ts = subset_ts.make_future(future_steps=horizon, transforms=[transform])
 
-        # checking
+        # check
         transformed_future_df = transformed_future_ts.to_pandas()
         transformed_subset_future_df = transformed_subset_future_ts.to_pandas()
         assert_frame_equal(transformed_subset_future_df, transformed_future_df.loc[:, pd.IndexSlice[segments, :]])
@@ -239,31 +240,39 @@ class TestTransformFutureSubsetSegments:
             (
                 ChangePointsSegmentationTransform(
                     in_column="target",
-                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                 ),
                 "regular_ts",
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="target"),
                 "regular_ts",
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="positive", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="positive"),
                 "ts_with_exog",
             ),
-            (BinsegTrendTransform(in_column="target"), "regular_ts"),
-            (BinsegTrendTransform(in_column="positive"), "ts_with_exog"),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="positive"),
+                "ts_with_exog",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (LinearTrendTransform(in_column="positive"), "ts_with_exog"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
             (STLTransform(in_column="positive", period=7), "ts_with_exog"),
-            (TrendTransform(in_column="target"), "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -392,26 +401,24 @@ class TestTransformTrainNewSegments:
     """
 
     def _test_transform_train_new_segments(self, ts, transform, train_segments, expected_changes):
-        # select subset of tsdataset
+        # prepare data
         train_segments = list(set(train_segments))
         forecast_segments = list(set(ts.segments) - set(train_segments))
-        train_ts = select_segments_subset(ts=deepcopy(ts), segments=train_segments)
-        test_ts = select_segments_subset(ts=deepcopy(ts), segments=forecast_segments)
-        train_df = train_ts.to_pandas()
-        test_df = test_ts.to_pandas()
+        train_ts = select_segments_subset(ts=ts, segments=train_segments)
+        test_ts = select_segments_subset(ts=ts, segments=forecast_segments)
 
-        # fitting
-        transform.fit(train_df)
+        # fit
+        transform.fit(train_ts)
 
         # transform
-        transformed_test_df = transform.transform(test_df.copy())
+        transformed_test_ts = transform.transform(deepcopy(test_ts))
 
-        # checking
+        # check
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_test_df = TSDataset.to_flatten(test_df)
-        flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
+        flat_test_df = test_ts.to_pandas(flatten=True)
+        flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
@@ -421,6 +428,11 @@ class TestTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -430,11 +442,10 @@ class TestTransformTrainNewSegments:
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features, wait for fixing [#1097](https://github.com/tinkoff-ai/etna/issues/1097)
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year", "month", "monthday", "positive"}},
+                {"remove": {"weekday", "year", "month"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
@@ -581,21 +592,28 @@ class TestTransformTrainNewSegments:
             (
                 ChangePointsSegmentationTransform(
                     in_column="target",
-                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                 ),
                 "regular_ts",
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="target"),
                 "regular_ts",
             ),
-            (BinsegTrendTransform(in_column="target"), "regular_ts"),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
-            (TrendTransform(in_column="target"), "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
@@ -665,33 +683,27 @@ class TestTransformFutureNewSegments:
     """
 
     def _test_transform_future_new_segments(self, ts, transform, train_segments, expected_changes, horizon=7):
-        # select subset of tsdataset
+        # prepare data
         train_segments = list(set(train_segments))
         forecast_segments = list(set(ts.segments) - set(train_segments))
-        train_ts = select_segments_subset(ts=deepcopy(ts), segments=train_segments)
-        test_ts_without_transform = select_segments_subset(ts=deepcopy(ts), segments=forecast_segments)
-        test_ts_with_transform = select_segments_subset(ts=deepcopy(ts), segments=forecast_segments)
-        test_ts_without_transform.transforms = []
-        test_ts_with_transform.transforms = [transform]
-        train_df = train_ts.to_pandas()
+        train_ts = select_segments_subset(ts=ts, segments=train_segments)
+        new_segments_ts = select_segments_subset(ts=ts, segments=forecast_segments)
 
-        # fitting
-        transform.fit(train_df)
+        # fit
+        transform.fit(train_ts)
 
-        # prepare df without transform
-        test_ts = test_ts_without_transform.make_future(future_steps=horizon)
-        test_df = test_ts.to_pandas()
+        # prepare ts without transform
+        test_ts = new_segments_ts.make_future(future_steps=horizon)
 
         # transform
-        transformed_test_ts = test_ts_with_transform.make_future(future_steps=horizon)
-        transformed_test_df = transformed_test_ts.to_pandas()
+        transformed_test_ts = new_segments_ts.make_future(future_steps=horizon, transforms=[transform])
 
-        # checking
+        # check
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_test_df = TSDataset.to_flatten(test_df)
-        flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
+        flat_test_df = test_ts.to_pandas(flatten=True)
+        flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
@@ -710,11 +722,10 @@ class TestTransformFutureNewSegments:
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
-                {"remove": {"weekday", "year", "month", "monthday", "positive"}},
+                {"remove": {"weekday", "year", "month"}},
             ),
             (
                 MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
@@ -903,21 +914,28 @@ class TestTransformFutureNewSegments:
             (
                 ChangePointsSegmentationTransform(
                     in_column="target",
-                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                 ),
                 "regular_ts",
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="target"),
                 "regular_ts",
             ),
-            (BinsegTrendTransform(in_column="target"), "regular_ts"),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
-            (TrendTransform(in_column="target"), "regular_ts"),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
@@ -994,24 +1012,22 @@ class TestTransformFutureWithTarget:
     """
 
     def _test_transform_future_with_target(self, ts, transform, expected_changes, gap_size=7, transform_size=50):
-        # select subset of tsdataset
-        history_ts, future_full_ts = ts.train_test_split(test_size=gap_size + transform_size)
+        # prepare data
+        train_ts, future_full_ts = ts.train_test_split(test_size=gap_size + transform_size)
         _, test_ts = future_full_ts.train_test_split(test_size=transform_size)
-        train_df = history_ts.to_pandas()
-        test_df = test_ts.to_pandas()
 
-        # fitting
-        transform.fit(train_df)
+        # fit
+        transform.fit(train_ts)
 
         # transform
-        transformed_test_df = transform.transform(test_df.copy())
+        transformed_test_ts = transform.transform(deepcopy(test_ts))
 
-        # checking
+        # check
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_test_df = TSDataset.to_flatten(test_df)
-        flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
+        flat_test_df = test_ts.to_pandas(flatten=True)
+        flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
@@ -1025,24 +1041,34 @@ class TestTransformFutureWithTarget:
             (
                 ChangePointsSegmentationTransform(
                     in_column="target",
-                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                     out_column="res",
                 ),
                 "regular_ts",
                 {"create": {"res"}},
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="target"),
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (BinsegTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
-            (TrendTransform(in_column="target", out_column="res"), "regular_ts", {"create": {"res"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -1054,7 +1080,6 @@ class TestTransformFutureWithTarget:
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
-            # TODO: this should remove only 2 features
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
@@ -1291,31 +1316,24 @@ class TestTransformFutureWithoutTarget:
     """
 
     def _test_transform_future_without_target(self, ts, transform, expected_changes, gap_size=28, transform_size=7):
-        # select subset of tsdataset
-        history_ts, future_ts = ts.train_test_split(test_size=gap_size)
-        future_ts_without_transform = future_ts
-        future_ts_with_transform = deepcopy(future_ts)
-        future_ts_without_transform.transforms = []
-        future_ts_with_transform.transforms = [transform]
-        train_df = history_ts.to_pandas()
+        # prepare data
+        train_ts, future_ts = ts.train_test_split(test_size=gap_size)
 
-        # fitting
-        transform.fit(train_df)
+        # fit
+        transform.fit(train_ts)
 
-        # prepare df without transform
-        test_ts = future_ts_without_transform.make_future(future_steps=transform_size)
-        test_df = test_ts.to_pandas()
+        # prepare ts without transform
+        test_ts = future_ts.make_future(future_steps=transform_size)
 
         # transform
-        transformed_test_ts = future_ts_with_transform.make_future(future_steps=transform_size)
-        transformed_test_df = transformed_test_ts.to_pandas()
+        transformed_test_ts = future_ts.make_future(future_steps=transform_size, transforms=[transform])
 
-        # checking
+        # check
         expected_columns_to_create = expected_changes.get("create", set())
         expected_columns_to_remove = expected_changes.get("remove", set())
         expected_columns_to_change = expected_changes.get("change", set())
-        flat_test_df = TSDataset.to_flatten(test_df)
-        flat_transformed_test_df = TSDataset.to_flatten(transformed_test_df)
+        flat_test_df = test_ts.to_pandas(flatten=True)
+        flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(flat_test_df, flat_transformed_test_df)
 
         assert created_columns == expected_columns_to_create
@@ -1329,35 +1347,47 @@ class TestTransformFutureWithoutTarget:
             (
                 ChangePointsSegmentationTransform(
                     in_column="target",
-                    change_point_model=RupturesChangePointsModel(change_point_model=Binseg(), n_bkps=5),
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                     out_column="res",
                 ),
                 "regular_ts",
                 {"create": {"res"}},
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="target", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="target"),
                 "regular_ts",
                 {},
             ),
             (
-                ChangePointsTrendTransform(
-                    in_column="positive", change_point_model=Binseg(), detrend_model=LinearRegression(), n_bkps=5
-                ),
+                ChangePointsTrendTransform(in_column="positive"),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
-            (BinsegTrendTransform(in_column="target"), "regular_ts", {}),
-            (BinsegTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="positive"),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {}),
             (LinearTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {}),
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {}),
             (STLTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
-            (TrendTransform(in_column="target", out_column="res"), "regular_ts", {"create": {"res"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (

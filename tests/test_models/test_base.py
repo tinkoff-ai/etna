@@ -146,12 +146,6 @@ def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
     np.testing.assert_allclose(predictions_dict[("segment2", "target")], batch["target"][1].numpy())
 
 
-def test_deep_base_model_forecast_inverse_transform_call_check(deep_base_model_mock, ts_mock):
-    horizon = 7
-    DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts_mock, prediction_size=horizon)
-    ts_mock.tsdataset_idx_slice.return_value.inverse_transform.assert_called_once()
-
-
 def test_deep_base_model_forecast_fail_not_enough_context(deep_base_model_mock, ts_mock):
     horizon = len(ts_mock.index)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
@@ -175,4 +169,8 @@ def test_deep_base_model_forecast_loop(simple_df, deep_base_model_mock, ts_mock)
     np.testing.assert_allclose(
         future.df.loc[:, pd.IndexSlice["B", "target"]], raw_predict[("B", "target")][:horizon, 0]
     )
-    ts_mock.tsdataset_idx_slice.return_value.inverse_transform.assert_called_once()
+
+
+def test_deep_base_model_forecast_throw_error_on_return_components():
+    with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
+        DeepBaseModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)

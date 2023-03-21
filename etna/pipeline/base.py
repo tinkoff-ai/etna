@@ -308,10 +308,22 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Add prediction intervals to the forecasts."""
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
+
+        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+
+        return predictions
+
+    def _add_forecast_borders(
+        self, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
+    ) -> None:
+        """Estimate prediction intervals and add to the forecasts."""
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted!")
+
+        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
         residuals = (
-            forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - ts[forecasts.index.min() : forecasts.index.max(), :, "target"]
+            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
+            - self.ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
         )
 
         sigma = np.std(residuals.values, axis=0)
@@ -323,8 +335,6 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             borders.append(border)
 
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
-
-        return predictions
 
     def forecast(
         self,
@@ -570,8 +580,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             )
             yield train, test
 
-    @staticmethod
-    def _compute_metrics(metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset) -> Dict[str, Dict[str, float]]:
+    def _compute_metrics(
+        self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
+    ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
@@ -604,6 +615,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         forecast: TSDataset,
         train: TSDataset,
         test: TSDataset,
+        pipeline: "BasePipeline",
         fold_number: int,
         mask: FoldMask,
         metrics: List[Metric],
@@ -621,7 +633,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         test.df = test.df.loc[mask.target_timestamps]
 
         fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(self._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+        fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
         tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
         tslogger.finish_experiment()
@@ -783,6 +795,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     forecast=forecasts_flat[group_idx * refit + idx],
                     train=train,
                     test=test,
+                    pipeline=pipelines[group_idx],
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     mask=fold_groups[group_idx]["forecast_masks"][idx],
                     metrics=metrics,

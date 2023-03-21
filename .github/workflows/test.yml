@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install poetry
+          pip install poetry==1.4.0 # TODO: remove after poetry fix
           poetry --version
           poetry config virtualenvs.in-project true
           poetry install -E style --no-root
@@ -48,6 +48,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -86,6 +87,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -123,6 +125,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -160,6 +163,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -199,6 +203,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 

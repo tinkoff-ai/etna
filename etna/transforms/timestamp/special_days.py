@@ -1,14 +1,15 @@
 import datetime
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 
 import pandas as pd
 
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversiblePerSegmentWrapper
+from etna.transforms.base import OneSegmentTransform
 
 
 def calc_day_number_in_week(datetime_day: datetime.datetime) -> int:
@@ -19,7 +20,7 @@ def calc_day_number_in_month(datetime_day: datetime.datetime) -> int:
     return datetime_day.day
 
 
-class _OneSegmentSpecialDaysTransform(Transform):
+class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
     """
     Search for anomalies in values, marked this days as 1 (and return new column with 1 in corresponding places).
 
@@ -119,8 +120,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
             to_add["anomaly_monthdays"] = to_add["anomaly_monthdays"].astype("category")
 
         to_add.index = df.index
-        to_return = df.copy()
-        to_return = pd.concat([to_return, to_add], axis=1)
+        to_return = pd.concat([df, to_add], axis=1)
         to_return.columns.names = df.columns.names
         return to_return
 
@@ -168,8 +168,12 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
         return df.loc[:, ["datetime"]].apply(check, axis=1).rename("anomaly_monthdays")
 
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform Dataframe."""
+        return df
 
-class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
+
+class SpecialDaysTransform(IrreversiblePerSegmentWrapper, FutureMixin):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
 
     Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.
@@ -199,8 +203,18 @@ class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
         super().__init__(
-            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day)
+            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day),
+            required_features=["target"],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        output_columns = []
+        if self.find_special_weekday:
+            output_columns.append("anomaly_weekdays")
+        if self.find_special_month_day:
+            output_columns.append("anomaly_monthdays")
+        return output_columns
 
 
 __all__ = ["SpecialDaysTransform"]

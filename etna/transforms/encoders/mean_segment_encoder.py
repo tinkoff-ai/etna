@@ -1,24 +1,26 @@
 import reprlib
 from typing import Dict
+from typing import List
 from typing import Optional
 
 import pandas as pd
 
-from etna.transforms import Transform
+from etna.transforms import IrreversibleTransform
 from etna.transforms.base import FutureMixin
 from etna.transforms.math.statistics import MeanTransform
 
 
-class MeanSegmentEncoderTransform(Transform, FutureMixin):
+class MeanSegmentEncoderTransform(IrreversibleTransform, FutureMixin):
     """Makes expanding mean target encoding of the segment. Creates column 'segment_mean'."""
 
     idx = pd.IndexSlice
 
     def __init__(self):
+        super().__init__(required_features=["target"])
         self.mean_encoder = MeanTransform(in_column="target", window=-1, out_column="segment_mean")
         self.global_means: Optional[Dict[str, float]] = None
 
-    def fit(self, df: pd.DataFrame) -> "MeanSegmentEncoderTransform":
+    def _fit(self, df: pd.DataFrame) -> "MeanSegmentEncoderTransform":
         """
         Fit encoder.
 
@@ -32,13 +34,13 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
         :
             Fitted transform
         """
-        self.mean_encoder.fit(df)
+        self.mean_encoder._fit(df)
         mean_values = df.loc[:, self.idx[:, "target"]].mean().to_dict()
         mean_values = {key[0]: value for key, value in mean_values.items()}
         self.global_means = mean_values
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Get encoded values for the segment.
 
@@ -69,8 +71,12 @@ class MeanSegmentEncoderTransform(Transform, FutureMixin):
                 f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
             )
 
-        df = self.mean_encoder.transform(df)
+        df = self.mean_encoder._transform(df)
         segment = segments[0]
         nan_timestamps = df[df.loc[:, self.idx[segment, "target"]].isna()].index
         df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = [self.global_means[x] for x in segments]
         return df
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return ["segment_mean"]

@@ -54,21 +54,20 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
         self.ts = ts
         self.ts.fit_transform(self.transforms)
         self.model.fit(self.ts)
-        self.ts.inverse_transform()
+        self.ts.inverse_transform(self.transforms)
         return self
 
     def _forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions."""
-        # because make_future uses `ts.transforms`
-        ts.transforms = self.transforms
-
         if isinstance(self.model, get_args(ContextRequiredModelType)):
             self.model = cast(ContextRequiredModelType, self.model)
-            future = ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            future = ts.make_future(
+                future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.context_size
+            )
             predictions = self.model.forecast(ts=future, prediction_size=self.horizon)
         else:
             self.model = cast(ContextIgnorantModelType, self.model)
-            future = ts.make_future(future_steps=self.horizon)
+            future = ts.make_future(future_steps=self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future)
         return predictions
 
@@ -103,18 +102,17 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
                     "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
                 )
             ts = self.ts
-        else:
-            # because make_future uses `ts.transforms`
-            ts.transforms = self.transforms
 
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
         if prediction_interval and isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
-            future = ts.make_future(future_steps=self.horizon)
+            future = ts.make_future(future_steps=self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future, prediction_interval=prediction_interval, quantiles=quantiles)
         elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
-            future = ts.make_future(future_steps=self.horizon, tail_steps=self.model.context_size)
+            future = ts.make_future(
+                future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.context_size
+            )
             predictions = self.model.forecast(
                 ts=future, prediction_size=self.horizon, prediction_interval=prediction_interval, quantiles=quantiles
             )
@@ -122,4 +120,5 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
             predictions = super().forecast(
                 ts=ts, prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
             )
+        predictions.inverse_transform(self.transforms)
         return predictions
