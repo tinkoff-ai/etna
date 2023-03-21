@@ -239,7 +239,7 @@ def get_level_dataframe(
     if num_target_level_segments != mapping_matrix.shape[0]:
         raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
 
-    source_level_data = df.values  # shape: (t, num_source_level_segments * num_columns)
+    source_level_data = df[source_level_segments].values  # shape: (t, num_source_level_segments * num_columns)
 
     source_level_data = source_level_data.reshape(
         (-1, num_source_level_segments, num_columns)

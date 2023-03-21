@@ -165,6 +165,8 @@ class TSDataset:
 
         self._target_components: Optional[List[str]] = None
 
+        self.df = self.df.sort_index(axis=1, level=("segment", "feature"))
+
     def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
         """Return the level of the passed dataframe in hierarchical structure."""
         if self.hierarchical_structure is None:
@@ -1083,21 +1085,29 @@ class TSDataset:
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
+        target_names = tuple(get_target_with_quantiles(columns=self.columns))
+        if self.target_components is not None:
+            target_names += tuple(set(self.target_components))
+
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
                 target_level=target_level, source_level=self.current_df_level
             )
 
             target_level_df = get_level_dataframe(
-                df=self.df,
+                df=self.to_pandas(features=target_names),
                 mapping_matrix=summing_matrix,
                 source_level_segments=current_level_segments,
                 target_level_segments=target_level_segments,
             )
 
         else:
-            target_names = tuple(get_target_with_quantiles(columns=self.columns))
-            target_level_df = self[:, current_level_segments, target_names]
+            target_level_df = self.to_pandas(features=target_names)
+
+        target_components_df = None
+        if self.target_components is not None:
+            target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components]]
+            target_level_df = target_level_df.drop(columns=self.target_components, level="feature")
 
         ts = TSDataset(
             df=target_level_df,
@@ -1106,7 +1116,9 @@ class TSDataset:
             known_future=self.known_future,
             hierarchical_structure=self.hierarchical_structure,
         )
-        ts._target_components = self._target_components
+
+        if self.target_components is not None:
+            ts.add_target_components(target_components_df=target_components_df)
         return ts
 
     def add_target_components(self, target_components_df: pd.DataFrame):
