@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -471,16 +470,19 @@ def test_get_level_dataset_lower_level_error(simple_hierarchical_ts):
 
 
 @pytest.mark.parametrize(
-    "target_level,answer",
+    "target_level, expected_dataframe_name",
     (
-        ("product", np.array([[1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]])),
-        ("market", np.array([[3, 3, 3, 7, 7, 7], [3, 3, 3, 7, 7, 7]])),
-        ("total", np.array([[10, 10, 10], [10, 10, 10]])),
+        ("product", "product_level_constant_forecast_w_quantiles"),
+        ("market", "market_level_constant_forecast_w_quantiles"),
+        ("total", "total_level_constant_forecast_w_quantiles"),
     ),
 )
-def test_get_level_dataset_with_quantiles(product_level_constant_forecast_w_quantiles, target_level, answer):
-    forecast = product_level_constant_forecast_w_quantiles
-    np.testing.assert_array_almost_equal(forecast.get_level_dataset(target_level=target_level).df.values, answer)
+def test_get_level_dataset_with_quantiles(
+    product_level_constant_forecast_w_quantiles, target_level, expected_dataframe_name, request
+):
+    expected_df = request.getfixturevalue(expected_dataframe_name).to_pandas()
+    reconciled_df = product_level_constant_forecast_w_quantiles.get_level_dataset(target_level=target_level).to_pandas()
+    pd.testing.assert_frame_equal(reconciled_df, expected_df)
 
 
 def test_get_level_dataset_pass_target_components_to_output(simple_hierarchical_ts):

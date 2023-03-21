@@ -683,14 +683,15 @@ def product_level_constant_forecast_w_quantiles(hierarchical_structure):
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
             "target": [1, 1] + [2, 2] + [3, 3] + [4, 4],
-            "target_0.25": [1/2, 1/4] + [1, 1/2] + [2, 1] + [3, 2],
+            "target_0.25": [1 / 2, 1 / 4] + [1, 1 / 2] + [2, 1] + [3, 2],
             "target_0.75": [2, 3] + [3, 4] + [4, 5] + [5, 6],
         },
-        dtype=float
+        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     return ts
+
 
 @pytest.fixture
 def market_level_constant_forecast_w_quantiles(hierarchical_structure):
@@ -702,11 +703,12 @@ def market_level_constant_forecast_w_quantiles(hierarchical_structure):
             "target_0.25": [1.5, 0.75] + [5, 3],
             "target_0.75": [5, 7] + [9, 11],
         },
-        dtype=float
+        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     return ts
+
 
 @pytest.fixture
 def total_level_constant_forecast_w_quantiles(hierarchical_structure):
@@ -718,7 +720,7 @@ def total_level_constant_forecast_w_quantiles(hierarchical_structure):
             "target_0.25": [6.5, 3.75],
             "target_0.75": [14, 18],
         },
-        dtype=float
+        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
