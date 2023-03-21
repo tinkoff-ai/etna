@@ -300,7 +300,7 @@ def test_save_load(model, transforms, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
 
 
-@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
 @pytest.mark.parametrize(
     "model_fixture",
     (
@@ -317,7 +317,7 @@ def test_forecast_return_components(example_tsds, model_fixture, request):
     forecast = pipeline.forecast(return_components=True)
 
 
-@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
 @pytest.mark.parametrize(
     "model_fixture",
     (

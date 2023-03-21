@@ -131,7 +131,7 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
         if return_components:
-            raise NotImplementedError("Target components logic is not currently implemented!")
+            raise NotImplementedError("Adding target components is not currently implemented!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
@@ -151,7 +151,7 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         if prediction_interval:
             raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
         if return_components:
-            raise NotImplementedError("Target components logic is not currently implemented!")
+            raise NotImplementedError("Adding target components is not currently implemented!")
 
         horizons = [pipeline.horizon for pipeline in self.pipelines]
         pipeline = self.pipelines[np.argmin(horizons)]

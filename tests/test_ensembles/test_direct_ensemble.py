@@ -73,11 +73,11 @@ def test_save_load(direct_ensemble_pipeline, example_tsds):
 
 def test_forecast_with_return_components_fails(example_tsds, direct_ensemble_pipeline):
     direct_ensemble_pipeline.fit(example_tsds)
-    with pytest.raises(NotImplementedError, match="Target components logic is not currently implemented!"):
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
         direct_ensemble_pipeline.forecast(return_components=True)
 
 
 def test_predict_with_return_components_fails(example_tsds, direct_ensemble_pipeline):
     direct_ensemble_pipeline.fit(example_tsds)
-    with pytest.raises(NotImplementedError, match="Target components logic is not currently implemented!"):
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
         direct_ensemble_pipeline.predict(ts=example_tsds, return_components=True)

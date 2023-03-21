@@ -115,7 +115,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         if self.ts is None:
             raise ValueError("Something went wrong, ts is None!")
         if return_components:
-            raise NotImplementedError("Target components logic is not currently implemented!")
+            raise NotImplementedError("Adding target components is not currently implemented!")
         prediction_df = self._create_predictions_template()
 
         for idx_start in range(0, self.horizon, self.step):
@@ -171,7 +171,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         return_components: bool = False,
     ) -> TSDataset:
         if return_components:
-            raise NotImplementedError("Target components logic is not currently implemented!")
+            raise NotImplementedError("Adding target components is not currently implemented!")
         return super()._predict(
             ts=ts,
             start_timestamp=start_timestamp,

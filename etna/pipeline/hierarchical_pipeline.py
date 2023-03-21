@@ -93,7 +93,7 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the source level
         """
         if return_components:
-            raise NotImplementedError("Target components logic is not currently implemented!")
+            raise NotImplementedError("Adding target components is not currently implemented!")
         forecast = super().forecast(
             prediction_interval=prediction_interval,
             quantiles=quantiles,
@@ -137,7 +137,7 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the target level of hierarchy.
         """
         if return_components:
-            raise NotImplementedError("Target components logic is not currently implemented!")
+            raise NotImplementedError("Adding target components is not currently implemented!")
         forecast = self.raw_forecast(
             prediction_interval=prediction_interval,
             quantiles=quantiles,

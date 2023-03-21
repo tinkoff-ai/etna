@@ -359,7 +359,7 @@ def test_save_load(model, transforms, reconciliator, product_level_constant_hier
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=product_level_constant_hierarchical_ts)
 
 
-@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
 def test_forecast_with_return_components(product_level_constant_hierarchical_ts):
     pipeline = HierarchicalPipeline(
         reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
@@ -368,7 +368,7 @@ def test_forecast_with_return_components(product_level_constant_hierarchical_ts)
     pipeline.forecast(return_components=True)
 
 
-@to_be_fixed(NotImplementedError, "Target components logic is not currently implemented!")
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
 def test_raw_forecast_with_return_components(product_level_constant_hierarchical_ts):
     pipeline = HierarchicalPipeline(
         reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
