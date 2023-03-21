@@ -41,6 +41,20 @@ def hierarchical_ts():
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["exog"], hierarchical_structure=hs)
     return ts
 
+@pytest.fixture
+def hierarchical_ts_with_target_components(hierarchical_ts):
+    target_components_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-01", "2000-01-02"] * 4,
+            "segment": ["X_a"] * 2 + ["X_b"] * 2 + ["Y_c"] * 2 + ["Y_d"] * 2,
+            "target_component_a": [0.3, 0.7] + [1, 1] + [2, 3] + [7, 8],
+            "target_component_b": [0.7, 1.3] + [2, 3] + [3, 7] + [8, 12],
+        }
+    )
+    target_components_df = TSDataset.to_dataset(target_components_df)
+    hierarchical_ts.add_target_components(target_components_df=target_components_df)
+    return hierarchical_ts
+
 
 @pytest.fixture
 def market_total_mapping_matrix():
@@ -103,5 +117,25 @@ def test_reconcile(hierarchical_ts, source_level, target_level, mapping_matrix, 
     assert obtained_ts.current_df_level == expected_ts.current_df_level
     assert obtained_ts.known_future == expected_ts.known_future
     assert obtained_ts.regressors == expected_ts.regressors
+    pd.testing.assert_frame_equal(obtained_ts.df, expected_ts.df)
+    pd.testing.assert_frame_equal(obtained_ts.df_exog, expected_ts.df_exog)
+
+@pytest.mark.parametrize(
+    "source_level, target_level, mapping_matrix",
+    [("market", "total", "market_total_mapping_matrix"), ("total", "market", "total_market_mapping_matrix")],
+)
+def test_reconcile_with_target_components(hierarchical_ts_with_target_components, source_level, target_level, mapping_matrix, request):
+    source_ts = hierarchical_ts_with_target_components.get_level_dataset(target_level=source_level)
+    expected_ts = hierarchical_ts_with_target_components.get_level_dataset(target_level=target_level)
+
+    reconciliator = DummyReconciliator(target_level=target_level, source_level=source_level)
+    reconciliator.mapping_matrix = request.getfixturevalue(mapping_matrix)
+    obtained_ts = reconciliator.reconcile(ts=source_ts)
+
+    assert obtained_ts.freq == expected_ts.freq
+    assert obtained_ts.current_df_level == expected_ts.current_df_level
+    assert obtained_ts.known_future == expected_ts.known_future
+    assert obtained_ts.regressors == expected_ts.regressors
+    pd.testing.assert_frame_equal(obtained_ts.get_target_components(), expected_ts.get_target_components())
     pd.testing.assert_frame_equal(obtained_ts.df, expected_ts.df)
     pd.testing.assert_frame_equal(obtained_ts.df_exog, expected_ts.df_exog)
