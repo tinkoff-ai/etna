@@ -485,9 +485,18 @@ def test_get_level_dataset_with_quantiles(
     pd.testing.assert_frame_equal(reconciled_df, expected_df)
 
 
-def test_get_level_dataset_pass_target_components_to_output(simple_hierarchical_ts):
-    simple_hierarchical_ts._target_components = ["target_component_a", "target_component_b"]
-    simple_hierarchical_ts_aggregated = simple_hierarchical_ts.get_level_dataset(target_level="market")
-    assert sorted(simple_hierarchical_ts_aggregated.target_components) == sorted(
-        simple_hierarchical_ts.target_components
-    )
+@pytest.mark.parametrize(
+    "target_level, expected_dataframe_name",
+    (
+        ("product", "product_level_constant_forecast_w_target_components"),
+        ("market", "market_level_constant_forecast_w_target_components"),
+        ("total", "total_level_constant_forecast_w_target_components"),
+    ),
+)
+def test_get_level_dataset_with_target_components(
+    product_level_constant_forecast_w_target_components, target_level, expected_dataframe_name, request
+):
+    expected_ts = request.getfixturevalue(expected_dataframe_name)
+    reconciled_ts = product_level_constant_forecast_w_target_components.get_level_dataset(target_level=target_level)
+    pd.testing.assert_frame_equal(reconciled_ts.get_target_components(), expected_ts.get_target_components())
+    pd.testing.assert_frame_equal(reconciled_ts.to_pandas(), expected_ts.to_pandas())
