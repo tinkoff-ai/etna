@@ -200,7 +200,6 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     )
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(example_tsds):
     """Test that the forecast from the Pipeline is correct."""
     original_ts = deepcopy(example_tsds)

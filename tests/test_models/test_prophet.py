@@ -197,7 +197,6 @@ def test_setstate_fitted(example_tsds):
     assert new_state == initial_state
 
 
-@pytest.mark.xfail(reason="Non native serialization, should be fixed in inference-v2.0")
 def test_save_load(example_tsds):
     model = ProphetModel()
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
