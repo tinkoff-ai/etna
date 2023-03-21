@@ -187,3 +187,11 @@ def test_save_load(example_tsds):
     transform = _get_default_transform(horizon)
     transforms = [transform]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+def test_repr():
+    model = TFTModel(max_epochs=2, learning_rate=[0.1], gpus=0, batch_size=64)
+    assert "TFTModel(max_epochs = 2, gpus = 0, gradient_clip_val = 0.1, "
+    "learning_rate = [0.1], batch_size = 64, context_length = None, hidden_size = 16, "
+    "lstm_layers = 1, attention_head_size = 4, dropout = 0.1, hidden_continuous_size = 8, "
+    "loss = QuantileLoss(), trainer_kwargs = {}, quantiles_kwargs = {}, )" == repr(model)

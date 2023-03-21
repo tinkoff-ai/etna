@@ -64,3 +64,9 @@ We have prepared a set of tutorials for an easy introduction:
 #### 10. [Inference: using saved pipeline on a new data](https://github.com/tinkoff-ai/etna/tree/master/examples/inference.ipynb) 
 - Fitting and saving pipeline
 - Using saved pipeline on a new data
+
+#### 11. [Hierarchical time series](https://github.com/tinkoff-ai/etna/tree/master/examples/hierarchical_pipeline.ipynb)
+- Hierarchical time series
+- Hierarchical structure
+- Reconciliation methods
+- Exogenous variables for hierarchical forecasts

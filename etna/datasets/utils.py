@@ -1,9 +1,13 @@
+import re
 from enum import Enum
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 
+import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from etna import SETTINGS
 
@@ -175,3 +179,90 @@ def set_columns_wide(
     df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left
+
+
+def match_target_quantiles(features: Set[str]) -> Set[str]:
+    """Find quantiles in dataframe columns."""
+    pattern = re.compile("target_\d+\.\d+$")
+    return {i for i in list(features) if pattern.match(i) is not None}
+
+
+def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
+    """Find "target" column and target quantiles among dataframe columns."""
+    column_names = set(columns.get_level_values(level="feature"))
+    target_columns = match_target_quantiles(column_names)
+    if "target" in column_names:
+        target_columns.add("target")
+    return target_columns
+
+
+def get_level_dataframe(
+    df: pd.DataFrame,
+    mapping_matrix: csr_matrix,
+    source_level_segments: List[str],
+    target_level_segments: List[str],
+):
+    """Perform mapping to dataframe at the target level.
+
+    Parameters
+    ----------
+    df:
+        dataframe at the source level
+    mapping_matrix:
+        mapping matrix between levels
+    source_level_segments:
+        tuple of segments at the source level
+    target_level_segments:
+        tuple of segments at the target level
+
+    Returns
+    -------
+    :
+       dataframe at the target level
+    """
+    target_names = tuple(get_target_with_quantiles(columns=df.columns))
+
+    num_target_names = len(target_names)
+    num_source_level_segments = len(source_level_segments)
+    num_target_level_segments = len(target_level_segments)
+
+    if len(target_names) == 0:
+        raise ValueError("Provided dataframe has no columns with the target variable!")
+
+    if set(df.columns.get_level_values(level="segment")) != set(source_level_segments):
+        raise ValueError("Segments mismatch for provided dataframe and `source_level_segments`!")
+
+    if num_source_level_segments != mapping_matrix.shape[1]:
+        raise ValueError("Number of source level segments do not match mapping matrix number of columns!")
+
+    if num_target_level_segments != mapping_matrix.shape[0]:
+        raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
+
+    df = df.loc[:, pd.IndexSlice[source_level_segments, target_names]]
+
+    source_level_data = df.values  # shape: (t, num_source_level_segments * num_target_names)
+
+    source_level_data = source_level_data.reshape(
+        (-1, num_source_level_segments, num_target_names)
+    )  # shape: (t, num_source_level_segments, num_target_names)
+    source_level_data = np.swapaxes(source_level_data, 1, 2)  # shape: (t, num_target_names, num_source_level_segments)
+    source_level_data = source_level_data.reshape(
+        (-1, num_source_level_segments)
+    )  # shape: (t * num_target_names, num_source_level_segments)
+
+    target_level_data = source_level_data @ mapping_matrix.T
+
+    target_level_data = target_level_data.reshape(
+        (-1, num_target_names, num_target_level_segments)
+    )  # shape: (t, num_target_names, num_target_level_segments)
+    target_level_data = np.swapaxes(target_level_data, 1, 2)  # shape: (t, num_target_level_segments, num_target_names)
+    target_level_data = target_level_data.reshape(
+        (-1, num_target_names * num_target_level_segments)
+    )  # shape: (t, num_target_level_segments * num_target_names)
+
+    target_level_segments = pd.MultiIndex.from_product(
+        [target_level_segments, target_names], names=["segment", "feature"]
+    )
+    target_level_df = pd.DataFrame(data=target_level_data, index=df.index, columns=target_level_segments)
+
+    return target_level_df
