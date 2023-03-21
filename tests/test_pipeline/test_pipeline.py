@@ -114,7 +114,7 @@ def test_forecast_return_components(
     pipeline = Pipeline(model=model)
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(return_components=True)
-    assert forecast.target_components is not None
+    assert forecast.target_components_names is not None
 
     taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
     assert (taregt_components_df["target_component_a"] == expected_component_a).all()
@@ -772,7 +772,7 @@ def test_predict_return_components(
     pipeline = Pipeline(model=model)
     pipeline.fit(example_tsds)
     forecast = pipeline.predict(ts=example_tsds, return_components=True)
-    assert forecast.target_components is not None
+    assert forecast.target_components_names is not None
 
     taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
     assert (taregt_components_df["target_component_a"] == expected_component_a).all()
