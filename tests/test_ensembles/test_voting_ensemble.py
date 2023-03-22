@@ -16,7 +16,8 @@ from etna.ensembles.voting_ensemble import VotingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
-from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 
 HORIZON = 7
 
@@ -204,6 +205,12 @@ def test_save_load(load_ts, voting_ensemble_pipeline, example_tsds):
 
 
 def test_forecast_given_ts(voting_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_with_given_ts(
-        pipeline=voting_ensemble_pipeline, ts=example_tsds, segments_to_check=["segment_2"]
+    assert_pipeline_forecasts_given_ts(
+        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
+    )
+
+
+def test_forecast_given_ts_with_prediction_interval(voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
+        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
     )

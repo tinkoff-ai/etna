@@ -170,7 +170,7 @@ class HierarchicalPipeline(Pipeline):
         # TODO: fix this: what if during backtest KeyboardInterrupt is raised
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
-        if self.ts is None or self._fit_ts is None:
+        if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
         # TODO: rework intervals estimation for `BottomUpReconciliator`
@@ -178,7 +178,10 @@ class HierarchicalPipeline(Pipeline):
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
-        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+        source_ts = self.reconciliator.aggregate(ts=ts)
+        self._add_forecast_borders(
+            ts=source_ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions
+        )
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 

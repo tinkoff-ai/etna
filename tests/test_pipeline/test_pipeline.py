@@ -37,7 +37,8 @@ from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
-from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -222,7 +223,7 @@ def test_forecast_prediction_interval_builtin(example_tsds, model):
 
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
-def test_forecast_prediction_interval_interface(example_tsds, model):
+def test_forecast_prediction_interval_not_builtin(example_tsds, model):
     """Test the forecast interface for the models without built-in prediction intervals."""
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -233,7 +234,7 @@ def test_forecast_prediction_interval_interface(example_tsds, model):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-def test_forecast_prediction_interval(splited_piecewise_constant_ts):
+def test_forecast_prediction_interval_correct_values(splited_piecewise_constant_ts):
     """Test that the prediction interval for piecewise-constant dataset is correct."""
     train, test = splited_piecewise_constant_ts
     pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=5)
@@ -1127,4 +1128,26 @@ def test_save_load(load_ts, model, transforms, example_tsds):
 def test_forecast_given_ts(model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_with_given_ts(pipeline=pipeline, ts=example_tsds, segments_to_check=["segment_2"])
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
