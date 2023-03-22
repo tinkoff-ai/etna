@@ -240,27 +240,47 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         return design_mat
 
     def _mle_regression_decomposition(self, state: np.ndarray, ssm: SimulationSmoother, exog: np.ndarray) -> np.ndarray:
-        """Estimate SARIMAX components for MLE regression case."""
+        """Estimate SARIMAX components for MLE regression case.
+
+        SARIMAX representation as SSM: https://www.statsmodels.org/dev/statespace.html
+        In MLE case exogenous data fitted separately from other components:
+        https://github.com/statsmodels/statsmodels/blob/main/statsmodels/tsa/statespace/sarimax.py#L1644
+        """
+        # get design matrix from SSM
         design_mat = self._prepare_design_matrix(ssm)
 
+        # estimate SARIMA component
         components = np.sum(design_mat * state, axis=1).T
 
         if len(exog) > 0:
+            # restore parameters for exogenous variabales
             exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]))[0]
+
+            # estimate exogenous components and append to others
             weighted_exog = exog * exog_params[np.newaxis]
             components = np.concatenate([weighted_exog, components], axis=1)
 
         return components
 
     def _state_regression_decomposition(self, state: np.ndarray, ssm: SimulationSmoother, k_exog: int) -> np.ndarray:
-        """Estimate SARIMAX components for state regression case."""
+        """Estimate SARIMAX components for state regression case.
+
+        SARIMAX representation as SSM: https://www.statsmodels.org/dev/statespace.html
+        In state regression case parameters for exogenous variables estimated inside SSM.
+        """
+        # get design matrix from SSM
         design_mat = self._prepare_design_matrix(ssm)
 
         if k_exog > 0:
+            # estimate SARIMA component
             sarima = np.sum(design_mat[:, :-k_exog] * state[:-k_exog], axis=1)
+
+            # obtain params from SSM and estimate exogenous components
             weighted_exog = np.squeeze(design_mat[:, -k_exog:] * state[-k_exog:])
             components = np.concatenate([weighted_exog, sarima], axis=0).T
+
         else:
+            # in this case we can take whole matrix for SARIMA component
             components = np.sum(design_mat * state, axis=1).T
 
         return components
