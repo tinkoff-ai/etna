@@ -4,7 +4,6 @@ import pytest
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import AutoARIMAModel
-from etna.models.autoarima import _AutoARIMAAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 
