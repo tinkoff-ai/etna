@@ -106,8 +106,11 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         prediction_df.index.name = "timestamp"
         return prediction_df
 
-    def _forecast(self, ts: TSDataset) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions."""
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
         prediction_df = self._create_predictions_template(ts)
 
         for idx_start in range(0, self.horizon, self.step):
@@ -150,3 +153,23 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         prediction_ts.df = prediction_ts.df.tail(self.horizon)
         prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
         return prediction_ts
+
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+        return_components: bool = False,
+    ) -> TSDataset:
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+        return super()._predict(
+            ts=ts,
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+            return_components=return_components,
+        )

@@ -24,6 +24,7 @@ from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.utils import to_be_fixed
 
 
 @pytest.mark.parametrize(
@@ -444,3 +445,21 @@ def test_forecast_given_ts_with_prediction_interval(
     assert_pipeline_forecasts_given_ts_with_prediction_intervals(
         pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon, n_folds=2
     )
+
+
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
+def test_forecast_with_return_components(product_level_constant_hierarchical_ts):
+    pipeline = HierarchicalPipeline(
+        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
+    )
+    pipeline.fit(product_level_constant_hierarchical_ts)
+    pipeline.forecast(return_components=True)
+
+
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
+def test_raw_forecast_with_return_components(product_level_constant_hierarchical_ts):
+    pipeline = HierarchicalPipeline(
+        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
+    )
+    pipeline.fit(product_level_constant_hierarchical_ts)
+    pipeline.raw_forecast(return_components=True)

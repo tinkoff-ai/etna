@@ -145,7 +145,7 @@ def test_forecast_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline
     ensemble.fit(ts=example_tsds)
     ensemble._vote = MagicMock()
 
-    result = ensemble._forecast(ts=example_tsds)
+    result = ensemble._forecast(ts=example_tsds, return_components=False)
 
     ensemble._vote.assert_called_once()
     assert result == ensemble._vote.return_value
@@ -162,6 +162,7 @@ def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline,
         end_timestamp=example_tsds.index[30],
         prediction_interval=False,
         quantiles=(),
+        return_components=False,
     )
 
     ensemble._vote.assert_called_once()
@@ -214,3 +215,15 @@ def test_forecast_given_ts_with_prediction_interval(voting_ensemble_pipeline, ex
     assert_pipeline_forecasts_given_ts_with_prediction_intervals(
         pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
     )
+
+
+def test_forecast_with_return_components_fails(example_tsds, voting_ensemble_naive):
+    voting_ensemble_naive.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        voting_ensemble_naive.forecast(return_components=True)
+
+
+def test_predict_with_return_components_fails(example_tsds, voting_ensemble_naive):
+    voting_ensemble_naive.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        voting_ensemble_naive.predict(ts=example_tsds, return_components=True)

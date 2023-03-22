@@ -227,11 +227,14 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         result.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
         return result
 
-    def _forecast(self, ts: TSDataset) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions.
 
         Compute the combination of pipelines' forecasts using ``final_model``
         """
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
@@ -245,9 +248,12 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         end_timestamp: pd.Timestamp,
         prediction_interval: bool,
         quantiles: Sequence[float],
+        return_components: bool,
     ) -> TSDataset:
         if prediction_interval:
             raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
 
         predictions = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._predict_pipeline)(

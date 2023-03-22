@@ -73,6 +73,7 @@ class HierarchicalPipeline(Pipeline):
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.25, 0.75),
         n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make a forecast of the next points of a dataset on a source level.
 
@@ -88,15 +89,20 @@ class HierarchicalPipeline(Pipeline):
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         n_folds:
             Number of folds to use in the backtest for prediction interval estimation
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions at the source level
         """
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
         # handle `prediction_interval=True` separately
         source_ts = self.reconciliator.aggregate(ts=ts)
-        forecast = super().forecast(ts=source_ts, prediction_interval=False, n_folds=n_folds)
+        forecast = super().forecast(ts=source_ts, prediction_interval=False, n_folds=n_folds, return_components=return_components)
         if prediction_interval:
             forecast = self._forecast_prediction_interval(
                 ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
@@ -118,6 +124,7 @@ class HierarchicalPipeline(Pipeline):
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make a forecast of the next points of a dataset on a target level.
 
@@ -135,12 +142,17 @@ class HierarchicalPipeline(Pipeline):
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         n_folds:
             Number of folds to use in the backtest for prediction interval estimation
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions at the target level of hierarchy.
         """
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
         if ts is None:
             if self._fit_ts is None:
                 raise ValueError(
@@ -149,7 +161,7 @@ class HierarchicalPipeline(Pipeline):
             ts = self._fit_ts
 
         forecast = self.raw_forecast(
-            ts=ts, prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds
+            ts=ts, prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds, return_components=return_components
         )
         forecast_reconciled = self.reconciliator.reconcile(forecast)
         return forecast_reconciled
