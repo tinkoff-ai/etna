@@ -163,6 +163,7 @@ def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name
     (
         (["f1", "f2"], ["target_component_f1", "target_component_f2"]),
         (["f1"], ["target_component_f1"]),
+        (["f1", "f1"], ["target_component_f1", "target_component_f1"]),
         ([], []),
     ),
 )
@@ -179,7 +180,7 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
     components_method = getattr(model, components_method_name)
     components = components_method(df=pred_df)
 
-    assert set(components.columns) == set(expected_components)
+    assert sorted(components.columns) == sorted(expected_components)
 
 
 @pytest.mark.long_2
@@ -189,7 +190,7 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
 @pytest.mark.parametrize(
     "mle_regression,time_varying_regression,regressors",
     (
-        (True, False, ["f1", "f2"]),
+        (True, False, ["f1", "f1"]),
         (True, False, []),
         (False, True, ["f1", "f2"]),
         (False, False, ["f1", "f2"]),
