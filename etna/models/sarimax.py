@@ -343,6 +343,8 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         state = forecast_results.predicted_state[:, :-1]
 
         if model.mle_regression:
+            # If there are no exog variales `mle_regression` will be set to `False`
+            # even if user set to `True`.
             components = self._mle_regression_decomposition(
                 state=state, ssm=forecast_results.model, exog=exog_future.values  # type: ignore
             )
