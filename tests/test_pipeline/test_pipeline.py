@@ -1118,29 +1118,6 @@ def test_predict(model, transforms, example_tsds):
     assert len(result_df) == len(example_tsds.segments) * num_points
 
 
-@pytest.mark.parametrize(
-    "model_fixture",
-    (
-        "non_prediction_interval_context_ignorant_dummy_model",
-        "non_prediction_interval_context_required_dummy_model",
-        "prediction_interval_context_ignorant_dummy_model",
-        "prediction_interval_context_required_dummy_model",
-    ),
-)
-def test_predict_return_components(
-    example_tsds, model_fixture, request, expected_component_a=20, expected_component_b=180
-):
-    model = request.getfixturevalue(model_fixture)
-    pipeline = Pipeline(model=model)
-    pipeline.fit(example_tsds)
-    forecast = pipeline.predict(ts=example_tsds, return_components=True)
-    assert forecast.target_components_names is not None
-
-    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
-    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
-    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
-
-
 @pytest.mark.parametrize("load_ts", [True, False])
 @pytest.mark.parametrize(
     "model, transforms",
@@ -1206,3 +1183,25 @@ def test_forecast_given_ts_with_prediction_interval(model, transforms, example_t
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_predict_return_components(
+    example_tsds, model_fixture, request, expected_component_a=20, expected_component_b=180
+):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = Pipeline(model=model)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.predict(ts=example_tsds, return_components=True)
+    assert forecast.target_components_names is not None
+
+    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
+    assert (taregt_components_df["target_component_b"] == expected_component_b).all()

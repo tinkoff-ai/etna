@@ -462,4 +462,4 @@ def test_raw_forecast_with_return_components(product_level_constant_hierarchical
         reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
     )
     pipeline.fit(product_level_constant_hierarchical_ts)
-    pipeline.raw_forecast(return_components=True)
+    pipeline.raw_forecast(ts=product_level_constant_hierarchical_ts, return_components=True)
