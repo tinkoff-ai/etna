@@ -78,7 +78,9 @@ class Pipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, BasePipeline):
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
     ) -> TSDataset:
-        """Make predictions.
+        """Make a forecast of the next points of a dataset.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
 
         Parameters
         ----------
