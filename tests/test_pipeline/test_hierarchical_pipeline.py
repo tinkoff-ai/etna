@@ -23,6 +23,7 @@ from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 
 
 @pytest.mark.parametrize(
@@ -390,17 +391,56 @@ def test_forecast_given_ts(model, transforms, reconciliator, product_level_const
     because it is difficult to set it up for hierarchy.
     """
     horizon = 1
-    ts = product_level_constant_hierarchical_ts
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
 
-    subset_ts = deepcopy(ts)
-    subset_ts.df = subset_ts.df.iloc[:-horizon]
+    fit_ts = deepcopy(product_level_constant_hierarchical_ts)
+    fit_ts.df = fit_ts.df.iloc[:-horizon]
+    to_forecast_ts = deepcopy(product_level_constant_hierarchical_ts)
 
-    pipeline.fit(ts)
-    forecast_full = pipeline.forecast()
-    forecast_subset = pipeline.forecast(ts=subset_ts)
+    pipeline.fit(ts=fit_ts)
+    forecast_ts = pipeline.forecast(ts=to_forecast_ts)
+    forecast_df = forecast_ts.to_pandas(flatten=True)
 
-    expected_segments = forecast_full.segments
-    expected_index = forecast_full.index - pd.DateOffset(days=horizon)
-    assert forecast_subset.segments == expected_segments
-    pd.testing.assert_index_equal(forecast_subset.index, expected_index)
+    expected_segments = product_level_constant_hierarchical_ts.hierarchical_structure.get_level_segments(
+        reconciliator.target_level
+    )
+    assert forecast_ts.segments == expected_segments
+    expected_index = pd.date_range(
+        start=to_forecast_ts.index[-1], periods=horizon + 1, freq=to_forecast_ts.freq, name="timestamp"
+    )[1:]
+    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    assert not forecast_df["target"].isna().any()
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (NaiveModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(
+    model, transforms, reconciliator, product_level_constant_hierarchical_ts
+):
+    horizon = 1
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
+        pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon, n_folds=2
+    )

@@ -28,7 +28,8 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
-from tests.test_pipeline.utils import assert_pipeline_forecasts_with_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -320,4 +321,26 @@ def test_save_load(load_ts, model, transforms, example_tsds):
 def test_forecast_given_ts(model, transforms, example_tsds):
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_with_given_ts(pipeline=pipeline, ts=example_tsds, segments_to_check=["segment_2"])
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)

@@ -1,14 +1,12 @@
 import pathlib
 import tempfile
 from copy import deepcopy
-from typing import List
 from typing import Tuple
 
 import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.pipeline.base import AbstractPipeline
-from tests.utils import select_segments_subset
 
 
 def get_loaded_pipeline(pipeline: AbstractPipeline, ts: TSDataset = None) -> AbstractPipeline:
@@ -48,23 +46,53 @@ def assert_pipeline_equals_loaded_original(
     return pipeline, loaded_pipeline
 
 
-def assert_pipeline_forecasts_with_given_ts(
-    pipeline: AbstractPipeline, ts: TSDataset, segments_to_check: List[str]
+def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset, horizon: int) -> AbstractPipeline:
+    fit_ts = deepcopy(ts)
+    fit_ts.df = fit_ts.df.iloc[:-horizon]
+    to_forecast_ts = deepcopy(ts)
+
+    pipeline.fit(ts=fit_ts)
+    forecast_ts = pipeline.forecast(ts=to_forecast_ts)
+    forecast_df = forecast_ts.to_pandas(flatten=True)
+
+    if ts.has_hierarchy():
+        expected_segments = ts.hierarchical_structure.get_level_segments(forecast_ts.current_df_level)
+    else:
+        expected_segments = to_forecast_ts.segments
+    assert forecast_ts.segments == expected_segments
+    expected_index = pd.date_range(
+        start=to_forecast_ts.index[-1], periods=horizon + 1, freq=to_forecast_ts.freq, name="timestamp"
+    )[1:]
+    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    assert not forecast_df["target"].isna().any()
+
+    return pipeline
+
+
+def assert_pipeline_forecasts_given_ts_with_prediction_intervals(
+    pipeline: AbstractPipeline, ts: TSDataset, horizon: int, **forecast_params
 ) -> AbstractPipeline:
-    import torch  # TODO: remove after fix at issue-802
+    fit_ts = deepcopy(ts)
+    fit_ts.df = fit_ts.df.iloc[:-horizon]
+    to_forecast_ts = deepcopy(ts)
 
-    segments_to_check = list(set(segments_to_check))
-    ts_selected = select_segments_subset(ts=deepcopy(ts), segments=segments_to_check)
+    pipeline.fit(fit_ts)
+    forecast_ts = pipeline.forecast(
+        ts=to_forecast_ts, prediction_interval=True, quantiles=[0.025, 0.975], **forecast_params
+    )
+    forecast_df = forecast_ts.to_pandas(flatten=True)
 
-    pipeline.fit(ts)
-    torch.manual_seed(11)
-    forecast_ts_1 = pipeline.forecast()
-    forecast_df_1 = forecast_ts_1.to_pandas().loc[:, pd.IndexSlice[segments_to_check, :]]
-
-    torch.manual_seed(11)
-    forecast_ts_2 = pipeline.forecast(ts=ts_selected)
-    forecast_df_2 = forecast_ts_2.to_pandas()
-
-    pd.testing.assert_frame_equal(forecast_df_1, forecast_df_2)
+    if ts.has_hierarchy():
+        expected_segments = ts.hierarchical_structure.get_level_segments(forecast_ts.current_df_level)
+    else:
+        expected_segments = to_forecast_ts.segments
+    assert forecast_ts.segments == expected_segments
+    expected_index = pd.date_range(
+        start=to_forecast_ts.index[-1], periods=horizon + 1, freq=to_forecast_ts.freq, name="timestamp"
+    )[1:]
+    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    assert not forecast_df["target"].isna().any()
+    assert not forecast_df["target_0.025"].isna().any()
+    assert not forecast_df["target_0.975"].isna().any()
 
     return pipeline

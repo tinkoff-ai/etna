@@ -309,12 +309,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         with tslogger.disable():
             _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
-        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+        self._add_forecast_borders(ts=ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         return predictions
 
     def _add_forecast_borders(
-        self, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
+        self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
     ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
         if self.ts is None:
@@ -323,7 +323,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
         residuals = (
             backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
+            - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
         )
 
         sigma = np.std(residuals.values, axis=0)
