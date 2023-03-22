@@ -74,7 +74,9 @@ class HierarchicalPipeline(Pipeline):
         quantiles: Sequence[float] = (0.25, 0.75),
         n_folds: int = 3,
     ) -> TSDataset:
-        """Make a prediction for target at the source level of hierarchy.
+        """Make a forecast of the next points of a dataset on a source level.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
 
         Parameters
         ----------
@@ -117,7 +119,11 @@ class HierarchicalPipeline(Pipeline):
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
     ) -> TSDataset:
-        """Make a prediction for target at the source level of hierarchy and make reconciliation to target level.
+        """Make a forecast of the next points of a dataset on a target level.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
+
+        Method makes a prediction for target at the source level of hierarchy and then makes reconciliation to target level.
 
         Parameters
         ----------
