@@ -128,8 +128,6 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         In each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
         which covers this point.
         """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
         if return_components:
             raise NotImplementedError("Adding target components is not currently implemented!")
 
