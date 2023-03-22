@@ -522,6 +522,10 @@ class SARIMAXModel(
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for SARIMAX model are: exogenous and SARIMA components.
+    Decomposition is obtained directly from fitted model parameters.
     """
 
     def __init__(

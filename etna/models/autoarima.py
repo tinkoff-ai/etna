@@ -63,6 +63,10 @@ class AutoARIMAModel(
     Notes
     -----
     We use :py:class:`pmdarima.arima.arima.ARIMA`.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for AutoARIMA model are: exogenous and ARIMA components.
+    Decomposition is obtained directly from fitted model parameters.
     """
 
     def __init__(
