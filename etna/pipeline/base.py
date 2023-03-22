@@ -144,7 +144,7 @@ class AbstractPipeline(AbstractSaveable):
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
-        return_components: bool = False
+        return_components: bool = False,
     ) -> TSDataset:
         """Make a forecast of the next points of a dataset.
 

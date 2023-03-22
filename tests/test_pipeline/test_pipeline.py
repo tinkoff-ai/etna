@@ -1184,6 +1184,7 @@ def test_forecast_given_ts_with_prediction_interval(model, transforms, example_t
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
 
+
 @pytest.mark.parametrize(
     "model_fixture",
     (

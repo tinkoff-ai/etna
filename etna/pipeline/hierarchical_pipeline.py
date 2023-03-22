@@ -102,7 +102,9 @@ class HierarchicalPipeline(Pipeline):
 
         # handle `prediction_interval=True` separately
         source_ts = self.reconciliator.aggregate(ts=ts)
-        forecast = super().forecast(ts=source_ts, prediction_interval=False, n_folds=n_folds, return_components=return_components)
+        forecast = super().forecast(
+            ts=source_ts, prediction_interval=False, n_folds=n_folds, return_components=return_components
+        )
         if prediction_interval:
             forecast = self._forecast_prediction_interval(
                 ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
@@ -161,7 +163,11 @@ class HierarchicalPipeline(Pipeline):
             ts = self._fit_ts
 
         forecast = self.raw_forecast(
-            ts=ts, prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds, return_components=return_components
+            ts=ts,
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+            n_folds=n_folds,
+            return_components=return_components,
         )
         forecast_reconciled = self.reconciliator.reconcile(forecast)
         return forecast_reconciled
