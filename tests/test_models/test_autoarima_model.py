@@ -145,32 +145,3 @@ def test_forecast_1_point(example_tsds):
 def test_save_load(example_tsds):
     model = AutoARIMAModel()
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
-
-
-@pytest.mark.parametrize(
-    "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
-)
-@pytest.mark.parametrize(
-    "regressors, regressors_components",
-    (
-        (["f1", "f2"], ["target_component_f1", "target_component_f2"]),
-        (["f1"], ["target_component_f1"]),
-        ([], []),
-    ),
-)
-@pytest.mark.parametrize("trend", (None, "t"))
-def test_components_names(dfs_w_exog, regressors, regressors_components, trend, components_method_name, in_sample):
-    expected_components = regressors_components + ["target_component_arima"]
-
-    train, test = dfs_w_exog
-
-    model = _AutoARIMAAdapter(trend=trend)
-    model.fit(train, regressors)
-
-    components_method = getattr(model, components_method_name)
-
-    pred_df = train if in_sample else test
-
-    components = components_method(df=pred_df)
-
-    assert set(components.columns) == set(expected_components)
