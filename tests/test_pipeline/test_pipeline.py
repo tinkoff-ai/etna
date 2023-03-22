@@ -99,6 +99,29 @@ def test_forecast_without_intervals_calls_private_forecast(private_forecast, exa
 
 
 @pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_forecast_return_components(
+    example_tsds, model_fixture, request, expected_component_a=10, expected_component_b=90
+):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = Pipeline(model=model)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.forecast(return_components=True)
+    assert forecast.target_components_names is not None
+
+    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
+    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
+
+
+@pytest.mark.parametrize(
     "model_class", [NonPredictionIntervalContextIgnorantAbstractModel, PredictionIntervalContextIgnorantAbstractModel]
 )
 def test_private_forecast_context_ignorant_model(model_class):
@@ -107,10 +130,10 @@ def test_private_forecast_context_ignorant_model(model_class):
 
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
-    _ = pipeline._forecast()
+    _ = pipeline._forecast(return_components=False)
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
-    model.forecast.assert_called_with(ts=ts.make_future())
+    model.forecast.assert_called_with(ts=ts.make_future(), return_components=False)
 
 
 @pytest.mark.parametrize(
@@ -122,10 +145,10 @@ def test_private_forecast_context_required_model(model_class):
 
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
-    _ = pipeline._forecast()
+    _ = pipeline._forecast(return_components=False)
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
-    model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon)
+    model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon, return_components=False)
 
 
 def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
@@ -137,7 +160,9 @@ def test_forecast_with_intervals_prediction_interval_context_ignorant_model():
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
-    model.forecast.assert_called_with(ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975))
+    model.forecast.assert_called_with(
+        ts=ts.make_future(), prediction_interval=True, quantiles=(0.025, 0.975), return_components=False
+    )
 
 
 def test_forecast_with_intervals_prediction_interval_context_required_model():
@@ -150,7 +175,11 @@ def test_forecast_with_intervals_prediction_interval_context_required_model():
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
     model.forecast.assert_called_with(
-        ts=ts.make_future(), prediction_size=pipeline.horizon, prediction_interval=True, quantiles=(0.025, 0.975)
+        ts=ts.make_future(),
+        prediction_size=pipeline.horizon,
+        prediction_interval=True,
+        quantiles=(0.025, 0.975),
+        return_components=False,
     )
 
 
@@ -166,10 +195,11 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
-    base_forecast.assert_called_with(prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3)
+    base_forecast.assert_called_with(
+        prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3, return_components=False
+    )
 
 
-@pytest.mark.xfail(reason="TSDataset 2.0")
 def test_forecast(example_tsds):
     """Test that the forecast from the Pipeline is correct."""
     original_ts = deepcopy(example_tsds)
@@ -217,7 +247,7 @@ def test_forecast_prediction_interval_builtin(example_tsds, model):
     np.random.seed(1234)
     model = model.fit(example_tsds)
     future = example_tsds.make_future(5)
-    forecast_model = model.forecast(ts=future, prediction_interval=True)
+    forecast_model = model.forecast(ts=future, prediction_interval=True, return_components=False)
 
     assert forecast_model.df.equals(forecast_pipeline.df)
 
@@ -724,6 +754,29 @@ def test_predict(model, transforms, example_tsds):
 
     assert not np.any(result_df["target"].isna())
     assert len(result_df) == len(example_tsds.segments) * num_points
+
+
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_predict_return_components(
+    example_tsds, model_fixture, request, expected_component_a=20, expected_component_b=180
+):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = Pipeline(model=model)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.predict(ts=example_tsds, return_components=True)
+    assert forecast.target_components_names is not None
+
+    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
+    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
 
 
 @pytest.mark.parametrize(

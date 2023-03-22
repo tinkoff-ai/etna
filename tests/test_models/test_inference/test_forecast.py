@@ -35,7 +35,7 @@ from etna.transforms import LagTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
-from tests.test_models.test_inference.common import to_be_fixed
+from tests.utils import to_be_fixed
 
 
 def make_forecast(model, ts, prediction_size) -> TSDataset:
