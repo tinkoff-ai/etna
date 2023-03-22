@@ -68,7 +68,11 @@ class HierarchicalPipeline(Pipeline):
         return self
 
     def raw_forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.25, 0.75), n_folds: int = 3
+        self,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.25, 0.75),
+        n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make a prediction for target at the source level of hierarchy.
 
@@ -80,13 +84,22 @@ class HierarchicalPipeline(Pipeline):
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         n_folds:
             Number of folds to use in the backtest for prediction interval estimation
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions at the source level
         """
-        forecast = super().forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+        forecast = super().forecast(
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+            n_folds=n_folds,
+            return_components=return_components,
+        )
         target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
 
         hierarchical_forecast = TSDataset(
@@ -99,7 +112,11 @@ class HierarchicalPipeline(Pipeline):
         return hierarchical_forecast
 
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make a prediction for target at the source level of hierarchy and make reconciliation to target level.
 
@@ -111,13 +128,22 @@ class HierarchicalPipeline(Pipeline):
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         n_folds:
             Number of folds to use in the backtest for prediction interval estimation
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions at the target level of hierarchy.
         """
-        forecast = self.raw_forecast(prediction_interval=prediction_interval, quantiles=quantiles, n_folds=n_folds)
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+        forecast = self.raw_forecast(
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+            n_folds=n_folds,
+            return_components=return_components,
+        )
         forecast_reconciled = self.reconciliator.reconcile(forecast)
         return forecast_reconciled
 

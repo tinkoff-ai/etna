@@ -130,7 +130,11 @@ class AbstractPipeline(AbstractSaveable):
 
     @abstractmethod
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -142,6 +146,8 @@ class AbstractPipeline(AbstractSaveable):
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         n_folds:
             Number of folds to use in the backtest for prediction interval estimation
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -158,6 +164,7 @@ class AbstractPipeline(AbstractSaveable):
         end_timestamp: Optional[pd.Timestamp] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make in-sample predictions on dataset in a given range.
 
@@ -179,6 +186,8 @@ class AbstractPipeline(AbstractSaveable):
             If True returns prediction interval for forecast.
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -258,7 +267,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return quantiles
 
     @abstractmethod
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, return_components: bool) -> TSDataset:
         """Make predictions."""
         pass
 
@@ -299,7 +308,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
 
     def forecast(
-        self, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975), n_folds: int = 3
+        self,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        n_folds: int = 3,
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -311,11 +324,18 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
         n_folds:
             Number of folds to use in the backtest for prediction interval estimation
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         :
             Dataset with predictions
+
+        Raises
+        ------
+        NotImplementedError:
+            Adding target components is not currently implemented
         """
         if self.ts is None:
             raise ValueError(
@@ -325,7 +345,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        predictions = self._forecast()
+        predictions = self._forecast(return_components=return_components)
         if prediction_interval:
             predictions = self._forecast_prediction_interval(
                 predictions=predictions, quantiles=quantiles, n_folds=n_folds
@@ -356,6 +376,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         return start_timestamp, end_timestamp
 
+    @abstractmethod
     def _predict(
         self,
         ts: TSDataset,
@@ -363,8 +384,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         end_timestamp: Optional[pd.Timestamp],
         prediction_interval: bool,
         quantiles: Sequence[float],
+        return_components: bool,
     ) -> TSDataset:
-        raise NotImplementedError("Predict method isn't implemented!")
+        pass
 
     def predict(
         self,
@@ -373,6 +395,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         end_timestamp: Optional[pd.Timestamp] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make in-sample predictions on dataset in a given range.
 
@@ -394,6 +417,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             If True returns prediction interval for forecast.
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval.
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
@@ -408,6 +433,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             Value of ``start_timestamp`` goes before point where each segment started.
         ValueError:
             Value of ``end_timestamp`` goes after the last timestamp.
+        NotImplementedError:
+            Adding target components is not currently implemented
         """
         start_timestamp, end_timestamp = self._make_predict_timestamps(
             ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
@@ -419,6 +446,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             end_timestamp=end_timestamp,
             prediction_interval=prediction_interval,
             quantiles=quantiles,
+            return_components=return_components,
         )
         return result
 
