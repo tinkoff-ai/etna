@@ -252,7 +252,7 @@ def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensembl
     naive_ensemble.fit(ts=example_tsds)
     naive_ensemble._process_forecasts = MagicMock()
 
-    result = naive_ensemble._forecast()
+    result = naive_ensemble._forecast(return_components=False)
 
     naive_ensemble._process_forecasts.assert_called_once()
     assert result == naive_ensemble._process_forecasts.return_value
@@ -268,6 +268,7 @@ def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble
         end_timestamp=example_tsds.index[30],
         prediction_interval=False,
         quantiles=(),
+        return_components=False,
     )
 
     naive_ensemble._process_forecasts.assert_called_once()
@@ -322,3 +323,15 @@ def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
 
 def test_save_load(stacking_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecast_with_return_components_fails(example_tsds, naive_ensemble):
+    naive_ensemble.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        naive_ensemble.forecast(return_components=True)
+
+
+def test_predict_with_return_components_fails(example_tsds, naive_ensemble):
+    naive_ensemble.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        naive_ensemble.predict(ts=example_tsds, return_components=True)

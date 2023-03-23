@@ -62,6 +62,7 @@ class ModelPipelinePredictMixin:
         end_timestamp: pd.Timestamp,
         prediction_interval: bool,
         quantiles: Sequence[float],
+        return_components: bool = False,
     ) -> TSDataset:
         predict_ts = self._create_ts(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
         prediction_size = self._determine_prediction_size(
@@ -72,17 +73,25 @@ class ModelPipelinePredictMixin:
             raise NotImplementedError(f"Model {self.model.__class__.__name__} doesn't support prediction intervals!")
 
         if isinstance(self.model, NonPredictionIntervalContextIgnorantAbstractModel):
-            results = self.model.predict(ts=predict_ts)
+            results = self.model.predict(ts=predict_ts, return_components=return_components)
         elif isinstance(self.model, NonPredictionIntervalContextRequiredAbstractModel):
-            results = self.model.predict(ts=predict_ts, prediction_size=prediction_size)
+            results = self.model.predict(
+                ts=predict_ts, prediction_size=prediction_size, return_components=return_components
+            )
         elif isinstance(self.model, PredictionIntervalContextIgnorantAbstractModel):
-            results = self.model.predict(ts=predict_ts, prediction_interval=prediction_interval, quantiles=quantiles)
+            results = self.model.predict(
+                ts=predict_ts,
+                prediction_interval=prediction_interval,
+                quantiles=quantiles,
+                return_components=return_components,
+            )
         elif isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
             results = self.model.predict(
                 ts=predict_ts,
                 prediction_size=prediction_size,
                 prediction_interval=prediction_interval,
                 quantiles=quantiles,
+                return_components=return_components,
             )
         else:
             raise NotImplementedError(f"Unknown model type: {self.model.__class__.__name__}!")

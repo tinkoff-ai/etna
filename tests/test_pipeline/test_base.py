@@ -51,7 +51,10 @@ class DummyPipeline(BasePipeline):
         self.ts = ts
         return self
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, return_components: bool) -> TSDataset:
+        return self.ts
+
+    def _predict(self, return_components: bool) -> TSDataset:
         return self.ts
 
     def save(self, path: pathlib.Path):
@@ -118,4 +121,5 @@ def test_predict_calls_private_predict(prediction_interval, quantiles, example_t
         end_timestamp=end_timestamp,
         prediction_interval=prediction_interval,
         quantiles=quantiles,
+        return_components=False,
     )

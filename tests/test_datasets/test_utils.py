@@ -8,6 +8,7 @@ from etna.datasets import generate_ar_df
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import get_target_with_quantiles
+from etna.datasets.utils import inverse_transform_target_components
 from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
 
@@ -263,3 +264,68 @@ def test_get_level_dataframe_segm_errors(
 def test_match_target_components(features, answer):
     components = match_target_components(features)
     assert components == answer
+
+
+@pytest.fixture
+def target_components_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-05")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 1, "target_component_b": 2, "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target_component_a": 3, "target_component_b": 4, "segment": 2})
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def inverse_transformed_components_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-05")
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": [1 * (i + 10) / i for i in range(1, 6)],
+            "target_component_b": [2 * (i + 10) / i for i in range(1, 6)],
+            "segment": 1,
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": [3 * (i + 10) / i for i in range(6, 11)],
+            "target_component_b": [4 * (i + 10) / i for i in range(6, 11)],
+            "segment": 2,
+        }
+    )
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def target_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-05")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": range(1, 6), "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": range(6, 11), "segment": 2})
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def inverse_transformed_target_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-05")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": range(11, 16), "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": range(16, 21), "segment": 2})
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+def test_inverse_transform_target_components(
+    target_components_df, target_df, inverse_transformed_target_df, inverse_transformed_components_df
+):
+    obtained_inverse_transformed_components_df = inverse_transform_target_components(
+        target_components_df=target_components_df,
+        target_df=target_df,
+        inverse_transformed_target_df=inverse_transformed_target_df,
+    )
+    pd.testing.assert_frame_equal(obtained_inverse_transformed_components_df, inverse_transformed_components_df)

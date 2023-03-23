@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Target components logic into base classes of pipelines ([#1173](https://github.com/tinkoff-ai/etna/pull/1173))
 - Method `predict_components` for forecast decomposition in `_SklearnAdapter` and `_LinearAdapter` for linear models ([#1164](https://github.com/tinkoff-ai/etna/pull/1164))
 - Target components logic into base classes of models ([#1158](https://github.com/tinkoff-ai/etna/pull/1158))
 - Target components logic to TSDataset ([#1153](https://github.com/tinkoff-ai/etna/pull/1153))

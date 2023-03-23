@@ -24,6 +24,7 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import get_target_with_quantiles
+from etna.datasets.utils import inverse_transform_target_components
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -163,7 +164,7 @@ class TSDataset:
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(self.df)
 
-        self._target_components: Optional[List[str]] = None
+        self._target_components_names: Optional[List[str]] = None
 
         self.df = self.df.sort_index(axis=1, level=("segment", "feature"))
 
@@ -333,7 +334,7 @@ class TSDataset:
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
         tsdataset_slice.df_exog = self.df_exog
-        tsdataset_slice._target_components = self._target_components
+        tsdataset_slice._target_components_names = self._target_components_names
         return tsdataset_slice
 
     @staticmethod
@@ -412,15 +413,40 @@ class TSDataset:
             else:
                 raise ValueError("All segments should end at the same timestamp")
 
+    def _inverse_transform_target_components(self, target_components_df: pd.DataFrame, target_df: pd.DataFrame):
+        """Inverse transform target components in dataset with inverse transformed target."""
+        self.drop_target_components()
+        inverse_transformed_target_components_df = inverse_transform_target_components(
+            target_components_df=target_components_df,
+            target_df=target_df,
+            inverse_transformed_target_df=self.to_pandas(features=["target"]),
+        )
+        self.add_target_components(target_components_df=inverse_transformed_target_components_df)
+
     def inverse_transform(self, transforms: Sequence["Transform"]):
         """Apply inverse transform method of transforms to the data.
 
         Applied in reversed order.
         """
         # TODO: return regressors after inverse_transform
-        for transform in reversed(transforms):
-            tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
-            transform.inverse_transform(self)
+        # Logic with target components is here for performance reasons.
+        # This way we avoid doing the inverse transformation for components several times.
+        target_components_present = self.target_components_names is not None
+        target_df, target_components_df = None, None
+        if target_components_present:
+            target_df = self.to_pandas(features=["target"])
+            target_components_df = self.get_target_components()
+            self.drop_target_components()
+
+        try:
+            for transform in reversed(transforms):
+                tslogger.log(f"Inverse transform {repr(transform)} is applied to dataset")
+                transform.inverse_transform(self)
+        finally:
+            if target_components_present:
+                self._inverse_transform_target_components(
+                    target_components_df=target_components_df, target_df=target_df
+                )
 
     @property
     def segments(self) -> List[str]:
@@ -470,9 +496,9 @@ class TSDataset:
         return self._regressors
 
     @property
-    def target_components(self) -> Optional[List[str]]:
-        """Get list of target components. Components sum up to target. If there are no components, None is returned."""
-        return self._target_components
+    def target_components_names(self) -> Optional[List[str]]:
+        """Get list of target components names. Components sum up to target. If there are no components, None is returned."""
+        return self._target_components_names
 
     def plot(
         self,
@@ -945,7 +971,7 @@ class TSDataset:
         )
         train.raw_df = train_raw_df
         train._regressors = self.regressors
-        train._target_components = self.target_components
+        train._target_components_names = self.target_components_names
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
@@ -958,7 +984,7 @@ class TSDataset:
         )
         test.raw_df = test_raw_df
         test._regressors = self.regressors
-        test._target_components = self.target_components
+        test._target_components_names = self.target_components_names
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
@@ -1020,11 +1046,13 @@ class TSDataset:
         ValueError:
             If ``features`` list contains target components
         """
-        features_contain_target_components = (self.target_components is not None) and (
-            len(set(features).intersection(self.target_components)) != 0
+        features_contain_target_components = (self.target_components_names is not None) and (
+            len(set(features).intersection(self.target_components_names)) != 0
         )
         if features_contain_target_components:
-            raise ValueError("Target components can't be dropped from the dataset!")
+            raise ValueError(
+                "Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!"
+            )
 
         dfs = [("df", self.df)]
         if drop_from_exog:
@@ -1086,8 +1114,8 @@ class TSDataset:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
         target_names = tuple(get_target_with_quantiles(columns=self.columns))
-        if self.target_components is not None:
-            target_names += tuple(set(self.target_components))
+        if self.target_components_names is not None:
+            target_names += tuple(set(self.target_components_names))
 
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
@@ -1105,9 +1133,9 @@ class TSDataset:
             target_level_df = self.to_pandas(features=target_names)
 
         target_components_df = None
-        if self.target_components is not None:
-            target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components]]
-            target_level_df = target_level_df.drop(columns=self.target_components, level="feature")
+        if self.target_components_names is not None:
+            target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components_names]]
+            target_level_df = target_level_df.drop(columns=self.target_components_names, level="feature")
 
         ts = TSDataset(
             df=target_level_df,
@@ -1117,7 +1145,7 @@ class TSDataset:
             hierarchical_structure=self.hierarchical_structure,
         )
 
-        if self.target_components is not None:
+        if self.target_components_names is not None:
             ts.add_target_components(target_components_df=target_components_df)
         return ts
 
@@ -1138,7 +1166,7 @@ class TSDataset:
         ValueError:
             If components don't sum up to target
         """
-        if self._target_components is not None:
+        if self._target_components_names is not None:
             raise ValueError("Dataset already contains target components!")
 
         components_names = sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
@@ -1153,7 +1181,7 @@ class TSDataset:
         if not np.array_equal(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
-        self._target_components = components_names
+        self._target_components_names = components_names
         self.df = (
             pd.concat((self.df, target_components_df), axis=1)
             .loc[self.df.index]
@@ -1168,9 +1196,15 @@ class TSDataset:
         :
             Dataframe with target components
         """
-        if self._target_components is None:
+        if self._target_components_names is None:
             return None
-        return self.to_pandas(features=self._target_components)
+        return self.to_pandas(features=self._target_components_names)
+
+    def drop_target_components(self):
+        """Drop target components from dataset."""
+        if self._target_components_names is not None:
+            self.df.drop(columns=self.target_components_names, level="feature", inplace=True)
+            self._target_components_names = None
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:

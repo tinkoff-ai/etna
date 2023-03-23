@@ -1,23 +1,8 @@
-import functools
-
 import numpy as np
-import pytest
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
 from etna.models import ContextRequiredModelType
-
-
-def to_be_fixed(raises, match=None):
-    def to_be_fixed_concrete(func):
-        @functools.wraps(func)
-        def wrapped_test(*args, **kwargs):
-            with pytest.raises(raises, match=match):
-                return func(*args, **kwargs)
-
-        return wrapped_test
-
-    return to_be_fixed_concrete
 
 
 def make_prediction(model, ts, prediction_size, method_name) -> TSDataset:
