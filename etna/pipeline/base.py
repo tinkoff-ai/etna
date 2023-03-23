@@ -325,10 +325,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
     ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
-        if self.ts is None:
-            raise ValueError("Pipeline is not fitted!")
-
-        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
+        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=ts.freq)
         residuals = (
             backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
             - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]

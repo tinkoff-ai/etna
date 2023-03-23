@@ -1,5 +1,4 @@
 import pathlib
-from copy import deepcopy
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -23,7 +22,8 @@ from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
-from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals, assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.utils import to_be_fixed
 
 
