@@ -41,10 +41,10 @@ class EnsembleMixin:
         return pipeline
 
     @staticmethod
-    def _forecast_pipeline(pipeline: BasePipeline) -> TSDataset:
+    def _forecast_pipeline(pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
         """Make forecast with given pipeline."""
         tslogger.log(msg=f"Start forecasting with {pipeline}.")
-        forecast = pipeline.forecast()
+        forecast = pipeline.forecast(ts=ts)
         tslogger.log(msg=f"Forecast is done with {pipeline}.")
         return forecast
 

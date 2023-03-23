@@ -278,3 +278,335 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
         df_multi = transformed_df.loc[:, pd.IndexSlice[segments, column_multi]]
         df_single = transformed_dfs_one_column[i].loc[:, pd.IndexSlice[segments, column_single]]
         assert np.all(df_multi == df_single)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "macro",
+        "per-segment",
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_transform_not_fitted_fail(transform_constructor, mode, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
+
+    with pytest.raises(ValueError, match="The transform isn't fitted"):
+        _ = transform.transform(df)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "macro",
+        "per-segment",
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_inverse_transform_not_fitted_fail(transform_constructor, mode, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
+
+    with pytest.raises(ValueError, match="The transform isn't fitted"):
+        _ = transform.inverse_transform(df)
+
+
+def _check_same_segments(df_1: pd.DataFrame, df_2: pd.DataFrame):
+    df_1_segments = set(df_1.columns.get_level_values("segment"))
+    df_2_segments = set(df_2.columns.get_level_values("segment"))
+    assert df_1_segments == df_2_segments
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "macro",
+        "per-segment",
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_transform_subset_segments(transform_constructor, mode, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df
+    test_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_2"], :]]
+    transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    transformed_df = transform.transform(test_df)
+
+    _check_same_segments(transformed_df, test_df)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "macro",
+        "per-segment",
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_inverse_transform_subset_segments(transform_constructor, mode, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df
+    test_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_2"], :]]
+    transform = transform_constructor(mode=mode, in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    inv_transformed_df = transform.inverse_transform(test_df)
+
+    _check_same_segments(inv_transformed_df, test_df)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_transform_new_segments_macro(transform_constructor, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
+    test_df = df.loc[:, pd.IndexSlice["segment_2", :]]
+    transform = transform_constructor(mode="macro", in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    transformed_df = transform.transform(test_df)
+
+    _check_same_segments(transformed_df, test_df)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_transform_new_segments_per_segment_fail(transform_constructor, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
+    test_df = df.loc[:, pd.IndexSlice["segment_2", :]]
+    transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.transform(test_df)
+
+
+@pytest.mark.parametrize("inplace", [False, True])
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_inverse_transform_new_segments_macro(transform_constructor, in_column, inplace, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
+    test_df = df.loc[:, pd.IndexSlice["segment_2", :]]
+    transform = transform_constructor(mode="macro", in_column=in_column, inplace=inplace)
+
+    transform.fit(train_df)
+    transformed_df = transform.inverse_transform(test_df)
+
+    _check_same_segments(transformed_df, test_df)
+
+
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_inverse_transform_new_segments_per_segment_non_inplace(transform_constructor, in_column, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
+    test_df = df.loc[:, pd.IndexSlice["segment_2", :]]
+    transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=False)
+
+    transform.fit(train_df)
+    inv_transformed_df = transform.inverse_transform(test_df)
+
+    pd.testing.assert_frame_equal(inv_transformed_df, test_df)
+
+
+@pytest.mark.parametrize(
+    "in_column",
+    [
+        "exog_1",
+        ["exog_1", "exog_2"],
+    ],
+)
+@pytest.mark.parametrize(
+    "transform_constructor",
+    [
+        BoxCoxTransform,
+        YeoJohnsonTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+        MaxAbsScalerTransform,
+        StandardScalerTransform,
+        RobustScalerTransform,
+        MinMaxScalerTransform,
+    ],
+)
+def test_inverse_transform_new_segments_per_segment_inplace_fail(transform_constructor, in_column, multicolumn_ts):
+    df = multicolumn_ts.to_pandas()
+    train_df = df.loc[:, pd.IndexSlice[["segment_0", "segment_1"], :]]
+    test_df = df.loc[:, pd.IndexSlice["segment_2", :]]
+    transform = transform_constructor(mode="per-segment", in_column=in_column, inplace=True)
+
+    transform.fit(train_df)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.inverse_transform(test_df)

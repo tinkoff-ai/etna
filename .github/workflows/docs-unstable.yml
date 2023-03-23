@@ -17,6 +17,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
       - name: Load cached venv

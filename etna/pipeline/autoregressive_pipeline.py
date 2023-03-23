@@ -96,34 +96,28 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         self.ts.inverse_transform()
         return self
 
-    def _create_predictions_template(self) -> pd.DataFrame:
+    def _create_predictions_template(self, ts: TSDataset) -> pd.DataFrame:
         """Create dataframe to fill with forecasts."""
-        if self.ts is None:
-            raise ValueError(
-                "AutoRegressivePipeline is not fitted! Fit the AutoRegressivePipeline before calling forecast method."
-            )
-        prediction_df = self.ts[:, :, "target"]
+        prediction_df = ts[:, :, "target"]
         future_dates = pd.date_range(
-            start=prediction_df.index.max(), periods=self.horizon + 1, freq=self.ts.freq, closed="right"
+            start=prediction_df.index.max(), periods=self.horizon + 1, freq=ts.freq, closed="right"
         )
         prediction_df = prediction_df.reindex(prediction_df.index.append(future_dates))
         prediction_df.index.name = "timestamp"
         return prediction_df
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, ts: TSDataset) -> TSDataset:
         """Make predictions."""
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
-        prediction_df = self._create_predictions_template()
+        prediction_df = self._create_predictions_template(ts)
 
         for idx_start in range(0, self.horizon, self.step):
             current_step = min(self.step, self.horizon - idx_start)
-            current_idx_border = self.ts.index.shape[0] + idx_start
+            current_idx_border = ts.index.shape[0] + idx_start
             current_ts = TSDataset(
                 df=prediction_df.iloc[:current_idx_border],
-                freq=self.ts.freq,
-                df_exog=self.ts.df_exog,
-                known_future=self.ts.known_future,
+                freq=ts.freq,
+                df_exog=ts.df_exog,
+                known_future=ts.known_future,
             )
             # manually set transforms in current_ts, otherwise make_future won't know about them
             current_ts.transforms = self.transforms
@@ -152,9 +146,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features
-        prediction_ts = TSDataset(
-            df=prediction_df, freq=self.ts.freq, df_exog=self.ts.df_exog, known_future=self.ts.known_future
-        )
+        prediction_ts = TSDataset(df=prediction_df, freq=ts.freq, df_exog=ts.df_exog, known_future=ts.known_future)
         prediction_ts.transform(self.transforms)
         prediction_ts.inverse_transform()
         # cut only last timestamps from result dataset

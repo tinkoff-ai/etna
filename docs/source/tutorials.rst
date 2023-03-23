@@ -17,3 +17,4 @@ Tutorials
    tutorials/NN_examples
    tutorials/classification
    tutorials/hierarchical_pipeline
+   tutorials/inference
