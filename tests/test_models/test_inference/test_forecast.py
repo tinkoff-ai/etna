@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from pandas.util.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
+from pytorch_forecasting.data import NaNLabelEncoder
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
@@ -28,6 +29,7 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import MLPModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
@@ -35,6 +37,7 @@ from etna.transforms import LagTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
+from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
 
@@ -43,7 +46,7 @@ def make_forecast(model, ts, prediction_size) -> TSDataset:
 
 
 class TestForecastInSampleFullNoTarget:
-    """Test forecast on full train dataset with filling target with NaNs.
+    """Test forecast on full train dataset where target is filled with NaNs.
 
     Expected that NaNs are filled after prediction.
     """
@@ -83,16 +86,6 @@ class TestForecastInSampleFullNoTarget:
     def test_forecast_in_sample_full_no_target(self, model, transforms, example_tsds):
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
-    @to_be_fixed(raises=AssertionError)
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-        ],
-    )
-    def test_forecast_in_sample_full_no_target_failed(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
-
     @pytest.mark.parametrize(
         "model, transforms",
         [
@@ -102,8 +95,21 @@ class TestForecastInSampleFullNoTarget:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_nans_lags(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_no_target_failed_nans_nn(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="There are NaNs in features"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @pytest.mark.parametrize(
@@ -113,6 +119,7 @@ class TestForecastInSampleFullNoTarget:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -164,7 +171,7 @@ class TestForecastInSampleFullNoTarget:
 class TestForecastInSampleFull:
     """Test forecast on full train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @pytest.mark.parametrize(
@@ -178,7 +185,6 @@ class TestForecastInSampleFull:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full(self, model, transforms, example_tsds):
@@ -193,8 +199,21 @@ class TestForecastInSampleFull:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
         ],
     )
-    def test_forecast_in_sample_full_failed_nans_lags(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_failed_nans_sklearn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_failed_nans_nn(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="There are NaNs in features"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(
@@ -204,6 +223,7 @@ class TestForecastInSampleFull:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -253,7 +273,7 @@ class TestForecastInSampleFull:
 
 
 class TestForecastInSampleSuffixNoTarget:
-    """Test forecast on suffix of train dataset with filling target with NaNs.
+    """Test forecast on suffix of train dataset where target is filled with NaNs.
 
     Expected that NaNs are filled after prediction.
     """
@@ -298,6 +318,10 @@ class TestForecastInSampleSuffixNoTarget:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
@@ -350,7 +374,7 @@ class TestForecastInSampleSuffixNoTarget:
 class TestForecastInSampleSuffix:
     """Test forecast on suffix of train dataset.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @pytest.mark.parametrize(
@@ -373,6 +397,10 @@ class TestForecastInSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[2, 3])],
+            ),
         ],
     )
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
@@ -480,6 +508,10 @@ class TestForecastOutSamplePrefix:
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
@@ -556,7 +588,7 @@ class TestForecastOutSampleSuffix:
             # firstly we should forecast prefix to use it as a context
             forecast_prefix_ts = deepcopy(forecast_gap_ts)
             forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-suffix_prediction_size]
-            model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
+            forecast_prefix_ts = model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
             forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
 
             # forecast suffix with known context for it
@@ -591,20 +623,28 @@ class TestForecastOutSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
-    @to_be_fixed(raises=AssertionError)
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
-    def test_forecast_out_sample_suffix_failed(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+    def test_forecast_out_sample_suffix_failed_rnn(self, model, transforms, example_tsds):
+        """This test is expected to fail due to autoregression in RNN.
+
+        More about it in issue: https://github.com/tinkoff-ai/etna/issues/1087
+        """
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
     # it even can't reach NotImplementedError
     @to_be_fixed(
@@ -653,7 +693,7 @@ class TestForecastOutSampleSuffix:
 class TestForecastMixedInOutSample:
     """Test forecast on mixture of in-sample and out-sample.
 
-    Expected that target values are filled after prediction.
+    Expected that there are no NaNs after prediction and targets are changed compared to original.
     """
 
     @staticmethod
@@ -676,6 +716,8 @@ class TestForecastMixedInOutSample:
         # checking
         forecast_full_df = forecast_full_ts.to_pandas(flatten=True)
         assert not np.any(forecast_full_df["target"].isna())
+        original_target = TSDataset.to_flatten(df_full.iloc[(num_skip_points - model.context_size) :])["target"]
+        assert not forecast_full_df["target"].equals(original_target)
 
     @pytest.mark.parametrize(
         "model, transforms",
@@ -697,6 +739,10 @@ class TestForecastMixedInOutSample:
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
@@ -742,3 +788,217 @@ class TestForecastMixedInOutSample:
     )
     def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
         self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+
+
+class TestForecastSubsetSegments:
+    """Test forecast on subset of segments.
+
+    Expected that predictions on subset of segments match subset of predictions on full dataset.
+    """
+
+    def _test_forecast_subset_segments(self, ts, model, transforms, segments, prediction_size=5):
+        # select subset of tsdataset
+        segments = list(set(segments))
+        subset_ts = select_segments_subset(ts=deepcopy(ts), segments=segments)
+
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting full
+        import torch  # TODO: remove after fix at issue-802
+
+        torch.manual_seed(11)
+
+        forecast_full_ts = ts.make_future(
+            future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
+        )
+        forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=prediction_size)
+
+        # forecasting subset of segments
+        torch.manual_seed(11)  # TODO: remove after fix at issue-802
+
+        forecast_subset_ts = subset_ts.make_future(
+            future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
+        )
+        forecast_subset_ts = make_forecast(model=model, ts=forecast_subset_ts, prediction_size=prediction_size)
+
+        # checking
+        forecast_full_df = forecast_full_ts.to_pandas()
+        forecast_subset_df = forecast_subset_ts.to_pandas()
+        assert_frame_equal(forecast_subset_df, forecast_full_df.loc[:, pd.IndexSlice[segments, :]])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+            (
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+            ),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+        ],
+    )
+    def test_forecast_subset_segments(self, model, transforms, example_tsds):
+        self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+
+    @to_be_fixed(raises=AssertionError)
+    # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+            ),
+        ],
+    )
+    def test_forecast_subset_segments_failed_assertion_error(self, model, transforms, example_tsds):
+        self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+
+
+class TestForecastNewSegments:
+    """Test forecast on new segments.
+
+    Expected that target values are filled after prediction.
+    """
+
+    def _test_forecast_new_segments(self, ts, model, transforms, train_segments, prediction_size=5):
+        # create tsdataset with new segments
+        train_segments = list(set(train_segments))
+        forecast_segments = list(set(ts.segments) - set(train_segments))
+        train_ts = select_segments_subset(ts=deepcopy(ts), segments=train_segments)
+        test_ts = select_segments_subset(ts=deepcopy(ts), segments=forecast_segments)
+
+        # fitting
+        train_ts.fit_transform(transforms)
+        model.fit(train_ts)
+
+        # forecasting
+        import torch  # TODO: remove after fix at issue-802
+
+        torch.manual_seed(11)
+
+        forecast_ts = test_ts.make_future(
+            future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
+        )
+        forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
+
+        # checking
+        forecast_df = forecast_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_df["target"].isna())
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (MovingAverageModel(window=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (NaiveModel(lag=3), []),
+            (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+            ),
+            (
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+            ),
+        ],
+    )
+    def test_forecast_new_segments(self, model, transforms, example_tsds):
+        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
+            (AutoARIMAModel(), []),
+            (ProphetModel(), []),
+            (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(), []),
+            (SimpleExpSmoothingModel(), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
+        ],
+    )
+    def test_forecast_new_segments_failed_per_segment(self, model, transforms, example_tsds):
+        with pytest.raises(NotImplementedError, match="Per-segment models can't make predictions on new segments"):
+            self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])

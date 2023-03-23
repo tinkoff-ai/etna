@@ -345,13 +345,17 @@ class PerSegmentWrapper(Transform):
             raise ValueError("Transform is not fitted!")
 
         results = []
-        for segment, transform in self.segment_transforms.items():
-            seg_df = transform.transform(df[segment])
+        segments = set(df.columns.get_level_values("segment"))
+        for segment in segments:
+            if segment not in self.segment_transforms:
+                raise NotImplementedError("Per-segment transforms can't work on new segments!")
+
+            segment_transform = self.segment_transforms[segment]
+            seg_df = segment_transform.transform(df[segment])
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", segment)
             seg_df.columns = pd.MultiIndex.from_frame(_idx)
-
             results.append(seg_df)
 
         df = pd.concat(results, axis=1)
@@ -379,8 +383,13 @@ class ReversiblePerSegmentWrapper(PerSegmentWrapper, ReversibleTransform):
             raise ValueError("Transform is not fitted!")
 
         results = []
-        for segment, transform in self.segment_transforms.items():
-            seg_df = transform.inverse_transform(df[segment])
+        segments = set(df.columns.get_level_values("segment"))
+        for segment in segments:
+            if segment not in self.segment_transforms:
+                raise NotImplementedError("Per-segment transforms can't work on new segments!")
+
+            segment_transform = self.segment_transforms[segment]
+            seg_df = segment_transform.inverse_transform(df[segment])
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", segment)

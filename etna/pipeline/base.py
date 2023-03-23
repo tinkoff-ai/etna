@@ -1,3 +1,4 @@
+import math
 from abc import abstractmethod
 from copy import deepcopy
 from enum import Enum
@@ -15,6 +16,8 @@ import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
+from typing_extensions import TypedDict
+from typing_extensions import assert_never
 
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
@@ -32,6 +35,12 @@ class CrossValidationMode(Enum):
 
     expand = "expand"
     constant = "constant"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} modes allowed"
+        )
 
 
 class FoldMask(BaseMixin):
@@ -131,15 +140,20 @@ class AbstractPipeline(AbstractSaveable):
     @abstractmethod
     def forecast(
         self,
+        ts: Optional[TSDataset] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
         return_components: bool = False,
     ) -> TSDataset:
-        """Make predictions.
+        """Make a forecast of the next points of a dataset.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -210,13 +224,17 @@ class AbstractPipeline(AbstractSaveable):
         ts: TSDataset,
         metrics: List[Metric],
         n_folds: Union[int, List[FoldMask]] = 5,
-        mode: str = "expand",
+        mode: Optional[str] = None,
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
+        refit: Union[bool, int] = True,
+        stride: Optional[int] = None,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
+
+        If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
 
         Parameters
         ----------
@@ -227,11 +245,23 @@ class AbstractPipeline(AbstractSaveable):
         n_folds:
             Number of folds or the list of fold masks
         mode:
-            One of 'expand', 'constant' -- train generation policy
+            Train generation policy: 'expand' or 'constant'. Works only if ``n_folds`` is integer.
+            By default, is set to 'expand'.
         aggregate_metrics:
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
             Number of jobs to run in parallel
+        refit:
+            Determines how often pipeline should be retrained during iteration over folds.
+
+            * If ``True``: pipeline is retrained on each fold.
+
+            * If ``False``: pipeline is trained only on the first fold.
+
+            * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
+
+        stride:
+            Number of points between folds. Works only if ``n_folds`` is integer. By default, is set to ``horizon``.
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
         forecast_params:
@@ -242,6 +272,15 @@ class AbstractPipeline(AbstractSaveable):
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
+
+
+class FoldParallelGroup(TypedDict):
+    """Group for parallel fold processing."""
+
+    train_fold_number: int
+    train_mask: FoldMask
+    forecast_fold_numbers: List[int]
+    forecast_masks: List[FoldMask]
 
 
 class BasePipeline(AbstractPipeline, BaseMixin):
@@ -267,34 +306,29 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return quantiles
 
     @abstractmethod
-    def _forecast(self, return_components: bool) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions."""
         pass
 
     def _forecast_prediction_interval(
-        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+        self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
         with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=self.ts, metrics=[MAE()], n_folds=n_folds)
+            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
-        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+        self._add_forecast_borders(ts=ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         return predictions
 
     def _add_forecast_borders(
-        self, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
+        self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
     ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
-        if self.ts is None:
-            raise ValueError("Pipeline is not fitted!")
-
-        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=self.ts.freq)
+        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=ts.freq)
         residuals = (
             backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - self.ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
+            - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
         )
 
         sigma = np.std(residuals.values, axis=0)
@@ -309,15 +343,20 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
     def forecast(
         self,
+        ts: Optional[TSDataset] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
         return_components: bool = False,
     ) -> TSDataset:
-        """Make predictions.
+        """Make a forecast of the next points of a dataset.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -337,18 +376,20 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         NotImplementedError:
             Adding target components is not currently implemented
         """
-        if self.ts is None:
-            raise ValueError(
-                f"{self.__class__.__name__} is not fitted! Fit the {self.__class__.__name__} "
-                f"before calling forecast method."
-            )
+        if ts is None:
+            if self.ts is None:
+                raise ValueError(
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                )
+            ts = self.ts
+
         self._validate_quantiles(quantiles=quantiles)
         self._validate_backtest_n_folds(n_folds=n_folds)
 
-        predictions = self._forecast(return_components=return_components)
+        predictions = self._forecast(ts=ts, return_components=return_components)
         if prediction_interval:
             predictions = self._forecast_prediction_interval(
-                predictions=predictions, quantiles=quantiles, n_folds=n_folds
+                ts=ts, predictions=predictions, quantiles=quantiles, n_folds=n_folds
             )
         return predictions
 
@@ -456,43 +497,65 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
     @staticmethod
     def _validate_backtest_n_folds(n_folds: int):
-        """Check that given n_folds value is valid."""
+        """Check that given n_folds value is >= 1."""
         if n_folds < 1:
             raise ValueError(f"Folds number should be a positive number, {n_folds} given")
 
     @staticmethod
-    def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int):
+    def _validate_backtest_mode(n_folds: Union[int, List[FoldMask]], mode: Optional[str]) -> CrossValidationMode:
+        if mode is None:
+            return CrossValidationMode.expand
+
+        if not isinstance(n_folds, int):
+            raise ValueError("Mode shouldn't be set if n_folds are fold masks!")
+
+        return CrossValidationMode(mode.lower())
+
+    @staticmethod
+    def _validate_backtest_stride(n_folds: Union[int, List[FoldMask]], horizon: int, stride: Optional[int]) -> int:
+        if stride is None:
+            return horizon
+
+        if not isinstance(n_folds, int):
+            raise ValueError("Stride shouldn't be set if n_folds are fold masks!")
+
+        if stride < 1:
+            raise ValueError(f"Stride should be a positive number, {stride} given!")
+
+        return stride
+
+    @staticmethod
+    def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int, stride: int):
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
-        min_required_length = horizon * n_folds
+        min_required_length = horizon + (n_folds - 1) * stride
         segments = set(ts.df.columns.get_level_values("segment"))
         for segment in segments:
             segment_target = ts[:, segment, "target"]
             if len(segment_target) < min_required_length:
                 raise ValueError(
                     f"All the series from feature dataframe should contain at least "
-                    f"{horizon} * {n_folds} = {min_required_length} timestamps; "
+                    f"{horizon} + {n_folds-1} * {stride} = {min_required_length} timestamps; "
                     f"series {segment} does not."
                 )
 
     @staticmethod
-    def _generate_masks_from_n_folds(ts: TSDataset, n_folds: int, horizon: int, mode: str) -> List[FoldMask]:
+    def _generate_masks_from_n_folds(
+        ts: TSDataset, n_folds: int, horizon: int, mode: CrossValidationMode, stride: int
+    ) -> List[FoldMask]:
         """Generate fold masks from n_folds."""
-        mode_enum = CrossValidationMode(mode.lower())
-        if mode_enum == CrossValidationMode.expand:
+        if mode is CrossValidationMode.expand:
             constant_history_length = 0
-        elif mode_enum == CrossValidationMode.constant:
+        elif mode is CrossValidationMode.constant:
             constant_history_length = 1
         else:
-            raise NotImplementedError(
-                f"Only '{CrossValidationMode.expand}' and '{CrossValidationMode.constant}' modes allowed"
-            )
+            assert_never(mode)
 
         masks = []
         dataset_timestamps = list(ts.index)
         min_timestamp_idx, max_timestamp_idx = 0, len(dataset_timestamps)
         for offset in range(n_folds, 0, -1):
-            min_train_idx = min_timestamp_idx + (n_folds - offset) * horizon * constant_history_length
-            max_train_idx = max_timestamp_idx - horizon * offset - 1
+            min_train_idx = min_timestamp_idx + (n_folds - offset) * stride * constant_history_length
+            max_train_idx = max_timestamp_idx - stride * (offset - 1) - horizon - 1
             min_test_idx = max_train_idx + 1
             max_test_idx = max_train_idx + horizon
 
@@ -549,21 +612,40 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
-    def _run_fold(
+    def _fit_backtest_pipeline(
         self,
+        ts: TSDataset,
+        fold_number: int,
+    ) -> "BasePipeline":
+        """Fit pipeline for a given data in backtest."""
+        tslogger.start_experiment(job_type="training", group=str(fold_number))
+        pipeline = deepcopy(self)
+        pipeline.fit(ts=ts)
+        tslogger.finish_experiment()
+        return pipeline
+
+    def _forecast_backtest_pipeline(
+        self, pipeline: "BasePipeline", ts: TSDataset, fold_number: int, forecast_params: Dict[str, Any]
+    ) -> TSDataset:
+        """Make a forecast with a given pipeline in backtest."""
+        tslogger.start_experiment(job_type="forecasting", group=str(fold_number))
+        forecast = pipeline.forecast(ts=ts, **forecast_params)
+        tslogger.finish_experiment()
+        return forecast
+
+    def _process_fold_forecast(
+        self,
+        forecast: TSDataset,
         train: TSDataset,
         test: TSDataset,
+        pipeline: "BasePipeline",
         fold_number: int,
         mask: FoldMask,
         metrics: List[Metric],
-        forecast_params: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Run fit-forecast pipeline of model for one fold."""
+        """Process forecast made for a fold."""
         tslogger.start_experiment(job_type="crossval", group=str(fold_number))
 
-        pipeline = deepcopy(self)
-        pipeline.fit(ts=train)
-        forecast = pipeline.forecast(**forecast_params)
         fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
             fold[f"{stage_name}_timerange"] = {}
@@ -611,7 +693,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     tmp_df[f"{stage_name}_{border}_time"] = [fold_info[f"{stage_name}_timerange"][border]]
             tmp_df[self._fold_column] = fold_number
             timerange_dfs.append(tmp_df)
-        timerange_df = pd.concat(timerange_dfs)
+        timerange_df = pd.concat(timerange_dfs, ignore_index=True)
         return timerange_df
 
     def _get_backtest_forecasts(self) -> pd.DataFrame:
@@ -634,12 +716,16 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         forecasts.sort_index(axis=1, inplace=True)
         return forecasts
 
-    def _prepare_fold_masks(self, ts: TSDataset, masks: Union[int, List[FoldMask]], mode: str) -> List[FoldMask]:
+    def _prepare_fold_masks(
+        self, ts: TSDataset, masks: Union[int, List[FoldMask]], mode: CrossValidationMode, stride: int
+    ) -> List[FoldMask]:
         """Prepare and validate fold masks."""
         if isinstance(masks, int):
             self._validate_backtest_n_folds(n_folds=masks)
-            self._validate_backtest_dataset(ts=ts, n_folds=masks, horizon=self.horizon)
-            masks = self._generate_masks_from_n_folds(ts=ts, n_folds=masks, horizon=self.horizon, mode=mode)
+            self._validate_backtest_dataset(ts=ts, n_folds=masks, horizon=self.horizon, stride=stride)
+            masks = self._generate_masks_from_n_folds(
+                ts=ts, n_folds=masks, horizon=self.horizon, mode=mode, stride=stride
+            )
         for i, mask in enumerate(masks):
             mask.first_train_timestamp = mask.first_train_timestamp if mask.first_train_timestamp else ts.index[0]
             masks[i] = mask
@@ -647,18 +733,125 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             mask.validate_on_dataset(ts=ts, horizon=self.horizon)
         return masks
 
+    @staticmethod
+    def _make_backtest_fold_groups(masks: List[FoldMask], refit: Union[bool, int]) -> List[FoldParallelGroup]:
+        """Make groups of folds for backtest."""
+        if not refit:
+            refit = len(masks)
+
+        grouped_folds = []
+        num_groups = math.ceil(len(masks) / refit)
+        for group_id in range(num_groups):
+            train_fold_number = group_id * refit
+            forecast_fold_numbers = [train_fold_number + i for i in range(refit) if train_fold_number + i < len(masks)]
+            cur_group: FoldParallelGroup = {
+                "train_fold_number": train_fold_number,
+                "train_mask": masks[train_fold_number],
+                "forecast_fold_numbers": forecast_fold_numbers,
+                "forecast_masks": [masks[i] for i in forecast_fold_numbers],
+            }
+            grouped_folds.append(cur_group)
+
+        return grouped_folds
+
+    def _run_all_folds(
+        self,
+        masks: List[FoldMask],
+        ts: TSDataset,
+        metrics: List[Metric],
+        n_jobs: int,
+        refit: Union[bool, int],
+        joblib_params: Dict[str, Any],
+        forecast_params: Dict[str, Any],
+    ) -> Dict[int, Any]:
+        """Run pipeline on all folds."""
+        fold_groups = self._make_backtest_fold_groups(masks=masks, refit=refit)
+
+        with Parallel(n_jobs=n_jobs, **joblib_params) as parallel:
+            # fitting
+            fit_masks = [group["train_mask"] for group in fold_groups]
+            fit_datasets = (
+                train for train, _ in self._generate_folds_datasets(ts=ts, masks=fit_masks, horizon=self.horizon)
+            )
+            pipelines = parallel(
+                delayed(self._fit_backtest_pipeline)(ts=fit_ts, fold_number=fold_groups[group_idx]["train_fold_number"])
+                for group_idx, fit_ts in enumerate(fit_datasets)
+            )
+
+            # forecasting
+            forecast_masks = [group["forecast_masks"] for group in fold_groups]
+            forecast_datasets = (
+                (
+                    train
+                    for train, _ in self._generate_folds_datasets(
+                        ts=ts, masks=group_forecast_masks, horizon=self.horizon
+                    )
+                )
+                for group_forecast_masks in forecast_masks
+            )
+            forecasts_flat = parallel(
+                delayed(self._forecast_backtest_pipeline)(
+                    ts=forecast_ts,
+                    pipeline=pipelines[group_idx],
+                    fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
+                    forecast_params=forecast_params,
+                )
+                for group_idx, group_forecast_datasets in enumerate(forecast_datasets)
+                for idx, forecast_ts in enumerate(group_forecast_datasets)
+            )
+
+            # processing forecasts
+            fold_process_train_datasets = (
+                train for train, _ in self._generate_folds_datasets(ts=ts, masks=fit_masks, horizon=self.horizon)
+            )
+            fold_process_test_datasets = (
+                (
+                    test
+                    for _, test in self._generate_folds_datasets(
+                        ts=ts, masks=group_forecast_masks, horizon=self.horizon
+                    )
+                )
+                for group_forecast_masks in forecast_masks
+            )
+            fold_results_flat = parallel(
+                delayed(self._process_fold_forecast)(
+                    forecast=forecasts_flat[group_idx * refit + idx],
+                    train=train,
+                    test=test,
+                    pipeline=pipelines[group_idx],
+                    fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
+                    mask=fold_groups[group_idx]["forecast_masks"][idx],
+                    metrics=metrics,
+                )
+                for group_idx, (train, group_fold_process_test_datasets) in enumerate(
+                    zip(fold_process_train_datasets, fold_process_test_datasets)
+                )
+                for idx, test in enumerate(group_fold_process_test_datasets)
+            )
+
+        results = {
+            fold_number: fold_results_flat[group_idx * refit + idx]
+            for group_idx in range(len(fold_groups))
+            for idx, fold_number in enumerate(fold_groups[group_idx]["forecast_fold_numbers"])
+        }
+        return results
+
     def backtest(
         self,
         ts: TSDataset,
         metrics: List[Metric],
         n_folds: Union[int, List[FoldMask]] = 5,
-        mode: str = "expand",
+        mode: Optional[str] = None,
         aggregate_metrics: bool = False,
         n_jobs: int = 1,
+        refit: Union[bool, int] = True,
+        stride: Optional[int] = None,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Run backtest with the pipeline.
+
+        If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
 
         Parameters
         ----------
@@ -669,11 +862,23 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         n_folds:
             Number of folds or the list of fold masks
         mode:
-            One of 'expand', 'constant' -- train generation policy, ignored if n_folds is a list of masks
+            Train generation policy: 'expand' or 'constant'. Works only if ``n_folds`` is integer.
+            By default, is set to 'expand'.
         aggregate_metrics:
             If True aggregate metrics above folds, return raw metrics otherwise
         n_jobs:
             Number of jobs to run in parallel
+        refit:
+            Determines how often pipeline should be retrained during iteration over folds.
+
+            * If ``True``: pipeline is retrained on each fold.
+
+            * If ``False``: pipeline is trained only on the first fold.
+
+            * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
+
+        stride:
+            Number of points between folds. Works only if ``n_folds`` is integer. By default, is set to ``horizon``.
         joblib_params:
             Additional parameters for :py:class:`joblib.Parallel`
         forecast_params:
@@ -683,7 +888,17 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         -------
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
+
+        Raises
+        ------
+        ValueError:
+            If ``mode`` is set when ``n_folds`` are ``List[FoldMask]``.
+        ValueError:
+            If ``stride`` is set when ``n_folds`` are ``List[FoldMask]``.
         """
+        mode_enum = self._validate_backtest_mode(n_folds=n_folds, mode=mode)
+        stride = self._validate_backtest_stride(n_folds=n_folds, horizon=self.horizon, stride=stride)
+
         if joblib_params is None:
             joblib_params = dict(verbose=11, backend="multiprocessing", mmap_mode="c")
 
@@ -692,22 +907,16 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         self._init_backtest()
         self._validate_backtest_metrics(metrics=metrics)
-        masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode)
-
-        folds = Parallel(n_jobs=n_jobs, **joblib_params)(
-            delayed(self._run_fold)(
-                train=train,
-                test=test,
-                fold_number=fold_number,
-                mask=masks[fold_number],
-                metrics=metrics,
-                forecast_params=forecast_params,
-            )
-            for fold_number, (train, test) in enumerate(
-                self._generate_folds_datasets(ts=ts, masks=masks, horizon=self.horizon)
-            )
+        masks = self._prepare_fold_masks(ts=ts, masks=n_folds, mode=mode_enum, stride=stride)
+        self._folds = self._run_all_folds(
+            masks=masks,
+            ts=ts,
+            metrics=metrics,
+            n_jobs=n_jobs,
+            refit=refit,
+            joblib_params=joblib_params,
+            forecast_params=forecast_params,
         )
-        self._folds = {i: fold for i, fold in enumerate(folds)}
 
         metrics_df = self._get_backtest_metrics(aggregate_metrics=aggregate_metrics)
         forecast_df = self._get_backtest_forecasts()

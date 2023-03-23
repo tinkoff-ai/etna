@@ -8,7 +8,6 @@ from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Union
-from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -160,7 +159,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
         # Fit the final model
         self.filtered_features_for_final_model = self._filter_features_to_use(forecasts)
-        x, y = self._make_features(forecasts=forecasts, train=True)
+        x, y = self._make_features(ts=self.ts, forecasts=forecasts, train=True)
         self.final_model.fit(x, y)
 
         # Fit the base models
@@ -170,12 +169,9 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         return self
 
     def _make_features(
-        self, forecasts: List[TSDataset], train: bool = False
+        self, ts: TSDataset, forecasts: List[TSDataset], train: bool = False
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the ``final_model``."""
-        if self.ts is None:
-            raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
-
         # Stack targets from the forecasts
         targets = [
             forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
@@ -201,29 +197,25 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         features_df = pd.concat([features, targets], axis=1)
 
         # Flatten the features to fit the sklearn interface
-        x = pd.concat([features_df.loc[:, segment] for segment in self.ts.segments], axis=0)
+        x = pd.concat([features_df.loc[:, segment] for segment in ts.segments], axis=0)
         if train:
             y = pd.concat(
-                [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
-                    for segment in self.ts.segments
-                ],
+                [ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"] for segment in ts.segments],
                 axis=0,
             )
             return x, y
         else:
             return x, None
 
-    def _process_forecasts(self, forecasts: List[TSDataset]) -> TSDataset:
-        x, _ = self._make_features(forecasts=forecasts, train=False)
-        self.ts = cast(TSDataset, self.ts)
+    def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
+        x, _ = self._make_features(ts=ts, forecasts=forecasts, train=False)
         y = self.final_model.predict(x)
         num_segments = len(forecasts[0].segments)
         y = y.reshape(num_segments, -1).T
         num_timestamps = y.shape[0]
 
         # Format the forecast into TSDataset
-        segment_col = [segment for segment in self.ts.segments for _ in range(num_timestamps)]
+        segment_col = [segment for segment in ts.segments for _ in range(num_timestamps)]
         x.loc[:, "segment"] = segment_col
         x.loc[:, "timestamp"] = x.index.values
         df_exog = TSDataset.to_dataset(x)
@@ -231,24 +223,22 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         df = forecasts[0][:, :, "target"].copy()
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
 
-        result = TSDataset(df=df, freq=self.ts.freq, df_exog=df_exog)
+        result = TSDataset(df=df, freq=ts.freq, df_exog=df_exog)
         result.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
         return result
 
-    def _forecast(self, return_components: bool) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions.
 
         Compute the combination of pipelines' forecasts using ``final_model``
         """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
         if return_components:
             raise NotImplementedError("Adding target components is not currently implemented!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
+            delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
-        forecast = self._process_forecasts(forecasts=forecasts)
+        forecast = self._process_forecasts(ts=ts, forecasts=forecasts)
         return forecast
 
     def _predict(
@@ -271,5 +261,5 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             )
             for pipeline in self.pipelines
         )
-        prediction = self._process_forecasts(forecasts=predictions)
+        prediction = self._process_forecasts(ts=ts, forecasts=predictions)
         return prediction
