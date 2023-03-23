@@ -86,8 +86,8 @@ class BaseReconciliator(ABC, BaseMixin):
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
         target_names = tuple(get_target_with_quantiles(columns=ts.columns))
-        if ts.target_components is not None:
-            target_names += tuple(set(ts.target_components))
+        if ts.target_components_names is not None:
+            target_names += tuple(set(ts.target_components_names))
 
         df_reconciled = get_level_dataframe(
             df=ts.to_pandas(features=target_names),
@@ -97,9 +97,9 @@ class BaseReconciliator(ABC, BaseMixin):
         )
 
         target_components_df = None
-        if ts.target_components is not None:
-            target_components_df = df_reconciled.loc[:, pd.IndexSlice[:, ts.target_components]]
-            df_reconciled = df_reconciled.drop(columns=ts.target_components, level="feature")
+        if ts.target_components_names is not None:
+            target_components_df = df_reconciled.loc[:, pd.IndexSlice[:, ts.target_components_names]]
+            df_reconciled = df_reconciled.drop(columns=ts.target_components_names, level="feature")
 
         ts_reconciled = TSDataset(
             df=df_reconciled,
@@ -108,6 +108,6 @@ class BaseReconciliator(ABC, BaseMixin):
             known_future=ts.known_future,
             hierarchical_structure=ts.hierarchical_structure,
         )
-        if ts.target_components is not None:
+        if ts.target_components_names is not None:
             ts_reconciled.add_target_components(target_components_df=target_components_df)
         return ts_reconciled
