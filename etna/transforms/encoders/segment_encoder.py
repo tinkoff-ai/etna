@@ -1,5 +1,7 @@
+import reprlib
 from typing import List
 
+import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 
@@ -47,12 +49,31 @@ class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
         -------
         :
             result dataframe
+
+        Raises
+        ------
+        ValueError:
+            If transform isn't fitted.
+        NotImplementedError:
+            If there are segments that weren't present during training.
         """
-        encoded_matrix = self._le.transform(self._le.classes_)
-        encoded_matrix = encoded_matrix.reshape(len(self._le.classes_), -1).repeat(len(df), axis=1).T
+        segments = df.columns.get_level_values("segment").unique().tolist()
+
+        try:
+            new_segments = set(segments) - set(self._le.classes_)
+        except AttributeError:
+            raise ValueError("The transform isn't fitted!")
+
+        if len(new_segments) > 0:
+            raise NotImplementedError(
+                f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
+            )
+
+        encoded_matrix = self._le.transform(segments)
+        encoded_matrix = np.tile(encoded_matrix, (len(df), 1))
         encoded_df = pd.DataFrame(
             encoded_matrix,
-            columns=pd.MultiIndex.from_product([self._le.classes_, ["segment_code"]], names=("segment", "feature")),
+            columns=pd.MultiIndex.from_product([segments, ["segment_code"]], names=("segment", "feature")),
             index=df.index,
         )
         encoded_df = encoded_df.astype("category")

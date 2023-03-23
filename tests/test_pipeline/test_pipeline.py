@@ -1,5 +1,4 @@
 from copy import deepcopy
-from datetime import datetime
 from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
@@ -14,7 +13,6 @@ from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
-from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics import Width
 from etna.models import CatBoostMultiSegmentModel
@@ -30,13 +28,17 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import FoldMask
 from etna.pipeline import Pipeline
+from etna.pipeline.base import CrossValidationMode
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -130,7 +132,7 @@ def test_private_forecast_context_ignorant_model(model_class):
 
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
-    _ = pipeline._forecast(return_components=False)
+    _ = pipeline._forecast(ts=ts, return_components=False)
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=())
     model.forecast.assert_called_with(ts=ts.make_future(), return_components=False)
@@ -145,7 +147,7 @@ def test_private_forecast_context_required_model(model_class):
 
     pipeline = Pipeline(model=model, horizon=5)
     pipeline.fit(ts)
-    _ = pipeline._forecast(return_components=False)
+    _ = pipeline._forecast(ts=ts, return_components=False)
 
     ts.make_future.assert_called_with(future_steps=pipeline.horizon, transforms=(), tail_steps=model.context_size)
     model.forecast.assert_called_with(ts=ts.make_future(), prediction_size=pipeline.horizon, return_components=False)
@@ -196,7 +198,7 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     pipeline.fit(ts)
     _ = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
     base_forecast.assert_called_with(
-        prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3, return_components=False
+        ts=ts, prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3, return_components=False
     )
 
 
@@ -253,7 +255,7 @@ def test_forecast_prediction_interval_builtin(example_tsds, model):
 
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
-def test_forecast_prediction_interval_interface(example_tsds, model):
+def test_forecast_prediction_interval_not_builtin(example_tsds, model):
     """Test the forecast interface for the models without built-in prediction intervals."""
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -264,7 +266,7 @@ def test_forecast_prediction_interval_interface(example_tsds, model):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-def test_forecast_prediction_interval(splited_piecewise_constant_ts):
+def test_forecast_prediction_interval_correct_values(splited_piecewise_constant_ts):
     """Test that the prediction interval for piecewise-constant dataset is correct."""
     train, test = splited_piecewise_constant_ts
     pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=5)
@@ -311,106 +313,86 @@ def test_forecast_prediction_interval_noise(constant_ts, constant_noisy_ts):
 @pytest.mark.parametrize("n_folds", (0, -1))
 def test_invalid_n_folds(catboost_pipeline: Pipeline, n_folds: int, example_tsdf: TSDataset):
     """Test Pipeline.backtest behavior in case of invalid n_folds."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Folds number should be a positive number"):
         _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds)
 
 
-def test_validate_backtest_dataset(catboost_pipeline_big: Pipeline, imbalanced_tsdf: TSDataset):
-    """Test Pipeline.backtest behavior in case of small dataframe that
-    can't be divided to required number of splits.
-    """
-    with pytest.raises(ValueError):
-        _ = catboost_pipeline_big.backtest(ts=imbalanced_tsdf, n_folds=3, metrics=DEFAULT_METRICS)
+@pytest.mark.parametrize(
+    "min_size, n_folds, horizon, stride",
+    [
+        (1, 10, 1, 1),
+        (9, 10, 1, 1),
+        (10, 10, 2, 1),
+        (19, 10, 2, 2),
+        (28, 10, 2, 3),
+    ],
+)
+def test_invalid_backtest_dataset_size(min_size, n_folds, horizon, stride):
+    """Test Pipeline.backtest behavior in case of too small dataframe for given number of folds."""
+    df = generate_ar_df(start_time="2020-01-01", periods=100, n_segments=2, freq="D")
+    df_wide = TSDataset.to_dataset(df)
+    to_remove = len(df_wide) - min_size
+    df_wide.iloc[:to_remove, 0] = np.NaN
+    ts = TSDataset(df=df_wide, freq="D")
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+
+    with pytest.raises(ValueError, match="All the series from feature dataframe should contain at least .* timestamps"):
+        _ = pipeline.backtest(ts=ts, n_folds=n_folds, stride=stride, metrics=DEFAULT_METRICS)
 
 
-@pytest.mark.parametrize("metrics", ([], [MAE(mode=MetricAggregationMode.macro)]))
-def test_invalid_backtest_metrics(catboost_pipeline: Pipeline, metrics: List[Metric], example_tsdf: TSDataset):
-    """Test Pipeline.backtest behavior in case of invalid metrics."""
-    with pytest.raises(ValueError):
-        _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=metrics, n_folds=2)
+def test_invalid_backtest_metrics_empty(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior in case of empty metrics."""
+    with pytest.raises(ValueError, match="At least one metric required"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=[], n_folds=2)
 
 
-def test_generate_expandable_timeranges_days():
-    """Test train-test timeranges generation in expand mode with daily freq"""
-    df = pd.DataFrame({"timestamp": pd.date_range("2021-01-01", "2021-04-01")})
-    df["segment"] = "seg"
-    df["target"] = 1
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="D")
-
-    true_borders = (
-        (("2021-01-01", "2021-02-24"), ("2021-02-25", "2021-03-08")),
-        (("2021-01-01", "2021-03-08"), ("2021-03-09", "2021-03-20")),
-        (("2021-01-01", "2021-03-20"), ("2021-03-21", "2021-04-01")),
-    )
-    masks = Pipeline._generate_masks_from_n_folds(ts=ts, n_folds=3, horizon=12, mode="expand")
-    for i, stage_dfs in enumerate(Pipeline._generate_folds_datasets(ts, masks=masks, horizon=12)):
-        for stage_df, borders in zip(stage_dfs, true_borders[i]):
-            assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d").date()
-            assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d").date()
+def test_invalid_backtest_metrics_macro(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior in case of macro metrics."""
+    with pytest.raises(ValueError, match="All the metrics should be in"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=[MAE(mode=MetricAggregationMode.macro)], n_folds=2)
 
 
-def test_generate_expandable_timeranges_hours():
-    """Test train-test timeranges generation in expand mode with hour freq"""
-    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2020-02-01", freq="H")})
-    df["segment"] = "seg"
-    df["target"] = 1
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="H")
-
-    true_borders = (
-        (("2020-01-01 00:00:00", "2020-01-30 12:00:00"), ("2020-01-30 13:00:00", "2020-01-31 00:00:00")),
-        (("2020-01-01 00:00:00", "2020-01-31 00:00:00"), ("2020-01-31 01:00:00", "2020-01-31 12:00:00")),
-        (("2020-01-01 00:00:00", "2020-01-31 12:00:00"), ("2020-01-31 13:00:00", "2020-02-01 00:00:00")),
-    )
-    masks = Pipeline._generate_masks_from_n_folds(ts=ts, n_folds=3, horizon=12, mode="expand")
-    for i, stage_dfs in enumerate(Pipeline._generate_folds_datasets(ts, horizon=12, masks=masks)):
-        for stage_df, borders in zip(stage_dfs, true_borders[i]):
-            assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d %H:%M:%S").date()
-            assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()
+def test_invalid_backtest_mode_set_on_fold_mask(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior on setting mode with fold masks."""
+    masks = [
+        FoldMask(
+            first_train_timestamp="2020-01-01",
+            last_train_timestamp="2020-04-03",
+            target_timestamps=["2020-04-04", "2020-04-05", "2020-04-06"],
+        ),
+        FoldMask(
+            first_train_timestamp="2020-01-01",
+            last_train_timestamp="2020-04-06",
+            target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+        ),
+    ]
+    with pytest.raises(ValueError, match="Mode shouldn't be set if n_folds are fold masks"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, n_folds=masks, mode="expand", metrics=DEFAULT_METRICS)
 
 
-def test_generate_constant_timeranges_days():
-    """Test train-test timeranges generation with constant mode with daily freq"""
-    df = pd.DataFrame({"timestamp": pd.date_range("2021-01-01", "2021-04-01")})
-    df["segment"] = "seg"
-    df["target"] = 1
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="D")
-
-    true_borders = (
-        (("2021-01-01", "2021-02-24"), ("2021-02-25", "2021-03-08")),
-        (("2021-01-13", "2021-03-08"), ("2021-03-09", "2021-03-20")),
-        (("2021-01-25", "2021-03-20"), ("2021-03-21", "2021-04-01")),
-    )
-    masks = Pipeline._generate_masks_from_n_folds(ts=ts, n_folds=3, horizon=12, mode="constant")
-    for i, stage_dfs in enumerate(Pipeline._generate_folds_datasets(ts, horizon=12, masks=masks)):
-        for stage_df, borders in zip(stage_dfs, true_borders[i]):
-            assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d").date()
-            assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d").date()
+def test_invalid_backtest_stride_set_on_fold_mask(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior on setting stride with fold masks."""
+    masks = [
+        FoldMask(
+            first_train_timestamp="2020-01-01",
+            last_train_timestamp="2020-04-03",
+            target_timestamps=["2020-04-04", "2020-04-05", "2020-04-06"],
+        ),
+        FoldMask(
+            first_train_timestamp="2020-01-01",
+            last_train_timestamp="2020-04-06",
+            target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+        ),
+    ]
+    with pytest.raises(ValueError, match="Stride shouldn't be set if n_folds are fold masks"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, n_folds=masks, stride=2, metrics=DEFAULT_METRICS)
 
 
-def test_generate_constant_timeranges_hours():
-    """Test train-test timeranges generation with constant mode with hours freq"""
-    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2020-02-01", freq="H")})
-    df["segment"] = "seg"
-    df["target"] = 1
-    df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="H")
-    true_borders = (
-        (("2020-01-01 00:00:00", "2020-01-30 12:00:00"), ("2020-01-30 13:00:00", "2020-01-31 00:00:00")),
-        (("2020-01-01 12:00:00", "2020-01-31 00:00:00"), ("2020-01-31 01:00:00", "2020-01-31 12:00:00")),
-        (("2020-01-02 00:00:00", "2020-01-31 12:00:00"), ("2020-01-31 13:00:00", "2020-02-01 00:00:00")),
-    )
-    masks = Pipeline._generate_masks_from_n_folds(ts=ts, n_folds=3, horizon=12, mode="constant")
-    for i, stage_dfs in enumerate(Pipeline._generate_folds_datasets(ts, horizon=12, masks=masks)):
-        for stage_df, borders in zip(stage_dfs, true_borders[i]):
-            assert stage_df.index.min() == datetime.strptime(borders[0], "%Y-%m-%d %H:%M:%S").date()
-            assert stage_df.index.max() == datetime.strptime(borders[1], "%Y-%m-%d %H:%M:%S").date()
+@pytest.mark.parametrize("stride", [-1, 0])
+def test_invalid_backtest_stride_not_positive(stride, catboost_pipeline: Pipeline, example_tsdf: TSDataset):
+    """Test Pipeline.backtest behavior on setting not positive stride."""
+    with pytest.raises(ValueError, match="Stride should be a positive number, .* given"):
+        _ = catboost_pipeline.backtest(ts=example_tsdf, n_folds=3, stride=stride, metrics=DEFAULT_METRICS)
 
 
 @pytest.mark.parametrize(
@@ -426,7 +408,7 @@ def test_generate_constant_timeranges_hours():
         ),
     ),
 )
-def test_get_metrics_interface(
+def test_backtest_metrics_interface(
     catboost_pipeline: Pipeline, aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset
 ):
     """Check that Pipeline.backtest returns metrics in correct format."""
@@ -438,47 +420,263 @@ def test_get_metrics_interface(
     assert sorted(expected_columns) == sorted(metrics_df.columns)
 
 
-def test_get_forecasts_interface_daily(catboost_pipeline: Pipeline, big_daily_example_tsdf: TSDataset):
+@pytest.mark.parametrize(
+    "ts_fixture",
+    [
+        "big_daily_example_tsdf",
+        "example_tsdf",
+    ],
+)
+def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
     """Check that Pipeline.backtest returns forecasts in correct format."""
-    _, forecast, _ = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
+    ts = request.getfixturevalue(ts_fixture)
+    _, forecast, _ = catboost_pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS)
     expected_columns = sorted(
         ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
     )
     assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
 
 
-def test_get_forecasts_interface_hours(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
-    """Check that Pipeline.backtest returns forecasts in correct format with non-daily seasonality."""
-    _, forecast, _ = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
-    expected_columns = sorted(
-        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
-    )
-    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+@pytest.mark.parametrize(
+    "n_folds, horizon, expected_timestamps",
+    [
+        (2, 3, [-6, -5, -4, -3, -2, -1]),
+        (2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+        (
+            [
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 14:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 17:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 19:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 22:00")],
+                ),
+            ],
+            5,
+            [-8, -3],
+        ),
+    ],
+)
+def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, example_tsdf):
+    """Check that Pipeline.backtest returns forecasts with expected timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds)
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
 
 
-def test_get_fold_info_interface_daily(catboost_pipeline: Pipeline, big_daily_example_tsdf: TSDataset):
+@pytest.mark.parametrize(
+    "n_folds, horizon, stride, expected_timestamps",
+    [
+        (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
+        (2, 3, 1, [-4, -3, -2, -3, -2, -1]),
+        (2, 3, 5, [-8, -7, -6, -3, -2, -1]),
+    ],
+)
+def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamps, example_tsdf):
+    """Check that Pipeline.backtest with stride returns forecasts with expected timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+
+
+@pytest.mark.parametrize(
+    "ts_fixture, n_folds",
+    [
+        ("big_daily_example_tsdf", 1),
+        ("big_daily_example_tsdf", 2),
+        ("example_tsdf", 1),
+        ("example_tsdf", 2),
+    ],
+)
+def test_backtest_fold_info_format(ts_fixture, n_folds, request):
     """Check that Pipeline.backtest returns info dataframe in correct format."""
-    _, _, info_df = catboost_pipeline.backtest(ts=big_daily_example_tsdf, metrics=DEFAULT_METRICS)
+    ts = request.getfixturevalue(ts_fixture)
+    pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
+    _, _, info_df = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)
+
+    expected_folds = pd.Series(np.arange(n_folds))
+    pd.testing.assert_series_equal(info_df["fold_number"], expected_folds, check_names=False)
     expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
     assert expected_columns == sorted(info_df.columns)
 
 
-def test_get_fold_info_interface_hours(catboost_pipeline: Pipeline, example_tsdf: TSDataset):
-    """Check that Pipeline.backtest returns info dataframe in correct format with non-daily seasonality."""
-    _, _, info_df = catboost_pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS)
-    expected_columns = ["fold_number", "test_end_time", "test_start_time", "train_end_time", "train_start_time"]
-    assert expected_columns == sorted(info_df.columns)
+@pytest.mark.parametrize(
+    "mode, n_folds, refit, horizon, stride, expected_train_starts, expected_train_ends, expected_test_starts, expected_test_ends",
+    [
+        ("expand", 3, True, 7, None, [0, 0, 0], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("expand", 3, True, 7, 1, [0, 0, 0], [-10, -9, -8], [-9, -8, -7], [-3, -2, -1]),
+        ("expand", 3, True, 7, 10, [0, 0, 0], [-28, -18, -8], [-27, -17, -7], [-21, -11, -1]),
+        ("expand", 3, False, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("expand", 3, False, 7, 1, [0, 0, 0], [-10, -10, -10], [-9, -8, -7], [-3, -2, -1]),
+        ("expand", 3, False, 7, 10, [0, 0, 0], [-28, -28, -28], [-27, -17, -7], [-21, -11, -1]),
+        ("expand", 1, 1, 7, None, [0], [-8], [-7], [-1]),
+        ("expand", 1, 2, 7, None, [0], [-8], [-7], [-1]),
+        ("expand", 3, 1, 7, None, [0, 0, 0], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("expand", 3, 2, 7, None, [0, 0, 0], [-22, -22, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("expand", 3, 3, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("expand", 3, 4, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("expand", 4, 1, 7, None, [0, 0, 0, 0], [-29, -22, -15, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("expand", 4, 2, 7, None, [0, 0, 0, 0], [-29, -29, -15, -15], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("expand", 4, 2, 7, 1, [0, 0, 0, 0], [-11, -11, -9, -9], [-10, -9, -8, -7], [-4, -3, -2, -1]),
+        ("expand", 4, 2, 7, 10, [0, 0, 0, 0], [-38, -38, -18, -18], [-37, -27, -17, -7], [-31, -21, -11, -1]),
+        ("expand", 4, 3, 7, None, [0, 0, 0, 0], [-29, -29, -29, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("expand", 4, 4, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("expand", 4, 5, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("constant", 3, True, 7, None, [0, 7, 14], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("constant", 3, True, 7, 1, [0, 1, 2], [-10, -9, -8], [-9, -8, -7], [-3, -2, -1]),
+        ("constant", 3, True, 7, 10, [0, 10, 20], [-28, -18, -8], [-27, -17, -7], [-21, -11, -1]),
+        ("constant", 3, False, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("constant", 3, False, 7, 1, [0, 0, 0], [-10, -10, -10], [-9, -8, -7], [-3, -2, -1]),
+        ("constant", 3, False, 7, 10, [0, 0, 0], [-28, -28, -28], [-27, -17, -7], [-21, -11, -1]),
+        ("constant", 1, 1, 7, None, [0], [-8], [-7], [-1]),
+        ("constant", 1, 2, 7, None, [0], [-8], [-7], [-1]),
+        ("constant", 3, 1, 7, None, [0, 7, 14], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("constant", 3, 2, 7, None, [0, 0, 14], [-22, -22, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("constant", 3, 3, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("constant", 3, 4, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("constant", 4, 1, 7, None, [0, 7, 14, 21], [-29, -22, -15, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("constant", 4, 2, 7, None, [0, 0, 14, 14], [-29, -29, -15, -15], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("constant", 4, 2, 7, 1, [0, 0, 2, 2], [-11, -11, -9, -9], [-10, -9, -8, -7], [-4, -3, -2, -1]),
+        ("constant", 4, 2, 7, 10, [0, 0, 20, 20], [-38, -38, -18, -18], [-37, -27, -17, -7], [-31, -21, -11, -1]),
+        ("constant", 4, 3, 7, None, [0, 0, 0, 21], [-29, -29, -29, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("constant", 4, 4, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("constant", 4, 5, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        (
+            None,
+            [
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 10:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 14:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 17:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 21:00")],
+                ),
+            ],
+            True,
+            7,
+            None,
+            [0, 0],
+            [-15, -8],
+            [-14, -7],
+            [-8, -1],
+        ),
+        (
+            None,
+            [
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01 1:00"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 10:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 14:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01 8:00"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 17:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 21:00")],
+                ),
+            ],
+            True,
+            7,
+            None,
+            [1, 8],
+            [-15, -8],
+            [-14, -7],
+            [-8, -1],
+        ),
+        (
+            None,
+            [
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-30 20:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 00:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 03:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 07:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 10:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 14:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=pd.Timestamp("2020-01-31 17:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 21:00")],
+                ),
+            ],
+            2,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -15, -15],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+    ],
+)
+def test_backtest_fold_info_timestamps(
+    mode,
+    n_folds,
+    refit,
+    horizon,
+    stride,
+    expected_train_starts,
+    expected_train_ends,
+    expected_test_starts,
+    expected_test_ends,
+    example_tsdf,
+):
+    """Check that Pipeline.backtest returns info dataframe with correct timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    _, _, info_df = pipeline.backtest(
+        ts=example_tsdf, metrics=DEFAULT_METRICS, mode=mode, n_folds=n_folds, refit=refit, stride=stride
+    )
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(info_df["train_start_time"], timestamp[expected_train_starts])
+    np.testing.assert_array_equal(info_df["train_end_time"], timestamp[expected_train_ends])
+    np.testing.assert_array_equal(info_df["test_start_time"], timestamp[expected_test_starts])
+    np.testing.assert_array_equal(info_df["test_end_time"], timestamp[expected_test_ends])
+
+
+def test_backtest_refit_success(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
+    """Check that backtest without refit works on pipeline that supports it."""
+    _ = catboost_pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
+
+
+def test_backtest_refit_fail(big_example_tsdf: TSDataset):
+    """Check that backtest without refit doesn't work on pipeline that doesn't support it."""
+    pipeline = Pipeline(
+        model=NaiveModel(lag=7),
+        transforms=[DifferencingTransform(in_column="target", inplace=True)],
+        horizon=7,
+    )
+    with pytest.raises(ValueError, match="Test should go after the train without gaps"):
+        _ = pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
 
 
 @pytest.mark.long_1
-def test_backtest_with_n_jobs(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
+@pytest.mark.parametrize("refit", [True, False, 2])
+def test_backtest_with_n_jobs(refit, catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that Pipeline.backtest gives the same results in case of single and multiple jobs modes."""
     ts1 = deepcopy(big_example_tsdf)
     ts2 = deepcopy(big_example_tsdf)
     pipeline_1 = deepcopy(catboost_pipeline)
     pipeline_2 = deepcopy(catboost_pipeline)
-    _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, metrics=DEFAULT_METRICS)
-    _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, metrics=DEFAULT_METRICS)
+    _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)
+    _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)
     assert (forecast_1 == forecast_2).all().all()
 
 
@@ -492,10 +690,10 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
-def test_forecast_raise_error_if_not_fitted():
-    """Test that Pipeline raise error when calling forecast without being fit."""
+def test_forecast_raise_error_if_no_ts():
+    """Test that Pipeline raises error when calling forecast without ts."""
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    with pytest.raises(ValueError, match="Pipeline is not fitted!"):
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = pipeline.forecast()
 
 
@@ -508,11 +706,13 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
 
 
 @pytest.mark.parametrize(
-    "n_folds, mode, expected_masks",
+    "n_folds, horizon, stride, mode, expected_masks",
     (
         (
             2,
-            "expand",
+            3,
+            3,
+            CrossValidationMode.expand,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -528,7 +728,45 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
         ),
         (
             2,
-            "constant",
+            3,
+            1,
+            CrossValidationMode.expand,
+            [
+                FoldMask(
+                    first_train_timestamp="2020-01-01",
+                    last_train_timestamp="2020-04-05",
+                    target_timestamps=["2020-04-06", "2020-04-07", "2020-04-08"],
+                ),
+                FoldMask(
+                    first_train_timestamp="2020-01-01",
+                    last_train_timestamp="2020-04-06",
+                    target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+                ),
+            ],
+        ),
+        (
+            2,
+            3,
+            5,
+            CrossValidationMode.expand,
+            [
+                FoldMask(
+                    first_train_timestamp="2020-01-01",
+                    last_train_timestamp="2020-04-01",
+                    target_timestamps=["2020-04-02", "2020-04-03", "2020-04-04"],
+                ),
+                FoldMask(
+                    first_train_timestamp="2020-01-01",
+                    last_train_timestamp="2020-04-06",
+                    target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+                ),
+            ],
+        ),
+        (
+            2,
+            3,
+            3,
+            CrossValidationMode.constant,
             [
                 FoldMask(
                     first_train_timestamp="2020-01-01",
@@ -542,10 +780,48 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
                 ),
             ],
         ),
+        (
+            2,
+            3,
+            1,
+            CrossValidationMode.constant,
+            [
+                FoldMask(
+                    first_train_timestamp="2020-01-01",
+                    last_train_timestamp="2020-04-05",
+                    target_timestamps=["2020-04-06", "2020-04-07", "2020-04-08"],
+                ),
+                FoldMask(
+                    first_train_timestamp="2020-01-02",
+                    last_train_timestamp="2020-04-06",
+                    target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+                ),
+            ],
+        ),
+        (
+            2,
+            3,
+            5,
+            CrossValidationMode.constant,
+            [
+                FoldMask(
+                    first_train_timestamp="2020-01-01",
+                    last_train_timestamp="2020-04-01",
+                    target_timestamps=["2020-04-02", "2020-04-03", "2020-04-04"],
+                ),
+                FoldMask(
+                    first_train_timestamp="2020-01-06",
+                    last_train_timestamp="2020-04-06",
+                    target_timestamps=["2020-04-07", "2020-04-08", "2020-04-09"],
+                ),
+            ],
+        ),
     ),
 )
-def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, mode, expected_masks):
-    masks = Pipeline._generate_masks_from_n_folds(ts=example_tsds, n_folds=n_folds, horizon=3, mode=mode)
+def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, horizon, stride, mode, expected_masks):
+    masks = Pipeline._generate_masks_from_n_folds(
+        ts=example_tsds, n_folds=n_folds, horizon=horizon, stride=stride, mode=mode
+    )
     for mask, expected_mask in zip(masks, expected_masks):
         assert mask.first_train_timestamp == expected_mask.first_train_timestamp
         assert mask.last_train_timestamp == expected_mask.last_train_timestamp
@@ -562,7 +838,7 @@ def test_generate_folds_datasets(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant")[0]
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
     train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
     assert train.index.min() == np.datetime64(mask.first_train_timestamp)
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
@@ -580,7 +856,7 @@ def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
     """Check _generate_folds_datasets for correct work without first date."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode="constant")[0]
+    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
     train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
     assert train.index.min() == np.datetime64(ts.index.min())
     assert train.index.max() == np.datetime64(mask.last_train_timestamp)
@@ -595,15 +871,101 @@ def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
         (FoldMask("2020-01-01", "2020-01-07", ["2020-01-08", "2020-01-11"]), {"segment_0": 95.5, "segment_1": 5}),
     ),
 )
-def test_run_fold(ts_run_fold: TSDataset, mask: FoldMask, expected: Dict[str, List[float]]):
-    train, test = ts_run_fold.train_test_split(
+def test_process_fold_forecast(ts_process_fold_forecast, mask: FoldMask, expected: Dict[str, List[float]]):
+    train, test = ts_process_fold_forecast.train_test_split(
         train_start=mask.first_train_timestamp, train_end=mask.last_train_timestamp
     )
 
     pipeline = Pipeline(model=NaiveModel(lag=5), transforms=[], horizon=4)
-    fold = pipeline._run_fold(train, test, 1, mask, [MAE()], forecast_params=dict())
+    pipeline = pipeline.fit(ts=train)
+    forecast = pipeline.forecast()
+    fold = pipeline._process_fold_forecast(
+        forecast=forecast, train=train, test=test, pipeline=pipeline, fold_number=1, mask=mask, metrics=[MAE()]
+    )
     for seg in fold["metrics"]["MAE"].keys():
         assert fold["metrics"]["MAE"][seg] == expected[seg]
+
+
+def test_make_backtest_fold_groups_refit_true():
+    masks = [MagicMock() for _ in range(2)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=True)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0],
+            "forecast_masks": [masks[0]],
+        },
+        {
+            "train_fold_number": 1,
+            "train_mask": masks[1],
+            "forecast_fold_numbers": [1],
+            "forecast_masks": [masks[1]],
+        },
+    ]
+    assert obtained_results == expected_results
+
+
+def test_make_backtest_fold_groups_refit_false():
+    masks = [MagicMock() for _ in range(2)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=False)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0, 1],
+            "forecast_masks": [masks[0], masks[1]],
+        }
+    ]
+    assert obtained_results == expected_results
+
+
+def test_make_backtest_fold_groups_refit_int():
+    masks = [MagicMock() for _ in range(5)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=2)
+    expected_results = [
+        {
+            "train_fold_number": 0,
+            "train_mask": masks[0],
+            "forecast_fold_numbers": [0, 1],
+            "forecast_masks": [masks[0], masks[1]],
+        },
+        {
+            "train_fold_number": 2,
+            "train_mask": masks[2],
+            "forecast_fold_numbers": [2, 3],
+            "forecast_masks": [masks[2], masks[3]],
+        },
+        {
+            "train_fold_number": 4,
+            "train_mask": masks[4],
+            "forecast_fold_numbers": [4],
+            "forecast_masks": [masks[4]],
+        },
+    ]
+    assert obtained_results == expected_results
+
+
+@pytest.mark.parametrize(
+    "n_folds, refit, expected_refits",
+    [
+        (1, 1, 1),
+        (1, 2, 1),
+        (3, 1, 3),
+        (3, 2, 2),
+        (3, 3, 1),
+        (3, 4, 1),
+        (4, 1, 4),
+        (4, 2, 2),
+        (4, 3, 2),
+        (4, 4, 1),
+        (4, 5, 1),
+    ],
+)
+def test_make_backtest_fold_groups_length_refit_int(n_folds, refit, expected_refits):
+    masks = [MagicMock() for _ in range(n_folds)]
+    obtained_results = Pipeline._make_backtest_fold_groups(masks=masks, refit=refit)
+    assert len(obtained_results) == expected_refits
 
 
 @pytest.mark.parametrize(
@@ -756,6 +1118,73 @@ def test_predict(model, transforms, example_tsds):
     assert len(result_df) == len(example_tsds.segments) * num_points
 
 
+@pytest.mark.parametrize("load_ts", [True, False])
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_save_load(load_ts, model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+
 @pytest.mark.parametrize(
     "model_fixture",
     (
@@ -777,25 +1206,3 @@ def test_predict_return_components(
     taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
     assert (taregt_components_df["target_component_a"] == expected_component_a).all()
     assert (taregt_components_df["target_component_b"] == expected_component_b).all()
-
-
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (
-            CatBoostMultiSegmentModel(iterations=100),
-            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
-        ),
-        (
-            LinearPerSegmentModel(),
-            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
-        ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
-    ],
-)
-def test_save_load(model, transforms, example_tsds):
-    horizon = 3
-    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)

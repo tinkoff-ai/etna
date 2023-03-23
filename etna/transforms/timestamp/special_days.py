@@ -1,4 +1,6 @@
 import datetime
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -56,6 +58,7 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
         self.anomaly_week_days: Optional[Tuple[int]] = None
         self.anomaly_month_days: Optional[Tuple[int]] = None
 
+        self.res_type: Dict[str, Any]
         if self.find_special_weekday and find_special_month_day:
             self.res_type = {"df_sample": (0, 0), "columns": ["anomaly_weekdays", "anomaly_monthdays"]}
         elif self.find_special_weekday:

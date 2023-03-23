@@ -12,6 +12,7 @@ from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import select_segments_subset
 
 
 @pytest.fixture()
@@ -153,6 +154,44 @@ def test_inverse_transform_raise_error_if_not_fitted(transform, outliers_solid_t
     """Test that transform for one segment raise error when calling inverse_transform without being fit."""
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.inverse_transform(ts=outliers_solid_tsds)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+    ),
+)
+def test_transform_new_segments_fail(transform, outliers_solid_tsds):
+    train_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["1"])
+    test_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["2"])
+
+    transform.fit(train_ts)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.transform(test_ts)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+    ),
+)
+def test_inverse_transform_new_segments_fail(transform, outliers_solid_tsds):
+    train_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["1"])
+    test_ts = select_segments_subset(ts=outliers_solid_tsds, segments=["2"])
+
+    transform.fit(train_ts)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.inverse_transform(test_ts)
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,11 @@
 import functools
+from typing import List
 
 import numpy as np
+import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 
@@ -17,6 +20,18 @@ def to_be_fixed(raises, match=None):
         return wrapped_test
 
     return to_be_fixed_concrete
+
+
+def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
+    df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
+    df = df.loc[ts.df.index]
+    df_exog = ts.df_exog
+    if df_exog is not None:
+        df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
+    known_future = ts.known_future
+    freq = ts.freq
+    subset_ts = TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
+    return subset_ts
 
 
 def create_dummy_functional_metric(alpha: float = 1.0):

@@ -69,15 +69,20 @@ class HierarchicalPipeline(Pipeline):
 
     def raw_forecast(
         self,
+        ts: TSDataset,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.25, 0.75),
         n_folds: int = 3,
         return_components: bool = False,
     ) -> TSDataset:
-        """Make a prediction for target at the source level of hierarchy.
+        """Make a forecast of the next points of a dataset on a source level.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -94,34 +99,45 @@ class HierarchicalPipeline(Pipeline):
         """
         if return_components:
             raise NotImplementedError("Adding target components is not currently implemented!")
-        forecast = super().forecast(
-            prediction_interval=prediction_interval,
-            quantiles=quantiles,
-            n_folds=n_folds,
-            return_components=return_components,
-        )
-        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
 
+        # handle `prediction_interval=True` separately
+        source_ts = self.reconciliator.aggregate(ts=ts)
+        forecast = super().forecast(
+            ts=source_ts, prediction_interval=False, n_folds=n_folds, return_components=return_components
+        )
+        if prediction_interval:
+            forecast = self._forecast_prediction_interval(
+                ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
+            )
+
+        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
         hierarchical_forecast = TSDataset(
             df=forecast[..., target_columns],
             freq=forecast.freq,
             df_exog=forecast.df_exog,
             known_future=forecast.known_future,
-            hierarchical_structure=self.ts.hierarchical_structure,  # type: ignore
+            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
         )
         return hierarchical_forecast
 
     def forecast(
         self,
+        ts: Optional[TSDataset] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         n_folds: int = 3,
         return_components: bool = False,
     ) -> TSDataset:
-        """Make a prediction for target at the source level of hierarchy and make reconciliation to target level.
+        """Make a forecast of the next points of a dataset on a target level.
+
+        The result of forecasting starts from the last point of ``ts``, not including it.
+
+        Method makes a prediction for target at the source level of hierarchy and then makes reconciliation to target level.
 
         Parameters
         ----------
+        ts:
+            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -138,7 +154,16 @@ class HierarchicalPipeline(Pipeline):
         """
         if return_components:
             raise NotImplementedError("Adding target components is not currently implemented!")
+
+        if ts is None:
+            if self._fit_ts is None:
+                raise ValueError(
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                )
+            ts = self._fit_ts
+
         forecast = self.raw_forecast(
+            ts=ts,
             prediction_interval=prediction_interval,
             quantiles=quantiles,
             n_folds=n_folds,
@@ -163,20 +188,24 @@ class HierarchicalPipeline(Pipeline):
         return metrics_values
 
     def _forecast_prediction_interval(
-        self, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
+        self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
+        # TODO: fix this: what if during backtest KeyboardInterrupt is raised
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
-        if self.ts is None or self._fit_ts is None:
+        if self.ts is None:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
         # TODO: rework intervals estimation for `BottomUpReconciliator`
 
         with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=self._fit_ts, metrics=[MAE()], n_folds=n_folds)
+            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
-        self._add_forecast_borders(backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
+        source_ts = self.reconciliator.aggregate(ts=ts)
+        self._add_forecast_borders(
+            ts=source_ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions
+        )
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 

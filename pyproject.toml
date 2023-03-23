@@ -100,7 +100,7 @@ pep8-naming = {version = "^0.12.1", optional = true}
 flake8-bugbear = {version = "^22.4.25", optional = true}
 flake8-comprehensions = {version = "^3.9.0", optional = true}
 flake8-docstrings = {version = "^1.6.0", optional = true}
-mypy = {version = "^0.910", optional = true}
+mypy = {version = "^0.950", optional = true}
 types-PyYAML = {version = "^6.0.0", optional = true}
 codespell = {version = "^2.0.0", optional = true}
 
@@ -266,6 +266,11 @@ markers = [
     "smoke",
     "long_1",
     "long_2"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    '^ +assert_never\(.*?\)$',
 ]
 
 [tool.mypy]
