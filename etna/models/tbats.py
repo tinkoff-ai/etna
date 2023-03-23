@@ -224,16 +224,14 @@ class _TBATSAdapter(BaseAdapter):
         component_weights = model.matrix.make_w_vector()
         error_weights = model.matrix.make_g_vector()
 
-        target = model._boxcox(model.y)
-
-        steps = len(target)
+        steps = len(model.y)
         state = model.params.x0
+        weighted_error = model.resid_boxcox[..., np.newaxis] * error_weights[np.newaxis]
 
         components = []
         for t in range(steps):
             components.append(component_weights * state)
-            error = target[t] - component_weights @ state
-            state = state_matrix @ state + error_weights * error
+            state = state_matrix @ state + weighted_error[t]
 
         raw_components = np.stack(components, axis=0)
 
