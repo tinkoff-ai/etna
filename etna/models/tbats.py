@@ -131,7 +131,15 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
-        raise NotImplementedError("Prediction decomposition isn't currently implemented!")
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        self._check_components()
+
+        raw_components = self._decompose_predict()
+        components = self._process_components(raw_components=raw_components)
+
+        return components
 
     def _get_steps_to_forecast(self, df: pd.DataFrame) -> int:
         if self._freq is None:
@@ -202,9 +210,35 @@ class _TBATSAdapter(BaseAdapter):
         raw_components = np.stack(components, axis=0)
 
         if model.params.components.use_box_cox:
-            transformed_pred = np.sum(raw_components, axis=1)
-            pred = model._inv_boxcox(transformed_pred)
-            raw_components = raw_components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
+            raw_components = self._rescale_components(raw_components)
+
+        return raw_components
+
+    def _decompose_predict(self) -> np.ndarray:
+        """Estimate raw prediction components."""
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
+
+        model = self._fitted_model
+        state_matrix = model.matrix.make_F_matrix()
+        component_weights = model.matrix.make_w_vector()
+        error_weights = model.matrix.make_g_vector()
+
+        target = model._boxcox(model.y)
+
+        steps = len(target)
+        state = model.params.x0
+
+        components = []
+        for t in range(steps):
+            components.append(component_weights * state)
+            error = target[t] - component_weights @ state
+            state = state_matrix @ state + error_weights * error
+
+        raw_components = np.stack(components, axis=0)
+
+        if model.params.components.use_box_cox:
+            raw_components = self._rescale_components(raw_components)
 
         return raw_components
 
