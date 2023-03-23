@@ -81,10 +81,27 @@ class SeasonalMovingAverageModel(
                 "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataframe!"
             )
 
+    def _predict_components(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+        """Estimate forecast components."""
+        from etna.transforms import LagTransform
+
+        self._validate_context(df=df, prediction_size=prediction_size)
+
+        lag_transform = LagTransform(
+            in_column="target",
+            lags=list(range(self.seasonality, self.context_size + 1, self.seasonality)),
+            out_column="target_component_lag",
+        )
+        target_components_df = lag_transform._transform(df) / self.window
+        target_components_df = target_components_df.iloc[-prediction_size:]
+        target_components_df = target_components_df.drop(columns=["target"], level="feature")
+        return target_components_df
+
     def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         """Make autoregressive forecasts on a wide dataframe."""
         self._validate_context(df=df, prediction_size=prediction_size)
 
+        df = df.copy()
         expected_length = prediction_size + self.context_size
         history = df.loc[:, pd.IndexSlice[:, "target"]].values
         history = history[-expected_length:-prediction_size]
@@ -128,18 +145,21 @@ class SeasonalMovingAverageModel(
         ValueError:
             if forecast context contains NaNs
         """
-        if return_components:
-            raise NotImplementedError("This mode isn't currently implemented!")
-
         df = ts.to_pandas()
         new_df = self._forecast(df=df, prediction_size=prediction_size)
         ts.df = new_df
+
+        if return_components:
+            df.loc[-prediction_size:, pd.IndexSlice[:, "target"]] = new_df.loc[:, pd.IndexSlice[:, "target"]]
+            target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
+            ts.add_target_components(target_components_df=target_components_df)
         return ts
 
     def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         """Make predictions on a wide dataframe using true values as autoregression context."""
         self._validate_context(df=df, prediction_size=prediction_size)
 
+        df = df.copy()
         expected_length = prediction_size + self.context_size
         context = df.loc[:, pd.IndexSlice[:, "target"]].values
         context = context[-expected_length:]
@@ -183,12 +203,13 @@ class SeasonalMovingAverageModel(
         ValueError:
             if forecast context contains NaNs
         """
-        if return_components:
-            raise NotImplementedError("This mode isn't currently implemented!")
-
         df = ts.to_pandas()
         new_df = self._predict(df=df, prediction_size=prediction_size)
         ts.df = new_df
+
+        if return_components:
+            target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
+            ts.add_target_components(target_components_df=target_components_df)
         return ts
 
 
