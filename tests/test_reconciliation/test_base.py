@@ -48,8 +48,8 @@ def hierarchical_ts_with_target_components(hierarchical_ts):
         {
             "timestamp": ["2000-01-01", "2000-01-02"] * 4,
             "segment": ["X_a"] * 2 + ["X_b"] * 2 + ["Y_c"] * 2 + ["Y_d"] * 2,
-            "target_component_a": [0.3, 0.7] + [1, 1] + [2, 3] + [7, 8],
-            "target_component_b": [0.7, 1.3] + [2, 3] + [3, 7] + [8, 12],
+            "target_component_a": [0.3, 0.27] + [0.7, 1.73] + [2, 2] + [3, 8],
+            "target_component_b": [0.7, 1.73] + [2.3, 2.27] + [3, 8] + [12, 12],
         }
     )
     target_components_df = TSDataset.to_dataset(target_components_df)

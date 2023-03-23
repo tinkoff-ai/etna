@@ -292,7 +292,12 @@ def test_top_down_reconcile_fit_w_nans(market_level_simple_hierarchical_ts_w_nan
 
 
 def test_reconcile_with_quantiles(total_level_constant_forecast_w_quantiles, product_level_constant_hierarchical_ts):
-    answer = np.array([[3, 3, 3, 7, 7, 7], [3, 3, 3, 7, 7, 7]])
+    answer = np.array(
+        [
+            [10 * 0.3, 6.5 * 0.3, 14 * 0.3, 10 * 0.7, 6.5 * 0.7, 14 * 0.7],
+            [10 * 0.3, 3.75 * 0.3, 18 * 0.3, 10 * 0.7, 3.75 * 0.7, 18 * 0.7],
+        ]
+    )
     ts = product_level_constant_hierarchical_ts
     forecast = total_level_constant_forecast_w_quantiles
     reconciliator = TopDownReconciliator(target_level="market", source_level="total", method="AHP", period=1)
