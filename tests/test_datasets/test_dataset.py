@@ -224,7 +224,7 @@ def inconsistent_target_components_names_duplication_df(target_components_df):
 
 @pytest.fixture
 def inconsistent_target_components_values_df(target_components_df):
-    target_components_df.loc[10, pd.IndexSlice["1", "target_component_a"]] = 100
+    target_components_df.loc[target_components_df.index[-1], pd.IndexSlice["1", "target_component_a"]] = 100
     return target_components_df
 
 
