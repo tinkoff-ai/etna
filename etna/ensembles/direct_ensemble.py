@@ -122,19 +122,17 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
-    def _forecast(self, return_components: bool) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions.
 
         In each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
         which covers this point.
         """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
         if return_components:
             raise NotImplementedError("Adding target components is not currently implemented!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
+            delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
         forecast = self._merge(forecasts=forecasts)
         return forecast

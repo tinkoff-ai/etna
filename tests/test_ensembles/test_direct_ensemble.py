@@ -9,6 +9,8 @@ from etna.ensembles import DirectEnsemble
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 
 
 @pytest.fixture
@@ -67,8 +69,21 @@ def test_predict(direct_ensemble_pipeline, simple_ts_train):
     pd.testing.assert_frame_equal(prediction.to_pandas(), expected_prediction.to_pandas())
 
 
-def test_save_load(direct_ensemble_pipeline, example_tsds):
-    assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds)
+@pytest.mark.parametrize("load_ts", [True, False])
+def test_save_load(load_ts, direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_given_ts(direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts(
+        pipeline=direct_ensemble_pipeline, ts=example_tsds, horizon=direct_ensemble_pipeline.horizon
+    )
+
+
+def test_forecast_given_ts_with_prediction_interval(direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
+        pipeline=direct_ensemble_pipeline, ts=example_tsds, horizon=direct_ensemble_pipeline.horizon
+    )
 
 
 def test_forecast_with_return_components_fails(example_tsds, direct_ensemble_pipeline):

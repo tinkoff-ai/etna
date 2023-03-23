@@ -24,7 +24,6 @@ from tests.test_models.utils import assert_model_equals_loaded_original
     ],
 )
 def test_mlp_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_with_horizon, horizon):
-
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 4)))
     fourier = FourierTransform(period=7, order=3)
@@ -82,6 +81,17 @@ def test_mlp_make_samples(simple_df_relevance):
     np.testing.assert_equal(df[["target"]].iloc[decoder_length : 2 * decoder_length], second_sample["decoder_target"])
 
 
+def test_mlp_forward_fail_nans():
+    batch = {
+        "decoder_real": torch.Tensor([[torch.nan, 2, 3], [1, 2, 3], [1, 2, 3]]),
+        "decoder_target": torch.Tensor([[1], [2], [3]]),
+        "segment": "A",
+    }
+    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
+    with pytest.raises(ValueError, match="There are NaNs in features"):
+        _ = model.forward(batch)
+
+
 def test_mlp_step():
 
     batch = {
@@ -96,6 +106,17 @@ def test_mlp_step():
     assert torch.all(decoder_target == batch["decoder_target"])
     assert type(output) == torch.Tensor
     assert output.shape == torch.Size([3, 1])
+
+
+def test_mlp_step_fail_nans():
+    batch = {
+        "decoder_real": torch.Tensor([[torch.nan, 2, 3], [1, 2, 3], [1, 2, 3]]),
+        "decoder_target": torch.Tensor([[1], [2], [3]]),
+        "segment": "A",
+    }
+    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
+    with pytest.raises(ValueError, match="There are NaNs in features"):
+        _ = model.step(batch)
 
 
 def test_mlp_layers():
