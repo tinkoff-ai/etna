@@ -65,7 +65,24 @@ class _TBATSAdapter(BaseAdapter):
         return y_pred
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
-        raise NotImplementedError("Method predict isn't currently implemented!")
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        y_pred = pd.DataFrame()
+        y_pred["target"] = self._fitted_model.y_hat
+
+        if prediction_interval:
+            for quantile in quantiles:
+                confidence_intervals = self._fitted_model._calculate_confidence_intervals(
+                    y_pred["target"].values, quantile
+                )
+
+                if quantile < 1 / 2:
+                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
+                else:
+                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
+
+        return y_pred
 
     def get_model(self) -> Model:
         """Get internal :py:class:`tbats.tbats.Model` model that was fitted inside etna class.
