@@ -41,6 +41,7 @@ def hierarchical_ts():
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["exog"], hierarchical_structure=hs)
     return ts
 
+
 @pytest.fixture
 def hierarchical_ts_with_target_components(hierarchical_ts):
     target_components_df = pd.DataFrame(
@@ -120,11 +121,14 @@ def test_reconcile(hierarchical_ts, source_level, target_level, mapping_matrix, 
     pd.testing.assert_frame_equal(obtained_ts.df, expected_ts.df)
     pd.testing.assert_frame_equal(obtained_ts.df_exog, expected_ts.df_exog)
 
+
 @pytest.mark.parametrize(
     "source_level, target_level, mapping_matrix",
     [("market", "total", "market_total_mapping_matrix"), ("total", "market", "total_market_mapping_matrix")],
 )
-def test_reconcile_with_target_components(hierarchical_ts_with_target_components, source_level, target_level, mapping_matrix, request):
+def test_reconcile_with_target_components(
+    hierarchical_ts_with_target_components, source_level, target_level, mapping_matrix, request
+):
     source_ts = hierarchical_ts_with_target_components.get_level_dataset(target_level=source_level)
     expected_ts = hierarchical_ts_with_target_components.get_level_dataset(target_level=target_level)
 
