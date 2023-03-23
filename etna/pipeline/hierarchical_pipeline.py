@@ -108,7 +108,7 @@ class HierarchicalPipeline(Pipeline):
             freq=forecast.freq,
             df_exog=forecast.df_exog,
             known_future=forecast.known_future,
-            hierarchical_structure=self.ts.hierarchical_structure,  # type: ignore
+            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
         )
         return hierarchical_forecast
 
