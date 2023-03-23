@@ -174,6 +174,16 @@ class _TBATSAdapter(BaseAdapter):
         if len(not_fitted_components) > 0:
             warn(f"Following components are not fitted: {', '.join(not_fitted_components)}!")
 
+    def _rescale_components(self, raw_components: np.ndarray) -> np.ndarray:
+        """Rescale components when Box-Cox transform used."""
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
+
+        transformed_pred = np.sum(raw_components, axis=1)
+        pred = self._fitted_model._inv_boxcox(transformed_pred)
+        components = raw_components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
+        return components
+
     def _decompose_forecast(self, horizon: int) -> np.ndarray:
         """Estimate raw forecast components."""
         if self._fitted_model is None:
