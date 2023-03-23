@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -121,16 +123,19 @@ def test_repr(model_class, model_class_repr):
 
 
 @pytest.mark.parametrize("model", (TBATSModel(), BATSModel()))
-def test_not_fitted(model, linear_segments_ts_unique):
+@pytest.mark.parametrize("method", ("forecast", "predict"))
+def test_not_fitted(model, method, linear_segments_ts_unique):
     train, test = linear_segments_ts_unique
     to_forecast = train.make_future(3)
+
+    method_to_call = getattr(model, method)
     with pytest.raises(ValueError, match="model is not fitted!"):
-        model.forecast(to_forecast)
+        method_to_call(ts=to_forecast)
 
 
 @pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_format(model, new_format_df):
+def test_forecast_format(model, new_format_df):
     df = new_format_df
     ts = TSDataset(df, "1d")
     lags = LagTransform(lags=[3, 4, 5], in_column="target")
@@ -144,22 +149,51 @@ def test_format(model, new_format_df):
 
 @pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_dummy(model, sinusoid_ts):
+def test_predict_format(model, new_format_df):
+    df = new_format_df
+    ts = TSDataset(df, "1d")
+    lags = LagTransform(lags=[3], in_column="target")
+    ts.fit_transform([lags])
+    model.fit(ts)
+    pred = model.predict(ts)
+    assert not pred[:, :, "target"].isnull().values.any()
+
+
+@pytest.mark.long_2
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
+@pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
+def test_dummy(model, method, use_future, sinusoid_ts):
     train, test = sinusoid_ts
     model.fit(train)
-    future_ts = train.make_future(14)
-    y_pred = model.forecast(future_ts)
+
+    if use_future:
+        pred_ts = train.make_future(14)
+        y_true = test
+    else:
+        pred_ts = deepcopy(train)
+        y_true = train
+
+    method_to_call = getattr(model, method)
+    y_pred = method_to_call(ts=pred_ts)
+
     metric = MAE("macro")
-    value_metric = metric(y_pred, test)
+    value_metric = metric(y_true, y_pred)
     assert value_metric < 0.33
 
 
 @pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_prediction_interval(model, example_tsds):
+@pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
+def test_prediction_interval(model, method, use_future, example_tsds):
     model.fit(example_tsds)
-    future_ts = example_tsds.make_future(3)
-    forecast = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+    if use_future:
+        pred_ts = example_tsds.make_future(3)
+    else:
+        pred_ts = deepcopy(example_tsds)
+
+    method_to_call = getattr(model, method)
+    forecast = method_to_call(ts=pred_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
