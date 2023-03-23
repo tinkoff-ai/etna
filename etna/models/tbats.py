@@ -240,7 +240,7 @@ class _TBATSAdapter(BaseAdapter):
                 raw_components[:, component_idx : component_idx + p + q], axis=1
             )
 
-        return pd.DataFrame(data=named_components)
+        return pd.DataFrame(data=named_components).add_prefix("target_component_")
 
 
 class BATSModel(
