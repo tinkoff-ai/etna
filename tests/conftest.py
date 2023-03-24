@@ -663,7 +663,7 @@ def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_d
 
 
 @pytest.fixture
-def product_level_constant_hierarchical_ts_w_exog(
+def product_level_constant_hierarchical_ts_with_exog(
     product_level_constant_hierarchical_df, market_level_constant_hierarchical_df_exog, hierarchical_structure
 ):
     ts = TSDataset(
@@ -677,7 +677,7 @@ def product_level_constant_hierarchical_ts_w_exog(
 
 
 @pytest.fixture
-def product_level_constant_forecast_w_quantiles(hierarchical_structure):
+def product_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
@@ -694,7 +694,7 @@ def product_level_constant_forecast_w_quantiles(hierarchical_structure):
 
 
 @pytest.fixture
-def product_level_constant_forecast_w_target_components(hierarchical_structure):
+def product_level_constant_forecast_with_target_components(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
@@ -720,7 +720,7 @@ def product_level_constant_forecast_w_target_components(hierarchical_structure):
 
 
 @pytest.fixture
-def market_level_constant_forecast_w_quantiles(hierarchical_structure):
+def market_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 2,
@@ -737,7 +737,7 @@ def market_level_constant_forecast_w_quantiles(hierarchical_structure):
 
 
 @pytest.fixture
-def market_level_constant_forecast_w_target_components(hierarchical_structure):
+def market_level_constant_forecast_with_target_components(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 2,
@@ -763,7 +763,7 @@ def market_level_constant_forecast_w_target_components(hierarchical_structure):
 
 
 @pytest.fixture
-def total_level_constant_forecast_w_quantiles(hierarchical_structure):
+def total_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"],
@@ -780,7 +780,7 @@ def total_level_constant_forecast_w_quantiles(hierarchical_structure):
 
 
 @pytest.fixture
-def total_level_constant_forecast_w_target_components(hierarchical_structure):
+def total_level_constant_forecast_with_target_components(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"],

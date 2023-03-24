@@ -100,12 +100,12 @@ def test_bottom_up_reconcile_fit_w_nans(market_level_simple_hierarchical_ts_w_na
 
 
 def test_reconcile_with_quantiles(
-    product_level_constant_forecast_w_quantiles,
-    market_level_constant_forecast_w_quantiles,
+    product_level_constant_forecast_with_quantiles,
+    market_level_constant_forecast_with_quantiles,
     product_level_constant_hierarchical_ts,
 ):
     ts = product_level_constant_hierarchical_ts
     reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
     reconciliator.fit(ts=ts)
-    reconciled_df = reconciliator.reconcile(ts=product_level_constant_forecast_w_quantiles).to_pandas()
-    pd.testing.assert_frame_equal(reconciled_df, market_level_constant_forecast_w_quantiles.to_pandas())
+    reconciled_df = reconciliator.reconcile(ts=product_level_constant_forecast_with_quantiles).to_pandas()
+    pd.testing.assert_frame_equal(reconciled_df, market_level_constant_forecast_with_quantiles.to_pandas())

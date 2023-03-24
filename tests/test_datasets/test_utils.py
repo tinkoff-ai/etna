@@ -199,10 +199,10 @@ def test_get_target_with_quantiles(segments, columns, answer):
 
 @pytest.mark.parametrize(
     "target_level, answer_name",
-    (("market", "market_level_constant_forecast_w_quantiles"), ("total", "total_level_constant_forecast_w_quantiles")),
+    (("market", "market_level_constant_forecast_with_quantiles"), ("total", "total_level_constant_forecast_with_quantiles")),
 )
-def test_get_level_dataframe(product_level_constant_forecast_w_quantiles, target_level, answer_name, request):
-    ts = product_level_constant_forecast_w_quantiles
+def test_get_level_dataframe(product_level_constant_forecast_with_quantiles, target_level, answer_name, request):
+    ts = product_level_constant_forecast_with_quantiles
     answer = request.getfixturevalue(answer_name).to_pandas()
     answer.index.freq = "D"
 
