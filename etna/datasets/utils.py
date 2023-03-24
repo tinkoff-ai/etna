@@ -216,9 +216,9 @@ def get_level_dataframe(
     mapping_matrix:
         mapping matrix between levels
     source_level_segments:
-        tuple of segments at the source level
+        list of segments at the source level
     target_level_segments:
-        tuple of segments at the target level
+        list of segments at the target level
 
     Returns
     -------

@@ -1123,3 +1123,9 @@ def test_inverse_transform_with_target_components_fails_keep_target_components(t
     with suppress(ValueError):
         ts_with_target_components.inverse_transform(transforms=[transform])
     assert ts_with_target_components.target_components_names is not None
+
+@pytest.mark.parametrize("fixture_name, expected_quantiles", (("example_tsds", ()), ("product_level_constant_forecast_with_quantiles", ("target_0.25", "target_0.75"))))
+def test_get_target_quantiles_names(fixture_name, expected_quantiles, request):
+    ts = request.getfixturevalue(fixture_name)
+    target_quantiles_names = ts.target_quantiles_names
+    assert sorted(target_quantiles_names) == sorted(expected_quantiles)

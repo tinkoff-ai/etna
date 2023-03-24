@@ -26,6 +26,7 @@ from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import inverse_transform_target_components
 from etna.loggers import tslogger
+from etna.datasets.utils import match_target_quantiles
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
@@ -499,6 +500,11 @@ class TSDataset:
     def target_components_names(self) -> Optional[List[str]]:
         """Get list of target components names. Components sum up to target. If there are no components, None is returned."""
         return self._target_components_names
+
+    @property
+    def target_quantiles_names(self) -> Tuple[str]:
+        """Get tuple with target quantiles names. Return the empty tuple in case of quantile absence."""
+        return tuple(match_target_quantiles(features=set(self.columns.get_level_values("feature"))))
 
     def plot(
         self,
