@@ -295,7 +295,15 @@ class _TBATSAdapter(BaseAdapter):
 class BATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
-    """Class for holding segment interval BATS model."""
+    """Class for holding segment interval BATS model.
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for BATS model are: local level, trend, seasonality and ARMA component.
+    In-sample and out-of-sample decompositions components are estimated directly from the fitted model parameters.
+    Box-Cox transform supported with components proportional rescaling.
+    """
 
     def __init__(
         self,
@@ -364,7 +372,15 @@ class BATSModel(
 class TBATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
-    """Class for holding segment interval TBATS model."""
+    """Class for holding segment interval TBATS model.
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for TBATS model are: local level, trend, seasonality and ARMA component.
+    In-sample and out-of-sample decompositions components are estimated directly from the fitted model parameters.
+    Box-Cox transform supported with components proportional rescaling.
+    """
 
     def __init__(
         self,
