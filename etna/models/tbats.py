@@ -70,6 +70,10 @@ class _TBATSAdapter(BaseAdapter):
 
         y_pred = pd.DataFrame()
         y_pred["target"] = self._fitted_model.y_hat
+        y_pred["timestamp"] = pd.date_range(end=str(self._last_train_timestamp), freq=self._freq, periods=len(y_pred))
+
+        if len(set(y_pred["timestamp"]) & set(df["timestamp"])) == 0:
+            raise NotImplementedError("Method predict isn't currently implemented for out-of-sample prediction!")
 
         if prediction_interval:
             for quantile in quantiles:
@@ -81,6 +85,9 @@ class _TBATSAdapter(BaseAdapter):
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
                 else:
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
+
+        # selecting time points from provided dataframe
+        y_pred = y_pred.merge(df["timestamp"], on="timestamp").drop(columns=["timestamp"])
 
         return y_pred
 
