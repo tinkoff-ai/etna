@@ -61,7 +61,7 @@ class TestPredictInSampleFull:
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
             (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), [])
+            (TBATSModel(use_trend=True), []),
         ],
     )
     def test_predict_in_sample_full(self, model, transforms, example_tsds):
