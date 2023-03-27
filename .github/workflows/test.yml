@@ -64,7 +64,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
-          pip install "sqlalchemy>=1.4,<2"
+          poetry run pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("not long")
         run: |
@@ -212,7 +212,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install -E "all tests" -vv
-          pip install "pandas${{ matrix.pandas-version }}"
+          poetry run pip install "pandas${{ matrix.pandas-version }}"
 
       - name: PyTest ("tsdataset transforms")
         run: |
