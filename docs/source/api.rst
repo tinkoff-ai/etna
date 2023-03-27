@@ -14,6 +14,7 @@ API
    transforms
    ensembles
    pipeline
+   reconciliation
    analysis
    auto
    clustering

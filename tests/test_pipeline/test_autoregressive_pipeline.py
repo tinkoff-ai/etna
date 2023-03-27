@@ -23,10 +23,14 @@ from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import AutoRegressivePipeline
+from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.utils import to_be_fixed
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -75,10 +79,10 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
     with patch.object(TSDataset, "make_future", make_future):
         pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
         pipeline.fit(example_tsds)
-        _ = pipeline._forecast()
+        _ = pipeline._forecast(ts=example_tsds, return_components=False)
 
     assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=pipeline.step)
+    make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=())
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY)
 
@@ -97,10 +101,10 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
     with patch.object(TSDataset, "make_future", make_future):
         pipeline = AutoRegressivePipeline(model=model, horizon=5, step=1)
         pipeline.fit(example_tsds)
-        _ = pipeline._forecast()
+        _ = pipeline._forecast(ts=example_tsds, return_components=False)
 
     assert make_future.mock.call_count == 5
-    make_future.mock.assert_called_with(future_steps=pipeline.step, tail_steps=model.context_size)
+    make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=(), tail_steps=model.context_size)
     assert model.forecast.call_count == 5
     model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
 
@@ -138,7 +142,7 @@ def test_forecast_one_step(example_tsds):
 
     # make predictions in AutoRegressivePipeline
     model = LinearPerSegmentModel()
-    transforms = [LagTransform(in_column="target", lags=[1])]
+    transforms = [AddConstTransform(in_column="target", value=10), LagTransform(in_column="target", lags=[1])]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast()
@@ -152,8 +156,9 @@ def test_forecast_one_step(example_tsds):
         cur_ts = TSDataset(df, freq=original_ts.freq)
         # these transform don't fit and we can fit_transform them at each step
         cur_ts.transform(transforms)
-        cur_forecast_ts = cur_ts.make_future(1)
+        cur_forecast_ts = cur_ts.make_future(1, transforms=transforms)
         cur_future_ts = model.forecast(cur_forecast_ts)
+        cur_future_ts.inverse_transform(transforms)
         to_add_df = cur_future_ts.to_pandas()
         df = pd.concat([df, to_add_df[df.columns]])
 
@@ -197,10 +202,10 @@ def test_forecast_with_fit_transforms(example_tsds):
     pipeline.forecast()
 
 
-def test_forecast_raise_error_if_not_fitted():
-    """Test that AutoRegressivePipeline raise error when calling forecast without being fit."""
+def test_forecast_raise_error_if_no_ts():
+    """Test that AutoRegressivePipeline raises error when calling forecast without ts."""
     pipeline = AutoRegressivePipeline(model=LinearPerSegmentModel(), horizon=5)
-    with pytest.raises(ValueError, match="AutoRegressivePipeline is not fitted!"):
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = pipeline.forecast()
 
 
@@ -275,6 +280,7 @@ def test_predict(model, transforms, example_tsds):
     assert len(result_df) == len(example_tsds.segments) * num_points
 
 
+@pytest.mark.parametrize("load_ts", [True, False])
 @pytest.mark.parametrize(
     "model, transforms",
     [
@@ -291,10 +297,88 @@ def test_predict(model, transforms, example_tsds):
         (ProphetModel(), []),
     ],
 )
-def test_save_load(model, transforms, example_tsds):
+def test_save_load(load_ts, model, transforms, example_tsds):
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
-    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds)
+    assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+
+
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_forecast_return_components(example_tsds, model_fixture, request):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = AutoRegressivePipeline(model=model, horizon=10)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.forecast(return_components=True)
+
+
+@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_predict_return_components(example_tsds, model_fixture, request):
+    model = request.getfixturevalue(model_fixture)
+    pipeline = AutoRegressivePipeline(model=model, horizon=10)
+    pipeline.fit(example_tsds)
+    forecast = pipeline.predict(ts=example_tsds, return_components=True)
 
 
 @pytest.mark.parametrize(

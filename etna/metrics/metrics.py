@@ -8,6 +8,7 @@ from etna.metrics import r2_score
 from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
+from etna.metrics import wape
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 
@@ -302,4 +303,32 @@ class MaxDeviation(Metric):
         return False
 
 
-__all__ = ["MAE", "MSE", "RMSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign", "MaxDeviation"]
+class WAPE(Metric):
+    """Weighted average percentage Error metric with multi-segment computation support.
+
+    .. math::
+        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=0}^{n}|y\\_true_i|}
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
+    """
+
+    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+        """Init metric.
+
+        Parameters
+        ----------
+        mode: 'macro' or 'per-segment'
+            metrics aggregation mode
+        kwargs:
+            metric's computation arguments
+        """
+        super().__init__(mode=mode, metric_fn=wape, **kwargs)
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
+
+
+__all__ = ["MAE", "MSE", "RMSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign", "MaxDeviation", "WAPE"]

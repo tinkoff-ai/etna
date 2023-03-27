@@ -1,7 +1,6 @@
 import warnings
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -10,15 +9,14 @@ import pandas as pd
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers import tslogger
-from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.base import log_decorator
 from etna.models.mixins import SaveNNMixin
+from etna.models.nn.utils import PytorchForecastingDatasetBuilder
+from etna.models.nn.utils import PytorchForecastingMixin
 from etna.models.nn.utils import _DeepCopyMixin
-from etna.transforms import PytorchForecastingTransform
 
 if SETTINGS.torch_required:
-    import pytorch_lightning as pl
     from pytorch_forecasting.data import TimeSeriesDataSet
     from pytorch_forecasting.metrics import MultiHorizonMetric
     from pytorch_forecasting.metrics import QuantileLoss
@@ -26,7 +24,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import LightningModule
 
 
-class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbstractModel):
+class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
     Notes
@@ -35,25 +33,22 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
     It`s not right pattern of using Transforms and TSDataset.
     """
 
-    context_size = 0
-
     def __init__(
         self,
-        max_epochs: int = 10,
-        gpus: Union[int, List[int]] = 0,
-        gradient_clip_val: float = 0.1,
-        learning_rate: Optional[List[float]] = None,
-        batch_size: int = 64,
-        context_length: Optional[int] = None,
+        decoder_length: Optional[int] = None,
+        encoder_length: Optional[int] = None,
+        dataset_builder: Optional[PytorchForecastingDatasetBuilder] = None,
+        train_batch_size: int = 64,
+        test_batch_size: int = 64,
+        lr: float = 1e-3,
         hidden_size: int = 16,
         lstm_layers: int = 1,
         attention_head_size: int = 4,
         dropout: float = 0.1,
         hidden_continuous_size: int = 8,
         loss: "MultiHorizonMetric" = None,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_params: Optional[Dict[str, Any]] = None,
         quantiles_kwargs: Optional[Dict[str, Any]] = None,
-        *args,
         **kwargs,
     ):
         """
@@ -61,17 +56,17 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
 
         Parameters
         ----------
-        batch_size:
-            Batch size.
-        context_length:
-            Max encoder length, if None max encoder length is equal to 2 horizons.
-        max_epochs:
-            Max epochs.
-        gpus:
-            0 - is CPU, or [n_{i}] - to choose n_{i} GPU from cluster.
-        gradient_clip_val:
-            Clipping by norm is using, choose 0 to not clip.
-        learning_rate:
+        decoder_length:
+            Decoder length.
+        encoder_length:
+            Encoder length.
+        dataset_builder:
+            Dataset builder for PytorchForecasting.
+        train_batch_size:
+            Train batch size.
+        test_batch_size:
+            Test batch size.
+        lr:
             Learning rate.
         hidden_size:
             Hidden size of network which can range from 8 to 512.
@@ -94,25 +89,38 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         super().__init__()
         if loss is None:
             loss = QuantileLoss()
-        self.max_epochs = max_epochs
-        self.gpus = gpus
-        self.gradient_clip_val = gradient_clip_val
-        self.learning_rate = learning_rate if learning_rate is not None else [0.001]
-        self.horizon = None
-        self.batch_size = batch_size
-        self.context_length = context_length
+        if dataset_builder is not None:
+            self.encoder_length = dataset_builder.max_encoder_length
+            self.decoder_length = dataset_builder.max_prediction_length
+            self.dataset_builder = dataset_builder
+        elif encoder_length is not None and decoder_length is not None:
+            self.encoder_length = encoder_length
+            self.decoder_length = decoder_length
+            self.dataset_builder = PytorchForecastingDatasetBuilder(
+                max_encoder_length=encoder_length,
+                min_encoder_length=encoder_length,
+                max_prediction_length=decoder_length,
+                time_varying_known_reals=["time_idx"],
+                time_varying_unknown_reals=["target"],
+                target_normalizer=None,
+            )
+        else:
+            raise ValueError("You should provide either dataset_builder or encoder_length and decoder_length")
+
+        self.train_batch_size = train_batch_size
+        self.test_batch_size = test_batch_size
+        self.lr = lr
         self.hidden_size = hidden_size
         self.lstm_layers = lstm_layers
         self.attention_head_size = attention_head_size
         self.dropout = dropout
         self.hidden_continuous_size = hidden_continuous_size
         self.loss = loss
-        self.trainer_kwargs = trainer_kwargs if trainer_kwargs is not None else dict()
+        self.trainer_params = trainer_params if trainer_params is not None else dict()
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
         self.model: Optional[Union[LightningModule, TemporalFusionTransformer]] = None
-        self.trainer: Optional[pl.Trainer] = None
         self._last_train_timestamp = None
-        self._freq: Optional[str] = None
+        self.kwargs = kwargs
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
         """
@@ -124,7 +132,7 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         """
         return TemporalFusionTransformer.from_dataset(
             ts_dataset,
-            learning_rate=self.learning_rate,
+            learning_rate=[self.lr],
             hidden_size=self.hidden_size,
             lstm_layers=self.lstm_layers,
             attention_head_size=self.attention_head_size,
@@ -133,54 +141,19 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
             loss=self.loss,
         )
 
-    @staticmethod
-    def _get_pf_transform(ts: TSDataset) -> PytorchForecastingTransform:
-        """Get PytorchForecastingTransform from ts.transforms or raise exception if not found."""
-        if ts.transforms is not None and isinstance(ts.transforms[-1], PytorchForecastingTransform):
-            return ts.transforms[-1]
-        else:
-            raise ValueError(
-                "Not valid usage of transforms, please add PytorchForecastingTransform at the end of transforms"
-            )
-
-    @log_decorator
-    def fit(self, ts: TSDataset) -> "TFTModel":
-        """
-        Fit model.
-
-        Parameters
-        ----------
-        ts:
-            TSDataset to fit.
-
-        Returns
-        -------
-        TFTModel
-        """
-        self._last_train_timestamp = ts.df.index[-1]
-        self._freq = ts.freq
-        pf_transform = self._get_pf_transform(ts)
-        self.model = self._from_dataset(pf_transform.pf_dataset_train)
-
-        trainer_kwargs = dict(
-            logger=tslogger.pl_loggers,
-            max_epochs=self.max_epochs,
-            gpus=self.gpus,
-            gradient_clip_val=self.gradient_clip_val,
-        )
-        trainer_kwargs.update(self.trainer_kwargs)
-
-        self.trainer = pl.Trainer(**trainer_kwargs)
-
-        train_dataloader = pf_transform.pf_dataset_train.to_dataloader(train=True, batch_size=self.batch_size)
-
-        self.trainer.fit(self.model, train_dataloader)
-
-        return self
+    @property
+    def context_size(self) -> int:
+        """Context size of the model."""
+        return self.encoder_length
 
     @log_decorator
     def forecast(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -190,41 +163,25 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context for models that require it.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns forecast components
 
         Returns
         -------
         TSDataset
             TSDataset with predictions.
         """
-        if ts.index[0] <= self._last_train_timestamp:
-            raise NotImplementedError(
-                "It is not possible to make in-sample predictions with TFT model! "
-                "In-sample predictions aren't supported by current implementation."
-            )
-        elif ts.index[0] != pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]:
-            raise NotImplementedError(
-                "You can only forecast from the next point after the last one in the training dataset: "
-                f"last train timestamp: {self._last_train_timestamp}, first test timestamp is {ts.index[0]}"
-            )
-        else:
-            pass
+        if return_components:
+            raise NotImplementedError("This mode isn't currently implemented!")
 
-        pf_transform = self._get_pf_transform(ts)
-        if pf_transform.pf_dataset_predict is None:
-            raise ValueError(
-                "The future is not generated! Generate future using TSDataset make_future before calling forecast method!"
-            )
-        prediction_dataloader = pf_transform.pf_dataset_predict.to_dataloader(
-            train=False, batch_size=self.batch_size * 2
-        )
-
-        predicts = self.model.predict(prediction_dataloader).numpy()  # type: ignore
-        # shape (segments, encoder_length)
-        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[: len(ts.df)]
+        ts, prediction_dataloader = self._make_target_prediction(ts, prediction_size)
 
         if prediction_interval:
             if not isinstance(self.loss, QuantileLoss):
@@ -272,12 +229,16 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
                 df = df.sort_index(axis=1)
                 ts.df = df
 
-        ts.inverse_transform()
         return ts
 
     @log_decorator
     def predict(
-        self, ts: TSDataset, prediction_interval: bool = False, quantiles: Sequence[float] = (0.025, 0.975)
+        self,
+        ts: TSDataset,
+        prediction_size: int,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
     ) -> TSDataset:
         """Make predictions.
 
@@ -288,10 +249,15 @@ class TFTModel(_DeepCopyMixin, SaveNNMixin, PredictionIntervalContextIgnorantAbs
         ----------
         ts:
             Dataset with features
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval
+        return_components:
+            If True additionally returns prediction components
 
         Returns
         -------

@@ -5,7 +5,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
-from typing import cast
 
 import pandas as pd
 from joblib import Parallel
@@ -203,16 +202,16 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions.
 
         Compute weighted average of pipelines' forecasts
         """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
+            delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
         forecast = self._vote(forecasts=forecasts)
         return forecast
@@ -224,11 +223,13 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         end_timestamp: pd.Timestamp,
         prediction_interval: bool,
         quantiles: Sequence[float],
+        return_components: bool,
     ) -> TSDataset:
         if prediction_interval:
             raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
 
-        self.ts = cast(TSDataset, self.ts)
         predictions = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
             delayed(self._predict_pipeline)(
                 ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp

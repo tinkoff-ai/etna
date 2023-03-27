@@ -48,8 +48,8 @@ def df_with_specials():
 
 
 @pytest.fixture()
-def constant_days_two_segments_df(constant_days_df: pd.DataFrame):
-    """Create pandas dataframe that has two segments with constant columns each."""
+def constant_days_two_segments_ts(constant_days_df: pd.DataFrame):
+    """Create TSDataset that has two segments with constant columns each."""
     df_1 = constant_days_df.reset_index()
     df_2 = constant_days_df.reset_index()
 
@@ -57,11 +57,9 @@ def constant_days_two_segments_df(constant_days_df: pd.DataFrame):
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    return df
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df=df, freq="D")
+    return ts
 
 
 def test_interface_week(constant_days_df: pd.DataFrame):
@@ -107,39 +105,39 @@ def test_interface_noweek_nomonth():
         _ = _OneSegmentSpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 
-def test_interface_two_segments_week(constant_days_two_segments_df: pd.DataFrame):
+def test_interface_two_segments_week(constant_days_two_segments_ts: TSDataset):
     """
     This test checks that SpecialDaysTransform that should find special weekdays creates the only column with
     'anomaly_weekdays' name as expected.
     """
     special_days_finder = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
-    df = special_days_finder.fit_transform(constant_days_two_segments_df)
+    df = special_days_finder.fit_transform(constant_days_two_segments_ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
         assert "anomaly_weekdays" in df[segment].columns
         assert "anomaly_monthdays" not in df[segment].columns
         assert df[segment]["anomaly_weekdays"].dtype == "category"
 
 
-def test_interface_two_segments_month(constant_days_two_segments_df: pd.DataFrame):
+def test_interface_two_segments_month(constant_days_two_segments_ts: TSDataset):
     """
     This test checks that SpecialDaysTransform that should find special month days creates the only column with
     'anomaly_monthdays' name as expected.
     """
     special_days_finder = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=True)
-    df = special_days_finder.fit_transform(constant_days_two_segments_df)
+    df = special_days_finder.fit_transform(constant_days_two_segments_ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
         assert "anomaly_weekdays" not in df[segment].columns
         assert "anomaly_monthdays" in df[segment].columns
         assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
-def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.DataFrame):
+def test_interface_two_segments_week_month(constant_days_two_segments_ts: TSDataset):
     """
     This test checks that SpecialDaysTransform that should find special month and week days
     creates two columns with 'anomaly_monthdays' and 'anomaly_weekdays' name as expected.
     """
     special_days_finder = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
-    df = special_days_finder.fit_transform(constant_days_two_segments_df)
+    df = special_days_finder.fit_transform(constant_days_two_segments_ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
         assert "anomaly_weekdays" in df[segment].columns
         assert "anomaly_monthdays" in df[segment].columns
@@ -147,9 +145,11 @@ def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.Dat
         assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
-def test_interface_two_segments_noweek_nomonth(constant_days_two_segments_df: pd.DataFrame):
-    """This test checks that bad-inited SpecialDaysTransform raises AssertionError during fit_transform."""
-    with pytest.raises(ValueError):
+def test_interface_two_segments_noweek_nomonth():
+    """This test checks that bad-inited SpecialDaysTransform raises ValueError on initialisation."""
+    with pytest.raises(
+        ValueError, match="_OneSegmentSpecialDaysTransform feature does nothing with given init args configuration"
+    ):
         _ = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 
@@ -190,7 +190,7 @@ def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
 
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
-    ts_diff_endings.fit_transform([transform])
+    transform.fit_transform(ts_diff_endings)
 
 
 def test_save_load(df_with_specials):

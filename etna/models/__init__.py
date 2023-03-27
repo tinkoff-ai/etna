@@ -10,8 +10,6 @@ from etna.models.base import NonPredictionIntervalModelType
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.base import PredictionIntervalModelType
-from etna.models.catboost import CatBoostModelMultiSegment
-from etna.models.catboost import CatBoostModelPerSegment
 from etna.models.catboost import CatBoostMultiSegmentModel
 from etna.models.catboost import CatBoostPerSegmentModel
 from etna.models.deadline_ma import DeadlineMovingAverageModel

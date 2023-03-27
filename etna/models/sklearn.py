@@ -63,6 +63,21 @@ class _SklearnAdapter(BaseAdapter):
         pred = self.model.predict(features)
         return pred
 
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        raise NotImplementedError("Prediction decomposition isn't currently implemented!")
+
     def get_model(self) -> RegressorMixin:
         """Get internal sklearn model that is used inside etna class.
 

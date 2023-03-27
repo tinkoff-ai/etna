@@ -1,4 +1,3 @@
-import warnings
 from enum import Enum
 from typing import List
 from typing import Optional
@@ -6,14 +5,13 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 
 
 class ImputerMode(str, Enum):
     """Enum for different imputation strategy."""
 
-    zero = "zero"
     mean = "mean"
     running_mean = "running_mean"
     forward_fill = "forward_fill"
@@ -21,7 +19,7 @@ class ImputerMode(str, Enum):
     constant = "constant"
 
 
-class _OneSegmentTimeSeriesImputerTransform(Transform):
+class _OneSegmentTimeSeriesImputerTransform(OneSegmentTransform):
     """One segment version of transform to fill NaNs in series of a given dataframe.
 
     - It is assumed that given series begins with first non NaN value.
@@ -50,8 +48,6 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             name of processed column
         strategy:
             filling value in missing timestamps:
-
-            - If "zero", then replace missing dates with zeros
 
             - If "mean", then replace missing dates using the mean in fit stage.
 
@@ -110,13 +106,6 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
             raise ValueError("Series hasn't non NaN values which means it is empty and can't be filled.")
         series = raw_series[raw_series.first_valid_index() :]
         self.nan_timestamps = series[series.isna()].index
-        if self.strategy == ImputerMode.zero:
-            warnings.warn(
-                "zero strategy will be removed in etna 2.0.0. Use constant strategy instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.fill_value = 0
         if self.strategy == ImputerMode.constant:
             self.fill_value = self.constant_value
         elif self.strategy == ImputerMode.mean:
@@ -137,7 +126,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         result: pd.DataFrame
             dataframe with in_column series with filled gaps
         """
-        result_df = df.copy()
+        result_df = df
         cur_nans = result_df[result_df[self.in_column].isna()].index
 
         result_df[self.in_column] = self._fill(result_df[self.in_column])
@@ -162,7 +151,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         result: pd.DataFrame
             dataframe with in_column series with initial values
         """
-        result_df = df.copy()
+        result_df = df
         index = result_df.index.intersection(self.nan_timestamps)
         result_df.loc[index, self.in_column] = np.nan
         return result_df
@@ -185,11 +174,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         if self.nan_timestamps is None:
             raise ValueError("Trying to apply the unfitted transform! First fit the transform.")
 
-        if (
-            self.strategy == ImputerMode.zero
-            or self.strategy == ImputerMode.mean
-            or self.strategy == ImputerMode.constant
-        ):
+        if self.strategy == ImputerMode.mean or self.strategy == ImputerMode.constant:
             df = df.fillna(value=self.fill_value)
         elif self.strategy == ImputerMode.forward_fill:
             df = df.fillna(method="ffill")
@@ -207,7 +192,7 @@ class _OneSegmentTimeSeriesImputerTransform(Transform):
         return df
 
 
-class TimeSeriesImputerTransform(PerSegmentWrapper):
+class TimeSeriesImputerTransform(ReversiblePerSegmentWrapper):
     """Transform to fill NaNs in series of a given dataframe.
 
     - It is assumed that given series begins with first non NaN value.
@@ -240,8 +225,6 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
             name of processed column
         strategy:
             filling value in missing timestamps:
-
-            - If "zero", then replace missing dates with zeros
 
             - If "mean", then replace missing dates using the mean in fit stage.
 
@@ -286,8 +269,13 @@ class TimeSeriesImputerTransform(PerSegmentWrapper):
                 seasonality=self.seasonality,
                 default_value=self.default_value,
                 constant_value=self.constant_value,
-            )
+            ),
+            required_features=[self.in_column],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
 
 
 __all__ = ["TimeSeriesImputerTransform"]

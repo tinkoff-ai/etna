@@ -165,7 +165,11 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_prediction_interval(
-            ts=ts, model=self.model, interval_width=self.interval_width, in_column=self.in_column, **self.model_kwargs
+            ts=ts,
+            model=self.model,
+            interval_width=self.interval_width,
+            in_column=self.in_column,
+            **self.model_kwargs,
         )
 
 

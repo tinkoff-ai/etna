@@ -16,7 +16,7 @@ from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
 from etna.metrics import Sign
-from etna.models import CatBoostModelMultiSegment
+from etna.models import CatBoostMultiSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 from etna.transforms import SegmentEncoderTransform
@@ -53,7 +53,7 @@ def objective(trial: optuna.Trial, metric_name: str, ts: TSDataset, horizon: int
 
     # Define model and features
     pipeline = Pipeline(
-        model=CatBoostModelMultiSegment(
+        model=CatBoostMultiSegmentModel(
             iterations=trial.suggest_int("iterations", 10, 100),
             depth=trial.suggest_int("depth", 1, 12),
         ),
@@ -87,7 +87,7 @@ def run_optuna(
     seed: int = 11,
 ):
     """
-    Run optuna optimization for CatBoostModelMultiSegment.
+    Run optuna optimization for CatBoostMultiSegmentModel.
     """
     # Load data
     ts = dataloader(file_path, freq=freq)

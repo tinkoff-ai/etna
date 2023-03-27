@@ -28,7 +28,7 @@ def find_change_points(
     Dict[str, List[pd.Timestamp]]
         dictionary with list of trend change points for each segment
     """
-    from etna.transforms.decomposition.base_change_points import RupturesChangePointsModel
+    from etna.transforms.decomposition.change_points_based import RupturesChangePointsModel
 
     result: Dict[str, List[pd.Timestamp]] = {}
     df = ts.to_pandas()

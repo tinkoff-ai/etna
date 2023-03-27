@@ -9,6 +9,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from scipy.special import inv_boxcox
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
@@ -277,6 +278,135 @@ class _HoltWintersAdapter(BaseAdapter):
         """
         return self._result
 
+    def _check_mul_components(self):
+        """Raise error if model has multiplicative components."""
+        model = self._model
+
+        if model is None:
+            raise ValueError("This model is not fitted!")
+
+        if (model.trend is not None and model.trend == "mul") or (
+            model.seasonal is not None and model.seasonal == "mul"
+        ):
+            raise ValueError("Forecast decomposition is only supported for additive components!")
+
+    def _rescale_components(self, components: pd.DataFrame) -> pd.DataFrame:
+        """Rescale components when Box-Cox transform used."""
+        if self._result is None:
+            raise ValueError("This model is not fitted!")
+
+        pred = np.sum(components.values, axis=1)
+        transformed_pred = inv_boxcox(pred, self._result.params["lamda"])
+        components *= (transformed_pred / pred).reshape((-1, 1))
+        return components
+
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        model = self._model
+        fit_result = self._result
+
+        if fit_result is None or model is None:
+            raise ValueError("This model is not fitted!")
+
+        self._check_mul_components()
+        self._check_df(df)
+
+        level = fit_result.level.values
+        trend = fit_result.trend.values
+        season = fit_result.season.values
+
+        horizon = df["timestamp"].nunique()
+        horizon_steps = np.arange(1, horizon + 1)
+
+        components = {"target_component_level": level[-1] * np.ones(horizon)}
+
+        if model.trend is not None:
+            t = horizon_steps.copy()
+
+            if model.damped_trend:
+                t = np.cumsum(fit_result.params["damping_trend"] ** t)
+
+            components["target_component_trend"] = trend[-1] * t
+
+        if model.seasonal is not None:
+            last_period = len(season)
+
+            seasonal_periods = fit_result.model.seasonal_periods
+            k = horizon_steps // seasonal_periods
+
+            components["target_component_seasonality"] = season[
+                last_period + horizon_steps - seasonal_periods * (k + 1) - 1
+            ]
+
+        components_df = pd.DataFrame(data=components)
+
+        if model._use_boxcox:
+            components_df = self._rescale_components(components=components_df)
+
+        return components_df
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        model = self._model
+        fit_result = self._result
+
+        if fit_result is None or model is None:
+            raise ValueError("This model is not fitted!")
+
+        self._check_mul_components()
+        self._check_df(df)
+
+        level = fit_result.level.values
+        trend = fit_result.trend.values
+        season = fit_result.season.values
+
+        components = {
+            "target_component_level": np.concatenate([[fit_result.params["initial_level"]], level[:-1]]),
+        }
+
+        if model.trend is not None:
+            trend = np.concatenate([[fit_result.params["initial_trend"]], trend[:-1]])
+
+            if model.damped_trend:
+                trend *= fit_result.params["damping_trend"]
+
+            components["target_component_trend"] = trend
+
+        if model.seasonal is not None:
+            seasonal_periods = model.seasonal_periods
+            components["target_component_seasonality"] = np.concatenate(
+                [fit_result.params["initial_seasons"], season[:-seasonal_periods]]
+            )
+
+        components_df = pd.DataFrame(data=components)
+
+        if model._use_boxcox:
+            components_df = self._rescale_components(components=components_df)
+
+        return components_df
+
 
 class HoltWintersModel(
     PerSegmentModelMixin,
@@ -289,6 +419,11 @@ class HoltWintersModel(
     Notes
     -----
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for Holt-Winters model are: level, trend and seasonality.
+    For in-sample decomposition, components are obtained directly from the fitted model. For out-of-sample,
+    components estimated using an analytical form of the prediction function.
     """
 
     def __init__(
@@ -486,6 +621,11 @@ class HoltModel(HoltWintersModel):
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     They implement :py:class:`statsmodels.tsa.holtwinters.Holt` model
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for Holt model are: level and trend.
+    For in-sample decomposition, components are obtained directly from the fitted model. For out-of-sample,
+    components estimated using an analytical form of the prediction function.
     """
 
     def __init__(
@@ -583,6 +723,10 @@ class SimpleExpSmoothingModel(HoltWintersModel):
     We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
     They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
     as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    For in-sample decomposition, level component is obtained directly from the fitted model. For out-of-sample,
+    it estimated using an analytical form of the prediction function.
     """
 
     def __init__(

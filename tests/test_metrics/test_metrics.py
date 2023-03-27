@@ -12,6 +12,7 @@ from etna.metrics import r2_score
 from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
+from etna.metrics import wape
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE
@@ -20,6 +21,7 @@ from etna.metrics.metrics import MSLE
 from etna.metrics.metrics import R2
 from etna.metrics.metrics import RMSE
 from etna.metrics.metrics import SMAPE
+from etna.metrics.metrics import WAPE
 from etna.metrics.metrics import MaxDeviation
 from etna.metrics.metrics import MedAE
 from etna.metrics.metrics import Sign
@@ -41,6 +43,7 @@ from tests.utils import create_dummy_functional_metric
         (Sign, "Sign", {}, ""),
         (MaxDeviation, "MaxDeviation", {}, ""),
         (DummyMetric, "DummyMetric", {"alpha": 1.0}, "alpha = 1.0, "),
+        (WAPE, "WAPE", {}, ""),
     ),
 )
 def test_repr(metric_class, metric_class_repr, metric_params, param_repr):
@@ -56,7 +59,7 @@ def test_repr(metric_class, metric_class_repr, metric_params, param_repr):
 
 @pytest.mark.parametrize(
     "metric_class",
-    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation),
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, WAPE),
 )
 def test_name_class_name(metric_class):
     """Check metrics name property without changing its during inheritance"""
@@ -80,7 +83,7 @@ def test_name_repr(metric_class):
     assert metric_name == true_name
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation))
+@pytest.mark.parametrize("metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, WAPE))
 def test_metrics_macro(metric_class, train_test_dfs):
     """Check metrics interface in 'macro' mode"""
     forecast_df, true_df = train_test_dfs
@@ -90,7 +93,7 @@ def test_metrics_macro(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric)
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_metrics_per_segment(metric_class, train_test_dfs):
     """Check metrics interface in 'per-segment' mode"""
@@ -103,7 +106,7 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric)
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_metrics_invalid_aggregation(metric_class):
     """Check metrics behavior in case of invalid aggregation mode"""
@@ -112,7 +115,7 @@ def test_metrics_invalid_aggregation(metric_class):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric)
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
     """Check metrics behavior in case of invalid timeranges"""
@@ -123,7 +126,7 @@ def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric)
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
@@ -134,7 +137,7 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric)
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_invalid_segments_target(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
@@ -159,6 +162,7 @@ def test_invalid_segments_target(metric_class, train_test_dfs):
         (Sign, sign),
         (MaxDeviation, max_deviation),
         (DummyMetric, create_dummy_functional_metric()),
+        (WAPE, wape),
     ),
 )
 def test_metrics_values(metric_class, metric_fn, train_test_dfs):
@@ -191,6 +195,7 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
         (Sign(), None),
         (MaxDeviation(), False),
         (DummyMetric(), False),
+        (WAPE(), False),
     ),
 )
 def test_metrics_greater_is_better(metric, greater_is_better):

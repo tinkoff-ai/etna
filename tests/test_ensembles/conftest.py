@@ -67,6 +67,12 @@ def voting_ensemble_pipeline(
 
 
 @pytest.fixture
+def voting_ensemble_naive(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    return pipeline
+
+
+@pytest.fixture
 def stacking_ensemble_pipeline(
     catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
 ) -> StackingEnsemble:

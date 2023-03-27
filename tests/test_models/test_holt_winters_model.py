@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
@@ -8,6 +9,7 @@ from etna.metrics import MAE
 from etna.models import HoltModel
 from etna.models import HoltWintersModel
 from etna.models import SimpleExpSmoothingModel
+from etna.models.holt_winters import _HoltWintersAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 
@@ -119,3 +121,133 @@ def test_get_model_after_training(example_tsds, etna_model_class, expected_class
 @pytest.mark.parametrize("model", [HoltModel(), HoltWintersModel(), SimpleExpSmoothingModel()])
 def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+@pytest.fixture()
+def multi_trend_dfs(multitrend_df):
+    df = multitrend_df.copy()
+    df.columns = df.columns.droplevel("segment")
+    df.reset_index(inplace=True)
+    df["target"] += 10 - df["target"].min()
+
+    return df.iloc[:-9], df.iloc[-9:]
+
+
+@pytest.fixture()
+def seasonal_dfs():
+    target = pd.Series(
+        [
+            41.727458,
+            24.041850,
+            32.328103,
+            37.328708,
+            46.213153,
+            29.346326,
+            36.482910,
+            42.977719,
+            48.901525,
+            31.180221,
+            37.717881,
+            40.420211,
+            51.206863,
+            31.887228,
+            40.978263,
+            43.772491,
+            55.558567,
+            33.850915,
+            42.076383,
+            45.642292,
+            59.766780,
+            35.191877,
+            44.319737,
+            47.913736,
+        ],
+        index=pd.period_range(start="2005Q1", end="2010Q4", freq="Q"),
+    )
+
+    df = pd.DataFrame(
+        {
+            "timestamp": target.index.to_timestamp(),
+            "target": target.values,
+        }
+    )
+
+    return df.iloc[:-9], df.iloc[-9:]
+
+
+def test_check_mul_components_not_fitted_error():
+    model = _HoltWintersAdapter()
+    with pytest.raises(ValueError, match="This model is not fitted!"):
+        model._check_mul_components()
+
+
+def test_rescale_components_not_fitted_error():
+    model = _HoltWintersAdapter()
+    with pytest.raises(ValueError, match="This model is not fitted!"):
+        model._rescale_components(pd.DataFrame({}))
+
+
+@pytest.mark.parametrize("components_method_name", ("predict_components", "forecast_components"))
+def test_decomposition_not_fitted_error(seasonal_dfs, components_method_name):
+    _, test = seasonal_dfs
+
+    model = _HoltWintersAdapter()
+    components_method = getattr(model, components_method_name)
+
+    with pytest.raises(ValueError, match="This model is not fitted!"):
+        components_method(df=test)
+
+
+@pytest.mark.parametrize("components_method_name", ("predict_components", "forecast_components"))
+@pytest.mark.parametrize("trend,seasonal", (("mul", "mul"), ("mul", None), (None, "mul")))
+def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_name):
+    _, test = seasonal_dfs
+
+    model = _HoltWintersAdapter(trend=trend, seasonal=seasonal)
+    model.fit(test, [])
+
+    components_method = getattr(model, components_method_name)
+
+    with pytest.raises(ValueError, match="Forecast decomposition is only supported for additive components!"):
+        components_method(df=test)
+
+
+@pytest.mark.parametrize("components_method_name", ("predict_components", "forecast_components"))
+@pytest.mark.parametrize("trend,trend_component", (("add", ["target_component_trend"]), (None, [])))
+@pytest.mark.parametrize("seasonal,seasonal_component", (("add", ["target_component_seasonality"]), (None, [])))
+def test_components_names(seasonal_dfs, trend, trend_component, seasonal, seasonal_component, components_method_name):
+    expected_components_names = set(trend_component + seasonal_component + ["target_component_level"])
+    _, test = seasonal_dfs
+
+    model = _HoltWintersAdapter(trend=trend, seasonal=seasonal)
+    model.fit(test, [])
+    components_method = getattr(model, components_method_name)
+    components = components_method(df=test)
+
+    assert set(components.columns) == expected_components_names
+
+
+@pytest.mark.parametrize(
+    "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
+)
+@pytest.mark.parametrize("df_names", ("seasonal_dfs", "multi_trend_dfs"))
+@pytest.mark.parametrize("trend,damped_trend", (("add", True), ("add", False), (None, False)))
+@pytest.mark.parametrize("seasonal", ("add", None))
+@pytest.mark.parametrize("use_boxcox", (True, False))
+def test_components_sum_up_to_target(
+    df_names, trend, seasonal, damped_trend, use_boxcox, components_method_name, in_sample, request
+):
+    dfs = request.getfixturevalue(df_names)
+    train, test = dfs
+
+    model = _HoltWintersAdapter(trend=trend, seasonal=seasonal, damped_trend=damped_trend, use_boxcox=use_boxcox)
+    model.fit(train, [])
+
+    components_method = getattr(model, components_method_name)
+
+    pred_df = train if in_sample else test
+
+    components = components_method(df=pred_df)
+    pred = model.predict(pred_df)
+
+    np.testing.assert_allclose(np.sum(components.values, axis=1), pred)
