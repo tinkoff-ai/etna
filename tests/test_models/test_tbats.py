@@ -212,6 +212,7 @@ def test_decompose_not_fitted(small_periodic_ts, method):
         method_to_call(df=small_periodic_ts.df)
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (BATS, TBATS),
@@ -228,6 +229,7 @@ def test_decompose_forecast_output_format(periodic_dfs, estimator):
     assert components.shape[0] == horizon
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -245,6 +247,7 @@ def test_decompose_predict_output_format(periodic_dfs, estimator):
     assert components.shape[0] == len(train)
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -266,6 +269,7 @@ def test_named_components_output_format(periodic_dfs, estimator):
     assert len(components) == horizon
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "train_slice,decompose_slice", ((slice(5, 20), slice(None, 20)), (slice(5, 10), slice(10, 20)))
 )
@@ -324,6 +328,7 @@ def test_components_names(periodic_dfs, estimator, params, components_names, met
     assert set(components_df.columns) == components_names
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -346,6 +351,7 @@ def test_seasonal_components_not_fitted(periodic_dfs, estimator, method, use_fut
         method_to_call(df=pred_df)
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -369,6 +375,7 @@ def test_arma_component_not_fitted(periodic_dfs, estimator, method, use_future):
         method_to_call(df=pred_df)
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -448,6 +455,7 @@ def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, me
     np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
 
 
+@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
