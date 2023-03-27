@@ -601,7 +601,7 @@ class TSDataset:
         columns = df.columns.get_level_values("feature").unique()
 
         # flatten dataframe
-        df_dict = {}
+        df_dict: Dict[str, Any] = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
         df_dict["segment"] = np.repeat(segments, len(df.index))
         if "target" in columns:

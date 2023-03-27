@@ -110,7 +110,7 @@ class CustomWEASEL(WEASEL):
         self._min_series_len: Optional[int] = None
         self._sfa_list: List[SymbolicFourierApproximation] = []
         self._vectorizer_list: List[CountVectorizer] = []
-        self._relevant_features_list: List[int] = []
+        self._relevant_features_list: List[List[int]] = []
         self._vocabulary: Dict[int, str] = {}
         self._sfa = SymbolicFourierApproximation(
             n_coefs=self.word_size,
@@ -131,7 +131,8 @@ class CustomWEASEL(WEASEL):
         """Create the samples of length window_size with window_step."""
         n_samples = len(x)
         n_windows_per_sample = [((len(x[i]) - window_size + window_step) // window_step) for i in range(n_samples)]
-        n_windows_per_sample_cum = np.asarray(np.concatenate(([0], np.cumsum(n_windows_per_sample))))
+        # problem with `np.concatenate` typing: `[0]` can't be used instead of `np.array([0])`
+        n_windows_per_sample_cum = np.asarray(np.concatenate((np.array([0]), np.cumsum(n_windows_per_sample))))
         x_windowed = np.asarray(
             np.concatenate(
                 [sliding_window_view(series[::-1], window_shape=window_size)[::window_step][::-1, ::-1] for series in x]
@@ -186,7 +187,7 @@ class CustomWEASEL(WEASEL):
             for i, idx in enumerate(relevant_features):
                 self._vocabulary[i + old_length_vocab] = str(window_size) + " " + vocabulary[idx]
 
-            self._relevant_features_list.append(relevant_features)
+            self._relevant_features_list.append(relevant_features.tolist())
             self._sfa_list.append(sfa)
             self._vectorizer_list.append(vectorizer)
 

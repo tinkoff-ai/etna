@@ -6,7 +6,7 @@ readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
 license = "Apache-2.0"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",

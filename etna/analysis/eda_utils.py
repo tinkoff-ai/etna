@@ -816,7 +816,7 @@ def seasonal_plot(
 
         # draw ticks if they are not digits
         if not np.all(seasonal_df["in_cycle_name"].str.isnumeric()):
-            ticks_dict = {key: value for key, value in zip(seasonal_df["in_cycle_num"], seasonal_df["in_cycle_name"])}
+            ticks_dict = dict(zip(seasonal_df["in_cycle_num"], seasonal_df["in_cycle_name"]))
             ticks = np.array(list(ticks_dict.keys()))
             ticks_labels = np.array(list(ticks_dict.values()))
             idx_sort = np.argsort(ticks)
