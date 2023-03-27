@@ -126,6 +126,9 @@ checkpoints/
 # macOS
 .DS_Store
 
+# poetry configuration
+poetry.toml
+
 *.html
 .devcontainer
 /docs/source/api/
