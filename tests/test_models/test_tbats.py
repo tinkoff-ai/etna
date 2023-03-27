@@ -269,6 +269,18 @@ def test_named_components_output_format(small_periodic_ts, estimator):
     assert len(components) == horizon
 
 
+@pytest.mark.parametrize(
+    "train_slice,decompose_slice", ((slice(5, 20), slice(None, 20)), (slice(5, 10), slice(10, 20)))
+)
+def test_predict_components_out_of_sample_error(periodic_dfs, train_slice, decompose_slice):
+    train, _ = periodic_dfs
+
+    model = _TBATSAdapter(model=BATS())
+    model.fit(train.iloc[train_slice], [])
+    with pytest.raises(NotImplementedError, match="isn't currently implemented for out-of-sample prediction"):
+        model.predict_components(df=train.iloc[decompose_slice])
+
+
 @pytest.mark.long_1
 @pytest.mark.parametrize(
     "estimator,params,components_names",
