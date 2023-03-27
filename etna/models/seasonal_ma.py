@@ -97,11 +97,10 @@ class SeasonalMovingAverageModel(
         target_components_df = target_components_df.drop(columns=["target"], level="feature")
         return target_components_df
 
-    def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+    def _forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """Make autoregressive forecasts on a wide dataframe."""
         self._validate_context(df=df, prediction_size=prediction_size)
 
-        df = df.copy()
         expected_length = prediction_size + self.context_size
         history = df.loc[:, pd.IndexSlice[:, "target"]].values
         history = history[-expected_length:-prediction_size]
@@ -113,10 +112,8 @@ class SeasonalMovingAverageModel(
         for i in range(self.context_size, len(res)):
             res[i] = res[i - self.context_size : i : self.seasonality].mean(axis=0)
 
-        df = df.iloc[-prediction_size:]
         y_pred = res[-prediction_size:]
-        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
-        return df
+        return y_pred
 
     def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make autoregressive forecasts.
@@ -146,20 +143,20 @@ class SeasonalMovingAverageModel(
             if forecast context contains NaNs
         """
         df = ts.to_pandas()
-        new_df = self._forecast(df=df, prediction_size=prediction_size)
-        ts.df = new_df
+        y_pred = self._forecast(df=df, prediction_size=prediction_size)
+        ts.df = ts.df.iloc[-prediction_size:]
+        ts.df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         if return_components:
-            df.loc[-prediction_size:, pd.IndexSlice[:, "target"]] = new_df.loc[:, pd.IndexSlice[:, "target"]]
+            df.loc[-prediction_size:, pd.IndexSlice[:, "target"]] = y_pred
             target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
             ts.add_target_components(target_components_df=target_components_df)
         return ts
 
-    def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+    def _predict(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
         """Make predictions on a wide dataframe using true values as autoregression context."""
         self._validate_context(df=df, prediction_size=prediction_size)
 
-        df = df.copy()
         expected_length = prediction_size + self.context_size
         context = df.loc[:, pd.IndexSlice[:, "target"]].values
         context = context[-expected_length:]
@@ -171,10 +168,8 @@ class SeasonalMovingAverageModel(
         for res_idx, context_idx in enumerate(range(self.context_size, len(context))):
             res[res_idx] = context[context_idx - self.context_size : context_idx : self.seasonality].mean(axis=0)
 
-        df = df.iloc[-prediction_size:]
         y_pred = res[-prediction_size:]
-        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
-        return df
+        return y_pred
 
     def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions using true values as autoregression context (teacher forcing).
@@ -204,8 +199,9 @@ class SeasonalMovingAverageModel(
             if forecast context contains NaNs
         """
         df = ts.to_pandas()
-        new_df = self._predict(df=df, prediction_size=prediction_size)
-        ts.df = new_df
+        y_pred = self._predict(df=df, prediction_size=prediction_size)
+        ts.df = ts.df.iloc[-prediction_size:]
+        ts.df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         if return_components:
             target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
