@@ -455,8 +455,8 @@ def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, me
         TBATS,
     ),
 )
-def test_predict_decompose_on_subset(dfs_w_exog, estimator):
-    train, _ = dfs_w_exog
+def test_predict_decompose_on_subset(periodic_dfs, estimator):
+    train, _ = periodic_dfs
     sub_train = train.iloc[5:]
 
     model = _TBATSAdapter(model=estimator())
