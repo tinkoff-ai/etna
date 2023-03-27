@@ -757,35 +757,20 @@ def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name
 
     target = forecast.to_pandas(features=["target"])
     target_components_df = forecast.get_target_components()
-    np.testing.assert_array_almost_equal(
-        target.values, target_components_df.sum(axis=1, level="segment").values, decimal=10
-    )
-
-
-@pytest.fixture
-def simple_ts() -> TSDataset:
-    periods = 100
-    timestamp = pd.date_range("2020-01-01", periods=periods)
-    df1 = pd.DataFrame({"timestamp": timestamp, "segment": "segment_1", "target": np.arange(1, periods + 1)})
-    df2 = pd.DataFrame({"timestamp": timestamp, "segment": "segment_2", "target": 100 + np.arange(1, periods + 1)})
-    df = pd.concat([df1, df2]).reset_index(drop=True)
-    df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
-
-    return tsds
+    np.testing.assert_allclose(target.values, target_components_df.sum(axis=1, level="segment").values)
 
 
 @pytest.mark.parametrize(
     "method_name, expected_values",
-    (("forecast", [[96, 196], [97, 197], [96, 196]]), ("predict", [[96, 196], [97, 197], [98, 198]])),
+    (("forecast", [[44, 4], [45, 6], [44, 4]]), ("predict", [[44, 4], [45, 6], [46, 8]])),
 )
 def test_sma_model_predict_components_correct(
-    simple_ts, method_name, expected_values, window=1, seasonality=2, horizon=3
+    simple_df, method_name, expected_values, window=1, seasonality=2, horizon=3
 ):
     model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
-    model.fit(simple_ts)
+    model.fit(simple_df)
     to_call = getattr(model, method_name)
-    forecast = to_call(ts=simple_ts, prediction_size=horizon, return_components=True)
+    forecast = to_call(ts=simple_df, prediction_size=horizon, return_components=True)
 
     target_components_df = forecast.get_target_components()
-    np.testing.assert_array_almost_equal(target_components_df.values, expected_values, decimal=10)
+    np.testing.assert_allclose(target_components_df.values, expected_values)
