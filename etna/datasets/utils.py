@@ -216,7 +216,7 @@ def get_level_dataframe(
     mapping_matrix:
         mapping matrix between levels
     source_level_segments:
-        list of segments at the source level
+        list of segments at the source level, set the order of segments matching the mapping matrix
     target_level_segments:
         list of segments at the target level
 
@@ -239,6 +239,8 @@ def get_level_dataframe(
     if num_target_level_segments != mapping_matrix.shape[0]:
         raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
 
+    # Slice should be done by source_level_segments -- to fix the order of segments for mapping matrix,
+    # by num_columns -- to fix the order of columns to create correct index in the end
     source_level_data = df.loc[
         pd.IndexSlice[:], pd.IndexSlice[source_level_segments, column_names]
     ].values  # shape: (t, num_source_level_segments * num_columns)
