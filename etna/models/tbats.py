@@ -22,6 +22,7 @@ class _TBATSAdapter(BaseAdapter):
     def __init__(self, model: Estimator):
         self._model = model
         self._fitted_model: Optional[Model] = None
+        self._first_train_timestamp = None
         self._last_train_timestamp = None
         self._freq = None
 
@@ -32,6 +33,7 @@ class _TBATSAdapter(BaseAdapter):
 
         target = df["target"]
         self._fitted_model = self._model.fit(target)
+        self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()
         self._freq = freq
 
@@ -68,12 +70,16 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
+        train_timestamp = pd.date_range(
+            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
+        )
+
+        if not (set(train_timestamp) >= set(df["timestamp"])):
+            raise NotImplementedError("Method predict isn't currently implemented for out-of-sample prediction!")
+
         y_pred = pd.DataFrame()
         y_pred["target"] = self._fitted_model.y_hat
-        y_pred["timestamp"] = pd.date_range(end=str(self._last_train_timestamp), freq=self._freq, periods=len(y_pred))
-
-        if len(set(y_pred["timestamp"]) & set(df["timestamp"])) == 0:
-            raise NotImplementedError("Method predict isn't currently implemented for out-of-sample prediction!")
+        y_pred["timestamp"] = train_timestamp
 
         if prediction_interval:
             for quantile in quantiles:
@@ -141,10 +147,23 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
+        train_timestamp = pd.date_range(
+            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
+        )
+
+        if not (set(train_timestamp) >= set(df["timestamp"])):
+            raise NotImplementedError(
+                "Method predict_components isn't currently implemented for out-of-sample prediction!"
+            )
+
         self._check_components()
 
         raw_components = self._decompose_predict()
         components = self._process_components(raw_components=raw_components)
+
+        # selecting time points from provided dataframe
+        components["timestamp"] = train_timestamp
+        components = components.merge(df["timestamp"], on="timestamp").drop(columns=["timestamp"])
 
         return components
 
