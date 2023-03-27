@@ -8,7 +8,6 @@ from scipy.sparse import csr_matrix
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.datasets.utils import get_level_dataframe
-from etna.datasets.utils import get_target_with_quantiles
 
 
 class BaseReconciliator(ABC, BaseMixin):
@@ -105,6 +104,6 @@ class BaseReconciliator(ABC, BaseMixin):
             hierarchical_structure=ts.hierarchical_structure,
         )
 
-        if ts.target_components_names is not None:
+        if len(ts.target_components_names) > 0:
             ts_reconciled.add_target_components(target_components_df=target_components_df)
         return ts_reconciled

@@ -207,7 +207,6 @@ def test_get_target_with_quantiles(segments, columns, answer):
 def test_get_level_dataframe(product_level_constant_forecast_with_quantiles, target_level, answer_name, request):
     ts = product_level_constant_forecast_with_quantiles
     answer = request.getfixturevalue(answer_name).to_pandas()
-    answer.index.freq = "D"
 
     mapping_matrix = ts.hierarchical_structure.get_summing_matrix(
         target_level=target_level, source_level=ts.current_df_level
