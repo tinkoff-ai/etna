@@ -83,18 +83,22 @@ class SeasonalMovingAverageModel(
 
     def _predict_components(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         """Estimate forecast components."""
-        from etna.transforms import LagTransform
-
         self._validate_context(df=df, prediction_size=prediction_size)
 
-        lag_transform = LagTransform(
-            in_column="target",
-            lags=list(range(self.seasonality, self.context_size + 1, self.seasonality)),
-            out_column="target_component_lag",
-        )
-        target_components_df = lag_transform._transform(df) / self.window
+        all_transformed_features = []
+        segments = sorted(set(df.columns.get_level_values("segment")))
+        lags = list(range(self.seasonality, self.context_size + 1, self.seasonality))
+
+        target = df.loc[:, pd.IndexSlice[:, "target"]]
+        for lag in lags:
+            transformed_features = target.shift(lag)
+            transformed_features.columns = pd.MultiIndex.from_product(
+                [segments, [f"target_component_lag_{lag}"]], names=("segment", "feature")
+            )
+            all_transformed_features.append(transformed_features)
+
+        target_components_df = pd.concat(all_transformed_features, axis=1) / self.window
         target_components_df = target_components_df.iloc[-prediction_size:]
-        target_components_df = target_components_df.drop(columns=["target"], level="feature")
         return target_components_df
 
     def _forecast(self, df: pd.DataFrame, prediction_size: int) -> np.ndarray:
