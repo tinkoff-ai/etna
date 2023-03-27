@@ -64,7 +64,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
-          pip install sqlalchemy==1.4.46 
+          pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("not long")
         run: |
