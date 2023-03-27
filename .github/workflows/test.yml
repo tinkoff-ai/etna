@@ -59,10 +59,12 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
+      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
+          pip install sqlalchemy==1.4.46 
 
       - name: PyTest ("not long")
         run: |
