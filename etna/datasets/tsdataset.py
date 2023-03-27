@@ -23,10 +23,9 @@ from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
-from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import inverse_transform_target_components
-from etna.loggers import tslogger
 from etna.datasets.utils import match_target_quantiles
+from etna.loggers import tslogger
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
@@ -165,7 +164,7 @@ class TSDataset:
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(self.df)
 
-        self._target_components_names: Optional[List[str]] = None
+        self._target_components_names: Tuple[str, ...] = tuple()
 
         self.df = self.df.sort_index(axis=1, level=("segment", "feature"))
 
@@ -432,7 +431,7 @@ class TSDataset:
         # TODO: return regressors after inverse_transform
         # Logic with target components is here for performance reasons.
         # This way we avoid doing the inverse transformation for components several times.
-        target_components_present = self.target_components_names is not None
+        target_components_present = len(self.target_components_names) > 0
         target_df, target_components_df = None, None
         if target_components_present:
             target_df = self.to_pandas(features=["target"])
@@ -497,12 +496,12 @@ class TSDataset:
         return self._regressors
 
     @property
-    def target_components_names(self) -> Optional[List[str]]:
-        """Get list of target components names. Components sum up to target. If there are no components, None is returned."""
+    def target_components_names(self) -> Tuple[str, ...]:
+        """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of quantile absence."""
         return self._target_components_names
 
     @property
-    def target_quantiles_names(self) -> Tuple[str]:
+    def target_quantiles_names(self) -> Tuple[str, ...]:
         """Get tuple with target quantiles names. Return the empty tuple in case of quantile absence."""
         return tuple(match_target_quantiles(features=set(self.columns.get_level_values("feature"))))
 
@@ -1052,9 +1051,7 @@ class TSDataset:
         ValueError:
             If ``features`` list contains target components
         """
-        features_contain_target_components = (self.target_components_names is not None) and (
-            len(set(features).intersection(self.target_components_names)) != 0
-        )
+        features_contain_target_components = len(set(features).intersection(self.target_components_names)) != 0
         if features_contain_target_components:
             raise ValueError(
                 "Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!"
@@ -1119,9 +1116,7 @@ class TSDataset:
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
-        target_names = tuple(get_target_with_quantiles(columns=self.columns))
-        if self.target_components_names is not None:
-            target_names += tuple(set(self.target_components_names))
+        target_names = self.target_quantiles_names + self.target_components_names + ("target",)
 
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
@@ -1138,10 +1133,8 @@ class TSDataset:
         else:
             target_level_df = self.to_pandas(features=target_names)
 
-        target_components_df = None
-        if self.target_components_names is not None:
-            target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components_names]]
-            target_level_df = target_level_df.drop(columns=self.target_components_names, level="feature")
+        target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components_names]]
+        target_level_df = target_level_df.drop(columns=list(self.target_components_names), level="feature")
 
         ts = TSDataset(
             df=target_level_df,
@@ -1151,7 +1144,7 @@ class TSDataset:
             hierarchical_structure=self.hierarchical_structure,
         )
 
-        if self.target_components_names is not None:
+        if len(self.target_components_names) > 0:
             ts.add_target_components(target_components_df=target_components_df)
         return ts
 
@@ -1172,7 +1165,7 @@ class TSDataset:
         ValueError:
             If components don't sum up to target
         """
-        if self._target_components_names is not None:
+        if len(self.target_components_names) > 0:
             raise ValueError("Dataset already contains target components!")
 
         components_names = sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
@@ -1187,7 +1180,7 @@ class TSDataset:
         if not np.array_equal(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
-        self._target_components_names = components_names
+        self._target_components_names = tuple(components_names)
         self.df = (
             pd.concat((self.df, target_components_df), axis=1)
             .loc[self.df.index]
@@ -1202,15 +1195,14 @@ class TSDataset:
         :
             Dataframe with target components
         """
-        if self._target_components_names is None:
+        if len(self.target_components_names) == 0:
             return None
-        return self.to_pandas(features=self._target_components_names)
+        return self.to_pandas(features=self.target_components_names)
 
     def drop_target_components(self):
         """Drop target components from dataset."""
-        if self._target_components_names is not None:
-            self.df.drop(columns=self.target_components_names, level="feature", inplace=True)
-            self._target_components_names = None
+        self.df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
+        self._target_components_names = ()
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:

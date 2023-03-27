@@ -481,7 +481,9 @@ def test_get_level_dataset_with_quantiles(
     product_level_constant_forecast_with_quantiles, target_level, expected_dataframe_name, request
 ):
     expected_df = request.getfixturevalue(expected_dataframe_name).to_pandas()
-    reconciled_df = product_level_constant_forecast_with_quantiles.get_level_dataset(target_level=target_level).to_pandas()
+    reconciled_df = product_level_constant_forecast_with_quantiles.get_level_dataset(
+        target_level=target_level
+    ).to_pandas()
     pd.testing.assert_frame_equal(reconciled_df, expected_df)
 
 
