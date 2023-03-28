@@ -74,7 +74,7 @@ class _TBATSAdapter(BaseAdapter):
             start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
         )
 
-        if not (set(train_timestamp) >= set(df["timestamp"])):
+        if not (set(df["timestamp"]) <= set(train_timestamp)):
             raise NotImplementedError("Method predict isn't currently implemented for out-of-sample prediction!")
 
         y_pred = pd.DataFrame()
@@ -93,7 +93,9 @@ class _TBATSAdapter(BaseAdapter):
                     y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
 
         # selecting time points from provided dataframe
-        y_pred = y_pred.merge(df["timestamp"], on="timestamp").drop(columns=["timestamp"])
+        y_pred.set_index("timestamp", inplace=True)
+        y_pred = y_pred.loc[df["timestamp"]]
+        y_pred.reset_index(drop=True, inplace=True)
 
         return y_pred
 
@@ -151,7 +153,7 @@ class _TBATSAdapter(BaseAdapter):
             start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
         )
 
-        if not (set(train_timestamp) >= set(df["timestamp"])):
+        if not (set(df["timestamp"]) <= set(train_timestamp)):
             raise NotImplementedError(
                 "Method predict_components isn't currently implemented for out-of-sample prediction!"
             )
@@ -163,7 +165,10 @@ class _TBATSAdapter(BaseAdapter):
 
         # selecting time points from provided dataframe
         components["timestamp"] = train_timestamp
-        components = components.merge(df["timestamp"], on="timestamp").drop(columns=["timestamp"])
+
+        components.set_index("timestamp", inplace=True)
+        components = components.loc[df["timestamp"]]
+        components.reset_index(drop=True, inplace=True)
 
         return components
 

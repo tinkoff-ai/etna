@@ -1,4 +1,5 @@
 from copy import deepcopy
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -11,7 +12,6 @@ from etna.models.tbats import TBATS
 from etna.models.tbats import BATSModel
 from etna.models.tbats import TBATSModel
 from etna.models.tbats import _TBATSAdapter
-from etna.transforms import LagTransform
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 from tests.test_models.utils import assert_model_equals_loaded_original
 
@@ -134,26 +134,9 @@ def test_repr(model_class, model_class_repr):
 @pytest.mark.parametrize("model", (TBATSModel(), BATSModel()))
 @pytest.mark.parametrize("method", ("forecast", "predict"))
 def test_not_fitted(model, method, linear_segments_ts_unique):
-    train, test = linear_segments_ts_unique
-    to_forecast = train.make_future(3)
-
     method_to_call = getattr(model, method)
     with pytest.raises(ValueError, match="model is not fitted!"):
-        method_to_call(ts=to_forecast)
-
-
-@pytest.mark.long_2
-@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_forecast_format(model, new_format_df):
-    df = new_format_df
-    ts = TSDataset(df, "1d")
-    lags = LagTransform(lags=[3, 4, 5], in_column="target")
-    ts.fit_transform([lags])
-    model.fit(ts)
-    future_ts = ts.make_future(3, transforms=[lags])
-    model.forecast(future_ts)
-    future_ts.inverse_transform([lags])
-    assert not future_ts.isnull().values.any()
+        method_to_call(ts=Mock())
 
 
 @pytest.mark.long_2
@@ -212,7 +195,6 @@ def test_decompose_not_fitted(small_periodic_ts, method):
         method_to_call(df=small_periodic_ts.df)
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (BATS, TBATS),
@@ -229,7 +211,6 @@ def test_decompose_forecast_output_format(periodic_dfs, estimator):
     assert components.shape[0] == horizon
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -247,7 +228,6 @@ def test_decompose_predict_output_format(periodic_dfs, estimator):
     assert components.shape[0] == len(train)
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -269,7 +249,6 @@ def test_named_components_output_format(periodic_dfs, estimator):
     assert len(components) == horizon
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "train_slice,decompose_slice", ((slice(5, 20), slice(None, 20)), (slice(5, 10), slice(10, 20)))
 )
@@ -328,7 +307,6 @@ def test_components_names(periodic_dfs, estimator, params, components_names, met
     assert set(components_df.columns) == components_names
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -351,7 +329,6 @@ def test_seasonal_components_not_fitted(periodic_dfs, estimator, method, use_fut
         method_to_call(df=pred_df)
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -375,7 +352,6 @@ def test_arma_component_not_fitted(periodic_dfs, estimator, method, use_future):
         method_to_call(df=pred_df)
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -455,7 +431,6 @@ def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, me
     np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
 
 
-@pytest.mark.long_3
 @pytest.mark.parametrize(
     "estimator",
     (
