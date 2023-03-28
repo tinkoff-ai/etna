@@ -18,7 +18,6 @@ if SETTINGS.auto_required:
     from optuna.distributions import BaseDistribution
     from optuna.distributions import IntUniformDistribution
     from optuna.distributions import LogUniformDistribution
-    from optuna.distributions import UniformDistribution
 
 
 class _CatBoostAdapter(BaseAdapter):
