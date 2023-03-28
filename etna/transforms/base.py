@@ -166,6 +166,18 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
         """
         pass
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
+
 
 class IrreversibleTransform(Transform):
     """Base class to create irreversible transforms."""
@@ -325,18 +337,6 @@ class OneSegmentTransform(ABC, BaseMixin):
             Dataframe after applying inverse transformation.
         """
         pass
-
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
-        """Get hyperparameter grid to tune.
-
-        This is default implementation with empty grid.
-
-        Returns
-        -------
-        :
-            Empty grid.
-        """
-        return {}
 
 
 class PerSegmentWrapper(Transform):
