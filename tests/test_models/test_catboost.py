@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from catboost import CatBoostRegressor
+from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -179,3 +180,15 @@ def test_decomposition_sums_to_target(dfs_w_exog):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, y_pred)
+
+
+@pytest.mark.parametrize("model", [CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()])
+def test_params_to_tune(model):
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) > 0
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
