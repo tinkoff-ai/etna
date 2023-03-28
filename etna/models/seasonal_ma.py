@@ -16,6 +16,11 @@ class SeasonalMovingAverageModel(
         y_{t} = \\frac{\\sum_{i=1}^{n} y_{t-is} }{n},
 
     where :math:`s` is seasonality, :math:`n` is window size (how many history values are taken for forecast).
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components are corresponding target lags with weights of 1/window.
     """
 
     def __init__(self, window: int = 5, seasonality: int = 7):
@@ -82,7 +87,21 @@ class SeasonalMovingAverageModel(
             )
 
     def _predict_components(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
-        """Estimate forecast components."""
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            DatаFrame with target, containing lags that was used to make a prediction
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
+
+        Returns
+        -------
+        :
+            DataFrame with target components
+        """
         self._validate_context(df=df, prediction_size=prediction_size)
 
         all_transformed_features = []
@@ -152,7 +171,8 @@ class SeasonalMovingAverageModel(
         ts.df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         if return_components:
-            df.loc[-prediction_size:, pd.IndexSlice[:, "target"]] = y_pred
+            # We use predicted targets as lags in autoregressive style
+            df.loc[df.index[-prediction_size:], pd.IndexSlice[:, "target"]] = y_pred
             target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
             ts.add_target_components(target_components_df=target_components_df)
         return ts
@@ -208,6 +228,7 @@ class SeasonalMovingAverageModel(
         ts.df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         if return_components:
+            # We use true targets as lags
             target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
             ts.add_target_components(target_components_df=target_components_df)
         return ts
