@@ -80,7 +80,7 @@ class LagTransform(IrreversibleTransform, FutureMixin):
         result: pd.Dataframe
             transformed dataframe
         """
-        result = df.copy()
+        result = df
         segments = sorted(set(df.columns.get_level_values("segment")))
         all_transformed_features = []
         features = df.loc[:, pd.IndexSlice[:, self.in_column]]
