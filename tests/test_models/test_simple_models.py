@@ -55,6 +55,26 @@ def df():
     return tsds
 
 
+@pytest.fixture()
+def long_periodic_ts():
+    history = 400
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.sin(np.arange(history))
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-01-01", periods=history)
+
+    df2 = df1.copy()
+    df2["segment"] = "B"
+    df2["target"] *= 4
+
+    df = pd.concat([df1, df2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+
+    return ts
+
+
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_forecast(simple_df, model):
     _check_forecast(ts=simple_df, model=model(), horizon=7)
@@ -729,3 +749,48 @@ def test_deadline_model_forecast_correct_with_big_horizons(two_month_ts):
 )
 def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+@pytest.mark.parametrize("method", ("predict", "forecast"))
+@pytest.mark.parametrize(
+    "window,seasonality,expected_components_names",
+    (
+        (1, "month", ["target_component_month_lag_1"]),
+        (3, "month", ["target_component_month_lag_1", "target_component_month_lag_2", "target_component_month_lag_3"]),
+        (1, "year", ["target_component_year_lag_1"]),
+    ),
+)
+def test_deadline_ma_predict_components_correct_names(
+    long_periodic_ts, method, window, seasonality, expected_components_names, horizon=10
+):
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(ts=long_periodic_ts)
+
+    method_to_call = getattr(model, method)
+    forecast = method_to_call(ts=long_periodic_ts, prediction_size=horizon, return_components=True)
+
+    assert sorted(forecast.target_components_names) == sorted(expected_components_names)
+
+
+@pytest.mark.parametrize("method", ("predict", "forecast"))
+@pytest.mark.parametrize(
+    "window,seasonality,expected_components_names",
+    (
+        (1, "month", ["target_component_month_lag_1"]),
+        (3, "month", ["target_component_month_lag_1", "target_component_month_lag_2", "target_component_month_lag_3"]),
+        (1, "year", ["target_component_year_lag_1"]),
+    ),
+)
+def test_deadline_ma_predict_components_sum_up_to_target(
+    long_periodic_ts, method, window, seasonality, expected_components_names, horizon=10
+):
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(ts=long_periodic_ts)
+
+    method_to_call = getattr(model, method)
+    forecast = method_to_call(ts=long_periodic_ts, prediction_size=horizon, return_components=True)
+
+    target = forecast.to_pandas(features=["target"])
+    components = forecast.get_target_components()
+
+    np.testing.assert_allclose(target.values, components.sum(axis=1, level="segment").values)
