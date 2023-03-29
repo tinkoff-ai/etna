@@ -588,9 +588,6 @@ class Tune(AutoBase):
 
     def _init_optuna(self):
         """Initialize optuna."""
-        pipeline = self.pipeline
-
-        pipeline_ = pipeline.to_dict()
 
         # sampler receives no hyperparameters here and optimizes only the hyperparameters suggested in objective
         optuna = Optuna(
