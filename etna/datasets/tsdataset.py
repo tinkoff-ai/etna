@@ -1166,7 +1166,7 @@ class TSDataset:
                 )
 
         components_sum = target_components_df.sum(axis=1, level="segment")
-        if not np.array_equal(components_sum.values, self[..., "target"].values):
+        if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
         self._target_components_names = components_names
