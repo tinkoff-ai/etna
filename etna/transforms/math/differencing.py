@@ -184,7 +184,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
                 cur_series = result_df.loc[:, pd.IndexSlice[current_segment, column]]
                 cur_series[init_segment.index] = init_segment.values
                 cur_series = self._make_inv_diff(cur_series)
-                result_df.loc[cur_series.index, pd.IndexSlice[current_segment, column]] = cur_series
+                result_df.loc[:, pd.IndexSlice[current_segment, column]] = cur_series
         return result_df
 
     def _reconstruct_test(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
@@ -212,7 +212,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
 
             # run reconstruction and save the result
             to_transform = self._make_inv_diff(to_transform)
-            result_df.loc[:, pd.IndexSlice[segments, column]] = to_transform
+            result_df.loc[:, pd.IndexSlice[segments, column]] = to_transform.loc[result_df.index]
 
         return result_df
 
@@ -398,7 +398,7 @@ class DifferencingTransform(ReversibleTransform):
             if NaNs are present inside the segment
         """
         # this is made because transforms of high order may need some columns created by transforms of lower order
-        result_df = df.copy()
+        result_df = df
         for transform in self._differencing_transforms:
             result_df = transform._fit_transform(result_df)
         self._fit_segments = df.columns.get_level_values("segment").unique().tolist()

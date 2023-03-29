@@ -751,6 +751,51 @@ def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
+@pytest.mark.parametrize("method_name", ("forecast", "predict"))
+@pytest.mark.parametrize(
+    "window, seasonality, expected_components_names",
+    ((1, 7, ["target_component_lag_7"]), (2, 7, ["target_component_lag_7", "target_component_lag_14"])),
+)
+def test_sma_model_predict_components_correct_names(
+    example_tsds, method_name, window, seasonality, expected_components_names, horizon=10
+):
+    model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(example_tsds)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=example_tsds, prediction_size=horizon, return_components=True)
+    assert sorted(forecast.target_components_names) == sorted(expected_components_names)
+
+
+@pytest.mark.parametrize("method_name", ("forecast", "predict"))
+@pytest.mark.parametrize("window", (1, 3, 5))
+@pytest.mark.parametrize("seasonality", (1, 7, 14))
+def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name, window, seasonality, horizon=10):
+    model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(example_tsds)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=example_tsds, prediction_size=horizon, return_components=True)
+
+    target = forecast.to_pandas(features=["target"])
+    target_components_df = forecast.get_target_components()
+    np.testing.assert_allclose(target.values, target_components_df.sum(axis=1, level="segment").values)
+
+
+@pytest.mark.parametrize(
+    "method_name, expected_values",
+    (("forecast", [[44, 4], [45, 6], [44, 4]]), ("predict", [[44, 4], [45, 6], [46, 8]])),
+)
+def test_sma_model_predict_components_correct(
+    simple_df, method_name, expected_values, window=1, seasonality=2, horizon=3
+):
+    model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(simple_df)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=simple_df, prediction_size=horizon, return_components=True)
+
+    target_components_df = forecast.get_target_components()
+    np.testing.assert_allclose(target_components_df.values, expected_values)
+
+
 @pytest.mark.parametrize("method", ("predict", "forecast"))
 @pytest.mark.parametrize(
     "window,seasonality,expected_components_names",

@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 from etna.transforms import IrreversibleTransform
@@ -74,7 +75,10 @@ class MeanSegmentEncoderTransform(IrreversibleTransform, FutureMixin):
         df = self.mean_encoder._transform(df)
         segment = segments[0]
         nan_timestamps = df[df.loc[:, self.idx[segment, "target"]].isna()].index
-        df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = [self.global_means[x] for x in segments]
+        values_to_set = np.array([self.global_means[x] for x in segments])
+        # repetition isn't necessary for pandas >= 1.2
+        values_to_set = np.repeat(values_to_set[np.newaxis, :], len(nan_timestamps), axis=0)
+        df.loc[nan_timestamps, self.idx[:, "segment_mean"]] = values_to_set
         return df
 
     def get_regressors_info(self) -> List[str]:

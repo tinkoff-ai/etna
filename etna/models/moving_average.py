@@ -8,6 +8,11 @@ class MovingAverageModel(SeasonalMovingAverageModel):
         y_{t} = \\frac{\\sum_{i=1}^{n} y_{t-i} }{n},
 
     where :math:`n` is window size.
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components are corresponding target lags with weights of :math:`1/window`.
     """
 
     def __init__(self, window: int = 5):
