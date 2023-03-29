@@ -663,7 +663,7 @@ def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_d
 
 
 @pytest.fixture
-def product_level_constant_hierarchical_ts_w_exog(
+def product_level_constant_hierarchical_ts_with_exog(
     product_level_constant_hierarchical_df, market_level_constant_hierarchical_df_exog, hierarchical_structure
 ):
     ts = TSDataset(
@@ -677,15 +677,16 @@ def product_level_constant_hierarchical_ts_w_exog(
 
 
 @pytest.fixture
-def product_level_constant_forecast_w_quantiles(hierarchical_structure):
+def product_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
             "target": [1, 1] + [2, 2] + [3, 3] + [4, 4],
-            "target_0.25": [1, 1] + [2, 2] + [3, 3] + [4, 4],
-            "target_0.75": [1, 1] + [2, 2] + [3, 3] + [4, 4],
-        }
+            "target_0.25": [1 / 2, 1 / 4] + [1, 1 / 2] + [2, 1] + [3, 2],
+            "target_0.75": [2, 3] + [3, 4] + [4, 5] + [5, 6],
+        },
+        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
@@ -693,16 +694,112 @@ def product_level_constant_forecast_w_quantiles(hierarchical_structure):
 
 
 @pytest.fixture
-def total_level_constant_forecast_w_quantiles(hierarchical_structure):
+def product_level_constant_forecast_with_target_components(hierarchical_structure):
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 4,
+            "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
+            "target": [1, 1] + [2, 2] + [3, 3] + [4, 4],
+        },
+        dtype=float,
+    )
+    target_components_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 4,
+            "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
+            "target_component_a": [0.7, 0.7] + [1.5, 1.5] + [2, 2] + [3, 3],
+            "target_component_b": [0.3, 0.3] + [0.5, 0.5] + [1, 1] + [1, 1],
+        },
+        dtype=float,
+    )
+    df = TSDataset.to_dataset(df=df)
+    target_components_df = TSDataset.to_dataset(target_components_df)
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_target_components(target_components_df=target_components_df)
+    return ts
+
+
+@pytest.fixture
+def market_level_constant_forecast_with_quantiles(hierarchical_structure):
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target": [3, 3] + [7, 7],
+            "target_0.25": [1.5, 0.75] + [5, 3],
+            "target_0.75": [5, 7] + [9, 11],
+        },
+        dtype=float,
+    )
+    df = TSDataset.to_dataset(df=df)
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
+
+
+@pytest.fixture
+def market_level_constant_forecast_with_target_components(hierarchical_structure):
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target": [3, 3] + [7, 7],
+        },
+        dtype=float,
+    )
+    target_components_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target_component_a": [2.2, 2.2] + [5, 5],
+            "target_component_b": [0.8, 0.8] + [2, 2],
+        },
+        dtype=float,
+    )
+    df = TSDataset.to_dataset(df=df)
+    target_components_df = TSDataset.to_dataset(target_components_df)
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_target_components(target_components_df=target_components_df)
+    return ts
+
+
+@pytest.fixture
+def total_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = pd.DataFrame(
         {
             "timestamp": ["2000-01-05", "2000-01-06"],
             "segment": ["total"] * 2,
             "target": [10, 10],
-            "target_0.25": [10, 10],
-            "target_0.75": [10, 10],
-        }
+            "target_0.25": [6.5, 3.75],
+            "target_0.75": [14, 18],
+        },
+        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
+
+
+@pytest.fixture
+def total_level_constant_forecast_with_target_components(hierarchical_structure):
+    df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"],
+            "segment": ["total"] * 2,
+            "target": [10, 10],
+        },
+        dtype=float,
+    )
+    target_components_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"],
+            "segment": ["total"] * 2,
+            "target_component_a": [7.2, 7.2],
+            "target_component_b": [2.8, 2.8],
+        },
+        dtype=float,
+    )
+    df = TSDataset.to_dataset(df=df)
+    target_components_df = TSDataset.to_dataset(target_components_df)
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_target_components(target_components_df=target_components_df)
     return ts

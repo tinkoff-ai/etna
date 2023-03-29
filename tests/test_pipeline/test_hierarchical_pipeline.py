@@ -199,8 +199,8 @@ def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconcilia
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
-def test_backtest_w_exog(product_level_constant_hierarchical_ts_w_exog, reconciliator):
-    ts = product_level_constant_hierarchical_ts_w_exog
+def test_backtest_w_exog(product_level_constant_hierarchical_ts_with_exog, reconciliator):
+    ts = product_level_constant_hierarchical_ts_with_exog
     model = LinearPerSegmentModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
