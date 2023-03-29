@@ -540,17 +540,20 @@ class Tune(AutoBase):
         def _objective(trial: Trial) -> float:
 
             params_to_tune = pipeline.params_to_tune()
-            
+
             dict_of_distrs = {
-        UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
-        LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
-        DiscreteUniformDistribution: lambda x: ("suggest_discrete_uniform", {"low": x.low, "high": x.high, "q": x.q}),
-        IntUniformDistribution: lambda x: ("suggest_int", {"low": x.low, "high": x.high, "step": x.step}),
-        IntLogUniformDistribution: lambda x: (
-            "suggest_int",
-            {"low": x.low, "high": x.high, "step": x.step, "log": x.log},
-        ),
-        CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
+                UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
+                LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
+                DiscreteUniformDistribution: lambda x: (
+                    "suggest_discrete_uniform",
+                    {"low": x.low, "high": x.high, "q": x.q},
+                ),
+                IntUniformDistribution: lambda x: ("suggest_int", {"low": x.low, "high": x.high, "step": x.step}),
+                IntLogUniformDistribution: lambda x: (
+                    "suggest_int",
+                    {"low": x.low, "high": x.high, "step": x.step, "log": x.log},
+                ),
+                CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
             }
 
             # using received optuna.distribution objects to call corresponding trial.suggest_xxx

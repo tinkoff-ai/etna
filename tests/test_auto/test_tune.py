@@ -1,5 +1,6 @@
 from os import unlink
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 from optuna.distributions import CategoricalDistribution
@@ -17,7 +18,8 @@ from etna.auto.auto import AutoBase
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
-from etna.models import NaiveModel, SimpleExpSmoothingModel
+from etna.models import NaiveModel
+from etna.models import SimpleExpSmoothingModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 
@@ -141,7 +143,7 @@ def test_top_k(
 
 def test_can_handle_uniform(example_tsds, optuna_storage):
     params = {"model.smoothing_level": UniformDistribution(1, 5)}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
@@ -149,7 +151,7 @@ def test_can_handle_uniform(example_tsds, optuna_storage):
 
 def test_can_handle_loguniform(example_tsds, optuna_storage):
     params = {"model.smoothing_level": LogUniformDistribution(1, 5)}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
@@ -157,7 +159,7 @@ def test_can_handle_loguniform(example_tsds, optuna_storage):
 
 def test_can_handle_discrete_uniform(example_tsds, optuna_storage):
     params = {"model.smoothing_level": DiscreteUniformDistribution(1, 5, 0.5)}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
@@ -165,7 +167,7 @@ def test_can_handle_discrete_uniform(example_tsds, optuna_storage):
 
 def test_can_handle_intuniform(example_tsds, optuna_storage):
     params = {"model.lag": IntUniformDistribution(1, 6)}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(NaiveModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
@@ -173,7 +175,7 @@ def test_can_handle_intuniform(example_tsds, optuna_storage):
 
 def test_can_handle_intloguniform(example_tsds, optuna_storage):
     params = {"model.lag": IntLogUniformDistribution(1, 6)}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(NaiveModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
@@ -181,7 +183,7 @@ def test_can_handle_intloguniform(example_tsds, optuna_storage):
 
 def test_can_handle_categorical(example_tsds, optuna_storage):
     params = {"model.lag": CategoricalDistribution((1, 2, 3))}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(NaiveModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
@@ -190,7 +192,7 @@ def test_can_handle_categorical(example_tsds, optuna_storage):
 def test_catch_nonexistent_argument_pass(example_tsds, optuna_storage):
     params = {"model.lag": UniformDistribution(1, 5)}
     with pytest.raises(TypeError):
-        with patch.object(Pipeline, 'params_to_tune', return_value=params):
+        with patch.object(Pipeline, "params_to_tune", return_value=params):
             pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
             tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
             tune.fit(ts=example_tsds, n_trials=2)
@@ -198,7 +200,7 @@ def test_catch_nonexistent_argument_pass(example_tsds, optuna_storage):
 
 def test_can_handle_transforms(example_tsds, optuna_storage):
     params = {"transform.0.value": IntUniformDistribution(0, 17), "transform.1.value": IntUniformDistribution(0, 17)}
-    with patch.object(Pipeline, 'params_to_tune', return_value=params):
+    with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(
             NaiveModel(),
             [AddConstTransform(in_column="target", value=8), AddConstTransform(in_column="target", value=4)],
