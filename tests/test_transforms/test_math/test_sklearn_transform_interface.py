@@ -267,7 +267,7 @@ def test_ordering(transform_constructor, in_column, mode, multicolumn_ts):
     for transform_one_column in transforms_one_column:
         transformed_dfs_one_column.append(transform_one_column.fit_transform(deepcopy(multicolumn_ts)))
 
-    in_to_out_columns = {key: value for key, value in zip(transform.in_column, transform.out_columns)}
+    in_to_out_columns = dict(zip(transform.in_column, transform.out_columns))
     for i, column in enumerate(in_column):
         # find relevant column name in transformed_df
         column_multi = in_to_out_columns[column]
