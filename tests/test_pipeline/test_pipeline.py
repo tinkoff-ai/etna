@@ -1206,3 +1206,22 @@ def test_predict_return_components(
     taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
     assert (taregt_components_df["target_component_a"] == expected_component_a).all()
     assert (taregt_components_df["target_component_b"] == expected_component_b).all()
+
+
+@pytest.mark.parametrize(
+    "model, transforms, expected_params_to_tune",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+            {},
+        ),
+    ],
+)
+def test_params_to_tune(model, transforms, expected_params_to_tune):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+
+    obtained_params_to_tune = pipeline.params_to_tune()
+
+    assert obtained_params_to_tune == expected_params_to_tune

@@ -379,3 +379,22 @@ def test_predict_return_components(example_tsds, model_fixture, request):
     pipeline = AutoRegressivePipeline(model=model, horizon=10)
     pipeline.fit(example_tsds)
     forecast = pipeline.predict(ts=example_tsds, return_components=True)
+
+
+@pytest.mark.parametrize(
+    "model, transforms, expected_params_to_tune",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+            {},
+        ),
+    ],
+)
+def test_params_to_tune(model, transforms, expected_params_to_tune):
+    horizon = 3
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
+
+    obtained_params_to_tune = pipeline.params_to_tune()
+
+    assert obtained_params_to_tune == expected_params_to_tune

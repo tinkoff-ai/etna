@@ -35,6 +35,9 @@ else:
     LightningModule = Mock  # type: ignore
     SaveNNMixin = Mock  # type: ignore
 
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+
 
 class AbstractModel(SaveMixin, AbstractSaveable, ABC, BaseMixin):
     """Interface for model with fit method."""
@@ -79,6 +82,18 @@ class AbstractModel(SaveMixin, AbstractSaveable, ABC, BaseMixin):
 
         """
         pass
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
 
 
 class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):

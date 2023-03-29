@@ -10,11 +10,15 @@ from typing import Union
 import pandas as pd
 from typing_extensions import Literal
 
+from etna import SETTINGS
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
 from etna.transforms.utils import match_target_quantiles
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
 
 
 class FutureMixin:
@@ -161,6 +165,18 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
             TSDataset after applying inverse transformation.
         """
         pass
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get hyperparameter grid to tune.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
 
 
 class IrreversibleTransform(Transform):
