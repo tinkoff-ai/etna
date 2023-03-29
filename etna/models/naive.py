@@ -8,6 +8,11 @@ class NaiveModel(SeasonalMovingAverageModel):
         y_{t} = y_{t-s},
 
     where :math:`s` is lag.
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction component here is the corresponding target lag.
     """
 
     def __init__(self, lag: int = 1):

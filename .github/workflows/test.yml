@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        python-version: [3.8, 3.9, '3.10']
       fail-fast: false
 
     steps:
@@ -59,10 +59,12 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
+      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
+          poetry run pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("not long")
         run: |
@@ -210,7 +212,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install -E "all tests" -vv
-          pip install "pandas${{ matrix.pandas-version }}"
+          poetry run pip install "pandas${{ matrix.pandas-version }}"
 
       - name: PyTest ("tsdataset transforms")
         run: |

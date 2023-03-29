@@ -608,7 +608,7 @@ class TSDataset:
         columns = df.columns.get_level_values("feature").unique()
 
         # flatten dataframe
-        df_dict = {}
+        df_dict: Dict[str, Any] = {}
         df_dict["timestamp"] = np.tile(df.index, len(segments))
         df_dict["segment"] = np.repeat(segments, len(df.index))
         if "target" in columns:
@@ -1065,9 +1065,10 @@ class TSDataset:
             columns_in_df = df.columns.get_level_values("feature")
             columns_to_remove = list(set(columns_in_df) & set(features))
             unknown_columns = set(features) - set(columns_to_remove)
-            if len(unknown_columns) != 0:
+            if len(unknown_columns) > 0:
                 warnings.warn(f"Features {unknown_columns} are not present in {name}!")
-            df.drop(columns=columns_to_remove, level="feature", inplace=True)
+            if len(columns_to_remove) > 0:
+                df.drop(columns=columns_to_remove, level="feature", inplace=True)
         self._regressors = list(set(self._regressors) - set(features))
 
     @property
@@ -1177,7 +1178,7 @@ class TSDataset:
                 )
 
         components_sum = target_components_df.sum(axis=1, level="segment")
-        if not np.array_equal(components_sum.values, self[..., "target"].values):
+        if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
         self._target_components_names = tuple(components_names)
