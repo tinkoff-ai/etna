@@ -1135,7 +1135,8 @@ class TSDataset:
             target_level_df = self.to_pandas(features=target_names)
 
         target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components_names]]
-        target_level_df = target_level_df.drop(columns=list(self.target_components_names), level="feature")
+        if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
+            target_level_df = target_level_df.drop(columns=list(self.target_components_names), level="feature")
 
         ts = TSDataset(
             df=target_level_df,
@@ -1202,8 +1203,9 @@ class TSDataset:
 
     def drop_target_components(self):
         """Drop target components from dataset."""
-        self.df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
-        self._target_components_names = ()
+        if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
+            self.df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
+            self._target_components_names = ()
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
