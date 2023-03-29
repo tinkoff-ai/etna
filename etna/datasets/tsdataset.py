@@ -497,7 +497,7 @@ class TSDataset:
 
     @property
     def target_components_names(self) -> Tuple[str, ...]:
-        """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of quantile absence."""
+        """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of components absence."""
         return self._target_components_names
 
     @property
@@ -1051,7 +1051,7 @@ class TSDataset:
         ValueError:
             If ``features`` list contains target components
         """
-        features_contain_target_components = len(set(features).intersection(self.target_components_names)) != 0
+        features_contain_target_components = len(set(features).intersection(self.target_components_names)) > 0
         if features_contain_target_components:
             raise ValueError(
                 "Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!"
