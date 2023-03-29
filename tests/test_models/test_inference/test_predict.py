@@ -60,6 +60,8 @@ class TestPredictInSampleFull:
             (HoltModel(), []),
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
         ],
     )
     def test_predict_in_sample_full(self, model, transforms, example_tsds):
@@ -95,8 +97,6 @@ class TestPredictInSampleFull:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -171,6 +171,8 @@ class TestPredictInSampleSuffix:
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
         ],
     )
     def test_predict_in_sample_suffix(self, model, transforms, example_tsds):
@@ -180,8 +182,6 @@ class TestPredictInSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -714,6 +714,8 @@ class TestPredictSubsetSegments:
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
         ],
     )
     def test_predict_subset_segments(self, model, transforms, example_tsds):
@@ -723,8 +725,6 @@ class TestPredictSubsetSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
