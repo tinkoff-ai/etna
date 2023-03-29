@@ -31,6 +31,8 @@ class DeadlineMovingAverageModel(
     Notes
     _____
     This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components are corresponding target seasonal lags (monthly or annual)
+    with weights of :math:`1/window`.
     """
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
