@@ -1,3 +1,6 @@
+from copy import deepcopy
+from unittest.mock import Mock
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -5,10 +8,10 @@ import pytest
 from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.models.tbats import BATS
+from etna.models.tbats import TBATS
 from etna.models.tbats import BATSModel
 from etna.models.tbats import TBATSModel
 from etna.models.tbats import _TBATSAdapter
-from etna.transforms import LagTransform
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 from tests.test_models.utils import assert_model_equals_loaded_original
 
@@ -45,9 +48,8 @@ def sinusoid_ts():
 
 
 @pytest.fixture()
-def periodic_ts():
-    horizon = 14
-    periods = 100
+def periodic_dfs():
+    periods = 50
     t = np.arange(periods)
 
     # data from https://pypi.org/project/tbats/
@@ -58,20 +60,29 @@ def periodic_ts():
         + 20
     )
 
-    ts_1 = pd.DataFrame(
+    df = pd.DataFrame(
         {
-            "segment": ["segment_1"] * periods,
             "timestamp": pd.date_range(start="1/1/2018", periods=periods),
             "target": y,
         }
     )
-    ts_2 = pd.DataFrame(
-        {
-            "segment": ["segment_2"] * periods,
-            "timestamp": pd.date_range(start="1/1/2018", periods=periods),
-            "target": 2 * y,
-        }
-    )
+
+    return df.iloc[:40], df.iloc[40:]
+
+
+@pytest.fixture()
+def periodic_ts(periodic_dfs):
+    horizon = 10
+
+    df = pd.concat(periodic_dfs, axis=0).reset_index(drop=True)
+
+    ts_1 = df.copy()
+    ts_1["segment"] = "segment_1"
+
+    ts_2 = df.copy()
+    ts_2["segment"] = "segment_2"
+    ts_2["target"] *= 2
+
     df = pd.concat((ts_1, ts_2))
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
@@ -121,45 +132,48 @@ def test_repr(model_class, model_class_repr):
 
 
 @pytest.mark.parametrize("model", (TBATSModel(), BATSModel()))
-def test_not_fitted(model, linear_segments_ts_unique):
-    train, test = linear_segments_ts_unique
-    to_forecast = train.make_future(3)
+@pytest.mark.parametrize("method", ("forecast", "predict"))
+def test_not_fitted(model, method, linear_segments_ts_unique):
+    method_to_call = getattr(model, method)
     with pytest.raises(ValueError, match="model is not fitted!"):
-        model.forecast(to_forecast)
+        method_to_call(ts=Mock())
 
 
 @pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_format(model, new_format_df):
-    df = new_format_df
-    ts = TSDataset(df, "1d")
-    lags = LagTransform(lags=[3, 4, 5], in_column="target")
-    ts.fit_transform([lags])
-    model.fit(ts)
-    future_ts = ts.make_future(3, transforms=[lags])
-    model.forecast(future_ts)
-    future_ts.inverse_transform([lags])
-    assert not future_ts.isnull().values.any()
-
-
-@pytest.mark.long_2
-@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_dummy(model, sinusoid_ts):
+@pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
+def test_dummy(model, method, use_future, sinusoid_ts):
     train, test = sinusoid_ts
     model.fit(train)
-    future_ts = train.make_future(14)
-    y_pred = model.forecast(future_ts)
+
+    if use_future:
+        pred_ts = train.make_future(14)
+        y_true = test
+    else:
+        pred_ts = deepcopy(train)
+        y_true = train
+
+    method_to_call = getattr(model, method)
+    y_pred = method_to_call(ts=pred_ts)
+
     metric = MAE("macro")
-    value_metric = metric(y_pred, test)
+    value_metric = metric(y_true, y_pred)
     assert value_metric < 0.33
 
 
 @pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-def test_prediction_interval(model, example_tsds):
+@pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
+def test_prediction_interval(model, method, use_future, example_tsds):
     model.fit(example_tsds)
-    future_ts = example_tsds.make_future(3)
-    forecast = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+    if use_future:
+        pred_ts = example_tsds.make_future(3)
+    else:
+        pred_ts = deepcopy(example_tsds)
+
+    method_to_call = getattr(model, method)
+    forecast = method_to_call(ts=pred_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
@@ -172,33 +186,27 @@ def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
-def test_forecast_decompose_not_fitted(small_periodic_ts):
+@pytest.mark.parametrize("method", ("predict_components", "forecast_components"))
+def test_decompose_not_fitted(small_periodic_ts, method):
     model = _TBATSAdapter(model=BATS())
 
+    method_to_call = getattr(model, method)
     with pytest.raises(ValueError, match="Model is not fitted!"):
-        model.forecast_components(df=small_periodic_ts.df)
-
-
-def test_predict_components_not_implemented(small_periodic_ts):
-    model = _TBATSAdapter(model=BATS())
-
-    with pytest.raises(NotImplementedError, match="Prediction decomposition isn't currently implemented!"):
-        model.predict_components(df=small_periodic_ts.df)
+        method_to_call(df=small_periodic_ts.df)
 
 
 @pytest.mark.parametrize(
     "estimator",
-    (
-        BATSModel,
-        TBATSModel,
-    ),
+    (BATS, TBATS),
 )
-def test_decompose_forecast_output_format(small_periodic_ts, estimator):
+def test_decompose_forecast_output_format(periodic_dfs, estimator):
+    _, train = periodic_dfs
     horizon = 3
-    model = estimator()
-    model.fit(small_periodic_ts)
 
-    components = model._models["segment_1"]._decompose_forecast(horizon=horizon)
+    model = _TBATSAdapter(model=estimator())
+    model.fit(train, [])
+
+    components = model._decompose_forecast(horizon=horizon)
     assert isinstance(components, np.ndarray)
     assert components.shape[0] == horizon
 
@@ -206,21 +214,51 @@ def test_decompose_forecast_output_format(small_periodic_ts, estimator):
 @pytest.mark.parametrize(
     "estimator",
     (
-        BATSModel,
-        TBATSModel,
+        BATS,
+        TBATS,
     ),
 )
-def test_named_components_output_format(small_periodic_ts, estimator):
-    horizon = 3
-    model = estimator()
-    model.fit(small_periodic_ts)
+def test_decompose_predict_output_format(periodic_dfs, estimator):
+    _, train = periodic_dfs
+    model = _TBATSAdapter(model=estimator())
+    model.fit(train, [])
 
-    segment_model = model._models["segment_1"]
-    components = segment_model._decompose_forecast(horizon=horizon)
-    components = segment_model._process_components(raw_components=components)
+    components = model._decompose_predict()
+    assert isinstance(components, np.ndarray)
+    assert components.shape[0] == len(train)
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATS,
+        TBATS,
+    ),
+)
+def test_named_components_output_format(periodic_dfs, estimator):
+    _, train = periodic_dfs
+    horizon = 3
+
+    model = _TBATSAdapter(model=estimator())
+    model.fit(train, [])
+
+    components = model._decompose_forecast(horizon=horizon)
+    components = model._process_components(raw_components=components)
 
     assert isinstance(components, pd.DataFrame)
     assert len(components) == horizon
+
+
+@pytest.mark.parametrize(
+    "train_slice,decompose_slice", ((slice(5, 20), slice(None, 20)), (slice(5, 10), slice(10, 20)))
+)
+def test_predict_components_out_of_sample_error(periodic_dfs, train_slice, decompose_slice):
+    train, _ = periodic_dfs
+
+    model = _TBATSAdapter(model=BATS())
+    model.fit(train.iloc[train_slice], [])
+    with pytest.raises(NotImplementedError, match="isn't currently implemented for out-of-sample prediction"):
+        model.predict_components(df=train.iloc[decompose_slice])
 
 
 @pytest.mark.long_1
@@ -228,85 +266,114 @@ def test_named_components_output_format(small_periodic_ts, estimator):
     "estimator,params,components_names",
     (
         (
-            BATSModel,
-            {"use_box_cox": False, "use_trend": True, "use_arma_errors": True, "seasonal_periods": [7, 14]},
-            {"local_level", "trend", "arma(p=1,q=1)", "seasonal(s=7)", "seasonal(s=14)"},
+            BATS,
+            {"use_box_cox": True, "use_trend": True, "use_arma_errors": True, "seasonal_periods": [7, 14]},
+            {
+                "target_component_local_level",
+                "target_component_trend",
+                "target_component_arma(p=1,q=1)",
+                "target_component_seasonal(s=7)",
+                "target_component_seasonal(s=14)",
+            },
         ),
         (
-            TBATSModel,
+            TBATS,
             {"use_box_cox": False, "use_trend": True, "use_arma_errors": False, "seasonal_periods": [7, 14]},
-            {"local_level", "trend", "seasonal(s=7.0)", "seasonal(s=14.0)"},
+            {
+                "target_component_local_level",
+                "target_component_trend",
+                "target_component_seasonal(s=7.0)",
+                "target_component_seasonal(s=14.0)",
+            },
         ),
     ),
 )
-def test_components_names(periodic_ts, estimator, params, components_names):
-    train, test = periodic_ts
-    model = estimator(**params)
-    model.fit(train)
+@pytest.mark.parametrize(
+    "method,use_future",
+    (
+        ("predict_components", False),
+        ("forecast_components", True),
+    ),
+)
+def test_components_names(periodic_dfs, estimator, params, components_names, method, use_future):
+    train, test = periodic_dfs
+    model = _TBATSAdapter(model=estimator(**params))
+    model.fit(train, [])
 
-    future = train.make_future(3).to_pandas(flatten=True)
+    pred_df = test if use_future else train
 
-    for segment in test.columns.get_level_values("segment"):
-        components_df = model._models[segment].forecast_components(df=future)
-        assert set(components_df.columns) == components_names
+    method_to_call = getattr(model, method)
+    components_df = method_to_call(df=pred_df)
+    assert set(components_df.columns) == components_names
 
 
 @pytest.mark.parametrize(
     "estimator",
     (
-        BATSModel,
-        TBATSModel,
+        BATS,
+        TBATS,
     ),
 )
-def test_seasonal_components_not_fitted(small_periodic_ts, estimator):
-    model = estimator(seasonal_periods=[7, 14], use_arma_errors=False)
-    model.fit(small_periodic_ts)
+@pytest.mark.parametrize("method,use_future", (("predict_components", False), ("forecast_components", True)))
+def test_seasonal_components_not_fitted(periodic_dfs, estimator, method, use_future):
+    train, test = periodic_dfs
+    model = _TBATSAdapter(model=estimator(seasonal_periods=[7, 14], use_arma_errors=False))
+    model.fit(train, [])
 
-    future = small_periodic_ts.make_future(3).to_pandas(flatten=True)
-    segment_model = model._models["segment_1"]
-    segment_model._fitted_model.params.components.seasonal_periods = []
+    model._fitted_model.params.components.seasonal_periods = []
 
+    pred_df = test if use_future else train
+
+    method_to_call = getattr(model, method)
     with pytest.warns(Warning, match=f"Following components are not fitted: Seasonal!"):
-        segment_model.forecast_components(df=future)
+        method_to_call(df=pred_df)
 
 
 @pytest.mark.parametrize(
     "estimator",
     (
-        BATSModel,
-        TBATSModel,
+        BATS,
+        TBATS,
     ),
 )
-def test_arma_component_not_fitted(small_periodic_ts, estimator):
-    model = estimator(use_arma_errors=True, seasonal_periods=[])
-    model.fit(small_periodic_ts)
+@pytest.mark.parametrize("method,use_future", (("predict_components", False), ("forecast_components", True)))
+def test_arma_component_not_fitted(periodic_dfs, estimator, method, use_future):
+    train, test = periodic_dfs
 
-    future = small_periodic_ts.make_future(3).to_pandas(flatten=True)
-    segment_model = model._models["segment_1"]
-    segment_model._fitted_model.params.components.use_arma_errors = False
+    model = _TBATSAdapter(model=estimator(use_arma_errors=True))
+    model.fit(train, [])
 
+    model._fitted_model.params.components.use_arma_errors = False
+
+    pred_df = test if use_future else train
+
+    method_to_call = getattr(model, method)
     with pytest.warns(Warning, match=f"Following components are not fitted: ARMA!"):
-        segment_model.forecast_components(df=future)
+        method_to_call(df=pred_df)
 
 
 @pytest.mark.parametrize(
     "estimator",
     (
-        BATSModel,
-        TBATSModel,
+        BATS,
+        TBATS,
     ),
 )
-def test_arma_w_seasonal_components_not_fitted(small_periodic_ts, estimator):
-    model = estimator(use_arma_errors=True, seasonal_periods=[2, 3])
-    model.fit(small_periodic_ts)
+@pytest.mark.parametrize("method,use_future", (("predict_components", False), ("forecast_components", True)))
+def test_arma_with_seasonal_components_not_fitted(periodic_dfs, estimator, method, use_future):
+    train, test = periodic_dfs
 
-    future = small_periodic_ts.make_future(3).to_pandas(flatten=True)
-    segment_model = model._models["segment_1"]
-    segment_model._fitted_model.params.components.use_arma_errors = False
-    segment_model._fitted_model.params.components.seasonal_periods = []
+    model = _TBATSAdapter(model=estimator(use_arma_errors=True, seasonal_periods=[2, 3], use_box_cox=False))
+    model.fit(train, [])
 
+    model._fitted_model.params.components.use_arma_errors = False
+    model._fitted_model.params.components.seasonal_periods = []
+
+    pred_df = test if use_future else train
+
+    method_to_call = getattr(model, method)
     with pytest.warns(Warning, match=f"Following components are not fitted: Seasonal, ARMA!"):
-        segment_model.forecast_components(df=future)
+        method_to_call(df=pred_df)
 
 
 @pytest.mark.long_1
@@ -314,8 +381,8 @@ def test_arma_w_seasonal_components_not_fitted(small_periodic_ts, estimator):
 @pytest.mark.parametrize(
     "estimator",
     (
-        BATSModel,
-        TBATSModel,
+        BATS,
+        TBATS,
     ),
 )
 @pytest.mark.parametrize(
@@ -342,16 +409,44 @@ def test_arma_w_seasonal_components_not_fitted(small_periodic_ts, estimator):
         },
     ),
 )
-def test_forecast_decompose_sum_up_to_target(periodic_ts, estimator, params):
-    train, test = periodic_ts
+@pytest.mark.parametrize("method,use_future", (("predict_components", False), ("forecast_components", True)))
+def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, method, use_future):
+    train, test = periodic_dfs
 
-    horizon = 14
-    model = estimator(**params)
-    model.fit(train)
-    future_ts = train.make_future(horizon)
-    y_pred = model.forecast(future_ts)
+    model = _TBATSAdapter(model=estimator(**params))
+    model.fit(train, [])
 
-    for segment in y_pred.columns.get_level_values("segment"):
-        components = model._models[segment].forecast_components(df=future_ts.to_pandas(flatten=True))
-        y_hat_pred = np.sum(components.values, axis=1)
-        np.testing.assert_allclose(y_hat_pred, y_pred[:, segment, "target"].values)
+    if use_future:
+        pred_df = test
+        y_pred = model.forecast(test, prediction_interval=False, quantiles=[])
+
+    else:
+        pred_df = train
+        y_pred = model.predict(train, prediction_interval=False, quantiles=[])
+
+    method_to_call = getattr(model, method)
+    components = method_to_call(df=pred_df)
+
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATS,
+        TBATS,
+    ),
+)
+def test_predict_decompose_on_subset(periodic_dfs, estimator):
+    train, _ = periodic_dfs
+    sub_train = train.iloc[5:]
+
+    model = _TBATSAdapter(model=estimator())
+    model.fit(train, [])
+
+    y_pred = model.predict(df=sub_train, prediction_interval=False, quantiles=[])
+    components = model.predict_components(df=sub_train)
+
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))

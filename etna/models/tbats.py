@@ -22,6 +22,7 @@ class _TBATSAdapter(BaseAdapter):
     def __init__(self, model: Estimator):
         self._model = model
         self._fitted_model: Optional[Model] = None
+        self._first_train_timestamp = None
         self._last_train_timestamp = None
         self._freq = None
 
@@ -32,6 +33,7 @@ class _TBATSAdapter(BaseAdapter):
 
         target = df["target"]
         self._fitted_model = self._model.fit(target)
+        self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()
         self._freq = freq
 
@@ -65,7 +67,37 @@ class _TBATSAdapter(BaseAdapter):
         return y_pred
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
-        raise NotImplementedError("Method predict isn't currently implemented!")
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        train_timestamp = pd.date_range(
+            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
+        )
+
+        if not (set(df["timestamp"]) <= set(train_timestamp)):
+            raise NotImplementedError("Method predict isn't currently implemented for out-of-sample prediction!")
+
+        y_pred = pd.DataFrame()
+        y_pred["target"] = self._fitted_model.y_hat
+        y_pred["timestamp"] = train_timestamp
+
+        if prediction_interval:
+            for quantile in quantiles:
+                confidence_intervals = self._fitted_model._calculate_confidence_intervals(
+                    y_pred["target"].values, quantile
+                )
+
+                if quantile < 1 / 2:
+                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
+                else:
+                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
+
+        # selecting time points from provided dataframe
+        y_pred.set_index("timestamp", inplace=True)
+        y_pred = y_pred.loc[df["timestamp"]]
+        y_pred.reset_index(drop=True, inplace=True)
+
+        return y_pred
 
     def get_model(self) -> Model:
         """Get internal :py:class:`tbats.tbats.Model` model that was fitted inside etna class.
@@ -114,7 +146,31 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
-        raise NotImplementedError("Prediction decomposition isn't currently implemented!")
+        if self._fitted_model is None or self._freq is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        train_timestamp = pd.date_range(
+            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
+        )
+
+        if not (set(df["timestamp"]) <= set(train_timestamp)):
+            raise NotImplementedError(
+                "Method predict_components isn't currently implemented for out-of-sample prediction!"
+            )
+
+        self._check_components()
+
+        raw_components = self._decompose_predict()
+        components = self._process_components(raw_components=raw_components)
+
+        # selecting time points from provided dataframe
+        components["timestamp"] = train_timestamp
+
+        components.set_index("timestamp", inplace=True)
+        components = components.loc[df["timestamp"]]
+        components.reset_index(drop=True, inplace=True)
+
+        return components
 
     def _get_steps_to_forecast(self, df: pd.DataFrame) -> int:
         if self._freq is None:
@@ -157,6 +213,16 @@ class _TBATSAdapter(BaseAdapter):
         if len(not_fitted_components) > 0:
             warn(f"Following components are not fitted: {', '.join(not_fitted_components)}!")
 
+    def _rescale_components(self, raw_components: np.ndarray) -> np.ndarray:
+        """Rescale components when Box-Cox transform used."""
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
+
+        transformed_pred = np.sum(raw_components, axis=1)
+        pred = self._fitted_model._inv_boxcox(transformed_pred)
+        components = raw_components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
+        return components
+
     def _decompose_forecast(self, horizon: int) -> np.ndarray:
         """Estimate raw forecast components."""
         if self._fitted_model is None:
@@ -175,9 +241,33 @@ class _TBATSAdapter(BaseAdapter):
         raw_components = np.stack(components, axis=0)
 
         if model.params.components.use_box_cox:
-            transformed_pred = np.sum(raw_components, axis=1)
-            pred = model._inv_boxcox(transformed_pred)
-            raw_components = raw_components * pred[..., np.newaxis] / transformed_pred[..., np.newaxis]
+            raw_components = self._rescale_components(raw_components)
+
+        return raw_components
+
+    def _decompose_predict(self) -> np.ndarray:
+        """Estimate raw prediction components."""
+        if self._fitted_model is None:
+            raise ValueError("Fitted model is not set!")
+
+        model = self._fitted_model
+        state_matrix = model.matrix.make_F_matrix()
+        component_weights = model.matrix.make_w_vector()
+        error_weights = model.matrix.make_g_vector()
+
+        steps = len(model.y)
+        state = model.params.x0
+        weighted_error = model.resid_boxcox[..., np.newaxis] * error_weights[np.newaxis]
+
+        components = []
+        for t in range(steps):
+            components.append(component_weights * state)
+            state = state_matrix @ state + weighted_error[t]
+
+        raw_components = np.stack(components, axis=0)
+
+        if model.params.components.use_box_cox:
+            raw_components = self._rescale_components(raw_components)
 
         return raw_components
 
@@ -223,13 +313,21 @@ class _TBATSAdapter(BaseAdapter):
                 raw_components[:, component_idx : component_idx + p + q], axis=1
             )
 
-        return pd.DataFrame(data=named_components)
+        return pd.DataFrame(data=named_components).add_prefix("target_component_")
 
 
 class BATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
-    """Class for holding segment interval BATS model."""
+    """Class for holding segment interval BATS model.
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for BATS model are: local level, trend, seasonality and ARMA component.
+    In-sample and out-of-sample decompositions components are estimated directly from the fitted model parameters.
+    Box-Cox transform supported with components proportional rescaling.
+    """
 
     def __init__(
         self,
@@ -298,7 +396,15 @@ class BATSModel(
 class TBATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
-    """Class for holding segment interval TBATS model."""
+    """Class for holding segment interval TBATS model.
+
+    Notes
+    -----
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for TBATS model are: local level, trend, seasonality and ARMA component.
+    In-sample and out-of-sample decompositions components are estimated directly from the fitted model parameters.
+    Box-Cox transform supported with components proportional rescaling.
+    """
 
     def __init__(
         self,
