@@ -167,7 +167,7 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
         pass
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
-        """Get hyperparameter grid to tune.
+        """Get grid for tuning hyperparameters.
 
         This is default implementation with empty grid.
 
