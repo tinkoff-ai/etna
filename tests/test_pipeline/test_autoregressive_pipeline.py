@@ -42,7 +42,7 @@ def test_fit(example_tsds):
     pipeline.fit(example_tsds)
 
 
-def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None):
+def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None, return_components: bool = False):
     df = ts.to_pandas()
 
     df.loc[:, pd.IndexSlice[:, "target"]] = 0
@@ -83,7 +83,7 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=())
     assert model.forecast.call_count == 5
-    model.forecast.assert_called_with(ts=ANY)
+    model.forecast.assert_called_with(ts=ANY, return_components=False)
 
 
 @pytest.mark.parametrize(
@@ -105,7 +105,7 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=(), tail_steps=model.context_size)
     assert model.forecast.call_count == 5
-    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
+    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step, return_components=False)
 
 
 def test_forecast_columns(example_reg_tsds):
