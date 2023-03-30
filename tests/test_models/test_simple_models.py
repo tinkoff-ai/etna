@@ -839,3 +839,19 @@ def test_deadline_ma_predict_components_sum_up_to_target(
     components = forecast.get_target_components()
 
     np.testing.assert_allclose(target.values, components.sum(axis=1, level="segment").values)
+
+
+@pytest.mark.parametrize(
+    "method_name, expected_values",
+    (("forecast", [[15, 2], [16, 4], [17, 6]]), ("predict", [[15, 2], [16, 4], [17, 6]])),
+)
+def test_deadline_ma_predict_components_correct(
+    simple_df, method_name, expected_values, window=1, seasonality="month", horizon=3
+):
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(simple_df)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=simple_df, prediction_size=horizon, return_components=True)
+
+    target_components_df = forecast.get_target_components()
+    np.testing.assert_allclose(target_components_df.values, expected_values)
