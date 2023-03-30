@@ -143,9 +143,11 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
                     current_ts_forecast = current_ts.make_future(future_steps=current_step, transforms=self.transforms)
                     current_ts_future = self.model.forecast(ts=current_ts_forecast, return_components=return_components)
             current_ts_future.inverse_transform(self.transforms)
+
             if len(current_ts_future.target_components_names) > 0:
                 target_components_dfs.append(current_ts_future.get_target_components())
                 current_ts_future.drop_target_components()
+
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features
