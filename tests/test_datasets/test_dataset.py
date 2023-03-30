@@ -1055,8 +1055,8 @@ def test_drop_features_throw_error_on_target_components(ts_with_target_component
 
 
 def test_get_target_components_on_dataset_without_components(example_tsds):
-    target_components_names = example_tsds.get_target_components()
-    assert target_components_names is None
+    target_components_df = example_tsds.get_target_components()
+    assert target_components_df is None
 
 
 def test_get_target_components(
@@ -1102,11 +1102,16 @@ def test_add_target_components(ts_without_target_components, ts_with_target_comp
 
 def test_drop_target_components(ts_with_target_components, ts_without_target_components):
     ts_with_target_components.drop_target_components()
-    assert ts_with_target_components.target_components_names is None
+    assert ts_with_target_components.target_components_names == ()
     pd.testing.assert_frame_equal(
         ts_with_target_components.to_pandas(),
         ts_without_target_components.to_pandas(),
     )
+
+
+def test_drop_target_components_without_components_in_dataset(ts_without_target_components):
+    ts_without_target_components.drop_target_components()
+    assert ts_without_target_components.target_components_names == ()
 
 
 def test_inverse_transform_target_components(ts_with_target_components, inverse_transformed_components_df):
@@ -1123,4 +1128,14 @@ def test_inverse_transform_with_target_components_fails_keep_target_components(t
     transform = DifferencingTransform(in_column="target")
     with suppress(ValueError):
         ts_with_target_components.inverse_transform(transforms=[transform])
-    assert ts_with_target_components.target_components_names is not None
+    assert len(ts_with_target_components.target_components_names) > 0
+
+
+@pytest.mark.parametrize(
+    "fixture_name, expected_quantiles",
+    (("example_tsds", ()), ("product_level_constant_forecast_with_quantiles", ("target_0.25", "target_0.75"))),
+)
+def test_get_target_quantiles_names(fixture_name, expected_quantiles, request):
+    ts = request.getfixturevalue(fixture_name)
+    target_quantiles_names = ts.target_quantiles_names
+    assert sorted(target_quantiles_names) == sorted(expected_quantiles)

@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -471,21 +470,35 @@ def test_get_level_dataset_lower_level_error(simple_hierarchical_ts):
 
 
 @pytest.mark.parametrize(
-    "target_level,answer",
+    "target_level, expected_dataframe_name",
     (
-        ("product", np.array([[1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], [1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4]])),
-        ("market", np.array([[3, 3, 3, 7, 7, 7], [3, 3, 3, 7, 7, 7]])),
-        ("total", np.array([[10, 10, 10], [10, 10, 10]])),
+        ("product", "product_level_constant_forecast_with_quantiles"),
+        ("market", "market_level_constant_forecast_with_quantiles"),
+        ("total", "total_level_constant_forecast_with_quantiles"),
     ),
 )
-def test_get_level_dataset_with_quantiles(product_level_constant_forecast_w_quantiles, target_level, answer):
-    forecast = product_level_constant_forecast_w_quantiles
-    np.testing.assert_array_almost_equal(forecast.get_level_dataset(target_level=target_level).df.values, answer)
+def test_get_level_dataset_with_quantiles(
+    product_level_constant_forecast_with_quantiles, target_level, expected_dataframe_name, request
+):
+    expected_df = request.getfixturevalue(expected_dataframe_name).to_pandas()
+    reconciled_df = product_level_constant_forecast_with_quantiles.get_level_dataset(
+        target_level=target_level
+    ).to_pandas()
+    pd.testing.assert_frame_equal(reconciled_df, expected_df)
 
 
-def test_get_level_dataset_pass_target_components_to_output(simple_hierarchical_ts):
-    simple_hierarchical_ts._target_components_names = ["target_component_a", "target_component_b"]
-    simple_hierarchical_ts_aggregated = simple_hierarchical_ts.get_level_dataset(target_level="market")
-    assert sorted(simple_hierarchical_ts_aggregated.target_components_names) == sorted(
-        simple_hierarchical_ts.target_components_names
-    )
+@pytest.mark.parametrize(
+    "target_level, expected_dataframe_name",
+    (
+        ("product", "product_level_constant_forecast_with_target_components"),
+        ("market", "market_level_constant_forecast_with_target_components"),
+        ("total", "total_level_constant_forecast_with_target_components"),
+    ),
+)
+def test_get_level_dataset_with_target_components(
+    product_level_constant_forecast_with_target_components, target_level, expected_dataframe_name, request
+):
+    expected_ts = request.getfixturevalue(expected_dataframe_name)
+    reconciled_ts = product_level_constant_forecast_with_target_components.get_level_dataset(target_level=target_level)
+    pd.testing.assert_frame_equal(reconciled_ts.get_target_components(), expected_ts.get_target_components())
+    pd.testing.assert_frame_equal(reconciled_ts.to_pandas(), expected_ts.to_pandas())
