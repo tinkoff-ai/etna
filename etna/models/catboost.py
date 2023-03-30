@@ -160,7 +160,7 @@ class _CatBoostAdapter(BaseAdapter):
         return pd.DataFrame(data=components, columns=component_names)
 
     def _params_to_tune(self) -> Dict[str, "BaseDistribution"]:
-        """Get hyperparameter grid to tune.
+        """Get default grid for tuning hyperparameters.
 
         Returns
         -------
@@ -302,7 +302,7 @@ class CatBoostPerSegmentModel(
         )
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
-        """Get hyperparameter grid to tune.
+        """Get default grid for tuning hyperparameters.
 
         Returns
         -------
@@ -439,7 +439,7 @@ class CatBoostMultiSegmentModel(
         )
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
-        """Get hyperparameter grid to tune.
+        """Get default grid for tuning hyperparameters.
 
         Returns
         -------
