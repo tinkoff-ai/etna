@@ -191,19 +191,25 @@ class DeadlineMovingAverageModel(
 
             components_data.append(obs_components)
 
+        # shape: (prediction_size, window, num_segments)
         raw_components = np.asarray(components_data, dtype=float)
+
+        # shape: (prediction_size, num_segments, window)
+        # this is needed to place elements in the right order
         raw_components = np.swapaxes(raw_components, -1, -2)
+
+        # shape: (prediction_size, num_segments * window)
         raw_components = raw_components.reshape(raw_components.shape[0], -1)
         raw_components /= self.window
 
-        components = pd.DataFrame(data=raw_components)
-        components.index = index[start_idx:end_idx]
         components_names = [f"target_component_{self.seasonality.name}_lag_{w}" for w in range(1, self.window + 1)]
-        components.columns = pd.MultiIndex.from_product(
-            [context.columns.get_level_values("segment"), components_names], names=("segment", "feature")
-        )
 
-        return components
+        segment_names = context.columns.get_level_values("segment")
+        column_names = pd.MultiIndex.from_product([segment_names, components_names], names=("segment", "feature"))
+
+        target_components_df = pd.DataFrame(data=raw_components, columns=column_names, index=index[start_idx:end_idx])
+
+        return target_components_df
 
     def _make_predictions(
         self, result_template: pd.DataFrame, context: pd.DataFrame, prediction_size: int
@@ -249,13 +255,13 @@ class DeadlineMovingAverageModel(
         y_pred = result_values[-prediction_size:]
         df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
-        components = None
+        target_components_df = None
         if return_components:
-            components = self._make_prediction_components(
+            target_components_df = self._make_prediction_components(
                 result_template=result_template, context=result_template, prediction_size=prediction_size
             )
 
-        return df, components
+        return df, target_components_df
 
     def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make autoregressive forecasts.
@@ -289,13 +295,13 @@ class DeadlineMovingAverageModel(
         self._validate_fitted()
 
         df = ts.to_pandas()
-        new_df, target_components = self._forecast(
+        new_df, target_components_df = self._forecast(
             df=df, prediction_size=prediction_size, return_components=return_components
         )
         ts.df = new_df
 
         if return_components:
-            ts.add_target_components(target_components_df=target_components)
+            ts.add_target_components(target_components_df=target_components_df)
 
         return ts
 
@@ -323,13 +329,13 @@ class DeadlineMovingAverageModel(
         y_pred = result_values[-prediction_size:]
         df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
-        components = None
+        target_components_df = None
         if return_components:
-            components = self._make_prediction_components(
+            target_components_df = self._make_prediction_components(
                 result_template=result_template, context=context, prediction_size=prediction_size
             )
 
-        return df, components
+        return df, target_components_df
 
     def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions using true values as autoregression context (teacher forcing).
@@ -363,13 +369,13 @@ class DeadlineMovingAverageModel(
         self._validate_fitted()
 
         df = ts.to_pandas()
-        new_df, target_components = self._predict(
+        new_df, target_components_df = self._predict(
             df=df, prediction_size=prediction_size, return_components=return_components
         )
         ts.df = new_df
 
         if return_components:
-            ts.add_target_components(target_components_df=target_components)
+            ts.add_target_components(target_components_df=target_components_df)
 
         return ts
 
