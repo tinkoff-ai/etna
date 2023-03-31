@@ -144,7 +144,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
                     current_ts_future = self.model.forecast(ts=current_ts_forecast, return_components=return_components)
             current_ts_future.inverse_transform(self.transforms)
 
-            if len(current_ts_future.target_components_names) > 0:
+            if return_components:
                 target_components_dfs.append(current_ts_future.get_target_components())
                 current_ts_future.drop_target_components()
 
@@ -159,7 +159,7 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         prediction_ts.df = prediction_ts.df.tail(self.horizon)
         prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
 
-        if len(target_components_dfs) > 0:
+        if return_components:
             target_components_df = pd.concat(target_components_dfs)
             prediction_ts.add_target_components(target_components_df=target_components_df)
 
