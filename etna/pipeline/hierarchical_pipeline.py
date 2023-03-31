@@ -77,7 +77,7 @@ class HierarchicalPipeline(Pipeline):
         n_folds: int = 3,
         return_components: bool = False,
     ) -> TSDataset:
-        """Make a forecast of the next points of a dataset on a source level.
+        """Make a forecast of the next points of a dataset at the source level.
 
         The result of forecasting starts from the last point of ``ts``, not including it.
 
@@ -99,9 +99,6 @@ class HierarchicalPipeline(Pipeline):
         :
             Dataset with predictions at the source level
         """
-        if return_components:
-            raise NotImplementedError("Adding target components is not currently implemented!")
-
         # handle `prediction_interval=True` separately
         source_ts = self.reconciliator.aggregate(ts=ts)
         forecast = super().forecast(
@@ -192,7 +189,7 @@ class HierarchicalPipeline(Pipeline):
         n_folds: int = 3,
         return_components: bool = False,
     ) -> TSDataset:
-        """Make a forecast of the next points of a dataset on a target level.
+        """Make a forecast of the next points of a dataset at a target level.
 
         The result of forecasting starts from the last point of ``ts``, not including it.
 
@@ -216,9 +213,6 @@ class HierarchicalPipeline(Pipeline):
         :
             Dataset with predictions at the target level of hierarchy.
         """
-        if return_components:
-            raise NotImplementedError("Adding target components is not currently implemented!")
-
         if ts is None:
             if self._fit_ts is None:
                 raise ValueError(
