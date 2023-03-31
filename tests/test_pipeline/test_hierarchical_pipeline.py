@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.datasets.utils import match_target_quantiles
 from etna.metrics import MAE
 from etna.metrics import Coverage
@@ -24,7 +25,6 @@ from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
-from tests.utils import to_be_fixed
 
 
 @pytest.mark.parametrize(
@@ -90,7 +90,23 @@ def test_raw_forecast_correctness(market_level_constant_hierarchical_ts, reconci
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=market_level_constant_hierarchical_ts)
     forecast = pipeline.raw_forecast(ts=market_level_constant_hierarchical_ts)
-    np.testing.assert_array_almost_equal(forecast[..., "target"].values, answer)
+    np.testing.assert_allclose(forecast[..., "target"].values, answer)
+
+
+@pytest.mark.parametrize(
+    "reconciliator,answer",
+    (
+        (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), 10),
+        (BottomUpReconciliator(target_level="total", source_level="market"), np.array([[3, 7]])),
+    ),
+)
+def test_raw_predict_correctness(market_level_constant_hierarchical_ts, reconciliator, answer):
+    ts = market_level_constant_hierarchical_ts
+
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    pipeline.fit(ts=ts)
+    forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.index[3])
+    np.testing.assert_allclose(forecast[..., "target"].values, answer)
 
 
 @pytest.mark.parametrize(
@@ -109,6 +125,22 @@ def test_raw_forecast_level(market_level_simple_hierarchical_ts, reconciliator):
 
 
 @pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+def test_raw_predict_level(market_level_simple_hierarchical_ts, reconciliator):
+    ts = market_level_simple_hierarchical_ts
+
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    pipeline.fit(ts=ts)
+    forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.index[1])
+    assert forecast.current_df_level == pipeline.reconciliator.source_level
+
+
+@pytest.mark.parametrize(
     "reconciliator,answer",
     (
         (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), np.array([[3, 7]])),
@@ -120,7 +152,23 @@ def test_forecast_correctness(market_level_constant_hierarchical_ts, reconciliat
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=market_level_constant_hierarchical_ts)
     forecast = pipeline.forecast()
-    np.testing.assert_array_almost_equal(forecast[..., "target"].values, answer)
+    np.testing.assert_allclose(forecast[..., "target"].values, answer)
+
+
+@pytest.mark.parametrize(
+    "reconciliator,answer",
+    (
+        (TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"), np.array([[3, 7]])),
+        (BottomUpReconciliator(target_level="total", source_level="market"), 10),
+    ),
+)
+def test_predict_correctness(market_level_constant_hierarchical_ts, reconciliator, answer):
+    ts = market_level_constant_hierarchical_ts
+
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    pipeline.fit(ts=ts)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[3])
+    np.testing.assert_allclose(forecast[..., "target"].values, answer)
 
 
 @pytest.mark.parametrize(
@@ -145,12 +193,43 @@ def test_forecast_level(market_level_simple_hierarchical_ts, reconciliator):
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
+def test_predict_level(market_level_simple_hierarchical_ts, reconciliator):
+    ts = market_level_simple_hierarchical_ts
+
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    pipeline.fit(ts=ts)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1])
+    assert forecast.current_df_level == pipeline.reconciliator.target_level
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
 def test_forecast_columns_duplicates(market_level_constant_hierarchical_ts_w_exog, reconciliator):
     ts = market_level_constant_hierarchical_ts_w_exog
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast()
+    assert not any(forecast.df.columns.duplicated())
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+def test_predict_columns_duplicates(market_level_constant_hierarchical_ts_w_exog, reconciliator):
+    ts = market_level_constant_hierarchical_ts_w_exog
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    pipeline.fit(ts=ts)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[3])
     assert not any(forecast.df.columns.duplicated())
 
 
@@ -228,6 +307,25 @@ def test_forecast_interval_presented(product_level_constant_hierarchical_ts, rec
 @pytest.mark.parametrize(
     "reconciliator",
     (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+    ),
+)
+def test_predict_interval_presented(product_level_constant_hierarchical_ts, reconciliator):
+    ts = product_level_constant_hierarchical_ts
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=ProphetModel(), transforms=[], horizon=2)
+
+    pipeline.fit(ts=ts)
+    forecast = pipeline.predict(
+        ts=ts, start_timestamp=ts.index[1], prediction_interval=True, quantiles=[0.025, 0.5, 0.975]
+    )
+    quantiles = match_target_quantiles(set(forecast.columns.get_level_values(1)))
+    assert quantiles == {"target_0.025", "target_0.5", "target_0.975"}
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
         TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
         TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
         BottomUpReconciliator(target_level="market", source_level="product"),
@@ -243,8 +341,30 @@ def test_forecast_prediction_intervals(product_level_constant_hierarchical_ts, r
     forecast = pipeline.forecast(prediction_interval=True, n_folds=1)
     for segment in forecast.segments:
         target = forecast[:, segment, "target"]
-        np.testing.assert_array_almost_equal(target, forecast[:, segment, "target_0.025"])
-        np.testing.assert_array_almost_equal(target, forecast[:, segment, "target_0.975"])
+        np.testing.assert_allclose(target, forecast[:, segment, "target_0.025"])
+        np.testing.assert_allclose(target, forecast[:, segment, "target_0.975"])
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+def test_predict_confidence_intervals(product_level_constant_hierarchical_ts, reconciliator):
+    ts = product_level_constant_hierarchical_ts
+    model = ProphetModel()
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=2)
+
+    pipeline.fit(ts=ts)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1], prediction_interval=True)
+    for segment in forecast.segments:
+        target = forecast[:, segment, "target"]
+        np.testing.assert_allclose(target, forecast[:, segment, "target_0.025"])
+        np.testing.assert_allclose(target, forecast[:, segment, "target_0.975"])
 
 
 @pytest.mark.parametrize(
