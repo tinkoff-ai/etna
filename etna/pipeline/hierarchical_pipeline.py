@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
+import pandas as pd
+
 from etna.datasets.tsdataset import TSDataset
 from etna.datasets.utils import get_target_with_quantiles
 from etna.loggers import tslogger
@@ -118,6 +120,68 @@ class HierarchicalPipeline(Pipeline):
             known_future=forecast.known_future,
             hierarchical_structure=ts.hierarchical_structure,  # type: ignore
         )
+
+        if return_components:
+            hierarchical_forecast.add_target_components(target_components_df=forecast.get_target_components())
+
+        return hierarchical_forecast
+
+    def raw_predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: Optional[pd.Timestamp] = None,
+        end_timestamp: Optional[pd.Timestamp] = None,
+        prediction_interval: bool = False,
+        quantiles: Sequence[float] = (0.025, 0.975),
+        return_components: bool = False,
+    ) -> TSDataset:
+        """Make in-sample predictions on dataset at the source level in a given range.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to make predictions on. If not given, dataset given during :py:meth:``fit`` is used.
+        start_timestamp:
+            First timestamp of prediction range to return, should be >= than first timestamp in ``ts``;
+            expected that beginning of each segment <= ``start_timestamp``;
+            if isn't set the first timestamp where each segment began is taken.
+        end_timestamp:
+            Last timestamp of prediction range to return; if isn't set the last timestamp of ``ts`` is taken.
+            Expected that value is less or equal to the last timestamp in ``ts``.
+        prediction_interval:
+            If True returns prediction interval for forecast.
+        quantiles:
+            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval.
+        return_components:
+            If True additionally returns forecast components.
+
+        Returns
+        -------
+        :
+            Dataset with predictions at the source level in ``[start_timestamp, end_timestamp]`` range.
+        """
+        source_ts = self.reconciliator.aggregate(ts=ts)
+        forecast = super().predict(
+            ts=source_ts,
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            prediction_interval=prediction_interval,
+            quantiles=quantiles,
+            return_components=return_components,
+        )
+
+        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
+        hierarchical_forecast = TSDataset(
+            df=forecast[..., target_columns],
+            freq=forecast.freq,
+            df_exog=forecast.df_exog,
+            known_future=forecast.known_future,
+            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
+        )
+
+        if return_components:
+            hierarchical_forecast.add_target_components(target_components_df=forecast.get_target_components())
+
         return hierarchical_forecast
 
     def forecast(
