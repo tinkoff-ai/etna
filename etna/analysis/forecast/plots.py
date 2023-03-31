@@ -1,6 +1,5 @@
 import itertools
 import math
-import warnings
 from copy import deepcopy
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -9,7 +8,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -25,6 +23,9 @@ from sklearn.metrics import r2_score
 from statsmodels.graphics.gofplots import qqplot
 from typing_extensions import Literal
 
+from etna.analysis.forecast.utils import _prepare_forecast_results
+from etna.analysis.forecast.utils import _select_quantiles
+from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.analysis.forecast.utils import get_residuals
 from etna.analysis.utils import _prepare_axes
 from etna.datasets.utils import match_target_components
@@ -32,50 +33,6 @@ from etna.datasets.utils import match_target_components
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
     from etna.transforms import Transform
-
-
-def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:
-    """Get quantiles that are present inside the TSDataset."""
-    cols = [col for col in ts.columns.get_level_values("feature").unique().tolist() if col.startswith("target_0.")]
-    existing_quantiles = {float(col[len("target_") :]) for col in cols}
-    return existing_quantiles
-
-
-def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optional[List[float]]) -> List[float]:
-    """Select quantiles from the forecast results.
-
-    Selected quantiles exist in each forecast.
-    """
-    intersection_quantiles_set = set.intersection(
-        *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
-    )
-    intersection_quantiles = sorted(intersection_quantiles_set)
-
-    if quantiles is None:
-        selected_quantiles = intersection_quantiles
-    else:
-        selected_quantiles = sorted(set(quantiles) & intersection_quantiles_set)
-        non_existent = set(quantiles) - intersection_quantiles_set
-        if non_existent:
-            warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
-
-    return selected_quantiles
-
-
-def _prepare_forecast_results(
-    forecast_ts: Union["TSDataset", List["TSDataset"], Dict[str, "TSDataset"]]
-) -> Dict[str, "TSDataset"]:
-    """Prepare dictionary with forecasts results."""
-    from etna.datasets import TSDataset
-
-    if isinstance(forecast_ts, TSDataset):
-        return {"1": forecast_ts}
-    elif isinstance(forecast_ts, list) and len(forecast_ts) > 0:
-        return {str(i + 1): forecast for i, forecast in enumerate(forecast_ts)}
-    elif isinstance(forecast_ts, dict) and len(forecast_ts) > 0:
-        return forecast_ts
-    else:
-        raise ValueError("Unknown type of `forecast_ts`")
 
 
 def plot_forecast(
@@ -236,21 +193,6 @@ def plot_forecast(
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
         ax[i].legend(loc="upper left")
-
-
-def _validate_intersecting_segments(fold_numbers: pd.Series):
-    """Validate if segments aren't intersecting."""
-    fold_info = []
-    for fold_number in fold_numbers.unique():
-        fold_start = fold_numbers[fold_numbers == fold_number].index.min()
-        fold_end = fold_numbers[fold_numbers == fold_number].index.max()
-        fold_info.append({"fold_start": fold_start, "fold_end": fold_end})
-
-    fold_info.sort(key=lambda x: x["fold_start"])
-
-    for fold_info_1, fold_info_2 in zip(fold_info[:-1], fold_info[1:]):
-        if fold_info_2["fold_start"] <= fold_info_1["fold_end"]:
-            raise ValueError("Folds are intersecting")
 
 
 def plot_backtest(
