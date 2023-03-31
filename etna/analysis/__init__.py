@@ -14,6 +14,7 @@ from etna.analysis.eda import get_correlation_matrix
 from etna.analysis.eda import plot_clusters
 from etna.analysis.eda import plot_correlation_matrix
 from etna.analysis.eda import plot_holidays
+from etna.analysis.eda import plot_imputation
 from etna.analysis.eda import plot_periodogram
 from etna.analysis.feature_relevance import plot_feature_relevance
 from etna.analysis.feature_relevance.relevance import ModelRelevanceTable
@@ -34,7 +35,6 @@ from etna.analysis.forecast import prediction_actual_scatter_plot
 from etna.analysis.forecast import qq_plot
 from etna.analysis.outliers import plot_anomalies
 from etna.analysis.outliers import plot_anomalies_interactive
-from etna.analysis.outliers import plot_imputation
 from etna.analysis.outliers.density_outliers import absolute_difference_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.hist_outliers import get_anomalies_hist

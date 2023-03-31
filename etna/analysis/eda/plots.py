@@ -1,6 +1,7 @@
 import itertools
 import math
 import warnings
+from copy import deepcopy
 from functools import singledispatch
 from itertools import combinations
 from typing import TYPE_CHECKING
@@ -30,6 +31,7 @@ from etna.analysis.utils import _prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.transforms import TimeSeriesImputerTransform
 
 plot_acf = sm.graphics.tsa.plot_acf
 plot_pacf = sm.graphics.tsa.plot_pacf
@@ -715,3 +717,63 @@ def distribution_plot(
         ax[i].set_title(f"{period}")
         ax[i].grid()
         i += 1
+
+
+def plot_imputation(
+    ts: "TSDataset",
+    imputer: "TimeSeriesImputerTransform",
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+):
+    """Plot the result of imputation by a given imputer.
+
+    Parameters
+    ----------
+    ts:
+        TSDataset with timeseries data
+    imputer:
+        transform to make imputation of NaNs
+    segments:
+        segments to use
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    start:
+        start timestamp for plot
+    end:
+        end timestamp for plot
+    """
+    start, end = _get_borders_ts(ts, start, end)
+
+    if segments is None:
+        segments = sorted(ts.segments)
+
+    _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
+
+    ts_after = deepcopy(ts)
+    imputer.fit_transform(ts_after)
+    feature_name = imputer.in_column
+
+    for i, segment in enumerate(segments):
+        # we want to capture nans at the beginning, so don't use `ts[:, segment, :]`
+        segment_before_df = ts.to_pandas().loc[start:end, pd.IndexSlice[segment, feature_name]]  # type: ignore
+        segment_after_df = ts_after.to_pandas().loc[start:end, pd.IndexSlice[segment, feature_name]]  # type: ignore
+
+        # plot result after imputation
+        ax[i].plot(segment_after_df.index, segment_after_df)
+
+        # highlight imputed points
+        imputed_index = ~segment_after_df.isna() & segment_before_df.isna()
+        ax[i].scatter(
+            segment_after_df.loc[imputed_index].index,
+            segment_after_df.loc[imputed_index],
+            c="red",
+            zorder=2,
+        )
+
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
