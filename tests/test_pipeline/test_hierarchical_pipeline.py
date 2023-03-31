@@ -580,7 +580,9 @@ def test_forecast_with_return_components(
         "prediction_interval_context_required_dummy_model",
     ),
 )
-def test_predict_with_return_components(product_level_constant_hierarchical_ts, model_fixture, request, expected_component_a=40, expected_component_b=360):
+def test_predict_with_return_components(
+    product_level_constant_hierarchical_ts, model_fixture, request, expected_component_a=40, expected_component_b=360
+):
     ts = product_level_constant_hierarchical_ts
     model = request.getfixturevalue(model_fixture)
 
