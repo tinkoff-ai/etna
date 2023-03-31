@@ -635,7 +635,7 @@ def plot_metric_per_segment(
     metrics_df: pd.DataFrame,
     metric_name: str,
     ascending: bool = False,
-    per_fold_aggregation_mode: str = PerFoldAggregation.mean,
+    per_fold_aggregation_mode: str = PerFoldAggregation.mean.value,
     top_k: Optional[int] = None,
     barplot_params: Optional[Dict[str, Any]] = None,
     figsize: Tuple[int, int] = (10, 5),
@@ -656,7 +656,7 @@ def plot_metric_per_segment(
 
     per_fold_aggregation_mode:
         how to aggregate metrics over the folds if they aren't already aggregated
-        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+        (see :py:class:`~etna.analysis.forecast.plots.PerFoldAggregation`)
     top_k:
         number segments to show after ordering according to ``ascending``
     barplot_params:
@@ -703,7 +703,7 @@ def plot_metric_per_segment(
 
 
 class MetricPlotType(str, Enum):
-    """Enum for types of plot in :py:func:`~etna.analysis.plotters.metric_per_segment_distribution_plot`.
+    """Enum for types of plot in :py:func:`~etna.analysis.forecast.plots.metric_per_segment_distribution_plot`.
 
     Attributes
     ----------
@@ -756,10 +756,10 @@ def metric_per_segment_distribution_plot(
         * If None, separate distributions for each fold will be drawn
 
         * If str, determines how to aggregate metrics over the folds if they aren't already aggregated
-        (see :py:class:`~etna.analysis.plotters.PerFoldAggregation`)
+        (see :py:class:`~etna.analysis.forecast.plots.PerFoldAggregation`)
 
     plot_type:
-        type of plot (see :py:class:`~etna.analysis.plotters.MetricPlotType`)
+        type of plot (see :py:class:`~etna.analysis.forecast.plots.MetricPlotType`)
     seaborn_params:
         dictionary with parameters for plotting
     figsize:
