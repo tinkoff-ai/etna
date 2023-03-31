@@ -202,7 +202,7 @@ def _seasonal_split(
     freq:
         frequency of dataframe
     cycle:
-        period of seasonality to capture (see :py:class:`~etna.analysis.eda_utils.SeasonalPlotCycle`)
+        period of seasonality to capture (see :py:class:`~etna.analysis.decomposition.utils.SeasonalPlotCycle`)
 
     Returns
     -------
