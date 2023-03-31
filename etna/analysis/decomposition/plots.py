@@ -9,13 +9,13 @@ from typing import Tuple
 from typing import Union
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from ruptures.base import BaseCost
 from ruptures.base import BaseEstimator
 from ruptures.exceptions import BadSegmentationParameters
 from statsmodels.tsa.seasonal import STL
 
+from etna.analysis.decomposition.utils import _get_labels_names
 from etna.analysis.utils import _get_borders_ts
 from etna.analysis.utils import _prepare_axes
 
@@ -32,31 +32,9 @@ TrendTransformType = Union[
 ]
 
 
-def _get_labels_names(trend_transform, segments):
-    """If only unique transform classes are used then show their short names (without parameters). Otherwise show their full repr as label."""
-    from etna.transforms.decomposition import LinearTrendTransform
-    from etna.transforms.decomposition import TheilSenTrendTransform
-
-    labels = [transform.__repr__() for transform in trend_transform]
-    labels_short = [i[: i.find("(")] for i in labels]
-    if len(np.unique(labels_short)) == len(labels_short):
-        labels = labels_short
-    linear_coeffs = dict(zip(segments, ["" for i in range(len(segments))]))
-    if (
-        len(trend_transform) == 1
-        and isinstance(trend_transform[0], (LinearTrendTransform, TheilSenTrendTransform))
-        and trend_transform[0].poly_degree == 1
-    ):
-        for seg in segments:
-            linear_coeffs[seg] = (
-                ", k=" + f"{trend_transform[0].segment_transforms[seg]._pipeline.steps[1][1].coef_[0]:g}"
-            )
-    return labels, linear_coeffs
-
-
 def plot_trend(
     ts: "TSDataset",
-    trend_transform: Union["TrendTransformType", List["TrendTransformType"]],
+    trend_transform: Union[TrendTransformType, List[TrendTransformType]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
