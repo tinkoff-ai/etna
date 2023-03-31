@@ -1,6 +1,3 @@
-from etna.analysis.decomposition import SeasonalPlotAggregation
-from etna.analysis.decomposition import SeasonalPlotAlignment
-from etna.analysis.decomposition import SeasonalPlotCycle
 from etna.analysis.decomposition import find_change_points
 from etna.analysis.decomposition import plot_change_points_interactive
 from etna.analysis.decomposition import plot_time_series_with_change_points

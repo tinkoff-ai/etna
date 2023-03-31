@@ -1,3 +1,5 @@
+from etna.analysis.forecast.plots import MetricPlotType
+from etna.analysis.forecast.plots import PerFoldAggregation
 from etna.analysis.forecast.plots import metric_per_segment_distribution_plot
 from etna.analysis.forecast.plots import plot_backtest
 from etna.analysis.forecast.plots import plot_backtest_interactive
