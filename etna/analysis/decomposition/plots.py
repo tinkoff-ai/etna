@@ -9,13 +9,17 @@ from typing import Tuple
 from typing import Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from ruptures.base import BaseCost
 from ruptures.base import BaseEstimator
 from ruptures.exceptions import BadSegmentationParameters
 from statsmodels.tsa.seasonal import STL
+from typing_extensions import Literal
 
 from etna.analysis.decomposition.utils import _get_labels_names
+from etna.analysis.decomposition.utils import _prepare_seasonal_plot_df
+from etna.analysis.decomposition.utils import _seasonal_split
 from etna.analysis.utils import _get_borders_ts
 from etna.analysis.utils import _prepare_axes
 
@@ -95,7 +99,7 @@ def plot_time_series_with_change_points(
         TSDataset with timeseries
     change_points:
         dictionary with trend change points for each segment,
-        can be obtained from :py:func:`~etna.analysis.change_points_trend.search.find_change_points`
+        can be obtained from :py:func:`~etna.analysis.decomposition.search.find_change_points`
     segments:
         segments to use
     columns_num:
@@ -352,3 +356,99 @@ def stl_plot(
         axs.flat[3].set_ylabel("Residual")
         axs.flat[3].tick_params("x", rotation=45)
         axs.flat[3].grid()
+
+
+def seasonal_plot(
+    ts: "TSDataset",
+    freq: Optional[str] = None,
+    cycle: Union[
+        Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
+    ] = "year",
+    alignment: Union[Literal["first"], Literal["last"]] = "last",
+    aggregation: Union[Literal["sum"], Literal["mean"]] = "sum",
+    in_column: str = "target",
+    plot_params: Optional[Dict[str, Any]] = None,
+    cmap: str = "plasma",
+    segments: Optional[List[str]] = None,
+    columns_num: int = 2,
+    figsize: Tuple[int, int] = (10, 5),
+):
+    """Plot each season on one canvas for each segment.
+
+    Parameters
+    ----------
+    ts:
+        dataset with timeseries data
+    freq:
+        frequency to analyze seasons:
+
+        * if isn't set, the frequency of ``ts`` will be used;
+
+        * if set, resampling will be made using ``aggregation`` parameter.
+          If given frequency is too low, then the frequency of ``ts`` will be used.
+
+    cycle:
+        period of seasonality to capture (see :class:`~etna.analysis.decomposition.utils.SeasonalPlotCycle`)
+    alignment:
+        how to align dataframe in case of integer cycle (see :py:class:`~etna.analysis.decomposition.utils.SeasonalPlotAlignment`)
+    aggregation:
+        how to aggregate values during resampling (see :py:class:`~etna.analysis.decomposition.utils.SeasonalPlotAggregation`)
+    in_column:
+        column to use
+    cmap:
+        name of colormap for plotting different cycles
+        (see `Choosing Colormaps in Matplotlib <https://matplotlib.org/3.5.1/tutorials/colors/colormaps.html>`_)
+    plot_params:
+        dictionary with parameters for plotting, :py:meth:`matplotlib.axes.Axes.plot` is used
+    segments:
+        segments to use
+    columns_num:
+        number of columns in subplots
+    figsize:
+        size of the figure per subplot with one segment in inches
+    """
+    if plot_params is None:
+        plot_params = {}
+    if freq is None:
+        freq = ts.freq
+    if segments is None:
+        segments = sorted(ts.segments)
+
+    df = _prepare_seasonal_plot_df(
+        ts=ts,
+        freq=freq,
+        cycle=cycle,
+        alignment=alignment,
+        aggregation=aggregation,
+        in_column=in_column,
+        segments=segments,
+    )
+    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)
+
+    colors = plt.get_cmap(cmap)
+    _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
+    for i, segment in enumerate(segments):
+        segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
+        cycle_names = seasonal_df["cycle_name"].unique()
+        for j, cycle_name in enumerate(cycle_names):
+            color = colors(j / len(cycle_names))
+            cycle_df = seasonal_df[seasonal_df["cycle_name"] == cycle_name]
+            segment_cycle_df = segment_df.loc[cycle_df["timestamp"]]
+            ax[i].plot(
+                cycle_df["in_cycle_num"],
+                segment_cycle_df[cycle_df["timestamp"]],
+                color=color,
+                label=cycle_name,
+                **plot_params,
+            )
+
+        # draw ticks if they are not digits
+        if not np.all(seasonal_df["in_cycle_name"].str.isnumeric()):
+            ticks_dict = dict(zip(seasonal_df["in_cycle_num"], seasonal_df["in_cycle_name"]))
+            ticks = np.array(list(ticks_dict.keys()))
+            ticks_labels = np.array(list(ticks_dict.values()))
+            idx_sort = np.argsort(ticks)
+            ax[i].set_xticks(ticks=ticks[idx_sort], labels=ticks_labels[idx_sort])
+        ax[i].set_xlabel(freq)
+        ax[i].set_title(segment)
+        ax[i].legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=6)
