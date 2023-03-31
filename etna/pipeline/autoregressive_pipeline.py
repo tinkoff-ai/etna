@@ -108,11 +108,9 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions."""
-        if return_components:
-            raise NotImplementedError("Adding target components is not currently implemented!")
-
         prediction_df = self._create_predictions_template(ts)
 
+        target_components_dfs = []
         for idx_start in range(0, self.horizon, self.step):
             current_step = min(self.step, self.horizon - idx_start)
             current_idx_border = ts.index.shape[0] + idx_start
@@ -137,21 +135,34 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
                     current_ts_forecast = current_ts.make_future(
                         future_steps=current_step, tail_steps=self.model.context_size, transforms=self.transforms
                     )
-                    current_ts_future = self.model.forecast(ts=current_ts_forecast, prediction_size=current_step)
+                    current_ts_future = self.model.forecast(
+                        ts=current_ts_forecast, prediction_size=current_step, return_components=return_components
+                    )
                 else:
                     self.model = cast(ContextIgnorantModelType, self.model)
                     current_ts_forecast = current_ts.make_future(future_steps=current_step, transforms=self.transforms)
-                    current_ts_future = self.model.forecast(ts=current_ts_forecast)
+                    current_ts_future = self.model.forecast(ts=current_ts_forecast, return_components=return_components)
             current_ts_future.inverse_transform(self.transforms)
+
+            if return_components:
+                target_components_dfs.append(current_ts_future.get_target_components())
+                current_ts_future.drop_target_components()
+
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features
         prediction_ts = TSDataset(df=prediction_df, freq=ts.freq, df_exog=ts.df_exog, known_future=ts.known_future)
         prediction_ts.transform(self.transforms)
         prediction_ts.inverse_transform(self.transforms)
+
         # cut only last timestamps from result dataset
         prediction_ts.df = prediction_ts.df.tail(self.horizon)
         prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
+
+        if return_components:
+            target_components_df = pd.concat(target_components_dfs)
+            prediction_ts.add_target_components(target_components_df=target_components_df)
+
         return prediction_ts
 
     def _predict(
@@ -163,8 +174,6 @@ class AutoRegressivePipeline(ModelPipelinePredictMixin, SaveModelPipelineMixin, 
         quantiles: Sequence[float],
         return_components: bool = False,
     ) -> TSDataset:
-        if return_components:
-            raise NotImplementedError("Adding target components is not currently implemented!")
         return super()._predict(
             ts=ts,
             start_timestamp=start_timestamp,

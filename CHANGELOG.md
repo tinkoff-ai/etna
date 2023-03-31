@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Target components logic into `AutoRegressivePipeline` ([#1188](https://github.com/tinkoff-ai/etna/pull/1188))
 - Add target components handling in `get_level_dataframe` ([#1179](https://github.com/tinkoff-ai/etna/pull/1179))
 - Forecast decomposition for `SeasonalMovingAverageModel`([#1180](https://github.com/tinkoff-ai/etna/pull/1180))
 - Target components logic into base classes of pipelines ([#1173](https://github.com/tinkoff-ai/etna/pull/1173))
