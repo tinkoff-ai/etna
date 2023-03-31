@@ -545,19 +545,53 @@ def test_forecast_given_ts_with_prediction_interval(
     )
 
 
-@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
-def test_forecast_with_return_components(product_level_constant_hierarchical_ts):
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_forecast_with_return_components(
+    product_level_constant_hierarchical_ts, model_fixture, request, expected_component_a=20, expected_component_b=180
+):
+    model = request.getfixturevalue(model_fixture)
     pipeline = HierarchicalPipeline(
-        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
+        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=model
     )
     pipeline.fit(product_level_constant_hierarchical_ts)
-    pipeline.forecast(return_components=True)
+    forecast = pipeline.forecast(return_components=True)
+
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
+
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
 
 
-@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
-def test_raw_forecast_with_return_components(product_level_constant_hierarchical_ts):
+@pytest.mark.parametrize(
+    "model_fixture",
+    (
+        "non_prediction_interval_context_ignorant_dummy_model",
+        "non_prediction_interval_context_required_dummy_model",
+        "prediction_interval_context_ignorant_dummy_model",
+        "prediction_interval_context_required_dummy_model",
+    ),
+)
+def test_predict_with_return_components(product_level_constant_hierarchical_ts, model_fixture, request, expected_component_a=40, expected_component_b=360):
+    ts = product_level_constant_hierarchical_ts
+    model = request.getfixturevalue(model_fixture)
+
     pipeline = HierarchicalPipeline(
-        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=NaiveModel()
+        reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=model
     )
-    pipeline.fit(product_level_constant_hierarchical_ts)
-    pipeline.raw_forecast(ts=product_level_constant_hierarchical_ts, return_components=True)
+    pipeline.fit(ts)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1], return_components=True)
+
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
+
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
