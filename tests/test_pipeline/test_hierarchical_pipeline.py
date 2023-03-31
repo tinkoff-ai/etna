@@ -246,7 +246,7 @@ def test_backtest(market_level_constant_hierarchical_ts, reconciliator):
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
-    np.testing.assert_array_almost_equal(metrics["MAE"], 0)
+    np.testing.assert_allclose(metrics["MAE"], 0)
 
 
 @pytest.mark.parametrize(
@@ -267,7 +267,7 @@ def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconcilia
     ]
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
-    np.testing.assert_array_almost_equal(metrics["MAE"], 0)
+    np.testing.assert_allclose(metrics["MAE"], 0)
 
 
 @pytest.mark.parametrize(
@@ -283,7 +283,7 @@ def test_backtest_w_exog(product_level_constant_hierarchical_ts_with_exog, recon
     model = LinearPerSegmentModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
-    np.testing.assert_array_almost_equal(metrics["MAE"], 0)
+    np.testing.assert_allclose(metrics["MAE"], 0)
 
 
 @pytest.mark.parametrize(
@@ -389,7 +389,7 @@ def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, r
         aggregate_metrics=True,
         forecast_params={"prediction_interval": True, "n_folds": 1},
     )
-    np.testing.assert_array_almost_equal(results[metric.name], answer)
+    np.testing.assert_allclose(results[metric.name], answer)
 
 
 @patch("etna.pipeline.pipeline.Pipeline.save")
