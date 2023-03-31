@@ -8,44 +8,18 @@ from typing import Tuple
 from typing import Union
 
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import seaborn as sns
 from typing_extensions import Literal
 
 from etna.analysis.feature_relevance.relevance import RelevanceTable
 from etna.analysis.feature_relevance.relevance import StatisticsRelevanceTable
+from etna.analysis.feature_relevance.utils import _get_fictitious_relevances
 from etna.analysis.feature_selection import AGGREGATION_FN
 from etna.analysis.feature_selection import AggregationMode
 from etna.analysis.utils import _prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-
-
-def _get_fictitious_relevances(pvalues: pd.DataFrame, alpha: float) -> Tuple[np.ndarray, float]:
-    """
-    Convert p-values into fictitious variables, with function f(x) = 1 - x.
-
-    Also converts alpha into fictitious variable.
-
-    Parameters
-    ----------
-    pvalues:
-        dataFrame with pvalues
-    alpha:
-        significance level, default alpha = 0.05
-
-    Returns
-    -------
-    pvalues:
-        array with fictitious relevances
-    new_alpha:
-        adjusted significance level
-    """
-    pvalues = 1 - pvalues
-    new_alpha = 1 - alpha
-    return pvalues, new_alpha
 
 
 def plot_feature_relevance(
