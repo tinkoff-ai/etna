@@ -787,6 +787,7 @@ def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name
 def test_sma_model_predict_components_correct(
     simple_df, method_name, expected_values, window=1, seasonality=2, horizon=3
 ):
+    """Testing that correct lag used as a component."""
     model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
     model.fit(simple_df)
     to_call = getattr(model, method_name)
@@ -846,6 +847,7 @@ def test_deadline_ma_predict_components_sum_up_to_target(long_periodic_ts, metho
 def test_deadline_ma_predict_components_correct(
     long_periodic_ts, method_name, out_of_sample_pred, window=1, seasonality="month", horizon=32
 ):
+    """Testing that correct lag used as a component."""
     predict_lags = long_periodic_ts.df.values[-63:-32]
 
     model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
