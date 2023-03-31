@@ -30,7 +30,6 @@ from etna.transforms import LinearTrendTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
-from tests.utils import to_be_fixed
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -43,7 +42,7 @@ def test_fit(example_tsds):
     pipeline.fit(example_tsds)
 
 
-def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None):
+def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None, return_components: bool = False):
     df = ts.to_pandas()
 
     df.loc[:, pd.IndexSlice[:, "target"]] = 0
@@ -84,7 +83,7 @@ def test_private_forecast_context_ignorant_model(model_class, example_tsds):
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=())
     assert model.forecast.call_count == 5
-    model.forecast.assert_called_with(ts=ANY)
+    model.forecast.assert_called_with(ts=ANY, return_components=False)
 
 
 @pytest.mark.parametrize(
@@ -106,7 +105,7 @@ def test_private_forecast_context_required_model(model_class, example_tsds):
     assert make_future.mock.call_count == 5
     make_future.mock.assert_called_with(future_steps=pipeline.step, transforms=(), tail_steps=model.context_size)
     assert model.forecast.call_count == 5
-    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step)
+    model.forecast.assert_called_with(ts=ANY, prediction_size=pipeline.step, return_components=False)
 
 
 def test_forecast_columns(example_reg_tsds):
@@ -347,7 +346,6 @@ def test_forecast_given_ts_with_prediction_interval(model, transforms, example_t
     assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
 
 
-@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
 @pytest.mark.parametrize(
     "model_fixture",
     (
@@ -357,14 +355,20 @@ def test_forecast_given_ts_with_prediction_interval(model, transforms, example_t
         "prediction_interval_context_required_dummy_model",
     ),
 )
-def test_forecast_return_components(example_tsds, model_fixture, request):
+def test_forecast_return_components(
+    example_tsds, model_fixture, request, expected_component_a=10, expected_component_b=90
+):
     model = request.getfixturevalue(model_fixture)
     pipeline = AutoRegressivePipeline(model=model, horizon=10)
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(return_components=True)
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
+
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
 
 
-@to_be_fixed(NotImplementedError, "Adding target components is not currently implemented!")
 @pytest.mark.parametrize(
     "model_fixture",
     (
@@ -374,8 +378,15 @@ def test_forecast_return_components(example_tsds, model_fixture, request):
         "prediction_interval_context_required_dummy_model",
     ),
 )
-def test_predict_return_components(example_tsds, model_fixture, request):
+def test_predict_return_components(
+    example_tsds, model_fixture, request, expected_component_a=20, expected_component_b=180
+):
     model = request.getfixturevalue(model_fixture)
     pipeline = AutoRegressivePipeline(model=model, horizon=10)
     pipeline.fit(example_tsds)
     forecast = pipeline.predict(ts=example_tsds, return_components=True)
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
+
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
