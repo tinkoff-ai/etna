@@ -11,10 +11,13 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import TypeVar
 from typing import cast
 
 import hydra_slayer
 from sklearn.base import BaseEstimator
+
+TMixin = TypeVar("TMixin", bound="BaseMixin")
 
 
 class BaseMixin:
@@ -113,10 +116,16 @@ class BaseMixin:
             *param_nesting, param_attr = param.split(".")
             cycle_dict = params_dict
             for param_nested in param_nesting:
-                cycle_dict = cycle_dict.setdefault(param_nested, {})
+                if type(cycle_dict) == dict:
+                    cycle_dict = cycle_dict.setdefault(param_nested, {})
+                elif type(cycle_dict) == list:
+                    # will be accessed only by "transform.0.x" attributes of tune calls
+                    cycle_dict = cycle_dict[int(param_nested)]
+                else:
+                    raise ValueError("Should be never reached")
             cycle_dict[param_attr] = param_value
 
-    def set_params(self, **params: dict) -> "BaseMixin":
+    def set_params(self: TMixin, **params: dict) -> TMixin:
         """Return new object instance with modified parameters.
 
         The method works on simple estimators as well as on nested objects
@@ -130,8 +139,13 @@ class BaseMixin:
             Estimator parameters.
 
         """
+        print("OJODFHABFKLFBLADKFBAKDFBALKDFB", flush=True)
         params_dict = self.to_dict()
+        print("params_dict before update nested", flush=True)  # debug
+        print(params_dict, flush=True)  # debug
         self._update_nested_dict_with_flat_dict(params_dict, params)
+        print("params_dict after update nested", flush=True)  # debug
+        print(params_dict, flush=True)  # debug
         estimator_out = hydra_slayer.get_from_params(**params_dict)
         return estimator_out
 

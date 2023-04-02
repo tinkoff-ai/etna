@@ -142,7 +142,7 @@ def test_top_k(
 
 
 def test_can_handle_uniform(example_tsds, optuna_storage):
-    params = {"model.smoothing_level": UniformDistribution(1, 5)}
+    params = {"model.smoothing_level": UniformDistribution(0.1, 1)}
     with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
@@ -150,7 +150,7 @@ def test_can_handle_uniform(example_tsds, optuna_storage):
 
 
 def test_can_handle_loguniform(example_tsds, optuna_storage):
-    params = {"model.smoothing_level": LogUniformDistribution(1, 5)}
+    params = {"model.smoothing_level": LogUniformDistribution(0.1, 1)}
     with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
@@ -158,7 +158,7 @@ def test_can_handle_loguniform(example_tsds, optuna_storage):
 
 
 def test_can_handle_discrete_uniform(example_tsds, optuna_storage):
-    params = {"model.smoothing_level": DiscreteUniformDistribution(1, 5, 0.5)}
+    params = {"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}
     with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
@@ -199,7 +199,7 @@ def test_catch_nonexistent_argument_pass(example_tsds, optuna_storage):
 
 
 def test_can_handle_transforms(example_tsds, optuna_storage):
-    params = {"transform.0.value": IntUniformDistribution(0, 17), "transform.1.value": IntUniformDistribution(0, 17)}
+    params = {"transforms.0.value": IntUniformDistribution(0, 17), "transforms.1.value": IntUniformDistribution(0, 17)}
     with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(
             NaiveModel(),

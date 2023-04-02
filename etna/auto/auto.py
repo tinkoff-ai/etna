@@ -101,39 +101,6 @@ class AutoAbstract(ABC):
         """
         pass
 
-    @staticmethod
-    @abstractmethod
-    def objective(
-        ts: TSDataset,
-        target_metric: Metric,
-        metric_aggregation: MetricAggregationStatistics,
-        metrics: List[Metric],
-        backtest_params: dict,
-        initializer: Optional[_Initializer] = None,
-        callback: Optional[_Callback] = None,
-    ) -> Callable[[Trial], float]:
-        """
-        Optuna objective wrapper.
-
-        Parameters
-        ----------
-        ts:
-            tsdataset to fit on
-        target_metric:
-            metric to optimize
-        metric_aggregation:
-            aggregation method for per-segment metrics
-        metrics:
-            list of metrics to compute
-        backtest_params:
-            custom parameters for backtest instead of default backtest parameters
-        initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
-        callback:
-            is called after each pipeline backtest, can be used to log extra metrics
-        """
-        pass
-
 
 class AutoBase(AutoAbstract):
     """Base Class for ``Auto`` and ``Tune``, implementing core logic behind these classes."""
@@ -411,7 +378,7 @@ class Tune(AutoBase):
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
         metrics: Optional[List[Metric]] = None,
-        sampler: BaseSampler = None,
+        sampler: Optional[BaseSampler] = None,
     ):
         """
         Initialize Auto class.
@@ -450,7 +417,7 @@ class Tune(AutoBase):
         self.pipeline = pipeline
         # let RandomSampler be default sampler
         if sampler is None:
-            self.sampler = RandomSampler()
+            self.sampler: BaseSampler = RandomSampler()
         else:
             self.sampler = sampler
 
@@ -556,6 +523,9 @@ class Tune(AutoBase):
                 CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
             }
 
+            print("params_to_tune")
+            print(params_to_tune)
+
             # using received optuna.distribution objects to call corresponding trial.suggest_xxx
             params_suggested = {}
             for param_name, param_distr in params_to_tune.items():
@@ -563,8 +533,10 @@ class Tune(AutoBase):
                 method = getattr(trial, method_name)
                 params_suggested[param_name] = method(param_name, **method_kwargs)
 
+            print("params_suggested")
+            print(params_suggested)
             # create pipeline instance with the parameters to try
-            pipeline_trial_params = pipeline.set_params(**params_suggested)
+            pipeline_trial_params: Pipeline = pipeline.set_params(**params_suggested)
             trial.set_user_attr("pipeline", params_suggested)
 
             if initializer is not None:
@@ -588,7 +560,6 @@ class Tune(AutoBase):
 
     def _init_optuna(self):
         """Initialize optuna."""
-
         # sampler receives no hyperparameters here and optimizes only the hyperparameters suggested in objective
         optuna = Optuna(
             direction="maximize" if self.target_metric.greater_is_better else "minimize",
