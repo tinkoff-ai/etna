@@ -2,4 +2,6 @@ from etna.analysis.outliers.density_outliers import absolute_difference_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
 from etna.analysis.outliers.hist_outliers import get_anomalies_hist
 from etna.analysis.outliers.median_outliers import get_anomalies_median
+from etna.analysis.outliers.plots import plot_anomalies
+from etna.analysis.outliers.plots import plot_anomalies_interactive
 from etna.analysis.outliers.prediction_interval_outliers import get_anomalies_prediction_interval
