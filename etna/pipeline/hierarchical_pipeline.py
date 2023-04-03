@@ -19,7 +19,13 @@ from etna.transforms.base import Transform
 
 
 class HierarchicalPipeline(Pipeline):
-    """Pipeline of transforms with a final estimator for hierarchical time series data."""
+    """Pipeline of transforms with a final estimator for hierarchical time series data.
+
+    Notes
+    -----
+    Aggregation of target quantiles and components is performed along
+    with the target itself. It uses a provided hierarchical structure and a reconciliation method.
+    """
 
     def __init__(
         self, reconciliator: BaseReconciliator, model: ModelType, transforms: Sequence[Transform] = (), horizon: int = 1
