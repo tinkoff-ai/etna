@@ -131,6 +131,13 @@ class _TBATSAdapter(BaseAdapter):
         raw_components = self._decompose_forecast(horizon=horizon)
         components = self._process_components(raw_components=raw_components)
 
+        # selecting time points from provided dataframe
+        components["timestamp"] = pd.date_range(end=df["timestamp"].max(), periods=horizon, freq=self._freq)
+
+        components.set_index("timestamp", inplace=True)
+        components = components.loc[df["timestamp"]]
+        components.reset_index(drop=True, inplace=True)
+
         return components
 
     def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -178,7 +185,6 @@ class _TBATSAdapter(BaseAdapter):
 
         if df["timestamp"].min() <= self._last_train_timestamp:
             raise NotImplementedError(
-                "It is not possible to make in-sample predictions with BATS/TBATS model! "
                 "In-sample predictions aren't supported by current implementation."
             )
 
