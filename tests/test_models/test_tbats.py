@@ -450,3 +450,24 @@ def test_predict_decompose_on_subset(periodic_dfs, estimator):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATS,
+        TBATS,
+    ),
+)
+def test_forecast_decompose_on_subset(periodic_dfs, estimator):
+    train, test = periodic_dfs
+    sub_test = test.iloc[5:]
+
+    model = _TBATSAdapter(model=estimator())
+    model.fit(train, [])
+
+    y_pred = model.forecast(df=sub_test, prediction_interval=False, quantiles=[])
+    components = model.forecast_components(df=sub_test)
+
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
