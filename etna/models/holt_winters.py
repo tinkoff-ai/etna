@@ -17,6 +17,7 @@ from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
+from etna.models.utils import determine_num_steps
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -192,6 +193,10 @@ class _HoltWintersAdapter(BaseAdapter):
         self._model: Optional[ExponentialSmoothing] = None
         self._result: Optional[HoltWintersResultsWrapper] = None
 
+        self._first_train_timestamp: Optional[pd.Timestamp] = None
+        self._last_train_timestamp: Optional[pd.Timestamp] = None
+        self._train_freq: Optional[str] = None
+
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
         """
         Fit Holt-Winters' model.
@@ -207,6 +212,12 @@ class _HoltWintersAdapter(BaseAdapter):
         :
             Fitted model
         """
+        freq = pd.infer_freq(df["timestamp"], warn=False)
+        if freq is None:
+            raise ValueError("Can't determine frequency of a given dataframe")
+
+        self._train_freq = freq
+
         self._check_df(df)
 
         targets = df["target"]
@@ -235,6 +246,10 @@ class _HoltWintersAdapter(BaseAdapter):
             damping_trend=self.damping_trend,
             **self.fit_kwargs,
         )
+
+        self._first_train_timestamp = targets.index.min()
+        self._last_train_timestamp = targets.index.max()
+
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
@@ -319,15 +334,22 @@ class _HoltWintersAdapter(BaseAdapter):
         if fit_result is None or model is None:
             raise ValueError("This model is not fitted!")
 
+        if df["timestamp"].max() <= self._last_train_timestamp:
+            raise NotImplementedError(
+                "In-sample predictions aren't supported by current implementation."
+            )
+
+        horizon = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._train_freq
+        )
+        horizon_steps = np.arange(1, horizon + 1)
+
         self._check_mul_components()
         self._check_df(df)
 
         level = fit_result.level.values
         trend = fit_result.trend.values
         season = fit_result.season.values
-
-        horizon = df["timestamp"].nunique()
-        horizon_steps = np.arange(1, horizon + 1)
 
         components = {"target_component_level": level[-1] * np.ones(horizon)}
 
@@ -354,6 +376,13 @@ class _HoltWintersAdapter(BaseAdapter):
         if model._use_boxcox:
             components_df = self._rescale_components(components=components_df)
 
+        # selecting time points from provided dataframe
+        components_df["timestamp"] = pd.date_range(end=df["timestamp"].max(), periods=horizon, freq=self._train_freq)
+
+        components_df.set_index("timestamp", inplace=True)
+        components_df = components_df.loc[df["timestamp"]]
+        components_df.reset_index(drop=True, inplace=True)
+
         return components_df
 
     def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -374,6 +403,11 @@ class _HoltWintersAdapter(BaseAdapter):
 
         if fit_result is None or model is None:
             raise ValueError("This model is not fitted!")
+
+        if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
+            raise NotImplementedError(
+                "Out-of-sample predictions aren't supported by current implementation."
+            )
 
         self._check_mul_components()
         self._check_df(df)
@@ -404,6 +438,15 @@ class _HoltWintersAdapter(BaseAdapter):
 
         if model._use_boxcox:
             components_df = self._rescale_components(components=components_df)
+
+        # selecting time points from provided dataframe
+        components_df["timestamp"] = pd.date_range(
+            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._train_freq
+        )
+
+        components_df.set_index("timestamp", inplace=True)
+        components_df = components_df.loc[df["timestamp"]]
+        components_df.reset_index(drop=True, inplace=True)
 
         return components_df
 
