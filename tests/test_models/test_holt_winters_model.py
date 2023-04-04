@@ -198,7 +198,9 @@ def test_decomposition_not_fitted_error(seasonal_dfs, components_method_name):
         components_method(df=test)
 
 
-@pytest.mark.parametrize("components_method_name,use_future", (("predict_components", False), ("forecast_components", True)))
+@pytest.mark.parametrize(
+    "components_method_name,use_future", (("predict_components", False), ("forecast_components", True))
+)
 @pytest.mark.parametrize("trend,seasonal", (("mul", "mul"), ("mul", None), (None, "mul")))
 def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_name, use_future):
     train, test = seasonal_dfs
@@ -213,10 +215,14 @@ def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_n
         components_method(df=pred_df)
 
 
-@pytest.mark.parametrize("components_method_name,use_future", (("predict_components", False), ("forecast_components", True)))
+@pytest.mark.parametrize(
+    "components_method_name,use_future", (("predict_components", False), ("forecast_components", True))
+)
 @pytest.mark.parametrize("trend,trend_component", (("add", ["target_component_trend"]), (None, [])))
 @pytest.mark.parametrize("seasonal,seasonal_component", (("add", ["target_component_seasonality"]), (None, [])))
-def test_components_names(seasonal_dfs, trend, trend_component, seasonal, seasonal_component, components_method_name, use_future):
+def test_components_names(
+    seasonal_dfs, trend, trend_component, seasonal, seasonal_component, components_method_name, use_future
+):
     expected_components_names = set(trend_component + seasonal_component + ["target_component_level"])
     train, test = seasonal_dfs
 
@@ -258,18 +264,16 @@ def test_components_sum_up_to_target(
 
 
 @pytest.mark.parametrize(
-    "components_method_name,in_sample", (
-            ("predict_components", True),
-            ("forecast_components", False)
-    )
+    "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
 )
-@pytest.mark.parametrize("df_names", (
+@pytest.mark.parametrize(
+    "df_names",
+    (
         "seasonal_dfs",
         "multi_trend_dfs",
-))
-def test_components_of_subset_sum_up_to_target(
-    df_names, components_method_name, in_sample, request
-):
+    ),
+)
+def test_components_of_subset_sum_up_to_target(df_names, components_method_name, in_sample, request):
     dfs = request.getfixturevalue(df_names)
     train, test = dfs
 
@@ -305,4 +309,3 @@ def test_predict_decompose_timestamp_error(seasonal_dfs):
 
     with pytest.raises(NotImplementedError, match="Out-of-sample predictions aren't supported"):
         model.predict_components(df=test)
-
