@@ -160,7 +160,7 @@ class _TBATSAdapter(BaseAdapter):
             start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
         )
 
-        if not (set(df["timestamp"]) <= set(train_timestamp)):
+        if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
             raise NotImplementedError(
                 "Method predict_components isn't currently implemented for out-of-sample prediction!"
             )
