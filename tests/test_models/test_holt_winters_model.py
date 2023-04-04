@@ -198,31 +198,35 @@ def test_decomposition_not_fitted_error(seasonal_dfs, components_method_name):
         components_method(df=test)
 
 
-@pytest.mark.parametrize("components_method_name", ("predict_components", "forecast_components"))
+@pytest.mark.parametrize("components_method_name,use_future", (("predict_components", False), ("forecast_components", True)))
 @pytest.mark.parametrize("trend,seasonal", (("mul", "mul"), ("mul", None), (None, "mul")))
-def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_name):
-    _, test = seasonal_dfs
+def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_name, use_future):
+    train, test = seasonal_dfs
 
     model = _HoltWintersAdapter(trend=trend, seasonal=seasonal)
-    model.fit(test, [])
+    model.fit(train, [])
 
     components_method = getattr(model, components_method_name)
+    pred_df = test if use_future else train
 
     with pytest.raises(ValueError, match="Forecast decomposition is only supported for additive components!"):
-        components_method(df=test)
+        components_method(df=pred_df)
 
 
-@pytest.mark.parametrize("components_method_name", ("predict_components", "forecast_components"))
+@pytest.mark.parametrize("components_method_name,use_future", (("predict_components", False), ("forecast_components", True)))
 @pytest.mark.parametrize("trend,trend_component", (("add", ["target_component_trend"]), (None, [])))
 @pytest.mark.parametrize("seasonal,seasonal_component", (("add", ["target_component_seasonality"]), (None, [])))
-def test_components_names(seasonal_dfs, trend, trend_component, seasonal, seasonal_component, components_method_name):
+def test_components_names(seasonal_dfs, trend, trend_component, seasonal, seasonal_component, components_method_name, use_future):
     expected_components_names = set(trend_component + seasonal_component + ["target_component_level"])
-    _, test = seasonal_dfs
+    train, test = seasonal_dfs
 
     model = _HoltWintersAdapter(trend=trend, seasonal=seasonal)
-    model.fit(test, [])
+    model.fit(train, [])
+
     components_method = getattr(model, components_method_name)
-    components = components_method(df=test)
+
+    pred_df = test if use_future else train
+    components = components_method(df=pred_df)
 
     assert set(components.columns) == expected_components_names
 
@@ -251,3 +255,54 @@ def test_components_sum_up_to_target(
     pred = model.predict(pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), pred)
+
+
+@pytest.mark.parametrize(
+    "components_method_name,in_sample", (
+            ("predict_components", True),
+            ("forecast_components", False)
+    )
+)
+@pytest.mark.parametrize("df_names", (
+        "seasonal_dfs",
+        "multi_trend_dfs",
+))
+def test_components_of_subset_sum_up_to_target(
+    df_names, components_method_name, in_sample, request
+):
+    dfs = request.getfixturevalue(df_names)
+    train, test = dfs
+
+    model = _HoltWintersAdapter()
+    model.fit(train, [])
+
+    components_method = getattr(model, components_method_name)
+
+    pred_df = train if in_sample else test
+    pred_df = pred_df.iloc[4:-2]
+
+    pred = model.predict(pred_df)
+    components = components_method(df=pred_df)
+
+    np.testing.assert_allclose(np.sum(components.values, axis=1), pred)
+
+
+def test_forecast_decompose_timestamp_error(seasonal_dfs):
+    train, _ = seasonal_dfs
+
+    model = _HoltWintersAdapter()
+    model.fit(train, [])
+
+    with pytest.raises(NotImplementedError, match="In-sample predictions aren't supported"):
+        model.forecast_components(df=train)
+
+
+def test_predict_decompose_timestamp_error(seasonal_dfs):
+    train, test = seasonal_dfs
+
+    model = _HoltWintersAdapter()
+    model.fit(train, [])
+
+    with pytest.raises(NotImplementedError, match="Out-of-sample predictions aren't supported"):
+        model.predict_components(df=test)
+
