@@ -36,7 +36,15 @@ class ModelPipelinePredictMixin:
         known_future = deepcopy(ts.known_future)
 
         df_to_transform = df[:end_timestamp]
-        cur_ts = TSDataset(df=df_to_transform, df_exog=df_exog, freq=freq, known_future=known_future)
+
+        cur_ts = TSDataset(
+            df=df_to_transform,
+            df_exog=df_exog,
+            freq=freq,
+            known_future=known_future,
+            hierarchical_structure=ts.hierarchical_structure,
+        )
+
         cur_ts.transform(transforms=self.transforms)
 
         # correct start_timestamp taking into account context size
