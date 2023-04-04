@@ -440,7 +440,7 @@ def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, me
 )
 def test_predict_decompose_on_subset(periodic_dfs, estimator):
     train, _ = periodic_dfs
-    sub_train = train.iloc[5:]
+    sub_train = train.iloc[2:-2]
 
     model = _TBATSAdapter(model=estimator())
     model.fit(train, [])
@@ -461,7 +461,7 @@ def test_predict_decompose_on_subset(periodic_dfs, estimator):
 )
 def test_forecast_decompose_on_subset(periodic_dfs, estimator):
     train, test = periodic_dfs
-    sub_test = test.iloc[5:]
+    sub_test = test.iloc[2:-2]
 
     model = _TBATSAdapter(model=estimator())
     model.fit(train, [])
