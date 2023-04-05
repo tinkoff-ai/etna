@@ -36,6 +36,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         self._fit_results = None
         self._freq = None
         self._first_train_timestamp = None
+        self._last_train_timestamp = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXBaseAdapter":
         """
@@ -66,6 +67,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
             raise ValueError("Can't determine frequency of a given dataframe")
         self._freq = freq
         self._first_train_timestamp = df["timestamp"].min()
+        self._last_train_timestamp = df["timestamp"].max()
 
         return self
 
@@ -298,11 +300,16 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
+        if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
+            raise NotImplementedError(
+                "Out-of-sample prediction decomposition isn't supported by current implementation."
+            )
+
         fit_results = self._fit_results
         model = fit_results.model
 
         if model.hamilton_representation:
-            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of an ARMA!")
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
 
         state = fit_results.predicted_state[:, :-1]
 
@@ -312,7 +319,18 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         else:
             components = self._state_regression_decomposition(state=state, ssm=model.ssm, k_exog=model.k_exog)
 
-        return self._prepare_components_df(components=components, model=model)
+        components_df = self._prepare_components_df(components=components, model=model)
+
+        # selecting time points from provided dataframe
+        components_df["timestamp"] = pd.date_range(
+            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._freq
+        )
+
+        components_df.set_index("timestamp", inplace=True)
+        components_df = components_df.loc[df["timestamp"]]
+        components_df.reset_index(drop=True, inplace=True)
+
+        return components_df
 
     def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
         """Estimate forecast components.
@@ -327,13 +345,19 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
+        if df["timestamp"].max() <= self._last_train_timestamp:
+            raise NotImplementedError("In-sample prediction decomposition isn't supported by current implementation.")
+
+        horizon = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
+        )
+
         fit_results = self._fit_results
 
         model = fit_results.model
         if model.hamilton_representation:
-            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of an ARMA!")
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
 
-        horizon = len(df)
         self._encode_categoricals(df)
         self._check_df(df, horizon)
 
@@ -354,7 +378,16 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 state=state, ssm=forecast_results.model, k_exog=model.k_exog
             )
 
-        return self._prepare_components_df(components=components, model=model)
+        components_df = self._prepare_components_df(components=components, model=model)
+
+        # selecting time points from provided dataframe
+        components_df["timestamp"] = pd.date_range(end=df["timestamp"].max(), periods=horizon, freq=self._freq)
+
+        components_df.set_index("timestamp", inplace=True)
+        components_df = components_df.loc[df["timestamp"]]
+        components_df.reset_index(drop=True, inplace=True)
+
+        return components_df
 
 
 class _SARIMAXAdapter(_SARIMAXBaseAdapter):
