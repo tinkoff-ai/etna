@@ -9,7 +9,6 @@ from enum import Enum
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Sequence
 from typing import Tuple
 from typing import cast
@@ -66,11 +65,11 @@ class BaseMixin:
             return {"_target_": BaseMixin._get_target_from_class(value), **value._init_params}
         elif isinstance(value, (str, float, int)):
             return value
-        elif isinstance(value, List):
+        elif isinstance(value, list):
             return [BaseMixin._parse_value(elem) for elem in value]
         elif isinstance(value, tuple):
             return tuple([BaseMixin._parse_value(elem) for elem in value])
-        elif isinstance(value, Dict):
+        elif isinstance(value, dict):
             return {key: BaseMixin._parse_value(item) for key, item in value.items()}
         elif inspect.isfunction(value):
             return {"_target_": BaseMixin._get_target_from_function(value)}
@@ -110,12 +109,12 @@ class BaseMixin:
 
         current_key = keys[0]
         new_structure: Any
-        if isinstance(structure, Dict):
+        if isinstance(structure, dict):
             structure_to_update = structure.get(current_key, {})
             current_value = cls._update_nested_structure(structure_to_update, keys[1:], value)
             new_structure = structure
             new_structure[current_key] = current_value
-        elif isinstance(structure, List):
+        elif isinstance(structure, list):
             idx = int(current_key)
             structure_to_update = structure[idx]
             current_value = cls._update_nested_structure(structure_to_update, keys[1:], value)
