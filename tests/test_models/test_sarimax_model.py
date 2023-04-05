@@ -170,7 +170,7 @@ def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name
 )
 @pytest.mark.parametrize("trend", (None, "t"))
 def test_components_names(dfs_w_exog, regressors, regressors_components, trend, components_method_name, in_sample):
-    expected_components = regressors_components + ["target_component_sarima"]
+    expected_components = regressors_components + ["target_component_arima"]
 
     train, test = dfs_w_exog
     pred_df = train if in_sample else test
