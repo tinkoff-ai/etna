@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -729,3 +730,23 @@ def test_deadline_model_forecast_correct_with_big_horizons(two_month_ts):
 )
 def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+@pytest.mark.parametrize(
+    "model, expected_length",
+    [
+        (NaiveModel(), 0),
+        (MovingAverageModel(), 1),
+        (SeasonalMovingAverageModel(), 1),
+        (DeadlineMovingAverageModel(), 1),
+    ],
+)
+def test_params_to_tune(model, expected_length):
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) == expected_length
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
