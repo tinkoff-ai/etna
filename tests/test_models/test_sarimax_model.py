@@ -185,7 +185,8 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
 
 @pytest.mark.long_2
 @pytest.mark.parametrize(
-    "components_method_name,predict_method_name,in_sample", (("predict_components", "predict", True), ("forecast_components", "forecast", False))
+    "components_method_name,predict_method_name,in_sample",
+    (("predict_components", "predict", True), ("forecast_components", "forecast", False)),
 )
 @pytest.mark.parametrize(
     "mle_regression,time_varying_regression,regressors",

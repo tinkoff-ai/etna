@@ -18,6 +18,7 @@ from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -374,12 +375,13 @@ class _HoltWintersAdapter(BaseAdapter):
         if model._use_boxcox:
             components_df = self._rescale_components(components=components_df)
 
-        # selecting time points from provided dataframe
-        components_df["timestamp"] = pd.date_range(end=df["timestamp"].max(), periods=horizon, freq=self._train_freq)
-
-        components_df.set_index("timestamp", inplace=True)
-        components_df = components_df.loc[df["timestamp"]]
-        components_df.reset_index(drop=True, inplace=True)
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            end=df["timestamp"].max(),
+            periods=horizon,
+            freq=self._train_freq,
+        )
 
         return components_df
 
@@ -399,7 +401,7 @@ class _HoltWintersAdapter(BaseAdapter):
         model = self._model
         fit_result = self._result
 
-        if fit_result is None or model is None:
+        if fit_result is None or model is None or self._train_freq is None:
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
@@ -437,14 +439,13 @@ class _HoltWintersAdapter(BaseAdapter):
         if model._use_boxcox:
             components_df = self._rescale_components(components=components_df)
 
-        # selecting time points from provided dataframe
-        components_df["timestamp"] = pd.date_range(
-            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._train_freq
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._train_freq,
         )
-
-        components_df.set_index("timestamp", inplace=True)
-        components_df = components_df.loc[df["timestamp"]]
-        components_df.reset_index(drop=True, inplace=True)
 
         return components_df
 

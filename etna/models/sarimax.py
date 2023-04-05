@@ -19,6 +19,7 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -321,14 +322,13 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         components_df = self._prepare_components_df(components=components, model=model)
 
-        # selecting time points from provided dataframe
-        components_df["timestamp"] = pd.date_range(
-            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._freq
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._freq,
         )
-
-        components_df.set_index("timestamp", inplace=True)
-        components_df = components_df.loc[df["timestamp"]]
-        components_df.reset_index(drop=True, inplace=True)
 
         return components_df
 
@@ -380,12 +380,9 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         components_df = self._prepare_components_df(components=components, model=model)
 
-        # selecting time points from provided dataframe
-        components_df["timestamp"] = pd.date_range(end=df["timestamp"].max(), periods=horizon, freq=self._freq)
-
-        components_df.set_index("timestamp", inplace=True)
-        components_df = components_df.loc[df["timestamp"]]
-        components_df.reset_index(drop=True, inplace=True)
+        components_df = select_observations(
+            df=components_df, timestamps=df["timestamp"], end=df["timestamp"].max(), periods=horizon, freq=self._freq
+        )
 
         return components_df
 

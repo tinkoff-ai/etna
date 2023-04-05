@@ -16,6 +16,7 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -131,12 +132,9 @@ class _TBATSAdapter(BaseAdapter):
         raw_components = self._decompose_forecast(horizon=horizon)
         components = self._process_components(raw_components=raw_components)
 
-        # selecting time points from provided dataframe
-        components["timestamp"] = pd.date_range(end=df["timestamp"].max(), periods=horizon, freq=self._freq)
-
-        components.set_index("timestamp", inplace=True)
-        components = components.loc[df["timestamp"]]
-        components.reset_index(drop=True, inplace=True)
+        components = select_observations(
+            df=components, timestamps=df["timestamp"], end=df["timestamp"].max(), periods=horizon, freq=self._freq
+        )
 
         return components
 
@@ -156,10 +154,6 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
-        train_timestamp = pd.date_range(
-            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
-        )
-
         if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
             raise NotImplementedError(
                 "Out-of-sample prediction decomposition isn't supported by current implementation."
@@ -170,12 +164,13 @@ class _TBATSAdapter(BaseAdapter):
         raw_components = self._decompose_predict()
         components = self._process_components(raw_components=raw_components)
 
-        # selecting time points from provided dataframe
-        components["timestamp"] = train_timestamp
-
-        components.set_index("timestamp", inplace=True)
-        components = components.loc[df["timestamp"]]
-        components.reset_index(drop=True, inplace=True)
+        components = select_observations(
+            df=components,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._freq,
+        )
 
         return components
 

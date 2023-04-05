@@ -257,7 +257,7 @@ def test_predict_components_out_of_sample_error(periodic_dfs, train_slice, decom
 
     model = _TBATSAdapter(model=BATS())
     model.fit(train.iloc[train_slice], [])
-    with pytest.raises(NotImplementedError, match="isn't currently implemented for out-of-sample prediction"):
+    with pytest.raises(NotImplementedError, match="Out-of-sample prediction decomposition isn't supported"):
         model.predict_components(df=train.iloc[decompose_slice])
 
 
