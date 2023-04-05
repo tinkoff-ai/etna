@@ -179,7 +179,9 @@ class _TBATSAdapter(BaseAdapter):
             raise ValueError("Data frequency is not set!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
-            raise NotImplementedError("In-sample predictions aren't supported by current implementation.")
+            raise NotImplementedError(
+                "It is not possible to make in-sample predictions using current method implementation!"
+            )
 
         steps_to_forecast = determine_num_steps(
             start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
