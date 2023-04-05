@@ -471,3 +471,13 @@ def test_forecast_decompose_on_subset(periodic_dfs, estimator):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
+
+
+def test_predict_decompose_timestamp_error(periodic_dfs):
+    train, test = periodic_dfs
+
+    model = _TBATSAdapter(model=BATS())
+    model.fit(train, [])
+
+    with pytest.raises(NotImplementedError, match="Out-of-sample prediction decomposition isn't supported"):
+        model.predict_components(df=test)

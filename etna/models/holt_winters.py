@@ -335,7 +335,7 @@ class _HoltWintersAdapter(BaseAdapter):
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].max() <= self._last_train_timestamp:
-            raise NotImplementedError("In-sample predictions aren't supported by current implementation.")
+            raise NotImplementedError("In-sample prediction decomposition isn't supported by current implementation.")
 
         horizon = determine_num_steps(
             start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._train_freq
@@ -403,7 +403,9 @@ class _HoltWintersAdapter(BaseAdapter):
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
-            raise NotImplementedError("Out-of-sample predictions aren't supported by current implementation.")
+            raise NotImplementedError(
+                "Out-of-sample prediction decomposition isn't supported by current implementation."
+            )
 
         self._check_mul_components()
         self._check_df(df)

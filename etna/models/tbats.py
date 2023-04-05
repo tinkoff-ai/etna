@@ -162,7 +162,7 @@ class _TBATSAdapter(BaseAdapter):
 
         if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
             raise NotImplementedError(
-                "Method predict_components isn't currently implemented for out-of-sample prediction!"
+                "Out-of-sample prediction decomposition isn't supported by current implementation."
             )
 
         self._check_components()
