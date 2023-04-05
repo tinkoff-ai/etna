@@ -1,6 +1,7 @@
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -13,12 +14,18 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
+from etna import SETTINGS
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
+    from optuna.distributions import IntUniformDistribution
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -698,3 +705,24 @@ class SARIMAXModel(
                 **self.kwargs,
             )
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid doesn't tune ``seasonal_order.s`` parameter that determines number of periods in a season.
+        This parameter is expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "order.0": IntUniformDistribution(low=1, high=6, step=1),
+            "order.1": IntUniformDistribution(low=1, high=3, step=1),
+            "order.2": IntUniformDistribution(low=1, high=6, step=1),
+            "seasonal_order.0": IntUniformDistribution(low=0, high=2, step=1),
+            "seasonal_order.1": IntUniformDistribution(low=0, high=1, step=1),
+            "seasonal_order.2": IntUniformDistribution(low=0, high=1, step=1),
+            "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
+        }

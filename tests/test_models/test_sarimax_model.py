@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+from optuna.samplers import RandomSampler
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
@@ -236,3 +237,15 @@ def test_components_sum_up_to_target(
     components = components_method(df=pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
+
+
+def test_params_to_tune():
+    model = SARIMAXModel()
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) > 0
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
