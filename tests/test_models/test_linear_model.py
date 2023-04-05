@@ -4,6 +4,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.samplers import RandomSampler
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
@@ -325,3 +326,17 @@ def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, 
     target = adapter.predict(df)
     target_components = adapter.predict_components(df)
     np.testing.assert_array_almost_equal(target, target_components.sum(axis=1), decimal=10)
+
+
+@pytest.mark.parametrize(
+    "model", [LinearPerSegmentModel(), LinearMultiSegmentModel(), ElasticPerSegmentModel(), ElasticMultiSegmentModel()]
+)
+def test_params_to_tune(model):
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) > 0
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
