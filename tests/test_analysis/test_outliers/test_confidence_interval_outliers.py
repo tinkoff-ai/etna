@@ -53,7 +53,6 @@ def test_get_anomalies_prediction_interval_interface(outliers_tsds, model, in_co
         ),
         (
             SARIMAXModel,
-            {},
             0.999,
             {"1": [np.datetime64("2021-01-11")], "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-27")]},
         ),
