@@ -381,9 +381,9 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
 
     def __init__(
         self,
-        order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
-        trend: Optional[str] = "c",
+        order: Tuple[int, int, int] = (1, 0, 0),
+        seasonal_order: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        trend: Optional[str] = None,
         measurement_error: bool = False,
         time_varying_regression: bool = False,
         mle_regression: bool = True,
@@ -559,9 +559,9 @@ class SARIMAXModel(
 
     def __init__(
         self,
-        order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
-        trend: Optional[str] = "c",
+        order: Tuple[int, int, int] = (1, 0, 0),
+        seasonal_order: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        trend: Optional[str] = None,
         measurement_error: bool = False,
         time_varying_regression: bool = False,
         mle_regression: bool = True,
@@ -717,12 +717,21 @@ class SARIMAXModel(
         :
             Grid to tune.
         """
-        return {
-            "order.0": IntUniformDistribution(low=1, high=6, step=1),
-            "order.1": IntUniformDistribution(low=1, high=3, step=1),
-            "order.2": IntUniformDistribution(low=1, high=6, step=1),
-            "seasonal_order.0": IntUniformDistribution(low=0, high=2, step=1),
-            "seasonal_order.1": IntUniformDistribution(low=0, high=1, step=1),
-            "seasonal_order.2": IntUniformDistribution(low=0, high=1, step=1),
-            "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
-        }
+        num_periods = self.seasonal_order[3]
+        if num_periods == 0:
+            return {
+                "order.0": IntUniformDistribution(low=1, high=6, step=1),
+                "order.1": IntUniformDistribution(low=1, high=2, step=1),
+                "order.2": IntUniformDistribution(low=1, high=6, step=1),
+                "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
+            }
+        else:
+            return {
+                "order.0": IntUniformDistribution(low=1, high=num_periods - 1, step=1),
+                "order.1": IntUniformDistribution(low=1, high=2, step=1),
+                "order.2": IntUniformDistribution(low=1, high=num_periods - 1, step=1),
+                "seasonal_order.0": IntUniformDistribution(low=0, high=2, step=1),
+                "seasonal_order.1": IntUniformDistribution(low=0, high=1, step=1),
+                "seasonal_order.2": IntUniformDistribution(low=0, high=1, step=1),
+                "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
+            }

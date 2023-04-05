@@ -239,8 +239,10 @@ def test_components_sum_up_to_target(
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
 
 
-def test_params_to_tune():
-    model = SARIMAXModel()
+@pytest.mark.parametrize(
+    "model", [SARIMAXModel(seasonal_order=(0, 0, 0, 0)), SARIMAXModel(seasonal_order=(0, 0, 0, 7))]
+)
+def test_params_to_tune(model):
     grid = model.params_to_tune()
     # we need sampler to get a value from distribution
     sampler = RandomSampler()
