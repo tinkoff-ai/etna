@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+from optuna.samplers import RandomSampler
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
@@ -169,7 +170,7 @@ def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name
 )
 @pytest.mark.parametrize("trend", (None, "t"))
 def test_components_names(dfs_w_exog, regressors, regressors_components, trend, components_method_name, in_sample):
-    expected_components = regressors_components + ["target_component_sarima"]
+    expected_components = regressors_components + ["target_component_arima"]
 
     train, test = dfs_w_exog
     pred_df = train if in_sample else test
@@ -236,3 +237,17 @@ def test_components_sum_up_to_target(
     components = components_method(df=pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
+
+
+@pytest.mark.parametrize(
+    "model", [SARIMAXModel(seasonal_order=(0, 0, 0, 0)), SARIMAXModel(seasonal_order=(0, 0, 0, 7))]
+)
+def test_params_to_tune(model):
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) > 0
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
