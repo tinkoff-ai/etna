@@ -1,15 +1,22 @@
 import warnings
 from enum import Enum
+from typing import Dict
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+from typing_extensions import assert_never
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
 
-class SeasonalityMode(Enum):
+
+class SeasonalityMode(str, Enum):
     """Enum for seasonality mode for DeadlineMovingAverageModel."""
 
     month = "month"
@@ -37,7 +44,7 @@ class DeadlineMovingAverageModel(
         window:
             Number of values taken for forecast for each point.
         seasonality:
-            Only allowed monthly or annual seasonality.
+            Only allowed values are "month" and "year".
         """
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
@@ -59,6 +66,8 @@ class DeadlineMovingAverageModel(
             cur_value = 366
         elif self.seasonality is SeasonalityMode.month:
             cur_value = 31
+        else:
+            assert_never(self.seasonality)
 
         if self._freq == "H":
             cur_value *= 24
@@ -145,9 +154,10 @@ class DeadlineMovingAverageModel(
 
         if seasonality is SeasonalityMode.month:
             first_index = future_timestamps[0] - pd.DateOffset(months=window)
-
         elif seasonality is SeasonalityMode.year:
             first_index = future_timestamps[0] - pd.DateOffset(years=window)
+        else:
+            assert_never(seasonality)
 
         if first_index < history_timestamps[0]:
             raise ValueError(
@@ -165,10 +175,12 @@ class DeadlineMovingAverageModel(
         end_idx = len(result_template)
         for i in range(start_idx, end_idx):
             for w in range(1, self.window + 1):
-                if self.seasonality == SeasonalityMode.month:
+                if self.seasonality is SeasonalityMode.month:
                     prev_date = result_template.index[i] - pd.DateOffset(months=w)
-                elif self.seasonality == SeasonalityMode.year:
+                elif self.seasonality is SeasonalityMode.year:
                     prev_date = result_template.index[i] - pd.DateOffset(years=w)
+                else:
+                    assert_never(self.seasonality)
 
                 result_template.loc[index[i]] += context.loc[prev_date]
 
@@ -300,6 +312,18 @@ class DeadlineMovingAverageModel(
         new_df = self._predict(df=df, prediction_size=prediction_size)
         ts.df = new_df
         return ts
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid doesn't tune ``seasonality`` parameter. It expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {"window": IntUniformDistribution(low=1, high=10, step=1)}
 
 
 __all__ = ["DeadlineMovingAverageModel"]

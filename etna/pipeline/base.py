@@ -34,7 +34,7 @@ if SETTINGS.auto_required:
 Timestamp = Union[str, pd.Timestamp]
 
 
-class CrossValidationMode(Enum):
+class CrossValidationMode(str, Enum):
     """Enum for different cross-validation modes."""
 
     expand = "expand"
