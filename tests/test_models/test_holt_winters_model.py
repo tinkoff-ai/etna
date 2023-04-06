@@ -257,8 +257,8 @@ def test_components_sum_up_to_target(
 @pytest.mark.parametrize(
     "model, expected_length",
     [
-        (HoltWintersModel(seasonal_periods=7), 4),
         (HoltWintersModel(), 3),
+        (HoltWintersModel(seasonal="add"), 4),
         (HoltModel(), 2),
         (SimpleExpSmoothingModel(), 0),
     ],
