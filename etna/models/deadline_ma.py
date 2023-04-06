@@ -16,7 +16,7 @@ if SETTINGS.auto_required:
     from optuna.distributions import IntUniformDistribution
 
 
-class SeasonalityMode(Enum):
+class SeasonalityMode(str, Enum):
     """Enum for seasonality mode for DeadlineMovingAverageModel."""
 
     month = "month"
@@ -47,8 +47,7 @@ class DeadlineMovingAverageModel(
             Only allowed monthly or annual seasonality.
         """
         self.window = window
-        self.seasonality = seasonality
-        self._seasonality = SeasonalityMode(seasonality)
+        self.seasonality = SeasonalityMode(seasonality)
         self._freqs_available = {"H", "D"}
         self._freq: Optional[str] = None
 
@@ -63,12 +62,12 @@ class DeadlineMovingAverageModel(
         self._validate_fitted()
 
         cur_value = None
-        if self._seasonality is SeasonalityMode.year:
+        if self.seasonality is SeasonalityMode.year:
             cur_value = 366
-        elif self._seasonality is SeasonalityMode.month:
+        elif self.seasonality is SeasonalityMode.month:
             cur_value = 31
         else:
-            assert_never(self._seasonality)
+            assert_never(self.seasonality)
 
         if self._freq == "H":
             cur_value *= 24
@@ -176,12 +175,12 @@ class DeadlineMovingAverageModel(
         end_idx = len(result_template)
         for i in range(start_idx, end_idx):
             for w in range(1, self.window + 1):
-                if self._seasonality is SeasonalityMode.month:
+                if self.seasonality is SeasonalityMode.month:
                     prev_date = result_template.index[i] - pd.DateOffset(months=w)
-                elif self._seasonality is SeasonalityMode.year:
+                elif self.seasonality is SeasonalityMode.year:
                     prev_date = result_template.index[i] - pd.DateOffset(years=w)
                 else:
-                    assert_never(self._seasonality)
+                    assert_never(self.seasonality)
 
                 result_template.loc[index[i]] += context.loc[prev_date]
 
@@ -193,7 +192,7 @@ class DeadlineMovingAverageModel(
     def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         """Make autoregressive forecasts on a wide dataframe."""
         context_beginning = self._get_context_beginning(
-            df=df, prediction_size=prediction_size, seasonality=self._seasonality, window=self.window
+            df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
         )
 
         history = df.loc[:, pd.IndexSlice[:, "target"]]
@@ -256,7 +255,7 @@ class DeadlineMovingAverageModel(
     def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
         """Make predictions on a wide dataframe using true values as autoregression context."""
         context_beginning = self._get_context_beginning(
-            df=df, prediction_size=prediction_size, seasonality=self._seasonality, window=self.window
+            df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
         )
 
         context = df.loc[:, pd.IndexSlice[:, "target"]]
