@@ -17,6 +17,7 @@ from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
+from etna.models.utils import determine_freq
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -28,15 +29,12 @@ class _TBATSAdapter(BaseAdapter):
         self._freq = None
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
+        self._freq = determine_freq(timestamps=df["timestamp"])
 
         target = df["target"]
         self._fitted_model = self._model.fit(target)
         self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()
-        self._freq = freq
 
         return self
 
@@ -126,6 +124,9 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+
         self._check_components()
 
         horizon = self._get_steps_to_forecast(df=df)
@@ -155,9 +156,7 @@ class _TBATSAdapter(BaseAdapter):
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
         if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
-            raise NotImplementedError(
-                "Out-of-sample prediction decomposition isn't supported by current implementation."
-            )
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
 
         self._check_components()
 

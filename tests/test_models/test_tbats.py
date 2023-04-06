@@ -249,18 +249,6 @@ def test_named_components_output_format(periodic_dfs, estimator):
     assert len(components) == horizon
 
 
-@pytest.mark.parametrize(
-    "train_slice,decompose_slice", ((slice(5, 20), slice(None, 20)), (slice(5, 10), slice(10, 20)))
-)
-def test_predict_components_out_of_sample_error(periodic_dfs, train_slice, decompose_slice):
-    train, _ = periodic_dfs
-
-    model = _TBATSAdapter(model=BATS())
-    model.fit(train.iloc[train_slice], [])
-    with pytest.raises(NotImplementedError, match="Out-of-sample prediction decomposition isn't supported"):
-        model.predict_components(df=train.iloc[decompose_slice])
-
-
 @pytest.mark.long_1
 @pytest.mark.parametrize(
     "estimator,params,components_names",
@@ -479,5 +467,15 @@ def test_predict_decompose_timestamp_error(periodic_dfs):
     model = _TBATSAdapter(model=BATS())
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="Out-of-sample prediction decomposition isn't supported"):
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
         model.predict_components(df=test)
+
+
+def test_forecast_decompose_timestamp_error(periodic_dfs):
+    train, _ = periodic_dfs
+
+    model = _TBATSAdapter(model=BATS())
+    model.fit(train, [])
+
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
+        model.forecast_components(df=train)

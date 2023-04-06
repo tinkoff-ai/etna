@@ -271,7 +271,7 @@ def test_forecast_decompose_timestamp_error(dfs_w_exog):
     model = _SARIMAXAdapter()
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="In-sample prediction decomposition isn't supported"):
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
         model.forecast_components(df=train)
 
 
@@ -281,5 +281,5 @@ def test_predict_decompose_timestamp_error(dfs_w_exog):
     model = _SARIMAXAdapter()
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="Out-of-sample prediction decomposition isn't supported"):
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
         model.predict_components(df=test)

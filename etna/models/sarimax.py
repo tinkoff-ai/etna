@@ -20,6 +20,7 @@ from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
+from etna.models.utils import determine_freq
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -63,10 +64,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
-        self._freq = freq
+        self._freq = determine_freq(timestamps=df["timestamp"])
         self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()
 
@@ -302,9 +300,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
             dataframe with prediction components
         """
         if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
-            raise NotImplementedError(
-                "Out-of-sample prediction decomposition isn't supported by current implementation."
-            )
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
 
         fit_results = self._fit_results
         model = fit_results.model
@@ -345,8 +341,8 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
-        if df["timestamp"].max() <= self._last_train_timestamp:
-            raise NotImplementedError("In-sample prediction decomposition isn't supported by current implementation.")
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
 
         horizon = determine_num_steps(
             start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq

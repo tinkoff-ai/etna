@@ -98,3 +98,28 @@ def select_observations(
     observations = observations.loc[timestamps]
     observations.reset_index(drop=drop_timestamp, inplace=True)
     return observations
+
+
+def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
+    """
+
+    Parameters
+    ----------
+    timestamps
+        timeline to determine frequency
+
+    Returns
+    -------
+    :
+        pandas frequency string
+
+    Raises
+    ------
+    ValueError:
+        unable do determine frequency of data
+    """
+    freq = pd.infer_freq(timestamps, warn=False)
+    if freq is None:
+        raise ValueError("Can't determine frequency of a given dataframe")
+
+    return freq

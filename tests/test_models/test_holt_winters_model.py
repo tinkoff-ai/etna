@@ -297,7 +297,7 @@ def test_forecast_decompose_timestamp_error(seasonal_dfs):
     model = _HoltWintersAdapter()
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="In-sample prediction decomposition isn't supported"):
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
         model.forecast_components(df=train)
 
 
@@ -307,5 +307,5 @@ def test_predict_decompose_timestamp_error(seasonal_dfs):
     model = _HoltWintersAdapter()
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="Out-of-sample prediction decomposition isn't supported"):
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
         model.predict_components(df=test)

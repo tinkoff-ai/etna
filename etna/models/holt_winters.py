@@ -19,6 +19,7 @@ from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
+from etna.models.utils import determine_freq
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -213,11 +214,7 @@ class _HoltWintersAdapter(BaseAdapter):
         :
             Fitted model
         """
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
-
-        self._train_freq = freq
+        self._train_freq = determine_freq(timestamps=df["timestamp"])
 
         self._check_df(df)
 
@@ -335,8 +332,8 @@ class _HoltWintersAdapter(BaseAdapter):
         if fit_result is None or model is None or self._train_freq is None:
             raise ValueError("This model is not fitted!")
 
-        if df["timestamp"].max() <= self._last_train_timestamp:
-            raise NotImplementedError("In-sample prediction decomposition isn't supported by current implementation.")
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
 
         horizon = determine_num_steps(
             start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._train_freq
@@ -405,9 +402,7 @@ class _HoltWintersAdapter(BaseAdapter):
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
-            raise NotImplementedError(
-                "Out-of-sample prediction decomposition isn't supported by current implementation."
-            )
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
 
         self._check_mul_components()
         self._check_df(df)

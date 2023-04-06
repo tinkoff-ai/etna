@@ -3,6 +3,7 @@ import pytest
 
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
+from etna.models.utils import determine_freq
 
 
 @pytest.mark.parametrize(
@@ -104,3 +105,28 @@ def test_select_observations_without_timestamp(df_without_timestamp, timestamps)
 def test_select_observations_out_of_timeline_error(df_with_timestamp, timestamps):
     with pytest.raises(ValueError, match="Some timestamps do not lie inside the timeline"):
         _ = select_observations(df=df_with_timestamp, timestamps=timestamps, freq="D")
+
+
+@pytest.mark.parametrize(
+    "timestamps,answer",
+    (
+            (pd.date_range(start="2020-01-01", periods=3, freq="M"), "M"),
+            (pd.date_range(start="2020-01-01", periods=3, freq="W"), "W-SUN"),
+            (pd.date_range(start="2020-01-01", periods=3, freq="D"), "D"),
+    )
+)
+def test_determine_freq(timestamps, answer):
+    assert determine_freq(timestamps=timestamps) == answer
+
+
+@pytest.mark.parametrize(
+    "timestamps",
+    (
+            pd.to_datetime(pd.Series(["2020-02-01", "2020-02-15", "2021-02-15"])),
+            pd.to_datetime(pd.Series(["2020-02-15", "2020-01-22", "2020-01-23"])),
+    ),
+)
+def test_determine_freq(timestamps):
+    with pytest.raises(ValueError, match="Can't determine frequency of a given dataframe"):
+        _ = determine_freq(timestamps=timestamps)
+
