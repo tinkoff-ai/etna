@@ -17,6 +17,7 @@ from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 from etna.transforms.timestamp import DateFlagsTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.common import _test_prediction_decomposition
 
 
 @pytest.fixture
@@ -325,3 +326,9 @@ def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, 
     target = adapter.predict(df)
     target_components = adapter.predict_components(df)
     np.testing.assert_array_almost_equal(target, target_components.sum(axis=1), decimal=10)
+
+
+@pytest.mark.parametrize("model", (LinearPerSegmentModel(), ElasticPerSegmentModel(), LinearMultiSegmentModel(), ElasticMultiSegmentModel()))
+def test_prediction_decomposition(example_reg_tsds, model):
+    train, test = example_reg_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=model, train=train, test=test)

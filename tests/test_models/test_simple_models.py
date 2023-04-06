@@ -12,6 +12,7 @@ from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.common import _test_prediction_decomposition
 
 
 def _check_forecast(ts, model, horizon):
@@ -863,3 +864,9 @@ def test_deadline_ma_predict_components_correct(
 
     # testing out-of-sample prediction
     np.testing.assert_allclose(target_components_df.values[-1], out_of_sample_pred)
+
+
+@pytest.mark.parametrize("model", (MovingAverageModel(), NaiveModel()))
+def test_prediction_decomposition(example_tsds, model):
+    train, test = example_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=model, train=train, test=test, prediction_size=5)

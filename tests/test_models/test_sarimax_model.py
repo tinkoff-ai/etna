@@ -8,6 +8,7 @@ from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.common import _test_prediction_decomposition
 
 
 def _check_forecast(ts, model, horizon):
@@ -236,3 +237,8 @@ def test_components_sum_up_to_target(
     components = components_method(df=pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
+
+
+def test_prediction_decomposition(outliers_tsds):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=SARIMAXModel(), train=train, test=test)

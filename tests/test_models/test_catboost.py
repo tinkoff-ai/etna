@@ -15,6 +15,7 @@ from etna.transforms import LabelEncoderTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms.math import LagTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.common import _test_prediction_decomposition
 
 
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
@@ -179,3 +180,9 @@ def test_decomposition_sums_to_target(dfs_w_exog):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, y_pred)
+
+
+@pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
+def test_prediction_decomposition(outliers_tsds, model):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=model, train=train, test=test)
