@@ -18,9 +18,9 @@ from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
-from etna.models.utils import determine_freq
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",

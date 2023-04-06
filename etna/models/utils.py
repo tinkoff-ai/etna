@@ -101,7 +101,7 @@ def select_observations(
 
 
 def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
-    """
+    """Determine data frequency using provided timestamps.
 
     Parameters
     ----------

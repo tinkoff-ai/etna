@@ -17,9 +17,9 @@ from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
+from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
-from etna.models.utils import determine_freq
 
 
 class _HoltWintersAdapter(BaseAdapter):

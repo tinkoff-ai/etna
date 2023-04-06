@@ -15,9 +15,9 @@ from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
-from etna.models.utils import determine_freq
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -26,7 +26,7 @@ class _TBATSAdapter(BaseAdapter):
         self._fitted_model: Optional[Model] = None
         self._first_train_timestamp = None
         self._last_train_timestamp = None
-        self._freq = None
+        self._freq: Optional[str] = None
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
         self._freq = determine_freq(timestamps=df["timestamp"])
