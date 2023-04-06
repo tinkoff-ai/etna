@@ -44,7 +44,7 @@ class DeadlineMovingAverageModel(
         window:
             Number of values taken for forecast for each point.
         seasonality:
-            Only allowed monthly or annual seasonality.
+            Only allowed values are "month" and "year".
         """
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
