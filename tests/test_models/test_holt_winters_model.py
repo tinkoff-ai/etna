@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.samplers import RandomSampler
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
 from etna.datasets import TSDataset
@@ -251,3 +252,23 @@ def test_components_sum_up_to_target(
     pred = model.predict(pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), pred)
+
+
+@pytest.mark.parametrize(
+    "model, expected_length",
+    [
+        (HoltWintersModel(seasonal_periods=7), 4),
+        (HoltWintersModel(), 3),
+        (HoltModel(), 2),
+        (SimpleExpSmoothingModel(), 0),
+    ],
+)
+def test_params_to_tune(model, expected_length):
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) == expected_length
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
