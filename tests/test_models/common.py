@@ -1,4 +1,5 @@
 def _test_prediction_decomposition(model, train, test, prediction_size=None):
+    """Test that components are presented after in-sample and out-of-sample decomposition."""
     model.fit(train)
 
     predict_args = dict(ts=train, return_components=True)
