@@ -11,6 +11,7 @@ from etna.models import HoltWintersModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models.holt_winters import _HoltWintersAdapter
 from etna.pipeline import Pipeline
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
 
 
@@ -251,3 +252,9 @@ def test_components_sum_up_to_target(
     pred = model.predict(pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), pred)
+
+
+@pytest.mark.parametrize("model", (SimpleExpSmoothingModel(), HoltModel(), HoltWintersModel()))
+def test_prediction_decomposition(outliers_tsds, model):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=model, train=train, test=test)

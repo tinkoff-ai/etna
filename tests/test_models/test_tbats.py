@@ -12,6 +12,7 @@ from etna.models.tbats import TBATS
 from etna.models.tbats import BATSModel
 from etna.models.tbats import TBATSModel
 from etna.models.tbats import _TBATSAdapter
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 from tests.test_models.utils import assert_model_equals_loaded_original
 
@@ -450,3 +451,9 @@ def test_predict_decompose_on_subset(periodic_dfs, estimator):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
+
+
+@pytest.mark.parametrize("model", (BATSModel(), TBATSModel()))
+def test_prediction_decomposition(outliers_tsds, model):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=model, train=train, test=test)

@@ -5,6 +5,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import AutoARIMAModel
 from etna.pipeline import Pipeline
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
 
 
@@ -144,3 +145,8 @@ def test_forecast_1_point(example_tsds):
 def test_save_load(example_tsds):
     model = AutoARIMAModel()
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+def test_prediction_decomposition(outliers_tsds):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=AutoARIMAModel(), train=train, test=test)
