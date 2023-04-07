@@ -626,6 +626,8 @@ class HoltWintersModel(
         :
             Grid to tune.
         """
+        # TODO: If trend=None and damped_trend=True, then we will get a ValueError during fit
+        #   It can only be solved using conditional grid
         grid: Dict[str, "BaseDistribution"] = {
             "trend": CategoricalDistribution(["add", "mul", None]),
             "damped_trend": CategoricalDistribution([False, True]),
