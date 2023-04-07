@@ -11,8 +11,8 @@ from etna.models import HoltWintersModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models.holt_winters import _HoltWintersAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.common import _test_prediction_decomposition
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.fixture

@@ -7,8 +7,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.common import _test_prediction_decomposition
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def _check_forecast(ts, model, horizon):

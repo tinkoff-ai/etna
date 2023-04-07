@@ -12,9 +12,9 @@ from etna.models.tbats import TBATS
 from etna.models.tbats import BATSModel
 from etna.models.tbats import TBATSModel
 from etna.models.tbats import _TBATSAdapter
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 from tests.test_models.utils import assert_model_equals_loaded_original
-from tests.test_models.common import _test_prediction_decomposition
 
 
 @pytest.fixture()

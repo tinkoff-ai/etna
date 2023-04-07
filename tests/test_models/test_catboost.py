@@ -14,8 +14,8 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms.math import LagTransform
-from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.common import _test_prediction_decomposition
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])

@@ -8,8 +8,8 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
 from etna.models.prophet import _ProphetAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.common import _test_prediction_decomposition
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def test_run(new_format_df):

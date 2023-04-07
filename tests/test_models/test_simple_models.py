@@ -11,8 +11,8 @@ from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
-from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.common import _test_prediction_decomposition
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 def _check_forecast(ts, model, horizon):
