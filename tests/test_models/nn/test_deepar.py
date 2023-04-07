@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 import pandas as pd
 import pytest
-from optuna.samplers import RandomSampler
 from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets.tsdataset import TSDataset
@@ -13,6 +12,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def _get_default_dataset_builder(horizon: int):
@@ -194,13 +194,8 @@ def test_deepar_forecast_throw_error_on_return_components():
         DeepARModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)
 
 
-def test_params_to_tune():
-    model = DeepARModel(decoder_length=3, encoder_length=4)
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler(seed=0)
-
-    assert len(grid) > 0
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    model = DeepARModel(decoder_length=3, encoder_length=4, trainer_params=dict(max_epochs=1, gpus=0))
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

@@ -4,6 +4,7 @@ from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
+from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
 from etna.models.base import ModelType
@@ -38,3 +39,13 @@ def assert_model_equals_loaded_original(
     pd.testing.assert_frame_equal(forecast_ts_1.to_pandas(), forecast_ts_2.to_pandas())
 
     return model, loaded_model
+
+
+def assert_sampling_is_valid(model: ModelType, ts: TSDataset, seed: int = 0):
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler(seed=seed)
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        new_model = model.set_params(**{name: value})
+        new_model.fit(ts)

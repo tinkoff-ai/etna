@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optuna.samplers import RandomSampler
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
 from etna.datasets import TSDataset
@@ -13,6 +12,7 @@ from etna.models import SimpleExpSmoothingModel
 from etna.models.holt_winters import _HoltWintersAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
@@ -263,12 +263,7 @@ def test_components_sum_up_to_target(
         (SimpleExpSmoothingModel(), 0),
     ],
 )
-def test_params_to_tune(model, expected_length):
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler(seed=0)
-
-    assert len(grid) == expected_length
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+def test_params_to_tune(model, expected_length, const_ts):
+    ts = const_ts
+    assert len(model.params_to_tune()) == expected_length
+    assert_sampling_is_valid(model=model, ts=ts)

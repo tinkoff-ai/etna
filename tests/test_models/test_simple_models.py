@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -13,6 +12,7 @@ from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def _check_forecast(ts, model, horizon):
@@ -741,12 +741,7 @@ def test_save_load(model, example_tsds):
         (DeadlineMovingAverageModel(), 1),
     ],
 )
-def test_params_to_tune(model, expected_length):
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler(seed=0)
-
-    assert len(grid) == expected_length
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+def test_params_to_tune(model, expected_length, example_tsds):
+    ts = example_tsds
+    assert len(model.params_to_tune()) == expected_length
+    assert_sampling_is_valid(model=model, ts=ts)

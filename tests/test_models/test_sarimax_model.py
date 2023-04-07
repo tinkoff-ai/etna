@@ -2,13 +2,13 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
-from optuna.samplers import RandomSampler
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def _check_forecast(ts, model, horizon):
@@ -242,12 +242,7 @@ def test_components_sum_up_to_target(
 @pytest.mark.parametrize(
     "model", [SARIMAXModel(seasonal_order=(0, 0, 0, 0)), SARIMAXModel(seasonal_order=(0, 0, 0, 7))]
 )
-def test_params_to_tune(model):
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler(seed=0)
-
-    assert len(grid) > 0
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+def test_params_to_tune(model, example_tsds):
+    ts = example_tsds
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

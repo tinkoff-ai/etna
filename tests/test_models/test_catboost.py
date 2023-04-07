@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from catboost import CatBoostRegressor
-from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -16,6 +15,7 @@ from etna.transforms import LabelEncoderTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms.math import LagTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
@@ -182,13 +182,10 @@ def test_decomposition_sums_to_target(dfs_w_exog):
     np.testing.assert_allclose(y_hat_pred, y_pred)
 
 
-@pytest.mark.parametrize("model", [CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()])
-def test_params_to_tune(model):
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler(seed=0)
-
-    assert len(grid) > 0
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+@pytest.mark.parametrize("model", [CatBoostPerSegmentModel(iterations=10), CatBoostMultiSegmentModel(iterations=10)])
+def test_params_to_tune(model, example_tsds):
+    ts = example_tsds
+    lags = LagTransform(in_column="target", lags=[10, 11, 12])
+    ts.fit_transform([lags])
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)
