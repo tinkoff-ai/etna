@@ -626,19 +626,16 @@ class HoltWintersModel(
         :
             Grid to tune.
         """
-        if self.seasonal is None:
-            return {
-                "trend": CategoricalDistribution(["add", "mul", None]),
-                "damped_trend": CategoricalDistribution([False, True]),
-                "use_boxcox": CategoricalDistribution([False, True]),
-            }
-        else:
-            return {
-                "trend": CategoricalDistribution(["add", "mul", None]),
-                "damped_trend": CategoricalDistribution([False, True]),
-                "seasonal": CategoricalDistribution(["add", "mul", None]),
-                "use_boxcox": CategoricalDistribution([False, True]),
-            }
+        grid: Dict[str, "BaseDistribution"] = {
+            "trend": CategoricalDistribution(["add", "mul", None]),
+            "damped_trend": CategoricalDistribution([False, True]),
+            "use_boxcox": CategoricalDistribution([False, True]),
+        }
+
+        if self.seasonal is not None:
+            grid.update({"seasonal": CategoricalDistribution(["add", "mul", None])})
+
+        return grid
 
 
 class HoltModel(

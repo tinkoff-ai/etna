@@ -717,21 +717,21 @@ class SARIMAXModel(
         :
             Grid to tune.
         """
+        grid: Dict[str, "BaseDistribution"] = {
+            "order.0": IntUniformDistribution(low=1, high=6, step=1),
+            "order.1": IntUniformDistribution(low=1, high=2, step=1),
+            "order.2": IntUniformDistribution(low=1, high=6, step=1),
+            "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
+        }
+
         num_periods = self.seasonal_order[3]
-        if num_periods == 0:
-            return {
-                "order.0": IntUniformDistribution(low=1, high=6, step=1),
-                "order.1": IntUniformDistribution(low=1, high=2, step=1),
-                "order.2": IntUniformDistribution(low=1, high=6, step=1),
-                "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
-            }
-        else:
-            return {
-                "order.0": IntUniformDistribution(low=1, high=num_periods - 1, step=1),
-                "order.1": IntUniformDistribution(low=1, high=2, step=1),
-                "order.2": IntUniformDistribution(low=1, high=num_periods - 1, step=1),
-                "seasonal_order.0": IntUniformDistribution(low=0, high=2, step=1),
-                "seasonal_order.1": IntUniformDistribution(low=0, high=1, step=1),
-                "seasonal_order.2": IntUniformDistribution(low=0, high=1, step=1),
-                "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
-            }
+        if num_periods > 0:
+            grid.update(
+                {
+                    "seasonal_order.0": IntUniformDistribution(low=0, high=2, step=1),
+                    "seasonal_order.1": IntUniformDistribution(low=0, high=1, step=1),
+                    "seasonal_order.2": IntUniformDistribution(low=0, high=1, step=1),
+                }
+            )
+
+        return grid
