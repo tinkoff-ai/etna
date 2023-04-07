@@ -105,7 +105,7 @@ def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
 
     Parameters
     ----------
-    timestamps
+    timestamps:
         timeline to determine frequency
 
     Returns
@@ -118,7 +118,11 @@ def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
     ValueError:
         unable do determine frequency of data
     """
-    freq = pd.infer_freq(timestamps, warn=False)
+    try:
+        freq = pd.infer_freq(timestamps, warn=False)
+    except ValueError:
+        freq = None
+
     if freq is None:
         raise ValueError("Can't determine frequency of a given dataframe")
 

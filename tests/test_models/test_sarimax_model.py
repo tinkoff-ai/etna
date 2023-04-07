@@ -275,11 +275,16 @@ def test_forecast_decompose_timestamp_error(dfs_w_exog):
         model.forecast_components(df=train)
 
 
-def test_predict_decompose_timestamp_error(dfs_w_exog):
-    train, test = dfs_w_exog
-
+@pytest.mark.parametrize(
+    "train_slice,decompose_slice",
+    (
+        (slice(None, 20), slice(5, None)),
+        (slice(2, 20), slice(None, 5)),
+    ),
+)
+def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_slice):
     model = _SARIMAXAdapter()
-    model.fit(train, [])
+    model.fit(outliers_df.iloc[train_slice], [])
 
     with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
-        model.predict_components(df=test)
+        model.predict_components(df=outliers_df.iloc[decompose_slice])
