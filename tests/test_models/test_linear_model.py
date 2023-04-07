@@ -4,7 +4,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import pytest
-from optuna.samplers import RandomSampler
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
@@ -18,6 +17,7 @@ from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 from etna.transforms.timestamp import DateFlagsTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
@@ -331,12 +331,9 @@ def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, 
 @pytest.mark.parametrize(
     "model", [LinearPerSegmentModel(), LinearMultiSegmentModel(), ElasticPerSegmentModel(), ElasticMultiSegmentModel()]
 )
-def test_params_to_tune(model):
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler()
-
-    assert len(grid) > 0
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+def test_params_to_tune(model, example_tsds):
+    ts = example_tsds
+    lags = LagTransform(in_column="target", lags=[10, 11, 12])
+    ts.fit_transform([lags])
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

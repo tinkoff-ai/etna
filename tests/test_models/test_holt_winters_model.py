@@ -12,6 +12,7 @@ from etna.models import SimpleExpSmoothingModel
 from etna.models.holt_winters import _HoltWintersAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
@@ -251,3 +252,18 @@ def test_components_sum_up_to_target(
     pred = model.predict(pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), pred)
+
+
+@pytest.mark.parametrize(
+    "model, expected_length",
+    [
+        (HoltWintersModel(), 3),
+        (HoltWintersModel(seasonal="add"), 4),
+        (HoltModel(), 2),
+        (SimpleExpSmoothingModel(), 0),
+    ],
+)
+def test_params_to_tune(model, expected_length, const_ts):
+    ts = const_ts
+    assert len(model.params_to_tune()) == expected_length
+    assert_sampling_is_valid(model=model, ts=ts)

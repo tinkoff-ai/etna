@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from optuna.samplers import RandomSampler
 from prophet import Prophet
 from prophet.serialize import model_to_dict
 
@@ -10,6 +9,7 @@ from etna.models import ProphetModel
 from etna.models.prophet import _ProphetAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def test_run(new_format_df):
@@ -367,13 +367,8 @@ def test_predict_components_sum_up_to_target(
     np.testing.assert_allclose(np.sum(components, axis=1), pred["target"].values)
 
 
-def test_params_to_tune():
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
     model = ProphetModel()
-    grid = model.params_to_tune()
-    # we need sampler to get a value from distribution
-    sampler = RandomSampler()
-
-    assert len(grid) > 0
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        _ = model.set_params(**{name: value})
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)
