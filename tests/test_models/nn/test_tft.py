@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 import pytest
+from optuna.samplers import RandomSampler
 
 from etna.metrics import MAE
 from etna.models.nn import TFTModel
@@ -196,3 +197,15 @@ def test_repr():
 def test_tft_forecast_throw_error_on_return_components():
     with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
         TFTModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)
+
+
+def test_params_to_tune():
+    model = TFTModel(decoder_length=3, encoder_length=4)
+    grid = model.params_to_tune()
+    # we need sampler to get a value from distribution
+    sampler = RandomSampler()
+
+    assert len(grid) > 0
+    for name, distribution in grid.items():
+        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
+        _ = model.set_params(**{name: value})
