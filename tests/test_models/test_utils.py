@@ -59,26 +59,9 @@ def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq
 
 
 @pytest.fixture()
-def df_with_timestamp():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-02-01", periods=5, freq="D"), "target": 1})
+def df_without_timestamp():
+    df = pd.DataFrame({"target": list(range(5))})
     return df
-
-
-@pytest.fixture()
-def df_without_timestamp(df_with_timestamp):
-    return df_with_timestamp.drop(columns=["timestamp"])
-
-
-@pytest.mark.parametrize(
-    "timestamps",
-    (
-        pd.to_datetime(pd.Series(["2020-02-01", "2020-02-03"])),
-        pd.to_datetime(pd.Series(["2020-02-01"])),
-    ),
-)
-def test_select_observations_with_timestamp(df_with_timestamp, timestamps):
-    selected_df = select_observations(df=df_with_timestamp, timestamps=timestamps, freq="D")
-    assert len(selected_df) == len(timestamps)
 
 
 @pytest.mark.parametrize(
@@ -93,18 +76,6 @@ def test_select_observations_without_timestamp(df_without_timestamp, timestamps)
         df=df_without_timestamp, timestamps=timestamps, freq="D", start="2020-02-01", periods=5
     )
     assert len(selected_df) == len(timestamps)
-
-
-@pytest.mark.parametrize(
-    "timestamps",
-    (
-        pd.to_datetime(pd.Series(["2020-02-01", "2020-02-15"])),
-        pd.to_datetime(pd.Series(["2020-01-22"])),
-    ),
-)
-def test_select_observations_out_of_timeline_error(df_with_timestamp, timestamps):
-    with pytest.raises(ValueError, match="Some timestamps do not lie inside the timeline"):
-        _ = select_observations(df=df_with_timestamp, timestamps=timestamps, freq="D")
 
 
 @pytest.mark.parametrize(

@@ -68,8 +68,7 @@ def select_observations(
     Parameters
     ----------
     df:
-        dataframe with known timeline. If `timestamps` column is not presented `freq`, `start`,
-        `end`, `periods` must be specified for date range generation
+        dataframe with known timeline
     timestamps:
         series of timestamps to select
     freq:
@@ -86,17 +85,14 @@ def select_observations(
     :
         dataframe with selected observations
     """
-    drop_timestamp = False
-    if "timestamp" not in df.columns:
-        df["timestamp"] = pd.date_range(start=start, end=end, periods=periods, freq=freq)
-        drop_timestamp = True
+    df["timestamp"] = pd.date_range(start=start, end=end, periods=periods, freq=freq)
 
     if not (set(timestamps) <= set(df["timestamp"])):
         raise ValueError("Some timestamps do not lie inside the timeline of the provided dataframe.")
 
     observations = df.set_index("timestamp")
     observations = observations.loc[timestamps]
-    observations.reset_index(drop=drop_timestamp, inplace=True)
+    observations.reset_index(drop=True, inplace=True)
     return observations
 
 
