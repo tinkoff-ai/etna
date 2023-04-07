@@ -7,6 +7,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
 
 
@@ -288,3 +289,8 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
 
     with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
         model.predict_components(df=outliers_df.iloc[decompose_slice])
+
+
+def test_prediction_decomposition(outliers_tsds):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=SARIMAXModel(), train=train, test=test)
