@@ -266,7 +266,7 @@ def test_components_sum_up_to_target(
 def test_params_to_tune(model, expected_length):
     grid = model.params_to_tune()
     # we need sampler to get a value from distribution
-    sampler = RandomSampler()
+    sampler = RandomSampler(seed=0)
 
     assert len(grid) == expected_length
     for name, distribution in grid.items():

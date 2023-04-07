@@ -334,7 +334,7 @@ def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, 
 def test_params_to_tune(model):
     grid = model.params_to_tune()
     # we need sampler to get a value from distribution
-    sampler = RandomSampler()
+    sampler = RandomSampler(seed=0)
 
     assert len(grid) > 0
     for name, distribution in grid.items():
