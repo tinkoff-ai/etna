@@ -8,6 +8,8 @@ from etna.models.nn import RNNModel
 from etna.models.nn.rnn import RNNNet
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sample_params_makes_correct_suggest
+from tests.test_models.utils import assert_sample_params_returns_correct_params
 
 
 @pytest.mark.long_2
@@ -79,3 +81,30 @@ def test_context_size(encoder_length):
 def test_save_load(example_tsds):
     model = RNNModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=2))
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+@pytest.mark.parametrize("suggest_prefix", ["", "example", "example."])
+def test_sample_params_name_prefix(suggest_prefix, optuna_storage):
+    model = RNNModel(
+        input_size=1,
+        encoder_length=14,
+        decoder_length=14,
+        lr=1e-1,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert_sample_params_makes_correct_suggest(
+        model=model, suggest_prefix=suggest_prefix, optuna_storage=optuna_storage
+    )
+
+
+def test_sample_params_set_params(optuna_storage, example_tsds):
+    model = RNNModel(
+        input_size=1,
+        encoder_length=14,
+        decoder_length=14,
+        lr=1e-1,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert_sample_params_returns_correct_params(
+        model=model, ts=example_tsds, expected_num_params=4, optuna_storage=optuna_storage
+    )

@@ -1,9 +1,7 @@
-from os import unlink
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
-from optuna.storages import RDBStorage
 from typing_extensions import Literal
 from typing_extensions import NamedTuple
 
@@ -14,12 +12,6 @@ from etna.auto.auto import _Initializer
 from etna.metrics import MAE
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
-
-
-@pytest.fixture()
-def optuna_storage():
-    yield RDBStorage("sqlite:///test.db")
-    unlink("test.db")
 
 
 @pytest.fixture()

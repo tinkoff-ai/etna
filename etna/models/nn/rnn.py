@@ -8,13 +8,15 @@ import pandas as pd
 from typing_extensions import TypedDict
 
 from etna import SETTINGS
+from etna.models.base import DeepBaseModel
+from etna.models.base import DeepBaseNet
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
 
-from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseNet
+if SETTINGS.auto_required:
+    from optuna import Trial
 
 
 class RNNBatch(TypedDict):
@@ -278,3 +280,35 @@ class RNNModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def sample_params(self, trial: Trial, suggest_prefix: str = "") -> Dict[str, Any]:
+        """Sample parameters for optuna trial using a pre-defined strategy.
+
+        Parameters are sampled using ``trial.suggest_...(f"{suggest_prefix}param_name")`` methods.
+
+        The result is the dictionary with sampled parameters that can be passed into the constructor.
+        Parameters sampled from ``trial`` and returned parameters doesn't have to be the same.
+
+        Parameters
+        ----------
+        trial:
+            optuna trial that is used for sampling parameters
+        suggest_prefix:
+            Prefix for parameters' names during sampling.
+            It is used during calling ``trial.suggest_...(f"{suggest_prefix}param_name")``.
+
+        Returns
+        -------
+        :
+            Sampled parameters.
+        """
+        num_layers = trial.suggest_int(f"{suggest_prefix}num_layers", low=1, high=3)
+        hidden_size = trial.suggest_int(f"{suggest_prefix}hidden_size", low=4, high=64, step=4)
+        lr = trial.suggest_float(f"{suggest_prefix}lr", low=1e-5, high=1e-2, log=True)
+        encoder_length = trial.suggest_int(f"{suggest_prefix}encoder_length", low=1, high=20, step=1)
+        return {
+            "num_layers": num_layers,
+            "hidden_size": hidden_size,
+            "lr": lr,
+            "encoder_length": encoder_length,
+        }

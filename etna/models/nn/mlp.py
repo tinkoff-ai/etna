@@ -4,19 +4,20 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 
 from etna import SETTINGS
+from etna.models.base import DeepBaseModel
+from etna.models.base import DeepBaseNet
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
 
-import numpy as np
-
-from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseNet
+if SETTINGS.auto_required:
+    from optuna import Trial
 
 
 class MLPBatch(TypedDict):
@@ -231,3 +232,42 @@ class MLPModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def sample_params(self, trial: "Trial", suggest_prefix: str = "") -> Dict[str, Any]:
+        """Sample parameters for optuna trial using a pre-defined strategy.
+
+        Parameters are sampled using ``trial.suggest_...(f"{suggest_prefix}param_name")`` methods.
+
+        The result is the dictionary with sampled parameters that can be passed into the constructor.
+        Parameters sampled from ``trial`` and returned parameters doesn't have to be the same.
+
+        Parameters
+        ----------
+        trial:
+            optuna trial that is used for sampling parameters
+        suggest_prefix:
+            Prefix for parameters' names during sampling.
+            It is used during calling ``trial.suggest_...(f"{suggest_prefix}param_name")``.
+
+        Returns
+        -------
+        :
+            Sampled parameters.
+        """
+        num_layers = trial.suggest_int(f"{suggest_prefix}num_layers", low=1, high=3)
+
+        if num_layers == 1:
+            hidden_size_0 = trial.suggest_int(f"{suggest_prefix}hidden_size_0", low=4, high=64, step=4)
+            hidden_size = [hidden_size_0]
+        elif num_layers == 2:
+            hidden_size_0 = trial.suggest_int(f"{suggest_prefix}hidden_size_0", low=4, high=64, step=4)
+            hidden_size_1 = trial.suggest_int(f"{suggest_prefix}hidden_size_1", low=4, high=64, step=4)
+            hidden_size = [hidden_size_0, hidden_size_1]
+        else:
+            hidden_size_0 = trial.suggest_int(f"{suggest_prefix}hidden_size_0", low=4, high=64, step=4)
+            hidden_size_1 = trial.suggest_int(f"{suggest_prefix}hidden_size_1", low=4, high=64, step=4)
+            hidden_size_2 = trial.suggest_int(f"{suggest_prefix}hidden_size_2", low=4, high=64, step=4)
+            hidden_size = [hidden_size_0, hidden_size_1, hidden_size_2]
+
+        lr = trial.suggest_float(f"{suggest_prefix}lr", low=1e-5, high=1e-2, log=True)
+        return {"lr": lr, "hidden_size": hidden_size}

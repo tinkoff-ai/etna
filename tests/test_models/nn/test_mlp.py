@@ -13,6 +13,8 @@ from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sample_params_makes_correct_suggest
+from tests.test_models.utils import assert_sample_params_returns_correct_params
 
 
 @pytest.mark.parametrize(
@@ -141,3 +143,36 @@ def test_save_load(example_tsds):
     std = StandardScalerTransform(in_column="target")
     transforms = [lag, fourier, std]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+@pytest.mark.parametrize("suggest_prefix", ["", "example", "example."])
+def test_sample_params_name_suggest(suggest_prefix, optuna_storage):
+    model = MLPModel(
+        input_size=9,
+        hidden_size=[10],
+        lr=1e-1,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert_sample_params_makes_correct_suggest(
+        model=model, suggest_prefix=suggest_prefix, optuna_storage=optuna_storage
+    )
+
+
+def test_sample_params_set_params(optuna_storage, example_tsds):
+    horizon = 3
+    lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))
+    fourier = FourierTransform(period=7, order=3)
+    std = StandardScalerTransform(in_column="target")
+    transforms = [std, lag, fourier]
+    example_tsds.fit_transform(transforms=transforms)
+    model = MLPModel(
+        input_size=9,
+        hidden_size=[10],
+        lr=1e-1,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert_sample_params_returns_correct_params(
+        model=model, ts=example_tsds, expected_num_params=2, optuna_storage=optuna_storage
+    )

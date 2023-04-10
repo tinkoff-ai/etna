@@ -1,13 +1,21 @@
 from copy import deepcopy
+from os import unlink
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.storages import RDBStorage
 
 from etna.datasets import generate_const_df
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
+
+
+@pytest.fixture()
+def optuna_storage():
+    yield RDBStorage("sqlite:///test.db")
+    unlink("test.db")
 
 
 @pytest.fixture(autouse=True)

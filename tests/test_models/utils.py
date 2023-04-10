@@ -1,8 +1,10 @@
 import pathlib
 import tempfile
+from functools import partial
 from typing import Sequence
 from typing import Tuple
 
+import optuna
 import pandas as pd
 from optuna.samplers import RandomSampler
 
@@ -49,3 +51,53 @@ def assert_sampling_is_valid(model: ModelType, ts: TSDataset, seed: int = 0):
         value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
         new_model = model.set_params(**{name: value})
         new_model.fit(ts)
+
+
+def assert_sample_params_makes_correct_suggest(
+    model: ModelType,
+    suggest_prefix: str,
+    optuna_storage: optuna.storages.BaseStorage,
+    n_trials: int = 3,
+    seed: int = 0,
+):
+    study = optuna.create_study(
+        storage=optuna_storage,
+        study_name="example_name",
+        sampler=optuna.samplers.RandomSampler(seed=seed),
+        load_if_exists=True,
+        direction="maximize",
+    )
+
+    def objective(trial, model):
+        _ = model.sample_params(trial, suggest_prefix=suggest_prefix)
+        trial_params = trial.params
+        assert all(key.startswith(suggest_prefix) for key in trial_params.keys())
+        return 1
+
+    study.optimize(partial(objective, model=model), n_trials=n_trials)
+
+
+def assert_sample_params_returns_correct_params(
+    model: ModelType,
+    ts: TSDataset,
+    expected_num_params: int,
+    optuna_storage: optuna.storages.BaseStorage,
+    n_trials: int = 3,
+    seed: int = 0,
+):
+    study = optuna.create_study(
+        storage=optuna_storage,
+        study_name="example_name",
+        sampler=optuna.samplers.RandomSampler(seed=seed),
+        load_if_exists=True,
+        direction="maximize",
+    )
+
+    def objective(trial, model, ts):
+        sampled_params = model.sample_params(trial)
+        assert len(sampled_params) == expected_num_params
+        new_model = model.set_params(**sampled_params)
+        new_model.fit(ts)
+        return 1
+
+    study.optimize(partial(objective, model=model, ts=ts), n_trials=n_trials)
