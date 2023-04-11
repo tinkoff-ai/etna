@@ -1,9 +1,10 @@
 import pytest
 from optuna.storages import RDBStorage
-from etna.pipeline import Pipeline
 from typing_extensions import Literal
 from typing_extensions import NamedTuple
+
 from etna.models import NaiveModel
+from etna.pipeline import Pipeline
 
 
 @pytest.fixture()
@@ -22,4 +23,3 @@ def trials():
         Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": i})
         for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
     ]
-

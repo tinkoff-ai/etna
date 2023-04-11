@@ -320,7 +320,7 @@ class Auto(AutoBase):
             is called before each pipeline backtest, can be used to initialize loggers
         callback:
             is called after each pipeline backtest, can be used to log extra metrics
-            
+
         Returns
         -------
         objective:
@@ -506,32 +506,32 @@ class Tune(AutoBase):
             is called before each pipeline backtest, can be used to initialize loggers
         callback:
             is called after each pipeline backtest, can be used to log extra metrics
-            
+
         Returns
         -------
         objective:
             function that runs specified trial and returns its evaluated score
         """
-        
+
         dict_of_distrs = {
-                UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
-                LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
-                DiscreteUniformDistribution: lambda x: (
-                    "suggest_discrete_uniform",
-                    {"low": x.low, "high": x.high, "q": x.q},
-                ),
-                IntUniformDistribution: lambda x: ("suggest_int", {"low": x.low, "high": x.high, "step": x.step}),
-                IntLogUniformDistribution: lambda x: (
-                    "suggest_int",
-                    {"low": x.low, "high": x.high, "step": x.step, "log": x.log},
-                ),
-                CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
-            }
-        
+            UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
+            LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
+            DiscreteUniformDistribution: lambda x: (
+                "suggest_discrete_uniform",
+                {"low": x.low, "high": x.high, "q": x.q},
+            ),
+            IntUniformDistribution: lambda x: ("suggest_int", {"low": x.low, "high": x.high, "step": x.step}),
+            IntLogUniformDistribution: lambda x: (
+                "suggest_int",
+                {"low": x.low, "high": x.high, "step": x.step, "log": x.log},
+            ),
+            CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
+        }
+
         def _objective(trial: Trial) -> float:
 
             params_to_tune = pipeline.params_to_tune()
-            
+
             # TODO : remove
             print("params_to_tune")
             print(params_to_tune)
@@ -542,11 +542,11 @@ class Tune(AutoBase):
                 method_name, method_kwargs = dict_of_distrs[type(param_distr)](param_distr)
                 method = getattr(trial, method_name)
                 params_suggested[param_name] = method(param_name, **method_kwargs)
-            
+
             # TODO : remove
             print("params_suggested")
             print(params_suggested)
-            
+
             # create pipeline instance with the parameters to try
             pipeline_trial_params: Pipeline = pipeline.set_params(**params_suggested)
 
