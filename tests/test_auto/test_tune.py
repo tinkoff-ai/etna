@@ -24,24 +24,6 @@ from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
 
 
-@pytest.fixture()
-def optuna_storage():
-    yield RDBStorage("sqlite:///test.db")
-    unlink("test.db")
-
-
-@pytest.fixture()
-def trials():
-    class Trial(NamedTuple):
-        user_attrs: dict
-        state: Literal["COMPLETE", "RUNNING", "PENDING"] = "COMPLETE"
-
-    return [
-        Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": i})
-        for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
-    ]
-
-
 def test_objective(
     example_tsds,
     target_metric=MAE(),
@@ -111,34 +93,6 @@ def test_simple_tune_run(example_tsds, optuna_storage, pipeline=Pipeline(NaiveMo
     assert len(tune.summary()) == 2
     assert len(tune.top_k()) == 2
     assert len(tune.top_k(k=1)) == 1
-
-
-def test_summary(
-    trials,
-    tune=MagicMock(),
-):
-    tune._optuna.study.get_trials.return_value = trials
-    df_summary = AutoBase.summary(self=tune)
-    assert len(df_summary) == len(trials)
-    assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
-
-
-@pytest.mark.parametrize("k", [1, 2, 3])
-def test_top_k(
-    trials,
-    k,
-    tune=MagicMock(),
-):
-    tune._optuna.study.get_trials.return_value = trials
-    tune.target_metric.name = "SMAPE"
-    tune.metric_aggregation = "median"
-    tune.target_metric.greater_is_better = False
-
-    df_summary = AutoBase.summary(self=tune)
-    tune.summary = MagicMock(return_value=df_summary)
-    top_k = AutoBase.top_k(tune, k=k)
-    assert len(top_k) == k
-    assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(k)]  # noqa C416
 
 
 def test_can_handle_uniform(example_tsds, optuna_storage):

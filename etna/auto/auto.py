@@ -14,7 +14,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import RandomSampler
+from optuna.samplers import TPESampler
 from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
 from optuna.trial import Trial
@@ -320,6 +320,11 @@ class Auto(AutoBase):
             is called before each pipeline backtest, can be used to initialize loggers
         callback:
             is called after each pipeline backtest, can be used to log extra metrics
+            
+        Returns
+        -------
+        objective:
+            function that runs specified trial and returns its evaluated score
         """
 
         def _objective(trial: Trial) -> float:
@@ -415,9 +420,8 @@ class Tune(AutoBase):
             metrics=metrics,
         )
         self.pipeline = pipeline
-        # let RandomSampler be default sampler
         if sampler is None:
-            self.sampler: BaseSampler = RandomSampler()
+            self.sampler: BaseSampler = TPESampler()
         else:
             self.sampler = sampler
 
@@ -502,13 +506,14 @@ class Tune(AutoBase):
             is called before each pipeline backtest, can be used to initialize loggers
         callback:
             is called after each pipeline backtest, can be used to log extra metrics
+            
+        Returns
+        -------
+        objective:
+            function that runs specified trial and returns its evaluated score
         """
-
-        def _objective(trial: Trial) -> float:
-
-            params_to_tune = pipeline.params_to_tune()
-
-            dict_of_distrs = {
+        
+        dict_of_distrs = {
                 UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
                 LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
                 DiscreteUniformDistribution: lambda x: (
@@ -522,7 +527,12 @@ class Tune(AutoBase):
                 ),
                 CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
             }
+        
+        def _objective(trial: Trial) -> float:
 
+            params_to_tune = pipeline.params_to_tune()
+            
+            # TODO : remove
             print("params_to_tune")
             print(params_to_tune)
 
@@ -532,12 +542,13 @@ class Tune(AutoBase):
                 method_name, method_kwargs = dict_of_distrs[type(param_distr)](param_distr)
                 method = getattr(trial, method_name)
                 params_suggested[param_name] = method(param_name, **method_kwargs)
-
+            
+            # TODO : remove
             print("params_suggested")
             print(params_suggested)
+            
             # create pipeline instance with the parameters to try
             pipeline_trial_params: Pipeline = pipeline.set_params(**params_suggested)
-            trial.set_user_attr("pipeline", params_suggested)
 
             if initializer is not None:
                 initializer(pipeline=pipeline_trial_params)

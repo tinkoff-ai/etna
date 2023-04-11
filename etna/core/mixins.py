@@ -139,13 +139,8 @@ class BaseMixin:
             Estimator parameters.
 
         """
-        print("OJODFHABFKLFBLADKFBAKDFBALKDFB", flush=True)
         params_dict = self.to_dict()
-        print("params_dict before update nested", flush=True)  # debug
-        print(params_dict, flush=True)  # debug
         self._update_nested_dict_with_flat_dict(params_dict, params)
-        print("params_dict after update nested", flush=True)  # debug
-        print(params_dict, flush=True)  # debug
         estimator_out = hydra_slayer.get_from_params(**params_dict)
         return estimator_out
 
