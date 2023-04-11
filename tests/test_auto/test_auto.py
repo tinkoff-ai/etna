@@ -12,6 +12,7 @@ from etna.auto.auto import AutoBase
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
+from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 
 
