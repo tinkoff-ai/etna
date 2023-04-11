@@ -222,6 +222,7 @@ jobs:
         run: |
           poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml --durations=10
           poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
+          poetry run pytest tests/test_models/test_utils.py -v --cov=etna --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2

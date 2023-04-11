@@ -7,6 +7,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
 
 
@@ -150,7 +151,7 @@ def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name
     components_method = getattr(model, components_method_name)
 
     with pytest.raises(
-        ValueError, match="Prediction decomposition is not implemented for Hamilton representation of an ARMA!"
+        ValueError, match="Prediction decomposition is not implemented for Hamilton representation of ARMA!"
     ):
         _ = components_method(df=pred_df)
 
@@ -185,7 +186,8 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
 
 @pytest.mark.long_2
 @pytest.mark.parametrize(
-    "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
+    "components_method_name,predict_method_name,in_sample",
+    (("predict_components", "predict", True), ("forecast_components", "forecast", False)),
 )
 @pytest.mark.parametrize(
     "mle_regression,time_varying_regression,regressors",
@@ -205,6 +207,7 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
 def test_components_sum_up_to_target(
     dfs_w_exog,
     components_method_name,
+    predict_method_name,
     in_sample,
     mle_regression,
     time_varying_regression,
@@ -229,10 +232,65 @@ def test_components_sum_up_to_target(
     model.fit(train, regressors)
 
     components_method = getattr(model, components_method_name)
+    predict_method = getattr(model, predict_method_name)
 
     pred_df = train if in_sample else test
 
-    pred = model.predict(pred_df, prediction_interval=False, quantiles=[])
+    pred = predict_method(df=pred_df, prediction_interval=False, quantiles=[])
     components = components_method(df=pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
+
+
+def test_predict_components_of_subset_sum_up_to_target(dfs_w_exog):
+    train, _ = dfs_w_exog
+
+    model = _SARIMAXAdapter()
+    model.fit(train, ["f1", "f2"])
+
+    pred_df = train.iloc[5:-5]
+
+    components = model.predict_components(df=pred_df)
+    pred = model.predict(df=pred_df, prediction_interval=False, quantiles=[])
+
+    np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
+
+
+def test_forecast_components_of_subset_error(dfs_w_exog):
+    train, test = dfs_w_exog
+
+    model = _SARIMAXAdapter()
+    model.fit(train, ["f1", "f2"])
+
+    with pytest.raises(ValueError, match="Regressors .* are too short for chosen horizon value"):
+        _ = model.forecast_components(df=test.iloc[1:-1])
+
+
+def test_forecast_decompose_timestamp_error(dfs_w_exog):
+    train, _ = dfs_w_exog
+
+    model = _SARIMAXAdapter()
+    model.fit(train, [])
+
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
+        model.forecast_components(df=train)
+
+
+@pytest.mark.parametrize(
+    "train_slice,decompose_slice",
+    (
+        (slice(None, 20), slice(5, None)),
+        (slice(2, 20), slice(None, 5)),
+    ),
+)
+def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_slice):
+    model = _SARIMAXAdapter()
+    model.fit(outliers_df.iloc[train_slice], [])
+
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
+        model.predict_components(df=outliers_df.iloc[decompose_slice])
+
+
+def test_prediction_decomposition(outliers_tsds):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=SARIMAXModel(), train=train, test=test)
