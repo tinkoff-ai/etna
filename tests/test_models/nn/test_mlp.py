@@ -13,6 +13,7 @@ from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.mark.parametrize(
@@ -134,10 +135,29 @@ def test_save_load(example_tsds):
         hidden_size=[10],
         lr=1e-1,
         decoder_length=14,
-        trainer_params=dict(max_epochs=2),
+        trainer_params=dict(max_epochs=1),
     )
     lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))
     fourier = FourierTransform(period=7, order=3)
     std = StandardScalerTransform(in_column="target")
     transforms = [lag, fourier, std]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    horizon = 3
+    model = MLPModel(
+        input_size=9,
+        hidden_size=[10],
+        lr=1e-1,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
+    lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))
+    fourier = FourierTransform(period=7, order=3)
+    std = StandardScalerTransform(in_column="target")
+    transforms = [lag, fourier, std]
+    ts.fit_transform(transforms)
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

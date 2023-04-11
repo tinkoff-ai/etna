@@ -8,13 +8,17 @@ import pandas as pd
 from typing_extensions import TypedDict
 
 from etna import SETTINGS
+from etna.models.base import DeepBaseModel
+from etna.models.base import DeepBaseNet
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
 
-from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseNet
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
+    from optuna.distributions import LogUniformDistribution
 
 
 class RNNBatch(TypedDict):
@@ -278,3 +282,18 @@ class RNNModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "num_layers": IntUniformDistribution(low=1, high=3),
+            "hidden_size": IntUniformDistribution(low=4, high=64, step=4),
+            "lr": LogUniformDistribution(low=1e-5, high=1e-2),
+            "encoder_length": IntUniformDistribution(low=1, high=20),
+        }
