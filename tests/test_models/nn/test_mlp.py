@@ -144,16 +144,35 @@ def test_save_load(example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
 
 
-def test_params_to_tune(example_tsds):
+@pytest.mark.parametrize(
+    "model",
+    [
+        MLPModel(
+            input_size=9,
+            hidden_size=[5],
+            lr=1e-1,
+            decoder_length=14,
+            trainer_params=dict(max_epochs=1),
+        ),
+        MLPModel(
+            input_size=9,
+            hidden_size=[5, 5],
+            lr=1e-1,
+            decoder_length=14,
+            trainer_params=dict(max_epochs=1),
+        ),
+        MLPModel(
+            input_size=9,
+            hidden_size=[5, 5, 5],
+            lr=1e-1,
+            decoder_length=14,
+            trainer_params=dict(max_epochs=1),
+        ),
+    ],
+)
+def test_params_to_tune(model, example_tsds):
     ts = example_tsds
     horizon = 3
-    model = MLPModel(
-        input_size=9,
-        hidden_size=[10],
-        lr=1e-1,
-        decoder_length=14,
-        trainer_params=dict(max_epochs=1),
-    )
     lag = LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))
     fourier = FourierTransform(period=7, order=3)
     std = StandardScalerTransform(in_column="target")
