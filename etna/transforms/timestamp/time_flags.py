@@ -1,12 +1,18 @@
 from copy import deepcopy
+from typing import Dict
 from typing import List
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
 
 
 class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
@@ -201,6 +207,25 @@ class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
         Accepts a period length in hours as input and returns array where timestamps marked by period number.
         """
         return timestamp_series.apply(lambda x: x.hour // period_in_hours).values
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        There are no restrictions on all ``False`` values for the flags.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "minute_in_hour_number": CategoricalDistribution([False, True]),
+            "fifteen_minutes_in_hour_number": CategoricalDistribution([False, True]),
+            "hour_number": CategoricalDistribution([False, True]),
+            "half_hour_number": CategoricalDistribution([False, True]),
+            "half_day_number": CategoricalDistribution([False, True]),
+            "one_third_day_number": CategoricalDistribution([False, True]),
+        }
 
 
 __all__ = ["TimeFlagsTransform"]

@@ -1,5 +1,6 @@
 from copy import deepcopy
 from math import ceil
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -7,8 +8,13 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
 
 
 class DateFlagsTransform(IrreversibleTransform, FutureMixin):
@@ -344,6 +350,28 @@ class DateFlagsTransform(IrreversibleTransform, FutureMixin):
         """Generate an array with the weekends flags."""
         weekend_days = (5, 6)
         return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        There are no restrictions on all ``False`` values for the flags.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "day_number_in_week": CategoricalDistribution([False, True]),
+            "day_number_in_month": CategoricalDistribution([False, True]),
+            "day_number_in_year": CategoricalDistribution([False, True]),
+            "week_number_in_month": CategoricalDistribution([False, True]),
+            "week_number_in_year": CategoricalDistribution([False, True]),
+            "month_number_in_year": CategoricalDistribution([False, True]),
+            "season_number": CategoricalDistribution([False, True]),
+            "year_number": CategoricalDistribution([False, True]),
+            "is_weekend": CategoricalDistribution([False, True]),
+        }
 
 
 __all__ = ["DateFlagsTransform"]

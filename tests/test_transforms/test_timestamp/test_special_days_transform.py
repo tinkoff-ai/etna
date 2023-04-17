@@ -6,6 +6,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp.special_days import _OneSegmentSpecialDaysTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -200,3 +201,10 @@ def test_save_load(df_with_specials):
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
     transform = SpecialDaysTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune(train_ts):
+    transform = SpecialDaysTransform()
+    ts = train_ts
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

@@ -1,4 +1,5 @@
 import math
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -6,8 +7,13 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntLogUniformDistribution
 
 
 class FourierTransform(IrreversibleTransform, FutureMixin):
@@ -150,3 +156,18 @@ class FourierTransform(IrreversibleTransform, FutureMixin):
             features[self._get_column_name(mod)] = np.sin(2 * np.pi * order * elapsed + np.pi / 2 * is_cos)
 
         return self._construct_answer(df, features)
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid doesn't tune ``period`` parameter. It expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        max_value = math.ceil(self.period / 2)
+        return {
+            "order": IntLogUniformDistribution(low=1, high=max_value),
+        }

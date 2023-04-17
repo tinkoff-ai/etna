@@ -11,6 +11,7 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.transforms.timestamp import DateFlagsTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 WEEKEND_DAYS = (5, 6)
@@ -289,3 +290,10 @@ def test_save_load(train_ts):
     ts = train_ts
     transform = DateFlagsTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune(train_ts):
+    transform = DateFlagsTransform()
+    ts = train_ts
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

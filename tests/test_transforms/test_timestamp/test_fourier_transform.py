@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.metrics import R2
 from etna.models import LinearPerSegmentModel
 from etna.transforms.timestamp import FourierTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -166,3 +167,18 @@ def test_forecast(ts_trend_seasonal):
 def test_save_load(ts_trend_seasonal):
     transform = FourierTransform(period=7, order=3)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_trend_seasonal)
+
+
+# TODO: fix this
+@pytest.mark.parametrize(
+    "transform",
+    [
+        FourierTransform(period=7, order=1),
+        FourierTransform(period=30.4, order=1),
+        FourierTransform(period=365.25, order=1),
+    ],
+)
+def test_params_to_tune(transform, ts_trend_seasonal):
+    ts = ts_trend_seasonal
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)
