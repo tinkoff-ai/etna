@@ -49,6 +49,16 @@ def df_with_specials():
 
 
 @pytest.fixture()
+def ts_with_specials(df_with_specials):
+    """Create dataset with special weekdays and monthdays."""
+    df = df_with_specials.reset_index()
+    df["segment"] = "1"
+    df = df[["timestamp", "segment", "target"]]
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    return ts
+
+
+@pytest.fixture()
 def constant_days_two_segments_ts(constant_days_df: pd.DataFrame):
     """Create TSDataset that has two segments with constant columns each."""
     df_1 = constant_days_df.reset_index()
@@ -194,17 +204,14 @@ def test_fit_transform_with_nans(ts_diff_endings):
     transform.fit_transform(ts_diff_endings)
 
 
-def test_save_load(df_with_specials):
-    df = df_with_specials.reset_index()
-    df["segment"] = "1"
-    df = df[["timestamp", "segment", "target"]]
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+def test_save_load(ts_with_specials):
+    ts = ts_with_specials
     transform = SpecialDaysTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
 
 
-def test_params_to_tune(train_ts):
+def test_params_to_tune(ts_with_specials):
     transform = SpecialDaysTransform()
-    ts = train_ts
+    ts = ts_with_specials
     assert len(transform.params_to_tune()) > 0
     assert_sampling_is_valid(transform=transform, ts=ts)
