@@ -94,7 +94,8 @@ class BaseReconciliator(ABC, BaseMixin):
         )
 
         target_components_df = df_reconciled.loc[:, pd.IndexSlice[:, ts.target_components_names]]
-        df_reconciled = df_reconciled.drop(columns=list(ts.target_components_names), level="feature")
+        if len(ts.target_components_names) > 0:  # for pandas >=1.1, <1.2
+            df_reconciled = df_reconciled.drop(columns=list(ts.target_components_names), level="feature")
 
         ts_reconciled = TSDataset(
             df=df_reconciled,

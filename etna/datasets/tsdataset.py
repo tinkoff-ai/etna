@@ -815,7 +815,7 @@ class TSDataset:
         """
         df_copy = df.copy(deep=True)
         df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
-        if not keep_level_columns:
+        if not keep_level_columns and len(level_columns) > 0:
             df_copy.drop(columns=level_columns, inplace=True)
         df_copy = TSDataset.to_dataset(df_copy)
 
