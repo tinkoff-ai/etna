@@ -7,6 +7,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.distributions import CategoricalDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 
@@ -1221,6 +1222,15 @@ def test_predict_return_components(
                 "model.depth": IntUniformDistribution(low=1, high=11, step=1),
                 "model.l2_leaf_reg": LogUniformDistribution(low=0.1, high=200.0),
                 "model.random_strength": LogUniformDistribution(low=1e-05, high=10.0),
+                "transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.season_number": CategoricalDistribution([False, True]),
+                "transforms.0.year_number": CategoricalDistribution([False, True]),
+                "transforms.0.is_weekend": CategoricalDistribution([False, True]),
             },
         ),
     ],
