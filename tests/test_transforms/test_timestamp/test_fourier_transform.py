@@ -3,7 +3,6 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import pytest
-from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
 from etna.metrics import R2
@@ -171,41 +170,16 @@ def test_save_load(ts_trend_seasonal):
 
 
 @pytest.mark.parametrize(
-    "transform",
+    "transform, expected_length",
     [
-        FourierTransform(period=7, order=1),
-        FourierTransform(period=30.4, order=1),
-        FourierTransform(period=365.25, order=1),
+        (FourierTransform(period=7, order=1), 1),
+        (FourierTransform(period=7, mods=[1]), 0),
+        (FourierTransform(period=7, mods=[1, 4]), 0),
+        (FourierTransform(period=30.4, order=1), 1),
+        (FourierTransform(period=365.25, order=1), 1),
     ],
 )
-def test_params_to_tune(transform, ts_trend_seasonal):
+def test_params_to_tune(transform, expected_length, ts_trend_seasonal):
     ts = ts_trend_seasonal
-    assert len(transform.params_to_tune()) > 0
+    assert len(transform.params_to_tune()) == expected_length
     assert_sampling_is_valid(transform=transform, ts=ts)
-
-
-@pytest.mark.parametrize(
-    "transform",
-    [
-        FourierTransform(period=7, mods=[1]),
-        FourierTransform(period=7, mods=[1, 4]),
-    ],
-)
-def test_params_to_tune_with_mods(transform, ts_trend_seasonal):
-    """Test that params_to_tune works with mods.
-
-    Setting parameters one by one isn't possible for mods. This case should check setting all parameters in one step.
-    """
-    ts = ts_trend_seasonal
-    grid = transform.params_to_tune()
-    assert len(grid) > 0
-    sampler = RandomSampler(seed=0)
-
-    params_to_set = {}
-    for name, distribution in grid.items():
-        value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
-        params_to_set[name] = value
-
-    new_transform = transform.set_params(**params_to_set)
-    assert new_transform.mods is None
-    new_transform.fit(ts)

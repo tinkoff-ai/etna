@@ -13,7 +13,6 @@ from etna.transforms.base import IrreversibleTransform
 
 if SETTINGS.auto_required:
     from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
     from optuna.distributions import IntLogUniformDistribution
 
 
@@ -164,14 +163,17 @@ class FourierTransform(IrreversibleTransform, FutureMixin):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid sets ``mods`` parameter to ``None`` and tunes only ``order``.
+        * If the ``mods`` parameter is set, then the grid is empty.
 
-        This grid doesn't tune ``period`` parameter. It expected to be set by the user.
+        * If the ``order`` parameter is set, ``period`` parameter isn't tuned. It is expected to be set by the user.
 
         Returns
         -------
         :
             Grid to tune.
         """
+        if self.mods is not None:
+            return {}
+
         max_value = math.ceil(self.period / 2)
-        return {"order": IntLogUniformDistribution(low=1, high=max_value), "mods": CategoricalDistribution([None])}
+        return {"order": IntLogUniformDistribution(low=1, high=max_value)}
