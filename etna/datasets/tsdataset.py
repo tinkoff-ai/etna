@@ -812,10 +812,18 @@ class TSDataset:
         -------
         :
             Dataframe in wide format and optionally hierarchical structure
+
+        Raises
+        ------
+        ValueError
+            If ``level_columns`` is empty
         """
+        if len(level_columns) == 0:
+            raise ValueError("Value of level_columns shouldn't be empty!")
+
         df_copy = df.copy(deep=True)
         df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
-        if not keep_level_columns and len(level_columns) > 0:
+        if not keep_level_columns:
             df_copy.drop(columns=level_columns, inplace=True)
         df_copy = TSDataset.to_dataset(df_copy)
 
