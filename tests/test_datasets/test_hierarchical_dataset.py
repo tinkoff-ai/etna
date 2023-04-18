@@ -307,6 +307,12 @@ def test_level_names_without_hierarchical_structure(market_level_df):
     assert ts_level_names is None
 
 
+def test_to_hierarchical_dataset_fails_empty_level_columns(product_level_df_long):
+    df = product_level_df_long
+    with pytest.raises(ValueError, match="Value of level_columns shouldn't be empty"):
+        _ = TSDataset.to_hierarchical_dataset(df=df, level_columns=[])
+
+
 def test_to_hierarchical_dataset_not_change_input_df(product_level_df_long):
     df = product_level_df_long
     df_before = df.copy()
