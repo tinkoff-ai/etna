@@ -5,6 +5,9 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
 
 from etna.datasets.utils import match_target_quantiles
 from etna.metrics import MAE
@@ -441,3 +444,45 @@ def test_raw_forecast_with_return_components(product_level_constant_hierarchical
     )
     pipeline.fit(product_level_constant_hierarchical_ts)
     pipeline.raw_forecast(ts=product_level_constant_hierarchical_ts, return_components=True)
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "model, transforms, expected_params_to_tune",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+            {
+                "model.learning_rate": LogUniformDistribution(low=1e-4, high=0.5),
+                "model.depth": IntUniformDistribution(low=1, high=11, step=1),
+                "model.l2_leaf_reg": LogUniformDistribution(low=0.1, high=200.0),
+                "model.random_strength": LogUniformDistribution(low=1e-05, high=10.0),
+                "transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.season_number": CategoricalDistribution([False, True]),
+                "transforms.0.year_number": CategoricalDistribution([False, True]),
+                "transforms.0.is_weekend": CategoricalDistribution([False, True]),
+            },
+        ),
+    ],
+)
+def test_params_to_tune(reconciliator, model, transforms, expected_params_to_tune):
+    horizon = 1
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+
+    obtained_params_to_tune = pipeline.params_to_tune()
+
+    assert obtained_params_to_tune == expected_params_to_tune
