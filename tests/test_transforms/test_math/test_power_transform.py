@@ -11,6 +11,7 @@ from etna.datasets import TSDataset
 from etna.transforms import AddConstTransform
 from etna.transforms.math import BoxCoxTransform
 from etna.transforms.math import YeoJohnsonTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -128,3 +129,12 @@ def test_save_load(transform_constructor, mode, positive_ts):
     ts = positive_ts
     transform = transform_constructor(in_column="target", mode=mode)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize("transform_constructor", (BoxCoxTransform, YeoJohnsonTransform))
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_params_to_tune(transform_constructor, mode, positive_ts):
+    ts = positive_ts
+    transform = transform_constructor(in_column="target", mode=mode)
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)
