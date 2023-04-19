@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -8,8 +9,13 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
+from etna import SETTINGS
 from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
 
 
 class StandardScalerTransform(SklearnTransform):
@@ -68,6 +74,26 @@ class StandardScalerTransform(SklearnTransform):
             inplace=inplace,
             mode=mode,
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``mode``, ``with_mean``, ``with_std``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "with_mean": CategoricalDistribution([False, True]),
+                "with_std": CategoricalDistribution([False, True]),
+            }
+        )
+        return grid
 
 
 class RobustScalerTransform(SklearnTransform):
@@ -145,6 +171,27 @@ class RobustScalerTransform(SklearnTransform):
             mode=mode,
         )
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``mode``, ``with_centering``, ``with_scaling``, ``unit_variance``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "with_centering": CategoricalDistribution([False, True]),
+                "with_scaling": CategoricalDistribution([False, True]),
+                "unit_variance": CategoricalDistribution([False, True]),
+            }
+        )
+        return grid
+
 
 class MinMaxScalerTransform(SklearnTransform):
     """Transform features by scaling each feature to a given range.
@@ -202,6 +249,24 @@ class MinMaxScalerTransform(SklearnTransform):
             transformer=MinMaxScaler(feature_range=self.feature_range, clip=self.clip, copy=True),
             mode=mode,
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``mode``, ``clip``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "clip": CategoricalDistribution([False, True]),
+            }
+        )
+        return grid
 
 
 class MaxAbsScalerTransform(SklearnTransform):
