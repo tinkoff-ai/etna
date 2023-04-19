@@ -131,10 +131,10 @@ def test_save_load(transform_constructor, mode, positive_ts):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
 
 
-@pytest.mark.parametrize("transform_constructor", (BoxCoxTransform, YeoJohnsonTransform))
+@pytest.mark.parametrize("transform_constructor, expected_length", [(BoxCoxTransform, 2), (YeoJohnsonTransform, 2)])
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
-def test_params_to_tune(transform_constructor, mode, positive_ts):
+def test_params_to_tune(transform_constructor, expected_length, mode, positive_ts):
     ts = positive_ts
     transform = transform_constructor(in_column="target", mode=mode)
-    assert len(transform.params_to_tune()) > 0
+    assert len(transform.params_to_tune()) == expected_length
     assert_sampling_is_valid(transform=transform, ts=ts)
