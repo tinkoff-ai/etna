@@ -129,7 +129,6 @@ checkpoints/
 # poetry configuration
 poetry.toml
 
-*.html
 .devcontainer
 /docs/source/api/
 tmp
