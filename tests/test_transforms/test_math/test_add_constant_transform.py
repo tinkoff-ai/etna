@@ -86,3 +86,8 @@ def test_get_regressors_info_not_fitted():
     transform = AddConstTransform(in_column="target", value=1, out_column="out_column")
     with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
+
+
+def test_params_to_tune():
+    transform = AddConstTransform(in_column="target", value=1)
+    assert len(transform.params_to_tune()) == 0

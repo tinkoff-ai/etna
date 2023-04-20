@@ -164,3 +164,8 @@ def test_get_regressors_info_not_fitted():
     transform = LambdaTransform(in_column="target", inplace=False, transform_func=lambda x: x)
     with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
+
+
+def test_params_to_tune():
+    transform = LambdaTransform(in_column="target", inplace=False, transform_func=lambda x: x)
+    assert len(transform.params_to_tune()) == 0
