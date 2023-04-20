@@ -10,6 +10,8 @@ ROOT_PATH = CURRENT_PATH.parents[1]
 def main():
     repo = git.Repo(ROOT_PATH)
     print(repo)
+    print(repo.head)
+    print(repo.active_branch)
     print(repo.heads)
     gh_pages = repo.heads["gh-pages"].commit
     directories = [x.path for x in gh_pages.trees]
