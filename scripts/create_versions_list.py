@@ -12,7 +12,7 @@ ROOT_PATH = CURRENT_PATH.parents[1]
 def main():
     with tempfile.TemporaryDirectory() as temp_dir:
         repo = git.Repo.clone_from(DOCUMENTATION_URL, temp_dir)
-        gh_pages = repo.heads["main"].commit
+        gh_pages = repo.heads["main"].commit.tree
         directories = [x.path for x in gh_pages.trees]
         versions = directories
 
