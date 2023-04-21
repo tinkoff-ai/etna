@@ -64,9 +64,10 @@ jobs:
       - name: Publish docs to GitHub pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
           publish_dir: ./site
           destination_dir: latest
+          publish_branch: main
           keep_files: false
       - name: Write versions to JSON file
         run: |
@@ -74,6 +75,7 @@ jobs:
       - name: Publish versions JSON to GitHub pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
           publish_dir: gh-pages
+          publish_branch: main
           keep_files: true
