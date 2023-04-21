@@ -65,9 +65,10 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
+          external_repository: tinkoff-ai/etna-docs
+          publish_branch: main
           publish_dir: ./site
           destination_dir: latest
-          publish_branch: main
           keep_files: false
       - name: Write versions to JSON file
         run: |
@@ -76,6 +77,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
-          publish_dir: gh-pages
+          external_repository: tinkoff-ai/etna-docs
           publish_branch: main
+          publish_dir: gh-pages
           keep_files: true
