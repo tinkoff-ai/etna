@@ -8,10 +8,7 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          clean: false
+      - uses: actions/checkout@v2
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -70,6 +67,31 @@ jobs:
           publish_dir: ./site
           destination_dir: latest
           keep_files: false
+
+  update-docs-version-list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.0 # TODO: remove after poetry fix
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install -E "all docs" -vv
       - name: Write versions to JSON file
         run: |
           poetry run python -m scripts.create_versions_list
