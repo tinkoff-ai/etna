@@ -71,7 +71,10 @@ jobs:
   update-docs-version-list:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          clean: false
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
