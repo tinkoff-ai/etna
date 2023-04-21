@@ -4,7 +4,7 @@ import tempfile
 
 import git
 
-DOCUMENTATION_URL = "git@github.com:tinkoff-ai/etna-docs.git"
+DOCUMENTATION_URL = "https://github.com/tinkoff-ai/etna-docs.git"
 CURRENT_PATH = pathlib.Path(__file__)
 ROOT_PATH = CURRENT_PATH.parents[1]
 
