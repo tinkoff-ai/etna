@@ -310,7 +310,8 @@ class TSDataset:
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         future_ts.known_future = deepcopy(self.known_future)
         future_ts._regressors = deepcopy(self.regressors)
-        future_ts.df_exog = self.df_exog
+        if self.df_exog is not None:
+            future_ts.df_exog = self.df_exog.copy(deep=True)
         return future_ts
 
     def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
@@ -333,8 +334,9 @@ class TSDataset:
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         tsdataset_slice.known_future = deepcopy(self.known_future)
         tsdataset_slice._regressors = deepcopy(self.regressors)
-        tsdataset_slice.df_exog = self.df_exog
-        tsdataset_slice._target_components_names = self._target_components_names
+        if self.df_exog is not None:
+            tsdataset_slice.df_exog = self.df_exog.copy(deep=True)
+        tsdataset_slice._target_components_names = deepcopy(self._target_components_names)
         return tsdataset_slice
 
     @staticmethod
@@ -983,8 +985,8 @@ class TSDataset:
             hierarchical_structure=self.hierarchical_structure,
         )
         train.raw_df = train_raw_df
-        train._regressors = self.regressors
-        train._target_components_names = self.target_components_names
+        train._regressors = deepcopy(self.regressors)
+        train._target_components_names = deepcopy(self.target_components_names)
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
@@ -996,8 +998,8 @@ class TSDataset:
             hierarchical_structure=self.hierarchical_structure,
         )
         test.raw_df = test_raw_df
-        test._regressors = self.regressors
-        test._target_components_names = self.target_components_names
+        test._regressors = deepcopy(self.regressors)
+        test._target_components_names = deepcopy(self.target_components_names)
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):

@@ -1,4 +1,5 @@
 import warnings
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
@@ -24,17 +25,13 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Returns
     -------
-    new_ts: TSDataset
+    new_ts:
         TSDataset with residuals in forecasts
 
     Raises
     ------
     KeyError:
         if segments of ``forecast_df`` and ``ts`` aren't the same
-
-    Notes
-    -----
-    Transforms are taken as is from ``ts``.
     """
     from etna.datasets import TSDataset
 
@@ -46,9 +43,10 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     # make TSDataset
     new_ts = TSDataset(df=true_df, freq=ts.freq)
-    new_ts.known_future = ts.known_future
-    new_ts._regressors = ts.regressors
-    new_ts.df_exog = ts.df_exog
+    new_ts.known_future = deepcopy(ts.known_future)
+    new_ts._regressors = deepcopy(ts.regressors)
+    if ts.df_exog is not None:
+        new_ts.df_exog = ts.df_exog.copy(deep=True)
     return new_ts
 
 
