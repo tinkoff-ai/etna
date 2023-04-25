@@ -15,6 +15,7 @@ from etna.transforms.math import QuantileTransform
 from etna.transforms.math import StdTransform
 from etna.transforms.math import SumTransform
 from etna.transforms.math import WindowStatisticsTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -384,8 +385,28 @@ def test_fit_transform_with_nans(transform, ts_diff_endings):
         StdTransform(in_column="target", window=5),
         MADTransform(in_column="target", window=5),
         MinMaxDifferenceTransform(in_column="target", window=5),
+        QuantileTransform(in_column="target", quantile=0.5, window=5),
     ),
 )
 def test_save_load(transform, simple_ts_for_agg):
     ts = simple_ts_for_agg
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (MaxTransform(in_column="target", window=5), 1),
+        (MinTransform(in_column="target", window=5), 1),
+        (MedianTransform(in_column="target", window=5), 1),
+        (MeanTransform(in_column="target", window=5), 2),
+        (StdTransform(in_column="target", window=5), 1),
+        (MADTransform(in_column="target", window=5), 1),
+        (MinMaxDifferenceTransform(in_column="target", window=5), 1),
+        (QuantileTransform(in_column="target", quantile=0.5, window=5), 2),
+    ],
+)
+def test_params_to_tune(transform, expected_length, simple_ts_for_agg):
+    ts = simple_ts_for_agg
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

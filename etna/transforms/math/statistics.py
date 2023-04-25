@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -7,8 +8,14 @@ import bottleneck as bn
 import numpy as np
 import pandas as pd
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.transforms.base import IrreversibleTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
+    from optuna.distributions import UniformDistribution
 
 
 class WindowStatisticsTransform(IrreversibleTransform, ABC):
@@ -112,6 +119,20 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
             raise ValueError("Fit the transform to get the correct regressors info!")
         return [self.out_column_name] if self.in_column_regressor else []
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes only ``window`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "window": IntUniformDistribution(low=1, high=20),
+        }
+
 
 class MeanTransform(WindowStatisticsTransform):
     """MeanTransform computes average value for given window.
@@ -192,6 +213,24 @@ class MeanTransform(WindowStatisticsTransform):
             # Loop prevents from memory overflow, 3d tensor is materialized after multiplication
             mean[:, segment] = bn.nanmean(series[:, segment] * self._alpha_range, axis=1)
         return mean
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window``, ``alpha``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "alpha": UniformDistribution(low=0.2, high=1),
+            }
+        )
+        return grid
 
 
 class StdTransform(WindowStatisticsTransform):
@@ -308,6 +347,24 @@ class QuantileTransform(WindowStatisticsTransform):
         # There is no "nanquantile" in bottleneck, "apply_along_axis" can't be replace with "axis=2"
         series = np.apply_along_axis(np.nanquantile, axis=2, arr=series, q=self.quantile)
         return series
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window``, ``quantile``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "quantile": UniformDistribution(low=0, high=1),
+            }
+        )
+        return grid
 
 
 class MinTransform(WindowStatisticsTransform):

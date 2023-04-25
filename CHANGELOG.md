@@ -52,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add default `params_to_tune` for `HoltWintersModel`, `HoltModel` and `SimpleExpSmoothingModel` ([#1209](https://github.com/tinkoff-ai/etna/pull/1209))
 - Add default `params_to_tune` for `RNNModel` and `MLPModel` ([#1218](https://github.com/tinkoff-ai/etna/pull/1218))
 - Add default `params_to_tune` for `DateFlagsTransform`, `TimeFlagsTransform`, `SpecialDaysTransform` and `FourierTransform` ([#1228](https://github.com/tinkoff-ai/etna/pull/1228))
+- Add default `params_to_tune` for `MedianOutliersTransform`, `DensityOutliersTransform` and `PredictionIntervalOutliersTransform` ([#1231](https://github.com/tinkoff-ai/etna/pull/1231))
+- Add default `params_to_tune` for `TimeSeriesImputerTransform` ([#1232](https://github.com/tinkoff-ai/etna/pull/1232))
+- Add default `params_to_tune` for `DifferencingTransform`, `MedianTransform`, `MaxTransform`, `MinTransform`, `QuantileTransform`, `StdTransform`, `MeanTransform`, `MADTransform`, `MinMaxDifferenceTransform`, `SumTransform`, `BoxCoxTransform`, `YeoJohnsonTransform`, `MaxAbsScalerTransform`, `MinMaxScalerTransform`, `RobustScalerTransform` and `StandardScalerTransform` ([#1233](https://github.com/tinkoff-ai/etna/pull/1233))
 - Add default `params_to_tune` for `LabelEncoderTransform` ([#1242](https://github.com/tinkoff-ai/etna/pull/1242))
 ### Fixed
 - Fix bug in `GaleShapleyFeatureSelectionTransform` with wrong number of remaining features ([#1110](https://github.com/tinkoff-ai/etna/pull/1110))
@@ -66,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `DifferencingTransform` to raise error on new segments during `transform` and `inverse_transform` in inplace mode ([#1141](https://github.com/tinkoff-ai/etna/pull/1141))
 - Teach `DifferencingTransform` to `inverse_transform` with NaNs ([#1155](https://github.com/tinkoff-ai/etna/pull/1155))
 - Teach `BaseMixin.set_params` to work with nested `list` and `tuple` ([#1201](https://github.com/tinkoff-ai/etna/pull/1201))
+- 
 ### Removed
 - `sample_acf_plot`, `sample_pacf_plot`, `CatBoostModelPerSegment`, `CatBoostModelMultiSegment` ([#1118](https://github.com/tinkoff-ai/etna/pull/1118))
 - `PytorchForecastingTransform` ([#971](https://github.com/tinkoff-ai/etna/pull/971))

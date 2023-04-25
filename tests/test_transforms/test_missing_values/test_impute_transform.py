@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.missing_values import TimeSeriesImputerTransform
 from etna.transforms.missing_values.imputation import _OneSegmentTimeSeriesImputerTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -393,3 +394,15 @@ def test_constant_fill_strategy(ts_with_missing_range_x_index_two_segments: TSDa
 def test_save_load(ts_to_fill):
     transform = TimeSeriesImputerTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_to_fill)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_strategy_length",
+    [(TimeSeriesImputerTransform(), 4), (TimeSeriesImputerTransform(seasonality=7), 5)],
+)
+def test_params_to_tune(transform, expected_strategy_length, ts_to_fill):
+    ts = ts_to_fill
+    grid = transform.params_to_tune()
+    assert len(grid) > 0
+    assert len(grid["strategy"].choices) == expected_strategy_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

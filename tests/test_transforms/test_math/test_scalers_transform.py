@@ -14,6 +14,7 @@ from etna.transforms import RobustScalerTransform
 from etna.transforms import StandardScalerTransform
 from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -159,9 +160,6 @@ def test_fit_transform_with_nans(scaler, mode, ts_diff_endings):
         RobustScalerTransform,
         MinMaxScalerTransform,
         MaxAbsScalerTransform,
-        StandardScalerTransform,
-        RobustScalerTransform,
-        MinMaxScalerTransform,
     ),
 )
 @pytest.mark.parametrize("mode", ("macro", "per-segment"))
@@ -169,3 +167,21 @@ def test_save_load(transform_constructor, mode, normal_distributed_ts):
     ts = normal_distributed_ts
     transform = transform_constructor(in_column="target", mode=mode)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize(
+    "transform_constructor, expected_length",
+    [
+        (DummyTransform, 1),
+        (StandardScalerTransform, 3),
+        (RobustScalerTransform, 4),
+        (MinMaxScalerTransform, 2),
+        (MaxAbsScalerTransform, 1),
+    ],
+)
+@pytest.mark.parametrize("mode", ("macro", "per-segment"))
+def test_params_to_tune(transform_constructor, expected_length, mode, normal_distributed_ts):
+    ts = normal_distributed_ts
+    transform = transform_constructor(in_column="target", mode=mode)
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

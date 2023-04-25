@@ -5,6 +5,7 @@ from typing import Type
 from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.analysis import absolute_difference_distance
@@ -17,6 +18,12 @@ from etna.transforms.outliers.base import OutliersTransform
 
 if SETTINGS.prophet_required:
     from etna.models import ProphetModel
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
+    from optuna.distributions import IntUniformDistribution
+    from optuna.distributions import UniformDistribution
 
 
 class MedianOutliersTransform(OutliersTransform):
@@ -58,6 +65,19 @@ class MedianOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "window_size": IntUniformDistribution(low=3, high=30),
+            "alpha": UniformDistribution(low=0.5, high=5),
+        }
 
 
 class DensityOutliersTransform(OutliersTransform):
@@ -120,6 +140,20 @@ class DensityOutliersTransform(OutliersTransform):
             distance_func=self.distance_func,
         )
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "window_size": IntUniformDistribution(low=3, high=30),
+            "distance_coef": UniformDistribution(low=0.5, high=5),
+            "n_neighbors": IntUniformDistribution(low=1, high=10),
+        }
+
 
 class PredictionIntervalOutliersTransform(OutliersTransform):
     """Transform that uses :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` to find anomalies in data."""
@@ -127,7 +161,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
     def __init__(
         self,
         in_column: str,
-        model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
+        model: Union[Literal["prophet"], Literal["sarimax"], Type["ProphetModel"], Type["SARIMAXModel"]],
         interval_width: float = 0.95,
         **model_kwargs,
     ):
@@ -149,7 +183,19 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
         self.model = model
         self.interval_width = interval_width
         self.model_kwargs = model_kwargs
+        self._model_type = self._get_model_type(model)
         super().__init__(in_column=in_column)
+
+    @staticmethod
+    def _get_model_type(
+        model: Union[Literal["prophet"], Literal["sarimax"], Type["ProphetModel"], Type["SARIMAXModel"]]
+    ) -> Union[Type["ProphetModel"], Type["SARIMAXModel"]]:
+        if isinstance(model, str):
+            if model == "prophet":
+                return ProphetModel
+            elif model == "sarimax":
+                return SARIMAXModel
+        return model
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` function with self parameters.
@@ -166,11 +212,24 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
         """
         return get_anomalies_prediction_interval(
             ts=ts,
-            model=self.model,
+            model=self._model_type,
             interval_width=self.interval_width,
             in_column=self.in_column,
             **self.model_kwargs,
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "interval_width": UniformDistribution(low=0.8, high=1.0),
+            "model": CategoricalDistribution(["prophet", "sarimax"]),
+        }
 
 
 __all__ = [
