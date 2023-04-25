@@ -189,7 +189,7 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 
 ## Community
 
-To ask the questions or discuss the library you can join our [telegram chat](t.me/etna_support). 
+To ask the questions or discuss the library you can join our [telegram chat](https://t.me/etna_support). 
 [Discussions section](https://github.com/tinkoff-ai/etna/discussions) on github is also open for this purpose.
 
 ## Resources
