@@ -18,6 +18,7 @@ from etna.datasets import TSDataset
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -97,3 +98,25 @@ def test_get_features(example_tsds: TSDataset):
 def test_save_load(example_tsds):
     transform = ChangePointsTrendTransform(in_column="target")
     assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (ChangePointsTrendTransform(in_column="target"), 2),
+        (
+            ChangePointsTrendTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=5,
+                ),
+            ),
+            0,
+        ),
+    ],
+)
+def test_params_to_tune(transform, expected_length, example_tsds):
+    ts = example_tsds
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

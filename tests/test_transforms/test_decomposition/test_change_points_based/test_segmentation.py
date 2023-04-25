@@ -11,6 +11,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.segmentation import _OneSegmentChangePointsSegmentationTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 OUT_COLUMN = "result"
@@ -131,3 +132,25 @@ def test_save_load(simple_ar_ts):
         in_column="target", change_points_model=change_points_model, out_column=OUT_COLUMN
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=simple_ar_ts)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (ChangePointsSegmentationTransform(in_column="target"), 2),
+        (
+            ChangePointsSegmentationTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=5,
+                ),
+            ),
+            0,
+        ),
+    ],
+)
+def test_params_to_tune(transform, expected_length, simple_ar_ts):
+    ts = simple_ar_ts
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)
