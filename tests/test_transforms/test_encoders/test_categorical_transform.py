@@ -364,5 +364,3 @@ def test_params_to_tune_label_encoder(ts_for_label_encoding):
         transform = LabelEncoderTransform(in_column=f"regressor_{i}", out_column="test")
         assert len(transform.params_to_tune()) > 0
         assert_sampling_is_valid(transform=transform, ts=ts)
-
-
