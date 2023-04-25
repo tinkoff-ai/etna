@@ -98,3 +98,8 @@ def test_fit_transform_with_nans(ts_diff_endings):
 def test_save_load(almost_constant_ts):
     transform = MeanSegmentEncoderTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=almost_constant_ts)
+
+
+def test_params_to_tune():
+    transform = MeanSegmentEncoderTransform()
+    assert len(transform.params_to_tune()) == 0

@@ -13,6 +13,7 @@ from etna.models import LinearPerSegmentModel
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms.encoders.categorical import LabelEncoderTransform
 from etna.transforms.encoders.categorical import OneHotEncoderTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -350,3 +351,18 @@ def test_save_load_ohe(dtype):
 def test_get_regressors_info_not_fitted(transform):
     with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
+
+
+def test_params_to_tune_ohe():
+    transform = OneHotEncoderTransform(in_column="regressor_0")
+    assert len(transform.params_to_tune()) == 0
+
+
+def test_params_to_tune_label_encoder(ts_for_label_encoding):
+    ts, _ = ts_for_label_encoding
+    for i in range(3):
+        transform = LabelEncoderTransform(in_column=f"regressor_{i}", out_column="test")
+        assert len(transform.params_to_tune()) > 0
+        assert_sampling_is_valid(transform=transform, ts=ts)
+
+

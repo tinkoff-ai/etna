@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -8,8 +9,13 @@ from sklearn import preprocessing
 from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.transforms.base import IrreversibleTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
 
 
 class ImputerMode(str, Enum):
@@ -129,6 +135,18 @@ class LabelEncoderTransform(IrreversibleTransform):
         if self.out_column:
             return self.out_column
         return self.__repr__()
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "strategy": CategoricalDistribution(["new_value", "mean"]),
+        }
 
 
 class OneHotEncoderTransform(IrreversibleTransform):
