@@ -6,7 +6,7 @@ import pandas as pd
 
 from etna import SETTINGS
 
-if SETTINGS.tsfresh_required:
+if SETTINGS.classification_required:
     from tsfresh import extract_features
     from tsfresh.feature_extraction.settings import MinimalFCParameters
 
