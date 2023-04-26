@@ -1,4 +1,5 @@
 import warnings
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import Dict
 from typing import List
@@ -15,6 +16,8 @@ if TYPE_CHECKING:
 def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     """Get residuals for further analysis.
 
+    Function keeps hierarchy, features in result dataset and removes target components.
+
     Parameters
     ----------
     forecast_df:
@@ -24,31 +27,32 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Returns
     -------
-    new_ts: TSDataset
+    new_ts:
         TSDataset with residuals in forecasts
 
     Raises
     ------
     KeyError:
         if segments of ``forecast_df`` and ``ts`` aren't the same
-
-    Notes
-    -----
-    Transforms are taken as is from ``ts``.
     """
     from etna.datasets import TSDataset
 
+    # remove target components
+    ts_copy = deepcopy(ts)
+    ts_copy.drop_target_components()
+
     # find the residuals
-    true_df = ts[forecast_df.index, :, :]
-    if set(ts.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
+    true_df = ts_copy[forecast_df.index, :, :]
+    if set(ts_copy.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
         raise KeyError("Segments of `ts` and `forecast_df` should be the same")
     true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[:, pd.IndexSlice[ts.segments, "target"]]
 
     # make TSDataset
-    new_ts = TSDataset(df=true_df, freq=ts.freq)
-    new_ts.known_future = ts.known_future
-    new_ts._regressors = ts.regressors
-    new_ts.df_exog = ts.df_exog
+    new_ts = TSDataset(df=true_df, freq=ts_copy.freq, hierarchical_structure=ts_copy.hierarchical_structure)
+    new_ts.known_future = deepcopy(ts_copy.known_future)
+    new_ts._regressors = deepcopy(ts_copy.regressors)
+    if ts.df_exog is not None:
+        new_ts.df_exog = ts.df_exog.copy(deep=True)
     return new_ts
 
 

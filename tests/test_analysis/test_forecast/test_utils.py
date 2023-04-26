@@ -31,9 +31,29 @@ def residuals():
     return residuals_df, forecast_df, ts
 
 
+@pytest.fixture
+def residuals_with_components(residuals):
+    residuals_df, forecast_df, ts = residuals
+    df_wide = ts.to_pandas()
+    df_component_1 = df_wide.rename(columns={"target": "component_1"}, level="feature")
+    df_component_2 = df_wide.rename(columns={"target": "component_2"}, level="feature")
+    df_component_1.loc[:, pd.IndexSlice[:, "component_1"]] *= 0.7
+    df_component_2.loc[:, pd.IndexSlice[:, "component_2"]] *= 0.3
+    df_components = pd.concat([df_component_1, df_component_2], axis=1)
+    ts.add_target_components(df_components)
+    return residuals_df, forecast_df, ts
+
+
 def test_get_residuals(residuals):
     """Test that get_residuals finds residuals correctly."""
     residuals_df, forecast_df, ts = residuals
+    actual_residuals = get_residuals(forecast_df=forecast_df, ts=ts)
+    assert actual_residuals.to_pandas().equals(residuals_df)
+
+
+def test_get_residuals_with_components(residuals_with_components):
+    """Test that get_residuals finds residuals correctly in case of target components presence."""
+    residuals_df, forecast_df, ts = residuals_with_components
     actual_residuals = get_residuals(forecast_df=forecast_df, ts=ts)
     assert actual_residuals.to_pandas().equals(residuals_df)
 
