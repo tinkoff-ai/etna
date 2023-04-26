@@ -620,6 +620,24 @@ def test_make_future_inherits_regressors(df_and_regressors):
     assert ts_future.regressors == ts.regressors
 
 
+def test_make_future_inherits_hierarchy(product_level_constant_forecast_with_quantiles):
+    ts = product_level_constant_forecast_with_quantiles
+    future = ts.make_future(future_steps=2)
+    assert future.hierarchical_structure is ts.hierarchical_structure
+
+
+def test_make_future_removes_quantiles(product_level_constant_forecast_with_quantiles):
+    ts = product_level_constant_forecast_with_quantiles
+    future = ts.make_future(future_steps=2)
+    assert len(future.target_quantiles_names) == 0
+
+
+def test_make_future_removes_target_components(ts_with_target_components):
+    ts = ts_with_target_components
+    future = ts.make_future(future_steps=2)
+    assert len(future.target_quantiles_names) == 0
+
+
 def test_make_future_warn_not_enough_regressors(df_and_regressors):
     """Check that warning is thrown if regressors don't have enough values for the future."""
     df, df_exog, known_future = df_and_regressors
