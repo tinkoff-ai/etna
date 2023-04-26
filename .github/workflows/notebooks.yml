@@ -31,9 +31,7 @@ jobs:
           virtualenvs-in-project: true
       - name: Install dependencies
         run: |
-          poetry install -E "all release jupyter" -vv
-          poetry run pip install tsfresh==0.19.0
-          poetry run pip install protobuf==3.20.1
+          poetry install -E "all release jupyter classification" -vv
       - name: Notebook runner
         run: |
           poetry run python -m scripts.notebook_runner
