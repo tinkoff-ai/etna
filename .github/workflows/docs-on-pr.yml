@@ -5,52 +5,115 @@ on:
     types: [opened, synchronize]
     
 jobs:
-   build-docs:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v2
-       - name: Set up Python
-         uses: actions/setup-python@v2
-         with:
-           python-version: "3.8"
-       - name: Install Poetry
-         uses: snok/install-poetry@v1
-         with:
-           version: 1.4.0 # TODO: remove after poetry fix
-           virtualenvs-create: true
-           virtualenvs-in-project: true
-       - name: Load cached venv
-         id: cached-poetry-dependencies
-         uses: actions/cache@v2
-         with:
-           path: .venv
-           key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
-       - name: Install dependencies
-         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-         run: |
-           poetry install -E "all docs" -vv
-       - name: Install apt docs dependencies
-         run: |
-           sudo apt install pandoc
-       - name: Build docs
-         run: |
-           cd docs
-           cp ../examples/*.ipynb source/tutorials
-           poetry run make clean ; poetry run make html
-           mv build/html/ ../site
-         env:
-           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
-           WORKFLOW_NAME: ${{ github.workflow }}
-       - name: Deploy to Netlify
-         uses: nwtgck/actions-netlify@v1.2
-         with:
-           publish-dir: './site'
-           production-branch: master
-           alias: deploy-preview-${{ github.event.number }}
-           production-deploy: false
-           deploy-message: "Deploy from GitHub Actions"
-           github-token: ${{ secrets.GITHUB_TOKEN }}
-           enable-commit-comment: true
-         env:
-           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.0 # TODO: remove after poetry fix
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install -E "all docs" -vv
+      - name: Install apt docs dependencies
+        run: |
+          sudo apt install pandoc
+      - name: Build docs
+        run: |
+          cd docs
+          cp ../examples/*.ipynb source/tutorials
+          poetry run make clean ; poetry run make html
+          mv build/html/ ../site
+        env:
+          CI_COMMIT_SHORT_SHA: ${{ github.sha }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v1.2
+        with:
+          publish-dir: './site'
+          production-branch: master
+          alias: deploy-preview-${{ github.event.number }}
+          production-deploy: false
+          deploy-message: "Deploy from GitHub Actions"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      # TODO:
+      # 1. We should decide where to publish docs. Here it is latest, but it isn't the case for the release.
+      # 2. We should decide how to set index.html in the root
+      - name: Publish docs to GitHub pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
+          external_repository: tinkoff-ai/etna-docs
+          publish_branch: main
+          publish_dir: ./site
+          destination_dir: latest
+          keep_files: false
+      - name: Write versions to JSON file
+        run: |
+          poetry run python -m scripts.create_versions_list
+      - name: Publish versions JSON to GitHub pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
+          external_repository: tinkoff-ai/etna-docs
+          publish_branch: main
+          publish_dir: gh-pages
+          keep_files: true
+
+#  update-docs-version-list:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#        with:
+#          fetch-depth: 0
+#          clean: false
+#      - name: Set up Python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: "3.8"
+#      - name: Install Poetry
+#        uses: snok/install-poetry@v1
+#        with:
+#          version: 1.4.0 # TODO: remove after poetry fix
+#          virtualenvs-create: true
+#          virtualenvs-in-project: true
+#      - name: Load cached venv
+#        id: cached-poetry-dependencies
+#        uses: actions/cache@v2
+#        with:
+#          path: .venv
+#          key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
+#      - name: Install dependencies
+#        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+#        run: |
+#          poetry install -E "all docs" -vv
+#      - name: Write versions to JSON file
+#        run: |
+#          poetry run python -m scripts.create_versions_list
+#      - name: Publish versions JSON to GitHub pages
+#        uses: peaceiris/actions-gh-pages@v3
+#        with:
+#          deploy_key: ${{ secrets.DOCUMENTATION_DEPLOY_KEY }}
+#          external_repository: tinkoff-ai/etna-docs
+#          publish_branch: main
+#          publish_dir: gh-pages
+#          keep_files: true
