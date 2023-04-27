@@ -48,7 +48,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -89,7 +88,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -129,7 +127,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -169,15 +166,12 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
       - name: Install dependencies
         run: |
           poetry install -E "all tests" -vv
-          poetry run pip install tsfresh==0.19.0
-          poetry run pip install protobuf==3.20.1
 
       - name: PyTest ("experimental")
         run: |
@@ -209,7 +203,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 

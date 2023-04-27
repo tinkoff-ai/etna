@@ -16,25 +16,26 @@ WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEM
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+# Note: Originally copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/v0.20.0/tsfresh/feature_selection/relevance.py)
 
-from multiprocessing import Pool
 import warnings
+from functools import partial, reduce
+from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
-from functools import partial, reduce
 from statsmodels.stats.multitest import multipletests
 
 from etna.libs.tsfresh import defaults
 from etna.libs.tsfresh.significance_tests import (
+    target_binary_feature_binary_test,
     target_binary_feature_real_test,
     target_real_feature_binary_test,
     target_real_feature_real_test,
-    target_binary_feature_binary_test,
 )
 from etna.libs.tsfresh.distribution import initialize_warnings_in_workers
 
-# Note: Originally copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/ff69073bbb4df787fcbf277a611c6b40632e767d/tsfresh/feature_selection/relevance.py)
+
 def calculate_relevance_table(
     X,
     y,
@@ -199,7 +200,7 @@ def calculate_relevance_table(
         else:
             warnings.simplefilter("default")
 
-        if n_jobs == 0:
+        if n_jobs == 0 or n_jobs == 1:
             map_function = map
         else:
             pool = Pool(
@@ -234,7 +235,7 @@ def calculate_relevance_table(
             )
 
         if len(table_const) == len(relevance_table):
-            if n_jobs != 0:
+            if n_jobs < 0 or n_jobs > 1:
                 pool.close()
                 pool.terminate()
                 pool.join()
@@ -301,7 +302,7 @@ def calculate_relevance_table(
                 map_function,
             )
 
-        if n_jobs != 0:
+        if n_jobs < 0 or n_jobs > 1:
             pool.close()
             pool.terminate()
             pool.join()

@@ -7,8 +7,6 @@ from typing import Union
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
-from pyts.approximation import SymbolicFourierApproximation
-from pyts.transformation import WEASEL
 from scipy.sparse import coo_matrix
 from scipy.sparse import csr_matrix
 from scipy.sparse import hstack
@@ -16,8 +14,17 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_selection import chi2
 from typing_extensions import Literal
 
+from etna import SETTINGS
 from etna.experimental.classification.feature_extraction.base import BaseTimeSeriesFeatureExtractor
 from etna.experimental.classification.utils import padd_single_series
+
+if SETTINGS.classification_required:
+    from pyts.approximation import SymbolicFourierApproximation
+    from pyts.transformation import WEASEL
+else:
+    from unittest.mock import Mock
+
+    WEASEL = Mock  # type: ignore
 
 
 class CustomWEASEL(WEASEL):
