@@ -10,7 +10,7 @@ class PerIntervalModel(BaseMixin, ABC):
     """Class to handle intervals in change point based transforms.
 
     PerIntervalModel is a class to process intervals between change points
-    in :py:module:`~etna.transforms.decomposition.change_points_based` transforms.
+    in :py:mod:`~etna.transforms.decomposition.change_points_based` transforms.
     """
 
     @abstractmethod
