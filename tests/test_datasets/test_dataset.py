@@ -635,7 +635,7 @@ def test_make_future_removes_quantiles(product_level_constant_forecast_with_quan
 def test_make_future_removes_target_components(ts_with_target_components):
     ts = ts_with_target_components
     future = ts.make_future(future_steps=2)
-    assert len(future.target_quantiles_names) == 0
+    assert len(future.target_components_names) == 0
 
 
 def test_make_future_warn_not_enough_regressors(df_and_regressors):
