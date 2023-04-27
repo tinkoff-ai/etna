@@ -14,11 +14,18 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 from typing_extensions import Literal
 
+from etna import SETTINGS
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection.mrmr_selection import AggregationMode
 from etna.analysis.feature_selection.mrmr_selection import mrmr
 from etna.datasets import TSDataset
 from etna.transforms.feature_selection import BaseFeatureSelectionTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
+    from optuna.distributions import IntUniformDistribution
+
 
 TreeBasedRegressor = Union[
     DecisionTreeRegressor,
@@ -41,7 +48,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
     def __init__(
         self,
-        model: TreeBasedRegressor,
+        model: Union[Literal["catboost"], Literal["random_forest"], TreeBasedRegressor],
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
         return_features: bool = False,
@@ -52,8 +59,14 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         Parameters
         ----------
         model:
-            model to make selection, it should have ``feature_importances_`` property
-            (e.g. all tree-based regressors in sklearn)
+            Model to make selection, it should have ``feature_importances_`` property
+            (e.g. all tree-based regressors in sklearn).
+            Pre-defined options are also available:
+
+            * catboost: ``catboost.CatBoostRegressor(silent=True)``, this model won't work if there are any category types
+
+            * random_forest: ``sklearn.ensemble.RandomForestRegressor(random_state=0)``
+
         top_k:
             num of features to select; if there are not enough features, then all will be selected
         features_to_use:
@@ -64,8 +77,16 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
         super().__init__(features_to_use=features_to_use, return_features=return_features)
-        self.model = model
         self.top_k = top_k
+        if isinstance(model, str):
+            if model == "catboost":
+                self.model = CatBoostRegressor(silent=True)
+            elif model == "random_forest":
+                self.model = RandomForestRegressor(random_state=0)
+            else:
+                raise ValueError(f"Not a valid option for model: {model}")
+        else:
+            self.model = model
 
     def _get_train(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Get train data for model."""
@@ -102,7 +123,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
         Returns
         -------
-        result: TreeFeatureSelectionTransform
+        result:
             instance after fitting
         """
         if len(self._get_features_to_use(df)) == 0:
@@ -111,6 +132,24 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         weights = self._get_features_weights(df)
         self.selected_features = self._select_top_k_features(weights, self.top_k)
         return self
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``model``, ``top_k``. Other parameters are expected to be set by the user.
+
+        For ``model`` parameter only pre-defined options are suggested.
+        For ``top_k`` parameter the maximum suggested value is not greater than ``self.top_k``.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "model": CategoricalDistribution(["catboost", "random_forest"]),
+            "top_k": IntUniformDistribution(low=1, high=self.top_k),
+        }
 
 
 class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
@@ -176,7 +215,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
         Returns
         -------
-        result: MRMRFeatureSelectionTransform
+        result:
             instance after fitting
         """
         features = self._get_features_to_use(df)
@@ -193,3 +232,19 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             atol=self.atol,
         )
         return self
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes only ``top_k`` parameter. Other parameters are expected to be set by the user.
+
+        For ``top_k`` parameter the maximum suggested value is not greater than ``self.top_k``.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "top_k": IntUniformDistribution(low=1, high=self.top_k),
+        }

@@ -18,6 +18,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import SegmentEncoderTransform
 from etna.transforms.feature_selection import TreeFeatureSelectionTransform
 from etna.transforms.feature_selection.feature_importance import MRMRFeatureSelectionTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -67,9 +68,16 @@ def ts_with_regressors():
     )
 
 
+def test_create_with_unknown_model(ts_with_exog):
+    with pytest.raises(ValueError, match="Not a valid option for model: .*"):
+        _ = TreeFeatureSelectionTransform(model="unknown", top_k=3, features_to_use="all")
+
+
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -86,6 +94,7 @@ def test_work_with_non_regressors(ts_with_exog, model):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -113,6 +122,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -141,6 +151,7 @@ def test_retain_values(model, top_k, ts_with_regressors):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -158,6 +169,8 @@ def test_fails_negative_top_k(model):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -178,6 +191,7 @@ def test_warns_no_regressors(model, example_tsds):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -202,6 +216,7 @@ def test_sanity_selected(model, ts_with_regressors):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -231,6 +246,7 @@ def test_sanity_model(model, ts_with_regressors):
 @pytest.mark.parametrize(
     "model",
     [
+        "random_forest",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -286,3 +302,19 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
 )
 def test_save_load(transform, ts_with_regressors):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_regressors)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=3),
+        MRMRFeatureSelectionTransform(
+            relevance_table=ModelRelevanceTable(), top_k=3, model=RandomForestRegressor(random_state=42)
+        ),
+        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3),
+    ],
+)
+def test_params_to_tune(transform, ts_with_regressors):
+    ts = ts_with_regressors
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)
