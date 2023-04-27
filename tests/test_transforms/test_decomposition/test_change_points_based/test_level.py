@@ -85,6 +85,16 @@ def test_save_load(ts_with_local_levels):
                     n_bkps=5,
                 ),
             ),
+            2,
+        ),
+        (
+            ChangePointsLevelTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=10,
+                ),
+            ),
             0,
         ),
     ],

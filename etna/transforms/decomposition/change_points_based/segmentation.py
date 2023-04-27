@@ -69,6 +69,11 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
     it uses information from the whole train part.
     """
 
+    _default_change_points_model = RupturesChangePointsModel(
+        change_points_model=Binseg(model="ar"),
+        n_bkps=5,
+    )
+
     def __init__(
         self,
         in_column: str,
@@ -83,21 +88,15 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
             name of column to fit change point model
         change_points_model:
             model to get change points,
-            by default :py:class:`ruptures.detection.Binseg` in a wrapper is used
+            by default :py:class:`ruptures.detection.Binseg` in a wrapper with ``n_bkps=5`` is used
         out_column:
             result column name. If not given use ``self.__repr__()``
         """
         self.in_column = in_column
         self.out_column = out_column if out_column is not None else self.__repr__()
 
-        self._is_change_points_model_default = change_points_model is None
         self.change_points_model = (
-            change_points_model
-            if change_points_model is not None
-            else RupturesChangePointsModel(
-                change_points_model=Binseg(model="l2"),
-                n_bkps=5,
-            )
+            change_points_model if change_points_model is not None else self._default_change_points_model
         )
 
         super().__init__(
@@ -109,10 +108,15 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
             required_features=[in_column],
         )
 
+    @property
+    def _is_change_points_model_default(self) -> bool:
+        # it can't see the difference between Binseg(model="ar") and Binseg(model="l1")
+        return self.change_points_model.to_dict() == self._default_change_points_model.to_dict()
+
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        If ``change_points_model`` isn't set then this grid tunes parameters:
+        If ``change_points_model`` is equal to default then this grid tunes parameters:
         ``change_points_model.change_points_model.model``, ``change_points_model.n_bkps``.
         Other parameters are expected to be set by the user.
 

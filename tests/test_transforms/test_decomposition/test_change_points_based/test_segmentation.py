@@ -146,6 +146,16 @@ def test_save_load(simple_ar_ts):
                     n_bkps=5,
                 ),
             ),
+            2,
+        ),
+        (
+            ChangePointsSegmentationTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=10,
+                ),
+            ),
             0,
         ),
     ],
