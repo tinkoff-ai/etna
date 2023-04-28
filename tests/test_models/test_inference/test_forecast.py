@@ -506,18 +506,6 @@ class TestForecastOutSamplePrefix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
-        ],
-    )
-    def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
-
-    @to_be_fixed(
-        raises=AssertionError,
-        match="filters should not remove entries all entries - check encoder/decoder lengths and lags",
-    )
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -550,7 +538,7 @@ class TestForecastOutSamplePrefix:
             ),
         ],
     )
-    def test_forecast_out_sample_prefix_failed_old_nns(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
 
@@ -640,10 +628,9 @@ class TestForecastOutSampleSuffix:
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
-    # it even can't reach NotImplementedError
     @to_be_fixed(
-        raises=AssertionError,
-        match="filters should not remove entries all entries - check encoder/decoder lengths and lags",
+        raises=NotImplementedError,
+        match="You can only forecast from the next point after the last one in the training dataset",
     )
     @pytest.mark.parametrize(
         "model, transforms",
