@@ -95,6 +95,7 @@ def test_work_with_non_regressors(ts_with_exog, model):
     "model",
     [
         "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -123,6 +124,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     "model",
     [
         "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -152,6 +154,7 @@ def test_retain_values(model, top_k, ts_with_regressors):
     "model",
     [
         "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -192,6 +195,7 @@ def test_warns_no_regressors(model, example_tsds):
     "model",
     [
         "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -217,6 +221,7 @@ def test_sanity_selected(model, ts_with_regressors):
     "model",
     [
         "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),
@@ -247,6 +252,7 @@ def test_sanity_model(model, ts_with_regressors):
     "model",
     [
         "random_forest",
+        "catboost",
         DecisionTreeRegressor(random_state=42),
         ExtraTreeRegressor(random_state=42),
         RandomForestRegressor(n_estimators=10, random_state=42),

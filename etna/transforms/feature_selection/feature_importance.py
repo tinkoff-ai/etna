@@ -61,12 +61,15 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         model:
             Model to make selection, it should have ``feature_importances_`` property
             (e.g. all tree-based regressors in sklearn).
+
+            If ``catboost.CatBoostRegressor`` is given with no ``cat_features`` parameter,
+            then ``cat_features`` are set during ``fit`` to be equal to columns of category type.
+
             Pre-defined options are also available:
 
-            * catboost: ``catboost.CatBoostRegressor(iterations=1000, silent=True)``,
-            this model won't work if there are any category types
+            * catboost: ``catboost.CatBoostRegressor(iterations=1000, silent=True)``;
 
-            * random_forest: ``sklearn.ensemble.RandomForestRegressor(n_estimators=100, random_state=0)``
+            * random_forest: ``sklearn.ensemble.RandomForestRegressor(n_estimators=100, random_state=0)``.
 
         top_k:
             num of features to select; if there are not enough features, then all will be selected
@@ -100,7 +103,12 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
     def _get_features_weights(self, df: pd.DataFrame) -> Dict[str, float]:
         """Get weights for features based on model feature importances."""
         train_data, train_target = self._get_train(df)
-        self.model.fit(train_data, train_target)
+        if isinstance(self.model, CatBoostRegressor) and self.model.get_param("cat_features") is None:
+            dtypes = train_data.dtypes
+            cat_features = dtypes[dtypes == "category"].index.tolist()
+            self.model.fit(train_data, train_target, cat_features=cat_features)
+        else:
+            self.model.fit(train_data, train_target)
         weights_array = self.model.feature_importances_
         weights_dict = {column: weights_array[i] for i, column in enumerate(train_data.columns)}
         return weights_dict
