@@ -463,18 +463,12 @@ class TestForecastOutSamplePrefix:
         model.fit(ts)
 
         # forecasting full
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         forecast_full_ts = ts.make_future(
             future_steps=full_prediction_size, tail_steps=model.context_size, transforms=transforms
         )
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 
         # forecasting only prefix
-        torch.manual_seed(11)  # TODO: remove after fix at issue-802
-
         forecast_prefix_ts = ts.make_future(
             future_steps=full_prediction_size, tail_steps=model.context_size, transforms=transforms
         )
@@ -806,18 +800,12 @@ class TestForecastSubsetSegments:
         model.fit(ts)
 
         # forecasting full
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         forecast_full_ts = ts.make_future(
             future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
         )
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=prediction_size)
 
         # forecasting subset of segments
-        torch.manual_seed(11)  # TODO: remove after fix at issue-802
-
         forecast_subset_ts = subset_ts.make_future(
             future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
         )
@@ -918,10 +906,6 @@ class TestForecastNewSegments:
         model.fit(train_ts)
 
         # forecasting
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         forecast_ts = test_ts.make_future(
             future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
         )
