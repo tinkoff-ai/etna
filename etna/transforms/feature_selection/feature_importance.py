@@ -63,9 +63,10 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             (e.g. all tree-based regressors in sklearn).
             Pre-defined options are also available:
 
-            * catboost: ``catboost.CatBoostRegressor(silent=True)``, this model won't work if there are any category types
+            * catboost: ``catboost.CatBoostRegressor(iterations=1000, silent=True)``,
+            this model won't work if there are any category types
 
-            * random_forest: ``sklearn.ensemble.RandomForestRegressor(random_state=0)``
+            * random_forest: ``sklearn.ensemble.RandomForestRegressor(n_estimators=100, random_state=0)``
 
         top_k:
             num of features to select; if there are not enough features, then all will be selected
@@ -80,7 +81,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.top_k = top_k
         if isinstance(model, str):
             if model == "catboost":
-                self.model = CatBoostRegressor(silent=True)
+                self.model = CatBoostRegressor(iterations=1000, silent=True)
             elif model == "random_forest":
                 self.model = RandomForestRegressor(random_state=0)
             else:
