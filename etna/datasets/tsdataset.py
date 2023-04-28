@@ -230,21 +230,23 @@ class TSDataset:
     def make_future(
         self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
     ) -> "TSDataset":
-        """Return new TSDataset with future steps.
+        """Return new TSDataset with features extended into the future.
+
+        The result dataset doesn't contain quantiles and target components.
 
         Parameters
         ----------
         future_steps:
-            number of timestamp in the future to build features for.
+            number of steps to extend dataset into the future.
         transforms:
             sequence of transforms to be applied.
         tail_steps:
-            number of timestamp for context to build features for.
+            number of steps to keep from the tail of the original dataset.
 
         Returns
         -------
         :
-            dataset with features in the future.
+            dataset with features extended into the.
 
         Examples
         --------
@@ -295,6 +297,14 @@ class TSDataset:
                             f"NaN-s will be used for missing values"
                         )
 
+        # remove components and quantiles
+        # it should be done if we have quantiles and components in raw_df
+        # TODO: fix this after making quantiles to work like components, with special methods
+        if len(self.target_components_names) > 0:
+            df = df.drop(columns=list(self.target_components_names), level="feature")
+        if len(self.target_quantiles_names) > 0:
+            df = df.drop(columns=list(self.target_quantiles_names), level="feature")
+
         # Here only df is required, other metadata is not necessary to build the dataset
         ts = TSDataset(df=df, freq=self.freq)
         for transform in transforms:
@@ -305,7 +315,7 @@ class TSDataset:
         future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
 
         future_dataset = future_dataset.sort_index(axis=1, level=(0, 1))
-        future_ts = TSDataset(df=future_dataset, freq=self.freq)
+        future_ts = TSDataset(df=future_dataset, freq=self.freq, hierarchical_structure=self.hierarchical_structure)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         future_ts.known_future = deepcopy(self.known_future)
