@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add deep copy for copying attributes of `TSDataset` ([#1241](https://github.com/tinkoff-ai/etna/pull/1241))
 -
 - Add `tsfresh` into optional dependencies, remove instruction about `pip install tsfresh` ([#1246](https://github.com/tinkoff-ai/etna/pull/1246))
--
+- Fix `DeepARModel` and `TFTModel` to work with changed `prediction_size` ([#1251](https://github.com/tinkoff-ai/etna/pull/1251))
 
 ## [2.0.0] - 2023-04-11
 ### Added
