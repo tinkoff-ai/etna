@@ -299,6 +299,7 @@ class TSDataset:
 
         # remove components and quantiles
         # it should be done if we have quantiles and components in raw_df
+        # TODO: fix this after making quantiles to work like components, with special methods
         if len(self.target_components_names) > 0:
             df = df.drop(columns=list(self.target_components_names), level="feature")
         if len(self.target_quantiles_names) > 0:
