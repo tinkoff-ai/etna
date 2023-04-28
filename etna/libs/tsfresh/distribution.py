@@ -16,8 +16,11 @@ WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEM
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+# Note: Originally copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/v0.20.0/tsfresh/utilities/distribution.py)
+
 import warnings
-# Note: Originally copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/ff69073bbb4df787fcbf277a611c6b40632e767d/tsfresh/utilities/distribution.py)
+
+
 def initialize_warnings_in_workers(show_warnings):
     """
     Small helper function to initialize warnings module in multiprocessing workers.

@@ -151,7 +151,7 @@ def test_creating_columns(transform_constructor, in_column, multicolumn_ts):
     # check that output columns are matching input columns
     assert len(transform.in_column) == len(transform.out_columns)
     assert all(
-        [f"new_exog_{column}" == new_column for column, new_column in zip(transform.in_column, transform.out_columns)]
+        f"new_exog_{column}" == new_column for column, new_column in zip(transform.in_column, transform.out_columns)
     )
 
 
@@ -202,7 +202,7 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
     # check that output columns are matching input columns
     assert len(transform.in_column) == len(transform.out_columns)
     # check that name if this input column is present inside name of this output column
-    assert all([(column in new_column) for column, new_column in zip(transform.in_column, transform.out_columns)])
+    assert all((column in new_column) for column, new_column in zip(transform.in_column, transform.out_columns))
 
 
 @pytest.mark.parametrize(
