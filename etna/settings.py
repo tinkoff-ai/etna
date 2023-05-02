@@ -54,13 +54,12 @@ def _is_prophet_available():
         return False
 
 
-def _is_tsfresh_available():
-    if _module_available("tsfresh"):
+def _is_classification_available():
+    true_case = _module_available("pyts") & _module_available("tsfresh")
+    if true_case:
         return True
     else:
-        warnings.warn(
-            "`tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 && pip install protobuf==3.20.1`"
-        )
+        warnings.warn("etna[classification] is not available, to install it, run `pip install etna[classification]`")
         return False
 
 
@@ -83,7 +82,7 @@ class Settings:
         torch_required: Optional[bool] = None,
         prophet_required: Optional[bool] = None,
         wandb_required: Optional[bool] = None,
-        tsfresh_required: Optional[bool] = None,
+        classification_required: Optional[bool] = None,
     ):
         # True – use the package
         # None – use the package if available
@@ -101,10 +100,10 @@ class Settings:
             _is_prophet_available,
             "etna[prophet] is not available, to install it, run `pip install etna[prophet]`.",
         )
-        self.tsfresh_required: bool = _get_optional_value(
-            tsfresh_required,
-            _is_tsfresh_available,
-            "`tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 && pip install protobuf==3.20.1`",
+        self.classification_required: bool = _get_optional_value(
+            classification_required,
+            _is_classification_available,
+            "etna[classification] is not available, to install it, run `pip install etna[classification]`.",
         )
 
     @staticmethod

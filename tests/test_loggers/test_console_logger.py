@@ -115,7 +115,7 @@ def test_backtest_logging(example_tsds: TSDataset):
         # remain lines only about backtest
         lines = [line for line in lines if "backtest" in line]
         assert len(lines) == len(metrics) * n_folds * len(example_tsds.segments)
-        assert all([any([metric_str in line for metric_str in metrics_str]) for line in lines])
+        assert all(any(metric_str in line for metric_str in metrics_str) for line in lines)
     tslogger.remove(idx)
 
 
