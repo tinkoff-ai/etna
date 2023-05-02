@@ -69,7 +69,9 @@ def _create_holidays_df_str(holidays: str, index, as_is):
 
     holidays_dict = {}
     for holiday_name in holiday_names:
-        cur_holiday_index = pd.Series(timestamp).apply(lambda x: country_holidays.get(x, "") == holiday_name)
+        cur_holiday_index = pd.Series(timestamp).apply(
+            lambda x: country_holidays.get(x, "") == holiday_name  # noqa: B023
+        )
         holidays_dict[holiday_name] = cur_holiday_index
 
     holidays_df = pd.DataFrame(holidays_dict)

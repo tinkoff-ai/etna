@@ -1,5 +1,5 @@
 [flake8]
-ignore = F, E203, W605, E501, W503, D100, D104, C408, B023
+ignore = F, E203, W605, E501, W503, D100, D104, C408
 max-line-length = 121
 max-complexity = 18
 docstring-convention=numpy
