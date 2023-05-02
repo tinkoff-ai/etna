@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Notebook `forecast_interpretation.ipynb` with forecast decomposition ([#1220](https://github.com/tinkoff-ai/etna/pull/1220))
--
+- `DeepStateModel` ([#1253](https://github.com/tinkoff-ai/etna/pull/1253))
 -
 - 
 ### Changed
