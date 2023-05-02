@@ -2,7 +2,6 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
-from typing import Tuple
 
 import pandas as pd
 import torch
@@ -12,15 +11,18 @@ from typing_extensions import TypedDict
 
 from etna.models.base import DeepBaseModel
 from etna.models.base import DeepBaseNet
-from etna.models.nn.deepstate.linear_dynamic_system import LDS
-from etna.models.nn.deepstate.state_space_model import CompositeSSM
+from etna.models.nn.deepstate import LDS
+from etna.models.nn.deepstate import CompositeSSM
 
 
 class DeepStateBatch(TypedDict):
+    """Batch specification for DeepStateModel."""
+
     encoder_real: Tensor  # (batch_size, seq_length, input_size)
     decoder_real: Tensor  # (batch_size, horizon, input_size)
     datetime_index: Tensor  # (batch_size, num_models , seq_length + horizon)
     encoder_target: Tensor  # (batch_size, seq_length, 1)
+
 
 class DeepStateNet(DeepBaseNet):
     """DeepState network."""
@@ -78,6 +80,18 @@ class DeepStateNet(DeepBaseNet):
         )
 
     def step(self, batch: DeepStateBatch, *args, **kwargs):  # type: ignore
+        """Step for loss computation for training or validation.
+
+        Parameters
+        ----------
+        batch:
+            batch of data
+
+        Returns
+        -------
+        :
+            loss, true_target, prediction_target
+        """
         encoder_real = batch["encoder_real"]  # (batch_size, seq_length, input_size)
         targets = batch["encoder_target"]  # (batch_size, seq_length, 1)
         seq_length = targets.shape[1]
@@ -104,6 +118,18 @@ class DeepStateNet(DeepBaseNet):
         return -log_likelihood, targets, targets
 
     def forward(self, x: DeepStateBatch, *args, **kwargs):  # type: ignore
+        """Forward pass.
+
+        Parameters
+        ----------
+        x:
+            batch of data
+
+        Returns
+        -------
+        :
+            forecast with shape (batch_size, decoder_length, 1)
+        """
         encoder_real = x["encoder_real"]  # (batch_size, seq_length, input_size)
         seq_length = encoder_real.shape[1]
         targets = x["encoder_target"][:, :seq_length]  # (batch_size, seq_length, 1)

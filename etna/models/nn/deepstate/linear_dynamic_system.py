@@ -123,7 +123,7 @@ class LDS(BaseMixin):
         return log_p, filtered_mean, filtered_cov
 
     def kalman_filter(self, targets: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
-        """Performs Kalman filtering of given observations.
+        """Perform Kalman filtering of given observations.
 
         Parameters
         ----------
@@ -175,7 +175,6 @@ class LDS(BaseMixin):
         :
             Tensor with log-likelihoods of target of shape (batch_size, seq_length)
         """
-
         log_p, _, _ = self.kalman_filter(targets=targets)
 
         return log_p
