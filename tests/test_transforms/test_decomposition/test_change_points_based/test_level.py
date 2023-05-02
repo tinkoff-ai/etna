@@ -9,6 +9,7 @@ from etna.datasets import TSDataset
 from etna.transforms import ChangePointsLevelTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import MeanPerIntervalModel
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -70,3 +71,35 @@ def test_save_load(ts_with_local_levels):
         per_interval_model=MeanPerIntervalModel(),
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_local_levels)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (ChangePointsLevelTransform(in_column="target"), 2),
+        (
+            ChangePointsLevelTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=5,
+                ),
+            ),
+            2,
+        ),
+        (
+            ChangePointsLevelTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=10,
+                ),
+            ),
+            0,
+        ),
+    ],
+)
+def test_params_to_tune(transform, expected_length, ts_with_local_levels):
+    ts = ts_with_local_levels
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

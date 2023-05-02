@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add default `params_to_tune` for `TimeSeriesImputerTransform` ([#1232](https://github.com/tinkoff-ai/etna/pull/1232))
 - Add default `params_to_tune` for `DifferencingTransform`, `MedianTransform`, `MaxTransform`, `MinTransform`, `QuantileTransform`, `StdTransform`, `MeanTransform`, `MADTransform`, `MinMaxDifferenceTransform`, `SumTransform`, `BoxCoxTransform`, `YeoJohnsonTransform`, `MaxAbsScalerTransform`, `MinMaxScalerTransform`, `RobustScalerTransform` and `StandardScalerTransform` ([#1233](https://github.com/tinkoff-ai/etna/pull/1233))
 - Add default `params_to_tune` for `LabelEncoderTransform` ([#1242](https://github.com/tinkoff-ai/etna/pull/1242))
+- Add default `params_to_tune` for `ChangePointsSegmentationTransform`, `ChangePointsTrendTransform`, `ChangePointsLevelTransform`, `TrendTransform`, `LinearTrendTransform`, `TheilSenTrendTransform` and `STLTransform` ([#1243](https://github.com/tinkoff-ai/etna/pull/1243))
 ### Fixed
 - Fix bug in `GaleShapleyFeatureSelectionTransform` with wrong number of remaining features ([#1110](https://github.com/tinkoff-ai/etna/pull/1110))
 - `ProphetModel` fails with additional seasonality set ([#1157](https://github.com/tinkoff-ai/etna/pull/1157))
