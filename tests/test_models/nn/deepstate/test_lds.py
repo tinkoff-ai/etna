@@ -2,7 +2,7 @@ import pytest
 import torch
 import torch.testing
 
-from etna.models.nn import LDS
+from etna.models.nn.deepstate import LDS
 
 
 @pytest.fixture

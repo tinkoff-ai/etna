@@ -2,10 +2,10 @@ import pytest
 import torch
 import torch.testing
 
-from etna.models.nn import CompositeSSM
-from etna.models.nn import LevelSSM
-from etna.models.nn import LevelTrendSSM
-from etna.models.nn import SeasonalitySSM
+from etna.models.nn.deepstate import CompositeSSM
+from etna.models.nn.deepstate import LevelSSM
+from etna.models.nn.deepstate import LevelTrendSSM
+from etna.models.nn.deepstate import SeasonalitySSM
 
 
 @pytest.mark.parametrize(
@@ -13,8 +13,14 @@ from etna.models.nn import SeasonalitySSM
     [
         (LevelSSM(), 1),
         (LevelTrendSSM(), 2),
-        (SeasonalitySSM(num_seasons=2), 2),
-        (CompositeSSM(seasonal_ssms=[SeasonalitySSM(num_seasons=2)], nonseasonal_ssm=LevelSSM()), 3),
+        (SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12)), 2),
+        (
+            CompositeSSM(
+                seasonal_ssms=[SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12))],
+                nonseasonal_ssm=LevelSSM(),
+            ),
+            3,
+        ),
     ],
 )
 def test_latent_dim(ssm, expected_dim):
@@ -35,12 +41,15 @@ def test_latent_dim(ssm, expected_dim):
             torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64),
         ),
         (
-            SeasonalitySSM(num_seasons=2),
+            SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12)),
             torch.tensor([[[1, 0], [0, 1], [1, 0]], [[1, 0], [0, 1], [1, 0]]]).float(),
             torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64),
         ),
         (
-            CompositeSSM(seasonal_ssms=[SeasonalitySSM(num_seasons=2)], nonseasonal_ssm=LevelSSM()),
+            CompositeSSM(
+                seasonal_ssms=[SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12))],
+                nonseasonal_ssm=LevelSSM(),
+            ),
             torch.tensor([[[1, 0, 1], [0, 1, 1], [1, 0, 1]], [[1, 0, 1], [0, 1, 1], [1, 0, 1]]]).float(),
             torch.tensor([[[0, 1, 0], [0, 1, 0]], [[0, 1, 0], [0, 1, 0]]], dtype=torch.int64),
         ),
@@ -62,12 +71,15 @@ def test_emission_coeff(ssm, expected_tensor, datetime_index):
             torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64),
         ),
         (
-            SeasonalitySSM(num_seasons=2),
+            SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12)),
             torch.tensor([[1, 0], [0, 1]]).float(),
             torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64),
         ),
         (
-            CompositeSSM(seasonal_ssms=[SeasonalitySSM(num_seasons=2)], nonseasonal_ssm=LevelSSM()),
+            CompositeSSM(
+                seasonal_ssms=[SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12))],
+                nonseasonal_ssm=LevelSSM(),
+            ),
             torch.tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]]).float(),
             torch.tensor([[[0, 1, 0], [0, 1, 0]], [[0, 1, 0], [0, 1, 0]]], dtype=torch.int64),
         ),
@@ -84,9 +96,15 @@ def test_transition_coeff(ssm, expected_tensor, datetime_index):
     [
         (LevelSSM(), torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64)),
         (LevelTrendSSM(), torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64)),
-        (SeasonalitySSM(num_seasons=2), torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64)),
         (
-            CompositeSSM(seasonal_ssms=[SeasonalitySSM(num_seasons=2)], nonseasonal_ssm=LevelSSM()),
+            SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12)),
+            torch.tensor([[0, 1, 0], [0, 1, 0]], dtype=torch.int64),
+        ),
+        (
+            CompositeSSM(
+                seasonal_ssms=[SeasonalitySSM(num_seasons=2, timestamp_transform=lambda x: int(x.hour() < 12))],
+                nonseasonal_ssm=LevelSSM(),
+            ),
             torch.tensor([[[0, 1, 0], [0, 1, 0]], [[0, 1, 0], [0, 1, 0]]], dtype=torch.int64),
         ),
     ],
