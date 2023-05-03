@@ -49,3 +49,21 @@ def assert_sampling_is_valid(model: ModelType, ts: TSDataset, seed: int = 0):
         value = sampler.sample_independent(study=None, trial=None, param_name=name, param_distribution=distribution)
         new_model = model.set_params(**{name: value})
         new_model.fit(ts)
+
+
+def assert_prediction_components_are_present(model, train, test, prediction_size=None):
+    """Test that components are presented after in-sample and out-of-sample decomposition."""
+    model.fit(train)
+
+    predict_args = dict(ts=train, return_components=True)
+    forecast_args = dict(ts=test, return_components=True)
+
+    if prediction_size is not None:
+        predict_args["prediction_size"] = prediction_size
+        forecast_args["prediction_size"] = prediction_size
+
+    forecast = model.predict(**predict_args)
+    assert len(forecast.target_components_names) > 0
+
+    forecast = model.forecast(**forecast_args)
+    assert len(forecast.target_components_names) > 0

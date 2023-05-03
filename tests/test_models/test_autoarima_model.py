@@ -5,8 +5,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import AutoARIMAModel
 from etna.pipeline import Pipeline
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
 
 
 def _check_forecast(ts, model, horizon):
@@ -149,4 +149,4 @@ def test_save_load(example_tsds):
 
 def test_prediction_decomposition(outliers_tsds):
     train, test = outliers_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=AutoARIMAModel(), train=train, test=test)
+    assert_prediction_components_are_present(model=AutoARIMAModel(), train=train, test=test)

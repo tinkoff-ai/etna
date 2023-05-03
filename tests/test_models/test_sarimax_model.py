@@ -7,8 +7,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
 
 
@@ -294,7 +294,7 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
 
 def test_prediction_decomposition(outliers_tsds):
     train, test = outliers_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=SARIMAXModel(), train=train, test=test)
+    assert_prediction_components_are_present(model=SARIMAXModel(), train=train, test=test)
 
 
 @pytest.mark.parametrize(

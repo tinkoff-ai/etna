@@ -8,8 +8,8 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models import ProphetModel
 from etna.models.prophet import _ProphetAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
 
 
@@ -370,7 +370,7 @@ def test_predict_components_sum_up_to_target(
 
 def test_prediction_decomposition(outliers_tsds):
     train, test = outliers_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=ProphetModel(), train=train, test=test)
+    assert_prediction_components_are_present(model=ProphetModel(), train=train, test=test)
 
 
 def test_params_to_tune(example_tsds):

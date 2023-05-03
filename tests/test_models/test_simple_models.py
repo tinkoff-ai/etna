@@ -11,8 +11,8 @@ from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
 
 
@@ -870,7 +870,7 @@ def test_deadline_ma_predict_components_correct(
 @pytest.mark.parametrize("model", (MovingAverageModel(), NaiveModel()))
 def test_prediction_decomposition(example_tsds, model):
     train, test = example_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=model, train=train, test=test, prediction_size=5)
+    assert_prediction_components_are_present(model=model, train=train, test=test, prediction_size=5)
 
 
 @pytest.mark.parametrize(
