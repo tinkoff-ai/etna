@@ -286,6 +286,9 @@ class RNNModel(DeepBaseModel):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``num_layers``, ``hidden_size``, ``lr``, ``encoder_length``.
+        Other parameters are expected to be set by the user.
+
         Returns
         -------
         :

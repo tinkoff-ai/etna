@@ -258,6 +258,9 @@ class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, Predicti
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``hidden_size``, ``rnn_layers``, ``dropout``, ``lr``.
+        Other parameters are expected to be set by the user.
+
         Returns
         -------
         :

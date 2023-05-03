@@ -238,8 +238,8 @@ class MLPModel(DeepBaseModel):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid doesn't tune number of layers, that is determined by the length of ``hidden_size`` parameter.
-        Length of ``hidden_size`` is expected to be set by the user.
+        This grid tunes parameters: ``lr``, ``hidden_size.i`` where i from 0 to ``len(hidden_size) - 1``.
+        Other parameters are expected to be set by the user.
 
         Returns
         -------

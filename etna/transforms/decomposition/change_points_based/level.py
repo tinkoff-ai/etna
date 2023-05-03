@@ -111,7 +111,7 @@ class ChangePointsLevelTransform(ReversibleChangePointsTransform):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        If ``change_points_model`` is equal to default then this grid tunes parameters:
+        If ``self.change_points_model`` is equal to default then this grid tunes parameters:
         ``change_points_model.change_points_model.model``, ``change_points_model.n_bkps``.
         Other parameters are expected to be set by the user.
 

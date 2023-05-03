@@ -656,7 +656,9 @@ class HoltWintersModel(
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid doesn't tune ``seasonal_periods`` parameter. It expected to be set by the user.
+        This grid tunes parameters: ``trend``, ``damped_trend``, ``use_boxcox``.
+        If ``self.seasonal`` is not None, then it also tunes ``seasonal`` parameter.
+        Other parameters are expected to be set by the user.
 
         Returns
         -------

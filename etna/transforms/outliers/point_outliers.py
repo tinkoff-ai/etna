@@ -69,6 +69,8 @@ class MedianOutliersTransform(OutliersTransform):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``window_size``, ``alpha``. Other parameters are expected to be set by the user.
+
         Returns
         -------
         :
@@ -142,6 +144,9 @@ class DensityOutliersTransform(OutliersTransform):
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window_size``, ``distance_coef``, ``n_neighbors``.
+        Other parameters are expected to be set by the user.
 
         Returns
         -------
@@ -220,6 +225,8 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``interval_width``, ``model``. Other parameters are expected to be set by the user.
 
         Returns
         -------

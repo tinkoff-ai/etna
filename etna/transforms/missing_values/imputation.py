@@ -287,8 +287,10 @@ class TimeSeriesImputerTransform(ReversiblePerSegmentWrapper):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid doesn't tune ``seasonality`` parameter. It expected to be set by the user.
-        Strategy "seasonal" is suggested only if ``seasonality`` is set higher than 1.
+        This grid tunes parameters: ``strategy``, ``window``.
+        Other parameters are expected to be set by the user.
+
+        Strategy "seasonal" is suggested only if ``self.seasonality`` is set higher than 1.
 
         Returns
         -------

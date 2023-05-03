@@ -245,7 +245,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid tunes only ``top_k`` parameter. Other parameters are expected to be set by the user.
+        This grid tunes ``top_k`` parameter. Other parameters are expected to be set by the user.
 
         For ``top_k`` parameter the maximum suggested value is not greater than ``self.top_k``.
 

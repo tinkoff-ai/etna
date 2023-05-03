@@ -211,6 +211,10 @@ class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``minute_in_hour_number``, ``fifteen_minutes_in_hour_number``, ``hour_number``,
+        ``half_hour_number``, ``half_day_number``, ``one_third_day_number``.
+        Other parameters are expected to be set by the user.
+
         There are no restrictions on all ``False`` values for the flags.
 
         Returns

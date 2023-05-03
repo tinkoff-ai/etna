@@ -287,6 +287,9 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``hidden_size``, ``lstm_layers``, ``dropout``, ``attention_head_size``, ``lr``.
+        Other parameters are expected to be set by the user.
+
         Returns
         -------
         :

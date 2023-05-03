@@ -224,6 +224,9 @@ class SpecialDaysTransform(IrreversiblePerSegmentWrapper, FutureMixin):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``find_special_weekday``, ``find_special_month_day``.
+        Other parameters are expected to be set by the user.
+
         There are no restrictions on all ``False`` values for the flags.
 
         Returns

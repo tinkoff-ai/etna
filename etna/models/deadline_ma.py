@@ -394,7 +394,7 @@ class DeadlineMovingAverageModel(
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid doesn't tune ``seasonality`` parameter. It expected to be set by the user.
+        This grid tunes ``window`` parameter. Other parameters are expected to be set by the user.
 
         Returns
         -------

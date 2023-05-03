@@ -482,7 +482,7 @@ class DifferencingTransform(ReversibleTransform):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid tunes only ``order`` parameter. Other parameters are expected to be set by the user.
+        This grid tunes ``order`` parameter. Other parameters are expected to be set by the user.
 
         Returns
         -------

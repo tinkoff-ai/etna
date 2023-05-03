@@ -735,8 +735,10 @@ class SARIMAXModel(
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid doesn't tune ``seasonal_order.s`` parameter that determines number of periods in a season.
-        This parameter is expected to be set by the user.
+        This grid tunes parameters: ``order.0``, ``order.1``, ``order.2``, ``trend``.
+        If ``self.num_periods`` is greater than zero, then it also tunes parameters:
+        ``seasonal_order.0``, ``seasonal_order.1``, ``seasonal_order.2``.
+        Other parameters are expected to be set by the user.
 
         Returns
         -------
