@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 import pytest
+from lightning_fabric.utilities.seed import seed_everything
 from pytorch_forecasting.data import GroupNormalizer
 
 from etna.datasets.tsdataset import TSDataset
@@ -140,19 +141,17 @@ def test_forecast_model_equals_pipeline(example_tsds):
     horizon = 10
     pfdb = _get_default_dataset_builder(horizon)
 
-    import torch  # TODO: remove after fix at issue-802
-
-    torch.manual_seed(11)
     model = DeepARModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=2), lr=0.1)
+    seed_everything(0)
     model.fit(example_tsds)
     future = example_tsds.make_future(future_steps=horizon, tail_steps=pfdb.max_encoder_length)
     forecast_model = model.forecast(
         ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.98]
     )
 
-    torch.manual_seed(11)
     model = DeepARModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=2), lr=0.1)
     pipeline = Pipeline(model=model, transforms=[], horizon=horizon)
+    seed_everything(0)
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast(prediction_interval=True, quantiles=[0.02, 0.98])
 

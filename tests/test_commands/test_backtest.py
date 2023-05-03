@@ -80,5 +80,5 @@ def test_forecast_format(base_pipeline_yaml_path, base_backtest_yaml_path, base_
         ]
     )
     forecast_df = pd.read_csv(tmp_output_path / "forecast.csv")
-    assert all([x in forecast_df.columns for x in ["segment", "timestamp", "target"]])
+    assert all(x in forecast_df.columns for x in ["segment", "timestamp", "target"])
     assert len(forecast_df) == 24

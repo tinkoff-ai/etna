@@ -48,7 +48,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -89,7 +88,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -100,10 +98,12 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
 
+      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
+          poetry run pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("long")
         run: |
@@ -127,7 +127,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -138,10 +137,12 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
 
+      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           poetry install -E "all tests" -vv
+          poetry run pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("long")
         run: |
@@ -165,15 +166,12 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
       - name: Install dependencies
         run: |
           poetry install -E "all tests" -vv
-          poetry run pip install tsfresh==0.19.0
-          poetry run pip install protobuf==3.20.1
 
       - name: PyTest ("experimental")
         run: |
@@ -205,7 +203,6 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.4.0 # TODO: remove after poetry fix
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -218,6 +215,7 @@ jobs:
         run: |
           poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml --durations=10
           poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
+          poetry run pytest tests/test_models/test_utils.py -v --cov=etna --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2

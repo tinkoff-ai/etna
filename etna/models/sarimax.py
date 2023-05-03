@@ -20,7 +20,9 @@ from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
 
 if SETTINGS.auto_required:
     from optuna.distributions import BaseDistribution
@@ -43,6 +45,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         self._fit_results = None
         self._freq = None
         self._first_train_timestamp = None
+        self._last_train_timestamp = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXBaseAdapter":
         """
@@ -68,11 +71,9 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
-        self._freq = freq
+        self._freq = determine_freq(timestamps=df["timestamp"])
         self._first_train_timestamp = df["timestamp"].min()
+        self._last_train_timestamp = df["timestamp"].max()
 
         return self
 
@@ -305,11 +306,14 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
+        if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
+
         fit_results = self._fit_results
         model = fit_results.model
 
         if model.hamilton_representation:
-            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of an ARMA!")
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
 
         state = fit_results.predicted_state[:, :-1]
 
@@ -319,7 +323,17 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         else:
             components = self._state_regression_decomposition(state=state, ssm=model.ssm, k_exog=model.k_exog)
 
-        return self._prepare_components_df(components=components, model=model)
+        components_df = self._prepare_components_df(components=components, model=model)
+
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._freq,
+        )
+
+        return components_df
 
     def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
         """Estimate forecast components.
@@ -334,13 +348,19 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+
+        horizon = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
+        )
+
         fit_results = self._fit_results
 
         model = fit_results.model
         if model.hamilton_representation:
-            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of an ARMA!")
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
 
-        horizon = len(df)
         self._encode_categoricals(df)
         self._check_df(df, horizon)
 
@@ -361,7 +381,13 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 state=state, ssm=forecast_results.model, k_exog=model.k_exog
             )
 
-        return self._prepare_components_df(components=components, model=model)
+        components_df = self._prepare_components_df(components=components, model=model)
+
+        components_df = select_observations(
+            df=components_df, timestamps=df["timestamp"], end=df["timestamp"].max(), periods=horizon, freq=self._freq
+        )
+
+        return components_df
 
 
 class _SARIMAXAdapter(_SARIMAXBaseAdapter):

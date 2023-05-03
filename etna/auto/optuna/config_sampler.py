@@ -1,3 +1,4 @@
+from functools import partial
 from typing import List
 from typing import Optional
 from typing import Set
@@ -115,10 +116,10 @@ class ConfigSampler(BaseSampler):
                 finished_trials_hash.append(t.user_attrs["hash"])
             elif t.state == TrialState.RUNNING:
 
-                def _closure():
-                    return study._storage.get_trial(t._trial_id).user_attrs["hash"]
+                def _closure(trial):
+                    return study._storage.get_trial(trial._trial_id).user_attrs["hash"]
 
-                hash_to_add = retry(_closure, max_retries=self.retries)
+                hash_to_add = retry(partial(_closure, trial=t), max_retries=self.retries)
                 running_trials_hash.append(hash_to_add)
             else:
                 pass

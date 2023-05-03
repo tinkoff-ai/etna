@@ -69,7 +69,7 @@ class StandardScalerTransform(SklearnTransform):
         self.with_std = with_std
         super().__init__(
             in_column=in_column,
-            transformer=StandardScaler(with_mean=self.with_mean, with_std=self.with_std, copy=True),
+            transformer=StandardScaler(with_mean=self.with_mean, with_std=self.with_std, copy=False),
             out_column=out_column,
             inplace=inplace,
             mode=mode,
@@ -166,7 +166,7 @@ class RobustScalerTransform(SklearnTransform):
                 with_scaling=self.with_scaling,
                 quantile_range=self.quantile_range,
                 unit_variance=self.unit_variance,
-                copy=True,
+                copy=False,
             ),
             mode=mode,
         )
@@ -246,7 +246,7 @@ class MinMaxScalerTransform(SklearnTransform):
             in_column=in_column,
             inplace=inplace,
             out_column=out_column,
-            transformer=MinMaxScaler(feature_range=self.feature_range, clip=self.clip, copy=True),
+            transformer=MinMaxScaler(feature_range=self.feature_range, clip=self.clip, copy=False),
             mode=mode,
         )
 
@@ -313,7 +313,7 @@ class MaxAbsScalerTransform(SklearnTransform):
             in_column=in_column,
             inplace=inplace,
             out_column=out_column,
-            transformer=MaxAbsScaler(copy=True),
+            transformer=MaxAbsScaler(copy=False),
             mode=mode,
         )
 

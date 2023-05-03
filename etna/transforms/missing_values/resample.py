@@ -140,26 +140,30 @@ class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
         self.in_column = in_column
         self.distribution_column = distribution_column
         self.inplace = inplace
-        self.out_column = self._get_out_column(out_column)
+        self.out_column = out_column
         self.in_column_regressor: Optional[bool] = None
+
+        if self.inplace and out_column:
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+
         super().__init__(
             transform=_OneSegmentResampleWithDistributionTransform(
                 in_column=in_column,
                 distribution_column=distribution_column,
                 inplace=inplace,
-                out_column=self.out_column,
+                out_column=self._get_column_name(),
             ),
             required_features=[in_column, distribution_column],
         )
 
-    def _get_out_column(self, out_column: Optional[str]) -> str:
+    def _get_column_name(
+        self,
+    ) -> str:
         """Get the `out_column` depending on the transform's parameters."""
-        if self.inplace and out_column:
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
         if self.inplace:
             return self.in_column
-        if out_column:
-            return out_column
+        if self.out_column:
+            return self.out_column
         return self.__repr__()
 
     def get_regressors_info(self) -> List[str]:
@@ -168,7 +172,7 @@ class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
             raise ValueError("Fit the transform to get the correct regressors info!")
         if self.inplace:
             return []
-        return [self.out_column] if self.in_column_regressor else []
+        return [self._get_column_name()] if self.in_column_regressor else []
 
     def fit(self, ts: TSDataset) -> "ResampleWithDistributionTransform":
         """Fit the transform."""

@@ -4,6 +4,7 @@ from typing import Sequence
 from typing import Tuple
 
 import pandas as pd
+from lightning_fabric.utilities.seed import seed_everything
 from optuna.samplers import RandomSampler
 
 from etna.datasets import TSDataset
@@ -24,16 +25,15 @@ def get_loaded_model(model: ModelType) -> ModelType:
 def assert_model_equals_loaded_original(
     model: ModelType, ts: TSDataset, transforms: Sequence[Transform], horizon: int
 ) -> Tuple[ModelType, ModelType]:
-    import torch  # TODO: remove after fix at issue-802
 
     pipeline_1 = Pipeline(model=model, transforms=transforms, horizon=horizon)
     pipeline_1.fit(ts)
-    torch.manual_seed(11)
+    seed_everything(0)
     forecast_ts_1 = pipeline_1.forecast()
 
     loaded_model = get_loaded_model(pipeline_1.model)
     pipeline_1.model = loaded_model
-    torch.manual_seed(11)
+    seed_everything(0)
     forecast_ts_2 = pipeline_1.forecast()
 
     pd.testing.assert_frame_equal(forecast_ts_1.to_pandas(), forecast_ts_2.to_pandas())

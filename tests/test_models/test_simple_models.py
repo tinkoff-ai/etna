@@ -11,6 +11,7 @@ from etna.models.moving_average import MovingAverageModel
 from etna.models.naive import NaiveModel
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
 from etna.pipeline import Pipeline
+from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
 
@@ -54,6 +55,26 @@ def df():
     tsds = TSDataset(df, freq="1d")
 
     return tsds
+
+
+@pytest.fixture()
+def long_periodic_ts():
+    history = 400
+
+    df1 = pd.DataFrame()
+    df1["target"] = np.sin(np.arange(history))
+    df1["segment"] = "A"
+    df1["timestamp"] = pd.date_range(start="2020-01-01", periods=history)
+
+    df2 = df1.copy()
+    df2["segment"] = "B"
+    df2["target"] *= 4
+
+    df = pd.concat([df1, df2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+
+    return ts
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
@@ -730,6 +751,126 @@ def test_deadline_model_forecast_correct_with_big_horizons(two_month_ts):
 )
 def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+@pytest.mark.parametrize("method_name", ("forecast", "predict"))
+@pytest.mark.parametrize(
+    "window, seasonality, expected_components_names",
+    ((1, 7, ["target_component_lag_7"]), (2, 7, ["target_component_lag_7", "target_component_lag_14"])),
+)
+def test_sma_model_predict_components_correct_names(
+    example_tsds, method_name, window, seasonality, expected_components_names, horizon=10
+):
+    model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(example_tsds)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=example_tsds, prediction_size=horizon, return_components=True)
+    assert sorted(forecast.target_components_names) == sorted(expected_components_names)
+
+
+@pytest.mark.parametrize("method_name", ("forecast", "predict"))
+@pytest.mark.parametrize("window", (1, 3, 5))
+@pytest.mark.parametrize("seasonality", (1, 7, 14))
+def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name, window, seasonality, horizon=10):
+    model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(example_tsds)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=example_tsds, prediction_size=horizon, return_components=True)
+
+    target = forecast.to_pandas(features=["target"])
+    target_components_df = forecast.get_target_components()
+    np.testing.assert_allclose(target.values, target_components_df.sum(axis=1, level="segment").values)
+
+
+@pytest.mark.parametrize(
+    "method_name, expected_values",
+    (("forecast", [[44, 4], [45, 6], [44, 4]]), ("predict", [[44, 4], [45, 6], [46, 8]])),
+)
+def test_sma_model_predict_components_correct(
+    simple_df, method_name, expected_values, window=1, seasonality=2, horizon=3
+):
+    """Testing that correct lag used as a component."""
+    model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(simple_df)
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=simple_df, prediction_size=horizon, return_components=True)
+
+    target_components_df = forecast.get_target_components()
+    np.testing.assert_allclose(target_components_df.values, expected_values)
+
+
+@pytest.mark.parametrize("method", ("predict", "forecast"))
+@pytest.mark.parametrize(
+    "window,seasonality,expected_components_names",
+    (
+        (1, "month", ["target_component_month_lag_1"]),
+        (3, "month", ["target_component_month_lag_1", "target_component_month_lag_2", "target_component_month_lag_3"]),
+        (1, "year", ["target_component_year_lag_1"]),
+    ),
+)
+def test_deadline_ma_predict_components_correct_names(
+    long_periodic_ts, method, window, seasonality, expected_components_names, horizon=10
+):
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(ts=long_periodic_ts)
+
+    method_to_call = getattr(model, method)
+    forecast = method_to_call(ts=long_periodic_ts, prediction_size=horizon, return_components=True)
+
+    assert sorted(forecast.target_components_names) == sorted(expected_components_names)
+
+
+@pytest.mark.parametrize("method", ("predict", "forecast"))
+@pytest.mark.parametrize(
+    "window,seasonality",
+    (
+        (1, "month"),
+        (3, "month"),
+        (1, "year"),
+    ),
+)
+def test_deadline_ma_predict_components_sum_up_to_target(long_periodic_ts, method, window, seasonality, horizon=10):
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(ts=long_periodic_ts)
+
+    method_to_call = getattr(model, method)
+    forecast = method_to_call(ts=long_periodic_ts, prediction_size=horizon, return_components=True)
+
+    target = forecast.to_pandas(features=["target"])
+    components = forecast.get_target_components()
+
+    np.testing.assert_allclose(target.values, components.sum(axis=1, level="segment").values)
+
+
+@pytest.mark.parametrize(
+    "method_name, out_of_sample_pred",
+    (("forecast", [-0.75100715, -3.00402861]), ("predict", [-0.42019439, -1.68077756])),
+)
+def test_deadline_ma_predict_components_correct(
+    long_periodic_ts, method_name, out_of_sample_pred, window=1, seasonality="month", horizon=32
+):
+    """Testing that correct lag used as a component."""
+    predict_lags = long_periodic_ts.df.values[-63:-32]
+
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
+    model.fit(long_periodic_ts)
+
+    to_call = getattr(model, method_name)
+    forecast = to_call(ts=long_periodic_ts, prediction_size=horizon, return_components=True)
+
+    target_components_df = forecast.get_target_components()
+
+    # testing in-sample prediction
+    np.testing.assert_allclose(target_components_df.values[:-1], predict_lags)
+
+    # testing out-of-sample prediction
+    np.testing.assert_allclose(target_components_df.values[-1], out_of_sample_pred)
+
+
+@pytest.mark.parametrize("model", (MovingAverageModel(), NaiveModel()))
+def test_prediction_decomposition(example_tsds, model):
+    train, test = example_tsds.train_test_split(test_size=10)
+    _test_prediction_decomposition(model=model, train=train, test=test, prediction_size=5)
 
 
 @pytest.mark.parametrize(

@@ -403,7 +403,7 @@ class DifferencingTransform(ReversibleTransform):
             if NaNs are present inside the segment
         """
         # this is made because transforms of high order may need some columns created by transforms of lower order
-        result_df = df.copy()
+        result_df = df
         for transform in self._differencing_transforms:
             result_df = transform._fit_transform(result_df)
         self._fit_segments = df.columns.get_level_values("segment").unique().tolist()

@@ -119,11 +119,11 @@ def test_forecast_return_components(
     pipeline = Pipeline(model=model)
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(return_components=True)
-    assert forecast.target_components_names is not None
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
 
-    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
-    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
-    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
 
 
 @pytest.mark.parametrize(
@@ -1204,11 +1204,11 @@ def test_predict_return_components(
     pipeline = Pipeline(model=model)
     pipeline.fit(example_tsds)
     forecast = pipeline.predict(ts=example_tsds, return_components=True)
-    assert forecast.target_components_names is not None
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
 
-    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
-    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
-    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
 
 
 @pytest.mark.parametrize(
