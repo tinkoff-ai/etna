@@ -107,7 +107,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         self.constant_fill_strategy = constant_fill_strategy if constant_fill_strategy else []
         self.lags = lags if lags else {}
         self.scalers = scalers if scalers else {}
-        self.pf_dataset_predict: Optional[TimeSeriesDataSet] = None
+        self.pf_dataset_params: Optional[Dict[str, Any]] = None
 
     def _time_encoder(self, values: List[int]) -> Dict[int, int]:
         encoded_unix_times = dict()
@@ -166,14 +166,28 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
 
         return pf_dataset
 
-    def create_inference_dataset(self, ts: TSDataset) -> TimeSeriesDataSet:
+    def create_inference_dataset(self, ts: TSDataset, horizon: int) -> TimeSeriesDataSet:
         """Create inference dataset.
+
+        This method should be used only after ``create_train_dataset`` that is used during model training.
 
         Parameters
         ----------
         ts:
             Time series dataset.
+        horizon:
+            Size of prediction to make.
+
+        Raises
+        ------
+        ValueError:
+            if method was used before ``create_train_dataset``
         """
+        if self.pf_dataset_params is None:
+            raise ValueError(
+                "This method should only be called after create_train_dataset. Try to train the model that uses this builder."
+            )
+
         df_flat = ts.to_pandas(flatten=True)
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
         df_flat["target"] = df_flat["target"].fillna(0)
@@ -184,8 +198,13 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
             for feature_name in self.time_varying_known_categoricals:
                 df_flat[feature_name] = df_flat[feature_name].astype(str)
 
+        # `TimeSeriesDataSet.from_parameters` in predict mode ignores `min_prediction_length`,
+        # and we can change prediction size only by changing `max_prediction_length`
+        dataset_params = deepcopy(self.pf_dataset_params)
+        dataset_params["max_prediction_length"] = horizon
+
         pf_inference_dataset = TimeSeriesDataSet.from_parameters(
-            self.pf_dataset_params, df_flat, predict=True, stop_randomization=True
+            dataset_params, df_flat, predict=True, stop_randomization=True
         )
         return pf_inference_dataset
 
@@ -266,7 +285,7 @@ class PytorchForecastingMixin:
         if len(ts.df) != horizon + self.encoder_length:
             raise ValueError("Length of dataset must be equal to horizon + max_encoder_length")
 
-        pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts)
+        pf_dataset_inference = self.dataset_builder.create_inference_dataset(ts, horizon)
 
         prediction_dataloader: DataLoader = pf_dataset_inference.to_dataloader(
             train=False, batch_size=self.test_batch_size

@@ -677,16 +677,10 @@ class TestPredictSubsetSegments:
         model.fit(ts)
 
         # forecasting full
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         ts.df = ts.df.iloc[(num_skip_points - model.context_size) :]
         forecast_full_ts = make_predict(model=model, ts=ts, prediction_size=prediction_size)
 
         # forecasting subset of segments
-        torch.manual_seed(11)  # TODO: remove after fix at issue-802
-
         subset_ts.df = subset_ts.df.iloc[(num_skip_points - model.context_size) :]
         forecast_subset_ts = make_predict(model=model, ts=subset_ts, prediction_size=prediction_size)
 
@@ -786,10 +780,6 @@ class TestPredictNewSegments:
         model.fit(train_ts)
 
         # forecasting
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         test_ts.df = test_ts.df.iloc[(num_skip_points - model.context_size) :]
         prediction_size = len(ts.index) - num_skip_points
         forecast_ts = make_predict(model=model, ts=test_ts, prediction_size=prediction_size)
