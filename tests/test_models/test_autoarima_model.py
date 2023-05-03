@@ -150,3 +150,8 @@ def test_save_load(example_tsds):
 def test_prediction_decomposition(outliers_tsds):
     train, test = outliers_tsds.train_test_split(test_size=10)
     assert_prediction_components_are_present(model=AutoARIMAModel(), train=train, test=test)
+
+
+def test_params_to_tune():
+    model = AutoARIMAModel()
+    assert len(model.params_to_tune()) == 0

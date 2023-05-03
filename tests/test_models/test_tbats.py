@@ -491,3 +491,8 @@ def test_forecast_decompose_timestamp_error(periodic_dfs):
 def test_prediction_decomposition(outliers_tsds, model):
     train, test = outliers_tsds.train_test_split(test_size=10)
     assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize("model", (BATSModel(), TBATSModel()))
+def test_params_to_tune(model):
+    assert len(model.params_to_tune()) == 0
