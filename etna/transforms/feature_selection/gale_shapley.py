@@ -8,9 +8,15 @@ from typing import Union
 import pandas as pd
 from typing_extensions import Literal
 
+from etna import SETTINGS
 from etna.analysis import RelevanceTable
 from etna.core import BaseMixin
 from etna.transforms.feature_selection.base import BaseFeatureSelectionTransform
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
+    from optuna.distributions import IntUniformDistribution
 
 
 class BaseGaleShapley(BaseMixin):
@@ -385,3 +391,20 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
                 segment_features_ranking=segment_features_ranking, features_to_drop=selected_features
             )
         return self
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``top_k``, ``use_rank``. Other parameters are expected to be set by the user.
+
+        For ``top_k`` parameter the maximum suggested value is not greater than ``self.top_k``.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "top_k": IntUniformDistribution(low=1, high=self.top_k),
+            "use_rank": CategoricalDistribution([False, True]),
+        }
