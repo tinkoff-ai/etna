@@ -234,3 +234,25 @@ def test_inverse_transform_with_target_components_target_not_in_required_feature
     transform = AddConstTransform(in_column="exog", value=-10)
     transform.inverse_transform(ts=ts_with_target_components)
     pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), target_components_before)
+
+
+@pytest.fixture()
+def df_exog_with_nans():
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range("2023-01-01", periods=5)) * 2,
+            "segment": ["A"] * 5 + ["B"] * 5,
+            "feat1": [1, 2, 3, 4, None] + [1, 2, 3, 4, 5],
+            "feat2": [1, 2, 3, None, None] + [1, 2, 3, None, None],
+        }
+    )
+
+    return TSDataset.to_dataset(df=df)
+
+
+def test_save_exog_last_date(
+    df_exog_with_nans, expected={"feat1": pd.Timestamp("2023-01-04"), "feat2": pd.Timestamp("2023-01-03")}
+):
+    tr = TransformMock(required_features="all")
+    tr._save_exog_last_date(df_exog=df_exog_with_nans)
+    assert tr._exog_last_date == expected
