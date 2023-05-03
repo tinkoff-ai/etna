@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Tuple
 
 import pandas as pd
+from lightning_fabric.utilities.seed import seed_everything
 
 from etna.datasets import TSDataset
 from etna.pipeline.base import AbstractPipeline
@@ -24,21 +25,20 @@ def get_loaded_pipeline(pipeline: AbstractPipeline, ts: TSDataset = None) -> Abs
 def assert_pipeline_equals_loaded_original(
     pipeline: AbstractPipeline, ts: TSDataset, load_ts: bool = True
 ) -> Tuple[AbstractPipeline, AbstractPipeline]:
-    import torch  # TODO: remove after fix at issue-802
 
     initial_ts = deepcopy(ts)
 
     pipeline.fit(ts)
-    torch.manual_seed(11)
+    seed_everything(0)
     forecast_ts_1 = pipeline.forecast()
 
     if load_ts:
         loaded_pipeline = get_loaded_pipeline(pipeline, ts=initial_ts)
-        torch.manual_seed(11)
+        seed_everything(0)
         forecast_ts_2 = loaded_pipeline.forecast()
     else:
         loaded_pipeline = get_loaded_pipeline(pipeline)
-        torch.manual_seed(11)
+        seed_everything(0)
         forecast_ts_2 = loaded_pipeline.forecast(ts=initial_ts)
 
     pd.testing.assert_frame_equal(forecast_ts_1.to_pandas(), forecast_ts_2.to_pandas())
