@@ -89,8 +89,9 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
         """
         df = ts.to_pandas(flatten=False, features=self.required_features)
 
-        if ts.df_exog is not None:
-            self._save_exog_last_date(df_exog=ts.df_exog)
+        df_exog = ts.df_exog
+        if df_exog is not None and isinstance(df_exog, pd.DataFrame):
+            self._save_exog_last_date(df_exog=df_exog)
 
         self._fit(df=df)
         return self
