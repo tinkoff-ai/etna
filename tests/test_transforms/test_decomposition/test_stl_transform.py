@@ -6,6 +6,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.decomposition import STLTransform
 from etna.transforms.decomposition.stl import _OneSegmentSTLTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -197,3 +198,10 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
 )
 def test_save_load(transform, ts_trend_seasonal):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_trend_seasonal)
+
+
+def test_params_to_tune(ts_trend_seasonal):
+    ts = ts_trend_seasonal
+    transform = STLTransform(in_column="target", period=7)
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)
