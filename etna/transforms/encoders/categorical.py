@@ -139,7 +139,7 @@ class LabelEncoderTransform(IrreversibleTransform):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        This grid tunes only ``strategy`` parameter. Other parameters are expected to be set by the user.
+        This grid tunes ``strategy`` parameter. Other parameters are expected to be set by the user.
 
         Returns
         -------

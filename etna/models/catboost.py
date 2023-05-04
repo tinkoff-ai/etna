@@ -162,6 +162,9 @@ class _CatBoostAdapter(BaseAdapter):
     def _params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``learning_rate``, ``depth``, ``random_strength``, ``l2_leaf_reg``.
+        Other parameters are expected to be set by the user.
+
         Returns
         -------
         :
@@ -304,6 +307,9 @@ class CatBoostPerSegmentModel(
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``learning_rate``, ``depth``, ``random_strength``, ``l2_leaf_reg``.
+        Other parameters are expected to be set by the user.
+
         Returns
         -------
         :
@@ -440,6 +446,9 @@ class CatBoostMultiSegmentModel(
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``learning_rate``, ``depth``, ``random_strength``, ``l2_leaf_reg``.
+        Other parameters are expected to be set by the user.
 
         Returns
         -------

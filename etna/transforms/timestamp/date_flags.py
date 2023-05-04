@@ -354,6 +354,11 @@ class DateFlagsTransform(IrreversibleTransform, FutureMixin):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``day_number_in_week``, ``day_number_in_month``, ``day_number_in_year``,
+        ``week_number_in_month``, ``week_number_in_year``, ``month_number_in_year``, ``season_number``,
+        ``year_number``, ``is_weekend``.
+        Other parameters are expected to be set by the user.
+
         There are no restrictions on all ``False`` values for the flags.
 
         Returns

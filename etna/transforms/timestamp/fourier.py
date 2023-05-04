@@ -163,9 +163,8 @@ class FourierTransform(IrreversibleTransform, FutureMixin):
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
-        * If the ``mods`` parameter is set, then the grid is empty.
-
-        * If the ``order`` parameter is set, ``period`` parameter isn't tuned. It is expected to be set by the user.
+        If ``self.order`` is set then this grid tunes ``order`` parameter:
+        Other parameters are expected to be set by the user.
 
         Returns
         -------

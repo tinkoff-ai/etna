@@ -461,6 +461,10 @@ class ProphetModel(
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
         """Get default grid for tuning hyperparameters.
 
+        This grid tunes parameters: ``seasonality_mode``, ``seasonality_prior_scale``, ``changepoint_prior_scale``,
+        ``changepoint_range``, ``holidays_prior_scale``.
+        Other parameters are expected to be set by the user.
+
         Returns
         -------
         :
