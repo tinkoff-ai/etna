@@ -6,6 +6,9 @@ from typing import Union
 
 import pandas as pd
 
+from etna.datasets.utils import match_target_components
+from etna.datasets.utils import match_target_quantiles
+from etna.models.utils import determine_num_steps
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
@@ -123,25 +126,25 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
         self.lag: Optional[int] = None
         self.horizon: Optional[int] = None
-        self.auto = False
+        self._auto = False
 
         self._created_regressors: Optional[List[str]] = None
         self._exog_shifts: Optional[Dict[str, int]] = None
 
         if isinstance(lag, int):
             if lag <= 0:
-                raise ValueError(f"{type(self).__name__} works only with positive lags values, {lag} given")
+                raise ValueError(f"{self.__class__.__name__} works only with positive lags values, {lag} given")
             self.lag = lag
 
         else:
             if horizon is None:
-                raise ValueError("`horizon` should be specified when using `auto`!")
+                raise ValueError("Value of `horizon` should be specified when using `auto`!")
 
             if horizon < 1:
-                raise ValueError(f"{type(self).__name__} works only with positive horizon values, {horizon} given")
+                raise ValueError(f"{self.__class__.__name__} works only with positive horizon values, {horizon} given")
 
             self.horizon = horizon
-            self.auto = True
+            self._auto = True
 
     def _fit(self, df: pd.DataFrame) -> "ExogShiftTransform":
         """Estimate shifts for exogenous variables.
@@ -153,7 +156,8 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
         Returns
         -------
-        result: ExogShiftTransform
+        :
+            Fitted `ExogShiftTransform` instance.
         """
         feature_names = self._get_feature_names(df=df)
 
@@ -183,7 +187,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
     def _estimate_shift(self, df: pd.DataFrame, feature_name: str) -> int:
         """Estimate shift value for exogenous variable."""
-        if not self.auto:
+        if not self._auto:
             return self.lag  # type: ignore
 
         freq = pd.infer_freq(df.index)
@@ -214,8 +218,8 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
         Returns
         -------
-        result: pd.Dataframe
-            transformed dataframe
+        :
+            Transformed dataframe.
         """
         if self._exog_shifts is None:
             raise ValueError("Transform is not fitted!")
@@ -251,6 +255,6 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         if self._created_regressors is None:
-            return []
+            raise ValueError("Fit the transform to get the regressors info!")
 
         return self._created_regressors
