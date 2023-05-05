@@ -173,10 +173,13 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
     def _get_feature_names(df: pd.DataFrame) -> List[str]:
         """Return the names of exogenous variables."""
         names = set(df.columns.get_level_values("feature"))
-        if "target" in names:
-            names.remove("target")
 
-        return list(names)
+        names_to_remove = {"target"}
+        names_to_remove |= match_target_quantiles(names)
+        names_to_remove |= match_target_components(names)
+
+        features = names - names_to_remove
+        return list(features)
 
     def _estimate_shift(self, df: pd.DataFrame, feature_name: str) -> int:
         """Estimate shift value for exogenous variable."""
