@@ -9,11 +9,10 @@ from etna.pipeline import Pipeline
 from etna.transforms import ExogShiftTransform
 
 
-@pytest.fixture()
-def df_exog_with_nans():
+def build_df_exog_with_nans(freq="D"):
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range("2023-01-01", periods=5)) * 2,
+            "timestamp": list(pd.date_range("2023-01-01", periods=5, freq=freq)) * 2,
             "segment": ["A"] * 5 + ["B"] * 5,
             "feat1": [1, 2, 3, 4, None] + [1, 2, 3, 4, 5],
             "feat2": [1, 2, 3, None, None] + [1, 2, 3, None, None],
@@ -24,19 +23,28 @@ def df_exog_with_nans():
     return TSDataset.to_dataset(df=df)
 
 
-@pytest.fixture()
-def ts_with_exogs(df_exog_with_nans):
+def build_ts_with_exogs(freq="D"):
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range("2023-01-01", periods=4)) * 2,
+            "timestamp": list(pd.date_range("2023-01-01", periods=4, freq=freq)) * 2,
             "segment": ["A"] * 4 + ["B"] * 4,
             "target": list(3 * np.arange(1, 5)) * 2,
         }
     )
 
     df = TSDataset.to_dataset(df=df)
-    ts = TSDataset(df=df, df_exog=df_exog_with_nans, freq="D")
+    ts = TSDataset(df=df, df_exog=build_df_exog_with_nans(freq=freq), freq=freq)
     return ts
+
+
+@pytest.fixture()
+def ts_with_exogs():
+    return build_ts_with_exogs(freq="D")
+
+
+@pytest.fixture()
+def ts_with_exogs_ms_freq():
+    return build_ts_with_exogs(freq="MS")
 
 
 def test_negative_lag():
@@ -113,20 +121,38 @@ def test_shift_no_exog(simple_df, lag, expected={"target"}):
         ("auto", 2, {"feat1_shift_2", "feat2_shift_3", "feat3_shift_1", "target"}),
     ),
 )
-def test_transformed_names(ts_with_exogs, lag, horizon, expected):
+@pytest.mark.parametrize(
+    "ts_name",
+    (
+        "ts_with_exogs",
+        "ts_with_exogs_ms_freq",
+    ),
+)
+def test_transformed_names(ts_name, lag, horizon, expected, request):
+    ts = request.getfixturevalue(ts_name)
+
     t = ExogShiftTransform(lag=lag, horizon=horizon)
-    transformed = t.fit_transform(ts=ts_with_exogs)
+    transformed = t.fit_transform(ts=ts)
     column_names = transformed.df.columns.get_level_values("feature")
     assert set(column_names) == expected
 
 
 @pytest.mark.parametrize("lag", (3, "auto"))
 @pytest.mark.parametrize("horizon", range(1, 3))
-def test_pipeline_forecast(ts_with_exogs, lag, horizon):
+@pytest.mark.parametrize(
+    "ts_name",
+    (
+        "ts_with_exogs",
+        "ts_with_exogs_ms_freq",
+    ),
+)
+def test_pipeline_forecast(ts_name, lag, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+
     pipeline = Pipeline(
         transforms=[ExogShiftTransform(lag=lag, horizon=horizon)], model=LinearPerSegmentModel(), horizon=horizon
     )
-    pipeline.fit(ts_with_exogs)
+    pipeline.fit(ts)
     pipeline.forecast()
 
 
