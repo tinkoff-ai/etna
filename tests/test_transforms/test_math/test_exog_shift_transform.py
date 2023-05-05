@@ -51,15 +51,16 @@ def ts_with_exogs():
 def ts_with_exogs_ms_freq():
     return build_ts_with_exogs(freq="MS")
 
+
 @pytest.mark.parametrize(
     "expected",
     (
-            {
-                "feat1": pd.Timestamp("2023-01-04"),
-                "feat2": pd.Timestamp("2023-01-03"),
-                'feat3': pd.Timestamp('2023-01-05 00:00:00')
-            },
-    )
+        {
+            "feat1": pd.Timestamp("2023-01-04"),
+            "feat2": pd.Timestamp("2023-01-03"),
+            "feat3": pd.Timestamp("2023-01-05 00:00:00"),
+        },
+    ),
 )
 def test_save_exog_last_date(df_exog_with_nans, expected):
     t = ExogShiftTransform(lag=1)

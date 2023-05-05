@@ -173,7 +173,6 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
         :
             The fitted transform instance.
         """
-
         df_exog = ts.df_exog
         if df_exog is not None and isinstance(df_exog, pd.DataFrame):
             self._save_exog_last_date(df_exog=df_exog)
