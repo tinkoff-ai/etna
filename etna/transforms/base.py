@@ -26,7 +26,6 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):
         self.required_features = required_features
-        self._exog_last_date: Optional[Dict[str, pd.Timestamp]] = None
 
     @abstractmethod
     def get_regressors_info(self) -> List[str]:
@@ -88,11 +87,6 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
             The fitted transform instance.
         """
         df = ts.to_pandas(flatten=False, features=self.required_features)
-
-        df_exog = ts.df_exog
-        if df_exog is not None and isinstance(df_exog, pd.DataFrame):
-            self._save_exog_last_date(df_exog=df_exog)
-
         self._fit(df=df)
         return self
 
@@ -132,19 +126,6 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
         df_transformed = self._transform(df=df)
         ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
         return ts
-
-    def _save_exog_last_date(self, df_exog: pd.DataFrame):
-        """Save last available date of each exogenous variable."""
-        exog_names = set(df_exog.columns.get_level_values("feature"))
-
-        self._exog_last_date = dict()
-        for name in exog_names:
-            feature = df_exog.loc[:, pd.IndexSlice[:, name]]
-
-            na_mask = pd.isna(feature).any(axis=1)
-            last_date = feature.index[~na_mask].max()
-
-            self._exog_last_date[name] = last_date
 
     def fit_transform(self, ts: TSDataset) -> TSDataset:
         """Fit and transform TSDataset.

@@ -38,6 +38,11 @@ def build_ts_with_exogs(freq="D"):
 
 
 @pytest.fixture()
+def df_exog_with_nans():
+    return build_df_exog_with_nans(freq="D")
+
+
+@pytest.fixture()
 def ts_with_exogs():
     return build_ts_with_exogs(freq="D")
 
@@ -45,6 +50,21 @@ def ts_with_exogs():
 @pytest.fixture()
 def ts_with_exogs_ms_freq():
     return build_ts_with_exogs(freq="MS")
+
+@pytest.mark.parametrize(
+    "expected",
+    (
+            {
+                "feat1": pd.Timestamp("2023-01-04"),
+                "feat2": pd.Timestamp("2023-01-03"),
+                'feat3': pd.Timestamp('2023-01-05 00:00:00')
+            },
+    )
+)
+def test_save_exog_last_date(df_exog_with_nans, expected):
+    t = ExogShiftTransform(lag=1)
+    t._save_exog_last_date(df_exog=df_exog_with_nans)
+    assert t._exog_last_date == expected
 
 
 def test_negative_lag():

@@ -6,6 +6,7 @@ from typing import Union
 
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.datasets.utils import match_target_components
 from etna.datasets.utils import match_target_quantiles
 from etna.models.utils import determine_num_steps
@@ -130,6 +131,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
         self._created_regressors: Optional[List[str]] = None
         self._exog_shifts: Optional[Dict[str, int]] = None
+        self._exog_last_date: Optional[Dict[str, pd.Timestamp]] = None
 
         if isinstance(lag, int):
             if lag <= 0:
@@ -145,6 +147,41 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
             self.horizon = horizon
             self._auto = True
+
+    def _save_exog_last_date(self, df_exog: pd.DataFrame):
+        """Save last available date of each exogenous variable."""
+        exog_names = set(df_exog.columns.get_level_values("feature"))
+
+        self._exog_last_date = dict()
+        for name in exog_names:
+            feature = df_exog.loc[:, pd.IndexSlice[:, name]]
+
+            na_mask = pd.isna(feature).any(axis=1)
+            last_date = feature.index[~na_mask].max()
+
+            self._exog_last_date[name] = last_date
+
+    def fit(self, ts: TSDataset) -> "ExogShiftTransform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+
+        df_exog = ts.df_exog
+        if df_exog is not None and isinstance(df_exog, pd.DataFrame):
+            self._save_exog_last_date(df_exog=df_exog)
+
+        super().fit(ts=ts)
+
+        return self
 
     def _fit(self, df: pd.DataFrame) -> "ExogShiftTransform":
         """Estimate shifts for exogenous variables.
