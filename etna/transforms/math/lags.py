@@ -188,11 +188,19 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
         freq = pd.infer_freq(df.index)
 
-        last_date = df.index.max() + pd.Timedelta(self.horizon, unit=freq)
+        last_date = df.index.max()
         last_feature_date = self._exog_last_date[feature_name]  # type: ignore
 
-        delta = last_date - last_feature_date
-        shift = max(0, int(delta / pd.Timedelta(1, unit=freq)))
+        if last_feature_date > last_date:
+            delta = -determine_num_steps(start_timestamp=last_date, end_timestamp=last_feature_date, freq=freq)
+
+        elif last_feature_date < last_date:
+            delta = determine_num_steps(start_timestamp=last_feature_date, end_timestamp=last_date, freq=freq)
+
+        else:
+            delta = 0
+
+        shift = max(0, delta + self.horizon)  # type: ignore
 
         return shift
 
