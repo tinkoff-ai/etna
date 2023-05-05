@@ -88,8 +88,19 @@ def test_regressors_info_not_fit():
 
 
 def test_get_feature_names(example_reg_tsds, expected={"regressor_exog_weekend"}):
-    feature_names = ExogShiftTransform._get_feature_names(example_reg_tsds.df)
+    t = ExogShiftTransform(lag=1)
+    t.fit(ts=example_reg_tsds)
+    feature_names = t._get_feature_names(example_reg_tsds.df)
     assert set(feature_names) == expected
+
+
+def test_get_feature_names_no_exog_error(ts_with_exogs):
+    t = ExogShiftTransform(lag=1)
+    t.fit(ts=ts_with_exogs)
+    df = ts_with_exogs.df.drop(columns=["feat3"], level=1)
+
+    with pytest.raises(ValueError, match="Feature `feat3` is expected to be in the dataframe!"):
+        t._get_feature_names(df)
 
 
 @pytest.mark.parametrize(
