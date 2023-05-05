@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
-from etna.core import AbstractSaveable
 from etna.core import SaveMixin
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
@@ -36,7 +35,7 @@ else:
     SaveNNMixin = Mock  # type: ignore
 
 
-class AbstractModel(SaveMixin, AbstractSaveable, ABC, BaseMixin):
+class AbstractModel(SaveMixin, ABC, BaseMixin):
     """Interface for model with fit method."""
 
     @property
