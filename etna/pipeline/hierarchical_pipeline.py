@@ -312,25 +312,25 @@ class HierarchicalPipeline(Pipeline):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        # TODO: fix this: what if during backtest KeyboardInterrupt is raised
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
-        if self.ts is None:
-            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+        try:
+            if self.ts is None:
+                raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
-        # TODO: rework intervals estimation for `BottomUpReconciliator`
+            # TODO: rework intervals estimation for `BottomUpReconciliator`
 
-        with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
+            with tslogger.disable():
+                _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
 
-        source_ts = self.reconciliator.aggregate(ts=ts)
-        self._add_forecast_borders(
-            ts=source_ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions
-        )
+            source_ts = self.reconciliator.aggregate(ts=ts)
+            self._add_forecast_borders(
+                ts=source_ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions
+            )
+            return predictions
 
-        self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
-
-        return predictions
+        finally:
+            self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
     def save(self, path: pathlib.Path):
         """Save the object.
