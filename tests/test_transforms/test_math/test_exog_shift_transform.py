@@ -54,13 +54,24 @@ def test_negative_horizon_set():
         ExogShiftTransform(lag="auto", horizon=-1)
 
 
+def test_regressors_info_not_fit():
+    with pytest.raises(ValueError, match="Fit the transform"):
+        ExogShiftTransform(lag=1).get_regressors_info()
+
+
 def test_get_feature_names(example_reg_tsds, expected={"regressor_exog_weekend"}):
     feature_names = ExogShiftTransform._get_feature_names(example_reg_tsds.df)
     assert set(feature_names) == expected
 
 
-def test_regressors_info_not_fit():
-    assert ExogShiftTransform(lag=1).get_regressors_info() == []
+@pytest.mark.parametrize(
+    "ts_name", ("toy_dataset_with_mean_shift_in_target", "product_level_constant_forecast_with_target_components")
+)
+def test_ts_with_quantiles_and_components(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    t = ExogShiftTransform(lag=1)
+    t.fit(ts=ts)
+    assert t.get_regressors_info() == []
 
 
 @pytest.mark.parametrize(
