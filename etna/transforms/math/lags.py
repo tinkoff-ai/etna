@@ -7,8 +7,6 @@ from typing import Union
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.datasets.utils import match_target_components
-from etna.datasets.utils import match_target_quantiles
 from etna.models.utils import determine_num_steps
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
@@ -132,6 +130,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
         self._created_regressors: Optional[List[str]] = None
         self._exog_shifts: Optional[Dict[str, int]] = None
         self._exog_last_date: Optional[Dict[str, pd.Timestamp]] = None
+        self._filter_out_columns = {"target"}
 
         if isinstance(lag, int):
             if lag <= 0:
@@ -210,17 +209,20 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
         return self
 
-    @staticmethod
-    def _get_feature_names(df: pd.DataFrame) -> List[str]:
+    def _get_feature_names(self, df: pd.DataFrame) -> List[str]:
         """Return the names of exogenous variables."""
-        names = set(df.columns.get_level_values("feature"))
+        if self._exog_last_date is not None:
+            feature_names = list(self._exog_last_date.keys())
 
-        names_to_remove = {"target"}
-        names_to_remove |= match_target_quantiles(names)
-        names_to_remove |= match_target_components(names)
+        else:
+            feature_names = []
 
-        features = names - names_to_remove
-        return list(features)
+        df_columns = df.columns.get_level_values("feature")
+        for name in feature_names:
+            if name not in df_columns:
+                raise ValueError(f"Feature `{name}` is expected to be in the dataframe!")
+
+        return feature_names
 
     def _estimate_shift(self, df: pd.DataFrame, feature_name: str) -> int:
         """Estimate shift value for exogenous variable."""
