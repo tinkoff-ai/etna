@@ -93,6 +93,12 @@ def test_estimate_shift_not_fit():
         ExogShiftTransform(lag="auto", horizon=1)._estimate_shift(None, None)
 
 
+def test_transform_not_fit(ts_with_exogs):
+    t = ExogShiftTransform(lag=1)
+    with pytest.raises(ValueError, match="Transform is not fitted!"):
+        t.transform(ts=ts_with_exogs)
+
+
 def test_get_feature_names(example_reg_tsds, expected={"regressor_exog_weekend"}):
     t = ExogShiftTransform(lag=1)
     t.fit(ts=example_reg_tsds)
