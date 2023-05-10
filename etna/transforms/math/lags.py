@@ -148,18 +148,19 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
             self.horizon = horizon
             self._auto = True
 
-    def _save_exog_last_date(self, df_exog: pd.DataFrame):
+    def _save_exog_last_date(self, df_exog: Optional[pd.DataFrame] = None):
         """Save last available date of each exogenous variable."""
-        exog_names = set(df_exog.columns.get_level_values("feature"))
+        self._exog_last_date = {}
+        if df_exog is not None:
+            exog_names = set(df_exog.columns.get_level_values("feature"))
 
-        self._exog_last_date = dict()
-        for name in exog_names:
-            feature = df_exog.loc[:, pd.IndexSlice[:, name]]
+            for name in exog_names:
+                feature = df_exog.loc[:, pd.IndexSlice[:, name]]
 
-            na_mask = pd.isna(feature).any(axis=1)
-            last_date = feature.index[~na_mask].max()
+                na_mask = pd.isna(feature).any(axis=1)
+                last_date = feature.index[~na_mask].max()
 
-            self._exog_last_date[name] = last_date
+                self._exog_last_date[name] = last_date
 
     def fit(self, ts: TSDataset) -> "ExogShiftTransform":
         """Fit the transform.
@@ -175,13 +176,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
             The fitted transform instance.
         """
         self._freq = ts.freq
-        df_exog = ts.df_exog
-
-        if df_exog is not None:
-            self._save_exog_last_date(df_exog=df_exog)
-
-        else:
-            self._exog_last_date = {}
+        self._save_exog_last_date(df_exog=ts.df_exog)
 
         super().fit(ts=ts)
 
