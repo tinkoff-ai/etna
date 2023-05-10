@@ -127,6 +127,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
         self.horizon: Optional[int] = None
         self._auto = False
 
+        self._freq: Optional[str] = None
         self._created_regressors: Optional[List[str]] = None
         self._exog_shifts: Optional[Dict[str, int]] = None
         self._exog_last_date: Optional[Dict[str, pd.Timestamp]] = None
@@ -173,9 +174,14 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
         :
             The fitted transform instance.
         """
+        self._freq = ts.freq
         df_exog = ts.df_exog
-        if df_exog is not None and isinstance(df_exog, pd.DataFrame):
+
+        if df_exog is not None:
             self._save_exog_last_date(df_exog=df_exog)
+
+        else:
+            self._exog_last_date = {}
 
         super().fit(ts=ts)
 
@@ -210,7 +216,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
     def _get_feature_names(self, df: pd.DataFrame) -> List[str]:
         """Return the names of exogenous variables."""
-        if self._exog_last_date is not None:
+        if self._exog_last_date is not None and len(self._exog_last_date) > 0:
             feature_names = list(self._exog_last_date.keys())
 
         else:
@@ -228,16 +234,17 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
         if not self._auto:
             return self.lag  # type: ignore
 
-        freq = pd.infer_freq(df.index)
+        if self._exog_last_date is None or self._freq is None:
+            raise ValueError("Call `fit()` method before estimating exog shifts!")
 
         last_date = df.index.max()
-        last_feature_date = self._exog_last_date[feature_name]  # type: ignore
+        last_feature_date = self._exog_last_date[feature_name]
 
         if last_feature_date > last_date:
-            delta = -determine_num_steps(start_timestamp=last_date, end_timestamp=last_feature_date, freq=freq)
+            delta = -determine_num_steps(start_timestamp=last_date, end_timestamp=last_feature_date, freq=self._freq)
 
         elif last_feature_date < last_date:
-            delta = determine_num_steps(start_timestamp=last_feature_date, end_timestamp=last_date, freq=freq)
+            delta = determine_num_steps(start_timestamp=last_feature_date, end_timestamp=last_date, freq=self._freq)
 
         else:
             delta = 0
@@ -263,7 +270,6 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
             raise ValueError("Transform is not fitted!")
 
         result = df
-        freq = pd.infer_freq(df.index)
         segments = sorted(set(df.columns.get_level_values("segment")))
         feature_names = self._get_feature_names(df=df)
 
@@ -275,7 +281,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
             feature = df.loc[:, pd.IndexSlice[:, feature_name]]
 
             if shift > 0:
-                shifted_feature = feature.shift(shift, freq=freq)
+                shifted_feature = feature.shift(shift, freq=self._freq)
 
                 column_name = f"{feature_name}_shift_{shift}"
                 shifted_feature.columns = pd.MultiIndex.from_product([segments, [column_name]])
