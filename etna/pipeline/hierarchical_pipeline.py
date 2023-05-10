@@ -312,12 +312,11 @@ class HierarchicalPipeline(Pipeline):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
+        if self.ts is None:
+            raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
+
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
-
         try:
-            if self.ts is None:
-                raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
-
             # TODO: rework intervals estimation for `BottomUpReconciliator`
 
             with tslogger.disable():
