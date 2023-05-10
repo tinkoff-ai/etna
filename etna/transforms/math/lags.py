@@ -211,11 +211,9 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
 
     def _get_feature_names(self, df: pd.DataFrame) -> List[str]:
         """Return the names of exogenous variables."""
-        if self._exog_last_date is not None and len(self._exog_last_date) > 0:
+        feature_names = []
+        if self._exog_last_date is not None:
             feature_names = list(self._exog_last_date.keys())
-
-        else:
-            feature_names = []
 
         df_columns = df.columns.get_level_values("feature")
         for name in feature_names:
