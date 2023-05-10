@@ -80,7 +80,7 @@ def mrmr(
             last_selected_regressor = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, last_selected_feature]]
 
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
-                not_selected_regressors.apply(lambda col: last_selected_regressor.corrwith(col))
+                not_selected_regressors.apply(lambda col: last_selected_regressor.corrwith(col))  # noqa: B023
                 .abs()
                 .groupby("feature")
                 .apply(redundancy_aggregation_fn)
