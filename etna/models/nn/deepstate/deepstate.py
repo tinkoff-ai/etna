@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Iterator
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -176,28 +177,43 @@ class DeepStateNet(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
 
-        def _make(df: pd.DataFrame, start_idx: int, encoder_length: int, decoder_length: int) -> Optional[dict]:
+        values_real = (
+            df
+            .assign(datetime_index=self.ssm.generate_datetime_index(df["timestamp"]).reshape(-1, 1))
+            .pipe(lambda x: x[["datetime_index"] + [i for i in x.columns if i not in
+                                                    ["datetime_index", "target", "segment", "timestamp"]]])
+            .values
+        )
+        values_target = df["target"].values
+        segment = df["segment"].values[0]
+
+        def _make(
+                values_target: np.ndarray,
+                values_real: np.ndarray,
+                segment: str,
+                start_idx: int,
+                encoder_length: int,
+                decoder_length: int
+        ) -> Optional[dict]:
+
             sample: Dict[str, Any] = {
                 "encoder_real": list(),
                 "decoder_real": list(),
                 "encoder_target": list(),
                 "segment": None,
             }
-            total_length = len(df["target"])
+            total_length = len(values_target)
             total_sample_length = encoder_length + decoder_length
 
             if total_sample_length + start_idx > total_length:
                 return None
 
-            sample["encoder_target"] = df["target"].values[start_idx : start_idx + encoder_length].reshape(-1, 1)
-            sample["datetime_index"] = self.ssm.generate_datetime_index(
-                df["timestamp"].iloc[start_idx : start_idx + total_sample_length]
-            )
-            sample["segment"] = df["segment"].values[0]
-            df = df.drop(columns=["target", "segment", "timestamp"])
+            sample["encoder_target"] = values_target[start_idx : start_idx + encoder_length].reshape(-1, 1)
+            sample["datetime_index"] = values_real[:, 0][start_idx : start_idx + total_sample_length].reshape(1, -1)
+            sample["segment"] = segment
 
-            sample["encoder_real"] = df.values[start_idx : start_idx + encoder_length]
-            sample["decoder_real"] = df.values[start_idx + encoder_length : start_idx + total_sample_length]
+            sample["encoder_real"] = values_real[:, 1:][start_idx : start_idx + encoder_length]
+            sample["decoder_real"] = values_real[:, 1:][start_idx + encoder_length : start_idx + total_sample_length]
 
             sample["encoder_target"] = torch.from_numpy(sample["encoder_target"]).float()
             sample["decoder_real"] = torch.from_numpy(sample["decoder_real"]).float()
@@ -208,7 +224,9 @@ class DeepStateNet(DeepBaseNet):
         start_idx = 0
         while True:
             batch = _make(
-                df=df,
+                values_target=values_target,
+                values_real=values_real,
+                segment=segment,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
