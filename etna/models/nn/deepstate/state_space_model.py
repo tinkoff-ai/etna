@@ -292,7 +292,7 @@ class DaylySeasonalitySSM(SeasonalitySSM):
     """Class for Daily Seasonality State Space Model."""
 
     def __init__(self):
-        super().__init__(num_seasons=24, timestamp_transform=lambda x: x.hour())
+        super().__init__(num_seasons=24, timestamp_transform=lambda x: x.hour)
 
 
 class CompositeSSM(SSM):
