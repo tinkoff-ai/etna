@@ -244,7 +244,6 @@ def plot_backtest(
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
-    freq_timedelta = df.index[1] - df.index[0]
 
     # prepare colors
     default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
@@ -257,6 +256,8 @@ def plot_backtest(
         segment_history_df = history_df[segment]
         segment_forecast_df = forecast_df[segment]
         is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
+        single_point_forecast = len(segment_backtest_df) == 1
+        draw_only_lines = is_full_folds and not single_point_forecast
 
         # plot history
         if history_len == "all":
@@ -270,13 +271,13 @@ def plot_backtest(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = end_fold + freq_timedelta
+            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
 
             # draw test
             backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
             ax[i].plot(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
 
-            if is_full_folds:
+            if draw_only_lines:
                 # draw forecast
                 forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
                 ax[i].plot(forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"])
@@ -360,7 +361,6 @@ def plot_backtest_interactive(
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
-    freq_timedelta = df.index[1] - df.index[0]
 
     # prepare colors
     colors = plotly.colors.qualitative.Dark24
@@ -371,6 +371,8 @@ def plot_backtest_interactive(
         segment_history_df = history_df[segment]
         segment_forecast_df = forecast_df[segment]
         is_full_folds = set(segment_backtest_df.index) == set(segment_forecast_df.index)
+        single_point_forecast = len(segment_backtest_df) == 1
+        draw_only_lines = is_full_folds and not single_point_forecast
 
         # plot history
         if history_len == "all":
@@ -395,7 +397,7 @@ def plot_backtest_interactive(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = end_fold + freq_timedelta
+            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
 
             # draw test
             backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
@@ -412,7 +414,7 @@ def plot_backtest_interactive(
                 )
             )
 
-            if is_full_folds:
+            if draw_only_lines:
                 # draw forecast
                 forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
                 fig.add_trace(
