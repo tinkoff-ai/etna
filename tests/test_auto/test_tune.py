@@ -94,62 +94,29 @@ def test_simple_tune_run(example_tsds, optuna_storage, pipeline=Pipeline(NaiveMo
     assert len(tune.top_k()) == 2
     assert len(tune.top_k(k=1)) == 1
 
+def test_summary(
+    trials,
+    auto=MagicMock(),
+):
+    auto._optuna.study.get_trials.return_value = trials
+    df_summary = Tune.summary(self=auto)
+    assert len(df_summary) == len(trials)
+    assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
 
-def test_can_handle_uniform(example_tsds, optuna_storage):
-    params = {"model.smoothing_level": UniformDistribution(0.1, 1)}
+@pytest.mark.parametrize("params, model", [
+    ({"model.smoothing_level": UniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
+    ({"model.smoothing_level": LogUniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
+    ({"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}, SimpleExpSmoothingModel()),
+    ({"model.lag": IntUniformDistribution(1, 6)}, NaiveModel()),
+    ({"model.lag": IntLogUniformDistribution(1, 6)}, NaiveModel()),
+    ({"model.lag": CategoricalDistribution((1, 2, 3))}, NaiveModel()),
+    ({"model.smoothing_level": UniformDistribution(1, 5)}, SimpleExpSmoothingModel()),
+])
+def test_can_handle_distribution_type(example_tsds, optuna_storage, params, model):
     with patch.object(Pipeline, "params_to_tune", return_value=params):
-        pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
+        pipeline = Pipeline(model, horizon=7)
         tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
         tune.fit(ts=example_tsds, n_trials=2)
-
-
-def test_can_handle_loguniform(example_tsds, optuna_storage):
-    params = {"model.smoothing_level": LogUniformDistribution(0.1, 1)}
-    with patch.object(Pipeline, "params_to_tune", return_value=params):
-        pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
-        tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
-        tune.fit(ts=example_tsds, n_trials=2)
-
-
-def test_can_handle_discrete_uniform(example_tsds, optuna_storage):
-    params = {"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}
-    with patch.object(Pipeline, "params_to_tune", return_value=params):
-        pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
-        tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
-        tune.fit(ts=example_tsds, n_trials=2)
-
-
-def test_can_handle_intuniform(example_tsds, optuna_storage):
-    params = {"model.lag": IntUniformDistribution(1, 6)}
-    with patch.object(Pipeline, "params_to_tune", return_value=params):
-        pipeline = Pipeline(NaiveModel(), horizon=7)
-        tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
-        tune.fit(ts=example_tsds, n_trials=2)
-
-
-def test_can_handle_intloguniform(example_tsds, optuna_storage):
-    params = {"model.lag": IntLogUniformDistribution(1, 6)}
-    with patch.object(Pipeline, "params_to_tune", return_value=params):
-        pipeline = Pipeline(NaiveModel(), horizon=7)
-        tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
-        tune.fit(ts=example_tsds, n_trials=2)
-
-
-def test_can_handle_categorical(example_tsds, optuna_storage):
-    params = {"model.lag": CategoricalDistribution((1, 2, 3))}
-    with patch.object(Pipeline, "params_to_tune", return_value=params):
-        pipeline = Pipeline(NaiveModel(), horizon=7)
-        tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
-        tune.fit(ts=example_tsds, n_trials=2)
-
-
-def test_catch_nonexistent_argument_pass(example_tsds, optuna_storage):
-    params = {"model.lag": UniformDistribution(1, 5)}
-    with pytest.raises(TypeError):
-        with patch.object(Pipeline, "params_to_tune", return_value=params):
-            pipeline = Pipeline(SimpleExpSmoothingModel(), horizon=7)
-            tune = Tune(pipeline, MAE(), metric_aggregation="median", horizon=7, storage=optuna_storage)
-            tune.fit(ts=example_tsds, n_trials=2)
 
 
 def test_can_handle_transforms(example_tsds, optuna_storage):

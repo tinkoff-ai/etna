@@ -1,3 +1,5 @@
+from os import unlink
+
 import pytest
 from optuna.storages import RDBStorage
 from typing_extensions import Literal
@@ -14,7 +16,7 @@ def optuna_storage():
 
 
 @pytest.fixture()
-def trials():
+def trials_auto():
     class Trial(NamedTuple):
         user_attrs: dict
         state: Literal["COMPLETE", "RUNNING", "PENDING"] = "COMPLETE"
@@ -23,3 +25,16 @@ def trials():
         Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": i})
         for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
     ]
+
+
+@pytest.fixture()
+def trials_tune():
+    class Trial(NamedTuple):
+        params: dict
+        state: Literal["COMPLETE", "RUNNING", "PENDING"] = "COMPLETE"
+
+    return [
+        Trial(params={"pipeline": pipeline.to_dict(), "SMAPE_median": i})
+        for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
+    ]
+

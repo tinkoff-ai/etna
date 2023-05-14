@@ -106,8 +106,10 @@ def test_summary(
     trials,
     auto=MagicMock(),
 ):
+    print("trials", type(trials), trials)
+    # мб разные trials должны быть для Tune и Auto
     auto._optuna.study.get_trials.return_value = trials
-    df_summary = AutoBase.summary(self=auto)
+    df_summary = Auto.summary(self=auto)
     assert len(df_summary) == len(trials)
     assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
 

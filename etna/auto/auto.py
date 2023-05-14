@@ -18,6 +18,7 @@ from optuna.samplers import TPESampler
 from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
 from optuna.trial import Trial
+from optuna.study import Study
 from typing_extensions import Protocol
 
 from etna.auto.optuna import ConfigSampler
@@ -87,6 +88,13 @@ class AutoAbstract(ABC):
     @abstractmethod
     def summary(self) -> pd.DataFrame:
         """Get Auto trials summary."""
+        pass
+    
+    @abstractmethod        
+    def _summary(self, study: Study) -> list[any]:
+        """
+        Get information from trial summary
+        """
         pass
 
     @abstractmethod
@@ -167,13 +175,14 @@ class AutoBase(AutoAbstract):
             self._optuna = self._init_optuna()
 
         study = self._optuna.study.get_trials()
-
-        study_params = [
-            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
-            for trial in study
-        ]
+        
+        print("h ".join(["a" for trial in study]))
+        study_params = self._summary(study)
+        print(study_params)
+        print(pd.DataFrame(study_params))
 
         return pd.DataFrame(study_params)
+
 
     def top_k(self, k: int = 5) -> List[Pipeline]:
         """
@@ -291,6 +300,16 @@ class Auto(AutoBase):
 
         return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
 
+    def _summary(self, study: Study) -> list[any]:
+        """
+        Get information from trial summary
+        """
+        study_params = [
+            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
+            for trial in study
+        ]
+        return study_params
+    
     @staticmethod
     def objective(
         ts: TSDataset,
@@ -472,7 +491,17 @@ class Tune(AutoBase):
             **optuna_kwargs,
         )
 
-        return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
+        return get_from_params(**self._optuna.study.best_trial.params)
+
+    def _summary(self, study: Study) -> list[any]:
+        """
+        Get information from trial summary
+        """
+        study_params = [
+            {**trial.params, "pipeline": get_from_params(**trial.params), "state": trial.state}
+            for trial in study
+        ]
+        return study_params
 
     @staticmethod
     def objective(
