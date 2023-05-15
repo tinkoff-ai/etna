@@ -17,8 +17,8 @@ from optuna.samplers import BaseSampler
 from optuna.samplers import TPESampler
 from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
-from optuna.trial import Trial
 from optuna.study import Study
+from optuna.trial import Trial
 from typing_extensions import Protocol
 
 from etna.auto.optuna import ConfigSampler
@@ -89,8 +89,8 @@ class AutoAbstract(ABC):
     def summary(self) -> pd.DataFrame:
         """Get Auto trials summary."""
         pass
-    
-    @abstractmethod        
+
+    @abstractmethod
     def _summary(self, study: Study) -> list[any]:
         """
         Get information from trial summary
@@ -175,14 +175,9 @@ class AutoBase(AutoAbstract):
             self._optuna = self._init_optuna()
 
         study = self._optuna.study.get_trials()
-        
-        print("h ".join(["a" for trial in study]))
+
         study_params = self._summary(study)
-        print(study_params)
-        print(pd.DataFrame(study_params))
-
         return pd.DataFrame(study_params)
-
 
     def top_k(self, k: int = 5) -> List[Pipeline]:
         """
@@ -300,7 +295,7 @@ class Auto(AutoBase):
 
         return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
 
-    def _summary(self, study: Study) -> list[any]:
+    def _summary(self, study: list[any]) -> list[any]:
         """
         Get information from trial summary
         """
@@ -309,7 +304,7 @@ class Auto(AutoBase):
             for trial in study
         ]
         return study_params
-    
+
     @staticmethod
     def objective(
         ts: TSDataset,
@@ -498,8 +493,7 @@ class Tune(AutoBase):
         Get information from trial summary
         """
         study_params = [
-            {**trial.params, "pipeline": get_from_params(**trial.params), "state": trial.state}
-            for trial in study
+            {**trial.user_attrs, "pipeline": get_from_params(**trial.params), "state": trial.state} for trial in study
         ]
         return study_params
 
@@ -561,20 +555,12 @@ class Tune(AutoBase):
 
             params_to_tune = pipeline.params_to_tune()
 
-            # TODO : remove
-            print("params_to_tune")
-            print(params_to_tune)
-
             # using received optuna.distribution objects to call corresponding trial.suggest_xxx
             params_suggested = {}
             for param_name, param_distr in params_to_tune.items():
                 method_name, method_kwargs = dict_of_distrs[type(param_distr)](param_distr)
                 method = getattr(trial, method_name)
                 params_suggested[param_name] = method(param_name, **method_kwargs)
-
-            # TODO : remove
-            print("params_suggested")
-            print(params_suggested)
 
             # create pipeline instance with the parameters to try
             pipeline_trial_params: Pipeline = pipeline.set_params(**params_suggested)

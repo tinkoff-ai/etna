@@ -2,13 +2,13 @@ from os import unlink
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 from optuna.storages import RDBStorage
 from typing_extensions import Literal
 from typing_extensions import NamedTuple
 
 from etna.auto import Auto
-from etna.auto.auto import AutoBase
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
@@ -106,10 +106,8 @@ def test_summary(
     trials,
     auto=MagicMock(),
 ):
-    print("trials", type(trials), trials)
-    # мб разные trials должны быть для Tune и Auto
-    auto._optuna.study.get_trials.return_value = trials
-    df_summary = Auto.summary(self=auto)
+    df_summary = pd.DataFrame(Auto._summary(self=auto, study=trials))
+
     assert len(df_summary) == len(trials)
     assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
 
@@ -125,8 +123,10 @@ def test_top_k(
     auto.metric_aggregation = "median"
     auto.target_metric.greater_is_better = False
 
-    df_summary = AutoBase.summary(self=auto)
+    df_summary = pd.DataFrame(Auto._summary(self=auto, study=trials))
+
     auto.summary = MagicMock(return_value=df_summary)
-    top_k = AutoBase.top_k(auto, k=k)
+
+    top_k = Auto.top_k(auto, k=k)
     assert len(top_k) == k
     assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(k)]  # noqa C416

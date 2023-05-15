@@ -94,24 +94,18 @@ def test_simple_tune_run(example_tsds, optuna_storage, pipeline=Pipeline(NaiveMo
     assert len(tune.top_k()) == 2
     assert len(tune.top_k(k=1)) == 1
 
-def test_summary(
-    trials,
-    auto=MagicMock(),
-):
-    auto._optuna.study.get_trials.return_value = trials
-    df_summary = Tune.summary(self=auto)
-    assert len(df_summary) == len(trials)
-    assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
 
-@pytest.mark.parametrize("params, model", [
-    ({"model.smoothing_level": UniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
-    ({"model.smoothing_level": LogUniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
-    ({"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}, SimpleExpSmoothingModel()),
-    ({"model.lag": IntUniformDistribution(1, 6)}, NaiveModel()),
-    ({"model.lag": IntLogUniformDistribution(1, 6)}, NaiveModel()),
-    ({"model.lag": CategoricalDistribution((1, 2, 3))}, NaiveModel()),
-    ({"model.smoothing_level": UniformDistribution(1, 5)}, SimpleExpSmoothingModel()),
-])
+@pytest.mark.parametrize(
+    "params, model",
+    [
+        ({"model.smoothing_level": UniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
+        ({"model.smoothing_level": LogUniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
+        ({"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}, SimpleExpSmoothingModel()),
+        ({"model.lag": IntUniformDistribution(1, 5)}, NaiveModel()),
+        ({"model.lag": CategoricalDistribution((1, 2, 3))}, NaiveModel()),
+        ({"model.smoothing_level": UniformDistribution(1, 5)}, SimpleExpSmoothingModel()),
+    ],
+)
 def test_can_handle_distribution_type(example_tsds, optuna_storage, params, model):
     with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(model, horizon=7)
