@@ -95,6 +95,21 @@ def test_simple_tune_run(example_tsds, optuna_storage, pipeline=Pipeline(NaiveMo
     assert len(tune.top_k(k=1)) == 1
 
 
+@patch("optuna.samplers.TPESampler", return_value=MagicMock())
+@patch("etna.auto.auto.Optuna", return_value=MagicMock())
+def test_init_optuna(
+    optuna_mock,
+    sampler_mock,
+    auto=MagicMock(),
+):
+    auto.configure_mock(sampler=sampler_mock)
+    Tune._init_optuna(self=auto)
+
+    optuna_mock.assert_called_once_with(
+        direction="maximize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock
+    )
+
+
 @pytest.mark.parametrize(
     "params, model",
     [
