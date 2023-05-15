@@ -32,14 +32,9 @@ def test_objective(
     backtest_params={},
     initializer=MagicMock(spec=_Initializer),
     callback=MagicMock(spec=_Callback),
-    relative_params={
-        "_target_": "etna.pipeline.Pipeline",
-        "horizon": 7,
-        "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
-    },
     pipeline=Pipeline(NaiveModel()),
 ):
-    trial = MagicMock(relative_params=relative_params)
+    trial = MagicMock()
     _objective = Tune.objective(
         ts=example_tsds,
         pipeline=pipeline,
