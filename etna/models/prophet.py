@@ -21,6 +21,12 @@ if SETTINGS.prophet_required:
     from prophet.serialize import model_from_dict
     from prophet.serialize import model_to_dict
 
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
+    from optuna.distributions import LogUniformDistribution
+    from optuna.distributions import UniformDistribution
+
 
 class _ProphetAdapter(BaseAdapter):
     """Class for holding Prophet model."""
@@ -451,3 +457,23 @@ class ProphetModel(
                 additional_seasonality_params=self.additional_seasonality_params,
             )
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``seasonality_mode``, ``seasonality_prior_scale``, ``changepoint_prior_scale``,
+        ``changepoint_range``, ``holidays_prior_scale``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "seasonality_mode": CategoricalDistribution(["additive", "multiplicative"]),
+            "seasonality_prior_scale": LogUniformDistribution(low=1e-2, high=10),
+            "changepoint_prior_scale": LogUniformDistribution(low=1e-3, high=0.5),
+            "changepoint_range": UniformDistribution(low=0.8, high=0.95),
+            "holidays_prior_scale": LogUniformDistribution(low=1e-2, high=10),
+        }

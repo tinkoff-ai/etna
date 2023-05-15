@@ -11,6 +11,7 @@ from etna.models import SARIMAXModel
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 from tests.utils import select_segments_subset
 
@@ -226,3 +227,17 @@ def test_save_load(transform, outliers_solid_tsds):
 )
 def test_save_load_prediction_interval(transform, outliers_solid_tsds):
     assert_transformation_equals_loaded_original(transform=transform, ts=outliers_solid_tsds)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target"),
+        DensityOutliersTransform(in_column="target"),
+        PredictionIntervalOutliersTransform(in_column="target", model="sarimax"),
+    ),
+)
+def test_params_to_tune(transform, outliers_solid_tsds):
+    ts = outliers_solid_tsds
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

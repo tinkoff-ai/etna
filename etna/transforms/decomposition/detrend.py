@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import List
 
 import numpy as np
@@ -8,13 +9,18 @@ from sklearn.linear_model import TheilSenRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
+from etna import SETTINGS
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
 
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
+
 
 class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
-    """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
+    """Transform for one segment that implements trend subtraction and reconstruction feature."""
 
     def __init__(self, in_column: str, regressor: RegressorMixin, poly_degree: int = 1):
         """
@@ -137,8 +143,10 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
 
 
 class LinearTrendTransform(ReversiblePerSegmentWrapper):
-    """
-    Transform that uses :py:class:`sklearn.linear_model.LinearRegression` to find linear or polynomial trend in data.
+    """Transform that uses linear regression with polynomial features to make a detrending.
+
+    Transform fits a :py:class:`sklearn.linear_model.LinearRegression` with polynomial features on each segment.
+    Values predicted by the model are subtracted from each segment.
 
     Warning
     -------
@@ -174,10 +182,26 @@ class LinearTrendTransform(ReversiblePerSegmentWrapper):
         """Return the list with regressors created by the transform."""
         return []
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes only ``poly_degree`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "poly_degree": IntUniformDistribution(low=1, high=2),
+        }
+
 
 class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
-    """
-    Transform that uses :py:class:`sklearn.linear_model.TheilSenRegressor` to find linear or polynomial trend in data.
+    """Transform that uses Theil–Sen regression with polynomial features to make a detrending.
+
+    Transform fits a :py:class:`sklearn.linear_model.TheilSenRegressor` with polynomial features on each segment.
+    Values predicted by the model are subtracted from each segment.
 
     Warning
     -------
@@ -217,3 +241,17 @@ class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         return []
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``poly_degree`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "poly_degree": IntUniformDistribution(low=1, high=2),
+        }

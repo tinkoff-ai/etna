@@ -13,10 +13,18 @@ from scipy.special import inv_boxcox
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
+from etna import SETTINGS
 from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
+from etna.models.utils import determine_freq
+from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import CategoricalDistribution
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -192,6 +200,10 @@ class _HoltWintersAdapter(BaseAdapter):
         self._model: Optional[ExponentialSmoothing] = None
         self._result: Optional[HoltWintersResultsWrapper] = None
 
+        self._first_train_timestamp: Optional[pd.Timestamp] = None
+        self._last_train_timestamp: Optional[pd.Timestamp] = None
+        self._train_freq: Optional[str] = None
+
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
         """
         Fit Holt-Winters' model.
@@ -207,6 +219,8 @@ class _HoltWintersAdapter(BaseAdapter):
         :
             Fitted model
         """
+        self._train_freq = determine_freq(timestamps=df["timestamp"])
+
         self._check_df(df)
 
         targets = df["target"]
@@ -235,6 +249,10 @@ class _HoltWintersAdapter(BaseAdapter):
             damping_trend=self.damping_trend,
             **self.fit_kwargs,
         )
+
+        self._first_train_timestamp = targets.index.min()
+        self._last_train_timestamp = targets.index.max()
+
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
@@ -316,8 +334,16 @@ class _HoltWintersAdapter(BaseAdapter):
         model = self._model
         fit_result = self._result
 
-        if fit_result is None or model is None:
+        if fit_result is None or model is None or self._train_freq is None:
             raise ValueError("This model is not fitted!")
+
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+
+        horizon = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._train_freq
+        )
+        horizon_steps = np.arange(1, horizon + 1)
 
         self._check_mul_components()
         self._check_df(df)
@@ -325,9 +351,6 @@ class _HoltWintersAdapter(BaseAdapter):
         level = fit_result.level.values
         trend = fit_result.trend.values
         season = fit_result.season.values
-
-        horizon = df["timestamp"].nunique()
-        horizon_steps = np.arange(1, horizon + 1)
 
         components = {"target_component_level": level[-1] * np.ones(horizon)}
 
@@ -354,6 +377,14 @@ class _HoltWintersAdapter(BaseAdapter):
         if model._use_boxcox:
             components_df = self._rescale_components(components=components_df)
 
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            end=df["timestamp"].max(),
+            periods=horizon,
+            freq=self._train_freq,
+        )
+
         return components_df
 
     def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -372,8 +403,11 @@ class _HoltWintersAdapter(BaseAdapter):
         model = self._model
         fit_result = self._result
 
-        if fit_result is None or model is None:
+        if fit_result is None or model is None or self._train_freq is None:
             raise ValueError("This model is not fitted!")
+
+        if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
 
         self._check_mul_components()
         self._check_df(df)
@@ -405,6 +439,14 @@ class _HoltWintersAdapter(BaseAdapter):
         if model._use_boxcox:
             components_df = self._rescale_components(components=components_df)
 
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._train_freq,
+        )
+
         return components_df
 
 
@@ -416,9 +458,11 @@ class HoltWintersModel(
     """
     Holt-Winters' etna model.
 
+    This model corresponds to :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing`.
+
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+    The model :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` is used in the implementation.
 
     This model supports in-sample and out-of-sample prediction decomposition.
     Prediction components for Holt-Winters model are: level, trend and seasonality.
@@ -609,18 +653,46 @@ class HoltWintersModel(
             )
         )
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
 
-class HoltModel(HoltWintersModel):
+        This grid tunes parameters: ``trend``, ``damped_trend``, ``use_boxcox``.
+        If ``self.seasonal`` is not None, then it also tunes ``seasonal`` parameter.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid: Dict[str, "BaseDistribution"] = {
+            "trend": CategoricalDistribution(["add", "mul", None]),
+            "damped_trend": CategoricalDistribution([False, True]),
+            "use_boxcox": CategoricalDistribution([False, True]),
+        }
+
+        if self.seasonal is not None:
+            grid.update({"seasonal": CategoricalDistribution(["add", "mul", None])})
+
+        return grid
+
+
+class HoltModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Holt etna model.
 
-    Restricted version of HoltWinters model.
+    This is a restricted version of :py:class:`~etna.models.holt_winters.HoltWintersModel`.
+    And it corresponds to :py:class:`statsmodels.tsa.holtwinters.Holt`.
 
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
-    They implement :py:class:`statsmodels.tsa.holtwinters.Holt` model
-    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+    The model :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` is used in the implementation.
+    In statsmodels package the model :py:class:`statsmodels.tsa.holtwinters.Holt` is implemented
+    as a restricted version of :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
 
     This model supports in-sample and out-of-sample prediction decomposition.
     Prediction components for Holt model are: level and trend.
@@ -698,31 +770,60 @@ class HoltModel(HoltWintersModel):
         fit_kwargs:
             Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
+        self.exponential = exponential
         trend = "mul" if exponential else "add"
+        self.damped_trend = damped_trend
+        self.initialization_method = initialization_method
+        self.initial_level = initial_level
+        self.initial_trend = initial_trend
+        self.smoothing_level = smoothing_level
+        self.smoothing_trend = smoothing_trend
+        self.damping_trend = damping_trend
+        self.fit_kwargs = fit_kwargs
         super().__init__(
-            trend=trend,
-            damped_trend=damped_trend,
-            initialization_method=initialization_method,
-            initial_level=initial_level,
-            initial_trend=initial_trend,
-            smoothing_level=smoothing_level,
-            smoothing_trend=smoothing_trend,
-            damping_trend=damping_trend,
-            **fit_kwargs,
+            base_model=_HoltWintersAdapter(
+                trend=trend,
+                damped_trend=self.damped_trend,
+                initialization_method=self.initialization_method,
+                initial_level=self.initial_level,
+                initial_trend=self.initial_trend,
+                smoothing_level=self.smoothing_level,
+                smoothing_trend=self.smoothing_trend,
+                damping_trend=self.damping_trend,
+                **self.fit_kwargs,
+            )
         )
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
 
-class SimpleExpSmoothingModel(HoltWintersModel):
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "exponential": CategoricalDistribution([False, True]),
+            "damped_trend": CategoricalDistribution([False, True]),
+        }
+
+
+class SimpleExpSmoothingModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Exponential smoothing etna model.
 
-    Restricted version of HoltWinters model.
+    This is a restricted version of :py:class:`~etna.models.holt_winters.HoltWintersModel`.
+    And it corresponds to :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing`.
 
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
-    They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
-    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+    The model :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` is used in the implementation.
+    In statsmodels package the model :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` is implemented
+    as a restricted version of :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
 
     This model supports in-sample and out-of-sample prediction decomposition.
     For in-sample decomposition, level component is obtained directly from the fitted model. For out-of-sample,
@@ -773,9 +874,15 @@ class SimpleExpSmoothingModel(HoltWintersModel):
         fit_kwargs:
             Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
+        self.initialization_method = initialization_method
+        self.initial_level = initial_level
+        self.smoothing_level = smoothing_level
+        self.fit_kwargs = fit_kwargs
         super().__init__(
-            initialization_method=initialization_method,
-            initial_level=initial_level,
-            smoothing_level=smoothing_level,
-            **fit_kwargs,
+            base_model=_HoltWintersAdapter(
+                initialization_method=self.initialization_method,
+                initial_level=self.initial_level,
+                smoothing_level=self.smoothing_level,
+                **self.fit_kwargs,
+            )
         )

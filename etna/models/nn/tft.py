@@ -23,6 +23,12 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.models import TemporalFusionTransformer
     from pytorch_lightning import LightningModule
 
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
+    from optuna.distributions import LogUniformDistribution
+    from optuna.distributions import UniformDistribution
+
 
 class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
@@ -269,8 +275,7 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.
 
-        Internal model is a model that is used inside etna to forecast segments,
-        e.g. :py:class:`catboost.CatBoostRegressor` or :py:class:`sklearn.linear_model.Ridge`.
+        Model is the instance of :py:class:`pytorch_forecasting.models.temporal_fusion_transformer.TemporalFusionTransformer`.
 
         Returns
         -------
@@ -278,3 +283,22 @@ class TFTModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionI
            Internal model
         """
         return self.model
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``hidden_size``, ``lstm_layers``, ``dropout``, ``attention_head_size``, ``lr``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "hidden_size": IntUniformDistribution(low=4, high=64, step=4),
+            "lstm_layers": IntUniformDistribution(low=1, high=3, step=1),
+            "dropout": UniformDistribution(low=0, high=0.5),
+            "attention_head_size": IntUniformDistribution(low=2, high=8, step=2),
+            "lr": LogUniformDistribution(low=1e-5, high=1e-2),
+        }

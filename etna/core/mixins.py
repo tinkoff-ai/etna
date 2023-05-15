@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
+from typing import Sequence
 from typing import Tuple
 from typing import TypeVar
 from typing import cast
@@ -63,15 +63,16 @@ class BaseMixin:
             model_parameters = value.get_params()
             answer.update(model_parameters)
             return answer
+        # this if is for objects imported from etna.libs.pytorch_lightning.callbacks
         elif hasattr(value, "_init_params"):
             return {"_target_": BaseMixin._get_target_from_class(value), **value._init_params}
         elif isinstance(value, (str, float, int)):
             return value
-        elif isinstance(value, List):
+        elif isinstance(value, list):
             return [BaseMixin._parse_value(elem) for elem in value]
         elif isinstance(value, tuple):
             return tuple([BaseMixin._parse_value(elem) for elem in value])
-        elif isinstance(value, Dict):
+        elif isinstance(value, dict):
             return {key: BaseMixin._parse_value(item) for key, item in value.items()}
         elif inspect.isfunction(value):
             return {"_target_": BaseMixin._get_target_from_function(value)}
@@ -93,55 +94,87 @@ class BaseMixin:
         params["_target_"] = BaseMixin._get_target_from_class(self)
         return params
 
-    @staticmethod
-    def _update_nested_dict_with_flat_dict(params_dict: dict, flat_dict: dict):
-        """Update nested dict with flat dict.
+    @classmethod
+    def _update_nested_structure(cls, structure: Any, keys: Sequence[str], value: Any) -> Any:
+        """Update nested structure by sequence of keys with value.
 
-        The method updates ``params_dict`` with values from ``flat_dict``,
-        so that ``params_dict`` contains all the nested keys of two given dicts,
-        e.g. for ``params_dict = {"model": {"learning_rate": value1}}``
-        and ``flat_dict = {"model.depth": value2}``
-        resulting ``params_dict`` will be
-        ``{"model": {"depth": value1, "learning_rate": value2}}``
+        Method applies sequence of keys to structure and returns the structure with changed value.
+        Key can only be applied to ``dict``, ``list`` or ``tuple``.
+        For ``list`` and ``tuple`` function ``int`` is used to make index from the key.
 
-        Parameters
-        ----------
-        **params_dict: dict
-            dict with nested parameters structure, e.g ``{"model": {"learning_rate": value1}}``
-        **flat_dict: dict
-            dict with flat paratemers structure, e.g. ``{"model.depth": value2}``
-
+        Raises
+        ------
+        ValueError:
+            Unsupported type of structure to update
         """
-        for param, param_value in flat_dict.items():
-            *param_nesting, param_attr = param.split(".")
-            cycle_dict = params_dict
-            for param_nested in param_nesting:
-                if type(cycle_dict) == dict:
-                    cycle_dict = cycle_dict.setdefault(param_nested, {})
-                elif type(cycle_dict) == list:
-                    # will be accessed only by "transform.0.x" attributes of tune calls
-                    cycle_dict = cycle_dict[int(param_nested)]
-                else:
-                    raise ValueError("Should be never reached")
-            cycle_dict[param_attr] = param_value
+        if len(keys) == 0:
+            return value
+
+        current_key = keys[0]
+        new_structure: Any
+        if isinstance(structure, dict):
+            structure_to_update = structure.get(current_key, {})
+            current_value = cls._update_nested_structure(structure_to_update, keys[1:], value)
+            new_structure = structure
+            new_structure[current_key] = current_value
+        elif isinstance(structure, list):
+            idx = int(current_key)
+            structure_to_update = structure[idx]
+            current_value = cls._update_nested_structure(structure_to_update, keys[1:], value)
+            new_structure = structure
+            new_structure[idx] = current_value
+        elif isinstance(structure, tuple):
+            idx = int(current_key)
+            structure_to_update = structure[idx]
+            current_value = cls._update_nested_structure(structure_to_update, keys[1:], value)
+            new_temp_structure = list(structure)
+            new_temp_structure[idx] = current_value
+            new_structure = tuple(new_temp_structure)
+        else:
+            raise ValueError(
+                f"Structure to update is {structure} with type {type(structure)}, allowed types are dict, list, tuple"
+            )
+
+        return new_structure
 
     def set_params(self: TMixin, **params: dict) -> TMixin:
         """Return new object instance with modified parameters.
 
-        The method works on simple estimators as well as on nested objects
-        (such as :class:`~etna.pipeline.Pipeline`). The latter have
-        parameters of the form ``<component>.<parameter>`` so that it's
-        possible to update each component of a nested object.
+        Method also allows to change parameters of nested objects within the current object.
+        For example, it is possible to change parameters of a ``model`` in a :class:`~etna.pipeline.Pipeline`.
+
+        Nested parameters are expected to be in a ``<component_1>.<...>.<parameter>`` form,
+        where components are separated by a dot.
 
         Parameters
         ----------
-        **params: dict
-            Estimator parameters.
+        **params:
+            Estimator parameters
 
+        Returns
+        -------
+        :
+            New instance with changed parameters
+
+        Examples
+        --------
+        >>> from etna.pipeline import Pipeline
+        >>> from etna.models import NaiveModel
+        >>> from etna.transforms import AddConstTransform
+        >>> model = model=NaiveModel(lag=1)
+        >>> transforms = [AddConstTransform(in_column="target", value=1)]
+        >>> pipeline = Pipeline(model, transforms=transforms, horizon=3)
+        >>> pipeline.set_params(**{"model.lag": 3, "transforms.0.value": 2})
+        Pipeline(model = NaiveModel(lag = 3, ), transforms = [AddConstTransform(in_column = 'target', value = 2, inplace = True, out_column = None, )], horizon = 3, )
         """
         params_dict = self.to_dict()
-        self._update_nested_dict_with_flat_dict(params_dict, params)
-        estimator_out = hydra_slayer.get_from_params(**params_dict)
+
+        new_params_dict = params_dict
+        for current_key, value in params.items():
+            keys = current_key.split(".")
+            new_params_dict = self._update_nested_structure(new_params_dict, keys, value)
+
+        estimator_out = hydra_slayer.get_from_params(**new_params_dict)
         return estimator_out
 
 

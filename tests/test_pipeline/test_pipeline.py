@@ -7,6 +7,9 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -116,11 +119,11 @@ def test_forecast_return_components(
     pipeline = Pipeline(model=model)
     pipeline.fit(example_tsds)
     forecast = pipeline.forecast(return_components=True)
-    assert forecast.target_components_names is not None
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
 
-    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
-    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
-    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
 
 
 @pytest.mark.parametrize(
@@ -1201,11 +1204,11 @@ def test_predict_return_components(
     pipeline = Pipeline(model=model)
     pipeline.fit(example_tsds)
     forecast = pipeline.predict(ts=example_tsds, return_components=True)
-    assert forecast.target_components_names is not None
+    assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
 
-    taregt_components_df = TSDataset.to_flatten(forecast.get_target_components())
-    assert (taregt_components_df["target_component_a"] == expected_component_a).all()
-    assert (taregt_components_df["target_component_b"] == expected_component_b).all()
+    target_components_df = TSDataset.to_flatten(forecast.get_target_components())
+    assert (target_components_df["target_component_a"] == expected_component_a).all()
+    assert (target_components_df["target_component_b"] == expected_component_b).all()
 
 
 @pytest.mark.parametrize(
@@ -1214,7 +1217,21 @@ def test_predict_return_components(
         (
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
-            {},
+            {
+                "model.learning_rate": LogUniformDistribution(low=1e-4, high=0.5),
+                "model.depth": IntUniformDistribution(low=1, high=11, step=1),
+                "model.l2_leaf_reg": LogUniformDistribution(low=0.1, high=200.0),
+                "model.random_strength": LogUniformDistribution(low=1e-05, high=10.0),
+                "transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.season_number": CategoricalDistribution([False, True]),
+                "transforms.0.year_number": CategoricalDistribution([False, True]),
+                "transforms.0.is_weekend": CategoricalDistribution([False, True]),
+            },
         ),
     ],
 )

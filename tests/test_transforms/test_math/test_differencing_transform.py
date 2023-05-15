@@ -15,6 +15,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
 from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 from tests.utils import select_segments_subset
 
@@ -594,3 +595,10 @@ def test_get_regressors_info_not_fitted():
     transform = DifferencingTransform(in_column="target")
     with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
+
+
+@pytest.mark.parametrize("transform", [DifferencingTransform(in_column="target")])
+def test_params_to_tune(transform, ts_nans):
+    ts = ts_nans
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 import pytest
+from lightning_fabric.utilities.seed import seed_everything
 
 from etna.metrics import MAE
 from etna.models.nn import TFTModel
@@ -10,6 +11,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def _get_default_dataset_builder(horizon: int):
@@ -144,19 +146,17 @@ def test_forecast_model_equals_pipeline(example_tsds):
     horizon = 10
     pfdb = _get_default_dataset_builder(horizon)
 
-    import torch  # TODO: remove after fix at issue-802
-
-    torch.manual_seed(11)
     model = TFTModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=8), lr=0.1)
+    seed_everything(0)
     model.fit(example_tsds)
     future = example_tsds.make_future(future_steps=horizon, tail_steps=pfdb.max_encoder_length)
     forecast_model = model.forecast(
         ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.98]
     )
 
-    torch.manual_seed(11)
     model = TFTModel(dataset_builder=pfdb, trainer_params=dict(max_epochs=8), lr=0.1)
     pipeline = Pipeline(model=model, transforms=[], horizon=horizon)
+    seed_everything(0)
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast(prediction_interval=True, quantiles=[0.02, 0.98])
 
@@ -196,3 +196,10 @@ def test_repr():
 def test_tft_forecast_throw_error_on_return_components():
     with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
         TFTModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)
+
+
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    model = TFTModel(decoder_length=3, encoder_length=4, trainer_params=dict(max_epochs=1, gpus=0))
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

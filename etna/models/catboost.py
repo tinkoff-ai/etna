@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -6,11 +7,17 @@ import pandas as pd
 from catboost import CatBoostRegressor
 from catboost import Pool
 
+from etna import SETTINGS
 from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import MultiSegmentModelMixin
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
+
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
+    from optuna.distributions import LogUniformDistribution
 
 
 class _CatBoostAdapter(BaseAdapter):
@@ -152,6 +159,24 @@ class _CatBoostAdapter(BaseAdapter):
 
         return pd.DataFrame(data=components, columns=component_names)
 
+    def _params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``learning_rate``, ``depth``, ``random_strength``, ``l2_leaf_reg``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "learning_rate": LogUniformDistribution(low=1e-4, high=0.5),
+            "depth": IntUniformDistribution(low=1, high=11, step=1),
+            "random_strength": LogUniformDistribution(low=1e-5, high=10),
+            "l2_leaf_reg": LogUniformDistribution(low=0.1, high=200),
+        }
+
 
 class CatBoostPerSegmentModel(
     PerSegmentModelMixin,
@@ -279,6 +304,19 @@ class CatBoostPerSegmentModel(
             )
         )
 
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``learning_rate``, ``depth``, ``random_strength``, ``l2_leaf_reg``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return self._base_model._params_to_tune()
+
 
 class CatBoostMultiSegmentModel(
     MultiSegmentModelMixin,
@@ -405,3 +443,16 @@ class CatBoostMultiSegmentModel(
                 **kwargs,
             )
         )
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``learning_rate``, ``depth``, ``random_strength``, ``l2_leaf_reg``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return self._base_model._params_to_tune()

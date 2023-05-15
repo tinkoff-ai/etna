@@ -9,6 +9,8 @@ from etna.models import ProphetModel
 from etna.models.prophet import _ProphetAdapter
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def test_run(new_format_df):
@@ -364,3 +366,15 @@ def test_predict_components_sum_up_to_target(
     pred = model.predict(df=test, prediction_interval=False, quantiles=[])
 
     np.testing.assert_allclose(np.sum(components, axis=1), pred["target"].values)
+
+
+def test_prediction_decomposition(outliers_tsds):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    assert_prediction_components_are_present(model=ProphetModel(), train=train, test=test)
+
+
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    model = ProphetModel()
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

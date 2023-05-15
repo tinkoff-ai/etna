@@ -11,6 +11,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import TheilSenTrendTransform
 from etna.transforms.decomposition.detrend import _OneSegmentLinearTrendBaseTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 DEFAULT_SEGMENT = "segment_1"
@@ -377,3 +378,13 @@ def test_fit_transform_with_nans(transformer, ts_with_nans, decimal):
 def test_save_load(transform, ts_two_segments_linear):
     ts = ts_two_segments_linear
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")],
+)
+def test_params_to_tune(transform, ts_two_segments_linear):
+    ts = ts_two_segments_linear
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

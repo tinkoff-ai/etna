@@ -15,7 +15,9 @@ from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -24,18 +26,15 @@ class _TBATSAdapter(BaseAdapter):
         self._fitted_model: Optional[Model] = None
         self._first_train_timestamp = None
         self._last_train_timestamp = None
-        self._freq = None
+        self._freq: Optional[str] = None
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
+        self._freq = determine_freq(timestamps=df["timestamp"])
 
         target = df["target"]
         self._fitted_model = self._model.fit(target)
         self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()
-        self._freq = freq
 
         return self
 
@@ -125,11 +124,18 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+
         self._check_components()
 
         horizon = self._get_steps_to_forecast(df=df)
         raw_components = self._decompose_forecast(horizon=horizon)
         components = self._process_components(raw_components=raw_components)
+
+        components = select_observations(
+            df=components, timestamps=df["timestamp"], end=df["timestamp"].max(), periods=horizon, freq=self._freq
+        )
 
         return components
 
@@ -149,26 +155,21 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
-        train_timestamp = pd.date_range(
-            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
-        )
-
-        if not (set(df["timestamp"]) <= set(train_timestamp)):
-            raise NotImplementedError(
-                "Method predict_components isn't currently implemented for out-of-sample prediction!"
-            )
+        if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
 
         self._check_components()
 
         raw_components = self._decompose_predict()
         components = self._process_components(raw_components=raw_components)
 
-        # selecting time points from provided dataframe
-        components["timestamp"] = train_timestamp
-
-        components.set_index("timestamp", inplace=True)
-        components = components.loc[df["timestamp"]]
-        components.reset_index(drop=True, inplace=True)
+        components = select_observations(
+            df=components,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._freq,
+        )
 
         return components
 
@@ -178,8 +179,7 @@ class _TBATSAdapter(BaseAdapter):
 
         if df["timestamp"].min() <= self._last_train_timestamp:
             raise NotImplementedError(
-                "It is not possible to make in-sample predictions with BATS/TBATS model! "
-                "In-sample predictions aren't supported by current implementation."
+                "It is not possible to make in-sample predictions using current method implementation!"
             )
 
         steps_to_forecast = determine_num_steps(

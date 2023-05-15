@@ -14,6 +14,7 @@ from etna.models.tbats import TBATSModel
 from etna.models.tbats import _TBATSAdapter
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
 
 
 @pytest.fixture()
@@ -249,18 +250,6 @@ def test_named_components_output_format(periodic_dfs, estimator):
     assert len(components) == horizon
 
 
-@pytest.mark.parametrize(
-    "train_slice,decompose_slice", ((slice(5, 20), slice(None, 20)), (slice(5, 10), slice(10, 20)))
-)
-def test_predict_components_out_of_sample_error(periodic_dfs, train_slice, decompose_slice):
-    train, _ = periodic_dfs
-
-    model = _TBATSAdapter(model=BATS())
-    model.fit(train.iloc[train_slice], [])
-    with pytest.raises(NotImplementedError, match="isn't currently implemented for out-of-sample prediction"):
-        model.predict_components(df=train.iloc[decompose_slice])
-
-
 @pytest.mark.long_1
 @pytest.mark.parametrize(
     "estimator,params,components_names",
@@ -440,7 +429,7 @@ def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, me
 )
 def test_predict_decompose_on_subset(periodic_dfs, estimator):
     train, _ = periodic_dfs
-    sub_train = train.iloc[5:]
+    sub_train = train.iloc[2:-2]
 
     model = _TBATSAdapter(model=estimator())
     model.fit(train, [])
@@ -450,3 +439,60 @@ def test_predict_decompose_on_subset(periodic_dfs, estimator):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    (
+        BATS,
+        TBATS,
+    ),
+)
+def test_forecast_decompose_on_subset(periodic_dfs, estimator):
+    train, test = periodic_dfs
+    sub_test = test.iloc[2:-2]
+
+    model = _TBATSAdapter(model=estimator())
+    model.fit(train, [])
+
+    y_pred = model.forecast(df=sub_test, prediction_interval=False, quantiles=[])
+    components = model.forecast_components(df=sub_test)
+
+    y_hat_pred = np.sum(components.values, axis=1)
+    np.testing.assert_allclose(y_hat_pred, np.squeeze(y_pred.values))
+
+
+@pytest.mark.parametrize(
+    "train_slice,decompose_slice",
+    (
+        (slice(None, 20), slice(5, None)),
+        (slice(2, 20), slice(None, 5)),
+    ),
+)
+def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_slice):
+    model = _TBATSAdapter(model=BATS())
+    model.fit(outliers_df.iloc[train_slice], [])
+
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
+        model.predict_components(df=outliers_df.iloc[decompose_slice])
+
+
+def test_forecast_decompose_timestamp_error(periodic_dfs):
+    train, _ = periodic_dfs
+
+    model = _TBATSAdapter(model=BATS())
+    model.fit(train, [])
+
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
+        model.forecast_components(df=train)
+
+
+@pytest.mark.parametrize("model", (BATSModel(), TBATSModel()))
+def test_prediction_decomposition(outliers_tsds, model):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize("model", (BATSModel(), TBATSModel()))
+def test_params_to_tune(model):
+    assert len(model.params_to_tune()) == 0

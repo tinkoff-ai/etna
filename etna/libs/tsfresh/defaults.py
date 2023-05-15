@@ -16,9 +16,15 @@ WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEM
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-# Note: Copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/ff69073bbb4df787fcbf277a611c6b40632e767d/tsfresh/defaults.py)
+# Note: Copied from tsfresh package (https://github.com/blue-yonder/tsfresh/blob/v0.20.0/tsfresh/defaults.py)
+
+import os
+from multiprocessing import cpu_count
+
+n_cores = int(os.getenv("NUMBER_OF_CPUS") or cpu_count())
+
 CHUNKSIZE = None
-N_PROCESSES = 1
+N_PROCESSES = max(1, n_cores // 2)
 PROFILING = False
 PROFILING_SORTING = "cumulative"
 PROFILING_FILENAME = "profile.txt"

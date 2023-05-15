@@ -191,3 +191,8 @@ def test_holidays_out_column_added_to_regressors(example_tsds, expected_regresso
 def test_save_load(example_tsds):
     transform = HolidayTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)
+
+
+def test_params_to_tune():
+    transform = HolidayTransform()
+    assert len(transform.params_to_tune()) == 0

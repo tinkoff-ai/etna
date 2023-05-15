@@ -167,7 +167,7 @@ class Transform(SaveMixin, AbstractSaveable, BaseMixin):
         pass
 
     def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
-        """Get hyperparameter grid to tune.
+        """Get grid for tuning hyperparameters.
 
         This is default implementation with empty grid.
 
@@ -251,7 +251,7 @@ class ReversibleTransform(Transform):
             TSDataset after applying inverse transformation.
         """
         required_features = self._get_inverse_transform_required_features(ts)
-        target_components_present = "target" in required_features and ts.target_components_names is not None
+        target_components_present = "target" in required_features and len(ts.target_components_names) > 0
         target_df = None
         if target_components_present:
             target_df = ts.to_pandas(flatten=False, features=["target"])

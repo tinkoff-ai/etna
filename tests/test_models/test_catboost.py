@@ -15,6 +15,8 @@ from etna.transforms import LabelEncoderTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms.math import LagTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.mark.parametrize("catboostmodel", [CatBoostMultiSegmentModel, CatBoostPerSegmentModel])
@@ -179,3 +181,18 @@ def test_decomposition_sums_to_target(dfs_w_exog):
 
     y_hat_pred = np.sum(components.values, axis=1)
     np.testing.assert_allclose(y_hat_pred, y_pred)
+
+
+@pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
+def test_prediction_decomposition(outliers_tsds, model):
+    train, test = outliers_tsds.train_test_split(test_size=10)
+    assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize("model", [CatBoostPerSegmentModel(iterations=10), CatBoostMultiSegmentModel(iterations=10)])
+def test_params_to_tune(model, example_tsds):
+    ts = example_tsds
+    lags = LagTransform(in_column="target", lags=[10, 11, 12])
+    ts.fit_transform([lags])
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

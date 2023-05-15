@@ -582,6 +582,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         # TODO: make it work with prediction intervals and context
         target_components_df = prediction_method(self=self._base_model, df=features_df, **kwargs)
         target_components_df["segment"] = segment_column
+        target_components_df["timestamp"] = features_df["timestamp"]
         target_components_df = TSDataset.to_dataset(target_components_df)
         return target_components_df
 

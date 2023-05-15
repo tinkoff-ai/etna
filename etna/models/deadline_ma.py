@@ -1,15 +1,23 @@
 import warnings
 from enum import Enum
+from typing import Dict
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from typing_extensions import assert_never
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 
+if SETTINGS.auto_required:
+    from optuna.distributions import BaseDistribution
+    from optuna.distributions import IntUniformDistribution
 
-class SeasonalityMode(Enum):
+
+class SeasonalityMode(str, Enum):
     """Enum for seasonality mode for DeadlineMovingAverageModel."""
 
     month = "month"
@@ -25,7 +33,14 @@ class SeasonalityMode(Enum):
 class DeadlineMovingAverageModel(
     NonPredictionIntervalContextRequiredAbstractModel,
 ):
-    """Moving average model that uses exact previous dates to predict."""
+    """Moving average model that uses exact previous dates to predict.
+
+    Notes
+    _____
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components are corresponding target seasonal lags (monthly or annual)
+    with weights of :math:`1/window`.
+    """
 
     def __init__(self, window: int = 3, seasonality: str = "month"):
         """Initialize deadline moving average model.
@@ -37,7 +52,7 @@ class DeadlineMovingAverageModel(
         window:
             Number of values taken for forecast for each point.
         seasonality:
-            Only allowed monthly or annual seasonality.
+            Only allowed values are "month" and "year".
         """
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
@@ -59,6 +74,8 @@ class DeadlineMovingAverageModel(
             cur_value = 366
         elif self.seasonality is SeasonalityMode.month:
             cur_value = 31
+        else:
+            assert_never(self.seasonality)
 
         if self._freq == "H":
             cur_value *= 24
@@ -145,9 +162,10 @@ class DeadlineMovingAverageModel(
 
         if seasonality is SeasonalityMode.month:
             first_index = future_timestamps[0] - pd.DateOffset(months=window)
-
         elif seasonality is SeasonalityMode.year:
             first_index = future_timestamps[0] - pd.DateOffset(years=window)
+        else:
+            assert_never(seasonality)
 
         if first_index < history_timestamps[0]:
             raise ValueError(
@@ -155,6 +173,55 @@ class DeadlineMovingAverageModel(
             )
 
         return first_index
+
+    def _get_previous_date(self, date, offset):
+        """Get previous date using seasonality offset."""
+        if self.seasonality == SeasonalityMode.month:
+            prev_date = date - pd.DateOffset(months=offset)
+        elif self.seasonality == SeasonalityMode.year:
+            prev_date = date - pd.DateOffset(years=offset)
+        else:
+            assert_never(self.seasonality)
+
+        return prev_date
+
+    def _make_prediction_components(
+        self, result_template: pd.DataFrame, context: pd.DataFrame, prediction_size: int
+    ) -> pd.DataFrame:
+        """Estimate prediction components using ``result_template`` as a base and ``context`` as a context."""
+        index = result_template.index
+        end_idx = len(result_template)
+        start_idx = end_idx - prediction_size
+
+        components_data = []
+        for i in range(start_idx, end_idx):
+
+            obs_components = []
+            for w in range(1, self.window + 1):
+                prev_date = self._get_previous_date(date=result_template.index[i], offset=w)
+                obs_components.append(context.loc[prev_date].values)
+
+            components_data.append(obs_components)
+
+        # shape: (prediction_size, window, num_segments)
+        raw_components = np.asarray(components_data, dtype=float)
+
+        # shape: (prediction_size, num_segments, window)
+        # this is needed to place elements in the right order
+        raw_components = np.swapaxes(raw_components, -1, -2)
+
+        # shape: (prediction_size, num_segments * window)
+        raw_components = raw_components.reshape(raw_components.shape[0], -1)
+        raw_components /= self.window
+
+        components_names = [f"target_component_{self.seasonality.name}_lag_{w}" for w in range(1, self.window + 1)]
+
+        segment_names = context.columns.get_level_values("segment")
+        column_names = pd.MultiIndex.from_product([segment_names, components_names], names=("segment", "feature"))
+
+        target_components_df = pd.DataFrame(data=raw_components, columns=column_names, index=index[start_idx:end_idx])
+
+        return target_components_df
 
     def _make_predictions(
         self, result_template: pd.DataFrame, context: pd.DataFrame, prediction_size: int
@@ -165,10 +232,7 @@ class DeadlineMovingAverageModel(
         end_idx = len(result_template)
         for i in range(start_idx, end_idx):
             for w in range(1, self.window + 1):
-                if self.seasonality == SeasonalityMode.month:
-                    prev_date = result_template.index[i] - pd.DateOffset(months=w)
-                elif self.seasonality == SeasonalityMode.year:
-                    prev_date = result_template.index[i] - pd.DateOffset(years=w)
+                prev_date = self._get_previous_date(date=result_template.index[i], offset=w)
 
                 result_template.loc[index[i]] += context.loc[prev_date]
 
@@ -177,7 +241,9 @@ class DeadlineMovingAverageModel(
         result_values = result_template.values[-prediction_size:]
         return result_values
 
-    def _forecast(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+    def _forecast(
+        self, df: pd.DataFrame, prediction_size: int, return_components: bool = False
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """Make autoregressive forecasts on a wide dataframe."""
         context_beginning = self._get_context_beginning(
             df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
@@ -200,7 +266,14 @@ class DeadlineMovingAverageModel(
         df = df.iloc[-prediction_size:]
         y_pred = result_values[-prediction_size:]
         df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
-        return df
+
+        target_components_df = None
+        if return_components:
+            target_components_df = self._make_prediction_components(
+                result_template=result_template, context=result_template, prediction_size=prediction_size
+            )
+
+        return df, target_components_df
 
     def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make autoregressive forecasts.
@@ -231,16 +304,22 @@ class DeadlineMovingAverageModel(
         ValueError:
             if forecast context contains NaNs
         """
-        if return_components:
-            raise NotImplementedError("This mode isn't currently implemented!")
         self._validate_fitted()
 
         df = ts.to_pandas()
-        new_df = self._forecast(df=df, prediction_size=prediction_size)
+        new_df, target_components_df = self._forecast(
+            df=df, prediction_size=prediction_size, return_components=return_components
+        )
         ts.df = new_df
+
+        if return_components:
+            ts.add_target_components(target_components_df=target_components_df)
+
         return ts
 
-    def _predict(self, df: pd.DataFrame, prediction_size: int) -> pd.DataFrame:
+    def _predict(
+        self, df: pd.DataFrame, prediction_size: int, return_components: bool = False
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
         """Make predictions on a wide dataframe using true values as autoregression context."""
         context_beginning = self._get_context_beginning(
             df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
@@ -261,7 +340,14 @@ class DeadlineMovingAverageModel(
         df = df.iloc[-prediction_size:]
         y_pred = result_values[-prediction_size:]
         df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
-        return df
+
+        target_components_df = None
+        if return_components:
+            target_components_df = self._make_prediction_components(
+                result_template=result_template, context=context, prediction_size=prediction_size
+            )
+
+        return df, target_components_df
 
     def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions using true values as autoregression context (teacher forcing).
@@ -292,14 +378,30 @@ class DeadlineMovingAverageModel(
         ValueError:
             if forecast context contains NaNs
         """
-        if return_components:
-            raise NotImplementedError("This mode isn't currently implemented!")
         self._validate_fitted()
 
         df = ts.to_pandas()
-        new_df = self._predict(df=df, prediction_size=prediction_size)
+        new_df, target_components_df = self._predict(
+            df=df, prediction_size=prediction_size, return_components=return_components
+        )
         ts.df = new_df
+
+        if return_components:
+            ts.add_target_components(target_components_df=target_components_df)
+
         return ts
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``window`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {"window": IntUniformDistribution(low=1, high=10, step=1)}
 
 
 __all__ = ["DeadlineMovingAverageModel"]
