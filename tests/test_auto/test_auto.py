@@ -1,3 +1,4 @@
+from functools import partial
 from os import unlink
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -106,7 +107,9 @@ def test_summary(
     trials,
     auto=MagicMock(),
 ):
-    df_summary = pd.DataFrame(Auto._summary(self=auto, study=trials))
+    auto._optuna.study.get_trials.return_value = trials
+    auto._summary = partial(Auto._summary, self=auto)  # essential for summary
+    df_summary = Auto.summary(self=auto)
 
     assert len(df_summary) == len(trials)
     assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
@@ -118,12 +121,13 @@ def test_top_k(
     k,
     auto=MagicMock(),
 ):
-    auto._optuna.study.get_trials.return_value = trials
     auto.target_metric.name = "SMAPE"
     auto.metric_aggregation = "median"
     auto.target_metric.greater_is_better = False
 
-    df_summary = pd.DataFrame(Auto._summary(self=auto, study=trials))
+    auto._optuna.study.get_trials.return_value = trials
+    auto._summary = partial(Auto._summary, self=auto)
+    df_summary = Auto.summary(self=auto)
 
     auto.summary = MagicMock(return_value=df_summary)
 

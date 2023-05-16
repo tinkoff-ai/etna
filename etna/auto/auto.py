@@ -91,7 +91,7 @@ class AutoAbstract(ABC):
         pass
 
     @abstractmethod
-    def _summary(self, study: Study) -> list[any]:
+    def _summary(self, study: Study) -> List[any]:
         """
         Get information from trial summary
         """
@@ -176,7 +176,7 @@ class AutoBase(AutoAbstract):
 
         study = self._optuna.study.get_trials()
 
-        study_params = self._summary(study)
+        study_params = self._summary(study=study)
         return pd.DataFrame(study_params)
 
     def top_k(self, k: int = 5) -> List[Pipeline]:
@@ -295,7 +295,7 @@ class Auto(AutoBase):
 
         return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
 
-    def _summary(self, study: list[any]) -> list[any]:
+    def _summary(self, study: List[any]) -> List[any]:
         """
         Get information from trial summary
         """
@@ -488,13 +488,15 @@ class Tune(AutoBase):
 
         return get_from_params(**self._optuna.study.best_trial.params)
 
-    def _summary(self, study: Study) -> list[any]:
+    def _summary(self, study: Study) -> List[any]:
         """
         Get information from trial summary
         """
         study_params = [
-            {**trial.user_attrs, "pipeline": get_from_params(**trial.params), "state": trial.state} for trial in study
+            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs), "state": trial.state}
+            for trial in study
         ]
+        print("tune study params,", study_params)
         return study_params
 
     @staticmethod

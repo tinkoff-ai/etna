@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Notebook `forecast_interpretation.ipynb` with forecast decomposition ([#1220](https://github.com/tinkoff-ai/etna/pull/1220))
--
+- Class `Tune` for hyperparameter optimization within existing `Pipeline` ([#1200](https://github.com/tinkoff-ai/etna/pull/1200))
 -
 - 
 ### Changed
