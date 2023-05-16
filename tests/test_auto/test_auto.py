@@ -1,13 +1,9 @@
 from functools import partial
-from os import unlink
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
-from optuna.storages import RDBStorage
 from typing_extensions import Literal
-from typing_extensions import NamedTuple
 
 from etna.auto import Auto
 from etna.auto.auto import _Callback

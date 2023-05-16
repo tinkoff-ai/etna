@@ -17,7 +17,7 @@ from optuna.samplers import BaseSampler
 from optuna.samplers import TPESampler
 from optuna.storages import BaseStorage
 from optuna.storages import RDBStorage
-from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from typing_extensions import Protocol
 
@@ -91,10 +91,8 @@ class AutoAbstract(ABC):
         pass
 
     @abstractmethod
-    def _summary(self, study: Study) -> List[any]:
-        """
-        Get information from trial summary
-        """
+    def _summary(self, study: List[FrozenTrial]) -> List[dict]:
+        """Get information from trial summary."""
         pass
 
     @abstractmethod
@@ -295,10 +293,8 @@ class Auto(AutoBase):
 
         return get_from_params(**self._optuna.study.best_trial.user_attrs["pipeline"])
 
-    def _summary(self, study: List[any]) -> List[any]:
-        """
-        Get information from trial summary
-        """
+    def _summary(self, study: List[FrozenTrial]) -> List[dict]:
+        """Get information from trial summary."""
         study_params = [
             {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
             for trial in study
@@ -488,15 +484,12 @@ class Tune(AutoBase):
 
         return get_from_params(**self._optuna.study.best_trial.params)
 
-    def _summary(self, study: Study) -> List[any]:
-        """
-        Get information from trial summary
-        """
+    def _summary(self, study: List[FrozenTrial]) -> List[dict]:
+        """Get information from trial summary."""
         study_params = [
             {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs), "state": trial.state}
             for trial in study
         ]
-        print("tune study params,", study_params)
         return study_params
 
     @staticmethod
@@ -537,7 +530,6 @@ class Tune(AutoBase):
         objective:
             function that runs specified trial and returns its evaluated score
         """
-
         dict_of_distrs = {
             UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
             LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
@@ -548,7 +540,7 @@ class Tune(AutoBase):
             IntUniformDistribution: lambda x: ("suggest_int", {"low": x.low, "high": x.high, "step": x.step}),
             IntLogUniformDistribution: lambda x: (
                 "suggest_int",
-                {"low": x.low, "high": x.high, "step": x.step, "log": x.log},
+                {"low": x.low, "high": x.high, "step": x.step},
             ),
             CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
         }

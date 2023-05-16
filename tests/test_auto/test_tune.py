@@ -1,9 +1,7 @@
 from functools import partial
-from os import unlink
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import pandas as pd
 import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -11,12 +9,9 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.storages import RDBStorage
 from typing_extensions import Literal
-from typing_extensions import NamedTuple
 
 from etna.auto import Tune
-from etna.auto.auto import AutoBase
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
@@ -114,6 +109,7 @@ def test_init_optuna(
         ({"model.smoothing_level": LogUniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
         ({"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}, SimpleExpSmoothingModel()),
         ({"model.lag": IntUniformDistribution(1, 5)}, NaiveModel()),
+        ({"model.lag": IntLogUniformDistribution(1, 5)}, NaiveModel()),
         ({"model.lag": CategoricalDistribution((1, 2, 3))}, NaiveModel()),
         ({"model.smoothing_level": UniformDistribution(1, 5)}, SimpleExpSmoothingModel()),
     ],
@@ -159,9 +155,9 @@ def test_top_k(
     tune.metric_aggregation = "median"
     tune.target_metric.greater_is_better = False
 
-    df_summary = pd.DataFrame(Tune._summary(self=tune, study=trials))
-
-    print("\n" * 20, df_summary, "\n" * 20)
+    tune._optuna.study.get_trials.return_value = trials
+    tune._summary = partial(Tune._summary, self=tune)
+    df_summary = Tune.summary(self=tune)
 
     tune.summary = MagicMock(return_value=df_summary)
 
