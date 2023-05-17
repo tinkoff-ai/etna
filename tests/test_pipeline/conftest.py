@@ -7,7 +7,6 @@ from numpy.random import RandomState
 from scipy.stats import norm
 
 from etna.datasets import TSDataset
-from etna.datasets import generate_ar_df
 from etna.models import CatBoostPerSegmentModel
 from etna.models import NaiveModel
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
@@ -245,15 +244,6 @@ def ts_process_fold_forecast() -> TSDataset:
     df["target"] = [1, 2, 3, 4, 100, 6, 7, 100, 100, 100, 100] + [1, 2, 3, 4, 5, 6, 7, 8, 9, -6, 11]
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
-    return ts
-
-
-@pytest.fixture
-def ts_with_segment_named_target() -> TSDataset:
-    df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=5, freq="D")
-    df.loc[df["segment"] == "segment_0", "segment"] = "target"
-    df_wide = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df_wide, freq="D")
     return ts
 
 
