@@ -21,6 +21,14 @@ Basic ``forecast`` usage:
             [RAW_OUTPUT]            by default we return only forecast without features [default: False]
             [KNOWN_FUTURE]          list of all known_future columns (regressor columns). If not specified then all exog_columns considered known_future [default: None]
 
+**Forecast config parameters**
+
+* :code:`prediction_interval` - whether to estimate prediction interval for forecast.
+* :code:`quantiles` - levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval.
+* :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation.
+* :code:`return_components` - whether to estimate forecast components
+* :code:`start_timestamp` - timestamp with the starting point of forecast.
+
 **How to create config?**
 
 Example of pipeline's config:
@@ -43,6 +51,7 @@ Example of forecast params config:
     prediction_interval: true
     quantiles: [0.025, 0.975]
     n_folds: 3
+    start_timestamp: "2020-01-12"
 
 **How to prepare data?**
 
