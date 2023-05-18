@@ -13,7 +13,44 @@ from omegaconf import OmegaConf
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
+from etna.models.utils import determine_num_steps
 from etna.pipeline import Pipeline
+
+ADDITIONAL_FORECAST_PARAMETERS = {"start_timestamp"}
+
+
+def drop_additional_forecast_params(forecast_params: Dict[str, Any]) -> Dict[str, Any]:
+    """Select `forecast` arguments from params."""
+    return {k: v for k, v in forecast_params.items() if k not in ADDITIONAL_FORECAST_PARAMETERS}
+
+
+def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TSDataset) -> int:
+    """Compute new pipeline horizon if `start_timestamp` presented in `forecast_params`."""
+    if "start_timestamp" in forecast_params:
+        freq = tsdataset.freq
+
+        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"], freq=freq)
+        train_end_timestamp = tsdataset.index.max()
+
+        if forecast_start_timestamp <= train_end_timestamp:
+            raise ValueError("Parameter `start_timestamp` should greater than end of training dataset!")
+
+        delta = determine_num_steps(
+            start_timestamp=train_end_timestamp, end_timestamp=forecast_start_timestamp, freq=freq
+        )
+
+        horizon += delta - 1
+
+    return horizon
+
+
+def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> TSDataset:
+    """Filter out forecasts before `start_timestamp` if `start_timestamp` presented in `forecast_params`.."""
+    if "start_timestamp" in forecast_params:
+        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"], freq=forecast_ts.freq)
+        forecast_ts.df = forecast_ts.df.loc[forecast_start_timestamp:, :]
+
+    return forecast_ts
 
 
 def forecast(
@@ -83,9 +120,17 @@ def forecast(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
 
+    horizon: int = pipeline_configs["horizon"]  # type: ignore
+    horizon = compute_horizon(horizon=horizon, forecast_params=forecast_params, tsdataset=tsdataset)
+    pipeline_configs["horizon"] = horizon  # type: ignore
+
+    forecast_args = drop_additional_forecast_params(forecast_params)
+
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     pipeline.fit(tsdataset)
-    forecast = pipeline.forecast(**forecast_params)
+    forecast = pipeline.forecast(**forecast_args)
+
+    forecast = filter_forecast(forecast_ts=forecast, forecast_params=forecast_params)
 
     flatten = forecast.to_pandas(flatten=True)
     if raw_output:
