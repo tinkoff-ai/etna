@@ -21,7 +21,7 @@ from etna.loggers.base import BaseLogger
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
-DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
+DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S-%f"
 
 
 class BaseFileLogger(BaseLogger):
