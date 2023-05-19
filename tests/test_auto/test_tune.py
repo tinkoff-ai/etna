@@ -17,8 +17,12 @@ from etna.auto.auto import _Initializer
 from etna.metrics import MAE
 from etna.models import NaiveModel
 from etna.models import SimpleExpSmoothingModel
+from etna.pipeline import AutoRegressivePipeline
 from etna.pipeline import Pipeline
+from etna.pipeline.hierarchical_pipeline import HierarchicalPipeline
+from etna.reconciliation import BottomUpReconciliator
 from etna.transforms import AddConstTransform
+from etna.transforms import DateFlagsTransform
 
 
 def test_objective(
@@ -69,22 +73,6 @@ def test_fit(
     tune._optuna.tune.assert_called_with(
         objective=tune.objective.return_value, runner=tune.runner, n_trials=n_trials, timeout=timeout
     )
-
-
-def test_simple_tune_run(example_tsds, optuna_storage, pipeline=Pipeline(NaiveModel(1), horizon=7)):
-    tune = Tune(
-        pipeline,
-        MAE(),
-        metric_aggregation="median",
-        horizon=7,
-        storage=optuna_storage,
-    )
-    tune.fit(ts=example_tsds, n_trials=2)
-
-    assert len(tune._optuna.study.trials) == 2
-    assert len(tune.summary()) == 2
-    assert len(tune.top_k()) == 2
-    assert len(tune.top_k(k=1)) == 1
 
 
 @patch("optuna.samplers.TPESampler", return_value=MagicMock())
@@ -164,3 +152,62 @@ def test_top_k(
     top_k = Tune.top_k(tune, k=k)
     assert len(top_k) == k
     assert [pipeline["pipeline"].model.lag for pipeline in top_k] == [i for i in range(k)]  # noqa C416
+
+
+@pytest.mark.parametrize(
+    "pipeline",
+    [
+        (Pipeline(NaiveModel(1), horizon=7)),
+        (AutoRegressivePipeline(model=NaiveModel(1), horizon=7, transforms=[])),
+        (AutoRegressivePipeline(model=NaiveModel(1), horizon=7, transforms=[DateFlagsTransform()])),
+    ],
+)
+def test_tune_run(example_tsds, optuna_storage, pipeline):
+    tune = Tune(
+        pipeline,
+        MAE(),
+        metric_aggregation="median",
+        horizon=7,
+        storage=optuna_storage,
+    )
+    tune.fit(ts=example_tsds, n_trials=2)
+
+    assert len(tune._optuna.study.trials) == 2
+    assert len(tune.summary()) == 2
+    assert len(tune.top_k()) == 2
+    assert len(tune.top_k(k=1)) == 1
+
+
+@pytest.mark.parametrize(
+    "pipeline",
+    [
+        (
+            HierarchicalPipeline(
+                reconciliator=BottomUpReconciliator(target_level="total", source_level="market"),
+                model=NaiveModel(1),
+                transforms=[],
+                horizon=1,
+            )
+        ),
+    ],
+)
+def test_tune_hierarchical_run(
+    market_level_constant_hierarchical_ts,
+    optuna_storage,
+    pipeline,
+):
+    print("\n" * 10, market_level_constant_hierarchical_ts, "\n" * 10)
+    tune = Tune(
+        pipeline,
+        MAE(),
+        metric_aggregation="median",
+        horizon=7,
+        backtest_params={"n_folds": 2},
+        storage=optuna_storage,
+    )
+    tune.fit(ts=market_level_constant_hierarchical_ts, n_trials=2)
+
+    assert len(tune._optuna.study.trials) == 2
+    assert len(tune.summary()) == 2
+    assert len(tune.top_k()) == 2
+    assert len(tune.top_k(k=1)) == 1

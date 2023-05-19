@@ -36,6 +36,7 @@ from etna.metrics import Sign
 from etna.metrics.utils import MetricAggregationStatistics
 from etna.metrics.utils import aggregate_metrics_df
 from etna.pipeline import Pipeline
+from etna.pipeline.base import BasePipeline
 
 
 class _Callback(Protocol):
@@ -44,7 +45,7 @@ class _Callback(Protocol):
 
 
 class _Initializer(Protocol):
-    def __call__(self, pipeline: Pipeline) -> None:
+    def __call__(self, pipeline: BasePipeline) -> None:
         ...
 
 
@@ -384,7 +385,7 @@ class Tune(AutoBase):
 
     def __init__(
         self,
-        pipeline: Pipeline,
+        pipeline: BasePipeline,
         target_metric: Metric,
         horizon: int,
         metric_aggregation: MetricAggregationStatistics = "mean",
@@ -495,7 +496,7 @@ class Tune(AutoBase):
     @staticmethod
     def objective(
         ts: TSDataset,
-        pipeline: Pipeline,
+        pipeline: BasePipeline,
         target_metric: Metric,
         metric_aggregation: MetricAggregationStatistics,
         metrics: List[Metric],
@@ -557,7 +558,7 @@ class Tune(AutoBase):
                 params_suggested[param_name] = method(param_name, **method_kwargs)
 
             # create pipeline instance with the parameters to try
-            pipeline_trial_params: Pipeline = pipeline.set_params(**params_suggested)
+            pipeline_trial_params: BasePipeline = pipeline.set_params(**params_suggested)
 
             if initializer is not None:
                 initializer(pipeline=pipeline_trial_params)
