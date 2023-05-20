@@ -196,7 +196,6 @@ def test_tune_hierarchical_run(
     optuna_storage,
     pipeline,
 ):
-    print("\n" * 10, market_level_constant_hierarchical_ts, "\n" * 10)
     tune = Tune(
         pipeline,
         MAE(),

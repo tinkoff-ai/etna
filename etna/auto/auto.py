@@ -35,7 +35,6 @@ from etna.metrics import Metric
 from etna.metrics import Sign
 from etna.metrics.utils import MetricAggregationStatistics
 from etna.metrics.utils import aggregate_metrics_df
-from etna.pipeline import Pipeline
 from etna.pipeline.base import BasePipeline
 
 
@@ -61,7 +60,7 @@ class AutoAbstract(ABC):
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
         **optuna_kwargs,
-    ) -> Pipeline:
+    ) -> BasePipeline:
         """
         Start automatic pipeline selection.
 
@@ -97,7 +96,7 @@ class AutoAbstract(ABC):
         pass
 
     @abstractmethod
-    def top_k(self, k: int = 5) -> List[Pipeline]:
+    def top_k(self, k: int = 5) -> List[BasePipeline]:
         """
         Get top k pipelines.
 
@@ -178,7 +177,7 @@ class AutoBase(AutoAbstract):
         study_params = self._summary(study=study)
         return pd.DataFrame(study_params)
 
-    def top_k(self, k: int = 5) -> List[Pipeline]:
+    def top_k(self, k: int = 5) -> List[BasePipeline]:
         """
         Get top k pipelines.
 
@@ -205,7 +204,7 @@ class Auto(AutoBase):
         metric_aggregation: MetricAggregationStatistics = "mean",
         backtest_params: Optional[dict] = None,
         experiment_folder: Optional[str] = None,
-        pool: Union[Pool, List[Pipeline]] = Pool.default,
+        pool: Union[Pool, List[BasePipeline]] = Pool.default,
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
         metrics: Optional[List[Metric]] = None,
@@ -254,7 +253,7 @@ class Auto(AutoBase):
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
         **optuna_kwargs,
-    ) -> Pipeline:
+    ) -> BasePipeline:
         """
         Start automatic pipeline selection.
 
@@ -344,7 +343,7 @@ class Auto(AutoBase):
             pipeline_config.update(trial.relative_params)
             pipeline_config.update(trial.params)
 
-            pipeline: Pipeline = get_from_params(**pipeline_config)
+            pipeline: BasePipeline = get_from_params(**pipeline_config)
             if initializer is not None:
                 initializer(pipeline=pipeline)
 
@@ -444,7 +443,7 @@ class Tune(AutoBase):
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
         **optuna_kwargs,
-    ) -> Pipeline:
+    ) -> BasePipeline:
         """
         Start automatic pipeline tuning.
 
