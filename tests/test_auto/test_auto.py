@@ -1,37 +1,16 @@
-from os import unlink
+from functools import partial
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
-from optuna.storages import RDBStorage
 from typing_extensions import Literal
-from typing_extensions import NamedTuple
 
 from etna.auto import Auto
-from etna.auto.auto import AutoBase
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
-
-
-@pytest.fixture()
-def optuna_storage():
-    yield RDBStorage("sqlite:///test.db")
-    unlink("test.db")
-
-
-@pytest.fixture()
-def trials():
-    class Trial(NamedTuple):
-        user_attrs: dict
-        state: Literal["COMPLETE", "RUNNING", "PENDING"] = "COMPLETE"
-
-    return [
-        Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": i})
-        for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
-    ]
 
 
 def test_objective(
@@ -125,7 +104,9 @@ def test_summary(
     auto=MagicMock(),
 ):
     auto._optuna.study.get_trials.return_value = trials
-    df_summary = AutoBase.summary(self=auto)
+    auto._summary = partial(Auto._summary, self=auto)  # essential for summary
+    df_summary = Auto.summary(self=auto)
+
     assert len(df_summary) == len(trials)
     assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
 
@@ -136,13 +117,16 @@ def test_top_k(
     k,
     auto=MagicMock(),
 ):
-    auto._optuna.study.get_trials.return_value = trials
     auto.target_metric.name = "SMAPE"
     auto.metric_aggregation = "median"
     auto.target_metric.greater_is_better = False
 
-    df_summary = AutoBase.summary(self=auto)
+    auto._optuna.study.get_trials.return_value = trials
+    auto._summary = partial(Auto._summary, self=auto)
+    df_summary = Auto.summary(self=auto)
+
     auto.summary = MagicMock(return_value=df_summary)
-    top_k = AutoBase.top_k(auto, k=k)
+
+    top_k = Auto.top_k(auto, k=k)
     assert len(top_k) == k
     assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(k)]  # noqa C416
