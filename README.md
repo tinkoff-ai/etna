@@ -236,7 +236,9 @@ To ask the questions or discuss the library you can join our [telegram chat](htt
 [Albina Munirova](https://github.com/albinamunirova),
 [Julia Shenshina](https://github.com/julia-shenshina),
 [Yuriy Tarasyuk](https://github.com/DBcreator),
-[Konstantin Vedernikov](https://github.com/scanhex12)
+[Konstantin Vedernikov](https://github.com/scanhex12),
+[Ivan Nedosekov](https://github.com/GrozniyToaster),
+[Rodion Petrov](https://github.com/Noidor1)
 
 ### ETNA.Contributors
 
