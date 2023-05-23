@@ -19,7 +19,7 @@ from etna.pipeline import Pipeline
 ADDITIONAL_FORECAST_PARAMETERS = {"start_timestamp"}
 
 
-def forecast_call_params(forecast_params: Dict[str, Any]) -> Dict[str, Any]:
+def get_forecast_call_params(forecast_params: Dict[str, Any]) -> Dict[str, Any]:
     """Select `forecast` arguments from params."""
     return {k: v for k, v in forecast_params.items() if k not in ADDITIONAL_FORECAST_PARAMETERS}
 
@@ -124,11 +124,11 @@ def forecast(
     horizon = compute_horizon(horizon=horizon, forecast_params=forecast_params, tsdataset=tsdataset)
     pipeline_configs["horizon"] = horizon  # type: ignore
 
-    forecast_args = forecast_call_params(forecast_params)
+    forecast_call_args = get_forecast_call_params(forecast_params)
 
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
     pipeline.fit(tsdataset)
-    forecast = pipeline.forecast(**forecast_args)
+    forecast = pipeline.forecast(**forecast_call_args)
 
     forecast = filter_forecast(forecast_ts=forecast, forecast_params=forecast_params)
 

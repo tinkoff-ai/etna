@@ -8,7 +8,7 @@ import pytest
 
 from etna.commands.forecast_command import compute_horizon
 from etna.commands.forecast_command import filter_forecast
-from etna.commands.forecast_command import forecast_call_params
+from etna.commands.forecast_command import get_forecast_call_params
 from etna.datasets import TSDataset
 
 
@@ -143,7 +143,7 @@ def pipeline_dummy_config():
     ),
 )
 def test_drop_additional_forecast_params(params, expected):
-    result = forecast_call_params(forecast_params=params)
+    result = get_forecast_call_params(forecast_params=params)
     assert result == expected
 
 
