@@ -9,8 +9,10 @@ from typing import Callable
 
 from hydra_slayer import get_factory
 
+from etna.core.saving import AbstractSaveable
 
-def load(path: pathlib.Path, **kwargs: Any) -> Any:
+
+def load(path: pathlib.Path, **kwargs: Any) -> AbstractSaveable:
     """Load saved object by path.
 
     Parameters
