@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 
 from etna.commands.forecast_command import compute_horizon
-from etna.commands.forecast_command import drop_additional_forecast_params
 from etna.commands.forecast_command import filter_forecast
+from etna.commands.forecast_command import forecast_call_params
 from etna.datasets import TSDataset
 
 
@@ -108,7 +108,7 @@ def test_forecast_use_exog_correct(
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def ms_tsds():
     df = pd.DataFrame(
         {
@@ -123,7 +123,7 @@ def ms_tsds():
     return ts
 
 
-@pytest.fixture()
+@pytest.fixture
 def pipeline_dummy_config():
     return {"horizon": 3}
 
@@ -143,12 +143,12 @@ def pipeline_dummy_config():
     ),
 )
 def test_drop_additional_forecast_params(params, expected):
-    result = drop_additional_forecast_params(forecast_params=params)
+    result = forecast_call_params(forecast_params=params)
     assert result == expected
 
 
 @pytest.mark.parametrize("forecast_params", ({"start_timestamp": "2020-04-09"}, {"start_timestamp": "2019-04-10"}))
-def test_update_horizon_error(example_tsds, forecast_params, pipeline_dummy_config):
+def test_compute_horizon_error(example_tsds, forecast_params, pipeline_dummy_config):
     with pytest.raises(ValueError, match="Parameter `start_timestamp` should greater than end of training dataset!"):
         compute_horizon(
             horizon=pipeline_dummy_config["horizon"], forecast_params=forecast_params, tsdataset=example_tsds
@@ -164,7 +164,7 @@ def test_update_horizon_error(example_tsds, forecast_params, pipeline_dummy_conf
         ({"start_timestamp": "2023-06-01"}, "ms_tsds", 4),
     ),
 )
-def test_update_horizon(forecast_params, tsdataset_name, expected, request, pipeline_dummy_config):
+def test_compute_horizon(forecast_params, tsdataset_name, expected, request, pipeline_dummy_config):
     tsdataset = request.getfixturevalue(tsdataset_name)
     result = compute_horizon(
         horizon=pipeline_dummy_config["horizon"], forecast_params=forecast_params, tsdataset=tsdataset
