@@ -142,7 +142,7 @@ def pipeline_dummy_config():
         ),
     ),
 )
-def test_drop_additional_forecast_params(params, expected):
+def test_get_forecast_call_params(params, expected):
     result = get_forecast_call_params(forecast_params=params)
     assert result == expected
 
