@@ -2,11 +2,11 @@ import pathlib
 import tempfile
 import zipfile
 from copy import deepcopy
-from typing import Any
 from typing import List
 from typing import Optional
 
 import pandas as pd
+from typing_extensions import Self
 
 from etna.core import SaveMixin
 from etna.core import load
@@ -113,7 +113,7 @@ class SaveEnsembleMixin(SaveMixin):
                     archive.write(pipeline_save_path, f"pipelines/{save_name}")
 
     @classmethod
-    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Any:
+    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Self:
         """Load an object.
 
         Parameters
