@@ -155,3 +155,19 @@ def base_forecast_omegaconf_path():
     tmp.flush()
     yield Path(tmp.name)
     tmp.close()
+
+
+@pytest.fixture
+def start_timestamp_forecast_omegaconf_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        prediction_interval: true
+        quantiles: [0.025, 0.975]
+        n_folds: 3
+        start_timestamp: "2021-09-10"
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
