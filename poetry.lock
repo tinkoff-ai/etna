@@ -1014,7 +1014,7 @@ name = "convertdate"
 version = "2.4.0"
 description = "Converts between Gregorian dates and other calendar systems"
 category = "main"
-optional = false
+optional = true
 python-versions = "<4,>=3.7"
 files = [
     {file = "convertdate-2.4.0-py3-none-any.whl", hash = "sha256:fcffe3a67522172648cf03b0c3757cfd079726fe5ae04ce29989ad3958039e4e"},
@@ -1802,32 +1802,18 @@ docs = ["Sphinx", "docutils (<0.18)"]
 test = ["objgraph", "psutil"]
 
 [[package]]
-name = "hijri-converter"
-version = "2.3.1"
-description = "Accurate Hijri-Gregorian dates converter based on the Umm al-Qura calendar"
+name = "holidays"
+version = "0.25"
+description = "Generate and work with holidays in Python"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "hijri-converter-2.3.1.tar.gz", hash = "sha256:069b6789291e0830f4860a79dcd34fb3ceea3b95516ed4010202b9656ba1ab61"},
-    {file = "hijri_converter-2.3.1-py3-none-any.whl", hash = "sha256:c04f072c78e1854a1f474ada253a3377009457221dbc1b14999761728e663662"},
-]
-
-[[package]]
-name = "holidays"
-version = "0.13"
-description = "Generate and work with holidays in Python"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "holidays-0.13-py3-none-any.whl", hash = "sha256:ca944d20762f027770ceae2f21d037f959c9b206afe92db97161ce78538c275e"},
-    {file = "holidays-0.13.tar.gz", hash = "sha256:c6f7c3ab8ada94806702da931d94d37cd61bcfa92cb4d39d351b6a9c5210675c"},
+    {file = "holidays-0.25-py3-none-any.whl", hash = "sha256:ad9b31e5175b4c5b601e06793633c2b0fff53179cf56ad4de1aea463c3f2679c"},
+    {file = "holidays-0.25.tar.gz", hash = "sha256:64d85ae60dd05715cdf3483e60ece93ae254e4f4fac23f1f83c6b0f04ae35508"},
 ]
 
 [package.dependencies]
-convertdate = ">=2.3.0"
-hijri-converter = "*"
 korean-lunar-calendar = "*"
 python-dateutil = "*"
 
@@ -3833,41 +3819,34 @@ wcwidth = "*"
 
 [[package]]
 name = "prophet"
-version = "1.1"
+version = "1.1.3"
 description = "Automatic Forecasting Procedure"
 category = "main"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "prophet-1.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f094e0dbf53faf3ea556dbf8e6912a53a5c2c37918af362cdcf8ba211cab4dd0"},
-    {file = "prophet-1.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ff6c18c3ce5cb48b9365ac6d744d8ac9bdb22a522bbdfe6d5bb42d06f31e0acb"},
-    {file = "prophet-1.1-cp310-cp310-win_amd64.whl", hash = "sha256:9cc9b22829263c180ef5e65e6dc7a5b81c17e5c950f266ef55bdecb0f238641b"},
-    {file = "prophet-1.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:f743740eb0b9417023598cb8b0968a457a8a8806a5f89697ce789c9a255ad0a0"},
-    {file = "prophet-1.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dea763ffeb50123642c17becab5450e41db10dff241b52e1be81cb469ffa1cf8"},
-    {file = "prophet-1.1-cp37-cp37m-win_amd64.whl", hash = "sha256:1d10c1aa39412954962b2bbe7c1aab7c23aeabf168374296316603d7eeec8777"},
-    {file = "prophet-1.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:1f8ce8c62facdae4cd048f9156e8b0f902f574a6651637617adde829943a8edd"},
-    {file = "prophet-1.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3724d4d8af25d3e951c3f442257086c78f14ca64f6352138b7bd1c438a44b041"},
-    {file = "prophet-1.1-cp38-cp38-win_amd64.whl", hash = "sha256:92a7b5833e0293f877e4c8cd4b2ee172be98b01e1644703f2081eea30d8e0038"},
-    {file = "prophet-1.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:72a0a11adc5d1ef8b774e50b1e1a763e94443ef041629a4ce5bb95bba1dc4c16"},
-    {file = "prophet-1.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:86d15dad5d8696e3341544a593adca31d6a24eb9245b5154163075385ab1b1de"},
-    {file = "prophet-1.1-cp39-cp39-win_amd64.whl", hash = "sha256:4ec66394ac488d6e004ddaac3ff9b315a70f8b248b2eb6df46a584eab40a1dd6"},
-    {file = "prophet-1.1.tar.gz", hash = "sha256:963b117d56fe0dabc247b5b36cdb20d7ce7ac6899e77ec4037040b773a713ffe"},
+    {file = "prophet-1.1.3-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:e64d66ca78ee1366d9c4b28397ec45357f825a7b048b384bbf899f6c6b0acd4c"},
+    {file = "prophet-1.1.3-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fd3c76f7188d8a42936c93f8b6c9a299b443cf5342d15ff6eb1a2eb777ce3315"},
+    {file = "prophet-1.1.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:718291f275bd59865274866f54380ad1ee2ef23ca1dec2950a45682bec261363"},
+    {file = "prophet-1.1.3-py3-none-win_amd64.whl", hash = "sha256:e248e837d37740df23ae616c7b09d2ffa9e22eadfa51984e08edeccc542b5562"},
+    {file = "prophet-1.1.3.tar.gz", hash = "sha256:f8d6d45a4391fdf740c7b74f79a72313f95a5f6e3417eaf1c68892b47b920646"},
 ]
 
 [package.dependencies]
-cmdstanpy = ">=1.0.1"
+cmdstanpy = ">=1.0.4"
 convertdate = ">=2.1.2"
-Cython = ">=0.22"
-holidays = ">=0.13"
+holidays = ">=0.14.2"
+importlib-resources = "*"
 LunarCalendar = ">=0.0.9"
 matplotlib = ">=2.0.0"
 numpy = ">=1.15.4"
 pandas = ">=1.0.4"
 python-dateutil = ">=2.8.0"
-setuptools = ">=42"
-setuptools-git = ">=1.2"
 tqdm = ">=4.36.1"
-wheel = ">=0.37.0"
+
+[package.extras]
+dev = ["jupyterlab", "nbconvert", "plotly", "pytest", "setuptools (>=64)", "wheel"]
+parallel = ["dask[dataframe]", "distributed"]
 
 [[package]]
 name = "protobuf"
@@ -4041,7 +4020,7 @@ name = "pymeeus"
 version = "0.5.12"
 description = "Python implementation of Jean Meeus astronomical routines"
 category = "main"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "PyMeeus-0.5.12.tar.gz", hash = "sha256:548f7186bd8b96cbc069cf649a8e8e377dce49ac74486709849fe63a99cad684"},
@@ -4913,18 +4892,6 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-hoverxref (<2)", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (==0.8.3)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
 testing = ["build[virtualenv]", "filelock (>=3.4.0)", "flake8 (<5)", "flake8-2020", "ini2toml[lite] (>=0.9)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pip (>=19.1)", "pip-run (>=8.8)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)", "pytest-perf", "pytest-timeout", "pytest-xdist", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
 testing-integration = ["build[virtualenv]", "filelock (>=3.4.0)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pytest", "pytest-enabler", "pytest-xdist", "tomli", "virtualenv (>=13.0.0)", "wheel"]
-
-[[package]]
-name = "setuptools-git"
-version = "1.2"
-description = "Setuptools revision control system plugin for Git"
-category = "main"
-optional = true
-python-versions = "*"
-files = [
-    {file = "setuptools-git-1.2.tar.gz", hash = "sha256:ff64136da01aabba76ae88b050e7197918d8b2139ccbf6144e14d472b9c40445"},
-    {file = "setuptools_git-1.2-py2.py3-none-any.whl", hash = "sha256:e7764dccce7d97b4b5a330d7b966aac6f9ac026385743fd6cedad553f2494cfa"},
-]
 
 [[package]]
 name = "shortuuid"
@@ -5868,21 +5835,6 @@ optional = ["python-socks", "wsaccel"]
 test = ["websockets"]
 
 [[package]]
-name = "wheel"
-version = "0.40.0"
-description = "A built-package format for Python"
-category = "main"
-optional = true
-python-versions = ">=3.7"
-files = [
-    {file = "wheel-0.40.0-py3-none-any.whl", hash = "sha256:d236b20e7cb522daf2390fa84c55eea81c5c30190f90f29ae2ca1ad8355bf247"},
-    {file = "wheel-0.40.0.tar.gz", hash = "sha256:cd1196f3faee2b31968d626e1731c94f99cbdb67cf5a46e4f5656cbee7738873"},
-]
-
-[package.extras]
-test = ["pytest (>=6.0.0)"]
-
-[[package]]
 name = "widgetsnbextension"
 version = "3.6.4"
 description = "IPython HTML widgets for Jupyter"
@@ -6130,4 +6082,4 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0, <3.11.0"
-content-hash = "732a798394e2e7b6bdc5ad5524c6f171c240c69ea30fecc0244a16b7f33eaa78"
+content-hash = "5a867df1b2f134ca38a5cffa006f9e3ca4cf98306713f2f0dffa348dbe71f60f"
