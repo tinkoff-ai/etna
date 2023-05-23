@@ -11,6 +11,7 @@ from typing import Sequence
 import dill
 import numpy as np
 import pandas as pd
+from typing_extensions import Self
 
 from etna.core.mixins import SaveMixin
 from etna.datasets.tsdataset import TSDataset
@@ -645,7 +646,7 @@ class SaveNNMixin(SaveMixin):
             torch.save(self, output_file, pickle_module=dill)
 
     @classmethod
-    def _load_state(cls, archive: zipfile.ZipFile) -> Any:
+    def _load_state(cls, archive: zipfile.ZipFile) -> Self:
         import torch
 
         with archive.open("object.pt", "r") as input_file:

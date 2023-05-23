@@ -15,6 +15,9 @@ from typing import cast
 
 import hydra_slayer
 from sklearn.base import BaseEstimator
+from typing_extensions import Self
+
+from etna.core.saving import AbstractSaveable
 
 
 class BaseMixin:
@@ -163,7 +166,7 @@ def get_etna_version() -> Tuple[int, int, int]:
         return result
 
 
-class SaveMixin:
+class SaveMixin(AbstractSaveable):
     """Basic implementation of ``AbstractSaveable`` abstract class.
 
     It saves object to the zip archive with 2 files:
@@ -223,12 +226,12 @@ class SaveMixin:
             )
 
     @classmethod
-    def _load_state(cls, archive: zipfile.ZipFile) -> Any:
+    def _load_state(cls, archive: zipfile.ZipFile) -> Self:
         with archive.open("object.pkl", "r") as input_file:
             return pickle.load(input_file)
 
     @classmethod
-    def load(cls, path: pathlib.Path) -> Any:
+    def load(cls, path: pathlib.Path) -> Self:
         """Load an object.
 
         Parameters
