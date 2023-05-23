@@ -73,9 +73,10 @@ types-Deprecated = "1.2.9"
 
 prophet = {version = "^1.0", optional = true}
 
-torch = {version = ">=1.8.0,<1.12.0", optional = true}
+torch = {version = ">=1.8.0,<2.0", optional = true}
 pytorch-forecasting = {version = "^0.9.0", optional = true}
 pytorch-lightning = {version = "*", optional = true}
+cloudpickle = {version = "^2.0", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
@@ -118,7 +119,7 @@ types-setuptools = {version = "^65.7.0", optional = true}
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
-torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
+torch = ["torch", "pytorch-forecasting", "pytorch-lightning", "cloudpickle"]
 wandb = ["wandb"]
 auto = ["optuna"]
 classification = ["pyts", "tsfresh"]
@@ -131,16 +132,15 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 
 all = [
     "prophet",
-    "torch", "pytorch-forecasting",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "cloudpickle",
     "wandb",
     "optuna",
-    "pyts",
-    "tsfresh"
+    "pyts", "tsfresh"
 ]
 
 all-dev = [
     "prophet",
-    "torch", "pytorch-forecasting",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "cloudpickle",
     "wandb",
     "optuna",
     "click", "semver",
@@ -149,8 +149,7 @@ all-dev = [
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools",
     "click", "semver",
     "jupyter", "nbconvert",
-    "pyts",
-    "tsfresh"
+    "pyts", "tsfresh"
 ]
 
 [tool.poetry.scripts]
