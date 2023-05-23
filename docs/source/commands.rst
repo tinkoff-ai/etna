@@ -25,9 +25,12 @@ Basic ``forecast`` usage:
 
 * :code:`prediction_interval` - whether to estimate prediction interval for forecast.
 * :code:`quantiles` - levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval.
-* :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation.
+* :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation. By default equals to 3.
 * :code:`return_components` - whether to estimate forecast components
 * :code:`start_timestamp` - timestamp with the starting point of forecast.
+
+Setting these parameters is optional.
+Further information on arguments could be found in the documentation of :meth:`~etna.pipeline.pipeline.Pipeline.forecast` method.
 
 **How to create config?**
 
@@ -51,6 +54,13 @@ Example of forecast params config:
     prediction_interval: true
     quantiles: [0.025, 0.975]
     n_folds: 3
+
+Parameter :code:`start_timestamp` could be set similarly:
+
+.. code-block:: yaml
+
+    prediction_interval: true
+    quantiles: [0.025, 0.975]
     start_timestamp: "2020-01-12"
 
 **How to prepare data?**
