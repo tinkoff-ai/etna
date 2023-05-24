@@ -285,14 +285,20 @@ class WeeklySeasonalitySSM(SeasonalitySSM):
     """Class for Weekly Seasonality State Space Model."""
 
     def __init__(self):
-        super().__init__(num_seasons=7, timestamp_transform=lambda x: x.dayofweek)
+        super().__init__(num_seasons=7, timestamp_transform=self.get_timestamp_transform)
+
+    def get_timestamp_transform(self, x):
+        return x.weekday()
 
 
 class DaylySeasonalitySSM(SeasonalitySSM):
     """Class for Daily Seasonality State Space Model."""
 
     def __init__(self):
-        super().__init__(num_seasons=24, timestamp_transform=lambda x: x.hour)
+        super().__init__(num_seasons=24, timestamp_transform=self.get_timestamp_transform)
+
+    def get_timestamp_transform(self, x):
+        return x.hour
 
 
 class CompositeSSM(SSM):
