@@ -29,10 +29,7 @@ def _module_available(module_path: str) -> bool:
 
 def _is_torch_available():
     true_case = (
-        _module_available("pytorch_forecasting")
-        & _module_available("pytorch_lightning")
-        & _module_available("torch")
-        & _module_available("cloudpickle")
+        _module_available("pytorch_forecasting") & _module_available("pytorch_lightning") & _module_available("torch")
     )
     if true_case:
         return True
