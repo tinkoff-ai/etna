@@ -8,6 +8,7 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 
+import dill
 import numpy as np
 import pandas as pd
 from typing_extensions import Self
@@ -639,16 +640,14 @@ class SaveNNMixin(SaveMixin):
     """
 
     def _save_state(self, archive: zipfile.ZipFile):
-        import cloudpickle
         import torch
 
         with archive.open("object.pt", "w") as output_file:
-            torch.save(self, output_file, pickle_module=cloudpickle)
+            torch.save(self, output_file, pickle_module=dill)
 
     @classmethod
     def _load_state(cls, archive: zipfile.ZipFile) -> Self:
-        import cloudpickle
         import torch
 
         with archive.open("object.pt", "r") as input_file:
-            return torch.load(input_file, pickle_module=cloudpickle)
+            return torch.load(input_file, pickle_module=dill)
