@@ -178,8 +178,11 @@ class DeepStateNet(DeepBaseNet):
         """Make samples from segment DataFrame."""
 
         values_real = df.drop(columns=["target", "segment", "timestamp"]).values
+        values_real = torch.from_numpy(values_real).float()
         values_datetime = self.ssm.generate_datetime_index(df["timestamp"])
+        values_datetime = torch.from_numpy(values_datetime).to(torch.int64)
         values_target = df["target"].values
+        values_target = torch.from_numpy(values_target).float()
         segment = df["segment"].values[0]
 
         def _make(
@@ -211,10 +214,6 @@ class DeepStateNet(DeepBaseNet):
             sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
             sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
 
-            sample["encoder_target"] = torch.from_numpy(sample["encoder_target"]).float()
-            sample["decoder_real"] = torch.from_numpy(sample["decoder_real"]).float()
-            sample["encoder_real"] = torch.from_numpy(sample["encoder_real"]).float()
-            sample["datetime_index"] = torch.from_numpy(sample["datetime_index"]).to(torch.int64)
             return sample
 
         start_idx = 0
