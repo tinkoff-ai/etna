@@ -56,10 +56,10 @@ loguru = "^0.5.3"
 hydra-slayer = "^0.2.0"
 typer = "^0.4.0"
 omegaconf = "^2.1.1"
-holidays = "^0.13"
+holidays = ">=0.13,<1.0"
 boto3 = "^1.5"
 botocore = "*"
-scipy = "<1.8.0"
+scipy = "^1.0"
 Bottleneck = "^1.3.4"
 numpy = "*"
 joblib = "*"
@@ -131,16 +131,15 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 
 all = [
     "prophet",
-    "torch", "pytorch-forecasting",
+    "torch", "pytorch-forecasting", "pytorch-lightning",
     "wandb",
     "optuna",
-    "pyts",
-    "tsfresh"
+    "pyts", "tsfresh"
 ]
 
 all-dev = [
     "prophet",
-    "torch", "pytorch-forecasting",
+    "torch", "pytorch-forecasting", "pytorch-lightning",
     "wandb",
     "optuna",
     "click", "semver",
@@ -149,8 +148,7 @@ all-dev = [
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools",
     "click", "semver",
     "jupyter", "nbconvert",
-    "pyts",
-    "tsfresh"
+    "pyts", "tsfresh"
 ]
 
 [tool.poetry.scripts]

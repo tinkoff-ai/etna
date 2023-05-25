@@ -1,7 +1,6 @@
 import inspect
 import json
 import pathlib
-import pickle
 import sys
 import warnings
 import zipfile
@@ -13,6 +12,7 @@ from typing import List
 from typing import Tuple
 from typing import cast
 
+import dill
 import hydra_slayer
 from sklearn.base import BaseEstimator
 from typing_extensions import Self
@@ -189,7 +189,7 @@ class SaveMixin(AbstractSaveable):
 
     def _save_state(self, archive: zipfile.ZipFile):
         with archive.open("object.pkl", "w") as output_file:
-            pickle.dump(self, output_file)
+            dill.dump(self, output_file)
 
     def save(self, path: pathlib.Path):
         """Save the object.
@@ -228,7 +228,7 @@ class SaveMixin(AbstractSaveable):
     @classmethod
     def _load_state(cls, archive: zipfile.ZipFile) -> Self:
         with archive.open("object.pkl", "r") as input_file:
-            return pickle.load(input_file)
+            return dill.load(input_file)
 
     @classmethod
     def load(cls, path: pathlib.Path) -> Self:
