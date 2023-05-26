@@ -364,7 +364,7 @@ class Auto(AutoBase):
     def _init_optuna(self):
         """Initialize optuna."""
         if isinstance(self.pool, Pool):
-            pool: List[Pipeline] = self.pool.value.generate(horizon=self.horizon)
+            pool: List[BasePipeline] = self.pool.value.generate(horizon=self.horizon)
         else:
             pool = self.pool
 
