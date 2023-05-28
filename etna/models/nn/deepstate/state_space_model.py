@@ -281,6 +281,16 @@ class SeasonalitySSM(LevelSSM):
         return np.array([self.timestamp_transform(timestamp) for timestamp in timestamps])
 
 
+class YearlySeasonalitySSM(SeasonalitySSM):
+    """Class for Weekly Seasonality State Space Model."""
+
+    def __init__(self):
+        super().__init__(num_seasons=12, timestamp_transform=self.get_timestamp_transform)
+
+    def get_timestamp_transform(self, x):
+        return x.month - 1
+
+
 class WeeklySeasonalitySSM(SeasonalitySSM):
     """Class for Weekly Seasonality State Space Model."""
 
