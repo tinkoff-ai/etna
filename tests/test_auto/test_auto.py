@@ -9,8 +9,11 @@ from etna.auto import Auto
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
+from etna.models import LinearPerSegmentModel
+from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
+from etna.transforms import LagTransform
 
 
 def test_objective(
@@ -44,7 +47,9 @@ def test_objective(
     callback.assert_called_once()
 
 
-def test_fit(
+@pytest.mark.parametrize("tune_size", [0, 2])
+def test_fit_called_tuning_pool(
+    tune_size,
     ts=MagicMock(),
     auto=MagicMock(),
     timeout=4,
@@ -52,6 +57,9 @@ def test_fit(
     initializer=MagicMock(),
     callback=MagicMock(),
 ):
+    auto._get_tuner_timeout = partial(Auto._get_tuner_timeout, self=auto)
+    auto._get_tuner_n_trials = partial(Auto._get_tuner_n_trials, self=auto)
+
     Auto.fit(
         self=auto,
         ts=ts,
@@ -59,11 +67,38 @@ def test_fit(
         n_trials=n_trials,
         initializer=initializer,
         callback=callback,
+        tune_size=tune_size,
     )
 
-    auto._optuna.tune.assert_called_with(
+    auto._pool_optuna.tune.assert_called_with(
         objective=auto.objective.return_value, runner=auto.runner, n_trials=n_trials, timeout=timeout
     )
+
+
+@pytest.mark.parametrize("tune_size", [0, 2])
+def test_fit_called_tuning_top_pipelines(
+    tune_size,
+    ts=MagicMock(),
+    auto=MagicMock(),
+    timeout=4,
+    n_trials=2,
+    initializer=MagicMock(),
+    callback=MagicMock(),
+):
+    auto._get_tuner_timeout = partial(Auto._get_tuner_timeout, self=auto)
+    auto._get_tuner_n_trials = partial(Auto._get_tuner_n_trials, self=auto)
+
+    Auto.fit(
+        self=auto,
+        ts=ts,
+        timeout=timeout,
+        n_trials=n_trials,
+        initializer=initializer,
+        callback=callback,
+        tune_size=tune_size,
+    )
+
+    assert auto._fit_tuner.call_count == tune_size
 
 
 @patch("etna.auto.auto.ConfigSampler", return_value=MagicMock())
@@ -73,15 +108,17 @@ def test_init_optuna(
     sampler_mock,
     auto=MagicMock(),
 ):
-    Auto._init_optuna(self=auto)
+    Auto._init_pool_optuna(self=auto)
 
     optuna_mock.assert_called_once_with(
-        direction="maximize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock.return_value
+        direction="maximize", study_name=auto._pool_folder, storage=auto.storage, sampler=sampler_mock.return_value
     )
 
 
-def test_simple_auto_run(
-    example_tsds, optuna_storage, pool=[Pipeline(NaiveModel(1), horizon=7), Pipeline(NaiveModel(50), horizon=7)]
+def test_fit_without_tuning(
+    example_tsds,
+    optuna_storage,
+    pool=(Pipeline(MovingAverageModel(5), horizon=7), Pipeline(NaiveModel(1), horizon=7)),
 ):
     auto = Auto(
         MAE(),
@@ -92,41 +129,69 @@ def test_simple_auto_run(
     )
     auto.fit(ts=example_tsds, n_trials=2)
 
-    assert len(auto._optuna.study.trials) == 2
+    assert len(auto._pool_optuna.study.trials) == 2
     assert len(auto.summary()) == 2
-    assert len(auto.top_k()) == 2
+    assert len(auto.top_k(k=5)) == 2
     assert len(auto.top_k(k=1)) == 1
-    assert str(auto.top_k(k=1)[0]) == str(pool[0])
+    assert auto.top_k(k=1)[0].to_dict() == pool[0].to_dict()
+
+
+@pytest.mark.parametrize("tune_size", [1, 2])
+def test_fit_with_tuning(
+    tune_size,
+    example_tsds,
+    optuna_storage,
+    pool=(
+        Pipeline(MovingAverageModel(5), horizon=7),
+        Pipeline(NaiveModel(1), horizon=7),
+        Pipeline(
+            LinearPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=list(range(7, 21)))], horizon=7
+        ),
+    ),
+):
+    auto = Auto(
+        MAE(),
+        pool=pool,
+        metric_aggregation="median",
+        horizon=7,
+        storage=optuna_storage,
+    )
+    auto.fit(ts=example_tsds, n_trials=11, tune_size=tune_size)
+
+    assert len(auto._pool_optuna.study.trials) == 3
+    assert len(auto.summary()) == 11
+    assert len(auto.top_k(k=5)) == 5
+    assert len(auto.top_k(k=1)) == 1
+    assert isinstance(auto.top_k(k=1)[0].model, MovingAverageModel)
 
 
 def test_summary(
-    trials,
-    auto=MagicMock(),
+    example_tsds,
+    optuna_storage,
+    pool=(
+        Pipeline(MovingAverageModel(5), horizon=7),
+        Pipeline(NaiveModel(1), horizon=7),
+        Pipeline(
+            LinearPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=list(range(7, 21)))], horizon=7
+        ),
+    ),
 ):
-    auto._optuna.study.get_trials.return_value = trials
-    auto._summary = partial(Auto._summary, self=auto)  # essential for summary
-    df_summary = Auto.summary(self=auto)
+    auto = Auto(
+        MAE(),
+        pool=pool,
+        metric_aggregation="median",
+        horizon=7,
+        storage=optuna_storage,
+    )
+    auto.fit(ts=example_tsds, n_trials=11, tune_size=2)
 
-    assert len(df_summary) == len(trials)
-    assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
-
-
-@pytest.mark.parametrize("k", [1, 2, 3])
-def test_top_k(
-    trials,
-    k,
-    auto=MagicMock(),
-):
-    auto.target_metric.name = "SMAPE"
-    auto.metric_aggregation = "median"
-    auto.target_metric.greater_is_better = False
-
-    auto._optuna.study.get_trials.return_value = trials
-    auto._summary = partial(Auto._summary, self=auto)
-    df_summary = Auto.summary(self=auto)
-
-    auto.summary = MagicMock(return_value=df_summary)
-
-    top_k = Auto.top_k(auto, k=k)
-    assert len(top_k) == k
-    assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(k)]  # noqa C416
+    df_summary = auto.summary()
+    assert {"pipeline", "state", "study"}.issubset(set(df_summary.columns))
+    assert len(df_summary) == 11
+    assert len(df_summary[df_summary["study"] == "/pool"]) == 3
+    df_summary_tune_0 = df_summary[df_summary["study"] == "/tuning/edddb11f9acb86ea0cd5568f13f53874"]
+    df_summary_tune_1 = df_summary[df_summary["study"] == "/tuning/591e66b111b09cbc351249ff4e214dc8"]
+    assert len(df_summary_tune_0) == 4
+    assert len(df_summary_tune_1) == 4
+    assert isinstance(df_summary_tune_0.iloc[0]["pipeline"].model, LinearPerSegmentModel)
+    assert isinstance(df_summary_tune_1.iloc[0]["pipeline"].model, MovingAverageModel)
