@@ -241,7 +241,7 @@ filterwarnings = [
     "ignore: Objective did not converge. You might want to increase the number",
     "ignore: distutils Version classes are deprecated.",
     "ignore: invalid escape sequence",
-    "ignore::pandas.core.common.SettingWithCopyWarning",
+    "ignore::pandas.errors.SettingWithCopyWarning",
     "ignore: You haven't set all parameters inside class __init__ method.* 'box_cox_bounds'",
     "ignore: You haven't set all parameters inside class __init__ method.* 'use_box_cox'",
     "ignore: You haven't set all parameters inside class __init__ method.* 'use_trend'",
