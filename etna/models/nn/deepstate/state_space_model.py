@@ -139,7 +139,7 @@ class LevelSSM(SSM):
             Emission coefficient matrix.
         """
         batch_size, seq_length = datetime_index.shape[0], datetime_index.shape[1]
-        emission_coeff = torch.ones(batch_size, seq_length, self.latent_dim())
+        emission_coeff = torch.ones(batch_size, seq_length, self.latent_dim(), device=datetime_index.device)
         return emission_coeff.float()
 
     def transition_coeff(self, datetime_index: Tensor) -> Tensor:
