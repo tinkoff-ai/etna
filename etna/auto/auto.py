@@ -73,34 +73,44 @@ class AutoAbstract(ABC):
         Parameters
         ----------
         ts:
-            tsdataset to fit on
+            TSDataset to fit on.
         timeout:
-            timeout for optuna. N.B. this is timeout for each worker
+            Timeout for optuna. N.B. this is timeout for each worker. By default, isn't set.
         n_trials:
-            number of trials for optuna. N.B. this is number of trials for each worker
+            Number of trials for optuna. N.B. this is number of trials for each worker. By default, isn't set.
         initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
+            Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
-            is called after each pipeline backtest, can be used to log extra metrics
+            Object that is called after each pipeline backtest, can be used to log extra metrics.
         optuna_params:
-            additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`
+            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
         """
         pass
 
     @abstractmethod
     def summary(self) -> pd.DataFrame:
-        """Get Auto trials summary."""
+        """Get trials summary.
+
+        Returns
+        -------
+        study_dataframe:
+            dataframe with detailed info on each performed trial
+        """
         pass
 
     @abstractmethod
     def top_k(self, k: int = 5) -> List[BasePipeline]:
-        """
-        Get top k pipelines with the best metric value.
+        """Get top k pipelines with the best metric value.
 
         Parameters
         ----------
         k:
-            number of pipelines to return
+            Number of pipelines to return.
+
+        Returns
+        -------
+        :
+            List of top k pipelines.
         """
         pass
 
@@ -125,21 +135,24 @@ class AutoBase(AutoAbstract):
         Parameters
         ----------
         target_metric:
-            metric to optimize
+            Metric to optimize.
         horizon:
-            horizon to forecast for
+            Horizon to forecast for.
         metric_aggregation:
-            aggregation method for per-segment metrics
+            Aggregation method for per-segment metrics. By default, mean aggregation is used.
         backtest_params:
-            custom parameters for backtest instead of default backtest parameters
+            Custom parameters for backtest instead of default backtest parameters.
         experiment_folder:
-            name for saving experiment results, it determines the name for optuna study
+            Name for saving experiment results, it determines the name for optuna study. By default, isn't set.
         runner:
-            runner to use for distributed training
+            Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
-            optuna storage to use
+            Optuna storage to use. By default, sqlite storage is used.
         metrics:
-            list of metrics to compute
+            List of metrics to compute.
+            By default, :py:class:`~etna.metrics.metrics.Sign`, :py:class:`~etna.metrics.metrics.SMAPE`,
+            :py:class:`~etna.metrics.metrics.MAE`, :py:class:`~etna.metrics.metrics.MSE`,
+            :py:class:`~etna.metrics.metrics.MedAE` metrics are used.
         """
         if target_metric.greater_is_better is None:
             raise ValueError("target_metric.greater_is_better is None")
@@ -165,13 +178,17 @@ class AutoBase(AutoAbstract):
         return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
 
     def top_k(self, k: int = 5) -> List[BasePipeline]:
-        """
-        Get top k pipelines with the best metric value.
+        """Get top k pipelines with the best metric value.
 
         Parameters
         ----------
         k:
-            number of pipelines to return
+            Number of pipelines to return.
+
+        Returns
+        -------
+        :
+            List of top k pipelines.
         """
         summary = self.summary()
         return self._top_k(summary=summary, k=k)
@@ -198,23 +215,27 @@ class Auto(AutoBase):
         Parameters
         ----------
         target_metric:
-            metric to optimize
+            Metric to optimize.
         horizon:
-            horizon to forecast for
+            Horizon to forecast for.
         metric_aggregation:
-            aggregation method for per-segment metrics
+            Aggregation method for per-segment metrics. By default, mean aggregation is used.
         backtest_params:
-            custom parameters for backtest instead of default backtest parameters
+            Custom parameters for backtest instead of default backtest parameters.
         experiment_folder:
-            name for saving experiment results, it determines the name for optuna study
+            Name for saving experiment results, it determines the name for optuna study. By default, isn't set.
         pool:
-            pool of pipelines to choose from
+            Pool of pipelines to choose from.
+            By default, default pool from :py:class:`~etna.auto.pool.generator.Pool` is used.
         runner:
-            runner to use for distributed training
+            Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
-            optuna storage to use
+            Optuna storage to use. By default, sqlite storage is used.
         metrics:
-            list of metrics to compute
+            List of metrics to compute.
+            By default, :py:class:`~etna.metrics.metrics.Sign`, :py:class:`~etna.metrics.metrics.SMAPE`,
+            :py:class:`~etna.metrics.metrics.MAE`, :py:class:`~etna.metrics.metrics.MSE`,
+            :py:class:`~etna.metrics.metrics.MedAE` metrics are used.
         """
         super().__init__(
             target_metric=target_metric,
@@ -320,8 +341,8 @@ class Auto(AutoBase):
 
         There are two stages:
 
-        - Pool-stage: trying every pipeline in a pool
-        - Tuning-stage: tuning `tune_size` best pipelines from a previous stage by using :py:class`~etna.auto.auto.Tune`.
+        - Pool stage: trying every pipeline in a pool
+        - Tuning stage: tuning `tune_size` best pipelines from a previous stage by using :py:class`~etna.auto.auto.Tune`.
 
         Tuning stage starts only if limits on `n_trials` and `timeout` aren't exceeded.
         Tuning goes from the best pipeline to the worst, and
@@ -331,19 +352,19 @@ class Auto(AutoBase):
         Parameters
         ----------
         ts:
-            tsdataset to fit on
+            TSDataset to fit on.
         timeout:
-            timeout for optuna. N.B. this is timeout for each worker
+            Timeout for optuna. N.B. this is timeout for each worker. By default, isn't set.
         n_trials:
-            number of trials for optuna. N.B. this is number of trials for each worker
-        tune_size:
-            how many best pipelines to tune after checking the pool
+            Number of trials for optuna. N.B. this is number of trials for each worker. By default, isn't set.
         initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
+            Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
-            is called after each pipeline backtest, can be used to log extra metrics
+            Object that is called after each pipeline backtest, can be used to log extra metrics.
         optuna_params:
-            additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`
+            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
+        tune_size:
+            How many pipelines to fit during tuning stage.
         """
         if optuna_params is None:
             optuna_params = {}
@@ -412,19 +433,19 @@ class Auto(AutoBase):
         Parameters
         ----------
         ts:
-            tsdataset to fit on
+            TSDataset to fit on.
         target_metric:
-            metric to optimize
+            Metric to optimize.
         metric_aggregation:
-            aggregation method for per-segment metrics
+            Aggregation method for per-segment metrics.
         metrics:
-            list of metrics to compute
+            List of metrics to compute.
         backtest_params:
-            custom parameters for backtest instead of default backtest parameters
+            Custom parameters for backtest instead of default backtest parameters.
         initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
+            Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
-            is called after each pipeline backtest, can be used to log extra metrics
+            Object that is called after each pipeline backtest, can be used to log extra metrics.
 
         Returns
         -------
@@ -566,23 +587,26 @@ class Tune(AutoBase):
         Parameters
         ----------
         pipeline:
-            pipeline to optimize
+            Pipeline to optimize.
         target_metric:
-            metric to optimize
+            Metric to optimize.
         horizon:
-            horizon to forecast for
+            Horizon to forecast for.
         metric_aggregation:
-            aggregation method for per-segment metrics
+            Aggregation method for per-segment metrics. By default, mean aggregation is used.
         backtest_params:
-            custom parameters for backtest instead of default backtest parameters
+            Custom parameters for backtest instead of default backtest parameters.
         experiment_folder:
-            name for saving experiment results, it determines the name for optuna study
+            Name for saving experiment results, it determines the name for optuna study. By default, isn't set.
         runner:
-            runner to use for distributed training
+            Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
-            optuna storage to use
+            Optuna storage to use. By default, sqlite storage is used.
         metrics:
-            list of metrics to compute
+            List of metrics to compute.
+            By default, :py:class:`~etna.metrics.metrics.Sign`, :py:class:`~etna.metrics.metrics.SMAPE`,
+            :py:class:`~etna.metrics.metrics.MAE`, :py:class:`~etna.metrics.metrics.MSE`,
+            :py:class:`~etna.metrics.metrics.MedAE` metrics are used.
         """
         super().__init__(
             target_metric=target_metric,
@@ -616,17 +640,17 @@ class Tune(AutoBase):
         Parameters
         ----------
         ts:
-            tsdataset to fit on
+            TSDataset to fit on.
         timeout:
-            timeout for optuna. N.B. this is timeout for each worker
+            Timeout for optuna. N.B. this is timeout for each worker. By default, isn't set.
         n_trials:
-            number of trials for optuna. N.B. this is number of trials for each worker
+            Number of trials for optuna. N.B. this is number of trials for each worker. By default, isn't set.
         initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
+            Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
-            is called after each pipeline backtest, can be used to log extra metrics
+            Object that is called after each pipeline backtest, can be used to log extra metrics.
         optuna_params:
-            additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`
+            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
         """
         if optuna_params is None:
             optuna_params = {}
@@ -670,21 +694,21 @@ class Tune(AutoBase):
         Parameters
         ----------
         ts:
-            tsdataset to fit on
+            TSDataset to fit on.
         pipeline:
-            pipeline to tune
+            Pipeline to tune.
         target_metric:
-            metric to optimize
+            Metric to optimize.
         metric_aggregation:
-            aggregation method for per-segment metrics
+            Aggregation method for per-segment metrics.
         metrics:
-            list of metrics to compute
+            List of metrics to compute.
         backtest_params:
-            custom parameters for backtest instead of default backtest parameters
+            Custom parameters for backtest instead of default backtest parameters.
         initializer:
-            is called before each pipeline backtest, can be used to initialize loggers
+            Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
-            is called after each pipeline backtest, can be used to log extra metrics
+            Object that is called after each pipeline backtest, can be used to log extra metrics.
 
         Returns
         -------
@@ -760,7 +784,7 @@ class Tune(AutoBase):
         return study_params
 
     def summary(self) -> pd.DataFrame:
-        """Get Auto trials summary.
+        """Get trials summary.
 
         Returns
         -------
