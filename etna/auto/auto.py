@@ -514,29 +514,35 @@ class Auto(AutoBase):
 
     def _make_pool_summary(self, trials: List[FrozenTrial]) -> List[dict]:
         """Get information from trial summary."""
-        study_params = [
-            {
+        study_params = []
+        for trial in trials:
+            trial_pipeline: Optional[BasePipeline] = None
+            if "pipeline" in trial.user_attrs:
+                trial_pipeline = get_from_params(**trial.user_attrs.get("pipeline"))
+            record = {
                 **trial.user_attrs,
                 "study": self._pool_folder,
-                "pipeline": get_from_params(**trial.user_attrs["pipeline"]),
+                "pipeline": trial_pipeline,
                 "state": trial.state,
             }
-            for trial in trials
-        ]
+            study_params.append(record)
         return study_params
 
     def _make_tune_summary(self, trials: List[FrozenTrial], pipeline: BasePipeline) -> List[dict]:
         """Get information from trial summary."""
         study = self._get_tune_folder(pipeline)
-        study_params = [
-            {
+        study_params = []
+        for trial in trials:
+            trial_pipeline: Optional[BasePipeline] = None
+            if "pipeline" in trial.user_attrs:
+                trial_pipeline = get_from_params(**trial.user_attrs.get("pipeline"))
+            record = {
                 **trial.user_attrs,
                 "study": study,
-                "pipeline": get_from_params(**trial.user_attrs["pipeline"]),
+                "pipeline": trial_pipeline,
                 "state": trial.state,
             }
-            for trial in trials
-        ]
+            study_params.append(record)
         return study_params
 
     def summary(self) -> pd.DataFrame:
@@ -777,10 +783,17 @@ class Tune(AutoBase):
 
     def _summary(self, trials: List[FrozenTrial]) -> List[dict]:
         """Get information from trial summary."""
-        study_params = [
-            {**trial.user_attrs, "pipeline": get_from_params(**trial.user_attrs["pipeline"]), "state": trial.state}
-            for trial in trials
-        ]
+        study_params = []
+        for trial in trials:
+            trial_pipeline: Optional[BasePipeline] = None
+            if "pipeline" in trial.user_attrs:
+                trial_pipeline = get_from_params(**trial.user_attrs.get("pipeline"))
+            record = {
+                **trial.user_attrs,
+                "pipeline": trial_pipeline,
+                "state": trial.state,
+            }
+            study_params.append(record)
         return study_params
 
     def summary(self) -> pd.DataFrame:
