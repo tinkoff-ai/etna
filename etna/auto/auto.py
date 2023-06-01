@@ -9,6 +9,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import optuna
 import pandas as pd
 from hydra_slayer import get_from_params
 from optuna.distributions import CategoricalDistribution
@@ -319,7 +320,7 @@ class Auto(AutoBase):
 
     def _top_k_pool(self, k: int):
         if self._pool_optuna is None:
-            self._pool_optuna = self._init_pool_optuna()
+            self._pool_optuna = self._init_pool_optuna(suppress_logging=True)
 
         pool_trials = self._pool_optuna.study.get_trials()
         pool_summary = self._make_pool_summary(trials=pool_trials)
@@ -477,15 +478,21 @@ class Auto(AutoBase):
 
         return _objective
 
-    def _init_pool_optuna(self) -> Optuna:
+    def _init_pool_optuna(self, suppress_logging: bool = False) -> Optuna:
         """Initialize optuna."""
         pool = [pipeline.to_dict() for pipeline in self._pool]
-        pool_optuna = Optuna(
-            direction="maximize" if self.target_metric.greater_is_better else "minimize",
-            study_name=self._pool_folder,
-            storage=self.storage,
-            sampler=ConfigSampler(configs=pool),
-        )
+        logging_verbosity = optuna.logging.get_verbosity()
+        try:
+            if suppress_logging:
+                optuna.logging.set_verbosity(optuna.logging.ERROR)
+            pool_optuna = Optuna(
+                direction="maximize" if self.target_metric.greater_is_better else "minimize",
+                study_name=self._pool_folder,
+                storage=self.storage,
+                sampler=ConfigSampler(configs=pool),
+            )
+        finally:
+            optuna.logging.set_verbosity(logging_verbosity)
         return pool_optuna
 
     def _init_tuners(self, pool_optuna: Optuna) -> List["Tune"]:
@@ -554,14 +561,14 @@ class Auto(AutoBase):
             dataframe with detailed info on each performed trial
         """
         if self._pool_optuna is None:
-            self._pool_optuna = self._init_pool_optuna()
+            self._pool_optuna = self._init_pool_optuna(suppress_logging=True)
 
         pool_trials = self._pool_optuna.study.get_trials()
         pool_summary = self._make_pool_summary(trials=pool_trials)
 
         tuners = self._init_tuners(self._pool_optuna)
         tune_pipelines = [t.pipeline for t in tuners]
-        tune_trials = [t._init_optuna().study.get_trials() for t in tuners]
+        tune_trials = [t._init_optuna(suppress_logging=True).study.get_trials() for t in tuners]
         tune_summary = [self._make_tune_summary(trials=t, pipeline=p) for t, p in zip(tune_trials, tune_pipelines)]
 
         total_summary = pool_summary + list(itertools.chain(*tune_summary))
@@ -770,16 +777,21 @@ class Tune(AutoBase):
 
         return _objective
 
-    def _init_optuna(self) -> Optuna:
+    def _init_optuna(self, suppress_logging: bool = False) -> Optuna:
         """Initialize optuna."""
-        # sampler receives no hyperparameters here and optimizes only the hyperparameters suggested in objective
-        optuna = Optuna(
-            direction="maximize" if self.target_metric.greater_is_better else "minimize",
-            study_name=self.experiment_folder,
-            storage=self.storage,
-            sampler=self.sampler,
-        )
-        return optuna
+        logging_verbosity = optuna.logging.get_verbosity()
+        try:
+            if suppress_logging:
+                optuna.logging.set_verbosity(optuna.logging.ERROR)
+            optuna_obj = Optuna(
+                direction="maximize" if self.target_metric.greater_is_better else "minimize",
+                study_name=self.experiment_folder,
+                storage=self.storage,
+                sampler=self.sampler,
+            )
+        finally:
+            optuna.logging.set_verbosity(logging_verbosity)
+        return optuna_obj
 
     def _summary(self, trials: List[FrozenTrial]) -> List[dict]:
         """Get information from trial summary."""

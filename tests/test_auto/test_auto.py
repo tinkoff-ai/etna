@@ -101,14 +101,16 @@ def test_fit_called_tuning_top_pipelines(
     assert auto._fit_tuner.call_count == tune_size
 
 
+@pytest.mark.parametrize("suppress_logging", [False, True])
 @patch("etna.auto.auto.ConfigSampler", return_value=MagicMock())
 @patch("etna.auto.auto.Optuna", return_value=MagicMock())
 def test_init_optuna(
     optuna_mock,
     sampler_mock,
+    suppress_logging,
     auto=MagicMock(),
 ):
-    Auto._init_pool_optuna(self=auto)
+    Auto._init_pool_optuna(self=auto, suppress_logging=suppress_logging)
 
     optuna_mock.assert_called_once_with(
         direction="maximize", study_name=auto._pool_folder, storage=auto.storage, sampler=sampler_mock.return_value

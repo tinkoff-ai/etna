@@ -75,15 +75,17 @@ def test_fit_called_tune(
     )
 
 
+@pytest.mark.parametrize("suppress_logging", [False, True])
 @patch("optuna.samplers.TPESampler", return_value=MagicMock())
 @patch("etna.auto.auto.Optuna", return_value=MagicMock())
 def test_init_optuna(
     optuna_mock,
     sampler_mock,
+    suppress_logging,
     auto=MagicMock(),
 ):
     auto.configure_mock(sampler=sampler_mock)
-    Tune._init_optuna(self=auto)
+    Tune._init_optuna(self=auto, suppress_logging=suppress_logging)
 
     optuna_mock.assert_called_once_with(
         direction="maximize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock
