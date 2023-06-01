@@ -45,7 +45,7 @@ python = ">=3.8.0, <3.11.0"
 scikit-learn = ">=0.24, <2"
 pandas = "^1.1"
 catboost = ">=0.21"
-ruptures = "1.1.5"
+ruptures = "^1.1.5"
 numba = ">=0.53.1,<0.56.0"
 seaborn = "^0.11.1"
 statsmodels = ">=0.12,<0.14"
@@ -80,6 +80,7 @@ pytorch-lightning = {version = "*", optional = true}
 wandb = {version = "^0.12.2", optional = true}
 
 optuna = {version = ">=2.5.0,<3.0.0", optional = true}
+sqlalchemy = {version = "^1.1.0", optional = true}
 
 sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
 nbsphinx = {version = "^0.8.2", optional = true}
@@ -120,7 +121,7 @@ types-setuptools = {version = "^65.7.0", optional = true}
 prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
 wandb = ["wandb"]
-auto = ["optuna"]
+auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 # dev deps
 release = ["click", "semver"]
@@ -133,7 +134,7 @@ all = [
     "prophet",
     "torch", "pytorch-forecasting", "pytorch-lightning",
     "wandb",
-    "optuna",
+    "optuna", "sqlalchemy",
     "pyts", "tsfresh"
 ]
 
@@ -141,7 +142,7 @@ all-dev = [
     "prophet",
     "torch", "pytorch-forecasting", "pytorch-lightning",
     "wandb",
-    "optuna",
+    "optuna", "sqlalchemy",
     "click", "semver",
     "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
     "pytest-cov", "coverage", "pytest",
