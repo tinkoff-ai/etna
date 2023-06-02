@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from etna.commands.utils import _estimate_n_folds
@@ -129,6 +131,22 @@ def test_estimate_max_n_folds_negative_context(pipeline_without_context, example
         _ = estimate_max_n_folds(
             pipeline=pipeline_without_context, ts=example_tsds, method_name="forecast", context_size=-1
         )
+
+
+def test_estimate_max_n_folds_forecast_with_ts(pipeline_without_context, example_tsds, context_size=3, expected=7):
+    pipeline = pipeline_without_context
+
+    pipeline.fit(ts=example_tsds)
+
+    ts_to_forecast = deepcopy(example_tsds)
+    ts_to_forecast.df = ts_to_forecast.df.iloc[-(context_size + expected) :]
+
+    n_folds = estimate_max_n_folds(
+        pipeline=pipeline, method_name="forecast", ts=ts_to_forecast, context_size=context_size
+    )
+
+    assert n_folds == expected
+    pipeline.forecast(ts=ts_to_forecast, prediction_interval=True, n_folds=n_folds)
 
 
 @pytest.mark.parametrize(
