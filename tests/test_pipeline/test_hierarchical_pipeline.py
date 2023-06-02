@@ -289,6 +289,33 @@ def test_backtest_w_exog(product_level_constant_hierarchical_ts_with_exog, recon
 @pytest.mark.parametrize(
     "reconciliator",
     (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+def test_private_forecast_prediction_interval_no_swap_after_error(
+    product_level_constant_hierarchical_ts_with_exog, reconciliator
+):
+    ts = product_level_constant_hierarchical_ts_with_exog
+    model = LinearPerSegmentModel()
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
+    pipeline.backtest = Mock(side_effect=ValueError("Some error"))
+    forecast_method = pipeline.forecast
+    raw_forecast_method = pipeline.raw_forecast
+
+    pipeline.fit(ts=ts)
+    with pytest.raises(ValueError, match="Some error"):
+        _ = pipeline.forecast(prediction_interval=True, n_folds=1, quantiles=[0.025, 0.5, 0.975])
+
+    # check that methods aren't swapped
+    assert pipeline.forecast == forecast_method
+    assert pipeline.raw_forecast == raw_forecast_method
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
         TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
         BottomUpReconciliator(target_level="market", source_level="product"),
     ),

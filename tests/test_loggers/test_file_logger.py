@@ -20,7 +20,7 @@ from etna.metrics import SMAPE
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 
-DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
+DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S-%f"
 
 
 def test_local_file_logger_init_new_dir():

@@ -1,4 +1,5 @@
 import numpy as np
+from lightning_fabric.utilities.seed import seed_everything
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
@@ -7,6 +8,7 @@ from etna.models import ContextRequiredModelType
 
 def make_prediction(model, ts, prediction_size, method_name) -> TSDataset:
     method = getattr(model, method_name)
+    seed_everything(0)
     if isinstance(model, get_args(ContextRequiredModelType)):
         ts = method(ts, prediction_size=prediction_size)
     else:

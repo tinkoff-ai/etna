@@ -10,7 +10,6 @@ from typing import Union
 import pandas as pd
 from typing_extensions import Literal
 
-from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
@@ -21,7 +20,7 @@ class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-class Transform(SaveMixin, AbstractSaveable, BaseMixin):
+class Transform(SaveMixin, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):

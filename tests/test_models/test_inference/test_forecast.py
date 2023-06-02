@@ -463,18 +463,12 @@ class TestForecastOutSamplePrefix:
         model.fit(ts)
 
         # forecasting full
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         forecast_full_ts = ts.make_future(
             future_steps=full_prediction_size, tail_steps=model.context_size, transforms=transforms
         )
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 
         # forecasting only prefix
-        torch.manual_seed(11)  # TODO: remove after fix at issue-802
-
         forecast_prefix_ts = ts.make_future(
             future_steps=full_prediction_size, tail_steps=model.context_size, transforms=transforms
         )
@@ -512,18 +506,6 @@ class TestForecastOutSamplePrefix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
-        ],
-    )
-    def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
-
-    @to_be_fixed(
-        raises=AssertionError,
-        match="filters should not remove entries all entries - check encoder/decoder lengths and lags",
-    )
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -556,7 +538,7 @@ class TestForecastOutSamplePrefix:
             ),
         ],
     )
-    def test_forecast_out_sample_prefix_failed_old_nns(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
 
@@ -646,10 +628,9 @@ class TestForecastOutSampleSuffix:
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
-    # it even can't reach NotImplementedError
     @to_be_fixed(
-        raises=AssertionError,
-        match="filters should not remove entries all entries - check encoder/decoder lengths and lags",
+        raises=NotImplementedError,
+        match="You can only forecast from the next point after the last one in the training dataset",
     )
     @pytest.mark.parametrize(
         "model, transforms",
@@ -806,18 +787,12 @@ class TestForecastSubsetSegments:
         model.fit(ts)
 
         # forecasting full
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         forecast_full_ts = ts.make_future(
             future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
         )
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=prediction_size)
 
         # forecasting subset of segments
-        torch.manual_seed(11)  # TODO: remove after fix at issue-802
-
         forecast_subset_ts = subset_ts.make_future(
             future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
         )
@@ -918,10 +893,6 @@ class TestForecastNewSegments:
         model.fit(train_ts)
 
         # forecasting
-        import torch  # TODO: remove after fix at issue-802
-
-        torch.manual_seed(11)
-
         forecast_ts = test_ts.make_future(
             future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms
         )
