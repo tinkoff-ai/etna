@@ -15,7 +15,7 @@ from etna.transforms import LagTransform
 from etna.transforms import MeanTransform
 
 
-def run_forecast_test(pipeline, context_size, ts, expected):
+def run_estimate_max_n_folds_forecast_test(pipeline, context_size, ts, expected):
     pipeline.fit(ts=ts)
 
     n_folds = estimate_max_n_folds(pipeline=pipeline, method_name="forecast", context_size=context_size)
@@ -24,7 +24,7 @@ def run_forecast_test(pipeline, context_size, ts, expected):
     pipeline.forecast(prediction_interval=True, n_folds=n_folds)
 
 
-def run_backtest_test(pipeline, context_size, ts, stride, expected):
+def run_estimate_max_n_folds_backtest_test(pipeline, context_size, ts, stride, expected):
     n_folds = estimate_max_n_folds(
         pipeline=pipeline, ts=ts, method_name="backtest", stride=stride, context_size=context_size
     )
@@ -144,7 +144,9 @@ def test_estimate_max_n_folds_negative_context(pipeline_without_context, example
 )
 def test_estimate_max_n_folds_forecast_no_context(pipeline_without_context, context_size, ts_name, expected, request):
     ts = request.getfixturevalue(ts_name)
-    run_forecast_test(pipeline=pipeline_without_context, ts=ts, expected=expected, context_size=context_size)
+    run_estimate_max_n_folds_forecast_test(
+        pipeline=pipeline_without_context, ts=ts, expected=expected, context_size=context_size
+    )
 
 
 @pytest.mark.parametrize(
@@ -159,7 +161,9 @@ def test_estimate_max_n_folds_forecast_no_context(pipeline_without_context, cont
 )
 def test_estimate_max_n_folds_forecast_with_context(pipeline_with_context, context_size, ts_name, expected, request):
     ts = request.getfixturevalue(ts_name)
-    run_forecast_test(pipeline=pipeline_with_context, context_size=context_size, ts=ts, expected=expected)
+    run_estimate_max_n_folds_forecast_test(
+        pipeline=pipeline_with_context, context_size=context_size, ts=ts, expected=expected
+    )
 
 
 @pytest.mark.parametrize(
@@ -173,7 +177,9 @@ def test_estimate_max_n_folds_forecast_with_transforms(
     pipeline_with_transforms, context_size, ts_name, expected, request
 ):
     ts = request.getfixturevalue(ts_name)
-    run_forecast_test(pipeline=pipeline_with_transforms, ts=ts, expected=expected, context_size=context_size)
+    run_estimate_max_n_folds_forecast_test(
+        pipeline=pipeline_with_transforms, ts=ts, expected=expected, context_size=context_size
+    )
 
 
 @pytest.mark.parametrize(
@@ -191,7 +197,7 @@ def test_estimate_max_n_folds_backtest_no_context(
     pipeline_without_context, context_size, stride, ts_name, expected, request
 ):
     ts = request.getfixturevalue(ts_name)
-    run_backtest_test(
+    run_estimate_max_n_folds_backtest_test(
         pipeline=pipeline_without_context, context_size=context_size, ts=ts, stride=stride, expected=expected
     )
 
@@ -210,7 +216,7 @@ def test_estimate_max_n_folds_backtest_with_context(
     pipeline_with_context, context_size, stride, ts_name, expected, request
 ):
     ts = request.getfixturevalue(ts_name)
-    run_backtest_test(
+    run_estimate_max_n_folds_backtest_test(
         pipeline=pipeline_with_context, context_size=context_size, ts=ts, stride=stride, expected=expected
     )
 
@@ -227,6 +233,6 @@ def test_estimate_max_n_folds_backtest_with_transforms(
     pipeline_with_transforms, context_size, stride, ts_name, expected, request
 ):
     ts = request.getfixturevalue(ts_name)
-    run_backtest_test(
+    run_estimate_max_n_folds_backtest_test(
         pipeline=pipeline_with_transforms, context_size=context_size, ts=ts, stride=stride, expected=expected
     )
