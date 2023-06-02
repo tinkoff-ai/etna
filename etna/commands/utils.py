@@ -100,9 +100,6 @@ def estimate_max_n_folds(
     if ts is None and method_name != MethodsWithFolds.forecast:
         raise ValueError("Parameter `ts` is required when estimating for backtest method")
 
-    if ts is not None and len(ts.index) == 0:
-        raise ValueError("Empty ts is passed!")
-
     method = MethodsWithFolds(method_name)
 
     if method == MethodsWithFolds.forecast:
