@@ -73,19 +73,21 @@ def estimate_max_n_folds(
     **method_kwargs,
 ) -> int:
     """Estimate number of folds using provided data and pipeline configuration.
+    This function helps to estimate maximum number of folds that can be used when performing
+    forecast with intervals or pipeline backtest.
 
     Parameters
     ----------
     pipeline:
-        pipeline for which to estimate number of folds.
+        Pipeline for which to estimate number of folds.
     method_name:
-       method name for which to estimate number of folds.
+       Method name for which to estimate number of folds.
     context_size:
-       minimum number of points for pipeline to be estimated.
+       Minimum number of points for pipeline to be estimated.
     ts:
-       dataset which will be used for estimation.
+       Dataset which will be used for estimation.
     method_kwargs:
-       additional arguments for methods that impact number of folds.
+       Additional arguments for methods that impact number of folds.
 
     Returns
     -------
