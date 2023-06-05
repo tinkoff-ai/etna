@@ -110,19 +110,13 @@ class MLPNet(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterable[dict]:
         """Make samples from segment DataFrame."""
         values_real = (
-            df.select_dtypes(include=[np.number])
-            .pipe(lambda x: x[[i for i in x.columns if i != "target"]])
-            .values
+            df.select_dtypes(include=[np.number]).pipe(lambda x: x[[i for i in x.columns if i != "target"]]).values
         )
         values_target = df["target"].values
         segment = df["segment"].values[0]
 
         def _make(
-                values_target: np.ndarray,
-                values_real: np.ndarray,
-                segment: str,
-                start_idx: int,
-                decoder_length: int
+            values_target: np.ndarray, values_real: np.ndarray, segment: str, start_idx: int, decoder_length: int
         ) -> Optional[dict]:
 
             sample: Dict[str, Any] = {"decoder_real": list(), "decoder_target": list(), "segment": None}
@@ -157,7 +151,7 @@ class MLPNet(DeepBaseNet):
                 values_real=values_real,
                 segment=segment,
                 start_idx=resid_length,
-                decoder_length=decoder_length
+                decoder_length=decoder_length,
             )
             if batch is not None:
                 yield batch
