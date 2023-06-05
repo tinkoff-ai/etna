@@ -287,7 +287,19 @@ class YearlySeasonalitySSM(SeasonalitySSM):
     def __init__(self):
         super().__init__(num_seasons=12, timestamp_transform=self.get_timestamp_transform)
 
-    def get_timestamp_transform(self, x):
+    def get_timestamp_transform(self, x: pd.Timestamp):
+        """Generate datetime index to use in the State Space Model.
+
+        Parameters
+        ----------
+        x:
+            timestamp
+
+        Returns
+        -------
+        :
+            Datetime index for State Space Model.
+        """
         return x.month - 1
 
 
@@ -297,7 +309,19 @@ class WeeklySeasonalitySSM(SeasonalitySSM):
     def __init__(self):
         super().__init__(num_seasons=7, timestamp_transform=self.get_timestamp_transform)
 
-    def get_timestamp_transform(self, x):
+    def get_timestamp_transform(self, x: pd.Timestamp):
+        """Generate datetime index to use in the State Space Model.
+
+        Parameters
+        ----------
+        x:
+            timestamp
+
+        Returns
+        -------
+        :
+            Datetime index for State Space Model.
+        """
         return x.weekday()
 
 
@@ -307,7 +331,19 @@ class DaylySeasonalitySSM(SeasonalitySSM):
     def __init__(self):
         super().__init__(num_seasons=24, timestamp_transform=self.get_timestamp_transform)
 
-    def get_timestamp_transform(self, x):
+    def get_timestamp_transform(self, x: pd.Timestamp):
+        """Generate datetime index to use in the State Space Model.
+
+        Parameters
+        ----------
+        x:
+            timestamp
+
+        Returns
+        -------
+        :
+            Datetime index for State Space Model.
+        """
         return x.hour
 
 

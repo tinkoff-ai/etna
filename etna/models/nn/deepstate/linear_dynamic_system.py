@@ -113,7 +113,9 @@ class LDS(BaseMixin):
         # mu = mu_t + K * v (batch_size, latent_dim)
         filtered_mean = prior_mean + (kalman_gain.unsqueeze(-1) @ residual.unsqueeze(-1)).squeeze(-1)
         # P = (I - KH)P_t (batch_size, latent_dim, latent_dim)
-        filtered_cov = (self._eye.type_as(target) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)) @ prior_cov
+        filtered_cov = (
+            self._eye.type_as(target) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
+        ) @ prior_cov
         # log-likelihood (batch_size, 1)
         log_p = (
             Normal(target_mean.squeeze(-1), torch.sqrt(target_cov.squeeze(-1).squeeze(-1)))
