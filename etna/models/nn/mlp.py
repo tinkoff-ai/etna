@@ -109,8 +109,22 @@ class MLPNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterable[dict]:
         """Make samples from segment DataFrame."""
+        values_real = (
+            df.select_dtypes(include=[np.number])
+            .pipe(lambda x: x[[i for i in x.columns if i != "target"]])
+            .values
+        )
+        values_target = df["target"].values
+        segment = df["segment"].values[0]
 
-        def _make(df: pd.DataFrame, start_idx: int, decoder_length: int) -> Optional[dict]:
+        def _make(
+                values_target: np.ndarray,
+                values_real: np.ndarray,
+                segment: str,
+                start_idx: int,
+                decoder_length: int
+        ) -> Optional[dict]:
+
             sample: Dict[str, Any] = {"decoder_real": list(), "decoder_target": list(), "segment": None}
             total_length = len(df["target"])
             total_sample_length = decoder_length
@@ -118,21 +132,17 @@ class MLPNet(DeepBaseNet):
             if total_sample_length + start_idx > total_length:
                 return None
 
-            sample["decoder_real"] = (
-                df.select_dtypes(include=[np.number])
-                .pipe(lambda x: x[[i for i in x.columns if i != "target"]])
-                .values[start_idx : start_idx + decoder_length]
-            )
-
-            target = df["target"].values[start_idx : start_idx + decoder_length].reshape(-1, 1)
-            sample["decoder_target"] = target
-            sample["segment"] = df["segment"].values[0]
+            sample["decoder_real"] = values_real[start_idx : start_idx + decoder_length]
+            sample["decoder_target"] = values_target[start_idx : start_idx + decoder_length].reshape(-1, 1)
+            sample["segment"] = segment
             return sample
 
         start_idx = 0
         while True:
             batch = _make(
-                df=df,
+                values_target=values_target,
+                values_real=values_real,
+                segment=segment,
                 start_idx=start_idx,
                 decoder_length=decoder_length,
             )
@@ -142,7 +152,13 @@ class MLPNet(DeepBaseNet):
             start_idx += decoder_length
         if start_idx < len(df):
             resid_length = len(df) - decoder_length
-            batch = _make(df=df, start_idx=resid_length, decoder_length=decoder_length)
+            batch = _make(
+                values_target=values_target,
+                values_real=values_real,
+                segment=segment,
+                start_idx=resid_length,
+                decoder_length=decoder_length
+            )
             if batch is not None:
                 yield batch
 

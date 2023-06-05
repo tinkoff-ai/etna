@@ -131,8 +131,25 @@ class RNNNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
+        values_real = (
+            df.select_dtypes(include=[np.number])
+            .assign(target_shifted=df["target"].shift(1))
+            .drop(["target"], axis=1)
+            .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
+            .values
+        )
+        values_target = df["target"].values
+        segment = df["segment"].values[0]
 
-        def _make(df: pd.DataFrame, start_idx: int, encoder_length: int, decoder_length: int) -> Optional[dict]:
+        def _make(
+            values_real: np.ndarray,
+            values_target: np.ndarray,
+            segment: str,
+            start_idx: int,
+            encoder_length: int,
+            decoder_length: int,
+        ) -> Optional[dict]:
+
             sample: Dict[str, Any] = {
                 "encoder_real": list(),
                 "decoder_real": list(),
@@ -140,43 +157,33 @@ class RNNNet(DeepBaseNet):
                 "decoder_target": list(),
                 "segment": None,
             }
-            total_length = len(df["target"])
+            total_length = len(values_target)
             total_sample_length = encoder_length + decoder_length
 
             if total_sample_length + start_idx > total_length:
                 return None
 
             # Get shifted target and concatenate it with real values features
-            sample["decoder_real"] = (
-                df.select_dtypes(include=[np.number])
-                .pipe(lambda x: x[["target"] + [i for i in x.columns if i != "target"]])
-                .values[start_idx + encoder_length : start_idx + encoder_length + decoder_length]
-            )
-            sample["decoder_real"][:, 0] = (
-                df["target"].shift(1).values[start_idx + encoder_length : start_idx + encoder_length + decoder_length]
-            )
+            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
 
             # Get shifted target and concatenate it with real values features
-            sample["encoder_real"] = (
-                df.select_dtypes(include=[np.number])
-                .pipe(lambda x: x[["target"] + [i for i in x.columns if i != "target"]])
-                .values[start_idx : start_idx + encoder_length]
-            )
-            sample["encoder_real"][:, 0] = df["target"].shift(1).values[start_idx : start_idx + encoder_length]
+            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
             sample["encoder_real"] = sample["encoder_real"][1:]
 
-            target = df["target"].values[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
+            target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
             sample["encoder_target"] = target[1:encoder_length]
             sample["decoder_target"] = target[encoder_length:]
 
-            sample["segment"] = df["segment"].values[0]
+            sample["segment"] = segment
 
             return sample
 
         start_idx = 0
         while True:
             batch = _make(
-                df=df,
+                values_target=values_target,
+                values_real=values_real,
+                segment=segment,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
