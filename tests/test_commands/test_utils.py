@@ -82,7 +82,7 @@ def pipeline_with_transforms():
         (10, 5, 5, 5, 1),
     ),
 )
-def test_estimate_n_folds(num_points, horizon, stride, context_size, expected):
+def test_private_estimate_n_folds(num_points, horizon, stride, context_size, expected):
     res = _estimate_n_folds(num_points=num_points, horizon=horizon, stride=stride, context_size=context_size)
     assert res == expected
 
