@@ -73,8 +73,18 @@ def estimate_max_n_folds(
     **method_kwargs,
 ) -> int:
     """Estimate number of folds using provided data and pipeline configuration.
+
     This function helps to estimate maximum number of folds that can be used when performing
-    forecast with intervals or pipeline backtest.
+    forecast with intervals or pipeline backtest. Number of folds estimated using the following formula:
+
+    .. math::
+        max\\_n\\_folds = \\left\\lfloor\\frac{num\\_points - horizon + stride - context\\_size}{stride}\\right\\rfloor,
+
+    where :math:`num\\_points` is number of points in the dataset,
+    :math:`horizon` is length of forecasting horizon,
+    :math:`stride` is number of points between folds,
+    :math:`context\\_size` is model context size.
+
 
     Parameters
     ----------
@@ -106,6 +116,7 @@ def estimate_max_n_folds(
         n_folds = _max_n_folds_forecast(pipeline=pipeline, context_size=context_size, ts=ts)
 
     else:
+        # ts always not None for backtest case
         n_folds = _max_n_folds_backtest(pipeline=pipeline, context_size=context_size, ts=ts, **method_kwargs)  # type: ignore
 
     return n_folds
