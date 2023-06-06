@@ -19,9 +19,12 @@ def optuna_storage():
 def trials():
     class Trial(NamedTuple):
         user_attrs: dict
-        state: Literal["COMPLETE", "RUNNING", "PENDING"] = "COMPLETE"
+        state: Literal["RUNNING", "WAITING", "COMPLETE", "PRUNED", "FAIL"] = "COMPLETE"
 
-    return [
-        Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": i})
+    complete_trials = [
+        Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": float(i)})
         for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
     ]
+    fail_trials = [Trial(user_attrs={}, state="FAIL")]
+
+    return complete_trials + fail_trials

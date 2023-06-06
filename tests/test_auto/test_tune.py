@@ -2,6 +2,7 @@ from functools import partial
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -53,7 +54,7 @@ def test_objective(
     callback.assert_called_once()
 
 
-def test_fit(
+def test_fit_called_tune(
     ts=MagicMock(),
     tune=MagicMock(),
     timeout=4,
@@ -75,15 +76,17 @@ def test_fit(
     )
 
 
+@pytest.mark.parametrize("suppress_logging", [False, True])
 @patch("optuna.samplers.TPESampler", return_value=MagicMock())
 @patch("etna.auto.auto.Optuna", return_value=MagicMock())
 def test_init_optuna(
     optuna_mock,
     sampler_mock,
+    suppress_logging,
     auto=MagicMock(),
 ):
     auto.configure_mock(sampler=sampler_mock)
-    Tune._init_optuna(self=auto)
+    Tune._init_optuna(self=auto, suppress_logging=suppress_logging)
 
     optuna_mock.assert_called_once_with(
         direction="maximize", study_name=auto.experiment_folder, storage=auto.storage, sampler=sampler_mock
@@ -130,13 +133,16 @@ def test_summary(
     df_summary = Tune.summary(self=tune)
 
     assert len(df_summary) == len(trials)
-    assert list(df_summary["SMAPE_median"].values) == [trial.user_attrs["SMAPE_median"] for trial in trials]
+    assert {"pipeline", "state"}.issubset(set(df_summary.columns))
+    expected_smape = pd.Series([trial.user_attrs.get("SMAPE_median") for trial in trials])
+    pd.testing.assert_series_equal(df_summary["SMAPE_median"], expected_smape, check_names=False)
 
 
-@pytest.mark.parametrize("k", [1, 2, 3])
+@pytest.mark.parametrize("k, expected_k", [(1, 1), (2, 2), (3, 3), (20, 10)])
 def test_top_k(
     trials,
     k,
+    expected_k,
     tune=MagicMock(),
 ):
     tune.target_metric.name = "SMAPE"
@@ -145,13 +151,15 @@ def test_top_k(
 
     tune._optuna.study.get_trials.return_value = trials
     tune._summary = partial(Tune._summary, self=tune)
-    df_summary = Tune.summary(self=tune)
+    tune._top_k = partial(Tune._top_k, self=tune)
 
+    df_summary = Tune.summary(self=tune)
     tune.summary = MagicMock(return_value=df_summary)
 
     top_k = Tune.top_k(tune, k=k)
-    assert len(top_k) == k
-    assert [pipeline["pipeline"].model.lag for pipeline in top_k] == [i for i in range(k)]  # noqa C416
+
+    assert len(top_k) == expected_k
+    assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(expected_k)]  # noqa C416
 
 
 @pytest.mark.parametrize(
