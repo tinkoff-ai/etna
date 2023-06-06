@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 
 
@@ -171,3 +172,10 @@ def start_timestamp_forecast_omegaconf_path():
     tmp.flush()
     yield Path(tmp.name)
     tmp.close()
+
+
+@pytest.fixture
+def empty_ts():
+    df = pd.DataFrame({"segment": [], "timestamp": [], "target": []})
+    df = TSDataset.to_dataset(df=df)
+    return TSDataset(df=df, freq="D")
