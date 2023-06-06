@@ -172,8 +172,10 @@ class AutoBase(AutoAbstract):
         self.metrics = metrics
 
     def _top_k(self, summary: pd.DataFrame, k: int) -> List[BasePipeline]:
-        df = summary.sort_values(
-            by=[f"{self.target_metric.name}_{self.metric_aggregation}"],
+        metric_name = f"{self.target_metric.name}_{self.metric_aggregation}"
+        df = summary[~summary[metric_name].isna()]
+        df = df.sort_values(
+            by=metric_name,
             ascending=(not self.target_metric.greater_is_better),
         )
         return [pipeline for pipeline in df["pipeline"].values[:k]]  # noqa: C416
@@ -252,8 +254,8 @@ class Auto(AutoBase):
         self._pool = self._make_pool(pool=pool, horizon=horizon)
         self._pool_optuna: Optional[Optuna] = None
 
-        root_folder = self.experiment_folder if self.experiment_folder is not None else ""
-        self._pool_folder = f"{root_folder}/pool"
+        root_folder = f"{self.experiment_folder}/" if self.experiment_folder is not None else ""
+        self._pool_folder = f"{root_folder}pool"
 
     @staticmethod
     def _make_pool(pool: Union[Pool, List[BasePipeline]], horizon: int) -> List[BasePipeline]:
@@ -314,8 +316,8 @@ class Auto(AutoBase):
     def _get_tune_folder(self, pipeline: BasePipeline) -> str:
         config = pipeline.to_dict()
         identifier = config_hash(config)
-        root_folder = self.experiment_folder if self.experiment_folder is not None else ""
-        folder = f"{root_folder}/tuning/{identifier}"
+        root_folder = f"{self.experiment_folder}/" if self.experiment_folder is not None else ""
+        folder = f"{root_folder}tuning/{identifier}"
         return folder
 
     def _top_k_pool(self, k: int):

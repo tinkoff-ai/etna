@@ -2,6 +2,7 @@ from functools import partial
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import pandas as pd
 import pytest
 from typing_extensions import Literal
 
@@ -168,6 +169,70 @@ def test_fit_with_tuning(
 
 
 def test_summary(
+    trials,
+    auto=MagicMock(),
+):
+    pool_trials = trials[:3]
+    tune_trials_0 = trials[3:6]
+    tune_trials_1 = trials[6:]
+
+    auto._pool_optuna.study.get_trials.return_value = pool_trials
+    auto._make_pool_summary = partial(Auto._make_pool_summary, self=auto)  # essential for summary
+
+    tune_0 = MagicMock()
+    tune_0.pipeline = pool_trials[0].user_attrs["pipeline"]
+    tune_0._init_optuna.return_value.study.get_trials.return_value = tune_trials_0
+    tune_1 = MagicMock()
+    tune_1.pipeline = pool_trials[1].user_attrs["pipeline"]
+    tune_1._init_optuna.return_value.study.get_trials.return_value = tune_trials_1
+    auto._init_tuners.return_value = [tune_0, tune_1]
+    auto._make_tune_summary = partial(Auto._make_tune_summary, self=auto)  # essential for summary
+
+    df_summary = Auto.summary(self=auto)
+
+    assert len(df_summary) == len(trials)
+    expected_smape = pd.Series([trial.user_attrs.get("SMAPE_median") for trial in trials])
+    pd.testing.assert_series_equal(df_summary["SMAPE_median"], expected_smape, check_names=False)
+
+
+@pytest.mark.parametrize("k, expected_k", [(1, 1), (2, 2), (3, 3), (20, 10)])
+def test_top_k(
+    trials,
+    k,
+    expected_k,
+    auto=MagicMock(),
+):
+    auto.target_metric.name = "SMAPE"
+    auto.metric_aggregation = "median"
+    auto.target_metric.greater_is_better = False
+
+    pool_trials = trials[:3]
+    tune_trials_0 = trials[3:6]
+    tune_trials_1 = trials[6:]
+
+    auto._pool_optuna.study.get_trials.return_value = pool_trials
+    auto._make_pool_summary = partial(Auto._make_pool_summary, self=auto)  # essential for summary
+
+    tune_0 = MagicMock()
+    tune_0.pipeline = pool_trials[0].user_attrs["pipeline"]
+    tune_0._init_optuna.return_value.study.get_trials.return_value = tune_trials_0
+    tune_1 = MagicMock()
+    tune_1.pipeline = pool_trials[1].user_attrs["pipeline"]
+    tune_1._init_optuna.return_value.study.get_trials.return_value = tune_trials_1
+    auto._init_tuners.return_value = [tune_0, tune_1]
+    auto._make_tune_summary = partial(Auto._make_tune_summary, self=auto)  # essential for summary
+
+    auto._top_k = partial(Auto._top_k, self=auto)
+    df_summary = Auto.summary(self=auto)
+    auto.summary = MagicMock(return_value=df_summary)
+
+    top_k = Auto.top_k(auto, k=k)
+
+    assert len(top_k) == expected_k
+    assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(expected_k)]  # noqa C416
+
+
+def test_summary_after_fit(
     example_tsds,
     optuna_storage,
     pool=(
@@ -190,9 +255,9 @@ def test_summary(
     df_summary = auto.summary()
     assert {"pipeline", "state", "study"}.issubset(set(df_summary.columns))
     assert len(df_summary) == 11
-    assert len(df_summary[df_summary["study"] == "/pool"]) == 3
-    df_summary_tune_0 = df_summary[df_summary["study"] == "/tuning/edddb11f9acb86ea0cd5568f13f53874"]
-    df_summary_tune_1 = df_summary[df_summary["study"] == "/tuning/591e66b111b09cbc351249ff4e214dc8"]
+    assert len(df_summary[df_summary["study"] == "pool"]) == 3
+    df_summary_tune_0 = df_summary[df_summary["study"] == "tuning/edddb11f9acb86ea0cd5568f13f53874"]
+    df_summary_tune_1 = df_summary[df_summary["study"] == "tuning/591e66b111b09cbc351249ff4e214dc8"]
     assert len(df_summary_tune_0) == 4
     assert len(df_summary_tune_1) == 4
     assert isinstance(df_summary_tune_0.iloc[0]["pipeline"].model, LinearPerSegmentModel)
