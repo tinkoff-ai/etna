@@ -83,7 +83,7 @@ def estimate_max_n_folds(
     where :math:`num\\_points` is number of points in the dataset,
     :math:`horizon` is length of forecasting horizon,
     :math:`stride` is number of points between folds,
-    :math:`context\\_size` is model context size.
+    :math:`context\\_size` is pipeline context size.
 
 
     Parameters
@@ -91,13 +91,13 @@ def estimate_max_n_folds(
     pipeline:
         Pipeline for which to estimate number of folds.
     method_name:
-       Method name for which to estimate number of folds.
+        Method name for which to estimate number of folds.
     context_size:
-       Minimum number of points for pipeline to be estimated.
+        Minimum number of points for pipeline to be estimated.
     ts:
-       Dataset which will be used for estimation.
+        Dataset which will be used for estimation.
     method_kwargs:
-       Additional arguments for methods that impact number of folds.
+        Additional arguments for methods that impact number of folds.
 
     Returns
     -------
