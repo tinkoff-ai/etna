@@ -12,6 +12,7 @@ from typing import Union
 import optuna
 import pandas as pd
 from hydra_slayer import get_from_params
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -595,6 +596,7 @@ class Tune(AutoBase):
         storage: Optional[BaseStorage] = None,
         metrics: Optional[List[Metric]] = None,
         sampler: Optional[BaseSampler] = None,
+        params_to_tune: Optional[Dict[str, BaseDistribution]] = None,
     ):
         """
         Initialize Tune class.
@@ -622,6 +624,11 @@ class Tune(AutoBase):
             By default, :py:class:`~etna.metrics.metrics.Sign`, :py:class:`~etna.metrics.metrics.SMAPE`,
             :py:class:`~etna.metrics.metrics.MAE`, :py:class:`~etna.metrics.metrics.MSE`,
             :py:class:`~etna.metrics.metrics.MedAE` metrics are used.
+        sampler:
+            Optuna sampler to use. By default, TPE sampler is used.
+        params_to_tune:
+            Parameters of pipeline that should be tuned with corresponding tuning distributions.
+            By default, `pipeline.params_to_tune()` is used.
         """
         super().__init__(
             target_metric=target_metric,
@@ -638,6 +645,10 @@ class Tune(AutoBase):
             self.sampler: BaseSampler = TPESampler()
         else:
             self.sampler = sampler
+        if params_to_tune is None:
+            self.params_to_tune = pipeline.params_to_tune()
+        else:
+            self.params_to_tune = params_to_tune
         self._optuna: Optional[Optuna] = None
 
     def fit(
@@ -677,6 +688,7 @@ class Tune(AutoBase):
             objective=self.objective(
                 ts=ts,
                 pipeline=self.pipeline,
+                params_to_tune=self.params_to_tune,
                 target_metric=self.target_metric,
                 metric_aggregation=self.metric_aggregation,
                 metrics=self.metrics,
@@ -696,6 +708,7 @@ class Tune(AutoBase):
     def objective(
         ts: TSDataset,
         pipeline: BasePipeline,
+        params_to_tune: Dict[str, BaseDistribution],
         target_metric: Metric,
         metric_aggregation: MetricAggregationStatistics,
         metrics: List[Metric],
@@ -712,6 +725,8 @@ class Tune(AutoBase):
             TSDataset to fit on.
         pipeline:
             Pipeline to tune.
+        params_to_tune:
+            Parameters of pipeline that should be tuned with corresponding tuning distributions.
         target_metric:
             Metric to optimize.
         metric_aggregation:
@@ -746,9 +761,6 @@ class Tune(AutoBase):
         }
 
         def _objective(trial: Trial) -> float:
-
-            params_to_tune = pipeline.params_to_tune()
-
             # using received optuna.distribution objects to call corresponding trial.suggest_xxx
             params_suggested = {}
             for param_name, param_distr in params_to_tune.items():
