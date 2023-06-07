@@ -18,18 +18,34 @@ class SSM(ABC, BaseMixin):
     """Base class for State Space Model.
 
     The system dynamics is described with the following equations:
+
     .. math::
-       y_t = a^T_tl_{t-1} + b_t + \sigma_t\epsilon_t
-       l_t = F_tl_{t-1} + g_t\epsilon_t
-       l_0 \sim N(\mu_0, diag(\sigma_0^2))
-       y - state of the system
-       l - state of the system in the latent space
-       a - emission coefficient
-       F - transition coefficient
-       g - innovation coefficient
-       \sigma - noise standard deviation
-       \mu_0 - prior mean
-       \sigma_0 - prior standard deviation
+       y_t = a^T_t l_{t-1} + b_t + \sigma_t\\varepsilon_t
+
+       l_t = F_t l_{t-1} + g_t\epsilon_t
+
+       l_0 \sim N(\mu_0, diag(\sigma_0^2)), \\varepsilon_t \sim N(0, 1), \epsilon_t \sim N(0, 1)
+
+    where
+       :math:`y` - state of the system
+
+       :math:`l` - state of the system in the latent space
+
+       :math:`a` - emission coefficient
+
+       :math:`F` - transition coefficient
+
+       :math:`g` - innovation coefficient
+
+       :math:`\sigma` - noise standard deviation
+
+       :math:`\mu_0` - prior mean
+
+       :math:`\sigma_0` - prior standard deviation
+
+    Parameters
+    -----
+
     """
 
     @abstractmethod
