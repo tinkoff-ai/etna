@@ -57,7 +57,7 @@ class LDS(BaseMixin):
         self.latent_dim = latent_dim
 
         self.batch_size = self.prior_mean.shape[0]
-        self._eye = torch.eye(self.latent_dim).type_as(noise_std)
+        self._eye = torch.eye(self.latent_dim).to(noise_std)
 
     def kalman_filter_step(
         self,
@@ -114,7 +114,7 @@ class LDS(BaseMixin):
         filtered_mean = prior_mean + (kalman_gain.unsqueeze(-1) @ residual.unsqueeze(-1)).squeeze(-1)
         # P = (I - KH)P_t (batch_size, latent_dim, latent_dim)
         filtered_cov = (
-            self._eye.type_as(target) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
+            self._eye.to(target) - kalman_gain.unsqueeze(-1) @ emission_coeff.permute(0, 2, 1)
         ) @ prior_cov
         # log-likelihood (batch_size, 1)
         log_p = (

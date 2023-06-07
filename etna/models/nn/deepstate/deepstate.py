@@ -104,7 +104,7 @@ class DeepStateNet(DeepBaseNet):
 
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),
-            transition_coeff=self.ssm.transition_coeff(datetime_index).type_as(targets),
+            transition_coeff=self.ssm.transition_coeff(datetime_index).to(targets),
             innovation_coeff=self.ssm.innovation_coeff(datetime_index) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=self.projectors["prior_mean"](output[:, 0]),
@@ -145,7 +145,7 @@ class DeepStateNet(DeepBaseNet):
         prior_std = self.projectors["prior_std"](output[:, 0])
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_train),
-            transition_coeff=self.ssm.transition_coeff(datetime_index_train).type_as(targets),
+            transition_coeff=self.ssm.transition_coeff(datetime_index_train).to(targets),
             innovation_coeff=self.ssm.innovation_coeff(datetime_index_train) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=self.projectors["prior_mean"](output[:, 0]),
@@ -160,7 +160,7 @@ class DeepStateNet(DeepBaseNet):
         horizon = output.shape[1]
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_test),
-            transition_coeff=self.ssm.transition_coeff(datetime_index_test).type_as(targets),
+            transition_coeff=self.ssm.transition_coeff(datetime_index_test).to(targets),
             innovation_coeff=self.ssm.innovation_coeff(datetime_index_test) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=prior_mean,
@@ -257,7 +257,7 @@ class DeepStateModel(DeepBaseModel):
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
     ):
-        """Init RNN model based on LSTM cell.
+        """Init Deep State Model.
         Parameters
         ----------
         ssm:
