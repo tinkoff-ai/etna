@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update requirements for `holidays` and `scipy`, change saving library from `pickle` to `dill` in `SaveMixin` ([#1268](https://github.com/tinkoff-ai/etna/pull/1268))
 - Update requirement for `ruptures`, add requirement for `sqlalchemy` ([#1276](https://github.com/tinkoff-ai/etna/pull/1276))
 - Optimize `make_samples` of `RNNNet` and `MLPNet` ([#1281](https://github.com/tinkoff-ai/etna/pull/1281))
+- Remove `to_be_fixed` from inference tests on `SpecialDaysTransform` ([#1283](https://github.com/tinkoff-ai/etna/pull/1283))
+- 
+- 
 - 
 ### Fixed
 - Fix `plot_backtest` and `plot_backtest_interactive` on one-step forecast ([1260](https://github.com/tinkoff-ai/etna/pull/1260))
