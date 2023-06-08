@@ -35,11 +35,13 @@ def test_objective(
     initializer=MagicMock(spec=_Initializer),
     callback=MagicMock(spec=_Callback),
     pipeline=Pipeline(NaiveModel()),
+    params_to_tune={},
 ):
     trial = MagicMock()
     _objective = Tune.objective(
         ts=example_tsds,
         pipeline=pipeline,
+        params_to_tune=params_to_tune,
         target_metric=target_metric,
         metric_aggregation=metric_aggregation,
         metrics=metrics,
@@ -172,14 +174,38 @@ def test_top_k(
 )
 def test_tune_run(example_tsds, optuna_storage, pipeline):
     tune = Tune(
-        pipeline,
-        MAE(),
+        pipeline=pipeline,
+        target_metric=MAE(),
         metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
     )
     tune.fit(ts=example_tsds, n_trials=2)
 
+    assert len(tune._optuna.study.trials) == 2
+    assert len(tune.summary()) == 2
+    assert len(tune.top_k()) == 2
+    assert len(tune.top_k(k=1)) == 1
+
+
+@pytest.mark.parametrize(
+    "pipeline, params_to_tune",
+    [
+        (Pipeline(NaiveModel(1), horizon=7), {"model.lag": IntUniformDistribution(low=1, high=5)}),
+    ],
+)
+def test_tune_run_custom_params_to_tune(example_tsds, optuna_storage, pipeline, params_to_tune):
+    tune = Tune(
+        pipeline=pipeline,
+        params_to_tune=params_to_tune,
+        target_metric=MAE(),
+        metric_aggregation="median",
+        horizon=7,
+        storage=optuna_storage,
+    )
+    tune.fit(ts=example_tsds, n_trials=2)
+
+    assert tune.params_to_tune == params_to_tune
     assert len(tune._optuna.study.trials) == 2
     assert len(tune.summary()) == 2
     assert len(tune.top_k()) == 2
@@ -205,8 +231,8 @@ def test_tune_hierarchical_run(
     pipeline,
 ):
     tune = Tune(
-        pipeline,
-        MAE(),
+        pipeline=pipeline,
+        target_metric=MAE(),
         metric_aggregation="median",
         horizon=7,
         backtest_params={"n_folds": 2},
