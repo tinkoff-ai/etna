@@ -30,6 +30,27 @@ def base_pipeline_yaml_path():
 
 
 @pytest.fixture
+def base_pipeline_with_context_size_yaml_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        _target_: etna.pipeline.Pipeline
+        horizon: 4
+        model:
+          _target_: etna.models.CatBoostMultiSegmentModel
+        transforms:
+          - _target_: etna.transforms.LinearTrendTransform
+            in_column: target
+          - _target_: etna.transforms.SegmentEncoderTransform
+        context_size: 1
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
 def elementary_linear_model_pipeline():
     tmp = NamedTemporaryFile("w")
     tmp.write(
