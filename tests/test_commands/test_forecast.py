@@ -8,8 +8,55 @@ import pytest
 
 from etna.commands.forecast_command import compute_horizon
 from etna.commands.forecast_command import filter_forecast
-from etna.commands.forecast_command import get_forecast_call_params
 from etna.datasets import TSDataset
+
+
+@pytest.fixture
+def base_forecast_omegaconf_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        prediction_interval: true
+        quantiles: [0.025, 0.975]
+        n_folds: 3
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def start_timestamp_forecast_omegaconf_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        prediction_interval: true
+        quantiles: [0.025, 0.975]
+        n_folds: 3
+        start_timestamp: "2021-09-10"
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def base_forecast_with_folds_estimation_omegaconf_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        prediction_interval: true
+        quantiles: [0.025, 0.975]
+        n_folds: 200
+        start_timestamp: "2021-09-10"
+        estimate_n_folds: true
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
 
 
 def test_dummy_run_with_exog(base_pipeline_yaml_path, base_timeseries_path, base_timeseries_exog_path):
@@ -128,25 +175,6 @@ def pipeline_dummy_config():
     return {"horizon": 3}
 
 
-@pytest.mark.parametrize(
-    "params,expected",
-    (
-        ({"start_timestamp": "2021-09-10"}, {}),
-        (
-            {"prediction_interval": True, "n_folds": 3, "start_timestamp": "2021-09-10"},
-            {"prediction_interval": True, "n_folds": 3},
-        ),
-        (
-            {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
-            {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
-        ),
-    ),
-)
-def test_get_forecast_call_params(params, expected):
-    result = get_forecast_call_params(forecast_params=params)
-    assert result == expected
-
-
 @pytest.mark.parametrize("forecast_params", ({"start_timestamp": "2020-04-09"}, {"start_timestamp": "2019-04-10"}))
 def test_compute_horizon_error(example_tsds, forecast_params, pipeline_dummy_config):
     with pytest.raises(ValueError, match="Parameter `start_timestamp` should greater than end of training dataset!"):
@@ -215,3 +243,31 @@ def test_forecast_start_timestamp(
     assert len(df_output) == 3 * 2  # 3 predictions for 2 segments
     assert df_output["timestamp"].min() == "2021-09-10"  # start_timestamp
     assert not np.any(df_output.isna().values)
+
+
+def test_forecast_estimate_n_folds(
+    base_pipeline_with_context_size_yaml_path,
+    base_forecast_with_folds_estimation_omegaconf_path,
+    base_timeseries_path,
+    base_timeseries_exog_path,
+):
+    tmp_output = NamedTemporaryFile("w")
+    tmp_output_path = Path(tmp_output.name)
+    run(
+        [
+            "etna",
+            "forecast",
+            str(base_pipeline_with_context_size_yaml_path),
+            str(base_timeseries_path),
+            "D",
+            str(tmp_output_path),
+            str(base_timeseries_exog_path),
+            str(base_forecast_with_folds_estimation_omegaconf_path),
+        ]
+    )
+    df_output = pd.read_csv(tmp_output_path)
+
+    print(df_output)
+
+    assert all(x in df_output.columns for x in ["target_0.025", "target_0.975"])
+    assert len(df_output) == 4 * 2  # 4 predictions for 2 segments
