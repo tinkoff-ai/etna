@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -5,6 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from typing import cast
 
 import hydra_slayer
 import pandas as pd
@@ -12,16 +14,14 @@ import typer
 from omegaconf import OmegaConf
 from typing_extensions import Literal
 
+from etna.commands.utils import estimate_max_n_folds
+from etna.commands.utils import remove_params
 from etna.datasets import TSDataset
 from etna.models.utils import determine_num_steps
 from etna.pipeline import Pipeline
 
-ADDITIONAL_FORECAST_PARAMETERS = {"start_timestamp"}
-
-
-def get_forecast_call_params(forecast_params: Dict[str, Any]) -> Dict[str, Any]:
-    """Select `forecast` arguments from params."""
-    return {k: v for k, v in forecast_params.items() if k not in ADDITIONAL_FORECAST_PARAMETERS}
+ADDITIONAL_FORECAST_PARAMETERS = {"start_timestamp", "estimate_n_folds"}
+ADDITIONAL_PIPELINE_PARAMETERS = {"context_size"}
 
 
 def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TSDataset) -> int:
@@ -101,6 +101,8 @@ def forecast(
     =============  ===========  ===============  ===============
     """
     pipeline_configs = OmegaConf.to_object(OmegaConf.load(config_path))
+    pipeline_configs = cast(Dict[str, Any], pipeline_configs)
+
     if forecast_config_path:
         forecast_params_config = OmegaConf.to_object(OmegaConf.load(forecast_config_path))
     else:
@@ -124,10 +126,32 @@ def forecast(
     horizon = compute_horizon(horizon=horizon, forecast_params=forecast_params, tsdataset=tsdataset)
     pipeline_configs["horizon"] = horizon  # type: ignore
 
-    forecast_call_args = get_forecast_call_params(forecast_params)
-
-    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
+    pipeline_args = remove_params(params=pipeline_configs, to_remove=ADDITIONAL_PIPELINE_PARAMETERS)
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_args)
     pipeline.fit(tsdataset)
+
+    # estimate number of folds if parameters set
+    if forecast_params.get("estimate_n_folds", False):
+        if forecast_params.get("prediction_interval", False):
+            if "context_size" not in pipeline_configs:
+                raise ValueError("Parameter `context_size` must be set if number of folds estimation enabled!")
+
+            context_size = pipeline_configs["context_size"]
+
+            max_n_folds = estimate_max_n_folds(
+                pipeline=pipeline, method_name="forecast", context_size=context_size, **forecast_params
+            )
+
+            n_folds = min(
+                max_n_folds, forecast_params.get("n_folds", 5)
+            )  # use default value of folds if parameter not set
+            forecast_params["n_folds"] = n_folds
+
+        else:
+            warnings.warn("Number of folds estimation would be ignored as the current forecast call doesn't use folds!")
+
+    forecast_call_args = remove_params(params=forecast_params, to_remove=ADDITIONAL_FORECAST_PARAMETERS)
+
     forecast = pipeline.forecast(**forecast_call_args)
 
     forecast = filter_forecast(forecast_ts=forecast, forecast_params=forecast_params)
