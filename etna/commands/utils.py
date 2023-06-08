@@ -1,11 +1,19 @@
 from enum import Enum
 from math import floor
+from typing import Any
+from typing import Dict
 from typing import Literal
 from typing import Optional
+from typing import Set
 from typing import Union
 
 from etna.datasets import TSDataset
 from etna.pipeline import Pipeline
+
+
+def remove_params(params: Dict[str, Any], to_remove: Set[str]) -> Dict[str, Any]:
+    """Select `forecast` arguments from params."""
+    return {k: v for k, v in params.items() if k not in to_remove}
 
 
 class MethodsWithFolds(str, Enum):

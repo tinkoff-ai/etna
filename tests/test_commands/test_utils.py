@@ -2,10 +2,12 @@ from copy import deepcopy
 
 import pytest
 
+from etna.commands.forecast_command import ADDITIONAL_FORECAST_PARAMETERS
 from etna.commands.utils import _estimate_n_folds
 from etna.commands.utils import _max_n_folds_backtest
 from etna.commands.utils import _max_n_folds_forecast
 from etna.commands.utils import estimate_max_n_folds
+from etna.commands.utils import remove_params
 from etna.metrics import MAE
 from etna.models import HoltWintersModel
 from etna.models import LinearPerSegmentModel
@@ -254,3 +256,35 @@ def test_estimate_max_n_folds_backtest_with_transforms(
     run_estimate_max_n_folds_backtest_test(
         pipeline=pipeline_with_transforms, context_size=context_size, ts=ts, stride=stride, expected=expected
     )
+
+
+@pytest.mark.parametrize(
+    "params,to_remove,expected",
+    (
+        ({"start_timestamp": "2021-09-10"}, ADDITIONAL_FORECAST_PARAMETERS, {}),
+        (
+            {"prediction_interval": True, "n_folds": 3, "start_timestamp": "2021-09-10"},
+            ADDITIONAL_FORECAST_PARAMETERS,
+            {"prediction_interval": True, "n_folds": 3},
+        ),
+        (
+            {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
+            ADDITIONAL_FORECAST_PARAMETERS,
+            {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
+        ),
+        (
+            {
+                "prediction_interval": True,
+                "n_folds": 3,
+                "quantiles": [0.025, 0.975],
+                "estimate_n_folds": True,
+                "context_size": 3,
+            },
+            ADDITIONAL_FORECAST_PARAMETERS,
+            {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
+        ),
+    ),
+)
+def test_get_forecast_call_params(params, to_remove, expected):
+    result = remove_params(params=params, to_remove=to_remove)
+    assert result == expected
