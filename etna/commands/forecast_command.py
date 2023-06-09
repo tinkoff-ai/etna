@@ -143,7 +143,7 @@ def forecast(
             )
 
             n_folds = min(
-                max_n_folds, forecast_params.get("n_folds", 5)
+                max_n_folds, forecast_params.get("n_folds", 3)
             )  # use default value of folds if parameter not set
             forecast_params["n_folds"] = n_folds
 

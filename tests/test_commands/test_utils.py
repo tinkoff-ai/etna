@@ -273,18 +273,12 @@ def test_estimate_max_n_folds_backtest_with_transforms(
             {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
         ),
         (
-            {
-                "prediction_interval": True,
-                "n_folds": 3,
-                "quantiles": [0.025, 0.975],
-                "estimate_n_folds": True,
-                "context_size": 3,
-            },
+            {"prediction_interval": True, "estimate_n_folds": True, "start_timestamp": "2021-09-10"},
             ADDITIONAL_FORECAST_PARAMETERS,
-            {"prediction_interval": True, "n_folds": 3, "quantiles": [0.025, 0.975]},
+            {"prediction_interval": True},
         ),
     ),
 )
-def test_get_forecast_call_params(params, to_remove, expected):
+def test_remove_params(params, to_remove, expected):
     result = remove_params(params=params, to_remove=to_remove)
     assert result == expected

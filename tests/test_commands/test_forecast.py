@@ -267,7 +267,5 @@ def test_forecast_estimate_n_folds(
     )
     df_output = pd.read_csv(tmp_output_path)
 
-    print(df_output)
-
     assert all(x in df_output.columns for x in ["target_0.025", "target_0.975"])
     assert len(df_output) == 4 * 2  # 4 predictions for 2 segments

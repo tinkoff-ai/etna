@@ -28,6 +28,10 @@ Basic ``forecast`` usage:
 * :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation. By default equals to 3.
 * :code:`return_components` - whether to estimate forecast components
 * :code:`start_timestamp` - timestamp with the starting point of forecast.
+* :code:`estimate_n_folds` - whether to estimate the number of folds from data. Works only when prediction intervals are enabled. Requires :code:`context_size` parameter set in pipeline config.
+
+:code:`context_size` is the top level field in pipeline config,
+determines minimum number of points in the history that is required by pipeline to produce a forecast.
 
 Setting these parameters is optional.
 Further information on arguments could be found in the documentation of :meth:`~etna.pipeline.pipeline.Pipeline.forecast` method.
@@ -62,6 +66,26 @@ Parameter :code:`start_timestamp` could be set similarly:
     prediction_interval: true
     quantiles: [0.025, 0.975]
     start_timestamp: "2020-01-12"
+
+Example of a pair of configs for number of folds estimation:
+
+.. code-block:: yaml
+
+    _target_: etna.pipeline.Pipeline
+    horizon: 4
+    model:
+      _target_: etna.models.CatBoostMultiSegmentModel
+    transforms:
+      - _target_: etna.transforms.LinearTrendTransform
+        in_column: target
+      - _target_: etna.transforms.SegmentEncoderTransform
+    context_size: 1
+
+.. code-block:: yaml
+
+    prediction_interval: true
+    quantiles: [0.025, 0.975]
+    estimate_n_folds: true
 
 **How to prepare data?**
 
@@ -114,6 +138,24 @@ Basic ``backtest`` usage:
             [EXOG_PATH]             path to csv with exog data
             [KNOWN_FUTURE]          list of all known_future columns (regressor columns). If not specified then all exog_columns considered known_future [default: None]
 
+**Backtest config parameters**
+
+* :code:`metrics` - list of metrics to compute for each fold.
+* :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation. By default equals to 5.
+* :code:`mode` - train generation policy: :code:`expand` or :code:`constant`.
+* :code:`aggregate_metrics` - if :code:`True` aggregate metrics above folds, return raw metrics otherwise.
+* :code:`n_jobs` - number of jobs to run in parallel.
+* :code:`refit` - determines how often pipeline should be retrained during iteration over folds.
+* :code:`stride` - number of points between folds.
+* :code:`joblib_params` - additional parameters for :py:class:`joblib.Parallel`
+* :code:`forecast_params` - additional parameters for :meth:`~etna.pipeline.base.BasePipeline.forecast`
+* :code:`estimate_n_folds` - whether to estimate the number of folds from data. Requires :code:`context_size` parameter set in pipeline config.
+
+:code:`context_size` is the top level field in pipeline config,
+determines minimum number of points in the history that is required by pipeline to produce a forecast.
+
+Setting these parameters is optional.
+Further information on arguments could be found in the documentation of :meth:`~etna.pipeline.base.BasePipeline.backtest` method.
 
 **How to create configs?**
 
@@ -141,6 +183,29 @@ Example of backtest run config:
       - _target_: etna.metrics.MSE
       - _target_: etna.metrics.MAPE
       - _target_: etna.metrics.SMAPE
+
+Example of a pair of configs for number of folds estimation for backtest:
+
+.. code-block:: yaml
+
+    _target_: etna.pipeline.Pipeline
+    horizon: 4
+    model:
+      _target_: etna.models.CatBoostMultiSegmentModel
+    transforms:
+      - _target_: etna.transforms.LinearTrendTransform
+        in_column: target
+      - _target_: etna.transforms.SegmentEncoderTransform
+    context_size: 1
+
+.. code-block:: yaml
+
+    n_folds: 200
+    n_jobs: 4
+    metrics:
+      - _target_: etna.metrics.MAE
+      - _target_: etna.metrics.SMAPE
+    estimate_n_folds: true
 
 
 **How to prepare data?**
