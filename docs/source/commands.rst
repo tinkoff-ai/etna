@@ -23,18 +23,20 @@ Basic ``forecast`` usage:
 
 **Forecast config parameters**
 
-* :code:`prediction_interval` - whether to estimate prediction interval for forecast.
-* :code:`quantiles` - levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval.
-* :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation. By default equals to 3.
-* :code:`return_components` - whether to estimate forecast components
 * :code:`start_timestamp` - timestamp with the starting point of forecast.
 * :code:`estimate_n_folds` - whether to estimate the number of folds from data. Works only when prediction intervals are enabled. Requires :code:`context_size` parameter set in pipeline config.
 
-:code:`context_size` is the top level field in pipeline config,
-determines minimum number of points in the history that is required by pipeline to produce a forecast.
+Other parameters that could be set in the configuration file could be found in :meth:`~etna.pipeline.pipeline.Pipeline.forecast` method documentation.
 
 Setting these parameters is optional.
-Further information on arguments could be found in the documentation of :meth:`~etna.pipeline.pipeline.Pipeline.forecast` method.
+
+
+**Pipeline config parameters**
+
+* :code:`context_size` - minimum number of points in the history that is required by pipeline to produce a forecast.
+
+Further information on pipeline parameters could be found in :class:`~etna.pipeline.pipeline.Pipeline` method documentation.
+
 
 **How to create config?**
 
@@ -140,22 +142,18 @@ Basic ``backtest`` usage:
 
 **Backtest config parameters**
 
-* :code:`metrics` - list of metrics to compute for each fold.
-* :code:`n_folds` - number of folds to use in the backtest for prediction interval estimation. By default equals to 5.
-* :code:`mode` - train generation policy: :code:`expand` or :code:`constant`.
-* :code:`aggregate_metrics` - if :code:`True` aggregate metrics above folds, return raw metrics otherwise.
-* :code:`n_jobs` - number of jobs to run in parallel.
-* :code:`refit` - determines how often pipeline should be retrained during iteration over folds.
-* :code:`stride` - number of points between folds.
-* :code:`joblib_params` - additional parameters for :py:class:`joblib.Parallel`
-* :code:`forecast_params` - additional parameters for :meth:`~etna.pipeline.base.BasePipeline.forecast`
 * :code:`estimate_n_folds` - whether to estimate the number of folds from data. Requires :code:`context_size` parameter set in pipeline config.
 
-:code:`context_size` is the top level field in pipeline config,
-determines minimum number of points in the history that is required by pipeline to produce a forecast.
+Other parameters that could be set in the configuration file could be found in :meth:`~etna.pipeline.base.BasePipeline.backtest` method documentation.
 
 Setting these parameters is optional.
-Further information on arguments could be found in the documentation of :meth:`~etna.pipeline.base.BasePipeline.backtest` method.
+
+
+**Pipeline config parameters**
+
+* :code:`context_size` - minimum number of points in the history that is required by pipeline to produce a forecast.
+
+Further information on pipeline parameters could be found in :class:`~etna.pipeline.pipeline.Pipeline` method documentation.
 
 **How to create configs?**
 
