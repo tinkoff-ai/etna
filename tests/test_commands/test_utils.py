@@ -2,7 +2,9 @@ from copy import deepcopy
 
 import pytest
 
+from etna.commands.backtest_command import ADDITIONAL_BACKTEST_PARAMETERS
 from etna.commands.forecast_command import ADDITIONAL_FORECAST_PARAMETERS
+from etna.commands.forecast_command import ADDITIONAL_PIPELINE_PARAMETERS
 from etna.commands.utils import _estimate_n_folds
 from etna.commands.utils import _max_n_folds_backtest
 from etna.commands.utils import _max_n_folds_forecast
@@ -276,6 +278,16 @@ def test_estimate_max_n_folds_backtest_with_transforms(
             {"prediction_interval": True, "estimate_n_folds": True, "start_timestamp": "2021-09-10"},
             ADDITIONAL_FORECAST_PARAMETERS,
             {"prediction_interval": True},
+        ),
+        (
+            {"n_folds": 2, "n_jobs": 4, "estimate_n_folds": True},
+            ADDITIONAL_BACKTEST_PARAMETERS,
+            {"n_folds": 2, "n_jobs": 4},
+        ),
+        (
+            {"_target_": "etna.pipeline.Pipeline", "horizon": 4, "context_size": 1},
+            ADDITIONAL_PIPELINE_PARAMETERS,
+            {"_target_": "etna.pipeline.Pipeline", "horizon": 4},
         ),
     ),
 )
