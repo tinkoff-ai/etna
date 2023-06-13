@@ -149,7 +149,7 @@ class AutoBase(AutoAbstract):
         runner:
             Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
-            Optuna storage to use. By default, sqlite storage is used.
+            Optuna storage to use. By default, sqlite storage is used with name "etna-auto.db".
         metrics:
             List of metrics to compute.
             By default, :py:class:`~etna.metrics.metrics.Sign`, :py:class:`~etna.metrics.metrics.SMAPE`,
@@ -174,7 +174,8 @@ class AutoBase(AutoAbstract):
 
     def _top_k(self, summary: pd.DataFrame, k: int) -> List[BasePipeline]:
         metric_name = f"{self.target_metric.name}_{self.metric_aggregation}"
-        df = summary[~summary[metric_name].isna()]
+        df = summary[summary["state"].apply(lambda x: x is optuna.structs.TrialState.COMPLETE)]
+        df = df.drop_duplicates(subset=["hash"])
         df = df.sort_values(
             by=metric_name,
             ascending=(not self.target_metric.greater_is_better),
@@ -183,6 +184,8 @@ class AutoBase(AutoAbstract):
 
     def top_k(self, k: int = 5) -> List[BasePipeline]:
         """Get top k pipelines with the best metric value.
+
+        Only complete and non-duplicate studies are taken into account.
 
         Parameters
         ----------
@@ -618,7 +621,7 @@ class Tune(AutoBase):
         runner:
             Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
-            Optuna storage to use. By default, sqlite storage is used.
+            Optuna storage to use. By default, sqlite storage is used with name "etna-auto.db".
         metrics:
             List of metrics to compute.
             By default, :py:class:`~etna.metrics.metrics.Sign`, :py:class:`~etna.metrics.metrics.SMAPE`,
@@ -642,7 +645,7 @@ class Tune(AutoBase):
         )
         self.pipeline = pipeline
         if sampler is None:
-            self.sampler: BaseSampler = TPESampler()
+            self.sampler: BaseSampler = TPESampler(seed=0)
         else:
             self.sampler = sampler
         if params_to_tune is None:
@@ -760,6 +763,18 @@ class Tune(AutoBase):
             CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
         }
 
+        def _find_duplicate_trial(trial: Trial, pipeline: BasePipeline) -> Optional[FrozenTrial]:
+            pipeline_hash = config_hash(pipeline.to_dict())
+
+            for t in trial.study.trials:
+                if t.state != optuna.structs.TrialState.COMPLETE:
+                    continue
+
+                if t.user_attrs.get("hash") == pipeline_hash:
+                    return t
+
+            return None
+
         def _objective(trial: Trial) -> float:
             # using received optuna.distribution objects to call corresponding trial.suggest_xxx
             params_suggested = {}
@@ -771,23 +786,33 @@ class Tune(AutoBase):
             # create pipeline instance with the parameters to try
             pipeline_trial_params: BasePipeline = pipeline.set_params(**params_suggested)
 
-            if initializer is not None:
-                initializer(pipeline=pipeline_trial_params)
+            duplicate_trial = _find_duplicate_trial(trial, pipeline_trial_params)
+            if duplicate_trial is not None:
+                for param_name, param_value in duplicate_trial.user_attrs.items():
+                    trial.set_user_attr(param_name, param_value)
 
-            metrics_df, forecast_df, fold_info_df = pipeline_trial_params.backtest(
-                ts, metrics=metrics, **backtest_params
-            )
+                metric_value = trial.user_attrs[f"{target_metric.name}_{metric_aggregation}"]
+                return metric_value
 
-            if callback is not None:
-                callback(metrics_df=metrics_df, forecast_df=forecast_df, fold_info_df=fold_info_df)
+            else:
+                if initializer is not None:
+                    initializer(pipeline=pipeline_trial_params)
 
-            trial.set_user_attr("pipeline", pipeline_trial_params.to_dict())
+                metrics_df, forecast_df, fold_info_df = pipeline_trial_params.backtest(
+                    ts, metrics=metrics, **backtest_params
+                )
 
-            aggregated_metrics = aggregate_metrics_df(metrics_df)
-            for metric in aggregated_metrics:
-                trial.set_user_attr(metric, aggregated_metrics[metric])
+                if callback is not None:
+                    callback(metrics_df=metrics_df, forecast_df=forecast_df, fold_info_df=fold_info_df)
 
-            return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+                trial.set_user_attr("pipeline", pipeline_trial_params.to_dict())
+                trial.set_user_attr("hash", config_hash(pipeline_trial_params.to_dict()))
+
+                aggregated_metrics = aggregate_metrics_df(metrics_df)
+                for metric in aggregated_metrics:
+                    trial.set_user_attr(metric, aggregated_metrics[metric])
+
+                return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
 
         return _objective
 
