@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add default `params_to_tune` for `TreeFeatureSelectionTransform`, `MRMRFeatureSelectionTransform` and `GaleShapleyFeatureSelectionTransform` ([#1250](https://github.com/tinkoff-ai/etna/pull/1250))
 - Add tuning stage into `Auto.fit` ([#1272](https://github.com/tinkoff-ai/etna/pull/1272))
 - Add `params_to_tune` into `Tune` init ([#1282](https://github.com/tinkoff-ai/etna/pull/1282))
-- Skip duplicates during `Tune.tune`, skip duplicates in `top_k`, add AutoML notebook ([#1285](https://github.com/tinkoff-ai/etna/pull/1285))
+- Skip duplicates during `Tune.fit`, skip duplicates in `top_k`, add AutoML notebook ([#1285](https://github.com/tinkoff-ai/etna/pull/1285))
 ### Fixed
 -
 - Fix `BaseReconciliator` to work on `pandas==1.1.5` ([#1229](https://github.com/tinkoff-ai/etna/pull/1229))
