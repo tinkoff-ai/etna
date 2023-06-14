@@ -21,12 +21,13 @@ class SSM(ABC, BaseMixin):
 
     .. math::
        y_t = a^T_t l_{t-1} + b_t + \sigma_t\\varepsilon_t
-
+    .. math::
        l_t = F_t l_{t-1} + g_t\epsilon_t
-
-       l_0 \sim N(\mu_0, diag(\sigma_0^2)), \\varepsilon_t \sim N(0, 1), \epsilon_t \sim N(0, 1)
+    .. math::
+       l_0 \sim N(\mu_0, diag(\sigma_0^2)), \\varepsilon_t \sim N(0, 1), \epsilon_t \sim N(0, 1),
 
     where
+
        :math:`y` - state of the system
 
        :math:`l` - state of the system in the latent space
@@ -42,10 +43,6 @@ class SSM(ABC, BaseMixin):
        :math:`\mu_0` - prior mean
 
        :math:`\sigma_0` - prior standard deviation
-
-    Parameters
-    -----
-
     """
 
     @abstractmethod

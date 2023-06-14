@@ -258,6 +258,7 @@ class DeepStateModel(DeepBaseModel):
         split_params: Optional[dict] = None,
     ):
         """Init Deep State Model.
+
         Parameters
         ----------
         ssm:
