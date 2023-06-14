@@ -135,7 +135,7 @@ def test_summary(
     df_summary = Tune.summary(self=tune)
 
     assert len(df_summary) == len(trials)
-    assert {"pipeline", "state"}.issubset(set(df_summary.columns))
+    assert {"hash", "pipeline", "state"}.issubset(set(df_summary.columns))
     expected_smape = pd.Series([trial.user_attrs.get("SMAPE_median") for trial in trials])
     pd.testing.assert_series_equal(df_summary["SMAPE_median"], expected_smape, check_names=False)
 
@@ -184,7 +184,7 @@ def test_tune_run(example_tsds, optuna_storage, pipeline):
 
     assert len(tune._optuna.study.trials) == 2
     assert len(tune.summary()) == 2
-    assert len(tune.top_k()) == 2
+    assert len(tune.top_k()) <= 2
     assert len(tune.top_k(k=1)) == 1
 
 
@@ -242,5 +242,5 @@ def test_tune_hierarchical_run(
 
     assert len(tune._optuna.study.trials) == 2
     assert len(tune.summary()) == 2
-    assert len(tune.top_k()) == 2
+    assert len(tune.top_k()) <= 2
     assert len(tune.top_k(k=1)) == 1

@@ -2,9 +2,10 @@ from os import unlink
 
 import pytest
 from optuna.storages import RDBStorage
-from typing_extensions import Literal
+from optuna.structs import TrialState
 from typing_extensions import NamedTuple
 
+from etna.auto.utils import config_hash
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 
@@ -19,12 +20,18 @@ def optuna_storage():
 def trials():
     class Trial(NamedTuple):
         user_attrs: dict
-        state: Literal["RUNNING", "WAITING", "COMPLETE", "PRUNED", "FAIL"] = "COMPLETE"
+        state: TrialState = TrialState.COMPLETE
 
     complete_trials = [
-        Trial(user_attrs={"pipeline": pipeline.to_dict(), "SMAPE_median": float(i)})
+        Trial(
+            user_attrs={
+                "pipeline": pipeline.to_dict(),
+                "SMAPE_median": float(i),
+                "hash": config_hash(pipeline.to_dict()),
+            }
+        )
         for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
     ]
-    fail_trials = [Trial(user_attrs={}, state="FAIL")]
+    fail_trials = [Trial(user_attrs={}, state=TrialState.FAIL)]
 
-    return complete_trials + fail_trials
+    return complete_trials + complete_trials[:3] + fail_trials

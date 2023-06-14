@@ -253,7 +253,7 @@ def test_summary_after_fit(
     auto.fit(ts=example_tsds, n_trials=11, tune_size=2)
 
     df_summary = auto.summary()
-    assert {"pipeline", "state", "study"}.issubset(set(df_summary.columns))
+    assert {"hash", "pipeline", "state", "study"}.issubset(set(df_summary.columns))
     assert len(df_summary) == 11
     assert len(df_summary[df_summary["study"] == "pool"]) == 3
     df_summary_tune_0 = df_summary[df_summary["study"] == "tuning/edddb11f9acb86ea0cd5568f13f53874"]
