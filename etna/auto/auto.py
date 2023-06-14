@@ -104,6 +104,8 @@ class AutoAbstract(ABC):
     def top_k(self, k: int = 5) -> List[BasePipeline]:
         """Get top k pipelines with the best metric value.
 
+        Only complete and non-duplicate studies are taken into account.
+
         Parameters
         ----------
         k:
@@ -561,6 +563,14 @@ class Auto(AutoBase):
     def summary(self) -> pd.DataFrame:
         """Get Auto trials summary.
 
+        There are columns:
+
+        - hash: hash of the pipeline;
+        - pipeline: pipeline object;
+        - metrics: columns with metrics' values;
+        - state: state of the trial;
+        - study: name of the study in which trial was made.
+
         Returns
         -------
         study_dataframe:
@@ -585,6 +595,8 @@ class Tune(AutoBase):
     """Automatic tuning of custom pipeline.
 
     This class takes given pipelines and tries to optimize its hyperparameters by using `params_to_tune`.
+
+    Trials with duplicate parameters are skipped and previously computed results are returned.
     """
 
     def __init__(
@@ -849,6 +861,13 @@ class Tune(AutoBase):
 
     def summary(self) -> pd.DataFrame:
         """Get trials summary.
+
+        There are columns:
+
+        - hash: hash of the pipeline;
+        - pipeline: pipeline object;
+        - metrics: columns with metrics' values;
+        - state: state of the trial.
 
         Returns
         -------
