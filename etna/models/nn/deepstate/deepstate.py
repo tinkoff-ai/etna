@@ -43,7 +43,7 @@ class DeepStateNet(DeepBaseNet):
         ssm:
             State Space Model of the system.
         input_size:
-            Size of the input feature space: target plus extra features.
+            Size of the input feature space: features for RNN part.
         num_layers:
             Number of layers in RNN.
         n_samples:
@@ -104,7 +104,7 @@ class DeepStateNet(DeepBaseNet):
 
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index),
-            transition_coeff=self.ssm.transition_coeff(datetime_index).to(targets),
+            transition_coeff=self.ssm.transition_coeff(datetime_index),
             innovation_coeff=self.ssm.innovation_coeff(datetime_index) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=self.projectors["prior_mean"](output[:, 0]),
@@ -145,7 +145,7 @@ class DeepStateNet(DeepBaseNet):
         prior_std = self.projectors["prior_std"](output[:, 0])
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_train),
-            transition_coeff=self.ssm.transition_coeff(datetime_index_train).to(targets),
+            transition_coeff=self.ssm.transition_coeff(datetime_index_train),
             innovation_coeff=self.ssm.innovation_coeff(datetime_index_train) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=self.projectors["prior_mean"](output[:, 0]),
@@ -160,7 +160,7 @@ class DeepStateNet(DeepBaseNet):
         horizon = output.shape[1]
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_test),
-            transition_coeff=self.ssm.transition_coeff(datetime_index_test).to(targets),
+            transition_coeff=self.ssm.transition_coeff(datetime_index_test),
             innovation_coeff=self.ssm.innovation_coeff(datetime_index_test) * self.projectors["innovation"](output),
             noise_std=self.projectors["noise_std"](output),
             prior_mean=prior_mean,
@@ -263,7 +263,7 @@ class DeepStateModel(DeepBaseModel):
         ssm:
             state Space Model of the system
         input_size:
-            size of the input feature space: target plus extra features
+            size of the input feature space: features for RNN part.
         encoder_length:
             encoder length
         decoder_length:

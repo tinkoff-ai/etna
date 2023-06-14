@@ -172,7 +172,7 @@ class LevelSSM(SSM):
         :
             Transition coefficient matrix.
         """
-        transition_coeff = torch.eye(self.latent_dim())
+        transition_coeff = torch.eye(self.latent_dim(), device=datetime_index.device)
         return transition_coeff.float()
 
     def innovation_coeff(self, datetime_index: Tensor) -> Tensor:
@@ -235,7 +235,7 @@ class LevelTrendSSM(LevelSSM):
         :
             Transition coefficient matrix.
         """
-        transition_coeff = torch.eye(self.latent_dim())
+        transition_coeff = torch.eye(self.latent_dim(), device=datetime_index.device)
         transition_coeff[0, 1] = 1
         return transition_coeff.float()
 
@@ -298,7 +298,7 @@ class SeasonalitySSM(LevelSSM):
 
 
 class YearlySeasonalitySSM(SeasonalitySSM):
-    """Class for Weekly Seasonality State Space Model."""
+    """Class for Yearly Seasonality State Space Model."""
 
     def __init__(self):
         super().__init__(num_seasons=12, timestamp_transform=self.get_timestamp_transform)
