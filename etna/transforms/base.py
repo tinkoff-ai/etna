@@ -11,7 +11,6 @@ import pandas as pd
 from typing_extensions import Literal
 
 from etna import SETTINGS
-from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset

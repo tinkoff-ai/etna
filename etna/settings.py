@@ -64,7 +64,8 @@ def _is_classification_available():
 
 
 def _is_auto_available():
-    if _module_available("optuna"):
+    true_case = _module_available("optuna") & _module_available("sqlalchemy")
+    if true_case:
         return True
     else:
         warnings.warn("etna[auto] is not available, to install it, run `pip install etna[auto]`")

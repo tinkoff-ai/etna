@@ -83,7 +83,7 @@ class TrendTransform(IrreversibleChangePointsTransform):
     def __init__(
         self,
         in_column: str,
-        change_points_model: BaseChangePointsModelAdapter = None,
+        change_points_model: Optional[BaseChangePointsModelAdapter] = None,
         per_interval_model: Optional[PerIntervalModel] = None,
         out_column: Optional[str] = None,
     ):
