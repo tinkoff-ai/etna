@@ -213,6 +213,9 @@ class CustomWEASEL(WEASEL):
         :
             Transformed input data.
         """
+        if self._padding_expected_len is None:
+            raise ValueError("Transform is not fitted!")
+
         n_samples = len(x)
         window_sizes, window_steps = self._check_params(self._min_series_len)
         for i in range(len(x)):

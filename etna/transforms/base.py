@@ -25,7 +25,7 @@ class FutureMixin:
     """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
-class Transform(SaveMixin, AbstractSaveable, BaseMixin):
+class Transform(SaveMixin, BaseMixin):
     """Base class to create any transforms to apply to data."""
 
     def __init__(self, required_features: Union[Literal["all"], List[str]]):

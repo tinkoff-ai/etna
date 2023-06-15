@@ -9,6 +9,7 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Self
 from typing_extensions import get_args
 
 from etna import SETTINGS
@@ -205,7 +206,7 @@ class SaveModelPipelineMixin(SaveMixin):
                     archive.write(transform_save_path, f"transforms/{save_name}")
 
     @classmethod
-    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Any:
+    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Self:
         """Load an object.
 
         Parameters

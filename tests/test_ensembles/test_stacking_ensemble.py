@@ -352,6 +352,18 @@ def test_predict_with_return_components_fails(example_tsds, naive_ensemble):
         naive_ensemble.predict(ts=example_tsds, return_components=True)
 
 
+@pytest.mark.long_1
+@pytest.mark.parametrize("n_jobs", (1, 4))
+def test_ts_with_segment_named_target(
+    ts_with_segment_named_target: TSDataset, stacking_ensemble_pipeline: StackingEnsemble, n_jobs: int
+):
+    results = stacking_ensemble_pipeline.backtest(
+        ts=ts_with_segment_named_target, metrics=[MAE()], n_jobs=n_jobs, n_folds=5
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
 def test_params_to_tune_not_implemented(stacking_ensemble_pipeline):
     with pytest.raises(NotImplementedError, match="StackingEnsemble doesn't support this method"):
         _ = stacking_ensemble_pipeline.params_to_tune()

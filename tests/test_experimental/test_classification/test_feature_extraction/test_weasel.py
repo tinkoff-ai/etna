@@ -55,6 +55,13 @@ def test_windowed_view(many_time_series, window_size, window_step, expected, req
     np.testing.assert_array_equal(n_windows_per_sample_cum, n_windows_per_sample_cum_expected)
 
 
+def test_not_fitted(many_time_series):
+    x, y = many_time_series
+    feature_extractor = WEASELFeatureExtractor(padding_value=0, window_sizes=[10, 15])
+    with pytest.raises(ValueError, match="Transform is not fitted"):
+        _ = feature_extractor.transform(x)
+
+
 def test_preprocessor_and_classifier(many_time_series_big):
     x, y = many_time_series_big
     model = LogisticRegression()

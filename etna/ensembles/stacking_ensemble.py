@@ -178,7 +178,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         """Prepare features for the ``final_model``."""
         # Stack targets from the forecasts
         targets = [
-            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
+            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, level="feature", axis=1)
             for i, forecast in enumerate(forecasts)
         ]
         targets = pd.concat(targets, axis=1)

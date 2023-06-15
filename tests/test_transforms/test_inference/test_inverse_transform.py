@@ -691,6 +691,8 @@ class TestInverseTransformTrainNewSegments:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
+            # timestamp
+            (SpecialDaysTransform(), "regular_ts"),
         ],
     )
     def test_inverse_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -699,20 +701,6 @@ class TestInverseTransformTrainNewSegments:
             self._test_inverse_transform_train_new_segments(
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
-
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # timestamp
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_inverse_transform_train_new_segments_failed_not_implemented(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
 
 
 class TestInverseTransformFutureNewSegments:
@@ -1027,6 +1015,8 @@ class TestInverseTransformFutureNewSegments:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
+            # timestamp
+            (SpecialDaysTransform(), "regular_ts"),
         ],
     )
     def test_inverse_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -1035,20 +1025,6 @@ class TestInverseTransformFutureNewSegments:
             self._test_inverse_transform_future_new_segments(
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
-
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # timestamp
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_inverse_transform_future_new_segments_failed_not_implemented(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_future_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
 
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(

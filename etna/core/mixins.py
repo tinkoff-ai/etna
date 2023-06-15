@@ -1,7 +1,6 @@
 import inspect
 import json
 import pathlib
-import pickle
 import sys
 import warnings
 import zipfile
@@ -14,8 +13,12 @@ from typing import Tuple
 from typing import TypeVar
 from typing import cast
 
+import dill
 import hydra_slayer
 from sklearn.base import BaseEstimator
+from typing_extensions import Self
+
+from etna.core.saving import AbstractSaveable
 
 TMixin = TypeVar("TMixin", bound="BaseMixin")
 
@@ -205,7 +208,7 @@ def get_etna_version() -> Tuple[int, int, int]:
         return result
 
 
-class SaveMixin:
+class SaveMixin(AbstractSaveable):
     """Basic implementation of ``AbstractSaveable`` abstract class.
 
     It saves object to the zip archive with 2 files:
@@ -228,7 +231,7 @@ class SaveMixin:
 
     def _save_state(self, archive: zipfile.ZipFile):
         with archive.open("object.pkl", "w") as output_file:
-            pickle.dump(self, output_file)
+            dill.dump(self, output_file)
 
     def save(self, path: pathlib.Path):
         """Save the object.
@@ -265,12 +268,12 @@ class SaveMixin:
             )
 
     @classmethod
-    def _load_state(cls, archive: zipfile.ZipFile) -> Any:
+    def _load_state(cls, archive: zipfile.ZipFile) -> Self:
         with archive.open("object.pkl", "r") as input_file:
-            return pickle.load(input_file)
+            return dill.load(input_file)
 
     @classmethod
-    def load(cls, path: pathlib.Path) -> Any:
+    def load(cls, path: pathlib.Path) -> Self:
         """Load an object.
 
         Parameters
