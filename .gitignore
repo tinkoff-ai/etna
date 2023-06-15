@@ -130,6 +130,7 @@ checkpoints/
 poetry.toml
 
 *.html
+*.db
 .devcontainer
 /docs/source/api/
 tmp
