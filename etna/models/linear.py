@@ -16,6 +16,12 @@ if SETTINGS.auto_required:
     from optuna.distributions import CategoricalDistribution
     from optuna.distributions import LogUniformDistribution
     from optuna.distributions import UniformDistribution
+else:
+    from unittest.mock import Mock
+
+    CategoricalDistribution = Mock  # type: ignore
+    UniformDistribution = Mock  # type: ignore
+    LogUniformDistribution = Mock  # type: ignore
 
 
 LINEAR_GRID: Dict[str, "BaseDistribution"] = {
