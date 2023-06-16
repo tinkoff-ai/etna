@@ -412,9 +412,9 @@ def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, r
     results, _, _ = pipeline.backtest(
         ts=ts,
         metrics=[metric],
-        n_folds=2,
+        n_folds=1,
         aggregate_metrics=True,
-        forecast_params={"prediction_interval": True, "n_folds": 1},
+        forecast_params={"prediction_interval": True, "n_folds": 2},
     )
     np.testing.assert_allclose(results[metric.name], answer)
 
