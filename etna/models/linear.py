@@ -24,11 +24,11 @@ else:
     LogUniformDistribution = Mock  # type: ignore
 
 
-LINEAR_GRID: Dict[str, "BaseDistribution"] = {
+_LINEAR_GRID: Dict[str, "BaseDistribution"] = {
     "fit_intercept": CategoricalDistribution([False, True]),
 }
 
-ELASTIC_GRID: Dict[str, "BaseDistribution"] = {
+_ELASTIC_GRID: Dict[str, "BaseDistribution"] = {
     "fit_intercept": CategoricalDistribution([False, True]),
     "l1_ratio": UniformDistribution(0, 1),
     "alpha": LogUniformDistribution(low=1e-5, high=1e3),
@@ -98,7 +98,7 @@ class LinearPerSegmentModel(
         :
             Grid to tune.
         """
-        return LINEAR_GRID
+        return _LINEAR_GRID
 
 
 class ElasticPerSegmentModel(
@@ -161,7 +161,7 @@ class ElasticPerSegmentModel(
         :
             Grid to tune.
         """
-        return ELASTIC_GRID
+        return _ELASTIC_GRID
 
 
 class LinearMultiSegmentModel(
@@ -201,7 +201,7 @@ class LinearMultiSegmentModel(
         :
             Grid to tune.
         """
-        return LINEAR_GRID
+        return _LINEAR_GRID
 
 
 class ElasticMultiSegmentModel(
@@ -264,4 +264,4 @@ class ElasticMultiSegmentModel(
         :
             Grid to tune.
         """
-        return ELASTIC_GRID
+        return _ELASTIC_GRID
