@@ -6,13 +6,10 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
@@ -208,7 +205,7 @@ class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
         """
         return timestamp_series.apply(lambda x: x.hour // period_in_hours).values
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``minute_in_hour_number``, ``fifteen_minutes_in_hour_number``, ``hour_number``,

@@ -9,13 +9,10 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import StandardScaler
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class StandardScalerTransform(SklearnTransform):
@@ -75,7 +72,7 @@ class StandardScalerTransform(SklearnTransform):
             mode=mode,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``mode``, ``with_mean``, ``with_std``.
@@ -171,7 +168,7 @@ class RobustScalerTransform(SklearnTransform):
             mode=mode,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``mode``, ``with_centering``, ``with_scaling``, ``unit_variance``.
@@ -250,7 +247,7 @@ class MinMaxScalerTransform(SklearnTransform):
             mode=mode,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``mode``, ``clip``. Other parameters are expected to be set by the user.

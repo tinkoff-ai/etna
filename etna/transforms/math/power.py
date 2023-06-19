@@ -5,13 +5,10 @@ from typing import Union
 
 from sklearn.preprocessing import PowerTransformer
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class YeoJohnsonTransform(SklearnTransform):
@@ -64,7 +61,7 @@ class YeoJohnsonTransform(SklearnTransform):
             mode=mode,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``mode``, ``standardize``. Other parameters are expected to be set by the user.
@@ -133,7 +130,7 @@ class BoxCoxTransform(SklearnTransform):
             mode=mode,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``mode``, ``standardize``. Other parameters are expected to be set by the user.

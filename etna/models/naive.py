@@ -1,10 +1,7 @@
 from typing import Dict
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
 from etna.models.seasonal_ma import SeasonalMovingAverageModel
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
 
 
 class NaiveModel(SeasonalMovingAverageModel):
@@ -33,7 +30,7 @@ class NaiveModel(SeasonalMovingAverageModel):
         self.lag = lag
         super().__init__(window=1, seasonality=lag)
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid is empty.

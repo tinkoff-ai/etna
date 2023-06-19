@@ -3,7 +3,9 @@ from typing import Optional
 
 from ruptures import Binseg
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.decomposition.change_points_based.base import BaseChangePointsModelAdapter
 from etna.transforms.decomposition.change_points_based.base import ReversibleChangePointsTransform
 from etna.transforms.decomposition.change_points_based.change_points_models.ruptures_based import (
@@ -12,11 +14,6 @@ from etna.transforms.decomposition.change_points_based.change_points_models.rupt
 from etna.transforms.decomposition.change_points_based.detrend import _OneSegmentChangePointsTrendTransform
 from etna.transforms.decomposition.change_points_based.per_interval_models import MeanPerIntervalModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import StatisticsPerIntervalModel
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
-    from optuna.distributions import IntUniformDistribution
 
 
 class _OneSegmentChangePointsLevelTransform(_OneSegmentChangePointsTrendTransform):
@@ -108,7 +105,7 @@ class ChangePointsLevelTransform(ReversibleChangePointsTransform):
         # it can't see the difference between Binseg(model="ar") and Binseg(model="l1")
         return self.change_points_model.to_dict() == self._default_change_points_model.to_dict()
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         If ``self.change_points_model`` is equal to default then this grid tunes parameters:
@@ -125,7 +122,7 @@ class ChangePointsLevelTransform(ReversibleChangePointsTransform):
                 "change_points_model.change_points_model.model": CategoricalDistribution(
                     ["l1", "l2", "normal", "rbf", "cosine", "linear", "clinear", "ar", "mahalanobis", "rank"]
                 ),
-                "change_points_model.n_bkps": IntUniformDistribution(low=5, high=30),
+                "change_points_model.n_bkps": IntDistribution(low=5, high=30),
             }
         else:
             return {}

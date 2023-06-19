@@ -11,6 +11,9 @@ from typing import Union
 import pandas as pd
 
 from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
@@ -20,12 +23,6 @@ if SETTINGS.prophet_required:
     from prophet import Prophet
     from prophet.serialize import model_from_dict
     from prophet.serialize import model_to_dict
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
-    from optuna.distributions import LogUniformDistribution
-    from optuna.distributions import UniformDistribution
 
 
 class _ProphetAdapter(BaseAdapter):
@@ -458,7 +455,7 @@ class ProphetModel(
             )
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``seasonality_mode``, ``seasonality_prior_scale``, ``changepoint_prior_scale``,
@@ -472,8 +469,8 @@ class ProphetModel(
         """
         return {
             "seasonality_mode": CategoricalDistribution(["additive", "multiplicative"]),
-            "seasonality_prior_scale": LogUniformDistribution(low=1e-2, high=10),
-            "changepoint_prior_scale": LogUniformDistribution(low=1e-3, high=0.5),
-            "changepoint_range": UniformDistribution(low=0.8, high=0.95),
-            "holidays_prior_scale": LogUniformDistribution(low=1e-2, high=10),
+            "seasonality_prior_scale": FloatDistribution(low=1e-2, high=10, log=True),
+            "changepoint_prior_scale": FloatDistribution(low=1e-3, high=0.5, log=True),
+            "changepoint_range": FloatDistribution(low=0.8, high=0.95),
+            "holidays_prior_scale": FloatDistribution(low=1e-2, high=10, log=True),
         }

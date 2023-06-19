@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
-from optuna.distributions import BaseDistribution
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.pipeline.base import BasePipeline
 
 

@@ -5,12 +5,12 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
 
 from etna.datasets import TSDataset
 from etna.datasets.utils import match_target_quantiles
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.metrics import MAE
 from etna.metrics import Coverage
 from etna.metrics import Width
@@ -645,10 +645,10 @@ def test_predict_with_return_components(
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
             {
-                "model.learning_rate": LogUniformDistribution(low=1e-4, high=0.5),
-                "model.depth": IntUniformDistribution(low=1, high=11, step=1),
-                "model.l2_leaf_reg": LogUniformDistribution(low=0.1, high=200.0),
-                "model.random_strength": LogUniformDistribution(low=1e-05, high=10.0),
+                "model.learning_rate": FloatDistribution(low=1e-4, high=0.5, log=True),
+                "model.depth": IntDistribution(low=1, high=11, step=1),
+                "model.l2_leaf_reg": FloatDistribution(low=0.1, high=200.0, log=True),
+                "model.random_strength": FloatDistribution(low=1e-05, high=10.0, log=True),
                 "transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
                 "transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
                 "transforms.0.day_number_in_year": CategoricalDistribution([False, True]),

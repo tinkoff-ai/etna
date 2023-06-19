@@ -19,17 +19,14 @@ from scipy.stats import norm
 from typing_extensions import TypedDict
 from typing_extensions import assert_never
 
-from etna import SETTINGS
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
 
 Timestamp = Union[str, pd.Timestamp]
 
@@ -278,7 +275,7 @@ class AbstractPipeline(AbstractSaveable):
         """
 
     @abstractmethod
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
         Returns

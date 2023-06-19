@@ -11,10 +11,10 @@ import pandas as pd
 from typing_extensions import Self
 from typing_extensions import get_args
 
-from etna import SETTINGS
 from etna.core import SaveMixin
 from etna.core import load
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.models import ModelType
 from etna.models import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models import NonPredictionIntervalContextRequiredAbstractModel
@@ -22,9 +22,6 @@ from etna.models import NonPredictionIntervalModelType
 from etna.models import PredictionIntervalContextIgnorantAbstractModel
 from etna.models import PredictionIntervalContextRequiredAbstractModel
 from etna.transforms import Transform
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
 
 
 class ModelPipelinePredictMixin:
@@ -117,7 +114,7 @@ class ModelPipelineParamsToTuneMixin:
     model: ModelType
     transforms: Sequence[Transform]
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
         Parameters for model has prefix "model.", e.g. "model.alpha".

@@ -335,6 +335,16 @@ def test_prediction_decomposition(outliers_tsds, model):
     ],
 )
 def test_params_to_tune(model, expected_length, const_ts):
+    def skip_parameters(parameters):
+        if (
+            "damped_trend" in parameters
+            and "trend" in parameters
+            and parameters["damped_trend"]
+            and parameters["trend"] is None
+        ):
+            return True
+        return False
+
     ts = const_ts
     assert len(model.params_to_tune()) == expected_length
-    assert_sampling_is_valid(model=model, ts=ts)
+    assert_sampling_is_valid(model=model, ts=ts, skip_parameters=skip_parameters)

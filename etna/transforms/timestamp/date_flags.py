@@ -8,13 +8,10 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class DateFlagsTransform(IrreversibleTransform, FutureMixin):
@@ -351,7 +348,7 @@ class DateFlagsTransform(IrreversibleTransform, FutureMixin):
         weekend_days = (5, 6)
         return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``day_number_in_week``, ``day_number_in_month``, ``day_number_in_year``,

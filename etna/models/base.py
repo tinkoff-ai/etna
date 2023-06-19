@@ -17,6 +17,7 @@ from etna import SETTINGS
 from etna.core import SaveMixin
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
 from etna.models.mixins import SaveNNMixin
@@ -33,9 +34,6 @@ else:
 
     LightningModule = Mock  # type: ignore
     SaveNNMixin = Mock  # type: ignore
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
 
 
 class AbstractModel(SaveMixin, ABC, BaseMixin):
@@ -82,7 +80,7 @@ class AbstractModel(SaveMixin, ABC, BaseMixin):
         """
         pass
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get grid for tuning hyperparameters.
 
         This is default implementation with empty grid.
