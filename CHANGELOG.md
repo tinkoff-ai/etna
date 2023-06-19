@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameters `estimate_n_folds` and `context_size` to forecast and backtest CLI commands ([#1284](https://github.com/tinkoff-ai/etna/pull/1284))
 -
 - Class `Tune` for hyperparameter optimization within existing pipeline ([#1200](https://github.com/tinkoff-ai/etna/pull/1200))
-- Add `etna.distributions` instead of using `optuna.distributions` ([#1292](https://github.com/tinkoff-ai/etna/pull/1292))
+- Add `etna.distributions` for using it instead of using `optuna.distributions` ([#1292](https://github.com/tinkoff-ai/etna/pull/1292))
 - 
 ### Changed
 - Set the default value of `final_model` to `LinearRegression(positive=True)` in the constructor of `StackingEnsemble` ([#1238](https://github.com/tinkoff-ai/etna/pull/1238))
