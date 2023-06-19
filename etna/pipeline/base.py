@@ -344,16 +344,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         return predictions
 
-    def _add_forecast_borders(
-        self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
-    ) -> None:
-        """Estimate prediction intervals and add to the forecasts."""
-        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=ts.freq)
-        residuals = (
-            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
-        )
-
+    @staticmethod
+    def _validate_residuals_for_interval_estimation(backtest_forecasts: TSDataset, residuals: pd.DataFrame):
         len_backtest, num_segments = residuals.shape
         min_timestamp = backtest_forecasts.index.min()
         max_timestamp = backtest_forecasts.index.max()
@@ -368,9 +360,20 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 f"There aren't enough target values to evaluate prediction intervals on history! "
                 f"For each segment there should be at least 2 points with defined value in a "
                 f"time span from {min_timestamp} to {max_timestamp}. "
-                f"You can try to increase n_folds parameter to make time span bigger or fill unknown target values."
+                f"You can try to increase n_folds parameter to make time span bigger."
             )
 
+    def _add_forecast_borders(
+        self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
+    ) -> None:
+        """Estimate prediction intervals and add to the forecasts."""
+        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=ts.freq)
+        residuals = (
+            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
+            - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
+        )
+
+        self._validate_residuals_for_interval_estimation(backtest_forecasts=backtest_forecasts, residuals=residuals)
         sigma = np.nanstd(residuals.values, axis=0)
 
         borders = []
