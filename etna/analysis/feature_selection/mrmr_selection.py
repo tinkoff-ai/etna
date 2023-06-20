@@ -58,6 +58,10 @@ def mrmr(
     -------
     selected_features: List[str]
         list of ``top_k`` selected regressors, sorted by their importance
+
+    Notes
+    -----
+    Time complexity of this method is O(top_k * n_segments * n_features * history_len)
     """
     relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
     redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]
@@ -65,6 +69,7 @@ def mrmr(
     relevance = relevance_table.apply(relevance_aggregation_fn).fillna(0)
 
     all_features = relevance.index.to_list()
+    segments = set(regressors.columns.get_level_values("segment"))
     selected_features: List[str] = []
     not_selected_features = all_features.copy()
 
@@ -76,20 +81,13 @@ def mrmr(
         score_denominator = pd.Series(1, index=not_selected_features)
         if i > 0:
             last_selected_feature = selected_features[-1]
-            not_selected_regressors = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, not_selected_features]]
-            last_selected_regressor = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, last_selected_feature]]
+            candidate_regressors = regressors.loc[
+                pd.IndexSlice[:], pd.IndexSlice[:, not_selected_features + [last_selected_feature]]
+            ]
 
+            segment_redundancy = [candidate_regressors[segment].corr() for segment in segments]
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
-                not_selected_regressors.apply(lambda col: last_selected_regressor.corrwith(col))  # noqa: B023
-                .abs()
-                .groupby("feature")
-                .apply(redundancy_aggregation_fn)
-                .T.groupby("feature")
-                .apply(redundancy_aggregation_fn)
-                .clip(atol)
-                .fillna(np.inf)
-                .loc[not_selected_features]
-                .values.squeeze()
+                pd.concat(segment_redundancy).apply(redundancy_aggregation_fn, axis=0).loc[not_selected_features]
             )
 
             score_denominator = redundancy_table.loc[not_selected_features, selected_features].mean(axis=1)
