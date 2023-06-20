@@ -36,7 +36,6 @@ def _prepare_df(df: pd.DataFrame, df_exog: pd.DataFrame, segment: str, regressor
 
 def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> pd.DataFrame:
     """Calculate relevance table with p-values from tsfresh.
-
     Parameters
     ----------
     df:
@@ -48,6 +47,10 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
     -------
     pd.DataFrame
         dataframe with p-values.
+
+    Notes
+    -----
+    Time complexity of this method is O(n_segments * n_features * history_len * log(history_len))
     """
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique())
@@ -64,7 +67,9 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
                 "Exogenous data contains columns with category type! It will be converted to float. If this is not desired behavior, use encoders."
             )
 
-        relevance = calculate_relevance_table(X=df_exog_seg, y=df_seg)[["feature", "p_value"]].values
+        relevance = calculate_relevance_table(X=df_exog_seg, y=df_seg, ml_task="regression")[
+            ["feature", "p_value"]
+        ].values
         result[k] = np.array(sorted(relevance, key=lambda x: x[0]))[:, 1]
     relevance_table = pd.DataFrame(result)
     relevance_table.index = segments
