@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix problems with flake8 B023 ([#1252](https://github.com/tinkoff-ai/etna/pull/1252))
 - Fix problem with swapped forecast methods in HierarchicalPipeline ([#1259](https://github.com/tinkoff-ai/etna/pull/1259))
 - Fix problem with segment name "target" in `StackingEnsemble` ([#1262](https://github.com/tinkoff-ai/etna/pull/1262))
+- Fix `BasePipeline.forecast` when prediction intervals are estimated on history data with presence of NaNs ([#1291](https://github.com/tinkoff-ai/etna/pull/1291))
 
 ## [2.0.0] - 2023-04-11
 ### Added

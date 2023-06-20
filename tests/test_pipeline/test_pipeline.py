@@ -266,6 +266,28 @@ def test_forecast_prediction_interval_not_builtin(example_tsds, model):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
+@pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
+def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds, model):
+    example_tsds.df.loc[example_tsds.index[-2], pd.IndexSlice["segment_1", "target"]] = None
+
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
+    pipeline.fit(example_tsds)
+    with pytest.warns(UserWarning, match="There are NaNs in target on time span from .* to .*"):
+        _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
+@pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
+def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
+    example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
+    pipeline.fit(example_tsds)
+    with pytest.raises(
+        ValueError, match="There aren't enough target values to evaluate prediction intervals on history"
+    ):
+        _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
 def test_forecast_prediction_interval_correct_values(splited_piecewise_constant_ts):
     """Test that the prediction interval for piecewise-constant dataset is correct."""
     train, test = splited_piecewise_constant_ts
