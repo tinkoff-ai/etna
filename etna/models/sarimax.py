@@ -14,7 +14,9 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -23,11 +25,6 @@ from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
-    from optuna.distributions import IntUniformDistribution
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -732,7 +729,7 @@ class SARIMAXModel(
             )
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``order.0``, ``order.1``, ``order.2``, ``trend``.
@@ -746,9 +743,9 @@ class SARIMAXModel(
             Grid to tune.
         """
         grid: Dict[str, "BaseDistribution"] = {
-            "order.0": IntUniformDistribution(low=1, high=6, step=1),
-            "order.1": IntUniformDistribution(low=1, high=2, step=1),
-            "order.2": IntUniformDistribution(low=1, high=6, step=1),
+            "order.0": IntDistribution(low=1, high=6),
+            "order.1": IntDistribution(low=1, high=2),
+            "order.2": IntDistribution(low=1, high=6),
             "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
         }
 
@@ -756,9 +753,9 @@ class SARIMAXModel(
         if num_periods > 0:
             grid.update(
                 {
-                    "seasonal_order.0": IntUniformDistribution(low=0, high=2, step=1),
-                    "seasonal_order.1": IntUniformDistribution(low=0, high=1, step=1),
-                    "seasonal_order.2": IntUniformDistribution(low=0, high=1, step=1),
+                    "seasonal_order.0": IntDistribution(low=0, high=2),
+                    "seasonal_order.1": IntDistribution(low=0, high=1),
+                    "seasonal_order.2": IntDistribution(low=0, high=1),
                 }
             )
 

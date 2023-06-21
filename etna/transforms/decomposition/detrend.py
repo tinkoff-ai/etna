@@ -9,14 +9,11 @@ from sklearn.linear_model import TheilSenRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import IntUniformDistribution
 
 
 class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
@@ -193,7 +190,7 @@ class LinearTrendTransform(ReversiblePerSegmentWrapper):
             Grid to tune.
         """
         return {
-            "poly_degree": IntUniformDistribution(low=1, high=2),
+            "poly_degree": IntDistribution(low=1, high=2),
         }
 
 
@@ -253,5 +250,5 @@ class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
             Grid to tune.
         """
         return {
-            "poly_degree": IntUniformDistribution(low=1, high=2),
+            "poly_degree": IntDistribution(low=1, high=2),
         }

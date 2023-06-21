@@ -227,7 +227,21 @@ def test_save_load(train_ts):
 
 
 def test_params_to_tune(train_ts):
+    def skip_parameters(parameters):
+        names = [
+            "minute_in_hour_number",
+            "fifteen_minutes_in_hour_number",
+            "hour_number",
+            "half_hour_number",
+            "half_day_number",
+            "one_third_day_number",
+        ]
+        values = [not parameters[x] for x in names]
+        if all(values):
+            return True
+        return False
+
     transform = TimeFlagsTransform()
     ts = train_ts
     assert len(transform.params_to_tune()) > 0
-    assert_sampling_is_valid(transform=transform, ts=ts)
+    assert_sampling_is_valid(transform=transform, ts=ts, skip_parameters=skip_parameters)

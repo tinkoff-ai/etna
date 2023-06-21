@@ -10,14 +10,11 @@ from typing import Union
 import pandas as pd
 from typing_extensions import Literal
 
-from etna import SETTINGS
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.transforms.utils import match_target_quantiles
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
 
 
 class FutureMixin:
@@ -165,7 +162,7 @@ class Transform(SaveMixin, BaseMixin):
         """
         pass
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get grid for tuning hyperparameters.
 
         This is default implementation with empty grid.

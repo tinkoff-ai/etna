@@ -211,7 +211,14 @@ def test_save_load(ts_with_specials):
 
 
 def test_params_to_tune(ts_with_specials):
+    def skip_parameters(parameters):
+        names = ["find_special_weekday", "find_special_month_day"]
+        values = [not parameters[x] for x in names]
+        if all(values):
+            return True
+        return False
+
     transform = SpecialDaysTransform()
     ts = ts_with_specials
     assert len(transform.params_to_tune()) > 0
-    assert_sampling_is_valid(transform=transform, ts=ts)
+    assert_sampling_is_valid(transform=transform, ts=ts, skip_parameters=skip_parameters)

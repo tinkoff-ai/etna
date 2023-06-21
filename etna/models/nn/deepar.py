@@ -8,6 +8,9 @@ import pandas as pd
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.base import log_decorator
 from etna.models.mixins import SaveNNMixin
@@ -22,12 +25,6 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.metrics import NormalDistributionLoss
     from pytorch_forecasting.models import DeepAR
     from pytorch_lightning import LightningModule
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import IntUniformDistribution
-    from optuna.distributions import LogUniformDistribution
-    from optuna.distributions import UniformDistribution
 
 
 class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
@@ -255,7 +252,7 @@ class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, Predicti
         """
         return self.model
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``hidden_size``, ``rnn_layers``, ``dropout``, ``lr``.
@@ -267,8 +264,8 @@ class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, Predicti
             Grid to tune.
         """
         return {
-            "hidden_size": IntUniformDistribution(low=4, high=64, step=4),
-            "rnn_layers": IntUniformDistribution(low=1, high=3, step=1),
-            "dropout": UniformDistribution(low=0, high=0.5),
-            "lr": LogUniformDistribution(low=1e-5, high=1e-2),
+            "hidden_size": IntDistribution(low=4, high=64, step=4),
+            "rnn_layers": IntDistribution(low=1, high=3),
+            "dropout": FloatDistribution(low=0, high=0.5),
+            "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
         }

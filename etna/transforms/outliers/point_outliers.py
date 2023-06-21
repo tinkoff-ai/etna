@@ -13,17 +13,15 @@ from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.models import SARIMAXModel
 from etna.transforms.outliers.base import OutliersTransform
 
 if SETTINGS.prophet_required:
     from etna.models import ProphetModel
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
-    from optuna.distributions import IntUniformDistribution
-    from optuna.distributions import UniformDistribution
 
 
 class MedianOutliersTransform(OutliersTransform):
@@ -66,7 +64,7 @@ class MedianOutliersTransform(OutliersTransform):
         """
         return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``window_size``, ``alpha``. Other parameters are expected to be set by the user.
@@ -77,8 +75,8 @@ class MedianOutliersTransform(OutliersTransform):
             Grid to tune.
         """
         return {
-            "window_size": IntUniformDistribution(low=3, high=30),
-            "alpha": UniformDistribution(low=0.5, high=5),
+            "window_size": IntDistribution(low=3, high=30),
+            "alpha": FloatDistribution(low=0.5, high=5),
         }
 
 
@@ -142,7 +140,7 @@ class DensityOutliersTransform(OutliersTransform):
             distance_func=self.distance_func,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``window_size``, ``distance_coef``, ``n_neighbors``.
@@ -154,9 +152,9 @@ class DensityOutliersTransform(OutliersTransform):
             Grid to tune.
         """
         return {
-            "window_size": IntUniformDistribution(low=3, high=30),
-            "distance_coef": UniformDistribution(low=0.5, high=5),
-            "n_neighbors": IntUniformDistribution(low=1, high=10),
+            "window_size": IntDistribution(low=3, high=30),
+            "distance_coef": FloatDistribution(low=0.5, high=5),
+            "n_neighbors": IntDistribution(low=1, high=10),
         }
 
 
@@ -223,7 +221,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             **self.model_kwargs,
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``interval_width``, ``model``. Other parameters are expected to be set by the user.
@@ -234,7 +232,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             Grid to tune.
         """
         return {
-            "interval_width": UniformDistribution(low=0.8, high=1.0),
+            "interval_width": FloatDistribution(low=0.8, high=1.0),
             "model": CategoricalDistribution(["prophet", "sarimax"]),
         }
 

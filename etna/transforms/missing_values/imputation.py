@@ -6,14 +6,11 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
-    from optuna.distributions import IntUniformDistribution
 
 
 class ImputerMode(str, Enum):
@@ -284,7 +281,7 @@ class TimeSeriesImputerTransform(ReversiblePerSegmentWrapper):
         """Return the list with regressors created by the transform."""
         return []
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``strategy``, ``window``.
@@ -300,12 +297,12 @@ class TimeSeriesImputerTransform(ReversiblePerSegmentWrapper):
         if self.seasonality > 1:
             return {
                 "strategy": CategoricalDistribution(["constant", "mean", "running_mean", "forward_fill", "seasonal"]),
-                "window": IntUniformDistribution(low=1, high=20),
+                "window": IntDistribution(low=1, high=20),
             }
         else:
             return {
                 "strategy": CategoricalDistribution(["constant", "mean", "running_mean", "forward_fill"]),
-                "window": IntUniformDistribution(low=1, high=20),
+                "window": IntDistribution(low=1, high=20),
             }
 
 

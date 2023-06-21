@@ -8,13 +8,10 @@ import numpy as np
 import pandas as pd
 from typing_extensions import assert_never
 
-from etna import SETTINGS
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import IntUniformDistribution
 
 
 class SeasonalityMode(str, Enum):
@@ -391,7 +388,7 @@ class DeadlineMovingAverageModel(
 
         return ts
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes ``window`` parameter. Other parameters are expected to be set by the user.
@@ -401,7 +398,7 @@ class DeadlineMovingAverageModel(
         :
             Grid to tune.
         """
-        return {"window": IntUniformDistribution(low=1, high=10, step=1)}
+        return {"window": IntDistribution(low=1, high=10)}
 
 
 __all__ = ["DeadlineMovingAverageModel"]

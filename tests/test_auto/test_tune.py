@@ -4,17 +4,14 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from typing_extensions import Literal
 
 from etna.auto import Tune
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.metrics import MAE
 from etna.models import NaiveModel
 from etna.models import SimpleExpSmoothingModel
@@ -98,13 +95,14 @@ def test_init_optuna(
 @pytest.mark.parametrize(
     "params, model",
     [
-        ({"model.smoothing_level": UniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
-        ({"model.smoothing_level": LogUniformDistribution(0.1, 1)}, SimpleExpSmoothingModel()),
-        ({"model.smoothing_level": DiscreteUniformDistribution(0.1, 1, 0.1)}, SimpleExpSmoothingModel()),
-        ({"model.lag": IntUniformDistribution(1, 5)}, NaiveModel()),
-        ({"model.lag": IntLogUniformDistribution(1, 5)}, NaiveModel()),
+        ({"model.smoothing_level": FloatDistribution(low=0.1, high=1)}, SimpleExpSmoothingModel()),
+        ({"model.smoothing_level": FloatDistribution(low=0.1, high=1, log=True)}, SimpleExpSmoothingModel()),
+        ({"model.smoothing_level": FloatDistribution(low=0.1, high=1, step=0.1)}, SimpleExpSmoothingModel()),
+        ({"model.lag": IntDistribution(low=1, high=5)}, NaiveModel()),
+        ({"model.lag": IntDistribution(low=1, high=5, log=True)}, NaiveModel()),
+        ({"model.lag": IntDistribution(low=1, high=5, step=2)}, NaiveModel()),
         ({"model.lag": CategoricalDistribution((1, 2, 3))}, NaiveModel()),
-        ({"model.smoothing_level": UniformDistribution(1, 5)}, SimpleExpSmoothingModel()),
+        ({"model.smoothing_level": FloatDistribution(low=1, high=5)}, SimpleExpSmoothingModel()),
     ],
 )
 def test_can_handle_distribution_type(example_tsds, optuna_storage, params, model):
@@ -115,7 +113,10 @@ def test_can_handle_distribution_type(example_tsds, optuna_storage, params, mode
 
 
 def test_can_handle_transforms(example_tsds, optuna_storage):
-    params = {"transforms.0.value": IntUniformDistribution(0, 17), "transforms.1.value": IntUniformDistribution(0, 17)}
+    params = {
+        "transforms.0.value": IntDistribution(low=0, high=17),
+        "transforms.1.value": IntDistribution(low=0, high=17),
+    }
     with patch.object(Pipeline, "params_to_tune", return_value=params):
         pipeline = Pipeline(
             NaiveModel(),
@@ -191,7 +192,7 @@ def test_tune_run(example_tsds, optuna_storage, pipeline):
 @pytest.mark.parametrize(
     "pipeline, params_to_tune",
     [
-        (Pipeline(NaiveModel(1), horizon=7), {"model.lag": IntUniformDistribution(low=1, high=5)}),
+        (Pipeline(NaiveModel(1), horizon=7), {"model.lag": IntDistribution(low=1, high=5)}),
     ],
 )
 def test_tune_run_custom_params_to_tune(example_tsds, optuna_storage, pipeline, params_to_tune):

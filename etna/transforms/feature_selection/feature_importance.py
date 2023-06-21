@@ -14,18 +14,14 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import ExtraTreeRegressor
 from typing_extensions import Literal
 
-from etna import SETTINGS
 from etna.analysis import RelevanceTable
 from etna.analysis.feature_selection.mrmr_selection import AggregationMode
 from etna.analysis.feature_selection.mrmr_selection import mrmr
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.feature_selection import BaseFeatureSelectionTransform
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
-    from optuna.distributions import IntUniformDistribution
-
 
 TreeBasedRegressor = Union[
     DecisionTreeRegressor,
@@ -142,7 +138,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.selected_features = self._select_top_k_features(weights, self.top_k)
         return self
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``model``, ``top_k``. Other parameters are expected to be set by the user.
@@ -157,7 +153,7 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         """
         return {
             "model": CategoricalDistribution(["catboost", "random_forest"]),
-            "top_k": IntUniformDistribution(low=1, high=self.top_k),
+            "top_k": IntDistribution(low=1, high=self.top_k),
         }
 
 
@@ -242,7 +238,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         )
         return self
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes ``top_k`` parameter. Other parameters are expected to be set by the user.
@@ -255,5 +251,5 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             Grid to tune.
         """
         return {
-            "top_k": IntUniformDistribution(low=1, high=self.top_k),
+            "top_k": IntDistribution(low=1, high=self.top_k),
         }

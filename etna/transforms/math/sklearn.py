@@ -10,17 +10,14 @@ import numpy as np
 import pandas as pd
 from sklearn.base import TransformerMixin
 
-from etna import SETTINGS
 from etna.core import StringEnumWithRepr
 from etna.datasets import TSDataset
 from etna.datasets import set_columns_wide
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class TransformMode(StringEnumWithRepr):
@@ -304,7 +301,7 @@ class SklearnTransform(ReversibleTransform):
             return []
         return self.out_column_regressors
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes ``mode`` parameter. Other parameters are expected to be set by the user.

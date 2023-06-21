@@ -13,7 +13,8 @@ from scipy.special import inv_boxcox
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
@@ -21,10 +22,6 @@ from etna.models.mixins import PerSegmentModelMixin
 from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class _HoltWintersAdapter(BaseAdapter):
@@ -653,7 +650,7 @@ class HoltWintersModel(
             )
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes parameters: ``trend``, ``damped_trend``, ``use_boxcox``.
@@ -794,7 +791,7 @@ class HoltModel(
             )
         )
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         Returns

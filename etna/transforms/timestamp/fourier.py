@@ -7,13 +7,10 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
-from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import IntLogUniformDistribution
 
 
 class FourierTransform(IrreversibleTransform, FutureMixin):
@@ -160,7 +157,7 @@ class FourierTransform(IrreversibleTransform, FutureMixin):
 
         return self._construct_answer(df, features)
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         If ``self.order`` is set then this grid tunes ``order`` parameter:
@@ -175,4 +172,4 @@ class FourierTransform(IrreversibleTransform, FutureMixin):
             return {}
 
         max_value = math.ceil(self.period / 2)
-        return {"order": IntLogUniformDistribution(low=1, high=max_value)}
+        return {"order": IntDistribution(low=1, high=max_value, log=True)}

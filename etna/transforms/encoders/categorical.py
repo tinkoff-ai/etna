@@ -9,13 +9,10 @@ from sklearn import preprocessing
 from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
 
-from etna import SETTINGS
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import IrreversibleTransform
-
-if SETTINGS.auto_required:
-    from optuna.distributions import BaseDistribution
-    from optuna.distributions import CategoricalDistribution
 
 
 class ImputerMode(str, Enum):
@@ -136,7 +133,7 @@ class LabelEncoderTransform(IrreversibleTransform):
             return self.out_column
         return self.__repr__()
 
-    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
         This grid tunes ``strategy`` parameter. Other parameters are expected to be set by the user.

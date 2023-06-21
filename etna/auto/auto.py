@@ -12,13 +12,6 @@ from typing import Union
 import optuna
 import pandas as pd
 from hydra_slayer import get_from_params
-from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import TPESampler
 from optuna.storages import BaseStorage
@@ -33,7 +26,9 @@ from etna.auto.pool import Pool
 from etna.auto.runner import AbstractRunner
 from etna.auto.runner import LocalRunner
 from etna.auto.utils import config_hash
+from etna.auto.utils import suggest_parameters
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import MSE
@@ -760,20 +755,6 @@ class Tune(AutoBase):
         objective:
             function that runs specified trial and returns its evaluated score
         """
-        dict_of_distrs = {
-            UniformDistribution: lambda x: ("suggest_uniform", {"low": x.low, "high": x.high}),
-            LogUniformDistribution: lambda x: ("suggest_loguniform", {"low": x.low, "high": x.high}),
-            DiscreteUniformDistribution: lambda x: (
-                "suggest_discrete_uniform",
-                {"low": x.low, "high": x.high, "q": x.q},
-            ),
-            IntUniformDistribution: lambda x: ("suggest_int", {"low": x.low, "high": x.high, "step": x.step}),
-            IntLogUniformDistribution: lambda x: (
-                "suggest_int",
-                {"low": x.low, "high": x.high, "step": x.step},
-            ),
-            CategoricalDistribution: lambda x: ("suggest_categorical", {"choices": x.choices}),
-        }
 
         def _find_duplicate_trial(trial: Trial, pipeline: BasePipeline) -> Optional[FrozenTrial]:
             pipeline_hash = config_hash(pipeline.to_dict())
@@ -788,14 +769,7 @@ class Tune(AutoBase):
             return None
 
         def _objective(trial: Trial) -> float:
-            # using received optuna.distribution objects to call corresponding trial.suggest_xxx
-            params_suggested = {}
-            for param_name, param_distr in params_to_tune.items():
-                method_name, method_kwargs = dict_of_distrs[type(param_distr)](param_distr)
-                method = getattr(trial, method_name)
-                params_suggested[param_name] = method(param_name, **method_kwargs)
-
-            # create pipeline instance with the parameters to try
+            params_suggested = suggest_parameters(trial=trial, params_to_tune=params_to_tune)
             pipeline_trial_params: BasePipeline = pipeline.set_params(**params_suggested)
 
             duplicate_trial = _find_duplicate_trial(trial, pipeline_trial_params)
