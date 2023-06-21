@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.missing_values import TimeSeriesImputerTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import select_segments_subset
 
 
 @pytest.fixture
@@ -331,6 +332,68 @@ def test_constant_fill_strategy(ts_with_missing_range_x_index_two_segments: TSDa
         np.testing.assert_array_equal(
             df.loc[pd.IndexSlice[rng], pd.IndexSlice[segment, "target"]].values, [constant_value] * 5
         )
+
+
+def _check_same_segments(df_1: pd.DataFrame, df_2: pd.DataFrame):
+    df_1_segments = set(df_1.columns.get_level_values("segment"))
+    df_2_segments = set(df_2.columns.get_level_values("segment"))
+    assert df_1_segments == df_2_segments
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+def test_transform_subset_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
+    ts, rng = ts_with_missing_range_x_index_two_segments
+    train_ts = ts
+    test_ts = select_segments_subset(ts=ts, segments=["segment_1"])
+    test_df = test_ts.to_pandas()
+    transform = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
+
+    transform.fit(train_ts)
+    transformed_df = transform.transform(test_ts).to_pandas()
+
+    _check_same_segments(transformed_df, test_df)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+def test_inverse_transform_subset_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
+    ts, rng = ts_with_missing_range_x_index_two_segments
+    train_ts = ts
+    test_ts = select_segments_subset(ts=ts, segments=["segment_1"])
+    test_df = test_ts.to_pandas()
+    transform = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
+
+    transform.fit(train_ts)
+    transformed_df = transform.inverse_transform(test_ts).to_pandas()
+
+    _check_same_segments(transformed_df, test_df)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+def test_transform_new_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
+    ts, rng = ts_with_missing_range_x_index_two_segments
+    train_ts = select_segments_subset(ts=ts, segments=["segment_1"])
+    test_ts = select_segments_subset(ts=ts, segments=["segment_2"])
+    transform = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
+
+    transform.fit(train_ts)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.transform(test_ts)
+
+
+@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+def test_inverse_transform_new_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
+    ts, rng = ts_with_missing_range_x_index_two_segments
+    train_ts = select_segments_subset(ts=ts, segments=["segment_1"])
+    test_ts = select_segments_subset(ts=ts, segments=["segment_2"])
+    transform = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
+
+    transform.fit(train_ts)
+    with pytest.raises(
+        NotImplementedError, match="This transform can't process segments that weren't present on train data"
+    ):
+        _ = transform.inverse_transform(test_ts)
 
 
 def test_save_load(ts_to_fill):

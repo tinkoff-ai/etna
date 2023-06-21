@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms.base import ReversibleTransform
+from etna.transforms.utils import check_new_segments
 
 
 class ImputerMode(str, Enum):
@@ -154,6 +155,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             raise ValueError("Transform is not fitted!")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
+        check_new_segments(transform_segments=segments, fit_segments=self._nan_timestamps.keys())
 
         cur_nans = {}
         for segment in segments:
@@ -231,12 +233,12 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             raise ValueError("Transform is not fitted!")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
-        result_df = df.copy()
+        check_new_segments(transform_segments=segments, fit_segments=self._nan_timestamps.keys())
 
         for segment in segments:
-            index = result_df.index.intersection(self._nan_timestamps[segment])
-            result_df.loc[index, pd.IndexSlice[segment, self.in_column]] = np.NaN
-        return result_df
+            index = df.index.intersection(self._nan_timestamps[segment])
+            df.loc[index, pd.IndexSlice[segment, self.in_column]] = np.NaN
+        return df
 
 
 __all__ = ["TimeSeriesImputerTransform"]
