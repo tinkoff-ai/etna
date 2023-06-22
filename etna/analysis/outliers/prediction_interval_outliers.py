@@ -5,7 +5,6 @@ from typing import List
 from typing import Type
 from typing import Union
 
-import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -78,7 +77,6 @@ def get_anomalies_prediction_interval(
     else:
         ts_inner = create_ts_by_column(ts, in_column)
     outliers_per_segment = {}
-    time_points = np.array(ts.index.values)
     model_instance = model(**model_params)
     model_instance.fit(ts_inner)
     lower_p, upper_p = [(1 - interval_width) / 2, (1 + interval_width) / 2]
@@ -86,10 +84,10 @@ def get_anomalies_prediction_interval(
         deepcopy(ts_inner), prediction_interval=True, quantiles=[lower_p, upper_p]
     )
     for segment in ts_inner.segments:
-        predicted_segment_slice = prediction_interval[:, segment, :][segment]
         actual_segment_slice = ts_inner[:, segment, :][segment]
+        predicted_segment_slice = prediction_interval[actual_segment_slice.index, segment, :][segment]
         anomalies_mask = (actual_segment_slice["target"] > predicted_segment_slice[f"target_{upper_p:.4g}"]) | (
             actual_segment_slice["target"] < predicted_segment_slice[f"target_{lower_p:.4g}"]
         )
-        outliers_per_segment[segment] = list(time_points[anomalies_mask])
+        outliers_per_segment[segment] = list(predicted_segment_slice[anomalies_mask].index.values)
     return outliers_per_segment
