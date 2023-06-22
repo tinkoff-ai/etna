@@ -279,13 +279,14 @@ def test_fit_transform_with_nans(model, ts_diff_endings):
     selector.fit_transform(ts_diff_endings)
 
 
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
-def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors):
+def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors, fast_redundancy):
     """Check that transform selects exactly top_k regressors."""
     all_regressors = ts_with_regressors.regressors
     ts = ts_with_regressors
-    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k)
+    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k, fast_redundancy=fast_redundancy)
     df_selected = mrmr.fit_transform(ts).to_pandas()
 
     selected_regressors = set()
@@ -316,7 +317,8 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors):
         MRMRFeatureSelectionTransform(
             relevance_table=ModelRelevanceTable(), top_k=3, model=RandomForestRegressor(random_state=42)
         ),
-        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3),
+        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, fast_redundancy=True),
+        MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, fast_redundancy=False),
     ],
 )
 def test_save_load(transform, ts_with_regressors):
