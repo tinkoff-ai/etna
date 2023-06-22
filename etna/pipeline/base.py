@@ -23,6 +23,7 @@ from typing_extensions import assert_never
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
@@ -30,7 +31,7 @@ from etna.metrics import MetricAggregationMode
 Timestamp = Union[str, pd.Timestamp]
 
 
-class CrossValidationMode(Enum):
+class CrossValidationMode(str, Enum):
     """Enum for different cross-validation modes."""
 
     expand = "expand"
@@ -271,6 +272,16 @@ class AbstractPipeline(AbstractSaveable):
         -------
         metrics_df, forecast_df, fold_info_df: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Metrics dataframe, forecast dataframe and dataframe with information about folds
+        """
+
+    @abstractmethod
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
         """
 
 

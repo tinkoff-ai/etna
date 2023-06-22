@@ -96,3 +96,8 @@ def test_predict_with_return_components_fails(example_tsds, direct_ensemble_pipe
     direct_ensemble_pipeline.fit(example_tsds)
     with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
         direct_ensemble_pipeline.predict(ts=example_tsds, return_components=True)
+
+
+def test_params_to_tune_not_implemented(direct_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="DirectEnsemble doesn't support this method"):
+        _ = direct_ensemble_pipeline.params_to_tune()

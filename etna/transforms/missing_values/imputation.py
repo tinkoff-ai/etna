@@ -9,6 +9,9 @@ import pandas as pd
 
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 
 
 class ImputerMode(str, Enum):
@@ -239,6 +242,30 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             index = df.index.intersection(self._nan_timestamps[segment])
             df.loc[index, pd.IndexSlice[segment, self.in_column]] = np.NaN
         return df
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``strategy``, ``window``.
+        Other parameters are expected to be set by the user.
+
+        Strategy "seasonal" is suggested only if ``self.seasonality`` is set higher than 1.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        if self.seasonality > 1:
+            return {
+                "strategy": CategoricalDistribution(["constant", "mean", "running_mean", "forward_fill", "seasonal"]),
+                "window": IntDistribution(low=1, high=20),
+            }
+        else:
+            return {
+                "strategy": CategoricalDistribution(["constant", "mean", "running_mean", "forward_fill"]),
+                "window": IntDistribution(low=1, high=20),
+            }
 
 
 __all__ = ["TimeSeriesImputerTransform"]

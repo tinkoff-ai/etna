@@ -4,19 +4,20 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 
 from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
+from etna.models.base import DeepBaseModel
+from etna.models.base import DeepBaseNet
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
-
-import numpy as np
-
-from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseNet
 
 
 class MLPBatch(TypedDict):
@@ -241,3 +242,24 @@ class MLPModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``lr``, ``hidden_size.i`` where i from 0 to ``len(hidden_size) - 1``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid: Dict[str, BaseDistribution] = {}
+
+        for i in range(len(self.hidden_size)):
+            key = f"hidden_size.{i}"
+            value = IntDistribution(low=4, high=64, step=4)
+            grid[key] = value
+
+        grid["lr"] = FloatDistribution(low=1e-5, high=1e-2, log=True)
+        return grid

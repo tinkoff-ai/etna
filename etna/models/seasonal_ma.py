@@ -1,9 +1,12 @@
 import warnings
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 
 
@@ -232,6 +235,18 @@ class SeasonalMovingAverageModel(
             target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
             ts.add_target_components(target_components_df=target_components_df)
         return ts
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``window`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {"window": IntDistribution(low=1, high=10)}
 
 
 __all__ = ["SeasonalMovingAverageModel"]

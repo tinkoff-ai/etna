@@ -128,3 +128,8 @@ def test_save_load(int_ts_two_segments):
     ts = int_ts_two_segments
     transform = LagTransform(in_column="target", lags=10)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune():
+    transform = LagTransform(in_column="target", lags=10)
+    assert len(transform.params_to_tune()) == 0

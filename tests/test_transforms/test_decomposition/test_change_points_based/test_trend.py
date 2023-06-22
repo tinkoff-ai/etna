@@ -11,6 +11,7 @@ from etna.transforms.decomposition import TrendTransform
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnRegressionPerIntervalModel
 from etna.transforms.decomposition.change_points_based.trend import _OneSegmentTrendTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 DEFAULT_SEGMENT = "segment_1"
@@ -168,3 +169,35 @@ def test_save_load(example_tsds):
         change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="rbf"), n_bkps=5),
     )
     assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (TrendTransform(in_column="target"), 2),
+        (
+            TrendTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=5,
+                ),
+            ),
+            2,
+        ),
+        (
+            TrendTransform(
+                in_column="target",
+                change_points_model=RupturesChangePointsModel(
+                    change_points_model=Binseg(model="ar"),
+                    n_bkps=10,
+                ),
+            ),
+            0,
+        ),
+    ],
+)
+def test_params_to_tune(transform, expected_length, example_tsds):
+    ts = example_tsds
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

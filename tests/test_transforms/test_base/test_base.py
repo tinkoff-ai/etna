@@ -234,3 +234,10 @@ def test_inverse_transform_with_target_components_target_not_in_required_feature
     transform = AddConstTransform(in_column="exog", value=-10)
     transform.inverse_transform(ts=ts_with_target_components)
     pd.testing.assert_frame_equal(ts_with_target_components.get_target_components(), target_components_before)
+
+
+@pytest.mark.parametrize(
+    "transform", [TransformMock(required_features="all"), ReversibleTransformMock(required_features="all")]
+)
+def test_default_params_to_tune(transform):
+    assert transform.params_to_tune() == {}
