@@ -13,6 +13,8 @@ from scipy.special import inv_boxcox
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.holtwinters.results import HoltWintersResultsWrapper
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.models.base import BaseAdapter
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
@@ -453,9 +455,11 @@ class HoltWintersModel(
     """
     Holt-Winters' etna model.
 
+    This model corresponds to :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing`.
+
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
+    The model :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` is used in the implementation.
 
     This model supports in-sample and out-of-sample prediction decomposition.
     Prediction components for Holt-Winters model are: level, trend and seasonality.
@@ -646,18 +650,46 @@ class HoltWintersModel(
             )
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
 
-class HoltModel(HoltWintersModel):
+        This grid tunes parameters: ``trend``, ``damped_trend``, ``use_boxcox``.
+        If ``self.seasonal`` is not None, then it also tunes ``seasonal`` parameter.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid: Dict[str, "BaseDistribution"] = {
+            "trend": CategoricalDistribution(["add", "mul", None]),
+            "damped_trend": CategoricalDistribution([False, True]),
+            "use_boxcox": CategoricalDistribution([False, True]),
+        }
+
+        if self.seasonal is not None:
+            grid.update({"seasonal": CategoricalDistribution(["add", "mul", None])})
+
+        return grid
+
+
+class HoltModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Holt etna model.
 
-    Restricted version of HoltWinters model.
+    This is a restricted version of :py:class:`~etna.models.holt_winters.HoltWintersModel`.
+    And it corresponds to :py:class:`statsmodels.tsa.holtwinters.Holt`.
 
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
-    They implement :py:class:`statsmodels.tsa.holtwinters.Holt` model
-    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+    The model :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` is used in the implementation.
+    In statsmodels package the model :py:class:`statsmodels.tsa.holtwinters.Holt` is implemented
+    as a restricted version of :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
 
     This model supports in-sample and out-of-sample prediction decomposition.
     Prediction components for Holt model are: level and trend.
@@ -735,31 +767,60 @@ class HoltModel(HoltWintersModel):
         fit_kwargs:
             Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
+        self.exponential = exponential
         trend = "mul" if exponential else "add"
+        self.damped_trend = damped_trend
+        self.initialization_method = initialization_method
+        self.initial_level = initial_level
+        self.initial_trend = initial_trend
+        self.smoothing_level = smoothing_level
+        self.smoothing_trend = smoothing_trend
+        self.damping_trend = damping_trend
+        self.fit_kwargs = fit_kwargs
         super().__init__(
-            trend=trend,
-            damped_trend=damped_trend,
-            initialization_method=initialization_method,
-            initial_level=initial_level,
-            initial_trend=initial_trend,
-            smoothing_level=smoothing_level,
-            smoothing_trend=smoothing_trend,
-            damping_trend=damping_trend,
-            **fit_kwargs,
+            base_model=_HoltWintersAdapter(
+                trend=trend,
+                damped_trend=self.damped_trend,
+                initialization_method=self.initialization_method,
+                initial_level=self.initial_level,
+                initial_trend=self.initial_trend,
+                smoothing_level=self.smoothing_level,
+                smoothing_trend=self.smoothing_trend,
+                damping_trend=self.damping_trend,
+                **self.fit_kwargs,
+            )
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
 
-class SimpleExpSmoothingModel(HoltWintersModel):
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "exponential": CategoricalDistribution([False, True]),
+            "damped_trend": CategoricalDistribution([False, True]),
+        }
+
+
+class SimpleExpSmoothingModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
     """
     Exponential smoothing etna model.
 
-    Restricted version of HoltWinters model.
+    This is a restricted version of :py:class:`~etna.models.holt_winters.HoltWintersModel`.
+    And it corresponds to :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing`.
 
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model from statsmodels package.
-    They implement :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` model
-    as a restricted version of :py:class:`~statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
+    The model :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` is used in the implementation.
+    In statsmodels package the model :py:class:`statsmodels.tsa.holtwinters.SimpleExpSmoothing` is implemented
+    as a restricted version of :py:class:`statsmodels.tsa.holtwinters.ExponentialSmoothing` model.
 
     This model supports in-sample and out-of-sample prediction decomposition.
     For in-sample decomposition, level component is obtained directly from the fitted model. For out-of-sample,
@@ -810,9 +871,15 @@ class SimpleExpSmoothingModel(HoltWintersModel):
         fit_kwargs:
             Additional parameters for calling :py:meth:`statsmodels.tsa.holtwinters.ExponentialSmoothing.fit`.
         """
+        self.initialization_method = initialization_method
+        self.initial_level = initial_level
+        self.smoothing_level = smoothing_level
+        self.fit_kwargs = fit_kwargs
         super().__init__(
-            initialization_method=initialization_method,
-            initial_level=initial_level,
-            smoothing_level=smoothing_level,
-            **fit_kwargs,
+            base_model=_HoltWintersAdapter(
+                initialization_method=self.initialization_method,
+                initial_level=self.initial_level,
+                smoothing_level=self.smoothing_level,
+                **self.fit_kwargs,
+            )
         )

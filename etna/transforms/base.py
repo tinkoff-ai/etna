@@ -13,6 +13,7 @@ from typing_extensions import Literal
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.transforms.utils import match_target_quantiles
 
 
@@ -160,6 +161,18 @@ class Transform(SaveMixin, BaseMixin):
             TSDataset after applying inverse transformation.
         """
         pass
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get grid for tuning hyperparameters.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
 
 
 class IrreversibleTransform(Transform):

@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
@@ -473,3 +475,17 @@ class DifferencingTransform(ReversibleTransform):
         for transform in self._differencing_transforms[::-1]:
             result_df = transform._inverse_transform(result_df)
         return result_df
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``order`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "order": IntDistribution(low=1, high=2),
+        }

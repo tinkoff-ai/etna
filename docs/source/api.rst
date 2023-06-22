@@ -17,6 +17,7 @@ API
    reconciliation
    analysis
    auto
+   distributions
    clustering
    loggers
    commands

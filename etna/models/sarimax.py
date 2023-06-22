@@ -1,6 +1,7 @@
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -13,6 +14,9 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
@@ -400,9 +404,9 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
 
     def __init__(
         self,
-        order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
-        trend: Optional[str] = "c",
+        order: Tuple[int, int, int] = (1, 0, 0),
+        seasonal_order: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        trend: Optional[str] = None,
         measurement_error: bool = False,
         time_varying_regression: bool = False,
         mle_regression: bool = True,
@@ -578,9 +582,9 @@ class SARIMAXModel(
 
     def __init__(
         self,
-        order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
-        trend: Optional[str] = "c",
+        order: Tuple[int, int, int] = (1, 0, 0),
+        seasonal_order: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        trend: Optional[str] = None,
         measurement_error: bool = False,
         time_varying_regression: bool = False,
         mle_regression: bool = True,
@@ -724,3 +728,35 @@ class SARIMAXModel(
                 **self.kwargs,
             )
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``order.0``, ``order.1``, ``order.2``, ``trend``.
+        If ``self.num_periods`` is greater than zero, then it also tunes parameters:
+        ``seasonal_order.0``, ``seasonal_order.1``, ``seasonal_order.2``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid: Dict[str, "BaseDistribution"] = {
+            "order.0": IntDistribution(low=1, high=6),
+            "order.1": IntDistribution(low=1, high=2),
+            "order.2": IntDistribution(low=1, high=6),
+            "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
+        }
+
+        num_periods = self.seasonal_order[3]
+        if num_periods > 0:
+            grid.update(
+                {
+                    "seasonal_order.0": IntDistribution(low=0, high=2),
+                    "seasonal_order.1": IntDistribution(low=0, high=1),
+                    "seasonal_order.2": IntDistribution(low=0, high=1),
+                }
+            )
+
+        return grid

@@ -62,3 +62,8 @@ def test_new_segments_error(simple_ts):
 def test_save_load(example_tsds):
     transform = SegmentEncoderTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=example_tsds)
+
+
+def test_params_to_tune():
+    transform = SegmentEncoderTransform()
+    assert len(transform.params_to_tune()) == 0

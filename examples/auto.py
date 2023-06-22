@@ -24,7 +24,7 @@ if __name__ == "__main__":
     )
 
     # Get best pipeline
-    best_pipeline = auto.fit(ts, catch=(Exception,))
+    best_pipeline = auto.fit(ts, n_trials=50, optuna_params=dict(catch=(Exception,)), tune_size=3)
     print(best_pipeline)
 
     # Get all metrics of greedy search
