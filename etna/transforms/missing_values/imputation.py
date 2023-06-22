@@ -199,11 +199,11 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             for segment in segments:
                 df.loc[:, pd.IndexSlice[segment, self.in_column]].fillna(value=self._fill_value[segment], inplace=True)
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
+            timestamp_to_index = {timestamp: i for i, timestamp in enumerate(df.index)}
             for segment in segments:
                 history = self.seasonality * self.window if self.window != -1 else len(df)
-                timestamps = list(df.index)
                 for timestamp in self._nan_timestamps[segment]:
-                    i = timestamps.index(timestamp)
+                    i = timestamp_to_index[timestamp]
                     indexes = np.arange(i - self.seasonality, i - self.seasonality - history, -self.seasonality)
                     indexes = indexes[indexes >= 0]
                     values = df.loc[df.index[indexes], pd.IndexSlice[segment, self.in_column]]
