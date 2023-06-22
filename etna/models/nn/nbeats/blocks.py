@@ -27,9 +27,11 @@ class NBeatsBlock(nn.Module):
         """
         super().__init__()
 
-        self.layers = [nn.Linear(in_features=input_size, out_features=layer_size)]
+        layers = [nn.Linear(in_features=input_size, out_features=layer_size)]
         for _ in range(num_layers - 1):
-            self.layers.append(nn.Linear(in_features=layer_size, out_features=layer_size))
+            layers.append(nn.Linear(in_features=layer_size, out_features=layer_size))
+
+        self.layers = nn.ModuleList(layers)
 
         self.basis_parameters = nn.Linear(in_features=layer_size, out_features=theta_size)
         self.basis_function = basis_function
