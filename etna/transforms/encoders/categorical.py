@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -9,6 +10,8 @@ from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import IrreversibleTransform
 
 
@@ -129,6 +132,20 @@ class LabelEncoderTransform(IrreversibleTransform):
         if self.out_column:
             return self.out_column
         return self.__repr__()
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``strategy`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "strategy": CategoricalDistribution(["new_value", "mean"]),
+        }
 
 
 class OneHotEncoderTransform(IrreversibleTransform):

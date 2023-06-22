@@ -227,3 +227,8 @@ def test_predict_with_return_components_fails(example_tsds, voting_ensemble_naiv
     voting_ensemble_naive.fit(example_tsds)
     with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
         voting_ensemble_naive.predict(ts=example_tsds, return_components=True)
+
+
+def test_params_to_tune_not_implemented(voting_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="VotingEnsemble doesn't support this method"):
+        _ = voting_ensemble_pipeline.params_to_tune()

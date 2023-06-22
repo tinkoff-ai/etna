@@ -11,6 +11,7 @@ from joblib import Parallel
 from joblib import delayed
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.ensembles.mixins import EnsembleMixin
 from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.pipeline.base import BasePipeline
@@ -157,3 +158,15 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
         )
         return prediction
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Not implemented for this class.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")

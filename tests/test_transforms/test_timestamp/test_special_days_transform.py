@@ -6,6 +6,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp.special_days import _OneSegmentSpecialDaysTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -45,6 +46,16 @@ def df_with_specials():
     df["month_true"] = df["timestamp"].apply(lambda x: x.day in special_monthdays)
     df.set_index("timestamp", inplace=True)
     return df
+
+
+@pytest.fixture()
+def ts_with_specials(df_with_specials):
+    """Create dataset with special weekdays and monthdays."""
+    df = df_with_specials.reset_index()
+    df["segment"] = "1"
+    df = df[["timestamp", "segment", "target"]]
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    return ts
 
 
 @pytest.fixture()
@@ -193,10 +204,21 @@ def test_fit_transform_with_nans(ts_diff_endings):
     transform.fit_transform(ts_diff_endings)
 
 
-def test_save_load(df_with_specials):
-    df = df_with_specials.reset_index()
-    df["segment"] = "1"
-    df = df[["timestamp", "segment", "target"]]
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+def test_save_load(ts_with_specials):
+    ts = ts_with_specials
     transform = SpecialDaysTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune(ts_with_specials):
+    def skip_parameters(parameters):
+        names = ["find_special_weekday", "find_special_month_day"]
+        values = [not parameters[x] for x in names]
+        if all(values):
+            return True
+        return False
+
+    transform = SpecialDaysTransform()
+    ts = ts_with_specials
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts, skip_parameters=skip_parameters)

@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.metrics import R2
 from etna.models import LinearPerSegmentModel
 from etna.transforms.timestamp import FourierTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -49,15 +50,15 @@ def ts_trend_seasonal(random_seed) -> TSDataset:
     return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
 
 
-@pytest.mark.parametrize("order, mods, repr_mods", [(None, [1, 2, 3, 4], [1, 2, 3, 4]), (2, None, [1, 2, 3, 4])])
-def test_repr(order, mods, repr_mods):
+@pytest.mark.parametrize("order, mods", [(None, [1, 2, 3, 4]), (2, None)])
+def test_repr(order, mods):
     transform = FourierTransform(
         period=10,
         order=order,
         mods=mods,
     )
     transform_repr = transform.__repr__()
-    true_repr = f"FourierTransform(period = 10, order = None, mods = {repr_mods}, out_column = None, )"
+    true_repr = f"FourierTransform(period = 10, order = {order}, mods = {mods}, out_column = None, )"
     assert transform_repr == true_repr
 
 
@@ -166,3 +167,19 @@ def test_forecast(ts_trend_seasonal):
 def test_save_load(ts_trend_seasonal):
     transform = FourierTransform(period=7, order=3)
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_trend_seasonal)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (FourierTransform(period=7, order=1), 1),
+        (FourierTransform(period=7, mods=[1]), 0),
+        (FourierTransform(period=7, mods=[1, 4]), 0),
+        (FourierTransform(period=30.4, order=1), 1),
+        (FourierTransform(period=365.25, order=1), 1),
+    ],
+)
+def test_params_to_tune(transform, expected_length, ts_trend_seasonal):
+    ts = ts_trend_seasonal
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

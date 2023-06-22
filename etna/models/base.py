@@ -17,6 +17,7 @@ from etna import SETTINGS
 from etna.core import SaveMixin
 from etna.core.mixins import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
 from etna.models.mixins import SaveNNMixin
@@ -78,6 +79,18 @@ class AbstractModel(SaveMixin, ABC, BaseMixin):
 
         """
         pass
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get grid for tuning hyperparameters.
+
+        This is default implementation with empty grid.
+
+        Returns
+        -------
+        :
+            Empty grid.
+        """
+        return {}
 
 
 class NonPredictionIntervalContextIgnorantAbstractModel(AbstractModel):

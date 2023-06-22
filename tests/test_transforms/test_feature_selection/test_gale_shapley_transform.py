@@ -16,6 +16,7 @@ from etna.transforms.feature_selection.gale_shapley import BaseGaleShapley
 from etna.transforms.feature_selection.gale_shapley import FeatureGaleShapley
 from etna.transforms.feature_selection.gale_shapley import GaleShapleyMatcher
 from etna.transforms.feature_selection.gale_shapley import SegmentGaleShapley
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -659,3 +660,18 @@ def test_right_number_features_with_integer_division(ts_with_exog_galeshapley):
 
     remaining_columns = ts.columns.get_level_values("feature").unique().tolist()
     assert len(remaining_columns) == top_k + 1
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        GaleShapleyFeatureSelectionTransform(
+            relevance_table=ModelRelevanceTable(), top_k=3, use_rank=False, model=RandomForestRegressor(random_state=42)
+        ),
+        GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False),
+    ],
+)
+def test_params_to_tune(transform, ts_with_large_regressors_number):
+    ts = ts_with_large_regressors_number
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

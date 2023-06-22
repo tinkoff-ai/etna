@@ -10,6 +10,9 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -1228,3 +1231,36 @@ def test_predict_return_components(
     target_components_df = TSDataset.to_flatten(forecast.get_target_components())
     assert (target_components_df["target_component_a"] == expected_component_a).all()
     assert (target_components_df["target_component_b"] == expected_component_b).all()
+
+
+@pytest.mark.parametrize(
+    "model, transforms, expected_params_to_tune",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+            {
+                "model.learning_rate": FloatDistribution(low=1e-4, high=0.5, log=True),
+                "model.depth": IntDistribution(low=1, high=11, step=1),
+                "model.l2_leaf_reg": FloatDistribution(low=0.1, high=200.0, log=True),
+                "model.random_strength": FloatDistribution(low=1e-05, high=10.0, log=True),
+                "transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+                "transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+                "transforms.0.season_number": CategoricalDistribution([False, True]),
+                "transforms.0.year_number": CategoricalDistribution([False, True]),
+                "transforms.0.is_weekend": CategoricalDistribution([False, True]),
+            },
+        ),
+    ],
+)
+def test_params_to_tune(model, transforms, expected_params_to_tune):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+
+    obtained_params_to_tune = pipeline.params_to_tune()
+
+    assert obtained_params_to_tune == expected_params_to_tune

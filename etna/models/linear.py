@@ -1,12 +1,27 @@
+from typing import Dict
+
 import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
 from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import MultiSegmentModelMixin
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.sklearn import _SklearnAdapter
+
+_LINEAR_GRID: Dict[str, BaseDistribution] = {
+    "fit_intercept": CategoricalDistribution([False, True]),
+}
+
+_ELASTIC_GRID: Dict[str, BaseDistribution] = {
+    "fit_intercept": CategoricalDistribution([False, True]),
+    "l1_ratio": FloatDistribution(low=0, high=1),
+    "alpha": FloatDistribution(low=1e-5, high=1e3, log=True),
+}
 
 
 class _LinearAdapter(_SklearnAdapter):
@@ -64,6 +79,16 @@ class LinearPerSegmentModel(
             base_model=_LinearAdapter(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _LINEAR_GRID
+
 
 class ElasticPerSegmentModel(
     PerSegmentModelMixin,
@@ -117,6 +142,16 @@ class ElasticPerSegmentModel(
             )
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _ELASTIC_GRID
+
 
 class LinearMultiSegmentModel(
     MultiSegmentModelMixin,
@@ -146,6 +181,16 @@ class LinearMultiSegmentModel(
         super().__init__(
             base_model=_LinearAdapter(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _LINEAR_GRID
 
 
 class ElasticMultiSegmentModel(
@@ -199,3 +244,13 @@ class ElasticMultiSegmentModel(
                 )
             )
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _ELASTIC_GRID
