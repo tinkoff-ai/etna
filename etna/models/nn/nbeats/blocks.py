@@ -1,4 +1,7 @@
 from typing import Tuple
+
+import numpy as np
+
 import torch
 import torch.nn as nn
 
@@ -155,11 +158,11 @@ class SeasonalityBasis(nn.Module):
         # https://github.com/ServiceNow/N-BEATS/blob/c746a4f13ffc957487e0c3279b182c3030836053/models/nbeats.py#LL120C9-L121C102
 
         # TODO: should it be division by backcast_size?
-        backcast_grid = -2 * torch.pi * torch.arange(backcast_size)[:, None] / forecast_size
+        backcast_grid = -2 * np.pi * torch.arange(backcast_size)[:, None] / forecast_size
         backcast_grid = backcast_grid * self.frequency
 
         # TODO: why is it positive ?
-        forecast_grid = 2 * torch.pi * torch.arange(forecast_size)[:, None] / forecast_size
+        forecast_grid = 2 * np.pi * torch.arange(forecast_size)[:, None] / forecast_size
         forecast_grid = forecast_grid * self.frequency
 
         self.backcast_cos_template = nn.Parameter(torch.transpose(torch.cos(backcast_grid), 0, 1), requires_grad=False)
