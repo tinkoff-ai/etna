@@ -50,7 +50,7 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
 
     Notes
     -----
-    Time complexity of this method is O(n_segments * n_features * history_len * log(history_len))
+    Time complexity of this method is :math:`O(n\_segments * n\_features * history\_len)`
     """
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())
     segments = sorted(df.columns.get_level_values("segment").unique())

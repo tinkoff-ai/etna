@@ -50,8 +50,8 @@ def mrmr(
     top_k:
         num of regressors to select; if there are not enough regressors, then all will be selected
     fast_redundancy:
-        * True: compute redundancy only inside the the segments, time complexity O(top_k * n_segments * n_features * history_len)
-        * False: compute redundancy for all the pairs of segments, time complexity O(top_k * n_segments * n_features * history_len)
+        * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)`
+        * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
     relevance_aggregation_mode:
         the method for relevance values per-segment aggregation
     redundancy_aggregation_mode:
@@ -66,9 +66,8 @@ def mrmr(
     """
     if not fast_redundancy:
         warnings.warn(
-            "`fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
+            "Option `fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
             DeprecationWarning,
-            stacklevel=2,
         )
     relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
     redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]

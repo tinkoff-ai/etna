@@ -172,5 +172,5 @@ def test_mrmr_select_less_redundant_regressor_diff_start(
 def test_fast_redundancy_deprecation_warning(df_with_regressors):
     df, regressors = df_with_regressors["df"], df_with_regressors["regressors"]
     relevance_table = ModelRelevanceTable()(df=df, df_exog=regressors, model=RandomForestRegressor())
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="Option `fast_redundancy=False` was added for backward compatibility"):
         mrmr(relevance_table=relevance_table, regressors=regressors, top_k=2, fast_redundancy=False)

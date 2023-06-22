@@ -191,8 +191,8 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             columns of the dataset to select from
             if "all" value is given, all columns are used
         fast_redundancy:
-            * True: compute redundancy only inside the the segments, time complexity O(top_k * n_segments * n_features * history_len)
-            * False: compute redundancy for all the pairs of segments, time complexity O(top_k * n_segments * n_features * history_len)
+            * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)
+            * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
         relevance_aggregation_mode:
             the method for relevance values per-segment aggregation
         redundancy_aggregation_mode:
