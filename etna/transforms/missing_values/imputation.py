@@ -111,8 +111,6 @@ class TimeSeriesImputerTransform(ReversibleTransform):
     def _fit(self, df: pd.DataFrame):
         """Fit the transform.
 
-        Should be implemented by user.
-
         Parameters
         ----------
         df:
@@ -141,8 +139,6 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform dataframe.
-
-        Should be implemented by user
 
         Parameters
         ----------
@@ -175,7 +171,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         return result_df
 
     def _fill(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Create new Dataframe taking all previous dates and adding missing dates.
+        """Fill the NaNs in a given Dataframe.
 
         Fills missed values for new dates according to ``self.strategy``
 
@@ -219,8 +215,6 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
-
-        Should be reimplemented in the subclasses where necessary.
 
         Parameters
         ----------
