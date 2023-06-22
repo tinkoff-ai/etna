@@ -7,7 +7,6 @@ import pytest
 from etna.datasets import TSDataset
 from etna.models import NaiveModel
 from etna.transforms.missing_values import TimeSeriesImputerTransform
-from etna.transforms.missing_values.imputation import _OneSegmentTimeSeriesImputerTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 from tests.utils import select_segments_subset

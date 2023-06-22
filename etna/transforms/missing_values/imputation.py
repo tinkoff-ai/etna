@@ -7,11 +7,11 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import ReversibleTransform
-from etna.transforms.utils import check_new_segments
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.distributions import IntDistribution
+from etna.transforms.base import ReversibleTransform
+from etna.transforms.utils import check_new_segments
 
 
 class ImputerMode(str, Enum):
