@@ -58,22 +58,31 @@ def df_with_regressors() -> Dict[str, pd.DataFrame]:
     }
 
 
+@pytest.mark.parametrize("fast_redundancy", [True, False])
 @pytest.mark.parametrize(
     "relevance_method, expected_regressors",
     [(ModelRelevanceTable(), ["regressor_useful_0", "regressor_useful_1", "regressor_useful_2"])],
 )
-def test_mrmr_right_regressors(df_with_regressors, relevance_method, expected_regressors):
+def test_mrmr_right_regressors(df_with_regressors, relevance_method, expected_regressors, fast_redundancy):
     relevance_table = relevance_method(
         df=df_with_regressors["target"], df_exog=df_with_regressors["regressors"], model=RandomForestRegressor()
     )
-    selected_regressors = mrmr(relevance_table=relevance_table, regressors=df_with_regressors["regressors"], top_k=3)
+    selected_regressors = mrmr(
+        relevance_table=relevance_table,
+        regressors=df_with_regressors["regressors"],
+        top_k=3,
+        fast_redundancy=fast_redundancy,
+    )
     assert set(selected_regressors) == set(expected_regressors)
 
 
-def test_mrmr_not_depend_on_columns_order(df_with_regressors):
+@pytest.mark.parametrize("fast_redundancy", [True, False])
+def test_mrmr_not_depend_on_columns_order(df_with_regressors, fast_redundancy):
     df, regressors = df_with_regressors["df"], df_with_regressors["regressors"]
     relevance_table = ModelRelevanceTable()(df=df, df_exog=regressors, model=RandomForestRegressor())
-    expected_answer = mrmr(relevance_table=relevance_table, regressors=regressors, top_k=5)
+    expected_answer = mrmr(
+        relevance_table=relevance_table, regressors=regressors, top_k=5, fast_redundancy=fast_redundancy
+    )
     columns = list(regressors.columns.get_level_values("feature").unique())
     for i in range(10):
         np.random.shuffle(columns)
@@ -81,6 +90,7 @@ def test_mrmr_not_depend_on_columns_order(df_with_regressors):
             relevance_table=relevance_table[columns],
             regressors=regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, columns]],
             top_k=5,
+            fast_redundancy=fast_redundancy,
         )
         assert answer == expected_answer
 
@@ -131,21 +141,36 @@ def high_relevance_high_redundancy_problem_diff_starts(periods=10):
     }
 
 
-def test_mrmr_select_less_redundant_regressor(high_relevance_high_redundancy_problem):
+@pytest.mark.parametrize("fast_redundancy", [True, False])
+def test_mrmr_select_less_redundant_regressor(high_relevance_high_redundancy_problem, fast_redundancy):
     """Check that transform selects the less redundant regressor out of regressors with same relevance."""
     relevance_table, regressors = (
         high_relevance_high_redundancy_problem["relevance_table"],
         high_relevance_high_redundancy_problem["regressors"],
     )
-    selected_regressors = mrmr(relevance_table=relevance_table, regressors=regressors, top_k=2)
+    selected_regressors = mrmr(
+        relevance_table=relevance_table, regressors=regressors, top_k=2, fast_redundancy=fast_redundancy
+    )
     assert set(selected_regressors) == set(high_relevance_high_redundancy_problem["expected_answer"])
 
 
-def test_mrmr_select_less_redundant_regressor_diff_start(high_relevance_high_redundancy_problem_diff_starts):
+@pytest.mark.parametrize("fast_redundancy", [True, False])
+def test_mrmr_select_less_redundant_regressor_diff_start(
+    high_relevance_high_redundancy_problem_diff_starts, fast_redundancy
+):
     """Check that transform selects the less redundant regressor out of regressors with same relevance."""
     relevance_table, regressors = (
         high_relevance_high_redundancy_problem_diff_starts["relevance_table"],
         high_relevance_high_redundancy_problem_diff_starts["regressors"],
     )
-    selected_regressors = mrmr(relevance_table=relevance_table, regressors=regressors, top_k=2)
+    selected_regressors = mrmr(
+        relevance_table=relevance_table, regressors=regressors, top_k=2, fast_redundancy=fast_redundancy
+    )
     assert set(selected_regressors) == set(high_relevance_high_redundancy_problem_diff_starts["expected_answer"])
+
+
+def test_fast_redundancy_deprecation_warning(df_with_regressors):
+    df, regressors = df_with_regressors["df"], df_with_regressors["regressors"]
+    relevance_table = ModelRelevanceTable()(df=df, df_exog=regressors, model=RandomForestRegressor())
+    with pytest.warns(DeprecationWarning):
+        mrmr(relevance_table=relevance_table, regressors=regressors, top_k=2, fast_redundancy=False)
