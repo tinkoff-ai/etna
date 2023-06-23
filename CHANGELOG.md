@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add tuning stage into `Auto.fit` ([#1272](https://github.com/tinkoff-ai/etna/pull/1272))
 - Add `params_to_tune` into `Tune` init ([#1282](https://github.com/tinkoff-ai/etna/pull/1282))
 - Skip duplicates during `Tune.fit`, skip duplicates in `top_k`, add AutoML notebook ([#1285](https://github.com/tinkoff-ai/etna/pull/1285))
+- Add parameter `fast_redundancy` in `mrmm`, fix relevance calculation in `get_model_relevance_table` ([#1294](https://github.com/tinkoff-ai/etna/pull/1294))
+
 ### Fixed
 - Fix `plot_backtest` and `plot_backtest_interactive` on one-step forecast ([1260](https://github.com/tinkoff-ai/etna/pull/1260))
 - Fix `BaseReconciliator` to work on `pandas==1.1.5` ([#1229](https://github.com/tinkoff-ai/etna/pull/1229))
