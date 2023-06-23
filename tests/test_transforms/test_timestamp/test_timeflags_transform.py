@@ -10,6 +10,7 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.transforms.timestamp import TimeFlagsTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 INIT_PARAMS_TEMPLATE = {
@@ -223,3 +224,24 @@ def test_save_load(train_ts):
     ts = train_ts
     transform = TimeFlagsTransform()
     assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune(train_ts):
+    def skip_parameters(parameters):
+        names = [
+            "minute_in_hour_number",
+            "fifteen_minutes_in_hour_number",
+            "hour_number",
+            "half_hour_number",
+            "half_day_number",
+            "one_third_day_number",
+        ]
+        values = [not parameters[x] for x in names]
+        if all(values):
+            return True
+        return False
+
+    transform = TimeFlagsTransform()
+    ts = train_ts
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts, skip_parameters=skip_parameters)

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 
 
@@ -21,6 +22,27 @@ def base_pipeline_yaml_path():
           - _target_: etna.transforms.LinearTrendTransform
             in_column: target
           - _target_: etna.transforms.SegmentEncoderTransform
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def base_pipeline_with_context_size_yaml_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        _target_: etna.pipeline.Pipeline
+        horizon: 4
+        model:
+          _target_: etna.models.CatBoostMultiSegmentModel
+        transforms:
+          - _target_: etna.transforms.LinearTrendTransform
+            in_column: target
+          - _target_: etna.transforms.SegmentEncoderTransform
+        context_size: 1
         """
     )
     tmp.flush()
@@ -143,31 +165,7 @@ def base_timeseries_exog_path():
 
 
 @pytest.fixture
-def base_forecast_omegaconf_path():
-    tmp = NamedTemporaryFile("w")
-    tmp.write(
-        """
-        prediction_interval: true
-        quantiles: [0.025, 0.975]
-        n_folds: 3
-        """
-    )
-    tmp.flush()
-    yield Path(tmp.name)
-    tmp.close()
-
-
-@pytest.fixture
-def start_timestamp_forecast_omegaconf_path():
-    tmp = NamedTemporaryFile("w")
-    tmp.write(
-        """
-        prediction_interval: true
-        quantiles: [0.025, 0.975]
-        n_folds: 3
-        start_timestamp: "2021-09-10"
-        """
-    )
-    tmp.flush()
-    yield Path(tmp.name)
-    tmp.close()
+def empty_ts():
+    df = pd.DataFrame({"segment": [], "timestamp": [], "target": []})
+    df = TSDataset.to_dataset(df=df)
+    return TSDataset(df=df, freq="D")

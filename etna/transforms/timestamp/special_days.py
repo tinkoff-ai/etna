@@ -7,6 +7,8 @@ from typing import Tuple
 
 import pandas as pd
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
@@ -215,6 +217,24 @@ class SpecialDaysTransform(IrreversiblePerSegmentWrapper, FutureMixin):
         if self.find_special_month_day:
             output_columns.append("anomaly_monthdays")
         return output_columns
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``find_special_weekday``, ``find_special_month_day``.
+        Other parameters are expected to be set by the user.
+
+        There are no restrictions on all ``False`` values for the flags.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "find_special_weekday": CategoricalDistribution([False, True]),
+            "find_special_month_day": CategoricalDistribution([False, True]),
+        }
 
 
 __all__ = ["SpecialDaysTransform"]

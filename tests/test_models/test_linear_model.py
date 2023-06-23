@@ -16,8 +16,9 @@ from etna.models.linear import _LinearAdapter
 from etna.pipeline import Pipeline
 from etna.transforms.math import LagTransform
 from etna.transforms.timestamp import DateFlagsTransform
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
@@ -333,4 +334,15 @@ def test_linear_adapter_predict_components_sum_up_to_target(df_with_regressors, 
 )
 def test_prediction_decomposition(example_reg_tsds, model):
     train, test = example_reg_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=model, train=train, test=test)
+    assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize(
+    "model", [LinearPerSegmentModel(), LinearMultiSegmentModel(), ElasticPerSegmentModel(), ElasticMultiSegmentModel()]
+)
+def test_params_to_tune(model, example_tsds):
+    ts = example_tsds
+    lags = LagTransform(in_column="target", lags=[10, 11, 12])
+    ts.fit_transform([lags])
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

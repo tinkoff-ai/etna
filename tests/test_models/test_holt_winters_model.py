@@ -11,8 +11,9 @@ from etna.models import HoltWintersModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models.holt_winters import _HoltWintersAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
@@ -321,4 +322,29 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
 @pytest.mark.parametrize("model", (SimpleExpSmoothingModel(), HoltModel(), HoltWintersModel()))
 def test_prediction_decomposition(outliers_tsds, model):
     train, test = outliers_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=model, train=train, test=test)
+    assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize(
+    "model, expected_length",
+    [
+        (HoltWintersModel(), 3),
+        (HoltWintersModel(seasonal="add"), 4),
+        (HoltModel(), 2),
+        (SimpleExpSmoothingModel(), 0),
+    ],
+)
+def test_params_to_tune(model, expected_length, const_ts):
+    def skip_parameters(parameters):
+        if (
+            "damped_trend" in parameters
+            and "trend" in parameters
+            and parameters["damped_trend"]
+            and parameters["trend"] is None
+        ):
+            return True
+        return False
+
+    ts = const_ts
+    assert len(model.params_to_tune()) == expected_length
+    assert_sampling_is_valid(model=model, ts=ts, skip_parameters=skip_parameters)

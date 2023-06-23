@@ -7,8 +7,9 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from etna.models import SARIMAXModel
 from etna.models.sarimax import _SARIMAXAdapter
 from etna.pipeline import Pipeline
-from tests.test_models.common import _test_prediction_decomposition
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_prediction_components_are_present
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def _check_forecast(ts, model, horizon):
@@ -170,7 +171,7 @@ def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name
 )
 @pytest.mark.parametrize("trend", (None, "t"))
 def test_components_names(dfs_w_exog, regressors, regressors_components, trend, components_method_name, in_sample):
-    expected_components = regressors_components + ["target_component_sarima"]
+    expected_components = regressors_components + ["target_component_arima"]
 
     train, test = dfs_w_exog
     pred_df = train if in_sample else test
@@ -293,4 +294,13 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
 
 def test_prediction_decomposition(outliers_tsds):
     train, test = outliers_tsds.train_test_split(test_size=10)
-    _test_prediction_decomposition(model=SARIMAXModel(), train=train, test=test)
+    assert_prediction_components_are_present(model=SARIMAXModel(), train=train, test=test)
+
+
+@pytest.mark.parametrize(
+    "model", [SARIMAXModel(seasonal_order=(0, 0, 0, 0)), SARIMAXModel(seasonal_order=(0, 0, 0, 7))]
+)
+def test_params_to_tune(model, example_tsds):
+    ts = example_tsds
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

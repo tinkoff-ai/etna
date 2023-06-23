@@ -10,6 +10,9 @@ from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
 from etna.core import BaseMixin
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.feature_selection.base import BaseFeatureSelectionTransform
 
 
@@ -385,3 +388,20 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
                 segment_features_ranking=segment_features_ranking, features_to_drop=selected_features
             )
         return self
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``top_k``, ``use_rank``. Other parameters are expected to be set by the user.
+
+        For ``top_k`` parameter the maximum suggested value is not greater than ``self.top_k``.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "top_k": IntDistribution(low=1, high=self.top_k),
+            "use_rank": CategoricalDistribution([False, True]),
+        }

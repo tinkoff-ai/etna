@@ -56,7 +56,6 @@ from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
-from tests.utils import to_be_fixed
 
 # TODO: figure out what happened to TrendTransform
 
@@ -652,6 +651,8 @@ class TestTransformTrainNewSegments:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
+            # timestamp
+            (SpecialDaysTransform(), "regular_ts"),
         ],
     )
     def test_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -660,20 +661,6 @@ class TestTransformTrainNewSegments:
             self._test_transform_train_new_segments(
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
-
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # timestamp
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_transform_train_new_segments_failed_not_implemented(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_train_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
 
 
 class TestTransformFutureNewSegments:
@@ -981,6 +968,8 @@ class TestTransformFutureNewSegments:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
+            # timestamp
+            (SpecialDaysTransform(), "regular_ts"),
         ],
     )
     def test_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -989,20 +978,6 @@ class TestTransformFutureNewSegments:
             self._test_transform_future_new_segments(
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
-
-    @to_be_fixed(raises=NotImplementedError, match="Per-segment transforms can't work on new segments")
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            # timestamp
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_transform_future_new_segments_failed_not_implemented(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_future_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
-        )
 
 
 class TestTransformFutureWithTarget:
