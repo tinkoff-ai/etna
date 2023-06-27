@@ -2,14 +2,17 @@ from typing import Tuple
 
 import numpy as np
 
-import torch
-import torch.nn as nn
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    import torch.nn as nn
 
 
 class NBeatsBlock(nn.Module):
     """Base N-BEATS block which takes a basis function as an argument."""
 
-    def __init__(self, input_size: int, theta_size: int, basis_function: nn.Module, num_layers: int, layer_size: int):
+    def __init__(self, input_size: int, theta_size: int, basis_function: "nn.Module", num_layers: int, layer_size: int):
         """N-BEATS block.
 
         Parameters
@@ -36,7 +39,7 @@ class NBeatsBlock(nn.Module):
         self.basis_parameters = nn.Linear(in_features=layer_size, out_features=theta_size)
         self.basis_function = basis_function
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: "torch.Tensor") -> Tuple["torch.Tensor", "torch.Tensor"]:
         """Forward pass.
 
         Parameters
@@ -73,7 +76,7 @@ class GenericBasis(nn.Module):
         self.backcast_size = backcast_size
         self.forecast_size = forecast_size
 
-    def forward(self, theta: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, theta: "torch.Tensor") -> Tuple["torch.Tensor", "torch.Tensor"]:
         """Forward pass.
 
         Parameters
@@ -86,7 +89,7 @@ class GenericBasis(nn.Module):
         :
             Tuple with backcast and forecast.
         """
-        return theta[:, :self.backcast_size], theta[:, -self.forecast_size:]
+        return theta[:, : self.backcast_size], theta[:, -self.forecast_size :]
 
 
 class TrendBasis(nn.Module):
@@ -110,15 +113,14 @@ class TrendBasis(nn.Module):
         self.backcast_time = nn.Parameter(self._trend_tensor(size=backcast_size), requires_grad=False)
         self.forecast_time = nn.Parameter(self._trend_tensor(size=forecast_size), requires_grad=False)
 
-
-    def _trend_tensor(self, size: int) -> torch.Tensor:
+    def _trend_tensor(self, size: int) -> "torch.Tensor":
         """Prepare trend tensor."""
         time = torch.arange(size) / size
         degrees = torch.arange(self.num_poly_terms)
         trend_tensor = torch.transpose(time[:, None] ** degrees[None], 0, 1)
         return trend_tensor
 
-    def forward(self, theta: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, theta: "torch.Tensor") -> Tuple["torch.Tensor", "torch.Tensor"]:
         """Forward pass.
 
         Parameters
@@ -131,8 +133,8 @@ class TrendBasis(nn.Module):
         :
             Tuple with backcast and forecast.
         """
-        backcast = theta[:, :self.num_poly_terms] @ self.backcast_time
-        forecast = theta[:, self.num_poly_terms:] @ self.forecast_time
+        backcast = theta[:, : self.num_poly_terms] @ self.backcast_time
+        forecast = theta[:, self.num_poly_terms :] @ self.forecast_time
         return backcast, forecast
 
 
@@ -154,7 +156,7 @@ class SeasonalityBasis(nn.Module):
         super().__init__()
 
         freq = torch.arange(harmonics - 1, harmonics / 2 * forecast_size) / harmonics
-        freq[0] = 0.
+        freq[0] = 0.0
         self.frequency = torch.unsqueeze(freq, 0)
 
         # https://github.com/ServiceNow/N-BEATS/blob/c746a4f13ffc957487e0c3279b182c3030836053/models/nbeats.py#LL120C9-L121C102
@@ -172,7 +174,7 @@ class SeasonalityBasis(nn.Module):
         self.forecast_cos_template = nn.Parameter(torch.transpose(torch.cos(forecast_grid), 0, 1), requires_grad=False)
         self.forecast_sin_template = nn.Parameter(torch.transpose(torch.sin(forecast_grid), 0, 1), requires_grad=False)
 
-    def forward(self, theta: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, theta: "torch.Tensor") -> Tuple["torch.Tensor", "torch.Tensor"]:
         """Forward pass.
 
         Parameters
@@ -188,11 +190,13 @@ class SeasonalityBasis(nn.Module):
         params_per_harmonic = theta.shape[1] // 4
 
         backcast_harmonics_cos = theta[:, :params_per_harmonic] @ self.backcast_cos_template
-        backcast_harmonics_sin = theta[:, params_per_harmonic: 2 * params_per_harmonic] @ self.backcast_sin_template
+        backcast_harmonics_sin = theta[:, params_per_harmonic : 2 * params_per_harmonic] @ self.backcast_sin_template
         backcast = backcast_harmonics_sin + backcast_harmonics_cos
 
-        forecast_harmonics_cos = theta[:, 2 * params_per_harmonic: 3 * params_per_harmonic] @ self.forecast_cos_template
-        forecast_harmonics_sin = theta[:, 3 * params_per_harmonic:] @ self.forecast_sin_template
+        forecast_harmonics_cos = (
+            theta[:, 2 * params_per_harmonic : 3 * params_per_harmonic] @ self.forecast_cos_template
+        )
+        forecast_harmonics_sin = theta[:, 3 * params_per_harmonic :] @ self.forecast_sin_template
         forecast = forecast_harmonics_sin + forecast_harmonics_cos
 
         return backcast, forecast
@@ -201,7 +205,7 @@ class SeasonalityBasis(nn.Module):
 class NBeats(nn.Module):
     """N-BEATS model."""
 
-    def __init__(self, blocks: nn.ModuleList):
+    def __init__(self, blocks: "nn.ModuleList"):
         """Initialize N-BEATS model.
 
         Parameters
@@ -212,7 +216,7 @@ class NBeats(nn.Module):
         super().__init__()
         self.blocks = blocks
 
-    def forward(self, x: torch.Tensor, input_mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: "torch.Tensor", input_mask: "torch.Tensor") -> "torch.Tensor":
         """Forward pass.
 
         Parameters
@@ -232,7 +236,7 @@ class NBeats(nn.Module):
         input_mask = input_mask.flip(dims=(1,))
         forecast = x[:, -1:]
 
-        for i, block in enumerate(self.blocks):
+        for block in self.blocks:
             backcast, block_forecast = block(residuals)
             residuals = (residuals - backcast) * input_mask
             forecast = forecast + block_forecast
