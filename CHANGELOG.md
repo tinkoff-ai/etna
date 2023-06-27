@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 - Class `Tune` for hyperparameter optimization within existing pipeline ([#1200](https://github.com/tinkoff-ai/etna/pull/1200))
 - Add `etna.distributions` for using it instead of using `optuna.distributions` ([#1292](https://github.com/tinkoff-ai/etna/pull/1292))
-- Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel`; rework exceptions on in-sample/out-of-sample for `BATSModel`, `TBATSModel`, `SimpleExpSmoothingModel`, `HoltModel`, `HoltWintersModel`, `TFTModel`, `DeepARModel` ([]())
+- Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel`; rework exceptions on in-sample/out-of-sample for `BATSModel`, `TBATSModel`, `SimpleExpSmoothingModel`, `HoltModel`, `HoltWintersModel`, `TFTModel`, `DeepARModel` ([#1295](https://github.com/tinkoff-ai/etna/pull/1297))
 - 
 
 ### Changed
