@@ -38,7 +38,7 @@ def to_tensor(x: Any) -> "torch.Tensor":
     :
         Input data as tensor.
     """
-    return torch.tensor(x, dtype=torch.float32).to(default_torch_device())
+    return torch.tensor(x, dtype=torch.float32)
 
 
 def prepare_train_batch(
