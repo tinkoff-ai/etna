@@ -74,7 +74,10 @@ class _TBATSAdapter(BaseAdapter):
         )
 
         if not (set(df["timestamp"]) <= set(train_timestamp)):
-            raise NotImplementedError("Method predict isn't currently implemented for out-of-sample prediction!")
+            raise NotImplementedError(
+                "This model can't make predict on future out-of-sample data! "
+                "Use forecast method for this type of prediction."
+            )
 
         y_pred = pd.DataFrame()
         y_pred["target"] = self._fitted_model.y_hat
@@ -125,7 +128,10 @@ class _TBATSAdapter(BaseAdapter):
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
-            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+            raise NotImplementedError(
+                "This model can't make forecast decomposition on history data! "
+                "Use method predict for in-sample prediction decomposition."
+            )
 
         self._check_components()
 
@@ -156,7 +162,10 @@ class _TBATSAdapter(BaseAdapter):
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
         if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
-            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
+            raise NotImplementedError(
+                "This model can't make prediction decomposition on future out-of-sample data! "
+                "Use method forecast for future out-of-sample prediction decomposition."
+            )
 
         self._check_components()
 
@@ -179,7 +188,7 @@ class _TBATSAdapter(BaseAdapter):
 
         if df["timestamp"].min() <= self._last_train_timestamp:
             raise NotImplementedError(
-                "It is not possible to make in-sample predictions using current method implementation!"
+                "This model can't make forecast on history data! Use method predict for in-sample prediction."
             )
 
         steps_to_forecast = determine_num_steps(
@@ -321,6 +330,10 @@ class BATSModel(
 ):
     """Class for holding segment interval BATS model.
 
+    Method ``forecast`` only works on ouf-of-sample data.
+
+    Method ``predict`` only works on in-sample data.
+
     Notes
     -----
     This model supports in-sample and out-of-sample prediction decomposition.
@@ -397,6 +410,10 @@ class TBATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
     """Class for holding segment interval TBATS model.
+
+    Method ``forecast`` only works on ouf-of-sample data.
+
+    Method ``predict`` only works on in-sample data.
 
     Notes
     -----

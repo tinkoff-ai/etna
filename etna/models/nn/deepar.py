@@ -30,6 +30,8 @@ if SETTINGS.torch_required:
 class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
+    Method ``forecast`` only works on ouf-of-sample data that goes right after training data.
+
     Notes
     -----
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.
