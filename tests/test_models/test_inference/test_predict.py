@@ -32,11 +32,15 @@ from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
+from etna.models.nn.deepstate import CompositeSSM
+from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
+from etna.transforms import SegmentEncoderTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
@@ -142,6 +146,16 @@ class TestPredictInSampleFull:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -231,6 +245,16 @@ class TestPredictInSampleSuffix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
         ],
     )
@@ -336,6 +360,16 @@ class TestPredictOutSample:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
         ],
     )
@@ -455,6 +489,16 @@ class TestPredictOutSamplePrefix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
         ],
     )
     def test_predict_out_sample_prefix_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -573,6 +617,26 @@ class TestPredictOutSampleSuffix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
         ],
     )
@@ -707,6 +771,16 @@ class TestPredictMixedInOutSample:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -830,6 +904,16 @@ class TestPredictSubsetSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
         ],
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -921,6 +1005,16 @@ class TestPredictNewSegments:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=0,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [],
             ),
         ],
     )
