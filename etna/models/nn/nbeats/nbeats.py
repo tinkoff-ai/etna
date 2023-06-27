@@ -1,5 +1,7 @@
 from abc import abstractmethod
+from typing import Literal
 from typing import Optional
+from typing import Union
 
 from etna import SETTINGS
 
@@ -7,6 +9,7 @@ if SETTINGS.torch_required:
     import torch
 
     from etna.models.base import DeepBaseModel
+    from etna.models.nn.nbeats.metrics import NBeatsLoss
     from etna.models.nn.nbeats.models import NBeatsBaseNet
     from etna.models.nn.nbeats.models import NBeatsGenericNet
     from etna.models.nn.nbeats.models import NBeatsInterpretableNet
@@ -74,7 +77,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         self,
         input_size: int,
         output_size: int,
-        loss: "torch.nn.Module",
+        loss: Union[Literal["mse"], Literal["mae"], Literal["smape"], Literal["mape"], "torch.nn.Module"] = "mse",
         trend_blocks: int = 3,
         trend_layers: int = 4,
         trend_layer_size: int = 256,
@@ -102,7 +105,8 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         output_size:
             Forecast size.
         loss:
-            Optimization objective.
+            Optimisation objective. The loss function should accept three arguments: `y_true`, `y_pred` and `mask`.
+            The last parameter is a binary mask that denotes which points are valid forecasts.
         trend_blocks:
             Number of trend blocks.
         trend_layers:
@@ -145,6 +149,16 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
+        if isinstance(loss, str):
+            try:
+                self.loss = NBeatsLoss[loss].value
+
+            except KeyError as e:
+                raise ValueError(f"Invalid loss name: {e}")
+
+        else:
+            self.loss = loss
+
         self.input_size = input_size
         self.output_size = output_size
         self.trend_blocks = trend_blocks
@@ -156,7 +170,6 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         self.seasonality_layer_size = seasonality_layer_size
         self.num_of_harmonics = num_of_harmonics
         self.lr = lr
-        self.loss = loss
         self.optimizer_params = optimizer_params
 
         super().__init__(
@@ -172,7 +185,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
                 seasonality_layer_size=seasonality_layer_size,
                 num_of_harmonics=num_of_harmonics,
                 lr=lr,
-                loss=loss,
+                loss=self.loss,
                 optimizer_params=optimizer_params,
             ),
             train_batch_size=train_batch_size,
@@ -192,7 +205,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
         self,
         input_size: int,
         output_size: int,
-        loss: "torch.nn.Module",
+        loss: Union[Literal["mse"], Literal["mae"], Literal["smape"], Literal["mape"], "torch.nn.Module"] = "mse",
         stacks: int = 30,
         layers: int = 4,
         layer_size: int = 512,
@@ -215,7 +228,8 @@ class NBeatsGenericModel(NBeatsBaseModel):
         output_size:
             Forecast size.
         loss:
-            Optimization objective.
+            Optimisation objective. The loss function should accept three arguments: `y_true`, `y_pred` and `mask`.
+            The last parameter is a binary mask that denotes which points are valid forecasts.
         stacks:
             Number of block stacks in model.
         layers:
@@ -248,13 +262,22 @@ class NBeatsGenericModel(NBeatsBaseModel):
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
+        if isinstance(loss, str):
+            try:
+                self.loss = NBeatsLoss[loss].value
+
+            except KeyError as e:
+                raise ValueError(f"Invalid loss name: {e}")
+
+        else:
+            self.loss = loss
+
         self.input_size = input_size
         self.output_size = output_size
         self.stacks = stacks
         self.layers = layers
         self.layer_size = layer_size
         self.lr = lr
-        self.loss = loss
         self.optimizer_params = optimizer_params
 
         super().__init__(
@@ -265,7 +288,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
                 layers=layers,
                 layer_size=layer_size,
                 lr=lr,
-                loss=loss,
+                loss=self.loss,
                 optimizer_params=optimizer_params,
             ),
             train_batch_size=train_batch_size,

@@ -231,7 +231,6 @@ class NBeats(nn.Module):
         :
             Tuple with backcast and forecast.
         """
-        # TODO: check without flip
         residuals = x.flip(dims=(1,))
         input_mask = input_mask.flip(dims=(1,))
         forecast = x[:, -1:]
