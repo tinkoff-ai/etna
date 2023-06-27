@@ -254,6 +254,8 @@ def test_predict_with_interval(model, example_tsds):
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
+        assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
@@ -273,6 +275,8 @@ def test_forecast_with_interval(model, example_tsds):
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
+        assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
+        assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 

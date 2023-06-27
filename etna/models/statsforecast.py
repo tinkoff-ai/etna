@@ -169,9 +169,8 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         if prediction_interval and self._support_prediction_intervals:
             levels = []
             for quantile in quantiles:
-                # set alpha in the way to get a desirable quantile
-                alpha = min(quantile * 2, (1 - quantile) * 2)
-                level = int(alpha * 100)
+                width = abs(1 / 2 - quantile) * 2
+                level = int(width * 100)
                 levels.append(level)
 
             # get unique levels to prevent strange behavior with stacking interval predictions
@@ -428,7 +427,7 @@ class _AutoThetaAdapter(_StatsForecastBaseAdapter):
         decomposition_type:
             Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
         model:
-            Controlling Theta Model. By default searchs the best model.
+            Controlling Theta Model. By default searches the best model.
         """
         self.season_length = season_length
         self.decomposition_type = decomposition_type
@@ -693,7 +692,7 @@ class StatsForecastAutoThetaModel(
         decomposition_type:
             Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
         model:
-            Controlling Theta Model. By default searchs the best model.
+            Controlling Theta Model. By default searches the best model.
         """
         self.season_length = season_length
         self.decomposition_type = decomposition_type
