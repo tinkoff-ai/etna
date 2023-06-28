@@ -7,13 +7,14 @@ from typing import Union
 
 import pandas as pd
 
+from etna.datasets import TSDataset
+
 if TYPE_CHECKING:
-    from etna.datasets import TSDataset
     from etna.models import ProphetModel
     from etna.models import SARIMAXModel
 
 
-def create_ts_by_column(ts: "TSDataset", column: str) -> "TSDataset":
+def create_ts_by_column(ts: TSDataset, column: str) -> TSDataset:
     """Create TSDataset based on original ts with selecting only column in each segment and setting it to target.
 
     Parameters
@@ -36,8 +37,34 @@ def create_ts_by_column(ts: "TSDataset", column: str) -> "TSDataset":
     return TSDataset(new_df, freq=ts.freq)
 
 
+def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
+    """Create TSDataset with certain segments.
+
+    Parameters
+    ----------
+    ts:
+        dataset with timeseries data
+    segments:
+        list with segments names
+
+    Returns
+    -------
+    result: TSDataset
+        dataset with selected column.
+    """
+    df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
+    df = df.loc[ts.df.index]
+    df_exog = ts.df_exog
+    if df_exog is not None:
+        df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
+    known_future = ts.known_future
+    freq = ts.freq
+    subset_ts = TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
+    return subset_ts
+
+
 def get_anomalies_prediction_interval(
-    ts: "TSDataset",
+    ts: TSDataset,
     model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
     interval_width: float = 0.95,
     in_column: str = "target",
@@ -80,11 +107,13 @@ def get_anomalies_prediction_interval(
     model_instance = model(**model_params)
     model_instance.fit(ts_inner)
     lower_p, upper_p = [(1 - interval_width) / 2, (1 + interval_width) / 2]
-    prediction_interval = model_instance.predict(
-        deepcopy(ts_inner), prediction_interval=True, quantiles=[lower_p, upper_p]
-    )
     for segment in ts_inner.segments:
-        actual_segment_slice = ts_inner[:, segment, :][segment]
+        ts_segment = select_segments_subset(ts=deepcopy(ts_inner), segments=[segment])
+        ts_segment.df = ts_segment.df.dropna()
+        prediction_interval = model_instance.predict(
+            deepcopy(ts_segment), prediction_interval=True, quantiles=[lower_p, upper_p]
+        )
+        actual_segment_slice = ts_segment[:, segment, :][segment]
         predicted_segment_slice = prediction_interval[actual_segment_slice.index, segment, :][segment]
         anomalies_mask = (actual_segment_slice["target"] > predicted_segment_slice[f"target_{upper_p:.4g}"]) | (
             actual_segment_slice["target"] < predicted_segment_slice[f"target_{lower_p:.4g}"]
