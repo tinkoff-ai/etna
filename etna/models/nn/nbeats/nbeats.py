@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from functools import partial
 from typing import Literal
 from typing import Optional
 from typing import Union
@@ -33,18 +34,9 @@ class NBeatsBaseModel(DeepBaseModel):
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
     ):
-        def train_collate_fn(data):
-            return prepare_train_batch(
-                data=data, batch_size=train_batch_size, input_size=net.input_size, output_size=net.output_size
-            )
-
-        def val_collate_fn(data):
-            return prepare_train_batch(
-                data=data, batch_size=test_batch_size, input_size=net.input_size, output_size=net.output_size
-            )
-
-        def test_collate_fn(data):
-            return prepare_test_batch(data=data, batch_size=test_batch_size, input_size=net.input_size)
+        train_collate_fn = partial(prepare_train_batch, input_size=net.input_size, output_size=net.output_size)
+        val_collate_fn = partial(prepare_train_batch, input_size=net.input_size, output_size=net.output_size)
+        test_collate_fn = partial(prepare_test_batch, input_size=net.input_size)
 
         train_dataloader_params = _create_or_update(
             param=train_dataloader_params, name="collate_fn", value=train_collate_fn

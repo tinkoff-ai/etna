@@ -1,6 +1,6 @@
 from typing import Any
 from typing import Dict
-from typing import Iterable
+from typing import List
 from typing import Optional
 
 import numpy as np
@@ -42,9 +42,11 @@ def to_tensor(x: Any) -> "torch.Tensor":
 
 
 def prepare_train_batch(
-    data: Iterable[Dict[str, Any]], batch_size: int, input_size: int, output_size: int
+    data: List[Dict[str, Any]], input_size: int, output_size: int
 ) -> Dict[str, Optional["torch.Tensor"]]:
     """Prepare batch with training data."""
+    batch_size = len(data)
+
     history = np.zeros((batch_size, input_size))
     history_mask = np.zeros((batch_size, input_size))
     target = np.zeros((batch_size, output_size))
@@ -73,8 +75,9 @@ def prepare_train_batch(
     return batch
 
 
-def prepare_test_batch(data: Iterable[Dict[str, Any]], batch_size: int, input_size: int) -> Dict[str, Any]:
+def prepare_test_batch(data: List[Dict[str, Any]], input_size: int) -> Dict[str, Any]:
     """Prepare batch with data for forecasting."""
+    batch_size = len(data)
     history = np.zeros((batch_size, input_size))
     history_mask = np.zeros((batch_size, input_size))
     segments = []
