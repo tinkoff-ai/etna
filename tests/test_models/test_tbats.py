@@ -473,9 +473,7 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
     model = _TBATSAdapter(model=BATS())
     model.fit(outliers_df.iloc[train_slice], [])
 
-    with pytest.raises(
-        NotImplementedError, match="This model can't make prediction decomposition on future out-of-sample data"
-    ):
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
         model.predict_components(df=outliers_df.iloc[decompose_slice])
 
 
@@ -485,7 +483,7 @@ def test_forecast_decompose_timestamp_error(periodic_dfs):
     model = _TBATSAdapter(model=BATS())
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="This model can't make forecast decomposition on history data"):
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
         model.forecast_components(df=train)
 
 

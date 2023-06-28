@@ -270,13 +270,12 @@ class PytorchForecastingMixin:
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
         if self._is_in_sample_prediction(ts=ts, horizon=horizon):
             raise NotImplementedError(
-                "This model can't make forecast on history data! "
-                "In-sample forecast isn't supported by current implementation."
+                "It is not possible to make in-sample predictions with DeepAR model! "
+                "In-sample predictions aren't supported by current implementation."
             )
         elif self._is_prediction_with_gap(ts=ts, horizon=horizon):
             first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
             raise NotImplementedError(
-                "This model can't make forecast on out-of-sample data that goes after training data with a gap! "
                 "You can only forecast from the next point after the last one in the training dataset: "
                 f"last train timestamp: {self._last_train_timestamp}, first prediction timestamp is {first_prediction_timestamp}"
             )

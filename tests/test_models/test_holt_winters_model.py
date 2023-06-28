@@ -213,7 +213,7 @@ def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_n
     components_method = getattr(model, components_method_name)
     pred_df = test if use_future else train
 
-    with pytest.raises(NotImplementedError, match="Forecast decomposition is only supported for additive components!"):
+    with pytest.raises(ValueError, match="Forecast decomposition is only supported for additive components!"):
         components_method(df=pred_df)
 
 
@@ -299,7 +299,7 @@ def test_forecast_decompose_timestamp_error(seasonal_dfs):
     model = _HoltWintersAdapter()
     model.fit(train, [])
 
-    with pytest.raises(NotImplementedError, match="This model can't make forecast decomposition on history data"):
+    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
         model.forecast_components(df=train)
 
 
@@ -315,9 +315,7 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
     model = _HoltWintersAdapter()
     model.fit(outliers_df.iloc[train_slice], [])
 
-    with pytest.raises(
-        NotImplementedError, match="This model can't make prediction decomposition on future out-of-sample data"
-    ):
+    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
         model.predict_components(df=outliers_df.iloc[decompose_slice])
 
 
