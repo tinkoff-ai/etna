@@ -29,15 +29,13 @@ def create_ts_by_column(ts: TSDataset, column: str) -> TSDataset:
     result: TSDataset
         dataset with selected column.
     """
-    from etna.datasets import TSDataset
-
     new_df = ts[:, :, [column]]
     new_columns_tuples = [(x[0], "target") for x in new_df.columns.tolist()]
     new_df.columns = pd.MultiIndex.from_tuples(new_columns_tuples, names=new_df.columns.names)
     return TSDataset(new_df, freq=ts.freq)
 
 
-def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
+def _select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
     """Create TSDataset with certain segments.
 
     Parameters
@@ -53,10 +51,10 @@ def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
         dataset with selected column.
     """
     df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
-    df = df.loc[ts.df.index]
+    df = df.dropna()
     df_exog = ts.df_exog
     if df_exog is not None:
-        df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
+        df_exog = df_exog.loc[df.index, pd.IndexSlice[segments, :]].copy()
     known_future = ts.known_future
     freq = ts.freq
     subset_ts = TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
@@ -108,8 +106,7 @@ def get_anomalies_prediction_interval(
     model_instance.fit(ts_inner)
     lower_p, upper_p = [(1 - interval_width) / 2, (1 + interval_width) / 2]
     for segment in ts_inner.segments:
-        ts_segment = select_segments_subset(ts=deepcopy(ts_inner), segments=[segment])
-        ts_segment.df = ts_segment.df.dropna()
+        ts_segment = _select_segments_subset(ts=ts_inner, segments=[segment])
         prediction_interval = model_instance.predict(
             deepcopy(ts_segment), prediction_interval=True, quantiles=[lower_p, upper_p]
         )
