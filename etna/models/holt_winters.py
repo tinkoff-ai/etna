@@ -303,7 +303,7 @@ class _HoltWintersAdapter(BaseAdapter):
         if (model.trend is not None and model.trend == "mul") or (
             model.seasonal is not None and model.seasonal == "mul"
         ):
-            raise ValueError("Forecast decomposition is only supported for additive components!")
+            raise NotImplementedError("Forecast decomposition is only supported for additive components!")
 
     def _rescale_components(self, components: pd.DataFrame) -> pd.DataFrame:
         """Rescale components when Box-Cox transform used."""
@@ -335,7 +335,10 @@ class _HoltWintersAdapter(BaseAdapter):
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
-            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+            raise NotImplementedError(
+                "This model can't make forecast decomposition on history data! "
+                "Use method predict for in-sample prediction decomposition."
+            )
 
         horizon = determine_num_steps(
             start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._train_freq
@@ -404,7 +407,10 @@ class _HoltWintersAdapter(BaseAdapter):
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
-            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
+            raise NotImplementedError(
+                "This model can't make prediction decomposition on future out-of-sample data! "
+                "Use method forecast for future out-of-sample prediction decomposition."
+            )
 
         self._check_mul_components()
         self._check_df(df)

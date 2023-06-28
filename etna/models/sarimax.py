@@ -389,7 +389,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
 class _SARIMAXAdapter(_SARIMAXBaseAdapter):
     """
-    Class for holding Sarimax model.
+    Class for holding SARIMAX model.
 
     Notes
     -----
@@ -509,6 +509,8 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
+        **kwargs:
+            Additional parameters for :py:class:`statsmodels.tsa.sarimax.SARIMAX`.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -563,9 +565,12 @@ class SARIMAXModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
     """
-    Class for holding Sarimax model.
+    Class for holding SARIMAX model.
 
-    Method ``predict`` can use true target values only on train data on future data autoregression
+    Method ``forecast`` can be used on ouf-of-sample data that goes after training data with a gap.
+    But forecast is still being made starting from the last point of training data.
+
+    Method ``predict`` can use true target values only on in-sample data. On ouf-of-sample data autoregression
     forecasting will be made even if targets are known.
 
     Notes
@@ -687,6 +692,8 @@ class SARIMAXModel(
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
+        **kwargs:
+            Additional parameters for :py:class:`statsmodels.tsa.sarimax.SARIMAX`.
         """
         self.order = order
         self.seasonal_order = seasonal_order
