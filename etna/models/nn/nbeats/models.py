@@ -36,15 +36,23 @@ class NBeatsBaseNet(DeepBaseNet):
     """Base class for N-BEATS models."""
 
     @abstractmethod
-    def __init__(self):
+    def __init__(
+        self,
+        model: "nn.Module",
+        input_size: int,
+        output_size: int,
+        loss: "nn.Module",
+        lr: float,
+        optimizer_params: Optional[Dict[str, Any]],
+    ):
         super().__init__()
 
-        self.input_size: int = ...
-        self.output_size: int = ...
-        self.loss: "nn.Module" = ...
-        self.lr: float = ...
-        self.optimizer_params: Dict[str, Any] = ...
-        self.model: "nn.Module" = ...
+        self.model = model
+        self.input_size = input_size
+        self.output_size = output_size
+        self.loss = loss
+        self.lr = lr
+        self.optimizer_params = optimizer_params if optimizer_params is not None else {}
 
     def forward(self, batch: NBeatsBatch) -> "torch.Tensor":
         """Forward pass.
@@ -63,7 +71,7 @@ class NBeatsBaseNet(DeepBaseNet):
         history_mask = batch["history_mask"].float()
         return self.model(x=history, input_mask=history_mask).reshape(-1, self.output_size, 1)
 
-    def step(self, batch: Dict[Any, Any], *args, **kwargs):
+    def step(self, batch: NBeatsBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -123,7 +131,7 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
         seasonality_layer_size: int,
         num_of_harmonics: int,
         lr: float,
-        optimizer_params: Optional[dict],
+        optimizer_params: Optional[Dict[str, Any]] = None,
     ):
         """Initialize N-BEATS model.
 
@@ -157,10 +165,6 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
         optimizer_params:
             Additional parameters for the optimizer.
         """
-        super().__init__()
-
-        self.input_size = input_size
-        self.output_size = output_size
         self.trend_blocks = trend_blocks
         self.trend_layers = trend_layers
         self.trend_layer_size = trend_layer_size
@@ -169,9 +173,6 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
         self.seasonality_layers = seasonality_layers
         self.seasonality_layer_size = seasonality_layer_size
         self.num_of_harmonics = num_of_harmonics
-        self.lr = lr
-        self.loss = loss
-        self.optimizer_params = optimizer_params if optimizer_params is not None else {}
 
         trend_block = NBeatsBlock(
             input_size=input_size,
@@ -192,10 +193,19 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
         )
 
         # TODO: page 5, 3.3, sharing weights across stacks
-        self.model = NBeats(
+        model = NBeats(
             nn.ModuleList(
                 [trend_block for _ in range(trend_blocks)] + [seasonality_block for _ in range(seasonality_blocks)]
             )
+        )
+
+        super().__init__(
+            model=model,
+            input_size=input_size,
+            output_size=output_size,
+            loss=loss,
+            lr=lr,
+            optimizer_params=optimizer_params,
         )
 
 
@@ -211,7 +221,7 @@ class NBeatsGenericNet(NBeatsBaseNet):
         layers: int,
         layer_size: int,
         lr: float,
-        optimizer_params: Optional[dict],
+        optimizer_params: Optional[Dict[str, Any]] = None,
     ):
         """Initialize N-BEATS model.
 
@@ -235,13 +245,9 @@ class NBeatsGenericNet(NBeatsBaseNet):
         optimizer_params:
             Additional parameters for the optimizer.
         """
-        super().__init__()
-
-        self.input_size = input_size
-        self.output_size = output_size
-        self.lr = lr
-        self.loss = loss
-        self.optimizer_params = optimizer_params if optimizer_params is not None else {}
+        self.stacks = stacks
+        self.layers = layers
+        self.layer_size = layer_size
 
         generic_block = NBeatsBlock(
             input_size=input_size,
@@ -250,5 +256,15 @@ class NBeatsGenericNet(NBeatsBaseNet):
             num_layers=layers,
             layer_size=layer_size,
         )
+
         # TODO: page 5, 3.3, sharing weights across stacks
-        self.model = NBeats(nn.ModuleList([generic_block for _ in range(stacks)]))
+        model = NBeats(nn.ModuleList([generic_block for _ in range(stacks)]))
+
+        super().__init__(
+            model=model,
+            input_size=input_size,
+            output_size=output_size,
+            loss=loss,
+            lr=lr,
+            optimizer_params=optimizer_params,
+        )
