@@ -66,3 +66,14 @@ def test_get_anomalies_prediction_interval_values(outliers_tsds, model, interval
         )
         == true_anomalies
     )
+
+
+@pytest.mark.parametrize(
+    "model, interval_width, in_column",
+    (
+        (ProphetModel, 0.95, "target"),
+        (SARIMAXModel, 0.999, "target"),
+    ),
+)
+def test_get_anomalies_prediction_interval_imbalanced_tsdf(imbalanced_tsdf, model, interval_width, in_column):
+    get_anomalies_prediction_interval(imbalanced_tsdf, model=model, interval_width=interval_width, in_column=in_column)
