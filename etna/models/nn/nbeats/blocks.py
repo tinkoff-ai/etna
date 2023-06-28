@@ -157,17 +157,17 @@ class SeasonalityBasis(nn.Module):
 
         freq = torch.arange(harmonics - 1, harmonics / 2 * forecast_size) / harmonics
         freq[0] = 0.0
-        self.frequency = torch.unsqueeze(freq, 0)
+        frequency = torch.unsqueeze(freq, 0)
 
         # https://github.com/ServiceNow/N-BEATS/blob/c746a4f13ffc957487e0c3279b182c3030836053/models/nbeats.py#LL120C9-L121C102
 
         # TODO: should it be division by backcast_size?
         backcast_grid = -2 * np.pi * torch.arange(backcast_size)[:, None] / forecast_size
-        backcast_grid = backcast_grid * self.frequency
+        backcast_grid = backcast_grid * frequency
 
         # TODO: why is it positive ?
         forecast_grid = 2 * np.pi * torch.arange(forecast_size)[:, None] / forecast_size
-        forecast_grid = forecast_grid * self.frequency
+        forecast_grid = forecast_grid * frequency
 
         self.backcast_cos_template = nn.Parameter(torch.transpose(torch.cos(backcast_grid), 0, 1), requires_grad=False)
         self.backcast_sin_template = nn.Parameter(torch.transpose(torch.sin(backcast_grid), 0, 1), requires_grad=False)
@@ -229,7 +229,7 @@ class NBeats(nn.Module):
         Returns
         -------
         :
-            Tuple with backcast and forecast.
+            Forecast tensor.
         """
         residuals = x.flip(dims=(1,))
         input_mask = input_mask.flip(dims=(1,))

@@ -15,7 +15,7 @@ class NBeatsSMAPE(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, y_true, y_pred, mask):
+    def forward(self, y_true: "torch.Tensor", y_pred: "torch.Tensor", mask: "torch.Tensor") -> "torch.Tensor":
         """Compute metric.
 
         Parameters
@@ -38,7 +38,7 @@ class NBeatsSMAPE(nn.Module):
         sape[sape != sape] = 0.0
         sape[sape == np.inf] = 0.0
 
-        return 200 * torch.mean(sape * mask)
+        return 200.0 * torch.mean(sape * mask)
 
 
 class NBeatsMAPE(nn.Module):
@@ -47,7 +47,7 @@ class NBeatsMAPE(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, y_true, y_pred, mask):
+    def forward(self, y_true: "torch.Tensor", y_pred: "torch.Tensor", mask: "torch.Tensor") -> "torch.Tensor":
         """Compute metric.
 
         Parameters
@@ -69,7 +69,7 @@ class NBeatsMAPE(nn.Module):
         ape[ape != ape] = 0.0
         ape[ape == np.inf] = 0.0
 
-        return torch.mean(ape * mask)
+        return 100.0 * torch.mean(ape * mask)
 
 
 class NBeatsMAE(nn.Module):
@@ -78,7 +78,7 @@ class NBeatsMAE(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, y_true, y_pred, mask):
+    def forward(self, y_true: "torch.Tensor", y_pred: "torch.Tensor", mask: "torch.Tensor") -> "torch.Tensor":
         """Compute metric.
 
         Parameters
@@ -104,7 +104,7 @@ class NBeatsMSE(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, y_true, y_pred, mask):
+    def forward(self, y_true: "torch.Tensor", y_pred: "torch.Tensor", mask: "torch.Tensor") -> "torch.Tensor":
         """Compute metric.
 
         Parameters
