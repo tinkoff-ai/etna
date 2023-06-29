@@ -28,6 +28,8 @@ from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
+from etna.models.nn import NBeatsGenericModel
+from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
@@ -132,6 +134,8 @@ class TestPredictInSampleFull:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -217,6 +221,8 @@ class TestPredictInSampleSuffix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -324,6 +330,8 @@ class TestPredictOutSample:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -428,6 +436,8 @@ class TestPredictOutSamplePrefix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_prefix_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -533,6 +543,8 @@ class TestPredictOutSampleSuffix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_suffix_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -652,6 +664,8 @@ class TestPredictMixedInOutSample:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -754,6 +768,8 @@ class TestPredictSubsetSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -846,6 +862,8 @@ class TestPredictNewSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_new_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):

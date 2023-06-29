@@ -30,6 +30,8 @@ from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
+from etna.models.nn import NBeatsGenericModel
+from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
@@ -322,6 +324,8 @@ class TestForecastInSampleSuffixNoTarget:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
@@ -401,6 +405,8 @@ class TestForecastInSampleSuffix:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
@@ -536,6 +542,8 @@ class TestForecastOutSamplePrefix:
                 ),
                 [],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
@@ -724,6 +732,8 @@ class TestForecastMixedInOutSample:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
@@ -845,6 +855,8 @@ class TestForecastSubsetSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_subset_segments(self, model, transforms, example_tsds):
@@ -949,6 +961,8 @@ class TestForecastNewSegments:
                 ),
                 [],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_new_segments(self, model, transforms, example_tsds):

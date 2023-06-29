@@ -10,6 +10,29 @@ from etna.models.nn.nbeats.models import NBeatsGenericNet
 from etna.models.nn.nbeats.models import NBeatsInterpretableNet
 
 
+@pytest.fixture
+def nbeats_generic_net():
+    return NBeatsGenericNet(input_size=5, output_size=3, loss=NBeatsMSE(), stacks=1, layers=1, layer_size=8, lr=0.001)
+
+
+@pytest.fixture
+def nbeats_interpretable_net():
+    return NBeatsInterpretableNet(
+        input_size=5,
+        output_size=3,
+        loss=NBeatsMSE(),
+        trend_blocks=1,
+        trend_layers=1,
+        trend_layer_size=8,
+        degree_of_polynomial=2,
+        seasonality_blocks=1,
+        seasonality_layers=1,
+        seasonality_layer_size=8,
+        lr=0.001,
+        num_of_harmonics=1,
+    )
+
+
 def test_make_samples(example_tsdf):
     module = MagicMock()
     df = example_tsdf.to_flatten(example_tsdf.df)
@@ -36,26 +59,14 @@ def test_make_samples(example_tsdf):
     ),
 )
 @pytest.mark.parametrize(
-    "net",
+    "net_name",
     (
-        NBeatsGenericNet(input_size=5, output_size=3, loss=NBeatsMSE(), stacks=1, layers=1, layer_size=8, lr=0.001),
-        NBeatsInterpretableNet(
-            input_size=5,
-            output_size=3,
-            loss=NBeatsMSE(),
-            trend_blocks=1,
-            trend_layers=1,
-            trend_layer_size=8,
-            degree_of_polynomial=2,
-            seasonality_blocks=1,
-            seasonality_layers=1,
-            seasonality_layer_size=8,
-            lr=0.001,
-            num_of_harmonics=1,
-        ),
+        "nbeats_generic_net",
+        "nbeats_interpretable_net",
     ),
 )
-def test_step(net, batch):
+def test_step(net_name, batch, request):
+    net = request.getfixturevalue(net_name)
     loss, target, forecast = net.step(batch)
 
     assert isinstance(loss, torch.Tensor)
@@ -66,25 +77,10 @@ def test_step(net, batch):
 
 
 @pytest.mark.parametrize(
-    "net",
-    (
-        NBeatsGenericNet(input_size=5, output_size=3, loss=NBeatsMSE(), stacks=1, layers=1, layer_size=8, lr=0.001),
-        NBeatsInterpretableNet(
-            input_size=5,
-            output_size=3,
-            loss=NBeatsMSE(),
-            trend_blocks=1,
-            trend_layers=1,
-            trend_layer_size=8,
-            degree_of_polynomial=2,
-            seasonality_blocks=1,
-            seasonality_layers=1,
-            seasonality_layer_size=8,
-            lr=0.001,
-            num_of_harmonics=1,
-        ),
-    ),
+    "net_name",
+    ("nbeats_generic_net", "nbeats_interpretable_net"),
 )
-def test_configure_optimizer(net):
+def test_configure_optimizer(net_name, request):
+    net = request.getfixturevalue(net_name)
     optimizer = net.configure_optimizers()
     assert isinstance(optimizer, torch.optim.Adam)
