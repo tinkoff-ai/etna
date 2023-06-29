@@ -80,7 +80,7 @@ class AutoAbstract(ABC):
         callback:
             Object that is called after each pipeline backtest, can be used to log extra metrics.
         **kwargs:
-            Additional kwargs for the method.
+            Additional parameters for the method.
         """
         pass
 
@@ -366,7 +366,7 @@ class Auto(AutoBase):
             Object that is called after each pipeline backtest, can be used to log extra metrics.
         **kwargs:
             Parameter ``tune_size`` (default: 0) determines how many pipelines to fit during tuning stage.
-            Other kwargs are passed into optuna :py:meth:`optuna.study.Study.optimize`.
+            Other parameters are passed into optuna :py:meth:`optuna.study.Study.optimize`.
         """
         tune_size = kwargs.pop("tune_size", 0)
         optuna_params = kwargs
@@ -684,7 +684,7 @@ class Tune(AutoBase):
         callback:
             Object that is called after each pipeline backtest, can be used to log extra metrics.
         **kwargs:
-            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
+            Additional parameters for optuna :py:meth:`optuna.study.Study.optimize`.
         """
         optuna_params = kwargs
 
