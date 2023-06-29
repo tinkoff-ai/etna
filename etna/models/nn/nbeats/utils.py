@@ -85,8 +85,11 @@ def prepare_test_batch(data: List[Dict[str, Any]], input_size: int) -> Dict[str,
     for i, part in enumerate(data):
         series = part["history"]
 
-        first_non_nan = int(np.argmin(np.isnan(series)))
-        insample_window = series[max(len(series) - input_size, first_non_nan) :]
+        nan_mask = np.isnan(series)
+        first_non_nan = int(np.argmin(nan_mask))
+        last_non_nan = len(nan_mask) - int(np.argmin(nan_mask[::-1]))
+
+        insample_window = series[max(last_non_nan - input_size, first_non_nan) : last_non_nan]
 
         history[i, -len(insample_window) :] = insample_window
         history_mask[i, -len(insample_window) :] = 1.0
