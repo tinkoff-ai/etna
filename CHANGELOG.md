@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `BasePipeline.forecast` when prediction intervals are estimated on history data with presence of NaNs ([#1291](https://github.com/tinkoff-ai/etna/pull/1291))
 - Teach `BaseMixin.set_params` to work with nested `list` and `tuple` ([#1201](https://github.com/tinkoff-ai/etna/pull/1201))
 - Fix `get_anomalies_prediction_interval` to work when segments have different start date ([#1296](https://github.com/tinkoff-ai/etna/pull/1296))
-- Fix `classification` notebook to download `FordA` dataset without error ([#1298](https://github.com/tinkoff-ai/etna/pull/1298))
+- Fix `classification` notebook to download `FordA` dataset without error ([#1299](https://github.com/tinkoff-ai/etna/pull/1299))
 
 ## [2.0.0] - 2023-04-11
 ### Added
