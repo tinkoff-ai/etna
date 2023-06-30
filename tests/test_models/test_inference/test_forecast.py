@@ -123,6 +123,8 @@ class TestForecastInSampleFullNoTarget:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -250,6 +252,8 @@ class TestForecastInSampleFull:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -717,6 +721,18 @@ class TestForecastOutSampleSuffix:
     )
     def test_forecast_out_sample_suffix_failed_deep_state(self, model, transforms, example_tsds):
         """This test is expected to fail due to sampling procedure of DeepStateModel"""
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model,transforms",
+        (
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+        ),
+    )
+    def test_forecast_out_sample_suffix_failed_nbeats(self, model, transforms, example_tsds):
+        """This test is expected to fail due to windowed view on data in N-BEATS"""
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
