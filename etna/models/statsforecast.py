@@ -55,7 +55,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
             df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
         except ValueError:
             raise ValueError(
-                f"Categorical columns {categorical_cols} can not been converted to int.\n "
+                f"Categorical columns {categorical_cols} can not be converted to int.\n "
                 "Try to encode this columns manually."
             )
 
@@ -244,9 +244,8 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         if prediction_interval and self._support_prediction_intervals:
             levels = []
             for quantile in quantiles:
-                # set alpha in the way to get a desirable quantile
-                alpha = min(quantile * 2, (1 - quantile) * 2)
-                level = int(alpha * 100)
+                width = abs(1 / 2 - quantile) * 2
+                level = int(width * 100)
                 levels.append(level)
 
             # get unique levels to prevent strange behavior with stacking interval predictions
@@ -265,6 +264,36 @@ class _StatsForecastBaseAdapter(BaseAdapter):
             y_pred = pd.DataFrame({"target": forecast["fitted"][start_idx : end_idx + 1]})
 
         return y_pred
+
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        raise NotImplementedError("This mode isn't currently implemented!")
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        raise NotImplementedError("This mode isn't currently implemented!")
 
     def get_model(self) -> StatsForecastModel:
         """Get statsforecast model that is used inside etna class.
