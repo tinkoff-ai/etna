@@ -159,13 +159,9 @@ class SeasonalityBasis(nn.Module):
         freq[0] = 0.0
         frequency = torch.unsqueeze(freq, 0)
 
-        # https://github.com/ServiceNow/N-BEATS/blob/c746a4f13ffc957487e0c3279b182c3030836053/models/nbeats.py#LL120C9-L121C102
-
-        # TODO: should it be division by backcast_size?
         backcast_grid = -2 * np.pi * torch.arange(backcast_size)[:, None] / forecast_size
         backcast_grid = backcast_grid * frequency
 
-        # TODO: why is it positive ?
         forecast_grid = 2 * np.pi * torch.arange(forecast_size)[:, None] / forecast_size
         forecast_grid = forecast_grid * frequency
 

@@ -192,7 +192,6 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
             layer_size=seasonality_layer_size,
         )
 
-        # TODO: page 5, 3.3, sharing weights across stacks
         model = NBeats(
             nn.ModuleList(
                 [trend_block for _ in range(trend_blocks)] + [seasonality_block for _ in range(seasonality_blocks)]
@@ -257,7 +256,6 @@ class NBeatsGenericNet(NBeatsBaseNet):
             layer_size=layer_size,
         )
 
-        # TODO: page 5, 3.3, sharing weights across stacks
         model = NBeats(nn.ModuleList([generic_block for _ in range(stacks)]))
 
         super().__init__(
