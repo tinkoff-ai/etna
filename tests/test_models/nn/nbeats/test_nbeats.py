@@ -104,3 +104,10 @@ def test_save_load(example_tsds, model):
     horizon = model.output_size
     std = StandardScalerTransform(in_column="target")
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[std], horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "model", (NBeatsInterpretableModel(input_size=6, output_size=3), NBeatsGenericModel(input_size=6, output_size=3))
+)
+def test_context_size(model, expected=6):
+    assert model.context_size == expected
