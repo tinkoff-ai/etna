@@ -1,16 +1,20 @@
 import warnings
 from enum import Enum
+from typing import Dict
 from typing import Optional
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from typing_extensions import assert_never
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
 
 
-class SeasonalityMode(Enum):
+class SeasonalityMode(str, Enum):
     """Enum for seasonality mode for DeadlineMovingAverageModel."""
 
     month = "month"
@@ -45,7 +49,7 @@ class DeadlineMovingAverageModel(
         window:
             Number of values taken for forecast for each point.
         seasonality:
-            Only allowed monthly or annual seasonality.
+            Only allowed values are "month" and "year".
         """
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
@@ -67,6 +71,8 @@ class DeadlineMovingAverageModel(
             cur_value = 366
         elif self.seasonality is SeasonalityMode.month:
             cur_value = 31
+        else:
+            assert_never(self.seasonality)
 
         if self._freq == "H":
             cur_value *= 24
@@ -153,9 +159,10 @@ class DeadlineMovingAverageModel(
 
         if seasonality is SeasonalityMode.month:
             first_index = future_timestamps[0] - pd.DateOffset(months=window)
-
         elif seasonality is SeasonalityMode.year:
             first_index = future_timestamps[0] - pd.DateOffset(years=window)
+        else:
+            assert_never(seasonality)
 
         if first_index < history_timestamps[0]:
             raise ValueError(
@@ -170,6 +177,8 @@ class DeadlineMovingAverageModel(
             prev_date = date - pd.DateOffset(months=offset)
         elif self.seasonality == SeasonalityMode.year:
             prev_date = date - pd.DateOffset(years=offset)
+        else:
+            assert_never(self.seasonality)
 
         return prev_date
 
@@ -378,6 +387,18 @@ class DeadlineMovingAverageModel(
             ts.add_target_components(target_components_df=target_components_df)
 
         return ts
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``window`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {"window": IntDistribution(low=1, high=10)}
 
 
 __all__ = ["DeadlineMovingAverageModel"]

@@ -139,9 +139,11 @@ pip install etna
 
 The default version doesn't contain all the dependencies, because some of them are needed only for specific models, e.g. Prophet, PyTorch.
 Available user extensions are the following:
-* `prophet`
-* `torch`
-* `wandb`
+* `prophet`: adds prophet model`,
+* `torch`: adds models based on neural nets,
+* `wandb`: adds wandb logger,
+* `auto`: adds AutoML functionality,
+* `classiciation`: adds time series classification functionality.
 
 Install extension:
 ```bash

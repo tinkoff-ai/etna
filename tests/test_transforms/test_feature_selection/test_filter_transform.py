@@ -201,3 +201,16 @@ def test_inverse_transform_back_included_columns(ts_with_features, columns, retu
 )
 def test_save_load(transform, ts_with_features):
     assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_features)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        FilterFeaturesTransform(include=["target"], return_features=True),
+        FilterFeaturesTransform(include=["target"], return_features=False),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
+    ],
+)
+def test_params_to_tune(transform):
+    assert len(transform.params_to_tune()) == 0

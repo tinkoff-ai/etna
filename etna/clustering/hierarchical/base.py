@@ -13,7 +13,7 @@ from etna.clustering.distances.distance_matrix import DistanceMatrix
 from etna.datasets import TSDataset
 
 
-class ClusteringLinkageMode(Enum):
+class ClusteringLinkageMode(str, Enum):
     """Modes allowed for clustering distance computation."""
 
     ward = "ward"

@@ -51,7 +51,11 @@ def test_get_anomalies_prediction_interval_interface(outliers_tsds, model, in_co
             0.95,
             {"1": [np.datetime64("2021-01-11")], "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-27")]},
         ),
-        (SARIMAXModel, 0.999, {"1": [], "2": [np.datetime64("2021-01-27")]}),
+        (
+            SARIMAXModel,
+            0.999,
+            {"1": [np.datetime64("2021-01-11")], "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-27")]},
+        ),
     ),
 )
 def test_get_anomalies_prediction_interval_values(outliers_tsds, model, interval_width, true_anomalies, in_column):
@@ -62,3 +66,14 @@ def test_get_anomalies_prediction_interval_values(outliers_tsds, model, interval
         )
         == true_anomalies
     )
+
+
+@pytest.mark.parametrize(
+    "model, interval_width, in_column",
+    (
+        (ProphetModel, 0.95, "target"),
+        (SARIMAXModel, 0.999, "target"),
+    ),
+)
+def test_get_anomalies_prediction_interval_imbalanced_tsdf(imbalanced_tsdf, model, interval_width, in_column):
+    get_anomalies_prediction_interval(imbalanced_tsdf, model=model, interval_width=interval_width, in_column=in_column)

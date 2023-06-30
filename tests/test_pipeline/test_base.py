@@ -1,11 +1,13 @@
 import pathlib
 from typing import Any
+from typing import Dict
 from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.pipeline.base import BasePipeline
 
 
@@ -63,6 +65,9 @@ class DummyPipeline(BasePipeline):
     @classmethod
     def load(cls, path: pathlib.Path) -> Any:
         raise NotImplementedError()
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        return {}
 
 
 @pytest.mark.parametrize(

@@ -13,6 +13,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 def _get_default_dataset_builder(horizon: int):
@@ -190,3 +191,10 @@ def test_repr():
 def test_deepar_forecast_throw_error_on_return_components():
     with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
         DeepARModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)
+
+
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    model = DeepARModel(decoder_length=3, encoder_length=4, trainer_params=dict(max_epochs=1, gpus=0))
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

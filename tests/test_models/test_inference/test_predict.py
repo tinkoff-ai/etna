@@ -27,13 +27,17 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
+from etna.models.nn.deepstate import CompositeSSM
+from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
+from etna.transforms import SegmentEncoderTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
@@ -134,6 +138,16 @@ class TestPredictInSampleFull:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -220,6 +234,16 @@ class TestPredictInSampleSuffix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
@@ -330,6 +354,16 @@ class TestPredictOutSample:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -435,6 +469,16 @@ class TestPredictOutSamplePrefix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
@@ -542,6 +586,26 @@ class TestPredictOutSampleSuffix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
@@ -664,6 +728,16 @@ class TestPredictMixedInOutSample:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -768,6 +842,16 @@ class TestPredictSubsetSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -861,6 +945,16 @@ class TestPredictNewSegments:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=0,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [],
             ),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),

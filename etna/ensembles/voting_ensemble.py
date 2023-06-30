@@ -14,6 +14,7 @@ from typing_extensions import Literal
 
 from etna.analysis.feature_relevance.relevance_table import TreeBasedRegressor
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.ensembles.mixins import EnsembleMixin
 from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.loggers import tslogger
@@ -234,3 +235,15 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         )
         predictions = self._vote(forecasts=predictions)
         return predictions
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Not implemented for this class.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")

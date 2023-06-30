@@ -1,9 +1,12 @@
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
 
 from sklearn.preprocessing import PowerTransformer
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
 
@@ -58,6 +61,24 @@ class YeoJohnsonTransform(SklearnTransform):
             mode=mode,
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``mode``, ``standardize``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "standardize": CategoricalDistribution([False, True]),
+            }
+        )
+        return grid
+
 
 class BoxCoxTransform(SklearnTransform):
     """BoxCoxTransform applies Box-Cox transformation to DataFrame.
@@ -108,6 +129,24 @@ class BoxCoxTransform(SklearnTransform):
             transformer=PowerTransformer(method="box-cox", standardize=self.standardize),
             mode=mode,
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``mode``, ``standardize``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "standardize": CategoricalDistribution([False, True]),
+            }
+        )
+        return grid
 
 
 __all__ = ["BoxCoxTransform", "YeoJohnsonTransform"]

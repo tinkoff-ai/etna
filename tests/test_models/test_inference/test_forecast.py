@@ -29,13 +29,17 @@ from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
+from etna.models.nn.deepstate import CompositeSSM
+from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
+from etna.transforms import SegmentEncoderTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
@@ -104,6 +108,30 @@ class TestForecastInSampleFullNoTarget:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (MovingAverageModel(window=3), []),
+            (NaiveModel(lag=3), []),
+            (SeasonalMovingAverageModel(), []),
+            (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
+        ],
+    )
+    def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
+        with pytest.raises(ValueError, match="Given context isn't big enough"):
+            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -112,20 +140,6 @@ class TestForecastInSampleFullNoTarget:
     )
     def test_forecast_in_sample_full_no_target_failed_nans_nn(self, model, transforms, example_tsds):
         with pytest.raises(ValueError, match="There are NaNs in features"):
-            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
-
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-        ],
-    )
-    def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
-        with pytest.raises(ValueError, match="Given context isn't big enough"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
@@ -226,6 +240,16 @@ class TestForecastInSampleFull:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
         ],
     )
     def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -324,6 +348,16 @@ class TestForecastInSampleSuffixNoTarget:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
             (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
         ],
@@ -404,6 +438,16 @@ class TestForecastInSampleSuffix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
             (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
@@ -549,6 +593,26 @@ class TestForecastOutSamplePrefix:
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
 
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            )
+        ],
+    )
+    def test_forecast_out_sample_prefix_failed_deep_state(self, model, transforms, example_tsds):
+        """This test is expected to fail due to sampling procedure of DeepStateModel"""
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
+
 
 class TestForecastOutSampleSuffix:
     """Test forecast on suffix of future dataset.
@@ -633,6 +697,26 @@ class TestForecastOutSampleSuffix:
 
         More about it in issue: https://github.com/tinkoff-ai/etna/issues/1087
         """
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            )
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_deep_state(self, model, transforms, example_tsds):
+        """This test is expected to fail due to sampling procedure of DeepStateModel"""
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
@@ -731,6 +815,16 @@ class TestForecastMixedInOutSample:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
             ),
             (NBeatsInterpretableModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
@@ -862,6 +956,25 @@ class TestForecastSubsetSegments:
     def test_forecast_subset_segments(self, model, transforms, example_tsds):
         self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
 
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+            ),
+        ],
+    )
+    def test_forecast_subset_segments_failed_deep_state(self, model, transforms, example_tsds):
+        with pytest.raises(AssertionError):
+            self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+
     @to_be_fixed(raises=AssertionError)
     # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
     @pytest.mark.parametrize(
@@ -958,6 +1071,16 @@ class TestForecastNewSegments:
                     ),
                     trainer_params=dict(max_epochs=1),
                     lr=0.01,
+                ),
+                [],
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=0,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [],
             ),

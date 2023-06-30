@@ -1,4 +1,5 @@
 import math
+import warnings
 from abc import abstractmethod
 from copy import deepcopy
 from enum import Enum
@@ -22,15 +23,15 @@ from typing_extensions import assert_never
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
-from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 
 Timestamp = Union[str, pd.Timestamp]
 
 
-class CrossValidationMode(Enum):
+class CrossValidationMode(str, Enum):
     """Enum for different cross-validation modes."""
 
     expand = "expand"
@@ -273,6 +274,16 @@ class AbstractPipeline(AbstractSaveable):
             Metrics dataframe, forecast dataframe and dataframe with information about folds
         """
 
+    @abstractmethod
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
+
 
 class FoldParallelGroup(TypedDict):
     """Group for parallel fold processing."""
@@ -281,6 +292,29 @@ class FoldParallelGroup(TypedDict):
     train_mask: FoldMask
     forecast_fold_numbers: List[int]
     forecast_masks: List[FoldMask]
+
+
+class _DummyMetric(Metric):
+    """Dummy metric that is created only for implementation of BasePipeline._forecast_prediction_interval."""
+
+    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+        super().__init__(mode=mode, metric_fn=self._compute_metric, **kwargs)
+
+    @staticmethod
+    def _compute_metric(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        return 0.0
+
+    @property
+    def greater_is_better(self) -> bool:
+        return False
+
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+        segments = set(y_true.df.columns.get_level_values("segment"))
+        metrics_per_segment = {}
+        for segment in segments:
+            metrics_per_segment[segment] = 0.0
+        metrics = self._aggregate_metrics(metrics_per_segment)
+        return metrics
 
 
 class BasePipeline(AbstractPipeline, BaseMixin):
@@ -315,11 +349,30 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
         with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
+            _, forecasts, _ = self.backtest(ts=ts, metrics=[_DummyMetric()], n_folds=n_folds)
 
         self._add_forecast_borders(ts=ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
         return predictions
+
+    @staticmethod
+    def _validate_residuals_for_interval_estimation(backtest_forecasts: TSDataset, residuals: pd.DataFrame):
+        len_backtest, num_segments = residuals.shape
+        min_timestamp = backtest_forecasts.index.min()
+        max_timestamp = backtest_forecasts.index.max()
+        non_nan_counts = np.sum(~np.isnan(residuals.values), axis=0)
+        if np.any(non_nan_counts < len_backtest):
+            warnings.warn(
+                f"There are NaNs in target on time span from {min_timestamp} to {max_timestamp}. "
+                f"It can obstruct prediction interval estimation on history data."
+            )
+        if np.any(non_nan_counts < 2):
+            raise ValueError(
+                f"There aren't enough target values to evaluate prediction intervals on history! "
+                f"For each segment there should be at least 2 points with defined value in a "
+                f"time span from {min_timestamp} to {max_timestamp}. "
+                f"You can try to increase n_folds parameter to make time span bigger."
+            )
 
     def _add_forecast_borders(
         self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
@@ -331,7 +384,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
         )
 
-        sigma = np.std(residuals.values, axis=0)
+        self._validate_residuals_for_interval_estimation(backtest_forecasts=backtest_forecasts, residuals=residuals)
+        sigma = np.nanstd(residuals.values, axis=0)
+
         borders = []
         for quantile in quantiles:
             z_q = norm.ppf(q=quantile)

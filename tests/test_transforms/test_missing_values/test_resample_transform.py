@@ -127,3 +127,8 @@ def test_get_regressors_info_not_fitted():
     transform = ResampleWithDistributionTransform(in_column="regressor_exog", distribution_column="target")
     with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
+
+
+def test_params_to_tune():
+    transform = ResampleWithDistributionTransform(in_column="regressor_exog", distribution_column="target")
+    assert len(transform.params_to_tune()) == 0
