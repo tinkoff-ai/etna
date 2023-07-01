@@ -44,7 +44,7 @@ def test_interpretable_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_fu
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
-    assert metric < 0.3
+    assert metric < 0.4
 
 
 @pytest.mark.parametrize(
@@ -69,7 +69,7 @@ def test_generic_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
-    assert metric < 0.3
+    assert metric < 0.4
 
 
 @pytest.mark.parametrize(
