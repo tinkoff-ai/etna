@@ -46,7 +46,8 @@ class NBeatsBaseModel(DeepBaseModel):
             param=test_dataloader_params, name="collate_fn", value=test_collate_fn
         )
 
-        trainer_params = _create_or_update(param=trainer_params, name="gradient_clip_val", value=1.0)
+        if trainer_params is None or "gradient_clip_val" not in trainer_params:
+            trainer_params = _create_or_update(param=trainer_params, name="gradient_clip_val", value=1.0)
 
         super().__init__(
             net=net,
