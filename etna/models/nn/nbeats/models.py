@@ -2,7 +2,9 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import Iterable
+from typing import List
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -108,10 +110,12 @@ class NBeatsBaseNet(DeepBaseNet):
         }
         yield sample
 
-    def configure_optimizers(self) -> "torch.optim.Optimizer":
+    def configure_optimizers(self) -> Tuple[List["torch.optim.Optimizer"], List[Dict[str, Any]]]:
         """Optimizer configuration."""
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
-        return optimizer
+        epochs = self.optimizer_params.get("max_epochs", 1000)
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda i: 0.5 ** (3 * i // epochs))
+        return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
 
 
 class NBeatsInterpretableNet(NBeatsBaseNet):

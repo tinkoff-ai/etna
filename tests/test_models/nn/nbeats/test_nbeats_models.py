@@ -82,5 +82,7 @@ def test_step(net_name, batch, request):
 )
 def test_configure_optimizer(net_name, request):
     net = request.getfixturevalue(net_name)
-    optimizer = net.configure_optimizers()
-    assert isinstance(optimizer, torch.optim.Adam)
+    optimizers, schedulers = net.configure_optimizers()
+
+    assert isinstance(optimizers[0], torch.optim.Adam)
+    assert isinstance(schedulers[0]["scheduler"], torch.optim.lr_scheduler._LRScheduler)
