@@ -125,7 +125,20 @@ class TestInverseTransformTrainSubsetSegments:
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
             (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
-            (MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    fast_redundancy=GaleShapleyFeatureSelectionTransform,
+                ),
+                "ts_with_exog",
+            ),
             (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog"),
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
@@ -296,7 +309,18 @@ class TestInverseTransformFutureSubsetSegments:
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
             (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
-            (MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+            ),
             (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog"),
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
@@ -473,13 +497,29 @@ class TestInverseTransformTrainNewSegments:
                 {"create": {"year", "weekday", "month"}},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
                 "ts_with_exog",
                 {},
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"create": {"monthday", "positive", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"monthday", "positive", "weekday"}},
@@ -762,7 +802,16 @@ class TestInverseTransformFutureNewSegments:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
                 "ts_with_exog",
                 {},
             ),
@@ -1042,7 +1091,14 @@ class TestInverseTransformFutureNewSegments:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"create": {"positive", "monthday", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"positive", "monthday", "weekday"}},
@@ -1166,13 +1222,32 @@ class TestInverseTransformFutureWithTarget:
                 {"create": {"month", "year", "positive"}},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
                 "ts_with_exog",
                 {},
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"weekday", "monthday", "positive"}},
@@ -1539,7 +1614,16 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
                 "ts_with_exog",
                 {},
             ),
@@ -1852,7 +1936,14 @@ class TestInverseTransformFutureWithoutTarget:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"weekday", "monthday", "positive"}},
