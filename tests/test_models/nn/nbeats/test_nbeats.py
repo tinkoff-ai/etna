@@ -29,22 +29,23 @@ def test_interpretable_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_fu
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
 
     model = NBeatsInterpretableModel(
-        input_size=horizon,
+        input_size=3 * horizon,
         output_size=horizon,
         loss="mae",
-        trend_blocks=1,
-        trend_layers=1,
+        trend_blocks=3,
+        trend_layers=4,
         trend_layer_size=64,
         degree_of_polynomial=2,
-        seasonality_blocks=1,
-        seasonality_layers=1,
+        seasonality_blocks=10,
+        seasonality_layers=4,
         seasonality_layer_size=256,
         lr=0.001,
         num_of_harmonics=1,
+        trainer_params=dict(max_epochs=2500),
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
-    assert metric < 0.4
+    assert metric < 0.05
 
 
 @pytest.mark.parametrize(
@@ -59,17 +60,18 @@ def test_generic_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
 
     model = NBeatsGenericModel(
-        input_size=horizon,
+        input_size=5 * horizon,
         output_size=horizon,
         loss="mae",
-        stacks=1,
+        stacks=30,
         layers=4,
-        layer_size=128,
+        layer_size=256,
         lr=0.001,
+        trainer_params=dict(max_epochs=2000),
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
-    assert metric < 0.4
+    assert metric < 0.05
 
 
 @pytest.mark.parametrize(
