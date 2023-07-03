@@ -10,12 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Notebook `forecast_interpretation.ipynb` with forecast decomposition ([#1220](https://github.com/tinkoff-ai/etna/pull/1220))
 - Exogenous variables shift transform `ExogShiftTransform`([#1254](https://github.com/tinkoff-ai/etna/pull/1254))
 - Parameter `start_timestamp` to forecast CLI command ([#1265](https://github.com/tinkoff-ai/etna/pull/1265))
+- `DeepStateModel` ([#1253](https://github.com/tinkoff-ai/etna/pull/1253))
 - Function `estimate_max_n_folds` for folds number estimation ([#1279](https://github.com/tinkoff-ai/etna/pull/1279))
 - Parameters `estimate_n_folds` and `context_size` to forecast and backtest CLI commands ([#1284](https://github.com/tinkoff-ai/etna/pull/1284))
 -
 - Class `Tune` for hyperparameter optimization within existing pipeline ([#1200](https://github.com/tinkoff-ai/etna/pull/1200))
 - Add `etna.distributions` for using it instead of using `optuna.distributions` ([#1292](https://github.com/tinkoff-ai/etna/pull/1292))
 - 
+
 ### Changed
 - Set the default value of `final_model` to `LinearRegression(positive=True)` in the constructor of `StackingEnsemble` ([#1238](https://github.com/tinkoff-ai/etna/pull/1238))
 - Add microseconds to `FileLogger`'s directory name ([#1264](https://github.com/tinkoff-ai/etna/pull/1264))
@@ -61,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix problem with segment name "target" in `StackingEnsemble` ([#1262](https://github.com/tinkoff-ai/etna/pull/1262))
 - Fix `BasePipeline.forecast` when prediction intervals are estimated on history data with presence of NaNs ([#1291](https://github.com/tinkoff-ai/etna/pull/1291))
 - Teach `BaseMixin.set_params` to work with nested `list` and `tuple` ([#1201](https://github.com/tinkoff-ai/etna/pull/1201))
+- Fix `get_anomalies_prediction_interval` to work when segments have different start date ([#1296](https://github.com/tinkoff-ai/etna/pull/1296))
+- Fix `classification` notebook to download `FordA` dataset without error ([#1299](https://github.com/tinkoff-ai/etna/pull/1299))
 
 ## [2.0.0] - 2023-04-11
 ### Added
