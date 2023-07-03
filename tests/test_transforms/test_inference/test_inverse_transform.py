@@ -1230,13 +1230,6 @@ class TestInverseTransformFutureWithTarget:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
                 ),
                 "ts_with_exog",
@@ -1244,7 +1237,17 @@ class TestInverseTransformFutureWithTarget:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=False
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"weekday", "monthday", "positive"}},
