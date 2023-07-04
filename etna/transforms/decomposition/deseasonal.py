@@ -1,17 +1,18 @@
-import numpy as np
 from typing import Dict
 from typing import List
+from typing import Optional
 
+import numpy as np
 import pandas as pd
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
+from etna.models.utils import determine_freq
+from etna.models.utils import determine_num_steps
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
-from etna.models.utils import determine_num_steps
-from etna.models.utils import determine_freq
 
 
 class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
@@ -38,11 +39,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             else:
                 raise ValueError(f"Not a valid option for model: {model}, only {allowed_models} can be used")
 
-        self.seasonal_ = None
+        self._seasonal: Optional[pd.Series] = None
 
-    def _roll_seasonal(self, X: pd.Series) -> np.ndarray:
+    def _roll_seasonal(self, x: pd.Series) -> np.ndarray:
         """
-        Roll out seasonal component by X's time index
+        Roll out seasonal component by X's time index.
 
         Parameters
         ----------
@@ -54,9 +55,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         result: np.ndarray
             seasonal component
         """
-        freq = determine_freq(X.index)
-        shift = -determine_num_steps(self.seasonal_.index[0], X.index[0], freq) % self.period
-        return np.resize(np.roll(self.seasonal_, shift=shift), X.shape[0])
+        if self._seasonal is None:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
+        freq = determine_freq(x.index)
+        shift = -determine_num_steps(self._seasonal.index[0], x.index[0], freq) % self.period
+        return np.resize(np.roll(self._seasonal, shift=shift), x.shape[0])
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentDeseasonalityTransform":
         """
@@ -77,13 +80,9 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             raise ValueError(
                 "The input column contains NaNs in the head or in the middle of the series! Try to use the imputer."
             )
-        self.seasonal_ = seasonal_decompose(
-            x=df[self.in_column],
-            model=self.model,
-            filt=None,
-            two_sided=False,
-            extrapolate_trend=0
-        ).seasonal[:self.period]
+        self._seasonal = seasonal_decompose(
+            x=df[self.in_column], model=self.model, filt=None, two_sided=False, extrapolate_trend=0
+        ).seasonal[: self.period]
         return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -101,14 +100,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             Dataframe with extracted features
         """
         result = df
-        if self.seasonal_ is not None:
-            seasonal = self._roll_seasonal(result[self.in_column])
-            if self.model == "additive":
-                result[self.in_column] -= seasonal
-            else:
-                result[self.in_column] /= seasonal
+        seasonal = self._roll_seasonal(result[self.in_column])
+        if self.model == "additive":
+            result[self.in_column] -= seasonal
         else:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
+            result[self.in_column] /= seasonal
         return result
 
     def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -126,14 +122,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             Dataframe with extracted features
         """
         result = df
-        if self.seasonal_ is None:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
+        seasonal = self._roll_seasonal(result[self.in_column])
+        if self.model == "additive":
+            result[self.in_column] += seasonal
         else:
-            seasonal = self._roll_seasonal(result[self.in_column])
-            if self.model == "additive":
-                result[self.in_column] += seasonal
-            else:
-                result[self.in_column] *= seasonal
+            result[self.in_column] *= seasonal
         if self.in_column == "target":
             quantiles = match_target_quantiles(set(result.columns))
             for quantile_column_nm in quantiles:
@@ -175,7 +168,7 @@ class DeseasonalityTransform(ReversiblePerSegmentWrapper):
                 period=self.period,
                 model=self.model,
             ),
-            required_features=[self.in_column]
+            required_features=[self.in_column],
         )
 
     def get_regressors_info(self) -> List[str]:
@@ -192,6 +185,4 @@ class DeseasonalityTransform(ReversiblePerSegmentWrapper):
         :
             Grid to tune.
         """
-        return {
-            "model": CategoricalDistribution(["additive", "multiplicative"])
-        }
+        return {"model": CategoricalDistribution(["additive", "multiplicative"])}

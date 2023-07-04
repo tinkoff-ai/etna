@@ -15,6 +15,7 @@ from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
+from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
@@ -46,7 +47,6 @@ from etna.transforms import SpecialDaysTransform
 from etna.transforms import StandardScalerTransform
 from etna.transforms import StdTransform
 from etna.transforms import STLTransform
-from etna.transforms import DeseasonalityTransform
 from etna.transforms import SumTransform
 from etna.transforms import TheilSenTrendTransform
 from etna.transforms import TimeFlagsTransform

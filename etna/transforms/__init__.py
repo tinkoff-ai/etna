@@ -9,13 +9,13 @@ from etna.transforms.decomposition import BaseChangePointsTransform
 from etna.transforms.decomposition import ChangePointsLevelTransform
 from etna.transforms.decomposition import ChangePointsSegmentationTransform
 from etna.transforms.decomposition import ChangePointsTrendTransform
+from etna.transforms.decomposition import DeseasonalityTransform
 from etna.transforms.decomposition import IrreversibleChangePointsTransform
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import ReversibleChangePointsTransform
 from etna.transforms.decomposition import STLTransform
 from etna.transforms.decomposition import TheilSenTrendTransform
 from etna.transforms.decomposition import TrendTransform
-from etna.transforms.decomposition import DeseasonalityTransform
 from etna.transforms.encoders import LabelEncoderTransform
 from etna.transforms.encoders import MeanSegmentEncoderTransform
 from etna.transforms.encoders import OneHotEncoderTransform

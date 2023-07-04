@@ -68,9 +68,7 @@ def ts_seasonal_nan_tails() -> TSDataset:
 
 
 @pytest.mark.parametrize("model", ["additive", "multiplicative"])
-@pytest.mark.parametrize(
-    "df_name", ["df_seasonal_one_segment"]
-)
+@pytest.mark.parametrize("df_name", ["df_seasonal_one_segment"])
 def test_transform_one_segment(df_name, model, request):
     """Test that transform for one segment removes seasonality."""
     df = request.getfixturevalue(df_name)
@@ -95,9 +93,7 @@ def test_transform_multi_segments(ts_name, model, request):
 
 
 @pytest.mark.parametrize("model", ["additive", "multiplicative"])
-@pytest.mark.parametrize(
-    "df_name", ["df_seasonal_one_segment"]
-)
+@pytest.mark.parametrize("df_name", ["df_seasonal_one_segment"])
 def test_inverse_transform_one_segment(df_name, model, request):
     """Test that transform + inverse_transform don't change dataframe."""
     df = request.getfixturevalue(df_name)
@@ -164,8 +160,8 @@ def test_fit_transform_with_nans_in_tails(ts_seasonal_nan_tails, model_decompose
 def test_fit_transform_with_nans_in_head_or_middle_raise_error(ts_with_nans):
     transform = DeseasonalityTransform(in_column="target", period=7)
     with pytest.raises(
-            ValueError,
-            match="The input column contains NaNs in the head or in the middle of the series! Try to use the imputer."
+        ValueError,
+        match="The input column contains NaNs in the head or in the middle of the series! Try to use the imputer.",
     ):
         _ = transform.fit_transform(ts_with_nans)
 
