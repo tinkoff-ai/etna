@@ -15,6 +15,7 @@ from etna.transforms.decomposition import ReversibleChangePointsTransform
 from etna.transforms.decomposition import STLTransform
 from etna.transforms.decomposition import TheilSenTrendTransform
 from etna.transforms.decomposition import TrendTransform
+from etna.transforms.decomposition import DeseasonalityTransform
 from etna.transforms.encoders import LabelEncoderTransform
 from etna.transforms.encoders import MeanSegmentEncoderTransform
 from etna.transforms.encoders import OneHotEncoderTransform
