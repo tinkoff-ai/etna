@@ -21,77 +21,83 @@ def date_range(request) -> pd.DatetimeIndex:
 
 
 @pytest.fixture
-def all_date_present_df(date_range: pd.Series) -> pd.DataFrame:
+def df_all_date_present(date_range: pd.Series) -> pd.DataFrame:
     """Create pd.DataFrame that contains some target on given range of dates without gaps."""
     df = pd.DataFrame({"timestamp": date_range})
     df["target"] = list(range(len(df)))
-    df.set_index("timestamp", inplace=True)
+    df["segment"] = "segment_1"
+    df = TSDataset.to_dataset(df)
+    df = df.asfreq(date_range.freq)
     return df
 
 
 @pytest.fixture
-def all_date_present_df_two_segments(all_date_present_df: pd.Series) -> pd.DataFrame:
-    """Create pd.DataFrame that contains two segments with some targets on given range of dates without gaps."""
-    df_1 = all_date_present_df.reset_index()
-    df_2 = all_date_present_df.copy().reset_index()
+def ts_all_date_present_two_segments(df_all_date_present) -> TSDataset:
+    """Create TSDataset that contains two segments with some targets on given range of dates without gaps."""
+    df_1 = TSDataset.to_flatten(df_all_date_present)
+    df_2 = df_1.copy()
 
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    return df
+    ts = TSDataset(df=df, freq=pd.infer_freq(df.index[-5:]))
+    return ts
 
 
 @pytest.fixture
-def df_with_missing_value_x_index(random_seed, all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-    """Create pd.DataFrame that contains some target on given range of dates with one gap."""
+def ts_with_missing_value_x_index(random_seed, df_all_date_present) -> Tuple[TSDataset, str, int]:
+    """Create TSDataset that contains some target on given range of dates with one gap."""
     # index cannot be first or last value,
     # because Imputer should know starting and ending dates
-    timestamps = sorted(all_date_present_df.index)[1:-1]
+    timestamps = sorted(df_all_date_present.index)[1:-1]
     idx = np.random.choice(timestamps)
-    df = all_date_present_df
-    df.loc[idx, "target"] = np.NaN
-    return df, idx
+    df = df_all_date_present.loc[:, pd.IndexSlice["segment_1", :]]
+    df.loc[idx, pd.IndexSlice[:, "target"]] = np.NaN
+    ts = TSDataset(df=df, freq=df.index.freqstr)
+    return ts, "segment_1", idx
 
 
 @pytest.fixture
-def df_with_missing_range_x_index(all_date_present_df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
-    """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
-    timestamps = sorted(all_date_present_df.index)
+def ts_with_missing_range_x_index(df_all_date_present) -> Tuple[TSDataset, str, list]:
+    """Create TSDataset that contains some target on given range of dates with range of gaps."""
+    timestamps = sorted(df_all_date_present.index)
     rng = timestamps[2:7]
-    df = all_date_present_df
-    df.loc[rng, "target"] = np.NaN
-    return df, rng
+    df = df_all_date_present.loc[:, pd.IndexSlice["segment_1", :]]
+    df.loc[rng, pd.IndexSlice[:, "target"]] = np.NaN
+    ts = TSDataset(df=df, freq=df.index.freqstr)
+    return ts, "segment_1", rng
 
 
 @pytest.fixture
-def df_with_missing_range_x_index_two_segments(
-    df_with_missing_range_x_index: pd.DataFrame,
-) -> Tuple[pd.DataFrame, list]:
-    """Create pd.DataFrame that contains some target on given range of dates with range of gaps."""
-    df_one_segment, rng = df_with_missing_range_x_index
-    df_1 = df_one_segment.reset_index()
-    df_2 = df_one_segment.copy().reset_index()
+def ts_with_missing_range_x_index_two_segments(
+    ts_with_missing_range_x_index,
+) -> Tuple[TSDataset, list]:
+    """Create TSDataset that contains some target on given range of dates with range of gaps."""
+    ts_one_segment, _, rng = ts_with_missing_range_x_index
+    df_1 = ts_one_segment.to_pandas(flatten=True)
+    df_2 = df_1.copy()
     df_1["segment"] = "segment_1"
     df_2["segment"] = "segment_2"
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    return df, rng
+    ts = TSDataset(df=df, freq=pd.infer_freq(df.index[-5:]))
+    return ts, rng
 
 
 @pytest.fixture
-def df_all_missing(all_date_present_df: pd.DataFrame) -> pd.DataFrame:
+def df_all_missing(df_all_date_present) -> pd.DataFrame:
     """Create pd.DataFrame with all values set to nan."""
-    all_date_present_df.loc[:, :] = np.NaN
-    return all_date_present_df
+    df_all_date_present.loc[:, :] = np.NaN
+    return df_all_date_present
 
 
 @pytest.fixture
-def df_all_missing_two_segments(all_date_present_df_two_segments: pd.DataFrame) -> pd.DataFrame:
-    """Create pd.DataFrame with all values set to nan."""
-    all_date_present_df_two_segments.loc[:, :] = np.NaN
-    return all_date_present_df_two_segments
+def ts_all_missing_two_segments(ts_all_date_present_two_segments) -> TSDataset:
+    """Create TSDataset with all values set to nan."""
+    ts_all_date_present_two_segments.loc[:, :] = np.NaN
+    return ts_all_date_present_two_segments
 
 
 @pytest.fixture

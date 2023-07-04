@@ -84,6 +84,11 @@ class Coverage(Metric, _QuantileMetricMixin):
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
 
+    @property
+    def greater_is_better(self) -> None:
+        """Whether higher metric value is better."""
+        return None
+
 
 class Width(Metric, _QuantileMetricMixin):
     """Mean width of prediction intervals.
@@ -147,6 +152,11 @@ class Width(Metric, _QuantileMetricMixin):
 
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
+
+    @property
+    def greater_is_better(self) -> bool:
+        """Whether higher metric value is better."""
+        return False
 
 
 __all__ = ["Coverage", "Width"]

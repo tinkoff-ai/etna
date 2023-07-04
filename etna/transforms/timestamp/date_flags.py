@@ -1,16 +1,20 @@
 from copy import deepcopy
 from math import ceil
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 
 import numpy as np
 import pandas as pd
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class DateFlagsTransform(Transform, FutureMixin):
+class DateFlagsTransform(IrreversibleTransform, FutureMixin):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
 
     Notes
@@ -103,7 +107,7 @@ class DateFlagsTransform(Transform, FutureMixin):
                 f"week_number_in_year, month_number_in_year, season_number, year_number, is_weekend should be True or any of "
                 f"special_days_in_week, special_days_in_month should be not empty."
             )
-
+        super().__init__(required_features=["target"])
         self.day_number_in_week = day_number_in_week
         self.day_number_in_month = day_number_in_month
         self.day_number_in_year = day_number_in_year
@@ -137,17 +141,37 @@ class DateFlagsTransform(Transform, FutureMixin):
     def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
-            init_parameters[feature_name] = self.__dict__[feature_name]
+            init_parameters[feature_name] = getattr(self, feature_name)
             temp_transform = DateFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
             return temp_transform.__repr__()
         else:
             return f"{self.out_column}_{feature_name}"
 
-    def fit(self, *args) -> "DateFlagsTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        features = [
+            "day_number_in_week",
+            "day_number_in_month",
+            "day_number_in_year",
+            "week_number_in_month",
+            "week_number_in_year",
+            "month_number_in_year",
+            "season_number",
+            "year_number",
+            "is_weekend",
+            "special_days_in_week",
+            "special_days_in_month",
+        ]
+        output_columns = [
+            self._get_column_name(feature_name=feature_name) for feature_name in features if getattr(self, feature_name)
+        ]
+        return output_columns
+
+    def _fit(self, df: pd.DataFrame) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Get required features from df.
 
         Parameters
@@ -323,6 +347,33 @@ class DateFlagsTransform(Transform, FutureMixin):
         """Generate an array with the weekends flags."""
         weekend_days = (5, 6)
         return timestamp_series.apply(lambda x: x.weekday() in weekend_days).values
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``day_number_in_week``, ``day_number_in_month``, ``day_number_in_year``,
+        ``week_number_in_month``, ``week_number_in_year``, ``month_number_in_year``, ``season_number``,
+        ``year_number``, ``is_weekend``.
+        Other parameters are expected to be set by the user.
+
+        There are no restrictions on all ``False`` values for the flags.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "day_number_in_week": CategoricalDistribution([False, True]),
+            "day_number_in_month": CategoricalDistribution([False, True]),
+            "day_number_in_year": CategoricalDistribution([False, True]),
+            "week_number_in_month": CategoricalDistribution([False, True]),
+            "week_number_in_year": CategoricalDistribution([False, True]),
+            "month_number_in_year": CategoricalDistribution([False, True]),
+            "season_number": CategoricalDistribution([False, True]),
+            "year_number": CategoricalDistribution([False, True]),
+            "is_weekend": CategoricalDistribution([False, True]),
+        }
 
 
 __all__ = ["DateFlagsTransform"]

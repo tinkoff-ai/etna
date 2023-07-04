@@ -3,6 +3,7 @@ from typing import List
 from typing import Set
 from typing import Tuple
 from typing import Union
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
@@ -13,6 +14,9 @@ from etna.datasets import TSDataset
 from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 
 HORIZON = 7
 
@@ -136,7 +140,7 @@ def test_make_features(
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     ).fit(example_tsds)
-    x, y = ensemble._make_features(forecasts_ts, train=True)
+    x, y = ensemble._make_features(ts=example_tsds, forecasts=forecasts_ts, train=True)
     features = set(x.columns.get_level_values("feature"))
     assert isinstance(x, pd.DataFrame)
     assert isinstance(y, pd.Series)
@@ -188,13 +192,52 @@ def test_forecast_interface(
     assert features == expected_features
 
 
-def test_forecast(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble):
-    """Check that StackingEnsemble.forecast forecast correct values"""
-    train, test = weekly_period_ts
-    ensemble = naive_ensemble.fit(train)
-    forecast = ensemble.forecast()
-    mae = MAE("macro")
-    np.allclose(mae(test, forecast), 0)
+@pytest.mark.parametrize(
+    "features_to_use,expected_features",
+    (
+        (None, {"regressor_target_0", "regressor_target_1"}),
+        (
+            "all",
+            {
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_month",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_dateflag_is_weekend",
+                "regressor_target_0",
+                "regressor_target_1",
+            },
+        ),
+        (
+            ["regressor_lag_feature_10", "regressor_dateflag_day_number_in_week", "unknown"],
+            {
+                "regressor_lag_feature_10",
+                "regressor_dateflag_day_number_in_week",
+                "regressor_target_0",
+                "regressor_target_1",
+            },
+        ),
+    ),
+)
+def test_predict_interface(
+    example_tsds,
+    naive_featured_pipeline_1: Pipeline,
+    naive_featured_pipeline_2: Pipeline,
+    features_to_use: Union[None, Literal[all], List[str]],
+    expected_features: Set[str],
+):
+    """Check that StackingEnsemble.predict returns TSDataset of correct length, containing all the expected columns"""
+    ensemble = StackingEnsemble(
+        pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
+    ).fit(example_tsds)
+    start_idx = 20
+    end_idx = 30
+    prediction = ensemble.predict(
+        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+    )
+    features = set(prediction.columns.get_level_values("feature")) - {"target"}
+    assert isinstance(prediction, TSDataset)
+    assert len(prediction.df) == end_idx - start_idx + 1
+    assert features == expected_features
 
 
 def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: StackingEnsemble):
@@ -207,7 +250,43 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_ensemble: St
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-@pytest.mark.long
+def test_forecast_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble):
+    naive_ensemble.fit(ts=example_tsds)
+    naive_ensemble._process_forecasts = MagicMock()
+
+    result = naive_ensemble._forecast(ts=example_tsds, return_components=False)
+
+    naive_ensemble._process_forecasts.assert_called_once()
+    assert result == naive_ensemble._process_forecasts.return_value
+
+
+def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble):
+    naive_ensemble.fit(ts=example_tsds)
+    naive_ensemble._process_forecasts = MagicMock()
+
+    result = naive_ensemble._predict(
+        ts=example_tsds,
+        start_timestamp=example_tsds.index[20],
+        end_timestamp=example_tsds.index[30],
+        prediction_interval=False,
+        quantiles=(),
+        return_components=False,
+    )
+
+    naive_ensemble._process_forecasts.assert_called_once()
+    assert result == naive_ensemble._process_forecasts.return_value
+
+
+def test_forecast_sanity(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naive_ensemble: StackingEnsemble):
+    """Check that StackingEnsemble.forecast forecast correct values"""
+    train, test = weekly_period_ts
+    ensemble = naive_ensemble.fit(train)
+    forecast = ensemble.forecast()
+    mae = MAE("macro")
+    np.allclose(mae(test, forecast), 0)
+
+
+@pytest.mark.long_1
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,
@@ -229,6 +308,7 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
+@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with StackingEnsemble."""
@@ -237,7 +317,53 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
         assert isinstance(df, pd.DataFrame)
 
 
-def test_forecast_raise_error_if_not_fitted(naive_ensemble: StackingEnsemble):
-    """Test that StackingEnsemble raise error when calling forecast without being fit."""
-    with pytest.raises(ValueError, match="StackingEnsemble is not fitted!"):
+def test_forecast_raise_error_if_no_ts(naive_ensemble: StackingEnsemble):
+    """Test that StackingEnsemble raises error when calling forecast without ts."""
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = naive_ensemble.forecast()
+
+
+@pytest.mark.parametrize("load_ts", [True, False])
+def test_save_load(stacking_ensemble_pipeline, example_tsds, load_ts):
+    assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_given_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts(
+        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
+    )
+
+
+def test_forecast_given_ts_with_prediction_interval(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
+        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
+    )
+
+
+def test_forecast_with_return_components_fails(example_tsds, naive_ensemble):
+    naive_ensemble.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        naive_ensemble.forecast(return_components=True)
+
+
+def test_predict_with_return_components_fails(example_tsds, naive_ensemble):
+    naive_ensemble.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        naive_ensemble.predict(ts=example_tsds, return_components=True)
+
+
+@pytest.mark.long_1
+@pytest.mark.parametrize("n_jobs", (1, 4))
+def test_ts_with_segment_named_target(
+    ts_with_segment_named_target: TSDataset, stacking_ensemble_pipeline: StackingEnsemble, n_jobs: int
+):
+    results = stacking_ensemble_pipeline.backtest(
+        ts=ts_with_segment_named_target, metrics=[MAE()], n_jobs=n_jobs, n_folds=5
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+def test_params_to_tune_not_implemented(stacking_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="StackingEnsemble doesn't support this method"):
+        _ = stacking_ensemble_pipeline.params_to_tune()

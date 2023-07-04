@@ -38,7 +38,7 @@ def test_tsdataset_transform_logging(example_tsds: TSDataset):
     _logger.add(file.name)
     example_tsds.fit_transform(transforms=transforms)
     idx = tslogger.add(ConsoleLogger())
-    example_tsds.transform(transforms=example_tsds.transforms)
+    example_tsds.transform(transforms=transforms)
     check_logged_transforms(log_file=file.name, transforms=transforms)
     tslogger.remove(idx)
 
@@ -61,7 +61,7 @@ def test_tsdataset_make_future_logging(example_tsds: TSDataset):
     _logger.add(file.name)
     example_tsds.fit_transform(transforms=transforms)
     idx = tslogger.add(ConsoleLogger())
-    _ = example_tsds.make_future(5)
+    _ = example_tsds.make_future(5, transforms=transforms)
     check_logged_transforms(log_file=file.name, transforms=transforms)
     tslogger.remove(idx)
 
@@ -73,7 +73,7 @@ def test_tsdataset_inverse_transform_logging(example_tsds: TSDataset):
     _logger.add(file.name)
     example_tsds.fit_transform(transforms=transforms)
     idx = tslogger.add(ConsoleLogger())
-    example_tsds.inverse_transform()
+    example_tsds.inverse_transform(transforms=transforms)
     check_logged_transforms(log_file=file.name, transforms=transforms[::-1])
     tslogger.remove(idx)
 
@@ -115,7 +115,7 @@ def test_backtest_logging(example_tsds: TSDataset):
         # remain lines only about backtest
         lines = [line for line in lines if "backtest" in line]
         assert len(lines) == len(metrics) * n_folds * len(example_tsds.segments)
-        assert all([any([metric_str in line for metric_str in metrics_str]) for line in lines])
+        assert all(any(metric_str in line for metric_str in metrics_str) for line in lines)
     tslogger.remove(idx)
 
 
@@ -149,7 +149,7 @@ def test_model_logging(example_tsds, model):
     idx = tslogger.add(ConsoleLogger())
 
     model.fit(example_tsds)
-    to_forecast = example_tsds.make_future(horizon)
+    to_forecast = example_tsds.make_future(horizon, transforms=[lags])
     model.forecast(to_forecast)
 
     with open(file.name, "r") as in_file:

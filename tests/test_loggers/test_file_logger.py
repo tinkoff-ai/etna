@@ -20,7 +20,7 @@ from etna.metrics import SMAPE
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 
-DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S"
+DATETIME_FORMAT = "%Y-%m-%dT%H-%M-%S-%f"
 
 
 def test_local_file_logger_init_new_dir():
@@ -249,11 +249,12 @@ def test_local_file_logger_with_stacking_ensemble(example_df):
         assert len(list(cur_dir.iterdir())) == 1, "we've run one experiment"
 
         current_experiment_dir = list(cur_dir.iterdir())[0]
-        assert len(list(current_experiment_dir.iterdir())) == 2, "crossval and crossval_results folders"
+        assert len(list(current_experiment_dir.iterdir())) == 4, "training, forecasting, crossval, crossval_results"
 
-        assert (
-            len(list((current_experiment_dir / "crossval").iterdir())) == n_folds
-        ), "crossval should have `n_folds` runs"
+        for folder in ["training", "forecasting", "crossval"]:
+            assert (
+                len(list((current_experiment_dir / folder).iterdir())) == n_folds
+            ), f"{folder} should have `n_folds` runs"
 
         tslogger.remove(idx)
 
@@ -281,11 +282,14 @@ def test_local_file_logger_with_empirical_prediction_interval(example_df):
         assert len(list(cur_dir.iterdir())) == 1, "we've run one experiment"
 
         current_experiment_dir = list(cur_dir.iterdir())[0]
-        assert len(list(current_experiment_dir.iterdir())) == 2, "crossval and crossval_results folders"
-
         assert (
-            len(list((current_experiment_dir / "crossval").iterdir())) == n_folds
-        ), "crossval should have `n_folds` runs"
+            len(list(current_experiment_dir.iterdir())) == 4
+        ), "training, forecasting, crossval, crossval_results folders"
+
+        for folder in ["training", "forecasting", "crossval"]:
+            assert (
+                len(list((current_experiment_dir / folder).iterdir())) == n_folds
+            ), f"{folder} should have `n_folds` runs"
 
         tslogger.remove(idx)
 

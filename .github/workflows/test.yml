@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install poetry
+          pip install poetry==1.4.0 # TODO: remove after poetry fix
           poetry --version
           poetry config virtualenvs.in-project true
           poetry install -E style --no-root
@@ -33,13 +33,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9, '3.10']
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Set up Python
+        id: setup-python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
@@ -55,32 +56,31 @@ jobs:
         uses: actions/cache@v2
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
+      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E all -vv
-
-      - name: Install Pytest
-        run: |
-          poetry install -E tests
+          poetry install -E "all tests" -vv
+          poetry run pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("not long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "not long" --cov-report=xml
-          poetry run pytest etna -v --doctest-modules
+          poetry run pytest tests -v --cov=etna -m "not long_1 and not long_2" --ignore=tests/test_experimental --cov-report=xml --durations=10
+          poetry run pytest etna -v --doctest-modules --ignore=etna/libs --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
 
-  long-test:
+  long-1-test:
       runs-on: ubuntu-latest
 
       steps:
       - uses: actions/checkout@v2
 
       - name: Set up Python
+        id: setup-python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
@@ -96,20 +96,126 @@ jobs:
         uses: actions/cache@v2
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
 
+      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E all -vv
-
-      - name: Install Pytest
-        run: |
-          poetry install -E tests
+          poetry install -E "all tests" -vv
+          poetry run pip install "sqlalchemy>=1.4,<2"
 
       - name: PyTest ("long")
         run: |
-          poetry run pytest tests -v --cov=etna -m "long" --cov-report=xml
+          poetry run pytest tests -v --cov=etna -m "long_1" --ignore=tests/test_experimental --cov-report=xml --durations=10
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+
+  long-2-test:
+      runs-on: ubuntu-latest
+
+      steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
+
+      # TODO: remove pip install after optuna fix
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install -E "all tests" -vv
+          poetry run pip install "sqlalchemy>=1.4,<2"
+
+      - name: PyTest ("long")
+        run: |
+          poetry run pytest tests -v --cov=etna -m "long_2" --ignore=tests/test_experimental --cov-report=xml --durations=10
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+
+  experimental-test:
+      runs-on: ubuntu-latest
+
+      steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: |
+          poetry install -E "all tests" -vv
+
+      - name: PyTest ("experimental")
+        run: |
+          poetry run pytest tests/test_experimental -v --cov=etna --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v2
+
+  test-pandas-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pandas-version:
+          - ">=1.1,<1.2"
+          - ">=1.2,<1.3"
+          - ">=1.3,<1.4"
+          - ">=1.4"
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: |
+          poetry install -E "all tests" -vv
+          poetry run pip install "pandas${{ matrix.pandas-version }}"
+
+      - name: PyTest ("tsdataset transforms")
+        run: |
+          poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml --durations=10
+          poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
+          poetry run pytest tests/test_models/test_utils.py -v --cov=etna --cov-report=xml --durations=10
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2

@@ -4,14 +4,15 @@ from typing import Optional
 
 import pandas as pd
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.datasets import TSDataset
+from etna.transforms.base import IrreversiblePerSegmentWrapper
+from etna.transforms.base import OneSegmentTransform
 
 
-class _OneSegmentResampleWithDistributionTransform(Transform):
+class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
     """_OneSegmentResampleWithDistributionTransform resamples the given column using the distribution of the other column."""
 
-    def __init__(self, in_column: str, distribution_column: str, inplace: bool, out_column: Optional[str]):
+    def __init__(self, in_column: str, distribution_column: str, inplace: bool, out_column: str):
         """
         Init _OneSegmentResampleWithDistributionTransform.
 
@@ -34,7 +35,7 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         self.distribution_column = distribution_column
         self.inplace = inplace
         self.out_column = out_column
-        self.distribution: pd.DataFrame = None
+        self.distribution: Optional[pd.DataFrame] = None
 
     def _get_folds(self, df: pd.DataFrame) -> List[int]:
         """
@@ -101,8 +102,12 @@ class _OneSegmentResampleWithDistributionTransform(Transform):
         df = df.drop(["fold", "distribution"], axis=1)
         return df
 
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform Dataframe."""
+        return df
 
-class ResampleWithDistributionTransform(PerSegmentWrapper):
+
+class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
     """ResampleWithDistributionTransform resamples the given column using the distribution of the other column.
 
     Warning
@@ -135,22 +140,42 @@ class ResampleWithDistributionTransform(PerSegmentWrapper):
         self.in_column = in_column
         self.distribution_column = distribution_column
         self.inplace = inplace
-        self.out_column = self._get_out_column(out_column)
+        self.out_column = out_column
+        self.in_column_regressor: Optional[bool] = None
+
+        if self.inplace and out_column:
+            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
+
         super().__init__(
             transform=_OneSegmentResampleWithDistributionTransform(
                 in_column=in_column,
                 distribution_column=distribution_column,
                 inplace=inplace,
-                out_column=self.out_column,
-            )
+                out_column=self._get_column_name(),
+            ),
+            required_features=[in_column, distribution_column],
         )
 
-    def _get_out_column(self, out_column: Optional[str]) -> str:
+    def _get_column_name(
+        self,
+    ) -> str:
         """Get the `out_column` depending on the transform's parameters."""
-        if self.inplace and out_column:
-            warnings.warn("Transformation will be applied inplace, out_column param will be ignored")
         if self.inplace:
             return self.in_column
-        if out_column:
-            return out_column
+        if self.out_column:
+            return self.out_column
         return self.__repr__()
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
+        return [self._get_column_name()] if self.in_column_regressor else []
+
+    def fit(self, ts: TSDataset) -> "ResampleWithDistributionTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self

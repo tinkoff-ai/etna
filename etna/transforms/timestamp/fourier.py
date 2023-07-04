@@ -1,15 +1,19 @@
 import math
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 
 import numpy as np
 import pandas as pd
 
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class FourierTransform(Transform, FutureMixin):
+class FourierTransform(IrreversibleTransform, FutureMixin):
     """Adds fourier features to the dataset.
 
     Notes
@@ -71,22 +75,37 @@ class FourierTransform(Transform, FutureMixin):
         if period < 2:
             raise ValueError("Period should be at least 2")
         self.period = period
-        self.mods: Sequence[int]
+
+        self.order = order
+        self.mods = mods
+        self._mods: Sequence[int]
 
         if order is not None and mods is None:
             if order < 1 or order > math.ceil(period / 2):
                 raise ValueError("Order should be within [1, ceil(period/2)] range")
-            self.mods = [mod for mod in range(1, 2 * order + 1) if mod < period]
+            self._mods = [mod for mod in range(1, 2 * order + 1) if mod < period]
         elif mods is not None and order is None:
             if min(mods) < 1 or max(mods) >= period:
                 raise ValueError("Every mod should be within [1, int(period)) range")
-            self.mods = mods
+            self._mods = mods
         else:
             raise ValueError("There should be exactly one option set: order or mods")
-        self.order = None
-        self.out_column = out_column
 
-    def fit(self, df: pd.DataFrame) -> "FourierTransform":
+        self.out_column = out_column
+        super().__init__(required_features=["target"])
+
+    def _get_column_name(self, mod: int) -> str:
+        if self.out_column is None:
+            return f"{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
+        else:
+            return f"{self.out_column}_{mod}"
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        output_columns = [self._get_column_name(mod=mod) for mod in self._mods]
+        return output_columns
+
+    def _fit(self, df: pd.DataFrame) -> "FourierTransform":
         """Fit method does nothing and is kept for compatibility.
 
         Parameters
@@ -99,12 +118,6 @@ class FourierTransform(Transform, FutureMixin):
         result: FourierTransform
         """
         return self
-
-    def _get_column_name(self, mod: int) -> str:
-        if self.out_column is None:
-            return f"{FourierTransform(period=self.period, mods=[mod]).__repr__()}"
-        else:
-            return f"{self.out_column}_{mod}"
 
     @staticmethod
     def _construct_answer(df: pd.DataFrame, features: pd.DataFrame) -> pd.DataFrame:
@@ -120,7 +133,7 @@ class FourierTransform(Transform, FutureMixin):
         result.columns.names = ["segment", "feature"]
         return result
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add harmonics to the dataset.
 
         Parameters
@@ -136,10 +149,27 @@ class FourierTransform(Transform, FutureMixin):
         features = pd.DataFrame(index=df.index)
         elapsed = np.arange(features.shape[0]) / self.period
 
-        for mod in self.mods:
+        for mod in self._mods:
             order = (mod + 1) // 2
             is_cos = mod % 2 == 0
 
             features[self._get_column_name(mod)] = np.sin(2 * np.pi * order * elapsed + np.pi / 2 * is_cos)
 
         return self._construct_answer(df, features)
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        If ``self.order`` is set then this grid tunes ``order`` parameter:
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        if self.mods is not None:
+            return {}
+
+        max_value = math.ceil(self.period / 2)
+        return {"order": IntDistribution(low=1, high=max_value, log=True)}

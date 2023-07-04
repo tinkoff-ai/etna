@@ -1,5 +1,6 @@
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -10,12 +11,14 @@ from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 from statsmodels.tsa.forecasting.stl import STLForecast
 from statsmodels.tsa.forecasting.stl import STLForecastResults
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
 
 
-class _OneSegmentSTLTransform(Transform):
+class _OneSegmentSTLTransform(OneSegmentTransform):
     def __init__(
         self,
         in_column: str,
@@ -121,7 +124,7 @@ class _OneSegmentSTLTransform(Transform):
         result: pd.DataFrame
             Dataframe with extracted features
         """
-        result = df.copy()
+        result = df
         if self.fit_results is not None:
             season_trend = self.fit_results.get_prediction(
                 start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
@@ -145,7 +148,7 @@ class _OneSegmentSTLTransform(Transform):
         result: pd.DataFrame
             Dataframe with extracted features
         """
-        result = df.copy()
+        result = df
         if self.fit_results is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         season_trend = self.fit_results.get_prediction(
@@ -159,7 +162,7 @@ class _OneSegmentSTLTransform(Transform):
         return result
 
 
-class STLTransform(PerSegmentWrapper):
+class STLTransform(ReversiblePerSegmentWrapper):
     """Transform that uses :py:class:`statsmodels.tsa.seasonal.STL` to subtract season and trend from the data.
 
     Warning
@@ -216,5 +219,25 @@ class STLTransform(PerSegmentWrapper):
                 robust=self.robust,
                 model_kwargs=self.model_kwargs,
                 stl_kwargs=self.stl_kwargs,
-            )
+            ),
+            required_features=[self.in_column],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``model``, ``robust``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "model": CategoricalDistribution(["arima", "holt"]),
+            "robust": CategoricalDistribution([False, True]),
+        }

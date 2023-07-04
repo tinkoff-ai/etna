@@ -5,7 +5,9 @@ import pmdarima as pm
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.sarimax import _SARIMAXBaseAdapter
 
 warnings.filterwarnings(
@@ -44,17 +46,27 @@ class _AutoARIMAAdapter(_SARIMAXBaseAdapter):
         super().__init__()
 
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
-        model = pm.auto_arima(endog, X=exog, **self.kwargs)
+        endog_np = endog.values
+        model = pm.auto_arima(endog_np, X=exog, **self.kwargs)
         return model.arima_res_
 
 
-class AutoARIMAModel(PerSegmentPredictionIntervalModel):
+class AutoARIMAModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """
     Class for holding auto arima model.
+
+    Method ``predict`` can use true target values only on train data on future data autoregression
+    forecasting will be made even if targets are known.
 
     Notes
     -----
     We use :py:class:`pmdarima.arima.arima.ARIMA`.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for AutoARIMA model are: exogenous and ARIMA components.
+    Decomposition is obtained directly from fitted model parameters.
     """
 
     def __init__(

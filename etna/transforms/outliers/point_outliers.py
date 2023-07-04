@@ -5,6 +5,7 @@ from typing import Type
 from typing import Union
 
 import pandas as pd
+from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.analysis import absolute_difference_distance
@@ -12,6 +13,10 @@ from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.models import SARIMAXModel
 from etna.transforms.outliers.base import OutliersTransform
 
@@ -58,6 +63,21 @@ class MedianOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window_size``, ``alpha``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "window_size": IntDistribution(low=3, high=30),
+            "alpha": FloatDistribution(low=0.5, high=5),
+        }
 
 
 class DensityOutliersTransform(OutliersTransform):
@@ -120,6 +140,23 @@ class DensityOutliersTransform(OutliersTransform):
             distance_func=self.distance_func,
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window_size``, ``distance_coef``, ``n_neighbors``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "window_size": IntDistribution(low=3, high=30),
+            "distance_coef": FloatDistribution(low=0.5, high=5),
+            "n_neighbors": IntDistribution(low=1, high=10),
+        }
+
 
 class PredictionIntervalOutliersTransform(OutliersTransform):
     """Transform that uses :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` to find anomalies in data."""
@@ -127,7 +164,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
     def __init__(
         self,
         in_column: str,
-        model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
+        model: Union[Literal["prophet"], Literal["sarimax"], Type["ProphetModel"], Type["SARIMAXModel"]],
         interval_width: float = 0.95,
         **model_kwargs,
     ):
@@ -149,7 +186,19 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
         self.model = model
         self.interval_width = interval_width
         self.model_kwargs = model_kwargs
+        self._model_type = self._get_model_type(model)
         super().__init__(in_column=in_column)
+
+    @staticmethod
+    def _get_model_type(
+        model: Union[Literal["prophet"], Literal["sarimax"], Type["ProphetModel"], Type["SARIMAXModel"]]
+    ) -> Union[Type["ProphetModel"], Type["SARIMAXModel"]]:
+        if isinstance(model, str):
+            if model == "prophet":
+                return ProphetModel
+            elif model == "sarimax":
+                return SARIMAXModel
+        return model
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` function with self parameters.
@@ -165,8 +214,27 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_prediction_interval(
-            ts=ts, model=self.model, interval_width=self.interval_width, in_column=self.in_column, **self.model_kwargs
+            ts=ts,
+            model=self._model_type,
+            interval_width=self.interval_width,
+            in_column=self.in_column,
+            **self.model_kwargs,
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``interval_width``, ``model``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "interval_width": FloatDistribution(low=0.8, high=1.0),
+            "model": CategoricalDistribution(["prophet", "sarimax"]),
+        }
 
 
 __all__ = [

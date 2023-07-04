@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,6 +8,8 @@ from etna.datasets import TSDataset
 from etna.metrics import R2
 from etna.models import LinearPerSegmentModel
 from etna.transforms.timestamp import FourierTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Series:
@@ -30,6 +34,13 @@ def get_one_df(period_1, period_2, magnitude_1, magnitude_2):
 
 
 @pytest.fixture
+def example_ts(example_df):
+    df = TSDataset.to_dataset(example_df)
+    ts = TSDataset(df=df, freq="H")
+    return ts
+
+
+@pytest.fixture
 def ts_trend_seasonal(random_seed) -> TSDataset:
     df_1 = get_one_df(period_1=7, period_2=30.4, magnitude_1=1, magnitude_2=1 / 2)
     df_1["segment"] = "segment_1"
@@ -39,15 +50,15 @@ def ts_trend_seasonal(random_seed) -> TSDataset:
     return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
 
 
-@pytest.mark.parametrize("order, mods, repr_mods", [(None, [1, 2, 3, 4], [1, 2, 3, 4]), (2, None, [1, 2, 3, 4])])
-def test_repr(order, mods, repr_mods):
+@pytest.mark.parametrize("order, mods", [(None, [1, 2, 3, 4]), (2, None)])
+def test_repr(order, mods):
     transform = FourierTransform(
         period=10,
         order=order,
         mods=mods,
     )
     transform_repr = transform.__repr__()
-    true_repr = f"FourierTransform(period = 10, order = None, mods = {repr_mods}, out_column = None, )"
+    true_repr = f"FourierTransform(period = 10, order = {order}, mods = {mods}, out_column = None, )"
     assert transform_repr == true_repr
 
 
@@ -87,17 +98,16 @@ def test_fail_set_both():
 @pytest.mark.parametrize(
     "period, order, num_columns", [(6, 2, 4), (7, 2, 4), (6, 3, 5), (7, 3, 6), (5.5, 2, 4), (5.5, 3, 5)]
 )
-def test_column_names(example_df, period, order, num_columns):
+def test_column_names(example_ts, period, order, num_columns):
     """Test that transform creates expected number of columns and they can be recreated by its name."""
-    df = TSDataset.to_dataset(example_df)
-    segments = df.columns.get_level_values("segment").unique()
+    segments = example_ts.columns.get_level_values("segment").unique()
     transform = FourierTransform(period=period, order=order)
-    transformed_df = transform.fit_transform(df)
+    transformed_df = transform.fit_transform(deepcopy(example_ts)).to_pandas()
     columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
     assert len(columns) == num_columns
     for column in columns:
         transform_temp = eval(column)
-        df_temp = transform_temp.fit_transform(df)
+        df_temp = transform_temp.fit_transform(deepcopy(example_ts)).to_pandas()
         columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
@@ -108,26 +118,24 @@ def test_column_names(example_df, period, order, num_columns):
         )
 
 
-def test_column_names_out_column(example_df):
+def test_column_names_out_column(example_ts):
     """Test that transform creates expected columns if `out_column` is set"""
-    df = TSDataset.to_dataset(example_df)
     transform = FourierTransform(period=10, order=3, out_column="regressor_fourier")
-    transformed_df = transform.fit_transform(df)
+    transformed_df = transform.fit_transform(example_ts).to_pandas()
     columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
     expected_columns = {f"regressor_fourier_{i}" for i in range(1, 7)}
     assert set(columns) == expected_columns
 
 
 @pytest.mark.parametrize("period, mod", [(24, 1), (24, 2), (24, 9), (24, 20), (24, 23), (7.5, 3), (7.5, 4)])
-def test_column_values(example_df, period, mod):
+def test_column_values(example_ts, period, mod):
     """Test that transform generates correct values."""
-    df = TSDataset.to_dataset(example_df)
     transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier")
-    transformed_df = transform.fit_transform(df)
-    for segment in example_df["segment"].unique():
+    transformed_df = transform.fit_transform(example_ts).to_pandas()
+    for segment in example_ts.segments:
         transform_values = transformed_df.loc[:, pd.IndexSlice[segment, f"regressor_fourier_{mod}"]]
 
-        timestamp = df.index
+        timestamp = example_ts.index
         freq = pd.Timedelta("1H")
         elapsed = (timestamp - timestamp[0]) / (period * freq)
         order = (mod + 1) // 2
@@ -143,12 +151,35 @@ def test_forecast(ts_trend_seasonal):
     """Test that transform works correctly in forecast."""
     transform_1 = FourierTransform(period=7, order=3)
     transform_2 = FourierTransform(period=30.4, order=5)
+    transforms = [transform_1, transform_2]
     ts_train, ts_test = ts_trend_seasonal.train_test_split(test_size=10)
-    ts_train.fit_transform(transforms=[transform_1, transform_2])
+    ts_train.fit_transform(transforms=transforms)
     model = LinearPerSegmentModel()
     model.fit(ts_train)
-    ts_future = ts_train.make_future(10)
+    ts_future = ts_train.make_future(10, transforms=transforms)
     ts_forecast = model.forecast(ts_future)
+    ts_forecast.inverse_transform(transforms)
     metric = R2("macro")
     r2 = metric(ts_test, ts_forecast)
     assert r2 > 0.95
+
+
+def test_save_load(ts_trend_seasonal):
+    transform = FourierTransform(period=7, order=3)
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_trend_seasonal)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_length",
+    [
+        (FourierTransform(period=7, order=1), 1),
+        (FourierTransform(period=7, mods=[1]), 0),
+        (FourierTransform(period=7, mods=[1, 4]), 0),
+        (FourierTransform(period=30.4, order=1), 1),
+        (FourierTransform(period=365.25, order=1), 1),
+    ],
+)
+def test_params_to_tune(transform, expected_length, ts_trend_seasonal):
+    ts = ts_trend_seasonal
+    assert len(transform.params_to_tune()) == expected_length
+    assert_sampling_is_valid(transform=transform, ts=ts)

@@ -36,7 +36,7 @@ def get_anomalies_median(
     outliers_per_segment = {}
     segments = ts.segments
     for seg in segments:
-        anomalies = []
+        anomalies: typing.List[int] = []
 
         segment_df = ts.df[seg].reset_index()
         values = segment_df[in_column].values

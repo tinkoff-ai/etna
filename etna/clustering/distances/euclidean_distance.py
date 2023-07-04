@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @numba.cfunc(numba.float64(numba.float64[:], numba.float64[:]))
-def euclidean_distance(x1: np.ndarray, x2: np.ndarray) -> float:
+def euclidean_distance(x1: np.ndarray, x2: np.ndarray) -> np.floating:
     """Get euclidean distance between two arrays.
 
     Parameters
@@ -23,7 +23,7 @@ def euclidean_distance(x1: np.ndarray, x2: np.ndarray) -> float:
 
     Returns
     -------
-    float:
+    :
         distance between x1 and x2
     """
     return np.linalg.norm(x1 - x2)

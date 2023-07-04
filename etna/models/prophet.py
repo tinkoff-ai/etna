@@ -1,19 +1,28 @@
+from copy import deepcopy
 from datetime import datetime
 from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Union
 
 import pandas as pd
 
 from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 
 if SETTINGS.prophet_required:
     from prophet import Prophet
+    from prophet.serialize import model_from_dict
+    from prophet.serialize import model_to_dict
 
 
 class _ProphetAdapter(BaseAdapter):
@@ -60,11 +69,16 @@ class _ProphetAdapter(BaseAdapter):
         self.stan_backend = stan_backend
         self.additional_seasonality_params = additional_seasonality_params
 
-        self.model = Prophet(
+        self.model = self._create_model()
+
+        self.regressor_columns: Optional[List[str]] = None
+
+    def _create_model(self) -> "Prophet":
+        model = Prophet(
             growth=self.growth,
-            changepoints=changepoints,
-            n_changepoints=n_changepoints,
-            changepoint_range=changepoint_range,
+            changepoints=self.changepoints,
+            n_changepoints=self.n_changepoints,
+            changepoint_range=self.changepoint_range,
             yearly_seasonality=self.yearly_seasonality,
             weekly_seasonality=self.weekly_seasonality,
             daily_seasonality=self.daily_seasonality,
@@ -80,9 +94,9 @@ class _ProphetAdapter(BaseAdapter):
         )
 
         for seasonality_params in self.additional_seasonality_params:
-            self.model.add_seasonality(**seasonality_params)
+            model.add_seasonality(**seasonality_params)
 
-        self.regressor_columns: Optional[List[str]] = None
+        return model
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetAdapter":
         """
@@ -96,10 +110,7 @@ class _ProphetAdapter(BaseAdapter):
             List of the columns with regressors
         """
         self.regressor_columns = regressors
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
         for regressor in self.regressor_columns:
             if regressor not in self.predefined_regressors_names:
                 self.model.add_regressor(regressor)
@@ -124,11 +135,7 @@ class _ProphetAdapter(BaseAdapter):
         :
             DataFrame with predictions
         """
-        df = df.reset_index()
-        prophet_df = pd.DataFrame()
-        prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        prophet_df = self._prepare_prophet_df(df=df)
         forecast = self.model.predict(prophet_df)
         y_pred = pd.DataFrame(forecast["yhat"])
         if prediction_interval:
@@ -142,6 +149,86 @@ class _ProphetAdapter(BaseAdapter):
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
 
+    def _prepare_prophet_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Prepare dataframe for fit and predict."""
+        if self.regressor_columns is None:
+            raise ValueError("List of regressor is not set!")
+
+        df = df.reset_index()
+
+        prophet_df = pd.DataFrame()
+        prophet_df["y"] = df["target"]
+        prophet_df["ds"] = df["timestamp"]
+        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+        return prophet_df
+
+    @staticmethod
+    def _filter_aggregated_components(components: Iterable[str]) -> Set[str]:
+        """Filter out aggregated components."""
+        # aggregation of corresponding model terms, e.g. sum
+        aggregated_components = {
+            "additive_terms",
+            "multiplicative_terms",
+            "extra_regressors_additive",
+            "extra_regressors_multiplicative",
+        }
+
+        return set(components) - aggregated_components
+
+    def _check_mul_components(self):
+        """Raise error if model contains multiplicative components."""
+        components_modes = self.model.component_modes
+        if components_modes is None:
+            raise ValueError("This model is not fitted!")
+
+        mul_components = self._filter_aggregated_components(self.model.component_modes["multiplicative"])
+        if len(mul_components) > 0:
+            raise ValueError("Forecast decomposition is only supported for additive components!")
+
+    def _predict_seasonal_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate seasonal, holidays and exogenous components."""
+        model = self.model
+
+        seasonal_features, _, component_cols, _ = model.make_all_seasonality_features(df)
+
+        holiday_names = set(model.train_holiday_names) if model.train_holiday_names is not None else set()
+
+        components_names = list(
+            filter(lambda v: v not in holiday_names, self._filter_aggregated_components(component_cols.columns))
+        )
+
+        beta_c = model.params["beta"].T * component_cols[components_names].values
+        comp = seasonal_features.values @ beta_c
+
+        # apply rescaling for additive components
+        comp *= model.y_scale
+
+        return pd.DataFrame(data=comp, columns=components_names)
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        self._check_mul_components()
+
+        prophet_df = self._prepare_prophet_df(df=df)
+
+        prophet_df = self.model.setup_dataframe(prophet_df)
+
+        components = self._predict_seasonal_components(df=prophet_df)
+        components["trend"] = self.model.predict_trend(df=prophet_df)
+
+        return components.add_prefix("target_component_")
+
     def get_model(self) -> Prophet:
         """Get internal prophet.Prophet model that is used inside etna class.
 
@@ -152,14 +239,49 @@ class _ProphetAdapter(BaseAdapter):
         """
         return self.model
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        try:
+            model_dict = model_to_dict(self.model)
+            is_fitted = True
+        except ValueError:
+            is_fitted = False
+            model_dict = {}
+        del state["model"]
+        state["_is_fitted"] = is_fitted
+        state["_model_dict"] = model_dict
+        return state
 
-class ProphetModel(PerSegmentPredictionIntervalModel):
+    def __setstate__(self, state):
+        local_state = deepcopy(state)
+        is_fitted = local_state["_is_fitted"]
+        model_dict = local_state["_model_dict"]
+        del local_state["_is_fitted"]
+        del local_state["_model_dict"]
+
+        self.__dict__.update(local_state)
+
+        if is_fitted:
+            self.model = model_from_dict(model_dict)
+        else:
+            self.model = self._create_model()
+
+
+class ProphetModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """Class for holding Prophet model.
 
     Notes
     -----
     Original Prophet can use features 'cap' and 'floor',
     they should be added to the known_future list on dataset initialization.
+
+    This model supports in-sample and out-of-sample forecast decomposition. The number
+    of components in the decomposition depends on model parameters. Main components are:
+    trend, seasonality, holiday and exogenous effects. Seasonal components will be decomposed
+    down to individual periods if fitted. Holiday and exogenous will be present in decomposition
+    if fitted.Corresponding components are obtained directly from the model.
 
     Examples
     --------
@@ -332,3 +454,23 @@ class ProphetModel(PerSegmentPredictionIntervalModel):
                 additional_seasonality_params=self.additional_seasonality_params,
             )
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``seasonality_mode``, ``seasonality_prior_scale``, ``changepoint_prior_scale``,
+        ``changepoint_range``, ``holidays_prior_scale``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "seasonality_mode": CategoricalDistribution(["additive", "multiplicative"]),
+            "seasonality_prior_scale": FloatDistribution(low=1e-2, high=10, log=True),
+            "changepoint_prior_scale": FloatDistribution(low=1e-3, high=0.5, log=True),
+            "changepoint_range": FloatDistribution(low=0.8, high=0.95),
+            "holidays_prior_scale": FloatDistribution(low=1e-2, high=10, log=True),
+        }

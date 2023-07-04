@@ -9,6 +9,7 @@ from joblib import delayed
 from sklearn.tree import DecisionTreeRegressor
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.ensembles import StackingEnsemble
 from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostPerSegmentModel
@@ -63,6 +64,12 @@ def voting_ensemble_pipeline(
     catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
 ) -> VotingEnsemble:
     pipeline = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def voting_ensemble_naive(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
     return pipeline
 
 
@@ -155,3 +162,12 @@ def naive_ensemble(horizon: int = 7) -> StackingEnsemble:
         features_to_use="all",
     )
     return ensemble
+
+
+@pytest.fixture
+def ts_with_segment_named_target() -> TSDataset:
+    df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=5, freq="D")
+    df.loc[df["segment"] == "segment_0", "segment"] = "target"
+    df_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, freq="D")
+    return ts

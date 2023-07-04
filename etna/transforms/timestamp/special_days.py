@@ -1,12 +1,17 @@
 import datetime
+from typing import Any
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 
 import pandas as pd
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversiblePerSegmentWrapper
+from etna.transforms.base import OneSegmentTransform
 
 
 def calc_day_number_in_week(datetime_day: datetime.datetime) -> int:
@@ -17,7 +22,7 @@ def calc_day_number_in_month(datetime_day: datetime.datetime) -> int:
     return datetime_day.day
 
 
-class _OneSegmentSpecialDaysTransform(Transform):
+class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
     """
     Search for anomalies in values, marked this days as 1 (and return new column with 1 in corresponding places).
 
@@ -55,6 +60,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
         self.anomaly_week_days: Optional[Tuple[int]] = None
         self.anomaly_month_days: Optional[Tuple[int]] = None
 
+        self.res_type: Dict[str, Any]
         if self.find_special_weekday and find_special_month_day:
             self.res_type = {"df_sample": (0, 0), "columns": ["anomaly_weekdays", "anomaly_monthdays"]}
         elif self.find_special_weekday:
@@ -116,8 +122,7 @@ class _OneSegmentSpecialDaysTransform(Transform):
             to_add["anomaly_monthdays"] = to_add["anomaly_monthdays"].astype("category")
 
         to_add.index = df.index
-        to_return = df.copy()
-        to_return = pd.concat([to_return, to_add], axis=1)
+        to_return = pd.concat([df, to_add], axis=1)
         to_return.columns.names = df.columns.names
         return to_return
 
@@ -165,8 +170,12 @@ class _OneSegmentSpecialDaysTransform(Transform):
 
         return df.loc[:, ["datetime"]].apply(check, axis=1).rename("anomaly_monthdays")
 
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Inverse transform Dataframe."""
+        return df
 
-class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
+
+class SpecialDaysTransform(IrreversiblePerSegmentWrapper, FutureMixin):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
 
     Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.
@@ -196,8 +205,36 @@ class SpecialDaysTransform(PerSegmentWrapper, FutureMixin):
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
         super().__init__(
-            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day)
+            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day),
+            required_features=["target"],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        output_columns = []
+        if self.find_special_weekday:
+            output_columns.append("anomaly_weekdays")
+        if self.find_special_month_day:
+            output_columns.append("anomaly_monthdays")
+        return output_columns
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``find_special_weekday``, ``find_special_month_day``.
+        Other parameters are expected to be set by the user.
+
+        There are no restrictions on all ``False`` values for the flags.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "find_special_weekday": CategoricalDistribution([False, True]),
+            "find_special_month_day": CategoricalDistribution([False, True]),
+        }
 
 
 __all__ = ["SpecialDaysTransform"]

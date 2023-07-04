@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Union
@@ -17,13 +18,15 @@ from sklearn.linear_model import LinearRegression
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
-from etna.ensembles import EnsembleMixin
+from etna.distributions import BaseDistribution
+from etna.ensembles.mixins import EnsembleMixin
+from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
-class StackingEnsemble(BasePipeline, EnsembleMixin):
+class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     """StackingEnsemble is a pipeline that forecast future using the metamodel to combine the forecasts of the base models.
 
     Examples
@@ -90,7 +93,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         """
         self._validate_pipeline_number(pipelines=pipelines)
         self.pipelines = pipelines
-        self.final_model = LinearRegression() if final_model is None else final_model
+        self.final_model = LinearRegression(positive=True) if final_model is None else final_model
         self._validate_backtest_n_folds(n_folds)
         self.n_folds = n_folds
         self.features_to_use = features_to_use
@@ -157,7 +160,7 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
 
         # Fit the final model
         self.filtered_features_for_final_model = self._filter_features_to_use(forecasts)
-        x, y = self._make_features(forecasts=forecasts, train=True)
+        x, y = self._make_features(ts=self.ts, forecasts=forecasts, train=True)
         self.final_model.fit(x, y)
 
         # Fit the base models
@@ -167,15 +170,12 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         return self
 
     def _make_features(
-        self, forecasts: List[TSDataset], train: bool = False
+        self, ts: TSDataset, forecasts: List[TSDataset], train: bool = False
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the ``final_model``."""
-        if self.ts is None:
-            raise ValueError("StackingEnsemble is not fitted! Fit the StackingEnsemble before calling forecast method.")
-
         # Stack targets from the forecasts
         targets = [
-            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, axis=1)
+            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, level="feature", axis=1)
             for i, forecast in enumerate(forecasts)
         ]
         targets = pd.concat(targets, axis=1)
@@ -198,36 +198,25 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         features_df = pd.concat([features, targets], axis=1)
 
         # Flatten the features to fit the sklearn interface
-        x = pd.concat([features_df.loc[:, segment] for segment in self.ts.segments], axis=0)
+        x = pd.concat([features_df.loc[:, segment] for segment in ts.segments], axis=0)
         if train:
             y = pd.concat(
-                [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
-                    for segment in self.ts.segments
-                ],
+                [ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"] for segment in ts.segments],
                 axis=0,
             )
             return x, y
         else:
             return x, None
 
-    def _forecast(self) -> TSDataset:
-        """Make predictions.
-
-        Compute the combination of pipelines' forecasts using ``final_model``
-        """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
-
-        # Get forecast
-        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
-        )
-        x, _ = self._make_features(forecasts=forecasts, train=False)
-        y = self.final_model.predict(x).reshape(-1, self.horizon).T
+    def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
+        x, _ = self._make_features(ts=ts, forecasts=forecasts, train=False)
+        y = self.final_model.predict(x)
+        num_segments = len(forecasts[0].segments)
+        y = y.reshape(num_segments, -1).T
+        num_timestamps = y.shape[0]
 
         # Format the forecast into TSDataset
-        segment_col = [segment for segment in self.ts.segments for _ in range(self.horizon)]
+        segment_col = [segment for segment in ts.segments for _ in range(num_timestamps)]
         x.loc[:, "segment"] = segment_col
         x.loc[:, "timestamp"] = x.index.values
         df_exog = TSDataset.to_dataset(x)
@@ -235,6 +224,55 @@ class StackingEnsemble(BasePipeline, EnsembleMixin):
         df = forecasts[0][:, :, "target"].copy()
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
 
-        forecast = TSDataset(df=df, freq=self.ts.freq, df_exog=df_exog)
-        forecast.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
+        result = TSDataset(df=df, freq=ts.freq, df_exog=df_exog)
+        result.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
+        return result
+
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
+        """Make predictions.
+
+        Compute the combination of pipelines' forecasts using ``final_model``
+        """
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
+        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+            delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
+        )
+        forecast = self._process_forecasts(ts=ts, forecasts=forecasts)
         return forecast
+
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+        return_components: bool,
+    ) -> TSDataset:
+        if prediction_interval:
+            raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
+        predictions = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+            delayed(self._predict_pipeline)(
+                ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+            )
+            for pipeline in self.pipelines
+        )
+        prediction = self._process_forecasts(ts=ts, forecasts=predictions)
+        return prediction
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Not implemented for this class.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")

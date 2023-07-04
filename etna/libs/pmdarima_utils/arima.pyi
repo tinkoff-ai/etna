@@ -2,6 +2,13 @@ from typing import Any
 
 from numpy import ndarray
 
+def check_endog(
+    y: Any,
+    dtype: Any,
+    copy: bool,
+    force_all_finite: bool,
+    ) -> ndarray: ...
+
 def ARMAtoMA(
     ar: ndarray, 
     ma: ndarray, 

@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -6,12 +8,14 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 
 from etna.datasets.tsdataset import TSDataset
-from etna.transforms.base import PerSegmentWrapper
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import TheilSenTrendTransform
 from etna.transforms.decomposition.detrend import _OneSegmentLinearTrendBaseTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 DEFAULT_SEGMENT = "segment_1"
+TREND_TRANSFORM_TYPE = Union[LinearTrendTransform, TheilSenTrendTransform]
 
 
 @pytest.fixture
@@ -20,15 +24,18 @@ def df_one_segment(example_df) -> pd.DataFrame:
 
 
 @pytest.fixture
-def df_two_segments(example_df) -> pd.DataFrame:
-    return TSDataset.to_dataset(example_df)
+def ts_two_segments(example_df) -> TSDataset:
+    df = TSDataset.to_dataset(example_df)
+    ts = TSDataset(df=df, freq="D")
+    return ts
 
 
 @pytest.fixture
-def df_two_segments_diff_size(example_df) -> pd.DataFrame:
+def ts_two_segments_diff_size(example_df) -> TSDataset:
     df = TSDataset.to_dataset(example_df)
     df.loc[:4, pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
-    return df
+    ts = TSDataset(df=df, freq="D")
+    return ts
 
 
 @pytest.fixture
@@ -67,9 +74,11 @@ def df_one_segment_linear(df_quadratic) -> pd.DataFrame:
 
 
 @pytest.fixture
-def df_two_segments_linear(df_quadratic) -> pd.DataFrame:
+def ts_two_segments_linear(df_quadratic) -> TSDataset:
     df_linear = df_quadratic[df_quadratic["segment"].isin(["segment_1", "segment_2"])]
-    return TSDataset.to_dataset(df_linear)
+    df = TSDataset.to_dataset(df_linear)
+    ts = TSDataset(df=df, freq="D")
+    return ts
 
 
 @pytest.fixture
@@ -78,8 +87,10 @@ def df_one_segment_quadratic(df_quadratic) -> pd.DataFrame:
 
 
 @pytest.fixture
-def df_two_segments_quadratic(df_quadratic) -> pd.DataFrame:
-    return TSDataset.to_dataset(df_quadratic)
+def ts_two_segments_quadratic(df_quadratic) -> TSDataset:
+    df = TSDataset.to_dataset(df_quadratic)
+    ts = TSDataset(df=df, freq="D")
+    return ts
 
 
 def _test_unbiased_fit_transform_one_segment(
@@ -87,35 +98,17 @@ def _test_unbiased_fit_transform_one_segment(
 ) -> None:
     """
     Test if mean of residue after trend subtraction is close to zero in one segment.
-
-    Parameters
-    ----------
-    trend_transform:
-        instance of OneSegmentLinearTrendBaseTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_almost_equal function in key-value format
     """
     residue = trend_transform.fit_transform(df)["target"].mean()
     npt.assert_almost_equal(residue, 0, **comparison_kwargs)
 
 
-def _test_unbiased_fit_transform_many_segments(trend_transform, df: pd.DataFrame, **comparison_kwargs) -> None:
+def _test_unbiased_fit_transform_many_segments(trend_transform, ts: TSDataset, **comparison_kwargs) -> None:
     """
     Test if mean of residue after trend subtraction is close to zero in all segments.
-
-    Parameters
-    ----------
-    trend_transform:
-         instance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_almost_equal function in key-value format
     """
-    residue = trend_transform.fit_transform(df)
-    for segment in df.columns.get_level_values("segment").unique():
+    residue = trend_transform.fit_transform(ts).to_pandas()
+    for segment in ts.segments:
         npt.assert_almost_equal(residue[segment, "target"].mean(), 0, **comparison_kwargs)
 
 
@@ -124,36 +117,18 @@ def _test_fit_transform_one_segment(
 ) -> None:
     """
     Test if residue after trend subtraction is close to zero in one segment.
-
-    Parameters
-    ----------
-    trend_transform:
-        instance of OneSegmentLinearTrendBaseTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_allclose function in key-value format
     """
     residue = trend_transform.fit_transform(df)["target"]
     residue = residue[~np.isnan(residue)]
     npt.assert_allclose(residue, 0, **comparison_kwargs)
 
 
-def _test_fit_transform_many_segments(trend_transform, df: pd.DataFrame, **comparison_kwargs) -> None:
+def _test_fit_transform_many_segments(trend_transform, ts: TSDataset, **comparison_kwargs) -> None:
     """
     Test if residue after trend subtraction is close to zero in all segments.
-
-    Parameters
-    ----------
-    trend_transform:
-         instance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_allclose function in key-value format
     """
-    residue = trend_transform.fit_transform(df)
-    for segment in df.columns.get_level_values("segment").unique():
+    residue = trend_transform.fit_transform(ts).to_pandas()
+    for segment in ts.segments:
         segment_residue = residue[segment, "target"]
         segment_residue = segment_residue[~np.isnan(segment_residue)]
         npt.assert_allclose(segment_residue, 0, **comparison_kwargs)
@@ -190,32 +165,32 @@ def test_unbiased_fit_transform_theil_sen_trend_all_data_one_segment(df_one_segm
     _test_unbiased_fit_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
 
 
-def test_unbiased_fit_transform_linear_trend_two_segments(df_two_segments: pd.DataFrame) -> None:
+def test_unbiased_fit_transform_linear_trend_two_segments(ts_two_segments: TSDataset) -> None:
     """
     This test checks that LinearRegression predicts unbiased trend on two segments of slightly noised data.
     """
     trend_transform = LinearTrendTransform(in_column="target")
-    _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
+    _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments)
 
 
-def test_unbiased_fit_transform_theil_sen_trend_two_segments(df_two_segments: pd.DataFrame) -> None:
+def test_unbiased_fit_transform_theil_sen_trend_two_segments(ts_two_segments: TSDataset) -> None:
     """
     This test checks that TheilSenRegressor predicts unbiased trend on two segments of slightly noised data.
     """
     trend_transform = TheilSenTrendTransform(
-        in_column="target", n_subsamples=int(len(df_two_segments) / 2), max_iter=3000, tol=1e-4
+        in_column="target", n_subsamples=int(len(ts_two_segments.index) / 2), max_iter=3000, tol=1e-4
     )
-    _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments, decimal=0)
+    _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments, decimal=0)
 
 
-def test_unbiased_fit_transform_theil_sen_trend_all_data_two_segments(df_two_segments: pd.DataFrame) -> None:
+def test_unbiased_fit_transform_theil_sen_trend_all_data_two_segments(ts_two_segments: TSDataset) -> None:
     """
     This test checks that TheilSenRegressor predicts unbiased trend on two segments of slightly noised data
     using all the data to train model.
     """
     # Note that it is a corner case: we use all the data to predict trend
-    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(df_two_segments))
-    _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
+    trend_transform = TheilSenTrendTransform(in_column="target", n_subsamples=len(ts_two_segments.index))
+    _test_unbiased_fit_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments)
 
 
 @pytest.mark.parametrize("df_fixture, poly_degree", [("df_one_segment_linear", 1), ("df_one_segment_quadratic", 2)])
@@ -261,41 +236,41 @@ def test_fit_transform_theil_sen_trend_all_data_one_segment(df_fixture, poly_deg
     _test_fit_transform_one_segment(trend_transform=trend_transform, df=df, atol=1e-5)
 
 
-@pytest.mark.parametrize("df_fixture, poly_degree", [("df_two_segments_linear", 1), ("df_two_segments_quadratic", 2)])
-def test_fit_transform_linear_trend_two_segments(df_fixture, poly_degree, request) -> None:
+@pytest.mark.parametrize("ts_fixture, poly_degree", [("ts_two_segments_linear", 1), ("ts_two_segments_quadratic", 2)])
+def test_fit_transform_linear_trend_two_segments(ts_fixture, poly_degree, request) -> None:
     """
     Test that LinearRegression predicts correct trend on two segments of slightly noised data.
     """
-    df = request.getfixturevalue(df_fixture)
+    ts = request.getfixturevalue(ts_fixture)
     trend_transform = LinearTrendTransform(in_column="target", poly_degree=poly_degree)
-    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df, atol=1e-5)
+    _test_fit_transform_many_segments(trend_transform=trend_transform, ts=ts, atol=1e-5)
 
 
-@pytest.mark.parametrize("df_fixture, poly_degree", [("df_two_segments_linear", 1), ("df_two_segments_quadratic", 2)])
-def test_fit_transform_theil_sen_trend_two_segments(df_fixture, poly_degree, request) -> None:
+@pytest.mark.parametrize("ts_fixture, poly_degree", [("ts_two_segments_linear", 1), ("ts_two_segments_quadratic", 2)])
+def test_fit_transform_theil_sen_trend_two_segments(ts_fixture, poly_degree, request) -> None:
     """
     Test that TheilSenRegressor predicts correct trend on two segments of slightly noised data.
 
     Not all data is used to train the model.
     """
-    df = request.getfixturevalue(df_fixture)
+    ts = request.getfixturevalue(ts_fixture)
     trend_transform = TheilSenTrendTransform(
-        in_column="target", poly_degree=poly_degree, n_subsamples=int(len(df) / 2), max_iter=3000, tol=1e-4
+        in_column="target", poly_degree=poly_degree, n_subsamples=int(len(ts.index) / 2), max_iter=3000, tol=1e-4
     )
-    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df, atol=1e-5)
+    _test_fit_transform_many_segments(trend_transform=trend_transform, ts=ts, atol=1e-5)
 
 
-@pytest.mark.parametrize("df_fixture, poly_degree", [("df_two_segments_linear", 1), ("df_two_segments_quadratic", 2)])
-def test_fit_transform_theil_sen_trend_all_data_two_segments(df_fixture, poly_degree, request) -> None:
+@pytest.mark.parametrize("ts_fixture, poly_degree", [("ts_two_segments_linear", 1), ("ts_two_segments_quadratic", 2)])
+def test_fit_transform_theil_sen_trend_all_data_two_segments(ts_fixture, poly_degree, request) -> None:
     """
     Test that TheilSenRegressor predicts correct trend on two segments of slightly noised data.
 
     All data is used to train the model.
     """
-    df = request.getfixturevalue(df_fixture)
+    ts = request.getfixturevalue(ts_fixture)
     # Note that it is a corner case: we use all the data to predict trend
-    trend_transform = TheilSenTrendTransform(in_column="target", poly_degree=poly_degree, n_subsamples=len(df))
-    _test_fit_transform_many_segments(trend_transform=trend_transform, df=df, atol=1e-5)
+    trend_transform = TheilSenTrendTransform(in_column="target", poly_degree=poly_degree, n_subsamples=len(ts.index))
+    _test_fit_transform_many_segments(trend_transform=trend_transform, ts=ts, atol=1e-5)
 
 
 def _test_inverse_transform_one_segment(
@@ -303,38 +278,22 @@ def _test_inverse_transform_one_segment(
 ) -> None:
     """
     Test that trend_transform can correctly make inverse_transform in one segment.
-
-    Parameters
-    ----------
-    trend_transform:
-        instance of LinearTrendBaseTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_allclose function in key-value format
     """
     df_transformed = trend_transform.fit_transform(df)
     df_inverse_transformed = trend_transform.inverse_transform(df_transformed)
     npt.assert_allclose(df["target"], df_inverse_transformed["target"], **comparison_kwargs)
 
 
-def _test_inverse_transform_many_segments(trend_transform, df: pd.DataFrame, **comparison_kwargs) -> None:
+def _test_inverse_transform_many_segments(trend_transform, ts: TSDataset, **comparison_kwargs) -> None:
     """
     Test that trend_transform can correctly make inverse_transform in all segments.
-
-    Parameters
-    ----------
-    trend_transform:
-        instance of LinearTrendTransform or TheilSenTrendTransform to predict trend with
-    df:
-        dataframe to predict
-    comparison_kwargs:
-        arguments for numpy.testing.assert_allclose function in key-value format
     """
-    df_transformed = trend_transform.fit_transform(df)
-    df_inverse_transformed = trend_transform.inverse_transform(df_transformed)
-    for segment in df.columns.get_level_values("segment").unique():
-        npt.assert_allclose(df_inverse_transformed[segment, "target"], df[segment, "target"], **comparison_kwargs)
+    trend_transform.fit_transform(ts)
+    df_inverse_transformed = trend_transform.inverse_transform(ts).to_pandas()
+    for segment in ts.segments:
+        npt.assert_allclose(
+            df_inverse_transformed[segment, "target"], ts.to_pandas()[segment, "target"], **comparison_kwargs
+        )
 
 
 @pytest.mark.parametrize("poly_degree", [1, 2])
@@ -360,23 +319,23 @@ def test_inverse_transform_theil_sen_trend_one_segment(df_one_segment: pd.DataFr
 
 
 @pytest.mark.parametrize("poly_degree", [1, 2])
-def test_inverse_transform_linear_trend_two_segments(df_two_segments: pd.DataFrame, poly_degree: int):
+def test_inverse_transform_linear_trend_two_segments(ts_two_segments: TSDataset, poly_degree: int):
     """
     Test that LinearTrend can correctly make inverse_transform for two segments.
     """
     trend_transform = LinearTrendTransform(in_column="target", poly_degree=poly_degree)
-    _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
+    _test_inverse_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments)
 
 
 @pytest.mark.parametrize("poly_degree", [1, 2])
-def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.DataFrame, poly_degree: int):
+def test_inverse_transform_theil_sen_trend_two_segments(ts_two_segments: TSDataset, poly_degree: int):
     """
     Test that TheilSenRegressor can correctly make inverse_transform for two segments.
     """
     trend_transform = TheilSenTrendTransform(
-        in_column="target", poly_degree=poly_degree, n_subsamples=len(df_two_segments)
+        in_column="target", poly_degree=poly_degree, n_subsamples=len(ts_two_segments.index)
     )
-    _test_inverse_transform_many_segments(trend_transform=trend_transform, df=df_two_segments)
+    _test_inverse_transform_many_segments(trend_transform=trend_transform, ts=ts_two_segments)
 
 
 @pytest.mark.parametrize(
@@ -384,29 +343,48 @@ def test_inverse_transform_theil_sen_trend_two_segments(df_two_segments: pd.Data
     [(LinearTrendTransform(in_column="target"), 7), (TheilSenTrendTransform(in_column="target"), 0)],
 )
 def test_fit_transform_two_segments_diff_size(
-    df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper, decimal: int
+    ts_two_segments_diff_size: TSDataset, transformer: TREND_TRANSFORM_TYPE, decimal: int
 ):
     """
     Test that TrendTransform can correctly make fit_transform for two segments of different size.
     """
     _test_unbiased_fit_transform_many_segments(
-        trend_transform=transformer, df=df_two_segments_diff_size, decimal=decimal
+        trend_transform=transformer, ts=ts_two_segments_diff_size, decimal=decimal
     )
 
 
 @pytest.mark.parametrize(
     "transformer", [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")]
 )
-def test_inverse_transform_segments_diff_size(df_two_segments_diff_size: pd.DataFrame, transformer: PerSegmentWrapper):
+def test_inverse_transform_segments_diff_size(ts_two_segments_diff_size: TSDataset, transformer: TREND_TRANSFORM_TYPE):
     """
     Test that TrendTransform can correctly make inverse_transform for two segments of different size.
     """
-    _test_inverse_transform_many_segments(trend_transform=transformer, df=df_two_segments_diff_size)
+    _test_inverse_transform_many_segments(trend_transform=transformer, ts=ts_two_segments_diff_size)
 
 
 @pytest.mark.parametrize(
     "transformer,decimal",
     [(LinearTrendTransform(in_column="target"), 7), (TheilSenTrendTransform(in_column="target"), 0)],
 )
-def test_fit_transform_with_nans(transformer, df_with_nans, decimal):
-    _test_unbiased_fit_transform_many_segments(trend_transform=transformer, df=df_with_nans, decimal=decimal)
+def test_fit_transform_with_nans(transformer, ts_with_nans, decimal):
+    _test_unbiased_fit_transform_many_segments(trend_transform=transformer, ts=ts_with_nans, decimal=decimal)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")],
+)
+def test_save_load(transform, ts_two_segments_linear):
+    ts = ts_two_segments_linear
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [LinearTrendTransform(in_column="target"), TheilSenTrendTransform(in_column="target")],
+)
+def test_params_to_tune(transform, ts_two_segments_linear):
+    ts = ts_two_segments_linear
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

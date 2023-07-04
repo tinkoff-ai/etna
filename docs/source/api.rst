@@ -14,7 +14,10 @@ API
    transforms
    ensembles
    pipeline
+   reconciliation
    analysis
+   auto
+   distributions
    clustering
    loggers
    commands

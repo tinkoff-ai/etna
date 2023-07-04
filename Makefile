@@ -1,12 +1,18 @@
-lint: isort-check black-check flake8-check mypy-check spell-check imported-deps-check notebooks-check
+lint: isort-check black-check flake8-check mypy-check spell-check imported-deps-check notebooks-check isort-check-examples black-check-examples
 
 isort-check:
 	isort --skip etna/libs --sl -c etna/
 	isort --skip etna/libs --sl -c tests/
 
+isort-check-examples:
+	isort --sl -c examples/**/*.py
+
 black-check:
 	black --check etna/
 	black --check tests/
+
+black-check-examples:
+	black --check examples/**/*.py
 
 flake8-check:
 	flake8 --exclude etna/libs etna/
@@ -16,7 +22,7 @@ mypy-check:
 	mypy
 
 spell-check:
-	codespell etna/ *.md tests/ -L mape,hist
+	codespell etna/ *.md tests/ -L mape,hist,lamda
 	python -m scripts.notebook_codespell
 
 imported-deps-check:
@@ -24,6 +30,10 @@ imported-deps-check:
 
 notebooks-check:
 	black --check examples/*.ipynb
+
+format-examples:
+	isort --sl examples/**/*.py
+	black examples/**/*.py
 
 format:
 	isort --skip etna/libs --sl etna/

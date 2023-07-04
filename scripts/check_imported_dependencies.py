@@ -56,7 +56,7 @@ with open("pyproject.toml", "r") as f:
 
 pyproject_deps = [i for i, value in pyproject["tool"]["poetry"]["dependencies"].items() if i != "python"]
 
-missed_deps = [module for module in modules if module != "sklearn" and min([lev_dist(module, dep) for dep in pyproject_deps]) > 2]
+missed_deps = [module for module in modules if module not in ["sklearn", "tsfresh", "pkg_resources"] and min([lev_dist(module, dep) for dep in pyproject_deps]) > 2]
 
 if len(missed_deps) > 0:
     raise ValueError(f"Missing deps: {missed_deps}")

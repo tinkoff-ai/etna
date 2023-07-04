@@ -5,13 +5,13 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from etna.models.base import BaseModel
+from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
 from etna.transforms import Transform
 
 
 def assemble_pipelines(
-    models: Union[BaseModel, Sequence[BaseModel]],
+    models: Union[ModelType, Sequence[ModelType]],
     transforms: Sequence[Union[Transform, Sequence[Optional[Transform]]]],
     horizons: Union[int, Sequence[int]],
 ) -> List[Pipeline]:
@@ -51,14 +51,14 @@ def assemble_pipelines(
     --------
     >>> from etna.pipeline import assemble_pipelines
     >>> from etna.models import LinearPerSegmentModel, NaiveModel
-    >>> from etna.transforms import TrendTransform, AddConstTransform, LagTransform
+    >>> from etna.transforms import DateFlagsTransform, AddConstTransform, LagTransform
     >>> assemble_pipelines(models=LinearPerSegmentModel(), transforms=[LagTransform(in_column='target', lags=[1]), AddConstTransform(in_column='target', value=1)], horizons=[1,2,3])
     [Pipeline(model = LinearPerSegmentModel(fit_intercept = True, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), AddConstTransform(in_column = 'target', value = 1, inplace = True, out_column = None, )], horizon = 1, ),
     Pipeline(model = LinearPerSegmentModel(fit_intercept = True, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), AddConstTransform(in_column = 'target', value = 1, inplace = True, out_column = None, )], horizon = 2, ),
     Pipeline(model = LinearPerSegmentModel(fit_intercept = True, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), AddConstTransform(in_column = 'target', value = 1, inplace = True, out_column = None, )], horizon = 3, )]
-    >>> assemble_pipelines(models=[LinearPerSegmentModel(), NaiveModel()], transforms=[LagTransform(in_column='target', lags=[1]), [AddConstTransform(in_column='target', value=1), TrendTransform(in_column='target')]], horizons=[1,2])
+    >>> assemble_pipelines(models=[LinearPerSegmentModel(), NaiveModel()], transforms=[LagTransform(in_column='target', lags=[1]), [AddConstTransform(in_column='target', value=1), DateFlagsTransform()]], horizons=[1,2])
     [Pipeline(model = LinearPerSegmentModel(fit_intercept = True, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), AddConstTransform(in_column = 'target', value = 1, inplace = True, out_column = None, )], horizon = 1, ),
-    Pipeline(model = NaiveModel(lag = 1, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), TrendTransform(in_column = 'target', out_column = None, detrend_model = LinearRegression(), model = 'ar', custom_cost = None, min_size = 2, jump = 1, n_bkps = 5, pen = None, epsilon = None, )], horizon = 2, )]
+    Pipeline(model = NaiveModel(lag = 1, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), DateFlagsTransform(day_number_in_week = True, day_number_in_month = True, day_number_in_year = False, week_number_in_month = False, week_number_in_year = False, month_number_in_year = False, season_number = False, year_number = False, is_weekend = True, special_days_in_week = (), special_days_in_month = (), out_column = None, )], horizon = 2, )]
     """
     n_models = len(models) if isinstance(models, Sequence) else 1
     n_horizons = len(horizons) if isinstance(horizons, Sequence) else 1

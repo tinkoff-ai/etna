@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from etna.analysis import StatisticsRelevanceTable
+from etna.datasets import TSDataset
 from etna.transforms.feature_selection import MRMRFeatureSelectionTransform
 
 
@@ -39,7 +40,7 @@ def test_get_features_to_use_raise_warning(ts_with_exog: pd.DataFrame):
         (["regressor_1", "regressor_2"], ["regressor_1"], ["regressor_1", "exog", "target"]),
     ),
 )
-def test_transform(ts_with_exog: pd.DataFrame, features_to_use, selected_features, expected_columns):
+def test_transform(ts_with_exog: TSDataset, features_to_use, selected_features, expected_columns):
     base_selector = MRMRFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(),
         top_k=3,
@@ -47,7 +48,7 @@ def test_transform(ts_with_exog: pd.DataFrame, features_to_use, selected_feature
         return_features=False,
     )
     base_selector.selected_features = selected_features
-    transformed_df_with_exog = base_selector.transform(ts_with_exog.df)
+    transformed_df_with_exog = base_selector.transform(ts_with_exog).to_pandas()
     columns = set(transformed_df_with_exog.columns.get_level_values("feature"))
     assert sorted(columns) == sorted(expected_columns)
 
@@ -69,7 +70,7 @@ def test_transform_save_columns(ts_with_exog, features_to_use, selected_features
         return_features=return_features,
     )
     transform.selected_features = selected_features
-    ts_with_exog.transform([transform])
+    transform.transform(ts_with_exog)
     df_saved = transform._df_removed
     if return_features:
         got_columns = set(df_saved.columns.get_level_values("feature"))
@@ -97,8 +98,8 @@ def test_inverse_transform_back_excluded_columns(ts_with_exog, features_to_use, 
         features_to_use=features_to_use,
         return_features=return_features,
     )
-    ts_with_exog.fit_transform([transform])
-    ts_with_exog.inverse_transform()
+    transform.fit_transform(ts_with_exog)
+    transform.inverse_transform(ts_with_exog)
     columns_inversed = set(ts_with_exog.columns.get_level_values("feature"))
     assert columns_inversed == set(expected_columns)
     for column in columns_inversed:

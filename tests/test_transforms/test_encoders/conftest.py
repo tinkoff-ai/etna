@@ -6,24 +6,7 @@ from etna.datasets import TSDataset
 
 
 @pytest.fixture
-def dummy_df() -> pd.DataFrame:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
-    df_1["segment"] = "Moscow"
-    df_1["target"] = 1
-    df_2["segment"] = "Omsk"
-    df_2["target"] = 2
-    classic_df = pd.concat([df_1, df_2], ignore_index=True)
-
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    return df
-
-
-@pytest.fixture
-def simple_df() -> pd.DataFrame:
+def simple_ts() -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
     df_1["segment"] = "Moscow"
@@ -34,7 +17,8 @@ def simple_df() -> pd.DataFrame:
     df_2["exog"] = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    return df
+    ts = TSDataset(df, freq="D")
+    return ts
 
 
 @pytest.fixture

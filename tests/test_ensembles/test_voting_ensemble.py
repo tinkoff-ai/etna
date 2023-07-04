@@ -2,16 +2,22 @@ from copy import deepcopy
 from typing import List
 from typing import Optional
 from typing import Union
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
 import pytest
+from joblib import Parallel
+from joblib import delayed
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
 from etna.ensembles.voting_ensemble import VotingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
+from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 
 HORIZON = 7
 
@@ -86,24 +92,6 @@ def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline
     assert len(forecast.df) == HORIZON
 
 
-def test_forecast_values_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
-    """Check that VotingEnsemble gets average."""
-    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
-    ensemble.fit(ts=simple_df)
-    forecast = ensemble.forecast()
-    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
-    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [11, 12, 11, 12, 11, 12, 11])
-
-
-def test_forecast_values_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
-    """Check that VotingEnsemble gets average."""
-    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
-    ensemble.fit(ts=simple_df)
-    forecast = ensemble.forecast()
-    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
-    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
-
-
 def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):
     """Test the forecast interface with prediction intervals."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
@@ -115,7 +103,73 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, 
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-@pytest.mark.long
+def test_predict_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
+    """Check that VotingEnsemble.predict returns TSDataset of correct length."""
+    ensemble = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline])
+    ensemble.fit(ts=example_tsds)
+    start_idx = 20
+    end_idx = 30
+    prediction = ensemble.predict(
+        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+    )
+    assert isinstance(prediction, TSDataset)
+    assert len(prediction.df) == end_idx - start_idx + 1
+
+
+def test_vote_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    """Check that VotingEnsemble gets average during vote."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(ts=simple_df)
+    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
+    )
+    forecast = ensemble._vote(forecasts=forecasts)
+    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
+    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [11, 12, 11, 12, 11, 12, 11])
+
+
+def test_vote_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    """Check that VotingEnsemble gets average during vote."""
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
+    ensemble.fit(ts=simple_df)
+    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
+    )
+    forecast = ensemble._vote(forecasts=forecasts)
+    np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
+    np.testing.assert_array_equal(forecast[:, "B", "target"].values, [10.5, 12, 10.5, 12, 10.5, 12, 10.5])
+
+
+def test_forecast_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(ts=example_tsds)
+    ensemble._vote = MagicMock()
+
+    result = ensemble._forecast(ts=example_tsds, return_components=False)
+
+    ensemble._vote.assert_called_once()
+    assert result == ensemble._vote.return_value
+
+
+def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(ts=example_tsds)
+    ensemble._vote = MagicMock()
+
+    result = ensemble._predict(
+        ts=example_tsds,
+        start_timestamp=example_tsds.index[20],
+        end_timestamp=example_tsds.index[30],
+        prediction_interval=False,
+        quantiles=(),
+        return_components=False,
+    )
+
+    ensemble._vote.assert_called_once()
+    assert result == ensemble._vote.return_value
+
+
+@pytest.mark.long_1
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,
@@ -137,9 +191,44 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
+@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with VotingEnsemble."""
     results = voting_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
     for df in results:
         assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("load_ts", [True, False])
+def test_save_load(load_ts, voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_given_ts(voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts(
+        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
+    )
+
+
+def test_forecast_given_ts_with_prediction_interval(voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
+        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
+    )
+
+
+def test_forecast_with_return_components_fails(example_tsds, voting_ensemble_naive):
+    voting_ensemble_naive.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        voting_ensemble_naive.forecast(return_components=True)
+
+
+def test_predict_with_return_components_fails(example_tsds, voting_ensemble_naive):
+    voting_ensemble_naive.fit(example_tsds)
+    with pytest.raises(NotImplementedError, match="Adding target components is not currently implemented!"):
+        voting_ensemble_naive.predict(ts=example_tsds, return_components=True)
+
+
+def test_params_to_tune_not_implemented(voting_ensemble_pipeline):
+    with pytest.raises(NotImplementedError, match="VotingEnsemble doesn't support this method"):
+        _ = voting_ensemble_pipeline.params_to_tune()

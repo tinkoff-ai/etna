@@ -2,18 +2,24 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Literal
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from typing import cast
 
 import hydra_slayer
 import pandas as pd
 import typer
 from omegaconf import OmegaConf
+from typing_extensions import Literal
 
+from etna.commands.utils import estimate_max_n_folds
+from etna.commands.utils import remove_params
 from etna.datasets import TSDataset
 from etna.pipeline import Pipeline
+
+ADDITIONAL_BACKTEST_PARAMETERS = {"estimate_n_folds"}
+ADDITIONAL_PIPELINE_PARAMETERS = {"context_size"}
 
 
 def backtest(
@@ -63,6 +69,8 @@ def backtest(
     =============  ===========  ===============  ===============
     """
     pipeline_configs = OmegaConf.to_object(OmegaConf.load(config_path))
+    pipeline_configs = cast(Dict[str, Any], pipeline_configs)
+
     backtest_configs = OmegaConf.to_object(OmegaConf.load(backtest_config_path))
 
     df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
@@ -78,10 +86,34 @@ def backtest(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
 
-    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_configs)
+    pipeline_args = remove_params(params=pipeline_configs, to_remove=ADDITIONAL_PIPELINE_PARAMETERS)
+    pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_args)
     backtest_configs_hydra_slayer: Dict[str, Any] = hydra_slayer.get_from_params(**backtest_configs)
 
-    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_configs_hydra_slayer)
+    # estimate number of folds if parameters set
+    if backtest_configs_hydra_slayer.get("estimate_n_folds", False):
+        if "context_size" not in pipeline_configs:
+            raise ValueError("Parameter `context_size` must be set if number of folds estimation enabled!")
+
+        context_size = pipeline_configs["context_size"]
+
+        max_n_folds = estimate_max_n_folds(
+            ts=tsdataset,
+            pipeline=pipeline,
+            method_name="backtest",
+            context_size=context_size,
+            **backtest_configs_hydra_slayer,
+        )
+
+        n_folds = min(
+            max_n_folds, backtest_configs_hydra_slayer.get("n_folds", 5)
+        )  # use default value of folds if parameter not set
+
+        backtest_configs_hydra_slayer["n_folds"] = n_folds
+
+    backtest_call_args = remove_params(params=backtest_configs_hydra_slayer, to_remove=ADDITIONAL_BACKTEST_PARAMETERS)
+
+    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_call_args)
 
     (metrics.to_csv(output_path / "metrics.csv", index=False))
     (TSDataset.to_flatten(forecast).to_csv(output_path / "forecast.csv", index=False))

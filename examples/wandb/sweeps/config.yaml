@@ -1,0 +1,32 @@
+backtest:
+  metrics:
+  - _target_: etna.metrics.MAE
+  - _target_: etna.metrics.MSE
+  - _target_: etna.metrics.MAPE
+  - _target_: etna.metrics.SMAPE
+  - _target_: etna.metrics.Sign
+
+pipeline:
+  _target_: etna.pipeline.Pipeline
+  horizon: 14
+  model:
+    _target_: etna.models.CatBoostMultiSegmentModel
+    iterations: ${iterations}
+    depth: ${depth}
+  transforms:
+    - _target_: etna.transforms.StandardScalerTransform
+      in_column: target
+    - _target_: etna.transforms.SegmentEncoderTransform
+    - _target_: etna.transforms.LagTransform
+      in_column: target
+      lags: ${range:${pipeline.horizon},${sum:${pipeline.horizon},${lags}}}
+
+dataset:
+  file_path: ${oc.env:PWD}/../../data/example_dataset.csv
+  freq: D
+
+iterations: ???
+depth: ???
+lags: ???
+
+seed: 11

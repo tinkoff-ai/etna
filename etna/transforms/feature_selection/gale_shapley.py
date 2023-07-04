@@ -10,6 +10,9 @@ from typing_extensions import Literal
 
 from etna.analysis import RelevanceTable
 from etna.core import BaseMixin
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.transforms.feature_selection.base import BaseFeatureSelectionTransform
 
 
@@ -344,7 +347,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         selected_features = [feature[0] for feature in sorted_features][:n]
         return selected_features
 
-    def fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
+    def _fit(self, df: pd.DataFrame) -> "GaleShapleyFeatureSelectionTransform":
         """Fit Gale-Shapley algo and find a pool of ``top_k`` features.
 
         Parameters
@@ -371,7 +374,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
                 segment_features_ranking=segment_features_ranking,
                 feature_segments_ranking=feature_segments_ranking,
             )
-            if step == gale_shapley_steps_number - 1:
+            if step == gale_shapley_steps_number - 1 and last_step_features_number != 0:
                 selected_features = self._process_last_step(
                     matches=matches,
                     relevance_table=relevance_table,
@@ -385,3 +388,20 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
                 segment_features_ranking=segment_features_ranking, features_to_drop=selected_features
             )
         return self
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``top_k``, ``use_rank``. Other parameters are expected to be set by the user.
+
+        For ``top_k`` parameter the maximum suggested value is not greater than ``self.top_k``.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "top_k": IntDistribution(low=1, high=self.top_k),
+            "use_rank": CategoricalDistribution([False, True]),
+        }

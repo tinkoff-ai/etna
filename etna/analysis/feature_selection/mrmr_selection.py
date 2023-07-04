@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 from typing import List
 
@@ -26,6 +27,7 @@ def mrmr(
     relevance_table: pd.DataFrame,
     regressors: pd.DataFrame,
     top_k: int,
+    fast_redundancy: bool = False,
     relevance_aggregation_mode: str = AggregationMode.mean,
     redundancy_aggregation_mode: str = AggregationMode.mean,
     atol: float = 1e-10,
@@ -47,6 +49,9 @@ def mrmr(
         dataframe with regressors in etna format
     top_k:
         num of regressors to select; if there are not enough regressors, then all will be selected
+    fast_redundancy:
+        * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)`
+        * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
     relevance_aggregation_mode:
         the method for relevance values per-segment aggregation
     redundancy_aggregation_mode:
@@ -59,12 +64,18 @@ def mrmr(
     selected_features: List[str]
         list of ``top_k`` selected regressors, sorted by their importance
     """
+    if not fast_redundancy:
+        warnings.warn(
+            "Option `fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
+            DeprecationWarning,
+        )
     relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
     redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]
 
     relevance = relevance_table.apply(relevance_aggregation_fn).fillna(0)
 
     all_features = relevance.index.to_list()
+    segments = set(regressors.columns.get_level_values("segment"))
     selected_features: List[str] = []
     not_selected_features = all_features.copy()
 
@@ -76,16 +87,29 @@ def mrmr(
         score_denominator = pd.Series(1, index=not_selected_features)
         if i > 0:
             last_selected_feature = selected_features[-1]
-            not_selected_regressors = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, not_selected_features]]
             last_selected_regressor = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, last_selected_feature]]
+            not_selected_regressors = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, not_selected_features]]
+
+            if fast_redundancy:
+                segment_redundancy = pd.concat(
+                    [
+                        not_selected_regressors[segment].apply(
+                            lambda col: last_selected_regressor[segment].corrwith(col)  # noqa: B023
+                        )
+                        for segment in segments
+                    ]
+                ).abs()
+            else:
+                segment_redundancy = (
+                    not_selected_regressors.apply(lambda col: last_selected_regressor.corrwith(col))  # noqa: B023
+                    .abs()
+                    .groupby("feature")
+                    .apply(redundancy_aggregation_fn)
+                    .T.groupby("feature")
+                )
 
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
-                not_selected_regressors.apply(lambda col: last_selected_regressor.corrwith(col))
-                .abs()
-                .groupby("feature")
-                .apply(redundancy_aggregation_fn)
-                .T.groupby("feature")
-                .apply(redundancy_aggregation_fn)
+                segment_redundancy.apply(redundancy_aggregation_fn)
                 .clip(atol)
                 .fillna(np.inf)
                 .loc[not_selected_features]

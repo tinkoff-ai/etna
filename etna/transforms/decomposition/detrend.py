@@ -1,3 +1,6 @@
+from typing import Dict
+from typing import List
+
 import numpy as np
 import pandas as pd
 from sklearn.base import RegressorMixin
@@ -6,13 +9,15 @@ from sklearn.linear_model import TheilSenRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures
 
-from etna.transforms.base import PerSegmentWrapper
-from etna.transforms.base import Transform
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
+from etna.transforms.base import OneSegmentTransform
+from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
 
 
-class _OneSegmentLinearTrendBaseTransform(Transform):
-    """LinearTrendBaseTransform is a base class that implements trend subtraction and reconstruction feature."""
+class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
+    """Transform for one segment that implements trend subtraction and reconstruction feature."""
 
     def __init__(self, in_column: str, regressor: RegressorMixin, poly_degree: int = 1):
         """
@@ -81,7 +86,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         pd.DataFrame
             residue after trend subtraction
         """
-        result = df.copy()
+        result = df
         x = self._get_x(df)
         x -= self._x_median
         y = df[self.in_column].values
@@ -120,7 +125,7 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         pd.DataFrame
             data with reconstructed trend
         """
-        result = df.copy()
+        result = df
         x = self._get_x(df)
         x -= self._x_median
         y = df[self.in_column].values
@@ -134,9 +139,11 @@ class _OneSegmentLinearTrendBaseTransform(Transform):
         return result
 
 
-class LinearTrendTransform(PerSegmentWrapper):
-    """
-    Transform that uses :py:class:`sklearn.linear_model.LinearRegression` to find linear or polynomial trend in data.
+class LinearTrendTransform(ReversiblePerSegmentWrapper):
+    """Transform that uses linear regression with polynomial features to make a detrending.
+
+    Transform fits a :py:class:`sklearn.linear_model.LinearRegression` with polynomial features on each segment.
+    Values predicted by the model are subtracted from each segment.
 
     Warning
     -------
@@ -164,13 +171,34 @@ class LinearTrendTransform(PerSegmentWrapper):
                 in_column=self.in_column,
                 regressor=LinearRegression(**self.regression_params),
                 poly_degree=self.poly_degree,
-            )
+            ),
+            required_features=[self.in_column],
         )
 
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
 
-class TheilSenTrendTransform(PerSegmentWrapper):
-    """
-    Transform that uses :py:class:`sklearn.linear_model.TheilSenRegressor` to find linear or polynomial trend in data.
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes only ``poly_degree`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "poly_degree": IntDistribution(low=1, high=2),
+        }
+
+
+class TheilSenTrendTransform(ReversiblePerSegmentWrapper):
+    """Transform that uses Theil–Sen regression with polynomial features to make a detrending.
+
+    Transform fits a :py:class:`sklearn.linear_model.TheilSenRegressor` with polynomial features on each segment.
+    Values predicted by the model are subtracted from each segment.
 
     Warning
     -------
@@ -203,5 +231,24 @@ class TheilSenTrendTransform(PerSegmentWrapper):
                 in_column=self.in_column,
                 regressor=TheilSenRegressor(**self.regression_params),
                 poly_degree=self.poly_degree,
-            )
+            ),
+            required_features=[self.in_column],
         )
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        return []
+
+    def params_to_tune(self) -> Dict[str, "BaseDistribution"]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``poly_degree`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "poly_degree": IntDistribution(low=1, high=2),
+        }

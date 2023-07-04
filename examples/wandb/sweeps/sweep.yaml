@@ -1,18 +1,23 @@
 program:
-  run.py
+  sweeps_example.py
 method: bayes
 parameters:
-  learning-rate:
-    min: 0.0001
-    max: 0.1
   iterations:
     distribution: int_uniform
-    min: 2
-    max: 30
+    min: 10
+    max: 100
+  depth:
+    distribution: int_uniform
+    min: 1
+    max: 12  
+  lags:
+    distribution: int_uniform
+    min: 1
+    max: 24
 metric:
-  name: MAE_median
+  name: MAE_mean
   goal: minimize
 command:
   - python
-  - run.py
-  - ${args}
+  - sweeps_example.py
+  - ${args_no_hyphens}

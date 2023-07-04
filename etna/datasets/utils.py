@@ -1,8 +1,13 @@
+import re
 from enum import Enum
 from typing import List
+from typing import Optional
 from typing import Sequence
+from typing import Set
 
+import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from etna import SETTINGS
 
@@ -120,3 +125,172 @@ class _TorchDataset(Dataset):
 
     def __len__(self):
         return len(self.ts_samples)
+
+
+def set_columns_wide(
+    df_left: pd.DataFrame,
+    df_right: pd.DataFrame,
+    timestamps_left: Optional[Sequence[pd.Timestamp]] = None,
+    timestamps_right: Optional[Sequence[pd.Timestamp]] = None,
+    segments_left: Optional[Sequence[str]] = None,
+    features_right: Optional[Sequence[str]] = None,
+    features_left: Optional[Sequence[str]] = None,
+    segments_right: Optional[Sequence[str]] = None,
+) -> pd.DataFrame:
+    """Set columns in a left dataframe with values from the right dataframe.
+
+    Parameters
+    ----------
+    df_left:
+        dataframe to set columns in
+    df_right:
+        dataframe to set columns from
+    timestamps_left:
+        timestamps to select in ``df_left``
+    timestamps_right:
+        timestamps to select in ``df_right``
+    segments_left:
+        segments to select in ``df_left``
+    segments_right:
+        segments to select in ``df_right``
+    features_left:
+        features to select in ``df_left``
+    features_right:
+        features to select in ``df_right``
+
+    Returns
+    -------
+    :
+        a new dataframe with changed columns
+    """
+    # sort columns
+    df_left = df_left.sort_index(axis=1)
+    df_right = df_right.sort_index(axis=1)
+
+    # prepare indexing
+    timestamps_left_index = slice(None) if timestamps_left is None else timestamps_left
+    timestamps_right_index = slice(None) if timestamps_right is None else timestamps_right
+    segments_left_index = slice(None) if segments_left is None else segments_left
+    segments_right_index = slice(None) if segments_right is None else segments_right
+    features_left_index = slice(None) if features_left is None else features_left
+    features_right_index = slice(None) if features_right is None else features_right
+
+    right_value = df_right.loc[timestamps_right_index, (segments_right_index, features_right_index)]
+    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
+
+    return df_left
+
+
+def match_target_quantiles(features: Set[str]) -> Set[str]:
+    """Find quantiles in dataframe columns."""
+    pattern = re.compile("target_\d+\.\d+$")
+    return {i for i in list(features) if pattern.match(i) is not None}
+
+
+def match_target_components(features: Set[str]) -> Set[str]:
+    """Find target components in a set of features."""
+    return set(filter(lambda f: f.startswith("target_component_"), features))
+
+
+def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
+    """Find "target" column and target quantiles among dataframe columns."""
+    column_names = set(columns.get_level_values(level="feature"))
+    target_columns = match_target_quantiles(column_names)
+    if "target" in column_names:
+        target_columns.add("target")
+    return target_columns
+
+
+def get_level_dataframe(
+    df: pd.DataFrame,
+    mapping_matrix: csr_matrix,
+    source_level_segments: List[str],
+    target_level_segments: List[str],
+):
+    """Perform mapping to dataframe at the target level.
+
+    Parameters
+    ----------
+    df:
+        dataframe at the source level
+    mapping_matrix:
+        mapping matrix between levels
+    source_level_segments:
+        list of segments at the source level, set the order of segments matching the mapping matrix
+    target_level_segments:
+        list of segments at the target level
+
+    Returns
+    -------
+    :
+       dataframe at the target level
+    """
+    column_names = sorted(set(df.columns.get_level_values("feature")))
+    num_columns = len(column_names)
+    num_source_level_segments = len(source_level_segments)
+    num_target_level_segments = len(target_level_segments)
+
+    if set(df.columns.get_level_values(level="segment")) != set(source_level_segments):
+        raise ValueError("Segments mismatch for provided dataframe and `source_level_segments`!")
+
+    if num_source_level_segments != mapping_matrix.shape[1]:
+        raise ValueError("Number of source level segments do not match mapping matrix number of columns!")
+
+    if num_target_level_segments != mapping_matrix.shape[0]:
+        raise ValueError("Number of target level segments do not match mapping matrix number of columns!")
+
+    # Slice should be done by source_level_segments -- to fix the order of segments for mapping matrix,
+    # by num_columns -- to fix the order of columns to create correct index in the end
+    source_level_data = df.loc[
+        pd.IndexSlice[:], pd.IndexSlice[source_level_segments, column_names]
+    ].values  # shape: (t, num_source_level_segments * num_columns)
+
+    source_level_data = source_level_data.reshape(
+        (-1, num_source_level_segments, num_columns)
+    )  # shape: (t, num_source_level_segments, num_columns)
+    source_level_data = np.swapaxes(source_level_data, 1, 2)  # shape: (t, num_columns, num_source_level_segments)
+    source_level_data = source_level_data.reshape(
+        (-1, num_source_level_segments)
+    )  # shape: (t * num_columns, num_source_level_segments)
+
+    target_level_data = source_level_data @ mapping_matrix.T
+
+    target_level_data = target_level_data.reshape(
+        (-1, num_columns, num_target_level_segments)
+    )  # shape: (t, num_columns, num_target_level_segments)
+    target_level_data = np.swapaxes(target_level_data, 1, 2)  # shape: (t, num_target_level_segments, num_columns)
+    target_level_data = target_level_data.reshape(
+        (-1, num_columns * num_target_level_segments)
+    )  # shape: (t, num_target_level_segments * num_columns)
+
+    target_level_segments = pd.MultiIndex.from_product(
+        [target_level_segments, column_names], names=["segment", "feature"]
+    )
+    target_level_df = pd.DataFrame(data=target_level_data, index=df.index, columns=target_level_segments)
+
+    return target_level_df
+
+
+def inverse_transform_target_components(
+    target_components_df: pd.DataFrame, target_df: pd.DataFrame, inverse_transformed_target_df: pd.DataFrame
+) -> pd.DataFrame:
+    """Inverse transform target components.
+
+    Parameters
+    ----------
+    target_components_df:
+        Dataframe with target components
+    target_df:
+        Dataframe with transformed target
+    inverse_transformed_target_df:
+        Dataframe with inverse_transformed target
+
+    Returns
+    -------
+    :
+       Dataframe with inverse transformed target components
+    """
+    components_number = len(set(target_components_df.columns.get_level_values("feature")))
+    scale_coef = np.repeat((inverse_transformed_target_df / target_df).values, repeats=components_number, axis=1)
+    inverse_transformed_target_components_df = target_components_df * scale_coef
+    return inverse_transformed_target_components_df

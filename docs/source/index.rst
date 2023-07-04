@@ -13,7 +13,9 @@ Welcome to ETNA's documentation
    transforms
    ensembles
    pipeline
+   reconciliation
    analysis
+   auto
    clustering
    loggers
    commands

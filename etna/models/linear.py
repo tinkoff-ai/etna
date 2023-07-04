@@ -1,12 +1,67 @@
+from typing import Dict
+
+import pandas as pd
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 
-from etna.models.sklearn import SklearnMultiSegmentModel
-from etna.models.sklearn import SklearnPerSegmentModel
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.models.base import NonPredictionIntervalContextIgnorantAbstractModel
+from etna.models.mixins import MultiSegmentModelMixin
+from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.sklearn import _SklearnAdapter
+
+_LINEAR_GRID: Dict[str, BaseDistribution] = {
+    "fit_intercept": CategoricalDistribution([False, True]),
+}
+
+_ELASTIC_GRID: Dict[str, BaseDistribution] = {
+    "fit_intercept": CategoricalDistribution([False, True]),
+    "l1_ratio": FloatDistribution(low=0, high=1),
+    "alpha": FloatDistribution(low=1e-5, high=1e3, log=True),
+}
 
 
-class LinearPerSegmentModel(SklearnPerSegmentModel):
-    """Class holding per segment :py:class:`sklearn.linear_model.LinearRegression`."""
+class _LinearAdapter(_SklearnAdapter):
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        if self.regressor_columns is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        components_coefs = self.model.coef_
+        target_components = df[self.model.feature_names_in_].apply(pd.to_numeric)
+        target_components = components_coefs * target_components
+        if self.model.fit_intercept:
+            target_components["intercept"] = self.model.intercept_
+        target_components = target_components.add_prefix("target_component_")
+        return target_components
+
+
+class LinearPerSegmentModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
+    """
+    Class holding per segment :py:class:`sklearn.linear_model.LinearRegression`.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
         """
@@ -20,11 +75,33 @@ class LinearPerSegmentModel(SklearnPerSegmentModel):
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
-        super().__init__(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        super().__init__(
+            base_model=_LinearAdapter(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _LINEAR_GRID
 
 
-class ElasticPerSegmentModel(SklearnPerSegmentModel):
-    """Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`."""
+class ElasticPerSegmentModel(
+    PerSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
+    """
+    Class holding per segment :py:class:`sklearn.linear_model.ElasticNet`.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """
@@ -55,17 +132,39 @@ class ElasticPerSegmentModel(SklearnPerSegmentModel):
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
         super().__init__(
-            regressor=ElasticNet(
-                alpha=self.alpha,
-                l1_ratio=self.l1_ratio,
-                fit_intercept=self.fit_intercept,
-                **self.kwargs,
+            base_model=_LinearAdapter(
+                regressor=ElasticNet(
+                    alpha=self.alpha,
+                    l1_ratio=self.l1_ratio,
+                    fit_intercept=self.fit_intercept,
+                    **self.kwargs,
+                )
             )
         )
 
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
 
-class LinearMultiSegmentModel(SklearnMultiSegmentModel):
-    """Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments."""
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _ELASTIC_GRID
+
+
+class LinearMultiSegmentModel(
+    MultiSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
+    """
+    Class holding :py:class:`sklearn.linear_model.LinearRegression` for all segments.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, fit_intercept: bool = True, **kwargs):
         """
@@ -79,11 +178,33 @@ class LinearMultiSegmentModel(SklearnMultiSegmentModel):
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
-        super().__init__(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        super().__init__(
+            base_model=_LinearAdapter(regressor=LinearRegression(fit_intercept=self.fit_intercept, **self.kwargs))
+        )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _LINEAR_GRID
 
 
-class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
-    """Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments."""
+class ElasticMultiSegmentModel(
+    MultiSegmentModelMixin,
+    NonPredictionIntervalContextIgnorantModelMixin,
+    NonPredictionIntervalContextIgnorantAbstractModel,
+):
+    """
+    Class holding :py:class:`sklearn.linear_model.ElasticNet` for all segments.
+
+    Notes
+    -----
+    Target components are formed as the terms from linear regression formula.
+    """
 
     def __init__(self, alpha: float = 1.0, l1_ratio: float = 0.5, fit_intercept: bool = True, **kwargs):
         """
@@ -114,10 +235,22 @@ class ElasticMultiSegmentModel(SklearnMultiSegmentModel):
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
         super().__init__(
-            regressor=ElasticNet(
-                alpha=self.alpha,
-                l1_ratio=self.l1_ratio,
-                fit_intercept=self.fit_intercept,
-                **self.kwargs,
+            base_model=_LinearAdapter(
+                regressor=ElasticNet(
+                    alpha=self.alpha,
+                    l1_ratio=self.l1_ratio,
+                    fit_intercept=self.fit_intercept,
+                    **self.kwargs,
+                )
             )
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return _ELASTIC_GRID

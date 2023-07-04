@@ -76,8 +76,8 @@ celerybeat-schedule
 /.env
 
 # virtualenv
-.venv/
-venv/
+.venv*/
+venv*/
 ENV/
 
 # Spyder project settings
@@ -126,7 +126,11 @@ checkpoints/
 # macOS
 .DS_Store
 
+# poetry configuration
+poetry.toml
+
 *.html
+*.db
 .devcontainer
 /docs/source/api/
 tmp

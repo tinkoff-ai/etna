@@ -15,3 +15,6 @@ Tutorials
    tutorials/custom_transform_and_model
    tutorials/ensembles
    tutorials/NN_examples
+   tutorials/classification
+   tutorials/hierarchical_pipeline
+   tutorials/inference

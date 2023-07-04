@@ -1,14 +1,18 @@
 from copy import deepcopy
+from typing import Dict
+from typing import List
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
 from etna.transforms.base import FutureMixin
-from etna.transforms.base import Transform
+from etna.transforms.base import IrreversibleTransform
 
 
-class TimeFlagsTransform(Transform, FutureMixin):
+class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
     """TimeFlagsTransform is a class that implements extraction of the main time-based features from datetime column."""
 
     def __init__(
@@ -68,7 +72,7 @@ class TimeFlagsTransform(Transform, FutureMixin):
                 f"at least one of minute_in_hour_number, fifteen_minutes_in_hour_number, hour_number, "
                 f"half_hour_number, half_day_number, one_third_day_number should be True."
             )
-
+        super().__init__(required_features=["target"])
         self.date_column_name = None
         self.minute_in_hour_number: bool = minute_in_hour_number
         self.fifteen_minutes_in_hour_number: bool = fifteen_minutes_in_hour_number
@@ -92,17 +96,32 @@ class TimeFlagsTransform(Transform, FutureMixin):
     def _get_column_name(self, feature_name: str) -> str:
         if self.out_column is None:
             init_parameters = deepcopy(self._empty_parameters)
-            init_parameters[feature_name] = self.__dict__[feature_name]
+            init_parameters[feature_name] = getattr(self, feature_name)
             temp_transform = TimeFlagsTransform(**init_parameters, out_column=self.out_column)  # type: ignore
             return repr(temp_transform)
         else:
             return f"{self.out_column}_{feature_name}"
 
-    def fit(self, *args, **kwargs) -> "TimeFlagsTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        features = [
+            "minute_in_hour_number",
+            "fifteen_minutes_in_hour_number",
+            "hour_number",
+            "half_hour_number",
+            "half_day_number",
+            "one_third_day_number",
+        ]
+        output_columns = [
+            self._get_column_name(feature_name=feature_name) for feature_name in features if getattr(self, feature_name)
+        ]
+        return output_columns
+
+    def _fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform method for features based on time.
 
@@ -185,6 +204,29 @@ class TimeFlagsTransform(Transform, FutureMixin):
         Accepts a period length in hours as input and returns array where timestamps marked by period number.
         """
         return timestamp_series.apply(lambda x: x.hour // period_in_hours).values
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``minute_in_hour_number``, ``fifteen_minutes_in_hour_number``, ``hour_number``,
+        ``half_hour_number``, ``half_day_number``, ``one_third_day_number``.
+        Other parameters are expected to be set by the user.
+
+        There are no restrictions on all ``False`` values for the flags.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "minute_in_hour_number": CategoricalDistribution([False, True]),
+            "fifteen_minutes_in_hour_number": CategoricalDistribution([False, True]),
+            "hour_number": CategoricalDistribution([False, True]),
+            "half_hour_number": CategoricalDistribution([False, True]),
+            "half_day_number": CategoricalDistribution([False, True]),
+            "one_third_day_number": CategoricalDistribution([False, True]),
+        }
 
 
 __all__ = ["TimeFlagsTransform"]

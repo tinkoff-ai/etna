@@ -1,10 +1,12 @@
 import pytest
+from ruptures.detection import Binseg
 
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.pipeline import assemble_pipelines
 from etna.transforms import LagTransform
 from etna.transforms import TrendTransform
+from etna.transforms.decomposition import RupturesChangePointsModel
 
 
 @pytest.mark.parametrize(
@@ -12,22 +14,44 @@ from etna.transforms import TrendTransform
     [
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel()],
-            [TrendTransform(in_column="target")],
+            [
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
+            ],
             [1, 2, 3],
             "Lengths of the result models is not equals to horizons or transforms",
         ),
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel(), LinearPerSegmentModel()],
             [
-                TrendTransform(in_column="target"),
-                [TrendTransform(in_column="target"), TrendTransform(in_column="target")],
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
+                [
+                    TrendTransform(
+                        in_column="target",
+                        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                    ),
+                    TrendTransform(
+                        in_column="target",
+                        change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                    ),
+                ],
             ],
             [1, 2, 3],
             "Lengths of the result transforms is not equals to models or horizons",
         ),
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel(), LinearPerSegmentModel()],
-            [TrendTransform(in_column="target")],
+            [
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                )
+            ],
             [1, 2],
             "Lengths of the result horizons is not equals to models or transforms",
         ),
@@ -41,11 +65,24 @@ def test_not_equal_lengths(models, transforms, horizons, message):
 @pytest.mark.parametrize(
     "models, transforms, horizons, expected_len",
     [
-        (LinearPerSegmentModel(), [TrendTransform(in_column="target")], 1, 1),
         (
             LinearPerSegmentModel(),
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                )
+            ],
+            1,
+            1,
+        ),
+        (
+            LinearPerSegmentModel(),
+            [
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [LagTransform(lags=[1, 2, 3], in_column="target"), LagTransform(lags=[2, 3, 4], in_column="target")],
             ],
             [1, 2],
@@ -54,7 +91,10 @@ def test_not_equal_lengths(models, transforms, horizons, message):
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel()],
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [LagTransform(lags=[1, 2, 3], in_column="target"), LagTransform(lags=[2, 3, 4], in_column="target")],
             ],
             1,
@@ -63,7 +103,10 @@ def test_not_equal_lengths(models, transforms, horizons, message):
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel(), LinearPerSegmentModel()],
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [
                     LagTransform(lags=[1, 2, 3], in_column="target"),
                     LagTransform(lags=[2, 3, 4], in_column="target"),
@@ -76,7 +119,10 @@ def test_not_equal_lengths(models, transforms, horizons, message):
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel()],
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [
                     LagTransform(lags=[1, 2, 3], in_column="target"),
                     LagTransform(lags=[2, 3, 4], in_column="target"),
@@ -89,7 +135,17 @@ def test_not_equal_lengths(models, transforms, horizons, message):
             [1, 2],
             2,
         ),
-        ([LinearPerSegmentModel(), LinearPerSegmentModel()], [TrendTransform(in_column="target")], [1, 2], 2),
+        (
+            [LinearPerSegmentModel(), LinearPerSegmentModel()],
+            [
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                )
+            ],
+            [1, 2],
+            2,
+        ),
     ],
 )
 def test_output_pipelines(models, transforms, horizons, expected_len):
@@ -104,7 +160,13 @@ def test_output_pipelines(models, transforms, horizons, expected_len):
     [
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel()],
-            [TrendTransform(in_column="target"), [LagTransform(lags=[1, 2, 3], in_column="target"), None]],
+            [
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
+                [LagTransform(lags=[1, 2, 3], in_column="target"), None],
+            ],
             [1, 2],
             [2, 1],
         ),
@@ -133,7 +195,12 @@ def test_none_in_tranforms(models, transforms, horizons, expected_transforms_len
 
 def test_different_objects():
     models = LinearPerSegmentModel()
-    transforms = [TrendTransform(in_column="target")]
+    transforms = [
+        TrendTransform(
+            in_column="target",
+            change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+        )
+    ]
     horizons = [1, 2, 3, 4, 5]
     pipelines = assemble_pipelines(models, transforms, horizons)
     assert len({id(pipeline.model) for pipeline in pipelines}) == len(pipelines)
@@ -143,11 +210,24 @@ def test_different_objects():
 @pytest.mark.parametrize(
     "models, transforms, horizons, expected_len",
     [
-        (LinearPerSegmentModel(), [TrendTransform(in_column="target")], 1, 1),
         (
             LinearPerSegmentModel(),
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                )
+            ],
+            1,
+            1,
+        ),
+        (
+            LinearPerSegmentModel(),
+            [
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [LagTransform(lags=[1, 2, 3], in_column="target"), LagTransform(lags=[2, 3, 4], in_column="target")],
             ],
             [1, 2],
@@ -156,7 +236,10 @@ def test_different_objects():
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel()],
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [LagTransform(lags=[1, 2, 3], in_column="target"), LagTransform(lags=[2, 3, 4], in_column="target")],
             ],
             1,
@@ -165,7 +248,10 @@ def test_different_objects():
         (
             [LinearPerSegmentModel(), LinearPerSegmentModel()],
             [
-                TrendTransform(in_column="target"),
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(model="ar"), n_bkps=5),
+                ),
                 [
                     LagTransform(lags=[1, 2, 3], in_column="target"),
                     LagTransform(lags=[2, 3, 4], in_column="target"),

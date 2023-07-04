@@ -3,18 +3,24 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import Transform
+from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import IntDistribution
+from etna.transforms.base import ReversibleTransform
+from etna.transforms.utils import check_new_segments
 from etna.transforms.utils import match_target_quantiles
 
 
-class _SingleDifferencingTransform(Transform):
+class _SingleDifferencingTransform(ReversibleTransform):
     """Calculate a time series differences of order 1.
 
-    This transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``transform`` and ``inverse_transform`` there is no special treatment of NaNs.
 
     Notes
     -----
@@ -54,6 +60,7 @@ class _SingleDifferencingTransform(Transform):
         ValueError:
             if period is not integer >= 1
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
 
         if not isinstance(period, int) or period < 1:
@@ -66,14 +73,31 @@ class _SingleDifferencingTransform(Transform):
         self._train_timestamp: Optional[pd.DatetimeIndex] = None
         self._train_init_dict: Optional[Dict[str, pd.Series]] = None
         self._test_init_df: Optional[pd.DataFrame] = None
+        self.in_column_regressor: Optional[bool] = None
 
     def _get_column_name(self) -> str:
+        if self.inplace:
+            return self.in_column
         if self.out_column is None:
             return self.__repr__()
         else:
             return self.out_column
 
-    def fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
+        return [self._get_column_name()] if self.in_column_regressor else []
+
+    def fit(self, ts: TSDataset) -> "_SingleDifferencingTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _fit(self, df: pd.DataFrame) -> "_SingleDifferencingTransform":
         """Fit the transform.
 
         Parameters
@@ -84,12 +108,16 @@ class _SingleDifferencingTransform(Transform):
         Returns
         -------
         result: _SingleDifferencingTransform
+
+        Raises
+        ------
+        ValueError:
+            if NaNs are present inside the segment
         """
         segments = sorted(set(df.columns.get_level_values("segment")))
         fit_df = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
 
-        self._train_timestamp = fit_df.index
-        self._train_init_dict = {}
+        train_init_dict = {}
         for current_segment in segments:
             cur_series = fit_df.loc[:, pd.IndexSlice[current_segment, self.in_column]]
             cur_series = cur_series.loc[cur_series.first_valid_index() :]
@@ -97,13 +125,16 @@ class _SingleDifferencingTransform(Transform):
             if cur_series.isna().sum() > 0:
                 raise ValueError(f"There should be no NaNs inside the segments")
 
-            self._train_init_dict[current_segment] = cur_series[: self.period]
+            train_init_dict[current_segment] = cur_series[: self.period]
+
+        self._train_init_dict = train_init_dict
+        self._train_timestamp = fit_df.index
         self._test_init_df = fit_df.iloc[-self.period :, :]
         # make multiindex levels consistent
         self._test_init_df.columns = self._test_init_df.columns.remove_unused_levels()
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Make a differencing transformation.
 
         Parameters
@@ -113,24 +144,18 @@ class _SingleDifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
         """
-        if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise AttributeError("Transform is not fitted")
-
         segments = sorted(set(df.columns.get_level_values("segment")))
-        transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]].copy()
+        transformed = df.loc[:, pd.IndexSlice[segments, self.in_column]]
         for current_segment in segments:
             to_transform = transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]]
-            start_idx = to_transform.first_valid_index()
             # make a differentiation
-            transformed.loc[start_idx:, pd.IndexSlice[current_segment, self.in_column]] = to_transform.loc[
-                start_idx:
-            ].diff(periods=self.period)
+            transformed.loc[:, pd.IndexSlice[current_segment, self.in_column]] = to_transform.diff(periods=self.period)
 
         if self.inplace:
-            result_df = df.copy()
+            result_df = df
             result_df.loc[:, pd.IndexSlice[segments, self.in_column]] = transformed
         else:
             transformed_features = pd.DataFrame(
@@ -161,7 +186,7 @@ class _SingleDifferencingTransform(Transform):
                 cur_series = result_df.loc[:, pd.IndexSlice[current_segment, column]]
                 cur_series[init_segment.index] = init_segment.values
                 cur_series = self._make_inv_diff(cur_series)
-                result_df.loc[cur_series.index, pd.IndexSlice[current_segment, column]] = cur_series
+                result_df.loc[:, pd.IndexSlice[current_segment, column]] = cur_series
         return result_df
 
     def _reconstruct_test(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:
@@ -184,19 +209,31 @@ class _SingleDifferencingTransform(Transform):
             to_transform = df.loc[:, pd.IndexSlice[segments, column]].copy()
             init_df = self._test_init_df.copy()  # type: ignore
             init_df.columns.set_levels([column], level="feature", inplace=True)
+            init_df = init_df[segments]
             to_transform = pd.concat([init_df, to_transform])
-
-            # validate values inside the series to transform
-            if to_transform.isna().sum().sum() > 0:
-                raise ValueError(f"There should be no NaNs inside the segments")
 
             # run reconstruction and save the result
             to_transform = self._make_inv_diff(to_transform)
-            result_df.loc[:, pd.IndexSlice[segments, column]] = to_transform
+            result_df.loc[:, pd.IndexSlice[segments, column]] = to_transform.loc[result_df.index]
 
         return result_df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Fit and transform dataframe.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to transform.
+
+        Returns
+        -------
+        :
+            Transformed dataframe.
+        """
+        return self._fit(df=df)._transform(df=df)
+
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
         Parameters
@@ -206,11 +243,18 @@ class _SingleDifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            if inverse transform is applied not to full train nor to test that goes after train
+        ValueError:
+            if inverse transform is applied to test that goes after train with gap
         """
-        if self._train_init_dict is None or self._test_init_df is None or self._train_timestamp is None:
-            raise AttributeError("Transform is not fitted")
+        # we assume this to be fitted
+        self._train_timestamp = cast(pd.DatetimeIndex, self._train_timestamp)
 
         if not self.inplace:
             return df
@@ -236,10 +280,11 @@ class _SingleDifferencingTransform(Transform):
         return result_df
 
 
-class DifferencingTransform(Transform):
+class DifferencingTransform(ReversibleTransform):
     """Calculate a time series differences.
 
-    This transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
+    During ``transform`` and ``inverse_transform`` there is no special treatment of NaNs.
 
     Notes
     -----
@@ -284,6 +329,7 @@ class DifferencingTransform(Transform):
         ValueError:
             if order is not integer >= 1
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
 
         if not isinstance(period, int) or period < 1:
@@ -311,6 +357,8 @@ class DifferencingTransform(Transform):
             self._differencing_transforms.append(
                 _SingleDifferencingTransform(in_column=result_out_column, period=self.period, inplace=True)
             )
+        self._fit_segments: Optional[List[str]] = None
+        self.in_column_regressor: Optional[bool] = None
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -320,7 +368,21 @@ class DifferencingTransform(Transform):
         else:
             return self.out_column
 
-    def fit(self, df: pd.DataFrame) -> "DifferencingTransform":
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+        if self.inplace:
+            return []
+        return [self._get_column_name()] if self.in_column_regressor else []
+
+    def fit(self, ts: TSDataset) -> "DifferencingTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _fit(self, df: pd.DataFrame) -> "DifferencingTransform":
         """Fit the transform.
 
         Parameters
@@ -331,14 +393,24 @@ class DifferencingTransform(Transform):
         Returns
         -------
         result: DifferencingTransform
+
+        Raises
+        ------
+        ValueError:
+            if NaNs are present inside the segment
         """
         # this is made because transforms of high order may need some columns created by transforms of lower order
-        result_df = df.copy()
+        result_df = df
         for transform in self._differencing_transforms:
-            result_df = transform.fit_transform(result_df)
+            result_df = transform._fit_transform(result_df)
+        self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _check_is_fitted(self):
+        if self._fit_segments is None:
+            raise ValueError("Transform is not fitted!")
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Make a differencing transformation.
 
         Parameters
@@ -348,15 +420,27 @@ class DifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
         """
-        result_df = df.copy()
+        self._check_is_fitted()
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        if self.inplace:
+            check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
+
+        result_df = df
         for transform in self._differencing_transforms:
-            result_df = transform.transform(result_df)
+            result_df = transform._transform(result_df)
         return result_df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
         Parameters
@@ -366,13 +450,42 @@ class DifferencingTransform(Transform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             transformed DataFrame.
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        NotImplementedError:
+            if there are segments that weren't present during training
+        ValueError:
+            if inverse transform is applied not to full train nor to test that goes after train
+        ValueError:
+            if inverse transform is applied to test that goes after train with gap
         """
+        self._check_is_fitted()
         if not self.inplace:
             return df
 
-        result_df = df.copy()
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
+
+        result_df = df
         for transform in self._differencing_transforms[::-1]:
-            result_df = transform.inverse_transform(result_df)
+            result_df = transform._inverse_transform(result_df)
         return result_df
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``order`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "order": IntDistribution(low=1, high=2),
+        }

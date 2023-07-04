@@ -1,6 +1,9 @@
+from abc import ABC
+from abc import abstractmethod
 from enum import Enum
 from typing import Callable
 from typing import Dict
+from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -24,7 +27,46 @@ class MetricAggregationMode(str, Enum):
         )
 
 
-class Metric(BaseMixin):
+class AbstractMetric(ABC):
+    """Abstract class for metric."""
+
+    @abstractmethod
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+        """
+        Compute metric's value with ``y_true`` and ``y_pred``.
+
+        Notes
+        -----
+        Note that if ``y_true`` and ``y_pred`` are not sorted Metric will sort it anyway
+
+        Parameters
+        ----------
+        y_true:
+            dataset with true time series values
+        y_pred:
+            dataset with predicted time series values
+
+        Returns
+        -------
+        :
+            metric's value aggregated over segments or not (depends on mode)
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Metric name."""
+        pass
+
+    @property
+    @abstractmethod
+    def greater_is_better(self) -> Optional[bool]:
+        """Whether higher metric value is better."""
+        pass
+
+
+class Metric(AbstractMetric, BaseMixin):
     """
     Base class for all the multi-segment metrics.
 

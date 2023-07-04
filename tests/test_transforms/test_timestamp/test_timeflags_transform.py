@@ -8,7 +8,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms.timestamp import TimeFlagsTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 INIT_PARAMS_TEMPLATE = {
     "minute_in_hour_number": False,
@@ -58,7 +61,7 @@ def dateflags_true_df() -> pd.DataFrame:
 
 
 @pytest.fixture
-def train_df() -> pd.DataFrame:
+def train_ts() -> TSDataset:
     """
     Generate dataset without dateflags
     """
@@ -76,8 +79,9 @@ def train_df() -> pd.DataFrame:
     result = result.reorder_levels([1, 0], axis=1)
     result = result.sort_index(axis=1)
     result.columns.names = ["segment", "feature"]
+    ts = TSDataset(df=result, freq="5 min")
 
-    return result
+    return ts
 
 
 def test_interface_incorrect_args():
@@ -112,15 +116,15 @@ def test_interface_incorrect_args():
         ],
     ),
 )
-def test_interface_out_column(true_params: List[str], train_df: pd.DataFrame):
+def test_interface_out_column(true_params: List[str], train_ts: TSDataset):
     """Test that transform generates correct column names using out_column parameter."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    segments = train_df.columns.get_level_values("segment").unique()
+    segments = train_ts.columns.get_level_values("segment").unique()
     out_column = "timeflag"
     for key in true_params:
         init_params[key] = True
     transform = TimeFlagsTransform(**init_params, out_column=out_column)
-    result = transform.fit_transform(df=train_df.copy())
+    result = transform.fit_transform(train_ts).to_pandas()
 
     assert sorted(result.columns.names) == ["feature", "segment"]
     assert sorted(segments) == sorted(result.columns.get_level_values("segment").unique())
@@ -152,14 +156,14 @@ def test_interface_out_column(true_params: List[str], train_df: pd.DataFrame):
         ],
     ),
 )
-def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFrame):
+def test_interface_correct_args_repr(true_params: List[str], train_ts: TSDataset):
     """Test that transform generates correct column names without setting out_column parameter."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    segments = train_df.columns.get_level_values("segment").unique()
+    segments = train_ts.columns.get_level_values("segment").unique()
     for key in true_params:
         init_params[key] = True
     transform = TimeFlagsTransform(**init_params)
-    result = transform.fit_transform(df=train_df.copy())
+    result = transform.fit_transform(deepcopy(train_ts)).to_pandas()
 
     assert sorted(result.columns.names) == ["feature", "segment"]
     assert sorted(segments) == sorted(result.columns.get_level_values("segment").unique())
@@ -172,7 +176,7 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
 
         # check that a transform can be created from column name and it generates the same results
         transform_temp = eval(column)
-        df_temp = transform_temp.fit_transform(df=train_df.copy())
+        df_temp = transform_temp.fit_transform(deepcopy(train_ts)).to_pandas()
         columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
@@ -194,14 +198,14 @@ def test_interface_correct_args_repr(true_params: List[str], train_df: pd.DataFr
     ),
 )
 def test_feature_values(
-    true_params: Dict[str, Union[bool, Tuple[int, int]]], train_df: pd.DataFrame, dateflags_true_df: pd.DataFrame
+    true_params: Dict[str, Union[bool, Tuple[int, int]]], train_ts: TSDataset, dateflags_true_df: pd.DataFrame
 ):
     """Test that transform generates correct values."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
     init_params.update(true_params)
     out_column = "timeflag"
     transform = TimeFlagsTransform(**init_params, out_column=out_column)
-    result = transform.fit_transform(df=train_df.copy())
+    result = transform.fit_transform(train_ts).to_pandas()
 
     segments_true = dateflags_true_df.columns.get_level_values("segment").unique()
     segment_result = result.columns.get_level_values("segment").unique()
@@ -214,3 +218,30 @@ def test_feature_values(
         true_df = segment_true[true_params + ["target"]].sort_index(axis=1)
         result_df = result[seg].sort_index(axis=1)
         assert (true_df == result_df).all().all()
+
+
+def test_save_load(train_ts):
+    ts = train_ts
+    transform = TimeFlagsTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune(train_ts):
+    def skip_parameters(parameters):
+        names = [
+            "minute_in_hour_number",
+            "fifteen_minutes_in_hour_number",
+            "hour_number",
+            "half_hour_number",
+            "half_day_number",
+            "one_third_day_number",
+        ]
+        values = [not parameters[x] for x in names]
+        if all(values):
+            return True
+        return False
+
+    transform = TimeFlagsTransform()
+    ts = train_ts
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts, skip_parameters=skip_parameters)

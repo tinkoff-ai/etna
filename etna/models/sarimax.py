@@ -1,20 +1,30 @@
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
+from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
+from etna.distributions import BaseDistribution
+from etna.distributions import CategoricalDistribution
+from etna.distributions import IntDistribution
 from etna.libs.pmdarima_utils import seasonal_prediction_with_confidence
 from etna.models.base import BaseAdapter
-from etna.models.base import PerSegmentPredictionIntervalModel
+from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
+from etna.models.mixins import PerSegmentModelMixin
+from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
+from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
+from etna.models.utils import select_observations
 
 warnings.filterwarnings(
     message="No frequency information was provided, so inferred frequency .* will be used",
@@ -32,6 +42,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         self._fit_results = None
         self._freq = None
         self._first_train_timestamp = None
+        self._last_train_timestamp = None
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_SARIMAXBaseAdapter":
         """
@@ -57,32 +68,16 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
-        freq = pd.infer_freq(df["timestamp"], warn=False)
-        if freq is None:
-            raise ValueError("Can't determine frequency of a given dataframe")
-        self._freq = freq
+        self._freq = determine_freq(timestamps=df["timestamp"])
         self._first_train_timestamp = df["timestamp"].min()
+        self._last_train_timestamp = df["timestamp"].max()
 
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
-        """
-        Compute predictions from a SARIMAX model.
-
-        Parameters
-        ----------
-        df:
-            Features dataframe
-        prediction_interval:
-             If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution
-
-        Returns
-        -------
-        :
-            DataFrame with predictions
-        """
+    def _make_prediction(
+        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float], dynamic: bool
+    ) -> pd.DataFrame:
+        """Make predictions taking into account ``dynamic`` parameter."""
         if self._fit_results is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
@@ -104,14 +99,19 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         if prediction_interval:
             forecast, _ = seasonal_prediction_with_confidence(
-                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
+                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05, dynamic=dynamic
             )
             y_pred = pd.DataFrame({"mean": forecast})
             for quantile in quantiles:
                 # set alpha in the way to get a desirable quantile
                 alpha = min(quantile * 2, (1 - quantile) * 2)
                 _, borders = seasonal_prediction_with_confidence(
-                    arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=alpha
+                    arima_res=self._fit_results,
+                    start=start_idx,
+                    end=end_idx,
+                    X=exog_future,
+                    alpha=alpha,
+                    dynamic=dynamic,
                 )
                 if quantile < 1 / 2:
                     series = borders[:, 0]
@@ -120,7 +120,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 y_pred[f"mean_{quantile:.4g}"] = series
         else:
             forecast, _ = seasonal_prediction_with_confidence(
-                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05
+                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05, dynamic=dynamic
             )
             y_pred = pd.DataFrame({"mean": forecast})
 
@@ -129,6 +129,46 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         }
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
+
+    def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute autoregressive predictions from a SARIMAX model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        prediction_interval:
+             If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        return self._make_prediction(df=df, prediction_interval=prediction_interval, quantiles=quantiles, dynamic=True)
+
+    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute predictions from a SARIMAX model and use true in-sample data as lags if possible.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        prediction_interval:
+            If True returns prediction interval for forecast
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        return self._make_prediction(df=df, prediction_interval=prediction_interval, quantiles=quantiles, dynamic=False)
 
     @abstractmethod
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
@@ -179,6 +219,173 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         """
         return self._fit_results
 
+    @staticmethod
+    def _prepare_components_df(components: np.ndarray, model: SARIMAX) -> pd.DataFrame:
+        """Prepare `pd.DataFrame` with components."""
+        if model.exog_names is not None:
+            components_names = model.exog_names[:]
+        else:
+            components_names = []
+
+        if model.seasonal_periods == 0:
+            components_names.append("arima")
+        else:
+            components_names.append("sarima")
+
+        df = pd.DataFrame(data=components, columns=components_names)
+        return df.add_prefix("target_component_")
+
+    @staticmethod
+    def _prepare_design_matrix(ssm: SimulationSmoother) -> np.ndarray:
+        """Extract design matrix from state space model."""
+        design_mat = ssm["design"]
+        if len(design_mat.shape) == 2:
+            design_mat = design_mat[..., np.newaxis]
+
+        return design_mat
+
+    def _mle_regression_decomposition(self, state: np.ndarray, ssm: SimulationSmoother, exog: np.ndarray) -> np.ndarray:
+        """Estimate SARIMAX components for MLE regression case.
+
+        SARIMAX representation as SSM: https://www.statsmodels.org/dev/statespace.html
+        In MLE case exogenous data fitted separately from other components:
+        https://github.com/statsmodels/statsmodels/blob/main/statsmodels/tsa/statespace/sarimax.py#L1644
+        """
+        # get design matrix from SSM
+        design_mat = self._prepare_design_matrix(ssm)
+
+        # estimate SARIMA component
+        components = np.sum(design_mat * state, axis=1).T
+
+        if len(exog) > 0:
+            # restore parameters for exogenous variabales
+            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]))[0]
+
+            # estimate exogenous components and append to others
+            weighted_exog = exog * exog_params[np.newaxis]
+            components = np.concatenate([weighted_exog, components], axis=1)
+
+        return components
+
+    def _state_regression_decomposition(self, state: np.ndarray, ssm: SimulationSmoother, k_exog: int) -> np.ndarray:
+        """Estimate SARIMAX components for state regression case.
+
+        SARIMAX representation as SSM: https://www.statsmodels.org/dev/statespace.html
+        In state regression case parameters for exogenous variables estimated inside SSM.
+        """
+        # get design matrix from SSM
+        design_mat = self._prepare_design_matrix(ssm)
+
+        if k_exog > 0:
+            # estimate SARIMA component
+            sarima = np.sum(design_mat[:, :-k_exog] * state[:-k_exog], axis=1)
+
+            # obtain params from SSM and estimate exogenous components
+            weighted_exog = np.squeeze(design_mat[:, -k_exog:] * state[-k_exog:])
+            components = np.concatenate([weighted_exog, sarima], axis=0).T
+
+        else:
+            # in this case we can take whole matrix for SARIMA component
+            components = np.sum(design_mat * state, axis=1).T
+
+        return components
+
+    def predict_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate prediction components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with prediction components
+        """
+        if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
+            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
+
+        fit_results = self._fit_results
+        model = fit_results.model
+
+        if model.hamilton_representation:
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
+
+        state = fit_results.predicted_state[:, :-1]
+
+        if model.mle_regression:
+            components = self._mle_regression_decomposition(state=state, ssm=model.ssm, exog=model.exog)
+
+        else:
+            components = self._state_regression_decomposition(state=state, ssm=model.ssm, k_exog=model.k_exog)
+
+        components_df = self._prepare_components_df(components=components, model=model)
+
+        components_df = select_observations(
+            df=components_df,
+            timestamps=df["timestamp"],
+            start=self._first_train_timestamp,
+            end=self._last_train_timestamp,
+            freq=self._freq,
+        )
+
+        return components_df
+
+    def forecast_components(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Estimate forecast components.
+
+        Parameters
+        ----------
+        df:
+            features dataframe
+
+        Returns
+        -------
+        :
+            dataframe with forecast components
+        """
+        if df["timestamp"].min() <= self._last_train_timestamp:
+            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+
+        horizon = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
+        )
+
+        fit_results = self._fit_results
+
+        model = fit_results.model
+        if model.hamilton_representation:
+            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
+
+        self._encode_categoricals(df)
+        self._check_df(df, horizon)
+
+        exog_future = self._select_regressors(df)
+
+        forecast_results = fit_results.get_forecast(horizon, exog=exog_future).prediction_results.results
+        state = forecast_results.predicted_state[:, :-1]
+
+        if model.mle_regression:
+            # If there are no exog variales `mle_regression` will be set to `False`
+            # even if user set to `True`.
+            components = self._mle_regression_decomposition(
+                state=state, ssm=forecast_results.model, exog=exog_future.values  # type: ignore
+            )
+
+        else:
+            components = self._state_regression_decomposition(
+                state=state, ssm=forecast_results.model, k_exog=model.k_exog
+            )
+
+        components_df = self._prepare_components_df(components=components, model=model)
+
+        components_df = select_observations(
+            df=components_df, timestamps=df["timestamp"], end=df["timestamp"].max(), periods=horizon, freq=self._freq
+        )
+
+        return components_df
+
 
 class _SARIMAXAdapter(_SARIMAXBaseAdapter):
     """
@@ -197,9 +404,9 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
 
     def __init__(
         self,
-        order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
-        trend: Optional[str] = "c",
+        order: Tuple[int, int, int] = (1, 0, 0),
+        seasonal_order: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        trend: Optional[str] = None,
         measurement_error: bool = False,
         time_varying_regression: bool = False,
         mle_regression: bool = True,
@@ -324,7 +531,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         super().__init__()
 
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame):
-        # make it a numpy array for forgetting about indices, it is necessary for _seasonal_prediction_with_confidence
+        # make it a numpy array for forgetting about indices, it is necessary for seasonal_prediction_with_confidence
         endog_np = endog.values
         model = SARIMAX(
             endog=endog_np,
@@ -352,9 +559,14 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         return result
 
 
-class SARIMAXModel(PerSegmentPredictionIntervalModel):
+class SARIMAXModel(
+    PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
+):
     """
     Class for holding Sarimax model.
+
+    Method ``predict`` can use true target values only on train data on future data autoregression
+    forecasting will be made even if targets are known.
 
     Notes
     -----
@@ -362,13 +574,17 @@ class SARIMAXModel(PerSegmentPredictionIntervalModel):
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
+
+    This model supports in-sample and out-of-sample prediction decomposition.
+    Prediction components for SARIMAX model are: exogenous and SARIMA components.
+    Decomposition is obtained directly from fitted model parameters.
     """
 
     def __init__(
         self,
-        order: Tuple[int, int, int] = (2, 1, 0),
-        seasonal_order: Tuple[int, int, int, int] = (1, 1, 0, 12),
-        trend: Optional[str] = "c",
+        order: Tuple[int, int, int] = (1, 0, 0),
+        seasonal_order: Tuple[int, int, int, int] = (0, 0, 0, 0),
+        trend: Optional[str] = None,
         measurement_error: bool = False,
         time_varying_regression: bool = False,
         mle_regression: bool = True,
@@ -512,3 +728,35 @@ class SARIMAXModel(PerSegmentPredictionIntervalModel):
                 **self.kwargs,
             )
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``order.0``, ``order.1``, ``order.2``, ``trend``.
+        If ``self.num_periods`` is greater than zero, then it also tunes parameters:
+        ``seasonal_order.0``, ``seasonal_order.1``, ``seasonal_order.2``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid: Dict[str, "BaseDistribution"] = {
+            "order.0": IntDistribution(low=1, high=6),
+            "order.1": IntDistribution(low=1, high=2),
+            "order.2": IntDistribution(low=1, high=6),
+            "trend": CategoricalDistribution(["n", "c", "t", "ct"]),
+        }
+
+        num_periods = self.seasonal_order[3]
+        if num_periods > 0:
+            grid.update(
+                {
+                    "seasonal_order.0": IntDistribution(low=0, high=2),
+                    "seasonal_order.1": IntDistribution(low=0, high=1),
+                    "seasonal_order.2": IntDistribution(low=0, high=1),
+                }
+            )
+
+        return grid

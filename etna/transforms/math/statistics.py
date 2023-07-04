@@ -1,15 +1,21 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Dict
+from typing import List
 from typing import Optional
 
 import bottleneck as bn
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import Transform
+from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
+from etna.transforms.base import IrreversibleTransform
 
 
-class WindowStatisticsTransform(Transform, ABC):
+class WindowStatisticsTransform(IrreversibleTransform, ABC):
     """WindowStatisticsTransform handles computation of statistical features on windows."""
 
     def __init__(
@@ -40,6 +46,7 @@ class WindowStatisticsTransform(Transform, ABC):
         fillna: float
             value to fill results NaNs with
         """
+        super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column_name = out_column
         self.window = window
@@ -47,8 +54,15 @@ class WindowStatisticsTransform(Transform, ABC):
         self.min_periods = min_periods
         self.fillna = fillna
         self.kwargs = kwargs
+        self.in_column_regressor: Optional[bool] = None
 
-    def fit(self, *args) -> "WindowStatisticsTransform":
+    def fit(self, ts: TSDataset) -> "WindowStatisticsTransform":
+        """Fit the transform."""
+        self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
+    def _fit(self, df: pd.DataFrame) -> "WindowStatisticsTransform":
         """Fits transform."""
         return self
 
@@ -57,7 +71,7 @@ class WindowStatisticsTransform(Transform, ABC):
         """Aggregate targets from given series."""
         pass
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
 
         Parameters
@@ -73,7 +87,8 @@ class WindowStatisticsTransform(Transform, ABC):
         history = self.seasonality * self.window if self.window != -1 else len(df)
         segments = sorted(df.columns.get_level_values("segment").unique())
 
-        x = df.loc[pd.IndexSlice[:], pd.IndexSlice[segments, self.in_column]].values[::-1]
+        df_slice = df.loc[:, pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
+        x = df_slice.values[::-1]
 
         # Addend NaNs to obtain a window of length "history" for each point
         x = np.append(x, np.empty((history - 1, x.shape[1])) * np.nan, axis=0)
@@ -94,6 +109,26 @@ class WindowStatisticsTransform(Transform, ABC):
         )
         result = result.sort_index(axis=1)
         return result
+
+    def get_regressors_info(self) -> List[str]:
+        """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+        return [self.out_column_name] if self.in_column_regressor else []
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes only ``window`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "window": IntDistribution(low=1, high=20),
+        }
 
 
 class MeanTransform(WindowStatisticsTransform):
@@ -150,7 +185,7 @@ class MeanTransform(WindowStatisticsTransform):
             fillna=fillna,
         )
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute feature's value.
 
         Parameters
@@ -166,7 +201,7 @@ class MeanTransform(WindowStatisticsTransform):
         window = self.window if self.window != -1 else len(df)
         self._alpha_range = np.array([self.alpha**i for i in range(window)])
         self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
-        return super().transform(df)
+        return super()._transform(df)
 
     def _aggregate(self, series: np.ndarray) -> np.ndarray:
         """Compute weighted average for window series."""
@@ -175,6 +210,24 @@ class MeanTransform(WindowStatisticsTransform):
             # Loop prevents from memory overflow, 3d tensor is materialized after multiplication
             mean[:, segment] = bn.nanmean(series[:, segment] * self._alpha_range, axis=1)
         return mean
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window``, ``alpha``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "alpha": FloatDistribution(low=0.2, high=1),
+            }
+        )
+        return grid
 
 
 class StdTransform(WindowStatisticsTransform):
@@ -291,6 +344,24 @@ class QuantileTransform(WindowStatisticsTransform):
         # There is no "nanquantile" in bottleneck, "apply_along_axis" can't be replace with "axis=2"
         series = np.apply_along_axis(np.nanquantile, axis=2, arr=series, q=self.quantile)
         return series
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``window``, ``quantile``. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        grid = super().params_to_tune()
+        grid.update(
+            {
+                "quantile": FloatDistribution(low=0, high=1),
+            }
+        )
+        return grid
 
 
 class MinTransform(WindowStatisticsTransform):
@@ -503,6 +574,111 @@ class MADTransform(WindowStatisticsTransform):
         return mad
 
 
+class MinMaxDifferenceTransform(WindowStatisticsTransform):
+    """MinMaxDifferenceTransform computes difference between max and min values for given window."""
+
+    def __init__(
+        self,
+        in_column: str,
+        window: int,
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+        out_column: Optional[str] = None,
+    ):
+        """Init MaxTransform.
+
+        Parameters
+        ----------
+        in_column: str
+            name of processed column
+        window: int
+            size of window to aggregate
+        seasonality: int
+            seasonality of lags to compute window's aggregation with
+        min_periods: int
+            min number of targets in window to compute aggregation;
+            if there is less than ``min_periods`` number of targets return None
+        fillna: float
+            value to fill results NaNs with
+        out_column: str, optional
+            result column name. If not given use ``self.__repr__()``
+        """
+        self.in_column = in_column
+        self.window = window
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        self.out_column = out_column
+        super().__init__(
+            window=window,
+            in_column=in_column,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            fillna=fillna,
+        )
+
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
+        """Compute max over the series."""
+        max_values = bn.nanmax(series, axis=2)
+        min_values = bn.nanmin(series, axis=2)
+        result = max_values - min_values
+        return result
+
+
+class SumTransform(WindowStatisticsTransform):
+    """SumTransform computes sum of values over given window."""
+
+    def __init__(
+        self,
+        in_column: str,
+        window: int,
+        seasonality: int = 1,
+        min_periods: int = 1,
+        fillna: float = 0,
+        out_column: Optional[str] = None,
+    ):
+        """Init SumTransform.
+
+        Parameters
+        ----------
+        in_column:
+            name of processed column
+        window:
+            size of window to aggregate, if window == -1 compute rolling sum all over the given series
+        seasonality:
+            seasonality of lags to compute window's aggregation with
+        min_periods:
+            min number of targets in window to compute aggregation;
+            if there is less than ``min_periods`` number of targets return None
+        fillna:
+            value to fill results NaNs with
+        out_column:
+            result column name. If not given use ``self.__repr__()``
+        """
+        self.in_column = in_column
+        self.window = window
+        self.seasonality = seasonality
+        self.min_periods = min_periods
+        self.fillna = fillna
+        self.out_column = out_column
+
+        super().__init__(
+            in_column=in_column,
+            out_column=self.out_column if self.out_column is not None else self.__repr__(),
+            window=window,
+            seasonality=seasonality,
+            min_periods=min_periods,
+            fillna=fillna,
+        )
+
+    def _aggregate(self, series: np.ndarray) -> np.ndarray:
+        """Compute sum over the series."""
+        series = bn.nansum(series, axis=2)
+        return series
+
+
 __all__ = [
     "MedianTransform",
     "MaxTransform",
@@ -512,4 +688,6 @@ __all__ = [
     "MeanTransform",
     "WindowStatisticsTransform",
     "MADTransform",
+    "MinMaxDifferenceTransform",
+    "SumTransform",
 ]

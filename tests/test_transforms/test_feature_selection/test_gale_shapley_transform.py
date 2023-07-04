@@ -16,6 +16,34 @@ from etna.transforms.feature_selection.gale_shapley import BaseGaleShapley
 from etna.transforms.feature_selection.gale_shapley import FeatureGaleShapley
 from etna.transforms.feature_selection.gale_shapley import GaleShapleyMatcher
 from etna.transforms.feature_selection.gale_shapley import SegmentGaleShapley
+from tests.test_transforms.utils import assert_sampling_is_valid
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+
+
+@pytest.fixture
+def ts_with_exog_galeshapley(random_seed) -> TSDataset:
+    np.random.seed(random_seed)
+
+    periods = 30
+    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-15", periods=periods)})
+    df_1["segment"] = "segment_1"
+    df_1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-15", periods=periods)})
+    df_2["segment"] = "segment_2"
+    df_2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    df = pd.concat([df_1, df_2]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    tsds = TSDataset(df, freq="D")
+    df = tsds.to_pandas(flatten=True)
+    df_exog = df.copy().drop(columns=["target"])
+    df_exog["weekday"] = df_exog["timestamp"].dt.weekday
+    df_exog["monthday"] = df_exog["timestamp"].dt.day
+    df_exog["month"] = df_exog["timestamp"].dt.month
+    df_exog["year"] = df_exog["timestamp"].dt.year
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    return ts
 
 
 @pytest.fixture
@@ -562,19 +590,19 @@ def test_gale_shapley_transform_process_last_step(
 @pytest.mark.parametrize("use_rank", (True, False))
 @pytest.mark.parametrize("top_k", (2, 3, 5, 6, 7))
 def test_gale_shapley_transform_fit(ts_with_large_regressors_number: TSDataset, top_k: int, use_rank: bool):
-    df = ts_with_large_regressors_number.df
+    ts = ts_with_large_regressors_number
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=top_k, use_rank=use_rank
     )
-    transform.fit(df=df)
+    transform.fit(ts)
 
 
 def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: TSDataset):
-    df = ts_with_large_regressors_number.df
+    ts = ts_with_large_regressors_number
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
     )
-    transformed = transform.fit_transform(df=df)
+    transformed = transform.fit_transform(ts)
     assert set(transformed.columns.get_level_values("feature")) == {
         "target",
         "regressor_1",
@@ -588,11 +616,11 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
 @pytest.mark.parametrize("use_rank", (True, False))
 @pytest.mark.parametrize("top_k", (2, 3, 5, 6, 7))
 def test_gale_shapley_transform_fit_model_based(ts_with_large_regressors_number: TSDataset, top_k: int, use_rank: bool):
-    df = ts_with_large_regressors_number.df
+    ts = ts_with_large_regressors_number
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=ModelRelevanceTable(), top_k=top_k, use_rank=use_rank, model=RandomForestRegressor()
     )
-    transform.fit(df=df)
+    transform.fit(ts)
 
 
 @pytest.mark.xfail
@@ -600,11 +628,50 @@ def test_fit_transform_with_nans(regressor_exog_weekend):
     transform = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
     )
-    regressor_exog_weekend.fit_transform([transform])
+    transform.fit_transform(regressor_exog_weekend)
 
 
 def test_work_with_non_regressors(ts_with_exog):
     selector = GaleShapleyFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False, features_to_use="all"
     )
-    ts_with_exog.fit_transform([selector])
+    selector.fit_transform(ts_with_exog)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        GaleShapleyFeatureSelectionTransform(
+            relevance_table=ModelRelevanceTable(), top_k=3, use_rank=False, model=RandomForestRegressor(random_state=42)
+        ),
+        GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False),
+    ],
+)
+def test_save_load(transform, ts_with_large_regressors_number):
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts_with_large_regressors_number)
+
+
+def test_right_number_features_with_integer_division(ts_with_exog_galeshapley):
+    top_k = len(ts_with_exog_galeshapley.segments)
+    transform = GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=top_k)
+
+    transform.fit(ts_with_exog_galeshapley)
+    ts = transform.transform(ts_with_exog_galeshapley)
+
+    remaining_columns = ts.columns.get_level_values("feature").unique().tolist()
+    assert len(remaining_columns) == top_k + 1
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        GaleShapleyFeatureSelectionTransform(
+            relevance_table=ModelRelevanceTable(), top_k=3, use_rank=False, model=RandomForestRegressor(random_state=42)
+        ),
+        GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=3, use_rank=False),
+    ],
+)
+def test_params_to_tune(transform, ts_with_large_regressors_number):
+    ts = ts_with_large_regressors_number
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts)

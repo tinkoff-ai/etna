@@ -3,8 +3,11 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
 from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp.special_days import _OneSegmentSpecialDaysTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
+from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
 @pytest.fixture()
@@ -46,8 +49,18 @@ def df_with_specials():
 
 
 @pytest.fixture()
-def constant_days_two_segments_df(constant_days_df: pd.DataFrame):
-    """Create pandas dataframe that has two segments with constant columns each."""
+def ts_with_specials(df_with_specials):
+    """Create dataset with special weekdays and monthdays."""
+    df = df_with_specials.reset_index()
+    df["segment"] = "1"
+    df = df[["timestamp", "segment", "target"]]
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    return ts
+
+
+@pytest.fixture()
+def constant_days_two_segments_ts(constant_days_df: pd.DataFrame):
+    """Create TSDataset that has two segments with constant columns each."""
     df_1 = constant_days_df.reset_index()
     df_2 = constant_days_df.reset_index()
 
@@ -55,11 +68,9 @@ def constant_days_two_segments_df(constant_days_df: pd.DataFrame):
     df_2["segment"] = "segment_2"
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = classic_df.pivot(index="timestamp", columns="segment")
-    df = df.reorder_levels([1, 0], axis=1)
-    df = df.sort_index(axis=1)
-    df.columns.names = ["segment", "feature"]
-    return df
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df=df, freq="D")
+    return ts
 
 
 def test_interface_week(constant_days_df: pd.DataFrame):
@@ -105,39 +116,39 @@ def test_interface_noweek_nomonth():
         _ = _OneSegmentSpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 
-def test_interface_two_segments_week(constant_days_two_segments_df: pd.DataFrame):
+def test_interface_two_segments_week(constant_days_two_segments_ts: TSDataset):
     """
     This test checks that SpecialDaysTransform that should find special weekdays creates the only column with
     'anomaly_weekdays' name as expected.
     """
     special_days_finder = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
-    df = special_days_finder.fit_transform(constant_days_two_segments_df)
+    df = special_days_finder.fit_transform(constant_days_two_segments_ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
         assert "anomaly_weekdays" in df[segment].columns
         assert "anomaly_monthdays" not in df[segment].columns
         assert df[segment]["anomaly_weekdays"].dtype == "category"
 
 
-def test_interface_two_segments_month(constant_days_two_segments_df: pd.DataFrame):
+def test_interface_two_segments_month(constant_days_two_segments_ts: TSDataset):
     """
     This test checks that SpecialDaysTransform that should find special month days creates the only column with
     'anomaly_monthdays' name as expected.
     """
     special_days_finder = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=True)
-    df = special_days_finder.fit_transform(constant_days_two_segments_df)
+    df = special_days_finder.fit_transform(constant_days_two_segments_ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
         assert "anomaly_weekdays" not in df[segment].columns
         assert "anomaly_monthdays" in df[segment].columns
         assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
-def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.DataFrame):
+def test_interface_two_segments_week_month(constant_days_two_segments_ts: TSDataset):
     """
     This test checks that SpecialDaysTransform that should find special month and week days
     creates two columns with 'anomaly_monthdays' and 'anomaly_weekdays' name as expected.
     """
     special_days_finder = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
-    df = special_days_finder.fit_transform(constant_days_two_segments_df)
+    df = special_days_finder.fit_transform(constant_days_two_segments_ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
         assert "anomaly_weekdays" in df[segment].columns
         assert "anomaly_monthdays" in df[segment].columns
@@ -145,9 +156,11 @@ def test_interface_two_segments_week_month(constant_days_two_segments_df: pd.Dat
         assert df[segment]["anomaly_monthdays"].dtype == "category"
 
 
-def test_interface_two_segments_noweek_nomonth(constant_days_two_segments_df: pd.DataFrame):
-    """This test checks that bad-inited SpecialDaysTransform raises AssertionError during fit_transform."""
-    with pytest.raises(ValueError):
+def test_interface_two_segments_noweek_nomonth():
+    """This test checks that bad-inited SpecialDaysTransform raises ValueError on initialisation."""
+    with pytest.raises(
+        ValueError, match="_OneSegmentSpecialDaysTransform feature does nothing with given init args configuration"
+    ):
         _ = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 
@@ -188,4 +201,24 @@ def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
 
 def test_fit_transform_with_nans(ts_diff_endings):
     transform = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
-    ts_diff_endings.fit_transform([transform])
+    transform.fit_transform(ts_diff_endings)
+
+
+def test_save_load(ts_with_specials):
+    ts = ts_with_specials
+    transform = SpecialDaysTransform()
+    assert_transformation_equals_loaded_original(transform=transform, ts=ts)
+
+
+def test_params_to_tune(ts_with_specials):
+    def skip_parameters(parameters):
+        names = ["find_special_weekday", "find_special_month_day"]
+        values = [not parameters[x] for x in names]
+        if all(values):
+            return True
+        return False
+
+    transform = SpecialDaysTransform()
+    ts = ts_with_specials
+    assert len(transform.params_to_tune()) > 0
+    assert_sampling_is_valid(transform=transform, ts=ts, skip_parameters=skip_parameters)

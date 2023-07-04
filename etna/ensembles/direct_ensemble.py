@@ -3,17 +3,21 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 import numpy as np
+import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 
 from etna.datasets import TSDataset
-from etna.ensembles import EnsembleMixin
+from etna.distributions import BaseDistribution
+from etna.ensembles.mixins import EnsembleMixin
+from etna.ensembles.mixins import SaveEnsembleMixin
 from etna.pipeline.base import BasePipeline
 
 
-class DirectEnsemble(BasePipeline, EnsembleMixin):
+class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     """DirectEnsemble is a pipeline that forecasts future values merging the forecasts of base pipelines.
 
     Ensemble expects several pipelines during init. These pipelines are expected to have different forecasting horizons.
@@ -119,17 +123,50 @@ class DirectEnsemble(BasePipeline, EnsembleMixin):
         forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
         return forecast_dataset
 
-    def _forecast(self) -> TSDataset:
+    def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make predictions.
 
         In each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
         which covers this point.
         """
-        if self.ts is None:
-            raise ValueError("Something went wrong, ts is None!")
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
 
         forecasts = Parallel(n_jobs=self.n_jobs, backend="multiprocessing", verbose=11)(
-            delayed(self._forecast_pipeline)(pipeline=pipeline) for pipeline in self.pipelines
+            delayed(self._forecast_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
         forecast = self._merge(forecasts=forecasts)
         return forecast
+
+    def _predict(
+        self,
+        ts: TSDataset,
+        start_timestamp: pd.Timestamp,
+        end_timestamp: pd.Timestamp,
+        prediction_interval: bool,
+        quantiles: Sequence[float],
+        return_components: bool,
+    ) -> TSDataset:
+        if prediction_interval:
+            raise NotImplementedError(f"Ensemble {self.__class__.__name__} doesn't support prediction intervals!")
+        if return_components:
+            raise NotImplementedError("Adding target components is not currently implemented!")
+
+        horizons = [pipeline.horizon for pipeline in self.pipelines]
+        pipeline = self.pipelines[np.argmin(horizons)]
+        prediction = self._predict_pipeline(
+            ts=ts, pipeline=pipeline, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+        )
+        return prediction
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Not implemented for this class.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
