@@ -134,21 +134,16 @@ class PatchTSNet(DeepBaseNet):
         """
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
-        decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
-        output = self.model(encoder_real)
-        forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
+        outputs = []
+        x = encoder_real
+        for i in range(decoder_length):
+            pred = self._get_prediction(encoder_real)
+            outputs.append(pred)
+            x = torch.cat((x[:, 1:, :], torch.unsqueeze(pred, dim=1)), dim=1)
 
-        for i in range(decoder_length - 1):
-            output = self.model(decoder_real[:, i, None])
-            forecast_point = self.projection(output[:, -1]).flatten()
-            forecast[:, i, 0] = forecast_point
-            decoder_real[:, i + 1, 0] = forecast_point
-
-        # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
-        output = self.model(decoder_real[:, decoder_length - 1, None])
-        forecast_point = self.projection(output[:, -1]).flatten()
-        forecast[:, decoder_length - 1, 0] = forecast_point
+        forecast = torch.cat(outputs, dim=1)
+        forecast = torch.unsqueeze(forecast, dim=2)
         return forecast
 
     def _get_prediction(self, x: torch.Tensor) -> torch.Tensor:
