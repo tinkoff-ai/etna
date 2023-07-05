@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -15,8 +16,21 @@ from etna.transforms.base import ReversiblePerSegmentWrapper
 from etna.transforms.utils import match_target_quantiles
 
 
+class DeseasonalModel(str, Enum):
+    """Enum for different types of deseasonality model."""
+
+    additive = "additive"
+    multiplicative = "multiplicative"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} types allowed."
+        )
+
+
 class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
-    def __init__(self, in_column: str, period: int, model: str = "additive"):
+    def __init__(self, in_column: str, period: int, model: str = DeseasonalModel.additive):
         """
         Init _OneSegmentDeseasonalityTransform.
 
@@ -31,34 +45,30 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         """
         self.in_column = in_column
         self.period = period
-
-        allowed_models = ("additive", "multiplicative")
-        if isinstance(model, str):
-            if model in allowed_models:
-                self.model = model
-            else:
-                raise ValueError(f"Not a valid option for model: {model}, only {allowed_models} can be used")
-
+        self.model = DeseasonalModel(model)
         self._seasonal: Optional[pd.Series] = None
 
     def _roll_seasonal(self, x: pd.Series) -> np.ndarray:
         """
-        Roll out seasonal component by X's time index.
+        Roll out seasonal component by x's time index.
 
         Parameters
         ----------
-        X:
+        x:
             processed column
 
         Returns
         -------
-        result: np.ndarray
+        result:
             seasonal component
         """
         if self._seasonal is None:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
+            raise ValueError("Transform is not fitted! Fit the Transform before calling.")
         freq = determine_freq(x.index)
-        shift = -determine_num_steps(self._seasonal.index[0], x.index[0], freq) % self.period
+        if self._seasonal.index[0] <= x.index[0]:
+            shift = -determine_num_steps(self._seasonal.index[0], x.index[0], freq) % self.period
+        else:
+            shift = determine_num_steps(x.index[0], self._seasonal.index[0], freq) % self.period
         return np.resize(np.roll(self._seasonal, shift=shift), x.shape[0])
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentDeseasonalityTransform":
@@ -72,14 +82,12 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: _OneSegmentDeseasonalityTransform
+        result:
             instance after processing
         """
-        df = df.loc[: df[self.in_column].last_valid_index()]
+        df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
-            raise ValueError(
-                "The input column contains NaNs in the head or in the middle of the series! Try to use the imputer."
-            )
+            raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
         self._seasonal = seasonal_decompose(
             x=df[self.in_column], model=self.model, filt=None, two_sided=False, extrapolate_trend=0
         ).seasonal[: self.period]
@@ -104,6 +112,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         if self.model == "additive":
             result[self.in_column] -= seasonal
         else:
+            if np.any(result[self.in_column] <= 0):
+                raise ValueError(
+                    "The input column contains zero or negative values,"
+                    "but multiplicative seasonality can not work with such values."
+                )
             result[self.in_column] /= seasonal
         return result
 
@@ -126,6 +139,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         if self.model == "additive":
             result[self.in_column] += seasonal
         else:
+            if np.any(result[self.in_column] <= 0):
+                raise ValueError(
+                    "The input column contains zero or negative values,"
+                    "but multiplicative seasonality can not work with such values."
+                )
             result[self.in_column] *= seasonal
         if self.in_column == "target":
             quantiles = match_target_quantiles(set(result.columns))
@@ -133,6 +151,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
                 if self.model == "additive":
                     result.loc[:, quantile_column_nm] += seasonal
                 else:
+                    if np.any(result.loc[quantile_column_nm] <= 0):
+                        raise ValueError(
+                            f"The {quantile_column_nm} column contains zero or negative values,"
+                            "but multiplicative seasonality can not work with such values."
+                        )
                     result.loc[:, quantile_column_nm] *= seasonal
         return result
 

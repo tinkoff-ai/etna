@@ -961,6 +961,7 @@ class TestTransformFutureNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
