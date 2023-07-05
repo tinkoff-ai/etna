@@ -3,8 +3,10 @@
 ## Available image names
 
 - `ghcr.io/tinkoff-ai/etna/etna-cpu:<tag>`
-- `ghcr.io/tinkoff-ai/etna/etna-cuda-10.2:<tag>`
 - `ghcr.io/tinkoff-ai/etna/etna-cuda-11.6.2:<tag>`
+
+On previous versions of the library there were also:
+- `ghcr.io/tinkoff-ai/etna/etna-cuda-10.2:<tag>`
 
 ## Use cases
 
