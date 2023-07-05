@@ -46,7 +46,7 @@ class PositionalEncoding(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Arguments:
-            x: Tensor, shape ``batch_size, input_size, patch_num, embedding_dim]``
+            x: Tensor, shape ``[batch_size, input_size, patch_num, embedding_dim]``
         """
         x = torch.reshape(x, (x.shape[0] * x.shape[1], x.shape[2], x.shape[3]))
         # x.shape = (batch_size * input_size, patch_num, embedding_dim)
@@ -61,8 +61,8 @@ class PatchTSNet(DeepBaseNet):
     def __init__(
             self,
             encoder_length: int,
-            decoder_length: int,
             patch_len: int,
+            stride: int,
             num_layers: int,
             hidden_size: int,
             feedforward_size: int,
@@ -77,10 +77,10 @@ class PatchTSNet(DeepBaseNet):
         ----------
         encoder_length:
             encoder length
-        decoder_length:
-            decoder length
         patch_len:
             size of patch
+        stride:
+            step of patch
         num_layers:
             number of layers
         hidden_size:
@@ -102,6 +102,7 @@ class PatchTSNet(DeepBaseNet):
         self.feedforward_size = feedforward_size
         self.hidden_size = hidden_size
         self.nhead = nhead
+        self.stride = stride
         self.loss = torch.nn.MSELoss() if loss is None else loss
 
         encoder_layers = nn.TransformerEncoderLayer(d_model=self.hidden_size, nhead=self.nhead,
@@ -111,8 +112,7 @@ class PatchTSNet(DeepBaseNet):
             PositionalEncoding(d_model=self.hidden_size),
             nn.TransformerEncoder(encoder_layers, self.num_layers)
         )
-        stride = 1
-        self.max_patch_num = (encoder_length - 1 - self.patch_len) // stride + 1
+        self.max_patch_num = (encoder_length - 1 - self.patch_len) // self.stride + 1
         self.projection = nn.Sequential(nn.Flatten(start_dim=-2),
                                         nn.Linear(in_features=self.hidden_size * self.max_patch_num, out_features=1))
 
@@ -138,18 +138,20 @@ class PatchTSNet(DeepBaseNet):
         outputs = []
         x = encoder_real
         for i in range(decoder_length):
-            pred = self._get_prediction(encoder_real)
+            pred = self._get_prediction(x)
             outputs.append(pred)
             x = torch.cat((x[:, 1:, :], torch.unsqueeze(pred, dim=1)), dim=1)
 
         forecast = torch.cat(outputs, dim=1)
         forecast = torch.unsqueeze(forecast, dim=2)
+
         return forecast
 
     def _get_prediction(self, x: torch.Tensor) -> torch.Tensor:
         x = x.permute(0, 2, 1)  # (batch_size, input_size, encoder_length + decoder_length - 1)
         # do patching
-        x = x.unfold(dimension=-1, size=self.patch_len, step=1)  # (batch_size, input_size, patch_num, patch_len)
+        x = x.unfold(dimension=-1, size=self.patch_len,
+                     step=self.stride)  # (batch_size, input_size, patch_num, patch_len)
 
         y = self.model(x)
         y = y.permute(1, 0, 2)  # (batch_size, hidden_size, patch_num)
@@ -172,7 +174,6 @@ class PatchTSNet(DeepBaseNet):
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
 
-        encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
 
         decoder_length = decoder_real.shape[1]
@@ -180,7 +181,7 @@ class PatchTSNet(DeepBaseNet):
         outputs = []
         x = encoder_real
         for i in range(decoder_length):
-            pred = self._get_prediction(encoder_real)
+            pred = self._get_prediction(x)
             outputs.append(pred)
             x = torch.cat((x[:, 1:, :], torch.unsqueeze(decoder_real[:, i, :], dim=1)), dim=1)
 
@@ -268,6 +269,7 @@ class PatchTSModel(DeepBaseModel):
             decoder_length: int,
             encoder_length: int,
             patch_len: int = 4,
+            stride: int = 1,
             num_layers: int = 3,
             hidden_size: int = 128,
             feedforward_size: int = 256,
@@ -287,12 +289,14 @@ class PatchTSModel(DeepBaseModel):
 
         Parameters
         ----------
-        patch_len:
-            size of patch
-        encoder_length:
+         encoder_length:
             encoder length
         decoder_length:
             decoder length
+        patch_len:
+            size of patch
+        stride:
+            step of patch
         num_layers:
             number of layers
         hidden_size:
@@ -335,8 +339,8 @@ class PatchTSModel(DeepBaseModel):
         super().__init__(
             net=PatchTSNet(
                 encoder_length,
-                decoder_length,
                 patch_len=patch_len,
+                stride=stride,
                 num_layers=num_layers,
                 hidden_size=hidden_size,
                 feedforward_size=feedforward_size,
