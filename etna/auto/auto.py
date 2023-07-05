@@ -62,7 +62,7 @@ class AutoAbstract(ABC):
         n_trials: Optional[int] = None,
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
-        optuna_params: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> BasePipeline:
         """
         Start automatic pipeline selection.
@@ -79,8 +79,8 @@ class AutoAbstract(ABC):
             Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
             Object that is called after each pipeline backtest, can be used to log extra metrics.
-        optuna_params:
-            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
+        **kwargs:
+            Additional parameters for the method.
         """
         pass
 
@@ -310,7 +310,7 @@ class Auto(AutoBase):
             n_trials=n_trials,
             initializer=initializer,
             callback=callback,
-            optuna_params=optuna_params,
+            **optuna_params,
         )
         return cur_tuner
 
@@ -337,8 +337,7 @@ class Auto(AutoBase):
         n_trials: Optional[int] = None,
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
-        optuna_params: Optional[Dict[str, Any]] = None,
-        tune_size: int = 0,
+        **kwargs,
     ) -> BasePipeline:
         """
         Start automatic pipeline selection.
@@ -365,13 +364,12 @@ class Auto(AutoBase):
             Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
             Object that is called after each pipeline backtest, can be used to log extra metrics.
-        optuna_params:
-            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
-        tune_size:
-            How many pipelines to fit during tuning stage.
+        **kwargs:
+            Parameter ``tune_size`` (default: 0) determines how many pipelines to fit during tuning stage.
+            Other parameters are passed into optuna :py:meth:`optuna.study.Study.optimize`.
         """
-        if optuna_params is None:
-            optuna_params = {}
+        tune_size = kwargs.pop("tune_size", 0)
+        optuna_params = kwargs
 
         if self._pool_optuna is None:
             self._pool_optuna = self._init_pool_optuna()
@@ -668,7 +666,7 @@ class Tune(AutoBase):
         n_trials: Optional[int] = None,
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
-        optuna_params: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> BasePipeline:
         """
         Start automatic pipeline tuning.
@@ -685,11 +683,10 @@ class Tune(AutoBase):
             Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
             Object that is called after each pipeline backtest, can be used to log extra metrics.
-        optuna_params:
-            Additional kwargs for optuna :py:meth:`optuna.study.Study.optimize`.
+        **kwargs:
+            Additional parameters for optuna :py:meth:`optuna.study.Study.optimize`.
         """
-        if optuna_params is None:
-            optuna_params = {}
+        optuna_params = kwargs
 
         if self._optuna is None:
             self._optuna = self._init_optuna()
