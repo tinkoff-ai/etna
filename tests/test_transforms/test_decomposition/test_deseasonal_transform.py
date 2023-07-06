@@ -125,7 +125,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
 
 
 @pytest.mark.parametrize("model", ["additive", "multiplicative"])
-@pytest.mark.parametrize("ts_name", ["ts_seasonal", "ts_seasonal_starting_with_nans"])
+@pytest.mark.parametrize("ts_name", ["ts_seasonal", "ts_seasonal_starting_with_nans", "ts_seasonal_nan_tails"])
 def test_inverse_transform_multi_segments(ts_name, model, request):
     """Test that transform + inverse_transform don't change tsdataset."""
     ts = request.getfixturevalue(ts_name)
