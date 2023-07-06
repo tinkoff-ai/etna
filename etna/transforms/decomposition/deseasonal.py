@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Optional
 
 import numpy as np
@@ -84,6 +85,11 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         -------
         result:
             instance after processing
+
+        Raises
+        ------
+        ValueError:
+            if input column contains NaNs in the middle of the series
         """
         df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
@@ -104,8 +110,13 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             Dataframe with extracted features
+
+        Raises
+        ------
+        ValueError:
+            if input column contains zero or negative values
         """
         result = df
         seasonal = self._roll_seasonal(result[self.in_column])
@@ -131,8 +142,15 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        result:
             Dataframe with extracted features
+
+        Raises
+        ------
+        ValueError:
+            if input column contains zero or negative values
+        ValueError:
+            if quantile columns contains zero or negative values
         """
         result = df
         seasonal = self._roll_seasonal(result[self.in_column])
@@ -161,7 +179,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
 
 
 class DeseasonalityTransform(ReversiblePerSegmentWrapper):
-    """Transform that uses :py:class:`statsmodels.tsa.seasonal.seasonal_decompose` to subtract season from the data.
+    """Transform that uses :py:func:`statsmodels.tsa.seasonal.seasonal_decompose` to subtract seasonal component from the data.
 
     Warning
     -------
@@ -169,7 +187,7 @@ class DeseasonalityTransform(ReversiblePerSegmentWrapper):
     it uses information from the whole train part.
     """
 
-    def __init__(self, in_column: str, period: int, model: str = "additive"):
+    def __init__(self, in_column: str, period: int, model: Literal["additive", "multiplicative"] = "additive"):
         """
         Init DeseasonalityTransform.
 
@@ -180,7 +198,7 @@ class DeseasonalityTransform(ReversiblePerSegmentWrapper):
         period:
             size of seasonality
         model:
-            'additive' (default) or 'multiplicative'
+            'additive' (Y[t] = T[t] + S[t] + e[t], default option) or 'multiplicative' (Y[t] = T[t] * S[t] * e[t])
         """
         self.in_column = in_column
         self.period = period

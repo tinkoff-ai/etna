@@ -101,7 +101,7 @@ def test_transform_one_segment(df_name, model, request):
 
 
 @pytest.mark.parametrize("model", ["additive", "multiplicative"])
-@pytest.mark.parametrize("ts_name", ["ts_seasonal", "ts_seasonal_starting_with_nans"])
+@pytest.mark.parametrize("ts_name", ["ts_seasonal", "ts_seasonal_starting_with_nans", "ts_seasonal_nan_tails"])
 def test_transform_multi_segments(ts_name, model, request):
     """Test that transform for all segments removes seasonality."""
     ts = request.getfixturevalue(ts_name)
@@ -164,13 +164,6 @@ def test_inverse_transform_raise_error_if_not_fitted(df_seasonal_one_segment):
     transform = _OneSegmentDeseasonalityTransform(in_column="target", period=7, model="additive")
     with pytest.raises(ValueError, match="Transform is not fitted!"):
         _ = transform.inverse_transform(df=df_seasonal_one_segment)
-
-
-@pytest.mark.parametrize("model_decompose", ["additive", "multiplicative"])
-def test_fit_transform_with_nans_in_tails(ts_seasonal_nan_tails, model_decompose):
-    transform = DeseasonalityTransform(in_column="target", period=7, model=model_decompose)
-    transform.fit_transform(ts=ts_seasonal_nan_tails)
-    np.testing.assert_allclose(ts_seasonal_nan_tails[:, :, "target"].dropna(), 10, atol=0.25)
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
