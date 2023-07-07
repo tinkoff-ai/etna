@@ -76,7 +76,11 @@ class NBeatsBaseModel(DeepBaseModel):
 
 
 class NBeatsInterpretableModel(NBeatsBaseModel):
-    """Interpretable N-BEATS model."""
+    """Interpretable N-BEATS model.
+
+    Paper: https://arxiv.org/pdf/1905.10437.pdf
+    Official implementation: https://github.com/ServiceNow/N-BEATS
+    """
 
     def __init__(
         self,
@@ -111,8 +115,9 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         output_size:
             Forecast size.
         loss:
-            Optimisation objective. The loss function should accept three arguments: `y_true`, `y_pred` and `mask`.
+            Optimisation objective. The loss function should accept three arguments: ``y_true``, ``y_pred`` and ``mask``.
             The last parameter is a binary mask that denotes which points are valid forecasts.
+            There are several implemented loss functions available in the :mod:`etna.models.nn.nbeats.metrics` module.
         trend_blocks:
             Number of trend blocks.
         trend_layers:
@@ -134,26 +139,28 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         optimizer_params:
             Additional parameters for the optimizer.
         train_batch_size:
-            batch size for training
+            Batch size for training.
         test_batch_size:
-            batch size for testing
+            Batch size for testing.
         optimizer_params:
-            parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
+            Parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`).
         trainer_params:
-            Pytorch lightning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch lightning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`).
         train_dataloader_params:
-            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
+            Parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`).
         test_dataloader_params:
-            parameters for test dataloader
+            Parameters for test dataloader.
         val_dataloader_params:
-            parameters for validation dataloader
+            Parameters for validation dataloader.
         split_params:
-            dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
+            Dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
+        random_state:
+            Random state for train batches generation.
         """
         if isinstance(loss, str):
             try:
@@ -233,7 +240,11 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
 
 
 class NBeatsGenericModel(NBeatsBaseModel):
-    """Generic N-BEATS model."""
+    """Generic N-BEATS model.
+
+    Paper: https://arxiv.org/pdf/1905.10437.pdf
+    Official implementation: https://github.com/ServiceNow/N-BEATS
+    """
 
     def __init__(
         self,
@@ -263,8 +274,9 @@ class NBeatsGenericModel(NBeatsBaseModel):
         output_size:
             Forecast size.
         loss:
-            Optimisation objective. The loss function should accept three arguments: `y_true`, `y_pred` and `mask`.
+            Optimisation objective. The loss function should accept three arguments: ``y_true``, ``y_pred`` and ``mask``.
             The last parameter is a binary mask that denotes which points are valid forecasts.
+            There are several implemented loss functions available in the :mod:`etna.models.nn.nbeats.metrics` module.
         stacks:
             Number of block stacks in model.
         layers:
@@ -276,26 +288,28 @@ class NBeatsGenericModel(NBeatsBaseModel):
         optimizer_params:
             Additional parameters for the optimizer.
         train_batch_size:
-            batch size for training
+            Batch size for training.
         test_batch_size:
-            batch size for testing
+            Batch size for testing.
         optimizer_params:
-            parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
+            Parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`).
         trainer_params:
-            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`).
         train_dataloader_params:
-            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
+            Parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`).
         test_dataloader_params:
-            parameters for test dataloader
+            Parameters for test dataloader.
         val_dataloader_params:
-            parameters for validation dataloader
+            Parameters for validation dataloader.
         split_params:
-            dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
+            Dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
+        random_state:
+            Random state for train batches generation.
         """
         if isinstance(loss, str):
             try:
