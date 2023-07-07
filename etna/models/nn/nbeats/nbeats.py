@@ -33,9 +33,15 @@ class NBeatsBaseModel(DeepBaseModel):
         test_dataloader_params: Optional[dict] = None,
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
+        random_state: Optional[int] = None,
     ):
-        train_collate_fn = partial(prepare_train_batch, input_size=net.input_size, output_size=net.output_size)
-        val_collate_fn = partial(prepare_train_batch, input_size=net.input_size, output_size=net.output_size)
+        gen_state = np.random.RandomState(seed=random_state)
+        train_collate_fn = partial(
+            prepare_train_batch, input_size=net.input_size, output_size=net.output_size, random_state=gen_state
+        )
+        val_collate_fn = partial(
+            prepare_train_batch, input_size=net.input_size, output_size=net.output_size, random_state=gen_state
+        )
         test_collate_fn = partial(prepare_test_batch, input_size=net.input_size)
 
         train_dataloader_params = _create_or_update(
@@ -164,6 +170,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         self.num_of_harmonics = num_of_harmonics
         self.lr = lr
         self.optimizer_params = optimizer_params
+        self.random_state = random_state
 
         super().__init__(
             net=NBeatsInterpretableNet(
@@ -188,6 +195,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
             val_dataloader_params=val_dataloader_params,
             trainer_params=trainer_params,
             split_params=split_params,
+            random_state=random_state,
         )
 
 
@@ -211,6 +219,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
         test_dataloader_params: Optional[dict] = None,
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
+        random_state: Optional[int] = None,
     ):
         """Init generic N-BEATS model.
 
@@ -272,6 +281,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
         self.layer_size = layer_size
         self.lr = lr
         self.optimizer_params = optimizer_params
+        self.random_state = random_state
 
         super().__init__(
             net=NBeatsGenericNet(
@@ -291,4 +301,5 @@ class NBeatsGenericModel(NBeatsBaseModel):
             val_dataloader_params=val_dataloader_params,
             trainer_params=trainer_params,
             split_params=split_params,
+            random_state=random_state,
         )

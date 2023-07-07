@@ -37,9 +37,12 @@ def to_tensor(x: Any) -> "torch.Tensor":
 
 
 def prepare_train_batch(
-    data: List[Dict[str, Any]], input_size: int, output_size: int
+    data: List[Dict[str, Any]], input_size: int, output_size: int, random_state: Optional[np.random.RandomState] = None
 ) -> Dict[str, Optional["torch.Tensor"]]:
     """Prepare batch with training data."""
+    if random_state is None:
+        random_state = np.random.RandomState()
+
     batch_size = len(data)
 
     history = np.zeros((batch_size, input_size))
@@ -49,7 +52,7 @@ def prepare_train_batch(
 
     for i, part in enumerate(data):
         series = part["history"]
-        cut_point = np.random.randint(low=1, high=len(series) - 1, size=1)[0]
+        cut_point = random_state.randint(low=1, high=len(series) - 1, size=1)[0]
 
         insample_window = series[max(0, cut_point - input_size) : cut_point]
         history[i, -len(insample_window) :] = insample_window
