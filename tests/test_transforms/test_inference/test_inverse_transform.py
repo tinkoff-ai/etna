@@ -15,6 +15,7 @@ from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
+from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
@@ -110,6 +111,7 @@ class TestInverseTransformTrainSubsetSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
@@ -125,7 +127,20 @@ class TestInverseTransformTrainSubsetSegments:
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
             (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
-            (MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    fast_redundancy=GaleShapleyFeatureSelectionTransform,
+                ),
+                "ts_with_exog",
+            ),
             (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog"),
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
@@ -281,6 +296,8 @@ class TestInverseTransformFutureSubsetSegments:
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
             (STLTransform(in_column="positive", period=7), "ts_with_exog"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="positive", period=7), "ts_with_exog"),
             (
                 TrendTransform(
                     in_column="target",
@@ -296,7 +313,18 @@ class TestInverseTransformFutureSubsetSegments:
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog"),
             (GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
-            (MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2), "ts_with_exog"),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+            ),
             (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog"),
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
@@ -473,13 +501,29 @@ class TestInverseTransformTrainNewSegments:
                 {"create": {"year", "weekday", "month"}},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
                 "ts_with_exog",
                 {},
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"create": {"monthday", "positive", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"monthday", "positive", "weekday"}},
@@ -646,6 +690,7 @@ class TestInverseTransformTrainNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
@@ -762,7 +807,16 @@ class TestInverseTransformFutureNewSegments:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
                 "ts_with_exog",
                 {},
             ),
@@ -963,6 +1017,7 @@ class TestInverseTransformFutureNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
@@ -1042,7 +1097,14 @@ class TestInverseTransformFutureNewSegments:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"create": {"positive", "monthday", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"positive", "monthday", "weekday"}},
@@ -1132,6 +1194,7 @@ class TestInverseTransformFutureWithTarget:
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
                 TrendTransform(
                     in_column="target",
@@ -1166,13 +1229,32 @@ class TestInverseTransformFutureWithTarget:
                 {"create": {"month", "year", "positive"}},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
                 "ts_with_exog",
                 {},
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"weekday", "monthday", "positive"}},
@@ -1513,6 +1595,8 @@ class TestInverseTransformFutureWithoutTarget:
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {}),
             (STLTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {}),
+            (DeseasonalityTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
             (
                 TrendTransform(
                     in_column="target",
@@ -1539,7 +1623,16 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
                 "ts_with_exog",
                 {},
             ),
@@ -1852,7 +1945,14 @@ class TestInverseTransformFutureWithoutTarget:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
                 {"create": {"weekday", "monthday", "positive"}},

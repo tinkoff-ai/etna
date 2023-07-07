@@ -31,3 +31,10 @@ from etna.models.tbats import TBATSModel
 
 if SETTINGS.prophet_required:
     from etna.models.prophet import ProphetModel
+
+if SETTINGS.statsforecast_required:
+    from etna.models.statsforecast import StatsForecastARIMAModel
+    from etna.models.statsforecast import StatsForecastAutoARIMAModel
+    from etna.models.statsforecast import StatsForecastAutoCESModel
+    from etna.models.statsforecast import StatsForecastAutoETSModel
+    from etna.models.statsforecast import StatsForecastAutoThetaModel

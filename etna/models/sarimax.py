@@ -205,7 +205,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
             df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
         except ValueError:
             raise ValueError(
-                f"Categorical columns {categorical_cols} can not been converted to int.\n "
+                f"Categorical columns {categorical_cols} can not be converted to int.\n "
                 "Try to encode this columns manually."
             )
 
