@@ -11,9 +11,9 @@ if SETTINGS.torch_required:
 
     from etna.models.base import DeepBaseModel
     from etna.models.nn.nbeats.metrics import NBeatsLoss
-    from etna.models.nn.nbeats.models import NBeatsBaseNet
-    from etna.models.nn.nbeats.models import NBeatsGenericNet
-    from etna.models.nn.nbeats.models import NBeatsInterpretableNet
+    from etna.models.nn.nbeats.nets import NBeatsBaseNet
+    from etna.models.nn.nbeats.nets import NBeatsGenericNet
+    from etna.models.nn.nbeats.nets import NBeatsInterpretableNet
     from etna.models.nn.nbeats.utils import _create_or_update
     from etna.models.nn.nbeats.utils import prepare_test_batch
     from etna.models.nn.nbeats.utils import prepare_train_batch

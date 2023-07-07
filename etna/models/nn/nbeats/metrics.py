@@ -35,6 +35,7 @@ class NBeatsSMAPE(nn.Module):
         ae = torch.abs(y_true - y_pred)
         sape = ae / (torch.abs(y_true) + torch.abs(y_pred))
 
+        # TODO: perhaps there is a better way to handle invalid values
         sape[sape != sape] = 0.0
         sape[sape == np.inf] = 0.0
 
@@ -66,6 +67,7 @@ class NBeatsMAPE(nn.Module):
         """
         ape = torch.abs(y_true - y_pred) / torch.abs(y_true)
 
+        # TODO: perhaps there is a better way to handle invalid values
         ape[ape != ape] = 0.0
         ape[ape == np.inf] = 0.0
 

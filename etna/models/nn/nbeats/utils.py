@@ -20,11 +20,6 @@ def _create_or_update(param: Optional[Dict], name: str, value: Any):
     return param
 
 
-def default_torch_device() -> "torch.device":
-    """Return CUDA device if available."""
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 def to_tensor(x: Any) -> "torch.Tensor":
     """Convert data to tensor and put on default device.
 

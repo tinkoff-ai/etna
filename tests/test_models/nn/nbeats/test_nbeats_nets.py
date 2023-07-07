@@ -5,9 +5,9 @@ import pytest
 import torch
 
 from etna.models.nn.nbeats.metrics import NBeatsMSE
-from etna.models.nn.nbeats.models import NBeatsBaseNet
-from etna.models.nn.nbeats.models import NBeatsGenericNet
-from etna.models.nn.nbeats.models import NBeatsInterpretableNet
+from etna.models.nn.nbeats.nets import NBeatsBaseNet
+from etna.models.nn.nbeats.nets import NBeatsGenericNet
+from etna.models.nn.nbeats.nets import NBeatsInterpretableNet
 
 
 @pytest.fixture

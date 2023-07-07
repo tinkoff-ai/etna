@@ -146,7 +146,7 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
         output_size:
             Forecast size.
         loss:
-            Optimisation objective. The loss function should accept three arguments: `y_true`, `y_pred` and `mask`.
+            Optimisation objective. The loss function should accept three arguments: ``y_true``, ``y_pred`` and ``mask``.
             The last parameter is a binary mask that denotes which points are valid forecasts.
         trend_blocks:
             Number of trend blocks.
@@ -235,7 +235,7 @@ class NBeatsGenericNet(NBeatsBaseNet):
         output_size:
             Forecast size.
         loss:
-            Optimisation objective. The loss function should accept three arguments: `y_true`, `y_pred` and `mask`.
+            Optimisation objective. The loss function should accept three arguments: ``y_true``, ``y_pred`` and ``mask``.
             The last parameter is a binary mask that denotes which points are valid forecasts.
         stacks:
             Number of block stacks in model.
