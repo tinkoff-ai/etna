@@ -42,6 +42,7 @@ def test_interpretable_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_fu
         lr=0.001,
         num_of_harmonics=1,
         trainer_params=dict(max_epochs=2500),
+        random_state=2,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
@@ -68,6 +69,7 @@ def test_generic_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function
         layer_size=256,
         lr=0.001,
         trainer_params=dict(max_epochs=2000),
+        random_state=2,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
@@ -113,3 +115,9 @@ def test_save_load(example_tsds, model):
 )
 def test_context_size(model, expected=6):
     assert model.context_size == expected
+
+
+@pytest.mark.parametrize("model_class", (NBeatsInterpretableModel, NBeatsGenericModel))
+def test_invalid_loss_name(model_class):
+    with pytest.raises(NotImplementedError, match="'abc' is not a valid NBeatsLoss."):
+        _ = model_class(input_size=6, output_size=3, loss="abc")

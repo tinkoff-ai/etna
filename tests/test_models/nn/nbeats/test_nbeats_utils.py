@@ -18,7 +18,8 @@ def batched_data_list():
 
 
 @pytest.mark.parametrize(
-    "params,name,value,expected", ((None, "a", 1, {"a": 1}), ({"b": 3}, "a", "c", {"b": 3, "a": "c"}))
+    "params,name,value,expected",
+    ((None, "a", 1, {"a": 1}), ({"b": 3}, "a", "c", {"b": 3, "a": "c"}), ({"a": 1}, "a", 2, {"a": 2})),
 )
 def test_create_or_update(params, name, value, expected):
     res = _create_or_update(param=params, name=name, value=value)
