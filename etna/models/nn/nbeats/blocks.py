@@ -30,9 +30,10 @@ class NBeatsBlock(nn.Module):
         """
         super().__init__()
 
-        layers = [nn.Linear(in_features=input_size, out_features=layer_size)]
+        layers = [nn.Linear(in_features=input_size, out_features=layer_size), nn.ReLU()]
         for _ in range(num_layers - 1):
             layers.append(nn.Linear(in_features=layer_size, out_features=layer_size))
+            layers.append(nn.ReLU())
 
         self.layers = nn.ModuleList(layers)
 
@@ -53,7 +54,7 @@ class NBeatsBlock(nn.Module):
             Tuple with backcast and forecast.
         """
         for layer in self.layers:
-            x = torch.relu(layer(x))
+            x = layer(x)
 
         basis_parameters = self.basis_parameters(x)
         return self.basis_function(basis_parameters)
