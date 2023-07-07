@@ -160,7 +160,10 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
                 self.loss = NBeatsLoss[loss].value
 
             except KeyError as e:
-                raise ValueError(f"Invalid loss name: {e}")
+                raise NotImplementedError(
+                    f"{e} is not a valid {NBeatsLoss.__name__}. "
+                    f"Only {', '.join([repr(m.name) for m in NBeatsLoss])} loss name allowed"
+                )
 
         else:
             self.loss = loss
@@ -299,7 +302,10 @@ class NBeatsGenericModel(NBeatsBaseModel):
                 self.loss = NBeatsLoss[loss].value
 
             except KeyError as e:
-                raise ValueError(f"Invalid loss name: {e}")
+                raise NotImplementedError(
+                    f"{e} is not a valid {NBeatsLoss.__name__}. "
+                    f"Only {', '.join([repr(m.name) for m in NBeatsLoss])} loss name allowed"
+                )
 
         else:
             self.loss = loss
