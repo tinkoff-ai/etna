@@ -1,10 +1,16 @@
 from abc import abstractmethod
 from functools import partial
+from typing import Dict
 from typing import Literal
 from typing import Optional
 from typing import Union
 
+import numpy as np
+
 from etna import SETTINGS
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 
 if SETTINGS.torch_required:
     import torch
@@ -94,6 +100,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         test_dataloader_params: Optional[dict] = None,
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
+        random_state: Optional[int] = None,
     ):
         """Init interpretable N-BEATS model.
 
@@ -197,6 +204,29 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
             split_params=split_params,
             random_state=random_state,
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``trend_blocks``, ``trend_layers``, ``trend_layer_size``, ``degree_of_polynomial``,
+        ``seasonality_blocks``, ``seasonality_layers``, ``seasonality_layer_size``, ``lr``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "trend_blocks": IntDistribution(low=1, high=10),
+            "trend_layers": IntDistribution(low=1, high=10),
+            "trend_layer_size": IntDistribution(low=4, high=1024, step=4),
+            "degree_of_polynomial": IntDistribution(low=0, high=4),
+            "seasonality_blocks": IntDistribution(low=1, high=10),
+            "seasonality_layers": IntDistribution(low=1, high=10),
+            "seasonality_layer_size": IntDistribution(low=8, high=4096, step=8),
+            "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
+        }
 
 
 class NBeatsGenericModel(NBeatsBaseModel):
@@ -303,3 +333,21 @@ class NBeatsGenericModel(NBeatsBaseModel):
             split_params=split_params,
             random_state=random_state,
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``stacks``, ``layers``, ``lr``, ``layer_size``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "stacks": IntDistribution(low=1, high=40),
+            "layers": IntDistribution(low=1, high=8),
+            "layer_size": IntDistribution(low=4, high=1024, step=4),
+            "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
+        }
