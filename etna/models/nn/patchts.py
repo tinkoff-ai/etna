@@ -103,7 +103,7 @@ class PatchTSNet(DeepBaseNet):
         self.hidden_size = hidden_size
         self.nhead = nhead
         self.stride = stride
-        self.loss = torch.nn.MSELoss() if loss is None else loss
+        self.loss = loss
 
         encoder_layers = nn.TransformerEncoderLayer(d_model=self.hidden_size, nhead=self.nhead,
                                                     dim_feedforward=self.feedforward_size)
@@ -132,6 +132,7 @@ class PatchTSNet(DeepBaseNet):
         :
             forecast with shape (batch_size, decoder_length, 1)
         """
+        print(x)
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_length = decoder_real.shape[1]
@@ -139,6 +140,7 @@ class PatchTSNet(DeepBaseNet):
         x = encoder_real
         for i in range(decoder_length):
             pred = self._get_prediction(x)
+            print(pred)
             outputs.append(pred)
             x = torch.cat((x[:, 1:, :], torch.unsqueeze(pred, dim=1)), dim=1)
 
@@ -275,9 +277,9 @@ class PatchTSModel(DeepBaseModel):
             feedforward_size: int = 256,
             nhead: int = 16,
             lr: float = 1e-3,
-            loss: Optional["torch.nn.Module"] = None,
-            train_batch_size: int = 16,
-            test_batch_size: int = 16,
+            loss: "torch.nn.Module" = nn.MSELoss(),
+            train_batch_size: int = 64,
+            test_batch_size: int = 64,
             optimizer_params: Optional[dict] = None,
             trainer_params: Optional[dict] = None,
             train_dataloader_params: Optional[dict] = None,
@@ -334,6 +336,10 @@ class PatchTSModel(DeepBaseModel):
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.lr = lr
+        self.patch_len = patch_len
+        self.stride = stride
+        self.nhead = nhead
+        self.feedforward_size = feedforward_size
         self.loss = loss
         self.optimizer_params = optimizer_params
         super().__init__(
@@ -346,7 +352,7 @@ class PatchTSModel(DeepBaseModel):
                 feedforward_size=feedforward_size,
                 nhead=nhead,
                 lr=lr,
-                loss=nn.MSELoss() if loss is None else loss,
+                loss=loss,
                 optimizer_params=optimizer_params,
             ),
             decoder_length=decoder_length,
@@ -373,7 +379,7 @@ class PatchTSModel(DeepBaseModel):
         """
         return {
             "num_layers": IntDistribution(low=1, high=3),
-            "hidden_size": IntDistribution(low=4, high=64, step=4),
+            "hidden_size": IntDistribution(low=16, high=256, step=self.nhead),
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
-            "encoder_length": IntDistribution(low=1, high=20),
+            "encoder_length": IntDistribution(low=self.patch_len, high=24)
         }

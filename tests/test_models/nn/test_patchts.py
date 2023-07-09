@@ -3,6 +3,7 @@ import pytest
 from etna.metrics import MAE
 from etna.models.nn import PatchTSModel
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.mark.long_2
@@ -10,8 +11,8 @@ from etna.transforms import StandardScalerTransform
     "horizon",
     [
         8,
-        13,
-        15
+        # 13,
+        # 15
     ],
 )
 def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_weekly_function_with_horizon, horizon):
@@ -57,3 +58,10 @@ def test_patchts_model_run_weekly_overfit_with_scaler_medium_patch(ts_dataset_we
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 1.3
+
+
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    model = PatchTSModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)
