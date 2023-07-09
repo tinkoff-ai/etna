@@ -11,8 +11,8 @@ from tests.test_models.utils import assert_sampling_is_valid
     "horizon",
     [
         8,
-        # 13,
-        # 15
+        13,
+        15
     ],
 )
 def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_weekly_function_with_horizon, horizon):
@@ -30,6 +30,7 @@ def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_wee
     future.inverse_transform([std])
 
     mae = MAE("macro")
+    print(mae(ts_test, future))
     assert mae(ts_test, future) < 0.9
 
 
