@@ -41,9 +41,8 @@ def test_interpretable_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_fu
         seasonality_layer_size=256,
         lr=0.001,
         num_of_harmonics=1,
-        trainer_params=dict(max_epochs=2500),
+        trainer_params=dict(max_epochs=2600, enable_progress_bar=False),
         random_state=2,
-        window_sampling_limit=7 * horizon,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
@@ -69,9 +68,8 @@ def test_generic_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function
         layers=4,
         layer_size=256,
         lr=0.001,
-        trainer_params=dict(max_epochs=2000),
+        trainer_params=dict(max_epochs=2000, enable_progress_bar=False),
         random_state=2,
-        window_sampling_limit=horizon,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
