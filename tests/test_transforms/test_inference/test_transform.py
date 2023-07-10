@@ -15,6 +15,7 @@ from etna.transforms import ChangePointsSegmentationTransform
 from etna.transforms import ChangePointsTrendTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
+from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
@@ -104,6 +105,7 @@ class TestTransformTrainSubsetSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
@@ -276,6 +278,8 @@ class TestTransformFutureSubsetSegments:
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
             (STLTransform(in_column="positive", period=7), "ts_with_exog"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="positive", period=7), "ts_with_exog"),
             (
                 TrendTransform(
                     in_column="target",
@@ -637,6 +641,7 @@ class TestTransformTrainNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
@@ -956,6 +961,7 @@ class TestTransformFutureNewSegments:
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts"),
             (
                 TrendTransform(
                     in_column="target",
@@ -1075,6 +1081,7 @@ class TestTransformFutureWithTarget:
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
                 TrendTransform(
                     in_column="target",
@@ -1403,6 +1410,8 @@ class TestTransformFutureWithoutTarget:
             (TheilSenTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {}),
             (STLTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {}),
+            (DeseasonalityTransform(in_column="positive", period=7), "ts_with_exog", {"change": {"positive"}}),
             (
                 TrendTransform(
                     in_column="target",
