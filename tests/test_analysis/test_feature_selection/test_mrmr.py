@@ -33,7 +33,7 @@ def df_with_regressors() -> Dict[str, pd.DataFrame]:
         regressor = df_regressors_useless[df_regressors_useless["segment"] == segment]["target"].values
         df_exog[f"regressor_useless_{i}"] = regressor
 
-    # useless categorical regressor
+    # useless categorical regressors
     num_cat_useless = 3
     for i in range(num_cat_useless):
         df_exog[f"categorical_regressor_useless_{i}"] = i
@@ -184,7 +184,7 @@ def test_fast_redundancy_deprecation_warning(df_with_regressors):
 
 
 @pytest.mark.parametrize("fast_redundancy", [True, False])
-def test_mrmr_with_categorical_regressor(df_with_regressors, fast_redundancy):
+def test_mrmr_with_castable_categorical_regressor(df_with_regressors, fast_redundancy):
     df, regressors = df_with_regressors["df"], df_with_regressors["regressors"]
     relevance_table = ModelRelevanceTable()(df=df, df_exog=regressors, model=RandomForestRegressor())
     mrmr(relevance_table=relevance_table, regressors=regressors, top_k=len(regressors), fast_redundancy=fast_redundancy)
