@@ -221,12 +221,8 @@ class PatchTSNet(DeepBaseNet):
             if total_sample_length + start_idx > total_length:
                 return None
 
-            # Get shifted target and concatenate it with real values features
             sample["decoder_real"] = values_real[start_idx + encoder_length: start_idx + total_sample_length]
-
-            # Get shifted target and concatenate it with real values features
             sample["encoder_real"] = values_real[start_idx: start_idx + encoder_length]
-            sample["encoder_real"] = sample["encoder_real"]
 
             target = values_target[start_idx: start_idx + encoder_length + decoder_length].reshape(-1, 1)
             sample["encoder_target"] = target[:encoder_length]
