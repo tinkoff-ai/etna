@@ -1,4 +1,5 @@
 from typing import Dict
+from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
@@ -187,3 +188,10 @@ def test_mrmr_with_categorical_regressor(df_with_regressors, fast_redundancy):
     df, regressors = df_with_regressors["df"], df_with_regressors["regressors"]
     relevance_table = ModelRelevanceTable()(df=df, df_exog=regressors, model=RandomForestRegressor())
     mrmr(relevance_table=relevance_table, regressors=regressors, top_k=len(regressors), fast_redundancy=fast_redundancy)
+
+
+@pytest.mark.parametrize("fast_redundancy", [True, False])
+def test_mrmr_with_uncastable_categorical_regressor_fails(exog_and_target_dfs, fast_redundancy):
+    df, regressors = exog_and_target_dfs
+    with pytest.raises(ValueError, match="Only convertible to float features are allowed!"):
+        mrmr(relevance_table=Mock(), regressors=regressors, top_k=len(regressors), fast_redundancy=fast_redundancy)
