@@ -82,6 +82,14 @@ def mrmr(
     redundancy_table = pd.DataFrame(np.inf, index=all_features, columns=all_features)
     top_k = min(top_k, len(all_features))
 
+    # can't compute correlation of categorical column with the others
+    cat_cols = regressors.dtypes[regressors.dtypes == "category"].index
+    for cat_col in cat_cols:
+        try:
+            regressors[cat_col] = regressors[cat_col].astype(float)
+        except ValueError:
+            raise ValueError(f"{cat_col} column cannot be cast to float type! Please, use encoders.")
+
     for i in range(top_k):
         score_numerator = relevance.loc[not_selected_features]
         score_denominator = pd.Series(1, index=not_selected_features)
