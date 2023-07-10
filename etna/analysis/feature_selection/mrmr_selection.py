@@ -72,6 +72,12 @@ def mrmr(
     relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
     redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]
 
+    # can't compute correlation of categorical column with the others
+    try:
+        regressors = regressors.astype(float)
+    except ValueError as e:
+        raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
+
     relevance = relevance_table.apply(relevance_aggregation_fn).fillna(0)
 
     all_features = relevance.index.to_list()
