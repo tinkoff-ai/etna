@@ -32,6 +32,7 @@ class NBeatsBaseModel(DeepBaseModel):
     def __init__(
         self,
         net: "NBeatsBaseNet",
+        window_sampling_limit: Optional[int] = None,
         train_batch_size: int = 1024,
         test_batch_size: int = 1024,
         trainer_params: Optional[dict] = None,
@@ -43,10 +44,18 @@ class NBeatsBaseModel(DeepBaseModel):
     ):
         gen_state = np.random.RandomState(seed=random_state)
         train_collate_fn = partial(
-            prepare_train_batch, input_size=net.input_size, output_size=net.output_size, random_state=gen_state
+            prepare_train_batch,
+            input_size=net.input_size,
+            output_size=net.output_size,
+            window_sampling_limit=window_sampling_limit,
+            random_state=gen_state,
         )
         val_collate_fn = partial(
-            prepare_train_batch, input_size=net.input_size, output_size=net.output_size, random_state=gen_state
+            prepare_train_batch,
+            input_size=net.input_size,
+            output_size=net.output_size,
+            window_sampling_limit=window_sampling_limit,
+            random_state=gen_state,
         )
         test_collate_fn = partial(prepare_test_batch, input_size=net.input_size)
 
@@ -96,6 +105,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         seasonality_layer_size: int = 2048,
         num_of_harmonics: int = 1,
         lr: float = 0.001,
+        window_sampling_limit: Optional[int] = None,
         optimizer_params: Optional[dict] = None,
         train_batch_size: int = 1024,
         test_batch_size: int = 1024,
@@ -136,6 +146,8 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
             Number of harmonics for seasonality estimation.
         lr:
             Optimizer learning rate.
+        window_sampling_limit:
+            Size of history for sampling training data. If set to ``None`` full series history used for sampling.
         optimizer_params:
             Additional parameters for the optimizer.
         train_batch_size:
@@ -186,6 +198,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
         self.seasonality_layer_size = seasonality_layer_size
         self.num_of_harmonics = num_of_harmonics
         self.lr = lr
+        self.window_sampling_limit = window_sampling_limit
         self.optimizer_params = optimizer_params
         self.random_state = random_state
 
@@ -205,6 +218,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
                 loss=self.loss,
                 optimizer_params=optimizer_params,
             ),
+            window_sampling_limit=window_sampling_limit,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
             train_dataloader_params=train_dataloader_params,
@@ -255,6 +269,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
         layers: int = 4,
         layer_size: int = 512,
         lr: float = 0.001,
+        window_sampling_limit: Optional[int] = None,
         optimizer_params: Optional[dict] = None,
         train_batch_size: int = 1024,
         test_batch_size: int = 1024,
@@ -285,6 +300,8 @@ class NBeatsGenericModel(NBeatsBaseModel):
             Inner layers size in blocks.
         lr:
             Optimizer learning rate.
+        window_sampling_limit:
+            Size of history for sampling training data. If set to ``None`` full series history used for sampling.
         optimizer_params:
             Additional parameters for the optimizer.
         train_batch_size:
@@ -330,6 +347,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
         self.layers = layers
         self.layer_size = layer_size
         self.lr = lr
+        self.window_sampling_limit = window_sampling_limit
         self.optimizer_params = optimizer_params
         self.random_state = random_state
 
@@ -344,6 +362,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
                 loss=self.loss,
                 optimizer_params=optimizer_params,
             ),
+            window_sampling_limit=window_sampling_limit,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
             train_dataloader_params=train_dataloader_params,

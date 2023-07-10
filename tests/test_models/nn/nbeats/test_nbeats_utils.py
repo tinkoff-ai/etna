@@ -32,13 +32,20 @@ def test_to_tensor(data):
     assert isinstance(res, torch.Tensor)
 
 
+@pytest.mark.parametrize("window_sampling_limit", (None, 3))
 def test_prepare_train_batch_format(
     batched_data_list,
+    window_sampling_limit,
     input_size=7,
     output_size=3,
     expected_fields=("history", "history_mask", "target", "target_mask", "segment"),
 ):
-    batch = prepare_train_batch(data=batched_data_list, input_size=input_size, output_size=output_size)
+    batch = prepare_train_batch(
+        data=batched_data_list,
+        input_size=input_size,
+        output_size=output_size,
+        window_sampling_limit=window_sampling_limit,
+    )
 
     for field in expected_fields:
         assert field in batch

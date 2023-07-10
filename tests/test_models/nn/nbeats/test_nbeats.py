@@ -43,6 +43,7 @@ def test_interpretable_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_fu
         num_of_harmonics=1,
         trainer_params=dict(max_epochs=2500),
         random_state=2,
+        window_sampling_limit=4 * horizon,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
@@ -61,7 +62,7 @@ def test_generic_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
 
     model = NBeatsGenericModel(
-        input_size=5 * horizon,
+        input_size=3 * horizon,
         output_size=horizon,
         loss="mae",
         stacks=30,
@@ -70,6 +71,7 @@ def test_generic_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function
         lr=0.001,
         trainer_params=dict(max_epochs=2000),
         random_state=2,
+        window_sampling_limit=horizon,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
