@@ -31,6 +31,13 @@ def _check_predict(ts, model):
     assert len(res) == len(ts.index) * 2
 
 
+def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    model = SARIMAXModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
+
+
 def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
     model = SARIMAXModel()
     ts = ts_with_non_convertable_category_regressor
@@ -73,14 +80,6 @@ def test_prediction_with_reg(example_reg_tsds):
 def test_prediction_with_reg_custom_order(example_reg_tsds):
     _check_forecast(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)), horizon=7)
     _check_predict(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)))
-
-
-def test_prediction_with_exogs_warning(ts_with_non_regressor_exog):
-    ts = ts_with_non_regressor_exog
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _check_predict(ts=deepcopy(ts), model=SARIMAXModel())
 
 
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):

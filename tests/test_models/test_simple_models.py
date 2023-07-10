@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -79,6 +77,13 @@ def long_periodic_ts():
     return ts
 
 
+def test_sma_model_fit_with_exogs_warning(example_reg_tsds):
+    ts = example_reg_tsds
+    model = SeasonalMovingAverageModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
+
+
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_forecast(simple_df, model):
     _check_forecast(ts=simple_df, model=model(), horizon=7)
@@ -121,12 +126,11 @@ def test_sma_model_predict_fail_nans_in_context(simple_df):
         _ = sma_model.predict(simple_df, prediction_size=7)
 
 
-def test_sma_model_with_exogs_warning(example_reg_tsds):
+def test_deadline_model_fit_with_exogs_warning(example_reg_tsds):
     ts = example_reg_tsds
+    model = DeadlineMovingAverageModel(window=1)
     with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
-        _check_forecast(ts=deepcopy(ts), model=SeasonalMovingAverageModel(), horizon=7)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
-        _check_predict(ts=deepcopy(ts), model=SeasonalMovingAverageModel(), prediction_size=7)
+        model.fit(ts)
 
 
 @pytest.mark.parametrize(
@@ -257,14 +261,6 @@ def test_deadline_model_predict_fail_not_fitted(simple_df):
     model = DeadlineMovingAverageModel(window=1000)
     with pytest.raises(ValueError, match="Model is not fitted"):
         _ = model.predict(simple_df, prediction_size=7)
-
-
-def test_deadline_model_with_exogs_warning(example_reg_tsds):
-    ts = example_reg_tsds
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
-        _check_forecast(ts=deepcopy(ts), model=DeadlineMovingAverageModel(window=1), horizon=7)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
-        _check_predict(ts=deepcopy(ts), model=DeadlineMovingAverageModel(window=1), prediction_size=7)
 
 
 def test_seasonal_moving_average_forecast_correct(simple_df):

@@ -43,6 +43,22 @@ def test_save_regressors_on_fit(model, example_reg_tsds):
         StatsForecastAutoThetaModel(),
     ],
 )
+def test_fit_with_exogs_warning(model, ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        StatsForecastARIMAModel(),
+        StatsForecastAutoARIMAModel(),
+        StatsForecastAutoCESModel(),
+        StatsForecastAutoETSModel(),
+        StatsForecastAutoThetaModel(),
+    ],
+)
 def test_fit_str_category_fail(model, ts_with_non_convertable_category_regressor):
     ts = ts_with_non_convertable_category_regressor
     with pytest.raises(ValueError, match="Only convertible to float features are allowed"):
@@ -216,25 +232,6 @@ def test_forecast_future_with_regressors(model, example_reg_tsds):
 
     assert not res.isnull().values.any()
     assert len(res) == horizon * 2
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        StatsForecastARIMAModel(),
-        StatsForecastAutoARIMAModel(),
-        StatsForecastAutoCESModel(),
-        StatsForecastAutoETSModel(),
-        StatsForecastAutoThetaModel(),
-    ],
-)
-def test_forecast_future_with_exogs_warning(model, ts_with_non_regressor_exog):
-    horizon = 7
-    ts = ts_with_non_regressor_exog
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _ = model.forecast(future_ts)
 
 
 @pytest.mark.parametrize(

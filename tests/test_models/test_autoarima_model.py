@@ -28,6 +28,13 @@ def _check_predict(ts, model):
     assert len(res) == len(ts.index) * 2
 
 
+def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    model = AutoARIMAModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
+
+
 def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
     model = AutoARIMAModel()
     ts = ts_with_non_convertable_category_regressor
@@ -60,14 +67,6 @@ def test_prediction(example_tsds):
 def test_prediction_with_reg(example_reg_tsds):
     _check_forecast(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel(), horizon=7)
     _check_predict(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel())
-
-
-def test_prediction_with_exogs_warning(ts_with_non_regressor_exog):
-    ts = ts_with_non_regressor_exog
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _check_predict(ts=deepcopy(ts), model=AutoARIMAModel())
 
 
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):

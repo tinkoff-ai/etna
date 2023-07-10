@@ -61,6 +61,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
             Fitted model
         """
         self.regressor_columns = regressors
+        self._check_not_used_columns(df)
 
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
@@ -168,6 +169,17 @@ class _SARIMAXBaseAdapter(BaseAdapter):
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
         pass
 
+    def _check_not_used_columns(self, df: pd.DataFrame):
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+
+        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if columns_not_used:
+            warnings.warn(
+                message=f"This model doesn't work with exogenous features unknown in future. "
+                f"Columns {columns_not_used} won't be used."
+            )
+
     def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
         """Select data with regressors.
 
@@ -180,13 +192,6 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         """
         if self.regressor_columns is None:
             raise ValueError("Something went wrong, regressor_columns is None!")
-
-        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
-        if columns_not_used:
-            warnings.warn(
-                message=f"This model doesn't work with exogenous features unknown in future. "
-                f"Columns {columns_not_used} won't be used."
-            )
 
         regressors_with_nans = [regressor for regressor in self.regressor_columns if df[regressor].isna().sum() > 0]
         if regressors_with_nans:

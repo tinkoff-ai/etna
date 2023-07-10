@@ -18,6 +18,17 @@ class _SklearnAdapter(BaseAdapter):
         self.model = regressor
         self.regressor_columns: Optional[List[str]] = None
 
+    def _check_not_used_columns(self, df: pd.DataFrame):
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+
+        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if columns_not_used:
+            warnings.warn(
+                message=f"This model doesn't work with exogenous features unknown in future. "
+                f"Columns {columns_not_used} won't be used."
+            )
+
     def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
         """Select data with regressors.
 
@@ -32,18 +43,11 @@ class _SklearnAdapter(BaseAdapter):
         if self.regressor_columns is None:
             raise ValueError("Something went wrong, regressor_columns is None!")
 
-        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
-        if columns_not_used:
-            warnings.warn(
-                message=f"This model doesn't work with exogenous features unknown in future. "
-                f"Columns {columns_not_used} won't be used."
-            )
-
         if self.regressor_columns:
             try:
-                result = df[self.regressor_columns].astype(float)
+                result = df[self.regressor_columns].apply(pd.to_numeric)
             except ValueError as e:
-                raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
+                raise ValueError(f"Only convertible to numeric features are allowed! Error: {str(e)}")
         else:
             raise ValueError("There are not features for fitting the model!")
 
@@ -66,6 +70,7 @@ class _SklearnAdapter(BaseAdapter):
             Fitted model
         """
         self.regressor_columns = regressors
+        self._check_not_used_columns(df)
         features = self._select_regressors(df)
         target = df["target"]
         self.model.fit(features, target)

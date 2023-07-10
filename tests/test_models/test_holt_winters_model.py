@@ -33,16 +33,11 @@ def const_ts():
         SimpleExpSmoothingModel(),
     ],
 )
-def test_holt_winters_simple(model, example_tsds):
-    """Test that Holt-Winters' models make predictions in simple case."""
-    horizon = 7
-    model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+def test_holt_winters_fit_with_exog_warning(model, example_reg_tsds):
+    """Test that Holt-Winters' models fits with exog with warning."""
+    ts = example_reg_tsds
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
 
 
 @pytest.mark.parametrize(
@@ -53,13 +48,12 @@ def test_holt_winters_simple(model, example_tsds):
         SimpleExpSmoothingModel(),
     ],
 )
-def test_holt_winters_with_exog_warning(model, example_reg_tsds):
-    """Test that Holt-Winters' models make predictions with exog with warning."""
+def test_holt_winters_simple(model, example_tsds):
+    """Test that Holt-Winters' models make predictions in simple case."""
     horizon = 7
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
-        res = model.forecast(future_ts)
+    model.fit(example_tsds)
+    future_ts = example_tsds.make_future(future_steps=horizon)
+    res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()

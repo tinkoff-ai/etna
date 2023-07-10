@@ -132,28 +132,19 @@ def test_repr(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
+def test_with_exog_warning(model, example_reg_tsds):
+    ts = example_reg_tsds
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
+
+
 @pytest.mark.parametrize("model", (TBATSModel(), BATSModel()))
 @pytest.mark.parametrize("method", ("forecast", "predict"))
 def test_not_fitted(model, method, linear_segments_ts_unique):
     method_to_call = getattr(model, method)
     with pytest.raises(ValueError, match="model is not fitted!"):
         method_to_call(ts=Mock())
-
-
-@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
-@pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
-def test_holt_winters_with_exog_warning(model, method, use_future, example_reg_tsds):
-    ts = example_reg_tsds
-    model.fit(ts)
-    if use_future:
-        pred_ts = ts.make_future(3)
-    else:
-        pred_ts = deepcopy(ts)
-
-    method_to_call = getattr(model, method)
-
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
-        _ = method_to_call(ts=pred_ts)
 
 
 @pytest.mark.long_2

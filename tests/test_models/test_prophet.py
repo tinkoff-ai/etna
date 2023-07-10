@@ -34,6 +34,20 @@ def _check_predict(ts, model):
     assert len(res) == len(ts.index) * 2
 
 
+def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
+    model = ProphetModel()
+    ts = ts_with_non_convertable_category_regressor
+    with pytest.raises(ValueError, match="Only convertible to numeric features are allowed"):
+        model.fit(ts)
+
+
+def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    model = ProphetModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
+
+
 def test_prediction(example_tsds):
     _check_forecast(ts=deepcopy(example_tsds), model=ProphetModel(), horizon=7)
     _check_predict(ts=deepcopy(example_tsds), model=ProphetModel())
@@ -73,14 +87,6 @@ def test_prediction_with_cap_floor():
     df_future = ts_future.to_pandas(flatten=True)
 
     assert np.all(df_future["target"] < cap)
-
-
-def test_prediction_with_exogs_warning(ts_with_non_regressor_exog):
-    ts = ts_with_non_regressor_exog
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _check_forecast(ts=deepcopy(ts), model=ProphetModel(), horizon=7)
-    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _check_predict(ts=deepcopy(ts), model=ProphetModel())
 
 
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):

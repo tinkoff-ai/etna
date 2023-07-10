@@ -201,6 +201,15 @@ class _HoltWintersAdapter(BaseAdapter):
         self._last_train_timestamp: Optional[pd.Timestamp] = None
         self._train_freq: Optional[str] = None
 
+    def _check_not_used_columns(self, df: pd.DataFrame):
+        columns = df.columns
+        columns_not_used = set(columns).difference({"target", "timestamp"})
+        if columns_not_used:
+            warnings.warn(
+                message=f"This model doesn't work with exogenous features. "
+                f"Columns {columns_not_used} won't be used."
+            )
+
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_HoltWintersAdapter":
         """
         Fit Holt-Winters' model.
@@ -217,8 +226,7 @@ class _HoltWintersAdapter(BaseAdapter):
             Fitted model
         """
         self._train_freq = determine_freq(timestamps=df["timestamp"])
-
-        self._check_df(df)
+        self._check_not_used_columns(df)
 
         targets = df["target"]
         targets.index = df["timestamp"]
@@ -268,20 +276,10 @@ class _HoltWintersAdapter(BaseAdapter):
         """
         if self._result is None or self._model is None:
             raise ValueError("This model is not fitted! Fit the model before calling predict method!")
-        self._check_df(df)
 
         forecast = self._result.predict(start=df["timestamp"].min(), end=df["timestamp"].max())
         y_pred = forecast.values
         return y_pred
-
-    def _check_df(self, df: pd.DataFrame):
-        columns = df.columns
-        columns_not_used = set(columns).difference({"target", "timestamp"})
-        if columns_not_used:
-            warnings.warn(
-                message=f"This model doesn't work with exogenous features. "
-                f"Columns {columns_not_used} won't be used."
-            )
 
     def get_model(self) -> HoltWintersResultsWrapper:
         """Get :py:class:`statsmodels.tsa.holtwinters.results.HoltWintersResultsWrapper` model that was fitted inside etna class.
@@ -346,7 +344,6 @@ class _HoltWintersAdapter(BaseAdapter):
         horizon_steps = np.arange(1, horizon + 1)
 
         self._check_mul_components()
-        self._check_df(df)
 
         level = fit_result.level.values
         trend = fit_result.trend.values
@@ -413,7 +410,6 @@ class _HoltWintersAdapter(BaseAdapter):
             )
 
         self._check_mul_components()
-        self._check_df(df)
 
         level = fit_result.level.values
         trend = fit_result.trend.values

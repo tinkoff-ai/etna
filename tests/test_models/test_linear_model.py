@@ -227,13 +227,10 @@ def test_prediction_with_exogs_warning(ts_with_non_regressor_exog, model):
     num_lags = 5
     lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
     dateflags = DateFlagsTransform()
-
     ts.fit_transform([lags, dateflags])
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
 
     with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
-        _ = model.forecast(future_ts)
+        model.fit(ts)
 
 
 @pytest.mark.parametrize(
