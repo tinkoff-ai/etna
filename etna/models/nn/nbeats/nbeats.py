@@ -88,6 +88,7 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
     """Interpretable N-BEATS model.
 
     Paper: https://arxiv.org/pdf/1905.10437.pdf
+
     Official implementation: https://github.com/ServiceNow/N-BEATS
     """
 
@@ -257,6 +258,7 @@ class NBeatsGenericModel(NBeatsBaseModel):
     """Generic N-BEATS model.
 
     Paper: https://arxiv.org/pdf/1905.10437.pdf
+
     Official implementation: https://github.com/ServiceNow/N-BEATS
     """
 
