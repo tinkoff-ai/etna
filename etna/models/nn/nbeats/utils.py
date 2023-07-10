@@ -58,7 +58,7 @@ def prepare_train_batch(
         series = part["history"]
 
         if window_sampling_limit is not None:
-            lower_bound = max(1, len(series) - window_sampling_limit - 2)
+            lower_bound = max(1, len(series) - window_sampling_limit - 1)
 
         else:
             lower_bound = 1

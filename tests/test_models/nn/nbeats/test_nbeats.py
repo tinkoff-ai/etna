@@ -43,7 +43,7 @@ def test_interpretable_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_fu
         num_of_harmonics=1,
         trainer_params=dict(max_epochs=2500),
         random_state=2,
-        window_sampling_limit=4 * horizon,
+        window_sampling_limit=7 * horizon,
     )
 
     metric = run_model_test(model=model, ts_train=ts_train, ts_test=ts_test, horizon=horizon)
