@@ -18,7 +18,7 @@ def _check_forecast(ts, model, horizon):
     res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
-    assert not res.isnull().values.any()
+    assert not res["target"].isnull().values.any()
     assert len(res) == horizon * 2
 
 
@@ -27,13 +27,15 @@ def _check_predict(ts, model):
     res = model.predict(ts)
     res = res.to_pandas(flatten=True)
 
-    assert not res.isnull().values.any()
+    assert not res["target"].isnull().values.any()
     assert len(res) == len(ts.index) * 2
 
 
-def test_prediction(example_tsds):
-    _check_forecast(ts=deepcopy(example_tsds), model=SARIMAXModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_tsds), model=SARIMAXModel())
+def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
+    model = SARIMAXModel()
+    ts = ts_with_non_convertable_category_regressor
+    with pytest.raises(ValueError, match="Only convertible to float features are allowed"):
+        model.fit(ts)
 
 
 def test_save_regressors_on_fit(example_reg_tsds):
@@ -53,6 +55,11 @@ def test_select_regressors_correctly(example_reg_tsds):
         assert (segment_regressors == segment_regressors_expected).all().all()
 
 
+def test_prediction(example_tsds):
+    _check_forecast(ts=deepcopy(example_tsds), model=SARIMAXModel(), horizon=7)
+    _check_predict(ts=deepcopy(example_tsds), model=SARIMAXModel())
+
+
 def test_prediction_with_simple_differencing(example_tsds):
     _check_forecast(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True), horizon=7)
     _check_predict(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True))
@@ -66,6 +73,20 @@ def test_prediction_with_reg(example_reg_tsds):
 def test_prediction_with_reg_custom_order(example_reg_tsds):
     _check_forecast(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)), horizon=7)
     _check_predict(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)))
+
+
+def test_prediction_with_exogs_warning(ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        _check_predict(ts=deepcopy(ts), model=SARIMAXModel())
+
+
+def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
+    ts = ts_with_short_regressor
+    with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
+        _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=20)
 
 
 @pytest.mark.parametrize("method_name", ["forecast", "predict"])
@@ -142,6 +163,20 @@ def test_save_load(example_tsds):
 @pytest.mark.parametrize(
     "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
 )
+def test_decomposition_raise_error_if_not_fitted(dfs_w_exog, components_method_name, in_sample):
+    train, test = dfs_w_exog
+    pred_df = train if in_sample else test
+
+    model = _SARIMAXAdapter(order=(2, 0, 0), seasonal_order=(1, 0, 0, 3), hamilton_representation=True)
+    components_method = getattr(model, components_method_name)
+
+    with pytest.raises(ValueError, match="Model is not fitted"):
+        _ = components_method(df=pred_df)
+
+
+@pytest.mark.parametrize(
+    "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
+)
 def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name, in_sample):
     train, test = dfs_w_exog
     pred_df = train if in_sample else test
@@ -152,7 +187,7 @@ def test_decomposition_hamiltonian_repr_error(dfs_w_exog, components_method_name
     components_method = getattr(model, components_method_name)
 
     with pytest.raises(
-        ValueError, match="Prediction decomposition is not implemented for Hamilton representation of ARMA!"
+        NotImplementedError, match="Prediction decomposition is not implemented for Hamilton representation of ARMA!"
     ):
         _ = components_method(df=pred_df)
 
@@ -263,7 +298,10 @@ def test_forecast_components_of_subset_error(dfs_w_exog):
     model = _SARIMAXAdapter()
     model.fit(train, ["f1", "f2"])
 
-    with pytest.raises(ValueError, match="Regressors .* are too short for chosen horizon value"):
+    with pytest.raises(
+        NotImplementedError,
+        match="This model can't make forecast decomposition on out-of-sample data that goes after training data with a gap",
+    ):
         _ = model.forecast_components(df=test.iloc[1:-1])
 
 
@@ -273,7 +311,7 @@ def test_forecast_decompose_timestamp_error(dfs_w_exog):
     model = _SARIMAXAdapter()
     model.fit(train, [])
 
-    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
+    with pytest.raises(NotImplementedError, match="This model can't make forecast decomposition on history data"):
         model.forecast_components(df=train)
 
 
@@ -288,7 +326,9 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
     model = _SARIMAXAdapter()
     model.fit(outliers_df.iloc[train_slice], [])
 
-    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
+    with pytest.raises(
+        NotImplementedError, match="This model can't make prediction decomposition on future out-of-sample data"
+    ):
         model.predict_components(df=outliers_df.iloc[decompose_slice])
 
 

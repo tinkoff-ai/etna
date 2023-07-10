@@ -62,9 +62,6 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         """
         self.regressor_columns = regressors
 
-        self._encode_categoricals(df)
-        self._check_df(df)
-
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
@@ -81,11 +78,8 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         if self._fit_results is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        horizon = len(df)
-        self._encode_categoricals(df)
-        self._check_df(df, horizon)
-
         exog_future = self._select_regressors(df)
+
         start_timestamp = df["timestamp"].min()
         end_timestamp = df["timestamp"].max()
         # determine index of start_timestamp if counting from first timestamp of train
@@ -174,40 +168,43 @@ class _SARIMAXBaseAdapter(BaseAdapter):
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:
         pass
 
-    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
+    def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
+        """Select data with regressors.
+
+        During fit there can't be regressors with NaNs, they are removed at higher level.
+        Look at the issue: https://github.com/tinkoff-ai/etna/issues/557
+
+        During prediction without validation NaNs in regressors lead to exception from the underlying model.
+
+        This model requires data to be in numeric dtype, but doesn't support boolean, so it was decided to use float.
+        """
         if self.regressor_columns is None:
             raise ValueError("Something went wrong, regressor_columns is None!")
-        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
-        if column_to_drop:
+
+        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if columns_not_used:
             warnings.warn(
-                message=f"SARIMAX model does not work with exogenous features (features unknown in future).\n "
-                f"{column_to_drop} will be dropped"
+                message=f"This model doesn't work with exogenous features unknown in future. "
+                f"Columns {columns_not_used} won't be used."
             )
-        if horizon:
-            short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
-            if short_regressors:
-                raise ValueError(
-                    f"Regressors {short_regressors} are too short for chosen horizon value.\n "
-                    "Try lower horizon value, or drop this regressors."
-                )
 
-    def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
-        if self.regressor_columns:
-            exog_future = df[self.regressor_columns]
-            exog_future.index = df["timestamp"]
-        else:
-            exog_future = None
-        return exog_future
-
-    def _encode_categoricals(self, df: pd.DataFrame) -> None:
-        categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
-        try:
-            df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
-        except ValueError:
+        regressors_with_nans = [regressor for regressor in self.regressor_columns if df[regressor].isna().sum() > 0]
+        if regressors_with_nans:
             raise ValueError(
-                f"Categorical columns {categorical_cols} can not be converted to int.\n "
-                "Try to encode this columns manually."
+                f"Regressors {regressors_with_nans} contain NaN values. "
+                "Try to lower horizon value, or drop these regressors."
             )
+
+        if self.regressor_columns:
+            try:
+                result = df[self.regressor_columns].astype(float)
+            except ValueError as e:
+                raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
+            result.index = df["timestamp"]
+        else:
+            result = None
+
+        return result
 
     def get_model(self) -> SARIMAXResultsWrapper:
         """Get :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAXResultsWrapper` that is used inside etna class.
@@ -303,14 +300,22 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
-        if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:
-            raise ValueError("To estimate out-of-sample prediction decomposition use `forecast` method.")
+        if self._fit_results is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
+
+        if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
+            raise NotImplementedError(
+                "This model can't make prediction decomposition on future out-of-sample data! "
+                "Use method forecast for future out-of-sample prediction decomposition."
+            )
 
         fit_results = self._fit_results
         model = fit_results.model
 
         if model.hamilton_representation:
-            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
+            raise NotImplementedError(
+                "Prediction decomposition is not implemented for Hamilton representation of ARMA!"
+            )
 
         state = fit_results.predicted_state[:, :-1]
 
@@ -345,21 +350,41 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
-        if df["timestamp"].min() <= self._last_train_timestamp:
-            raise ValueError("To estimate in-sample prediction decomposition use `predict` method.")
+        if self._fit_results is None:
+            raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
-        horizon = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=df["timestamp"].max(), freq=self._freq
+        start_timestamp = df["timestamp"].min()
+        end_timestamp = df["timestamp"].max()
+
+        if start_timestamp < self._last_train_timestamp:
+            raise NotImplementedError(
+                "This model can't make forecast decomposition on history data! "
+                "Use method predict for in-sample prediction decomposition."
+            )
+
+        # determine index of start_timestamp if counting from last timestamp of train
+        start_idx = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+        )
+        # determine index of end_timestamp if counting from last timestamp of train
+        end_idx = determine_num_steps(
+            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
         )
 
+        if start_idx > 1:
+            raise NotImplementedError(
+                "This model can't make forecast decomposition on out-of-sample data that goes after training data with a gap! "
+                "You can only forecast from the next point after the last one in the training dataset."
+            )
+
+        horizon = end_idx
         fit_results = self._fit_results
 
         model = fit_results.model
         if model.hamilton_representation:
-            raise ValueError("Prediction decomposition is not implemented for Hamilton representation of ARMA!")
-
-        self._encode_categoricals(df)
-        self._check_df(df, horizon)
+            raise NotImplementedError(
+                "Prediction decomposition is not implemented for Hamilton representation of ARMA!"
+            )
 
         exog_future = self._select_regressors(df)
 

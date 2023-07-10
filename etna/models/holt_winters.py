@@ -279,8 +279,8 @@ class _HoltWintersAdapter(BaseAdapter):
         columns_not_used = set(columns).difference({"target", "timestamp"})
         if columns_not_used:
             warnings.warn(
-                message=f"This model does not work with exogenous features and regressors.\n "
-                f"{columns_not_used} will be dropped"
+                message=f"This model doesn't work with exogenous features. "
+                f"Columns {columns_not_used} won't be used."
             )
 
     def get_model(self) -> HoltWintersResultsWrapper:

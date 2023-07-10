@@ -30,6 +30,13 @@ class _TBATSAdapter(BaseAdapter):
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
         self._freq = determine_freq(timestamps=df["timestamp"])
+        columns = set(df.columns)
+        columns_not_used = columns.difference({"target", "segment"})
+        if columns_not_used:
+            warn(
+                message=f"This model doesn't work with exogenous features. "
+                f"Columns {columns_not_used} won't be used."
+            )
 
         target = df["target"]
         self._fitted_model = self._model.fit(target)

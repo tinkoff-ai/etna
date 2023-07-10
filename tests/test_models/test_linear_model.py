@@ -22,33 +22,6 @@ from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
-def ts_with_categoricals(random_seed) -> TSDataset:
-    periods = 100
-    df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    df1["segment"] = "segment_1"
-    df1["target"] = np.random.uniform(10, 20, size=periods)
-
-    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    df2["segment"] = "segment_2"
-    df2["target"] = np.random.uniform(-15, 5, size=periods)
-
-    df_exog1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods * 2)})
-    df_exog1["segment"] = "segment_1"
-    df_exog1["cat_feature"] = "x"
-
-    df_exog2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods * 2)})
-    df_exog2["segment"] = "segment_2"
-    df_exog2["cat_feature"] = "y"
-
-    df = pd.concat([df1, df2]).reset_index(drop=True)
-    df_exog = pd.concat([df_exog1, df_exog2]).reset_index(drop=True)
-
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
-
-    return ts
-
-
-@pytest.fixture
 def df_with_regressors(example_tsds) -> Tuple[pd.DataFrame, List[str]]:
     lags = LagTransform(in_column="target", lags=[7], out_column="lag")
     dflg = DateFlagsTransform(day_number_in_week=True, day_number_in_month=True, is_weekend=False, out_column="df")
@@ -226,16 +199,41 @@ def test_no_warning_on_categorical_features(example_tsds, model):
 
 
 @pytest.mark.parametrize("model", [LinearPerSegmentModel()])
-def test_raise_error_on_unconvertable_features(ts_with_categoricals, model):
+def test_raise_error_on_unconvertable_features(ts_with_non_convertable_category_regressor, model):
     """Check that SklearnModel raises error working with dataset with categorical features which can't be converted to numeric"""
+    ts = ts_with_non_convertable_category_regressor
     horizon = 7
     num_lags = 5
     lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
     dateflags = DateFlagsTransform()
-    ts_with_categoricals.fit_transform([lags, dateflags])
+    ts.fit_transform([lags, dateflags])
 
-    with pytest.raises(ValueError, match="Only convertible to numeric features are accepted!"):
-        _ = model.fit(ts_with_categoricals)
+    with pytest.raises(ValueError, match="Only convertible to numeric features are allowed"):
+        _ = model.fit(ts)
+
+
+@pytest.mark.parametrize("model", [LinearPerSegmentModel()])
+def test_raise_error_on_no_features(example_tsds, model):
+    ts = example_tsds
+
+    with pytest.raises(ValueError, match="There are not features for fitting the model"):
+        _ = model.fit(ts)
+
+
+@pytest.mark.parametrize("model", [LinearPerSegmentModel()])
+def test_prediction_with_exogs_warning(ts_with_non_regressor_exog, model):
+    ts = ts_with_non_regressor_exog
+    horizon = 7
+    num_lags = 5
+    lags = LagTransform(in_column="target", lags=[i + horizon for i in range(1, num_lags + 1)])
+    dateflags = DateFlagsTransform()
+
+    ts.fit_transform([lags, dateflags])
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
+
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        _ = model.forecast(future_ts)
 
 
 @pytest.mark.parametrize(
@@ -283,6 +281,17 @@ def test_save_load(model, example_tsds):
     horizon = 3
     transforms = [LagTransform(in_column="target", lags=list(range(horizon, horizon + 3)))]
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
+
+
+@pytest.mark.parametrize("fit_intercept", (True, False))
+@pytest.mark.parametrize("regressor_constructor", (LinearRegression, ElasticNet))
+def test_linear_adapter_predict_components_raise_error_if_not_fitted(
+    df_with_regressors, regressor_constructor, fit_intercept
+):
+    df, regressors = df_with_regressors
+    adapter = _LinearAdapter(regressor=regressor_constructor(fit_intercept=fit_intercept))
+    with pytest.raises(ValueError, match="Model is not fitted"):
+        _ = adapter.predict_components(df)
 
 
 @pytest.mark.parametrize(

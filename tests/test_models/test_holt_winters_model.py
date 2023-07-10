@@ -58,7 +58,7 @@ def test_holt_winters_with_exog_warning(model, example_reg_tsds):
     horizon = 7
     model.fit(example_reg_tsds)
     future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    with pytest.warns(UserWarning, match="This model does not work with exogenous features and regressors"):
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
         res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
