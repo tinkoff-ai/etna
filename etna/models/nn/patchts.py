@@ -1,13 +1,19 @@
 import math
-from typing import Any, Dict, Iterator, Optional
+from typing import Any
+from typing import Dict
+from typing import Iterator
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 
 from etna import SETTINGS
-from etna.distributions import BaseDistribution, FloatDistribution, IntDistribution
-from etna.models.base import DeepBaseModel, DeepBaseNet
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
+from etna.models.base import DeepBaseModel
+from etna.models.base import DeepBaseNet
 
 if SETTINGS.torch_required:
     import torch
@@ -126,7 +132,7 @@ class PatchTSNet(DeepBaseNet):
         :
             forecast with shape (batch_size, decoder_length, 1)
         """
-        encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
+        encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_length = decoder_real.shape[1]
         outputs = []
