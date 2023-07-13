@@ -31,7 +31,6 @@ class PatchTSBatch(TypedDict):
 
 
 class PositionalEncoding(nn.Module):
-
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
@@ -41,7 +40,7 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, 1, d_model)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -51,7 +50,7 @@ class PositionalEncoding(nn.Module):
         x = torch.reshape(x, (x.shape[0] * x.shape[1], x.shape[2], x.shape[3]))
         # x.shape = (batch_size * input_size, patch_num, embedding_dim)
         x = x.permute(1, 0, 2)  # (patch_num, batch_size * input_size, embedding_dim)
-        x = x + self.pe[:x.size(0)]
+        x = x + self.pe[: x.size(0)]
         return self.dropout(x)
 
 
@@ -59,17 +58,17 @@ class PatchTSNet(DeepBaseNet):
     """PatchTS based Lightning module"""
 
     def __init__(
-            self,
-            encoder_length: int,
-            patch_len: int,
-            stride: int,
-            num_layers: int,
-            hidden_size: int,
-            feedforward_size: int,
-            nhead: int,
-            lr: float,
-            loss: "torch.nn.Module",
-            optimizer_params: Optional[dict],
+        self,
+        encoder_length: int,
+        patch_len: int,
+        stride: int,
+        num_layers: int,
+        hidden_size: int,
+        feedforward_size: int,
+        nhead: int,
+        lr: float,
+        loss: "torch.nn.Module",
+        optimizer_params: Optional[dict],
     ) -> None:
         """Init PatchTS
 
@@ -105,16 +104,18 @@ class PatchTSNet(DeepBaseNet):
         self.stride = stride
         self.loss = loss
 
-        encoder_layers = nn.TransformerEncoderLayer(d_model=self.hidden_size, nhead=self.nhead,
-                                                    dim_feedforward=self.feedforward_size)
+        encoder_layers = nn.TransformerEncoderLayer(
+            d_model=self.hidden_size, nhead=self.nhead, dim_feedforward=self.feedforward_size
+        )
         self.model = nn.Sequential(
             nn.Linear(self.patch_len, self.hidden_size),
             PositionalEncoding(d_model=self.hidden_size),
-            nn.TransformerEncoder(encoder_layers, self.num_layers)
+            nn.TransformerEncoder(encoder_layers, self.num_layers),
         )
         self.max_patch_num = (encoder_length - self.patch_len) // self.stride + 1
-        self.projection = nn.Sequential(nn.Flatten(start_dim=-2),
-                                        nn.Linear(in_features=self.hidden_size * self.max_patch_num, out_features=1))
+        self.projection = nn.Sequential(
+            nn.Flatten(start_dim=-2), nn.Linear(in_features=self.hidden_size * self.max_patch_num, out_features=1)
+        )
 
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
@@ -150,8 +151,9 @@ class PatchTSNet(DeepBaseNet):
     def _get_prediction(self, x: torch.Tensor) -> torch.Tensor:
         x = x.permute(0, 2, 1)  # (batch_size, input_size, encoder_length)
         # do patching
-        x = x.unfold(dimension=-1, size=self.patch_len,
-                     step=self.stride)  # (batch_size, input_size, patch_num, patch_len)
+        x = x.unfold(
+            dimension=-1, size=self.patch_len, step=self.stride
+        )  # (batch_size, input_size, patch_num, patch_len)
 
         y = self.model(x)
         y = y.permute(1, 0, 2)  # (batch_size, hidden_size, patch_num)
@@ -193,19 +195,17 @@ class PatchTSNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = (
-            df.select_dtypes(include=[np.number]).values
-        )
+        values_real = df.select_dtypes(include=[np.number]).values
         values_target = df["target"].values
         segment = df["segment"].values[0]
 
         def _make(
-                values_real: np.ndarray,
-                values_target: np.ndarray,
-                segment: str,
-                start_idx: int,
-                encoder_length: int,
-                decoder_length: int,
+            values_real: np.ndarray,
+            values_target: np.ndarray,
+            segment: str,
+            start_idx: int,
+            encoder_length: int,
+            decoder_length: int,
         ) -> Optional[dict]:
 
             sample: Dict[str, Any] = {
@@ -221,10 +221,10 @@ class PatchTSNet(DeepBaseNet):
             if total_sample_length + start_idx > total_length:
                 return None
 
-            sample["decoder_real"] = values_real[start_idx + encoder_length: start_idx + total_sample_length]
-            sample["encoder_real"] = values_real[start_idx: start_idx + encoder_length]
+            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
+            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
 
-            target = values_target[start_idx: start_idx + encoder_length + decoder_length].reshape(-1, 1)
+            target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
             sample["encoder_target"] = target[:encoder_length]
             sample["decoder_target"] = target[encoder_length:]
 
@@ -257,25 +257,25 @@ class PatchTSModel(DeepBaseModel):
     """PatchTS model using PyTorch layers"""
 
     def __init__(
-            self,
-            decoder_length: int,
-            encoder_length: int,
-            patch_len: int = 4,
-            stride: int = 1,
-            num_layers: int = 3,
-            hidden_size: int = 128,
-            feedforward_size: int = 256,
-            nhead: int = 16,
-            lr: float = 1e-3,
-            loss: "torch.nn.Module" = nn.MSELoss(),
-            train_batch_size: int = 128,
-            test_batch_size: int = 128,
-            optimizer_params: Optional[dict] = None,
-            trainer_params: Optional[dict] = None,
-            train_dataloader_params: Optional[dict] = None,
-            test_dataloader_params: Optional[dict] = None,
-            val_dataloader_params: Optional[dict] = None,
-            split_params: Optional[dict] = None,
+        self,
+        decoder_length: int,
+        encoder_length: int,
+        patch_len: int = 4,
+        stride: int = 1,
+        num_layers: int = 3,
+        hidden_size: int = 128,
+        feedforward_size: int = 256,
+        nhead: int = 16,
+        lr: float = 1e-3,
+        loss: "torch.nn.Module" = nn.MSELoss(),
+        train_batch_size: int = 128,
+        test_batch_size: int = 128,
+        optimizer_params: Optional[dict] = None,
+        trainer_params: Optional[dict] = None,
+        train_dataloader_params: Optional[dict] = None,
+        test_dataloader_params: Optional[dict] = None,
+        val_dataloader_params: Optional[dict] = None,
+        split_params: Optional[dict] = None,
     ):
         """Init PatchTS model.
 
@@ -371,5 +371,5 @@ class PatchTSModel(DeepBaseModel):
             "num_layers": IntDistribution(low=1, high=3),
             "hidden_size": IntDistribution(low=16, high=256, step=self.nhead),
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
-            "encoder_length": IntDistribution(low=self.patch_len, high=24)
+            "encoder_length": IntDistribution(low=self.patch_len, high=24),
         }

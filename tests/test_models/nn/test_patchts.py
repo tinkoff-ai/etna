@@ -13,11 +13,7 @@ from tests.test_models.utils import assert_sampling_is_valid
 @pytest.mark.long_2
 @pytest.mark.parametrize(
     "horizon",
-    [
-        8,
-        13,
-        15
-    ],
+    [8, 13, 15],
 )
 def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_weekly_function_with_horizon, horizon):
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
@@ -40,11 +36,7 @@ def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_wee
 @pytest.mark.long_2
 @pytest.mark.parametrize(
     "horizon",
-    [
-        8,
-        13,
-        15
-    ],
+    [8, 13, 15],
 )
 def test_patchts_model_run_weekly_overfit_with_scaler_medium_patch(ts_dataset_weekly_function_with_horizon, horizon):
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
@@ -81,7 +73,7 @@ def test_patchts_make_samples(example_df):
     assert first_sample["encoder_target"].shape == (encoder_length, 1)
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
     np.testing.assert_equal(example_df[["target"]].iloc[:encoder_length], first_sample["encoder_real"])
-    np.testing.assert_equal(example_df[["target"]].iloc[1:encoder_length + 1], second_sample["encoder_real"])
+    np.testing.assert_equal(example_df[["target"]].iloc[1 : encoder_length + 1], second_sample["encoder_real"])
 
 
 def test_params_to_tune(example_tsds):
