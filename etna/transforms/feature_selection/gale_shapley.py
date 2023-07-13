@@ -87,7 +87,7 @@ class SegmentGaleShapley(BaseGaleShapley):
 
         Returns
         -------
-        name: str
+        name:
             name of feature
         """
         if self.last_candidate is None:
@@ -113,7 +113,7 @@ class FeatureGaleShapley(BaseGaleShapley):
 
         Returns
         -------
-        is_better: bool
+        is_better:
             returns True if given segment is a better candidate than current match.
         """
         if self.tmp_match is None or self.tmp_match_rank is None:
@@ -178,7 +178,7 @@ class GaleShapleyMatcher(BaseMixin):
 
         Returns
         -------
-        success: bool
+        success:
             True if there is at least one match attempt at the iteration
 
         Notes
@@ -212,7 +212,7 @@ class GaleShapleyMatcher(BaseMixin):
 
         Returns
         -------
-        matching: Dict[str, str]
+        matching:
             matching dict of segment x feature
         """
         success_run = True
@@ -224,13 +224,23 @@ class GaleShapleyMatcher(BaseMixin):
 
 
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """GaleShapleyFeatureSelectionTransform provides feature filtering with Gale-Shapley matching algo according to relevance table.
-
+    """Transform that provides feature filtering by Gale-Shapley matching algorithm according to the relevance table.
 
     Notes
     -----
     Transform works with any type of features, however most of the models works only with regressors.
     Therefore, it is recommended to pass the regressors into the feature selection transforms.
+
+    As input, we have a table of relevances with size :math:`N\_{f} \times N\_{s}` where :math:`N\_{f}` -- number of features,
+    :math:`N\_{s}` -- number of segments.
+    Procedure of filtering features consist of :math:`\lceil \frac{k}{N\_{s}} \rceil` iterations.
+    Algorithm of each iteration:
+
+    - build a matching between segments and features by `Gale–Shapley algorithm <https://en.wikipedia.org/wiki/Gale%E2%80%93Shapley_algorithm>`_
+    according to the relevance table, during the matching segments send proposals to features;
+    - select features to add by taking matched feature for each segment;
+    - add selected features to accumulated list of selected features taking into account that this list shouldn't exceed the size of ``top_k``;
+    - remove added features from future consideration.
     """
 
     def __init__(
@@ -290,7 +300,8 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             return 1
         if top_k < n_segments:
             warnings.warn(
-                f"Given top_k={top_k} is less than n_segments. Algo will filter data without Gale-Shapley run."
+                f"Given top_k={top_k} is less than n_segments={n_segments}. "
+                f"Algo will filter data without Gale-Shapley run."
             )
             return 1
         return ceil(top_k / n_segments)
@@ -309,7 +320,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
 
         Returns
         -------
-        matching dict: Dict[str, str]
+        matching dict:
             dict of segment x feature
         """
         gssegments = [

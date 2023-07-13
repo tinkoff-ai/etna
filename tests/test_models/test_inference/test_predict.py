@@ -25,10 +25,17 @@ from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
+from etna.models import StatsForecastARIMAModel
+from etna.models import StatsForecastAutoARIMAModel
+from etna.models import StatsForecastAutoCESModel
+from etna.models import StatsForecastAutoETSModel
+from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
+from etna.models.nn import NBeatsGenericModel
+from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
@@ -66,6 +73,11 @@ class TestPredictInSampleFull:
             (SimpleExpSmoothingModel(), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
         ],
     )
     def test_predict_in_sample_full(self, model, transforms, example_tsds):
@@ -146,6 +158,8 @@ class TestPredictInSampleFull:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -187,6 +201,11 @@ class TestPredictInSampleSuffix:
             (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
         ],
     )
     def test_predict_in_sample_suffix(self, model, transforms, example_tsds):
@@ -241,6 +260,8 @@ class TestPredictInSampleSuffix:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -358,9 +379,25 @@ class TestPredictOutSample:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_out_sample(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make predict on future out-of-sample data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_predict_out_sample_failed_not_implemented_out_sample(self, model, transforms, example_tsds):
         self._test_predict_out_sample(example_tsds, model, transforms)
 
 
@@ -472,9 +509,25 @@ class TestPredictOutSamplePrefix:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_prefix_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_out_sample_prefix(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make predict on future out-of-sample data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_predict_out_sample_prefix_failed_not_implemented_out_sample(self, model, transforms, example_tsds):
         self._test_predict_out_sample_prefix(example_tsds, model, transforms)
 
 
@@ -597,9 +650,25 @@ class TestPredictOutSampleSuffix:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_out_sample_suffix_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_out_sample_suffix(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make predict on future out-of-sample data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_predict_out_sample_suffix_failed_not_implemented_out_sample(self, model, transforms, example_tsds):
         self._test_predict_out_sample_suffix(example_tsds, model, transforms)
 
 
@@ -726,9 +795,25 @@ class TestPredictMixedInOutSample:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, example_tsds):
+        self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make predict on future out-of-sample data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_predict_mixed_in_out_sample_failed_not_implemented_out_sample(self, model, transforms, example_tsds):
         self._test_predict_mixed_in_out_sample(example_tsds, model, transforms)
 
 
@@ -784,6 +869,11 @@ class TestPredictSubsetSegments:
             (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
         ],
     )
     def test_predict_subset_segments(self, model, transforms, example_tsds):
@@ -838,6 +928,8 @@ class TestPredictSubsetSegments:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -940,6 +1032,8 @@ class TestPredictNewSegments:
                 ),
                 [],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_predict_new_segments_failed_not_implemented_predict(self, model, transforms, example_tsds):
@@ -959,6 +1053,11 @@ class TestPredictNewSegments:
             (SimpleExpSmoothingModel(), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
         ],
     )
     def test_predict_new_segments_failed_per_segment(self, model, transforms, example_tsds):

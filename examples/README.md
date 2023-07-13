@@ -15,17 +15,17 @@ We have prepared a set of tutorials for an easy introduction:
 
 #### 03. [EDA](https://github.com/tinkoff-ai/etna/tree/master/examples/EDA.ipynb) 
 - Visualization
-    - Plot
-    - Partial autocorrelation
-    - Cross-correlation
-    - Correlation heatmap
-    - Distribution
+  - Plot
+  - Partial autocorrelation
+  - Cross-correlation
+  - Correlation heatmap
+  - Distribution
 - Outliers
-     - Median method
-     - Density method
+  - Median method
+  - Density method
 - Change Points
-     - Change points plot
-     - Interactive change points plot
+  - Change points plot
+  - Interactive change points plot
 
 #### 04. [Regressors and exogenous data](https://github.com/tinkoff-ai/etna/tree/master/examples/exogenous_data.ipynb)
 - What is regressor? 
@@ -35,7 +35,7 @@ We have prepared a set of tutorials for an easy introduction:
   - EDA
 - Forecast with regressors
 
-#### 05. [Custom model and transform](https://github.com/tinkoff-ai/etna/tree/master/examples/exogenous_data.ipynb)
+#### 05. [Custom model and transform](https://github.com/tinkoff-ai/etna/tree/master/examples/custom_transform_and_model.ipynb)
 - What is Transform and how it works 
 - Custom Transform 
   - Per-segment Custom Transform 
@@ -56,10 +56,10 @@ We have prepared a set of tutorials for an easy introduction:
 
 #### 08. [Outliers](https://github.com/tinkoff-ai/etna/tree/master/examples/outliers.ipynb) 
 - Point outliers
-    - Median method
-    - Density method
-    - Prediction interval method
-    - Histogram method
+  - Median method
+  - Density method
+  - Prediction interval method
+  - Histogram method
 - Sequence outliers
 - Interactive visualization
 - Outliers imputation
@@ -96,11 +96,11 @@ We have prepared a set of tutorials for an easy introduction:
 
 #### 13. [AutoML notebook](https://github.com/tinkoff-ai/etna/tree/master/examples/automl.ipynb)
 - Hyperparameters tuning
-    - How `Tune` works
-    - Example
+  - How `Tune` works
+  - Example
 - General AutoML
-    - How `Auto` works
-    - Example
+  - How `Auto` works
+  - Example
 
 #### 14. Hyperparameter search
 - [Optuna](https://github.com/tinkoff-ai/etna/tree/master/examples/optuna)
@@ -115,3 +115,21 @@ We have prepared a set of tutorials for an easy introduction:
 - Hierarchical structure
 - Reconciliation methods
 - Exogenous variables for hierarchical forecasts
+
+#### 17. [Classification](https://github.com/tinkoff-ai/etna/tree/master/examples/classification.ipynb)
+- Classification 
+  - Load Dataset
+  - Feature extraction 
+  - Cross validation 
+- Predictability analysis
+  - Load Dataset 
+  - Load pretrained analyzer 
+  - Analyze segments predictability
+
+#### 18. [Feature selection](https://github.com/tinkoff-ai/etna/tree/master/examples/feature_selection.ipynb)
+- Loading Dataset
+- Feature selection methods
+  - Intro to feature selection
+  - `TreeFeatureSelectionTransform`
+  - `GaleShapleyFeatureSelectionTransform`
+  - `MRMRFeatureSelectionTransform`

@@ -27,10 +27,17 @@ from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.models import SeasonalMovingAverageModel
 from etna.models import SimpleExpSmoothingModel
+from etna.models import StatsForecastARIMAModel
+from etna.models import StatsForecastAutoARIMAModel
+from etna.models import StatsForecastAutoCESModel
+from etna.models import StatsForecastAutoETSModel
+from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
+from etna.models.nn import NBeatsGenericModel
+from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
@@ -121,6 +128,8 @@ class TestForecastInSampleFullNoTarget:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -179,6 +188,22 @@ class TestForecastInSampleFullNoTarget:
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
+        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample_2(
+        self, model, transforms, example_tsds
+    ):
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
 
@@ -248,6 +273,8 @@ class TestForecastInSampleFull:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
@@ -293,6 +320,20 @@ class TestForecastInSampleFull:
         ],
     )
     def test_forecast_in_sample_full_not_implemented(self, model, transforms, example_tsds):
+        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_forecast_in_sample_full_not_implemented_2(self, model, transforms, example_tsds):
         _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
 
@@ -356,6 +397,8 @@ class TestForecastInSampleSuffixNoTarget:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
@@ -404,6 +447,22 @@ class TestForecastInSampleSuffixNoTarget:
     ):
         self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
 
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_forecast_in_sample_suffix_no_target_failed_not_implemented_in_sample_2(
+        self, model, transforms, example_tsds
+    ):
+        self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
+
 
 class TestForecastInSampleSuffix:
     """Test forecast on suffix of train dataset.
@@ -445,6 +504,8 @@ class TestForecastInSampleSuffix:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
@@ -489,6 +550,20 @@ class TestForecastInSampleSuffix:
         ],
     )
     def test_forecast_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
+        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_forecast_in_sample_suffix_failed_not_implemented_in_sample_2(self, model, transforms, example_tsds):
         _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
 
 
@@ -545,6 +620,11 @@ class TestForecastOutSamplePrefix:
             (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -580,6 +660,8 @@ class TestForecastOutSamplePrefix:
                 ),
                 [],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
@@ -712,6 +794,18 @@ class TestForecastOutSampleSuffix:
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
+    @pytest.mark.parametrize(
+        "model,transforms",
+        (
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+        ),
+    )
+    def test_forecast_out_sample_suffix_failed_nbeats(self, model, transforms, example_tsds):
+        """This test is expected to fail due to windowed view on data in N-BEATS"""
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
     @to_be_fixed(
         raises=NotImplementedError,
         match="You can only forecast from the next point after the last one in the training dataset",
@@ -752,6 +846,23 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, example_tsds):
+        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+    @to_be_fixed(
+        raises=NotImplementedError,
+        match="This model can't make forecast on out-of-sample data that goes after training data with a gap",
+    )
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_not_implemented_2(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
@@ -818,6 +929,8 @@ class TestForecastMixedInOutSample:
                 ),
                 [SegmentEncoderTransform()],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
@@ -862,6 +975,20 @@ class TestForecastMixedInOutSample:
         ],
     )
     def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
+        self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
+        ],
+    )
+    def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample_2(self, model, transforms, example_tsds):
         self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
 
@@ -918,6 +1045,11 @@ class TestForecastSubsetSegments:
             (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -939,6 +1071,8 @@ class TestForecastSubsetSegments:
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_subset_segments(self, model, transforms, example_tsds):
@@ -1072,6 +1206,8 @@ class TestForecastNewSegments:
                 ),
                 [],
             ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
         ],
     )
     def test_forecast_new_segments(self, model, transforms, example_tsds):
@@ -1091,6 +1227,11 @@ class TestForecastNewSegments:
             (SimpleExpSmoothingModel(), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
         ],
     )
     def test_forecast_new_segments_failed_per_segment(self, model, transforms, example_tsds):

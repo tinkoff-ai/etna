@@ -5236,6 +5236,33 @@ pure-eval = "*"
 tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
+name = "statsforecast"
+version = "1.4.0"
+description = "Time series forecasting suite using statistical models"
+category = "main"
+optional = true
+python-versions = ">=3.7"
+files = [
+    {file = "statsforecast-1.4.0-py3-none-any.whl", hash = "sha256:01a46892412b9af044e42b27f773172d7f70d1a1cfad0a1147426ecdd8bc28e1"},
+    {file = "statsforecast-1.4.0.tar.gz", hash = "sha256:f468bbd80266601a296a77580521ebfd310a0dbe301153bd170812fce7691740"},
+]
+
+[package.dependencies]
+matplotlib = "*"
+numba = ">=0.55.0"
+numpy = ">=1.21.6"
+pandas = ">=1.3.5"
+plotly = "*"
+scipy = ">=1.7.3"
+statsmodels = ">=0.13.2"
+tqdm = "*"
+
+[package.extras]
+dev = ["black", "dask[distributed]", "flake8", "fugue (>=0.7.0)", "matplotlib", "mypy", "nbdev", "neuralforecast", "pmdarima", "prophet", "protobuf (>=3.15.3,<4.0.0)", "ray", "sklearn"]
+fugue = ["fugue[ray] (>=0.7.0)"]
+ray = ["protobuf (>=3.15.3,<4.0.0)", "ray"]
+
+[[package]]
 name = "statsmodels"
 version = "0.13.2"
 description = "Statistical computations and models for Python"
@@ -6150,14 +6177,15 @@ docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker
 testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["optuna", "prophet", "pytorch-forecasting", "pytorch-lightning", "pyts", "sqlalchemy", "torch", "tsfresh", "wandb"]
-all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "coverage", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbsphinx", "numpydoc", "optuna", "pep8-naming", "prophet", "pytest", "pytest-cov", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-mathjax-offline", "sphinx-rtd-theme", "sqlalchemy", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
+all = ["optuna", "prophet", "pytorch-forecasting", "pytorch-lightning", "pyts", "sqlalchemy", "statsforecast", "torch", "tsfresh", "wandb"]
+all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "coverage", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbsphinx", "numpydoc", "optuna", "pep8-naming", "prophet", "pytest", "pytest-cov", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-mathjax-offline", "sphinx-rtd-theme", "sqlalchemy", "statsforecast", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 docs = ["GitPython", "Sphinx", "myst-parser", "nbsphinx", "numpydoc", "sphinx-mathjax-offline", "sphinx-rtd-theme"]
 jupyter = ["black", "jupyter", "nbconvert"]
 prophet = ["prophet"]
 release = ["click", "semver"]
+statsforecast = ["statsforecast"]
 style = ["black", "codespell", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "mypy", "pep8-naming", "types-PyYAML", "types-setuptools"]
 tests = ["coverage", "pytest", "pytest-cov"]
 torch = ["pytorch-forecasting", "pytorch-lightning", "torch"]
@@ -6166,4 +6194,4 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0, <3.11.0"
-content-hash = "13b87da1179c0c1d55958ca3e4364b365f887ed4518c42564340e33792c8a675"
+content-hash = "4de2dc547a31712fcd04469793b4747c65611a4953ce87e488766be17ec81228"
