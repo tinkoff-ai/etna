@@ -137,11 +137,11 @@ class PatchTSNet(DeepBaseNet):
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_length = decoder_real.shape[1]
         outputs = []
-        x = encoder_real
+        current_input = encoder_real
         for _ in range(decoder_length):
-            pred = self._get_prediction(x)
+            pred = self._get_prediction(current_input)
             outputs.append(pred)
-            x = torch.cat((x[:, 1:, :], torch.unsqueeze(pred, dim=1)), dim=1)
+            current_input = torch.cat((current_input[:, 1:, :], torch.unsqueeze(pred, dim=1)), dim=1)
 
         forecast = torch.cat(outputs, dim=1)
         forecast = torch.unsqueeze(forecast, dim=2)
