@@ -31,6 +31,9 @@ class PatchTSBatch(TypedDict):
 
 
 class PositionalEncoding(nn.Module):
+
+    """Positional encoding of tokens and reshaping."""
+
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
@@ -43,19 +46,16 @@ class PositionalEncoding(nn.Module):
         self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Arguments:
-            x: Tensor, shape ``[batch_size, input_size, patch_num, embedding_dim]``
-        """
+        """x: Tensor, shape [batch_size, input_size, patch_num, embedding_dim]."""
         x = torch.reshape(x, (x.shape[0] * x.shape[1], x.shape[2], x.shape[3]))
-        # x.shape = (batch_size * input_size, patch_num, embedding_dim)
+        # x.shape == (batch_size * input_size, patch_num, embedding_dim)
         x = x.permute(1, 0, 2)  # (patch_num, batch_size * input_size, embedding_dim)
         x = x + self.pe[: x.size(0)]
         return self.dropout(x)
 
 
 class PatchTSNet(DeepBaseNet):
-    """PatchTS based Lightning module"""
+    """PatchTS based Lightning module."""
 
     def __init__(
         self,
@@ -70,7 +70,7 @@ class PatchTSNet(DeepBaseNet):
         loss: "torch.nn.Module",
         optimizer_params: Optional[dict],
     ) -> None:
-        """Init PatchTS
+        """Init PatchTS.
 
         Parameters
         ----------
@@ -138,7 +138,7 @@ class PatchTSNet(DeepBaseNet):
         decoder_length = decoder_real.shape[1]
         outputs = []
         x = encoder_real
-        for i in range(decoder_length):
+        for _ in range(decoder_length):
             pred = self._get_prediction(x)
             outputs.append(pred)
             x = torch.cat((x[:, 1:, :], torch.unsqueeze(pred, dim=1)), dim=1)
@@ -254,7 +254,7 @@ class PatchTSNet(DeepBaseNet):
 
 
 class PatchTSModel(DeepBaseModel):
-    """PatchTS model using PyTorch layers"""
+    """PatchTS model using PyTorch layers."""
 
     def __init__(
         self,
@@ -267,7 +267,7 @@ class PatchTSModel(DeepBaseModel):
         feedforward_size: int = 256,
         nhead: int = 16,
         lr: float = 1e-3,
-        loss: "torch.nn.Module" = nn.MSELoss(),
+        loss: Optional["torch.nn.Module"] = None,
         train_batch_size: int = 128,
         test_batch_size: int = 128,
         optimizer_params: Optional[dict] = None,
@@ -330,20 +330,20 @@ class PatchTSModel(DeepBaseModel):
         self.stride = stride
         self.nhead = nhead
         self.feedforward_size = feedforward_size
-        self.loss = loss
+        self.loss = loss if loss is not None else nn.MSELoss()
         self.optimizer_params = optimizer_params
         super().__init__(
             net=PatchTSNet(
                 encoder_length,
-                patch_len=patch_len,
-                stride=stride,
-                num_layers=num_layers,
-                hidden_size=hidden_size,
-                feedforward_size=feedforward_size,
-                nhead=nhead,
-                lr=lr,
-                loss=loss,
-                optimizer_params=optimizer_params,
+                patch_len=self.patch_len,
+                stride=self.stride,
+                num_layers=self.num_layers,
+                hidden_size=self.hidden_size,
+                feedforward_size=self.feedforward_size,
+                nhead=self.nhead,
+                lr=self.lr,
+                loss=self.loss,
+                optimizer_params=self.optimizer_params,
             ),
             decoder_length=decoder_length,
             encoder_length=encoder_length,
