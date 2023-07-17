@@ -36,6 +36,7 @@ def _prepare_df(df: pd.DataFrame, df_exog: pd.DataFrame, segment: str, regressor
 
 def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> pd.DataFrame:
     """Calculate relevance table with p-values from tsfresh.
+
     Parameters
     ----------
     df:
