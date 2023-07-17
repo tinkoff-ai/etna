@@ -105,6 +105,8 @@ class ModelPipelinePredictMixin:
             )
         else:
             raise NotImplementedError(f"Unknown model type: {self.model.__class__.__name__}!")
+
+        results.inverse_transform(self.transforms)
         return results
 
 
