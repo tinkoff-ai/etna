@@ -340,10 +340,6 @@ class BATSModel(
 ):
     """Class for holding segment interval BATS model.
 
-    Method ``forecast`` only works on ouf-of-sample data.
-
-    Method ``predict`` only works on in-sample data.
-
     Notes
     -----
     This model supports in-sample and out-of-sample prediction decomposition.
@@ -420,10 +416,6 @@ class TBATSModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
     """Class for holding segment interval TBATS model.
-
-    Method ``forecast`` only works on ouf-of-sample data.
-
-    Method ``predict`` only works on in-sample data.
 
     Notes
     -----

@@ -57,10 +57,7 @@ class AutoARIMAModel(
     """
     Class for holding auto arima model.
 
-    Method ``forecast`` can be used on ouf-of-sample data that goes after training data with a gap.
-    But forecast is still being made starting from the last point of training data.
-
-    Method ``predict`` can use true target values only on in-sample data. On ouf-of-sample data autoregression
+    Method ``predict`` can use true target values only on train data on future data autoregression
     forecasting will be made even if targets are known.
 
     Notes
