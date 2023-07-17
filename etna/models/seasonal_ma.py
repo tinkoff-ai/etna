@@ -57,6 +57,15 @@ class SeasonalMovingAverageModel(
         """
         return self
 
+    def _check_not_used_columns(self, ts: TSDataset):
+        columns = set(ts.columns.get_level_values("feature"))
+        columns_not_used = columns.difference({"target"})
+        if columns_not_used:
+            warnings.warn(
+                message=f"This model doesn't work with exogenous features. "
+                f"Columns {columns_not_used} won't be used."
+            )
+
     def fit(self, ts: TSDataset) -> "SeasonalMovingAverageModel":
         """Fit model.
 
@@ -72,12 +81,7 @@ class SeasonalMovingAverageModel(
         :
             Model after fit
         """
-        columns = set(ts.columns.get_level_values("feature"))
-        if columns != {"target"}:
-            warnings.warn(
-                message=f"{type(self).__name__} does not work with any exogenous series or features. "
-                f"It uses only target series for predict/\n "
-            )
+        self._check_not_used_columns(ts)
         return self
 
     def _validate_context(self, df: pd.DataFrame, prediction_size: int):

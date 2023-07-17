@@ -132,6 +132,13 @@ def test_repr(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
+@pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
+def test_with_exog_warning(model, example_reg_tsds):
+    ts = example_reg_tsds
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
+
+
 @pytest.mark.parametrize("model", (TBATSModel(), BATSModel()))
 @pytest.mark.parametrize("method", ("forecast", "predict"))
 def test_not_fitted(model, method, linear_segments_ts_unique):
@@ -473,7 +480,9 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
     model = _TBATSAdapter(model=BATS())
     model.fit(outliers_df.iloc[train_slice], [])
 
-    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
+    with pytest.raises(
+        NotImplementedError, match="This model can't make prediction decomposition on future out-of-sample data"
+    ):
         model.predict_components(df=outliers_df.iloc[decompose_slice])
 
 
@@ -483,7 +492,7 @@ def test_forecast_decompose_timestamp_error(periodic_dfs):
     model = _TBATSAdapter(model=BATS())
     model.fit(train, [])
 
-    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
+    with pytest.raises(NotImplementedError, match="This model can't make forecast decomposition on history data"):
         model.forecast_components(df=train)
 
 

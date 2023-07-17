@@ -49,39 +49,46 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         self._model = model
         self._support_prediction_intervals = support_prediction_intervals
 
-    def _encode_categoricals(self, df: pd.DataFrame) -> None:
-        categorical_cols = df.select_dtypes(include=["category"]).columns.tolist()
-        try:
-            df.loc[:, categorical_cols] = df[categorical_cols].astype(int)
-        except ValueError:
-            raise ValueError(
-                f"Categorical columns {categorical_cols} can not be converted to int.\n "
-                "Try to encode this columns manually."
-            )
-
-    def _check_df(self, df: pd.DataFrame, horizon: Optional[int] = None):
+    def _check_not_used_columns(self, df: pd.DataFrame):
         if self.regressor_columns is None:
             raise ValueError("Something went wrong, regressor_columns is None!")
-        column_to_drop = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
-        if column_to_drop:
+
+        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if columns_not_used:
             warnings.warn(
-                message=f"Model from statsforecast does not work with exogenous features (features unknown in future).\n "
-                f"{column_to_drop} will be dropped"
+                message=f"This model doesn't work with exogenous features unknown in future. "
+                f"Columns {columns_not_used} won't be used."
             )
-        if horizon:
-            short_regressors = [regressor for regressor in self.regressor_columns if df[regressor].count() < horizon]
-            if short_regressors:
-                raise ValueError(
-                    f"Regressors {short_regressors} are too short for chosen horizon value.\n "
-                    "Try lower horizon value, or drop this regressors."
-                )
 
     def _select_regressors(self, df: pd.DataFrame) -> Optional[np.ndarray]:
+        """Select data with regressors.
+
+        During fit there can't be regressors with NaNs, they are removed at higher level.
+        Look at the issue: https://github.com/tinkoff-ai/etna/issues/557
+
+        During prediction without validation NaNs in regressors lead to NaNs in the answer.
+
+        This model requires data to be in float dtype.
+        """
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+
+        regressors_with_nans = [regressor for regressor in self.regressor_columns if df[regressor].isna().sum() > 0]
+        if regressors_with_nans:
+            raise ValueError(
+                f"Regressors {regressors_with_nans} contain NaN values. "
+                "Try to lower horizon value, or drop these regressors."
+            )
+
         if self.regressor_columns:
-            exog_future = df[self.regressor_columns].values.astype(float)
+            try:
+                result = df[self.regressor_columns].values.astype(float)
+            except ValueError as e:
+                raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
         else:
-            exog_future = None
-        return exog_future
+            result = None
+
+        return result
 
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_StatsForecastBaseAdapter":
         """Fit statsforecast adapter.
@@ -99,12 +106,11 @@ class _StatsForecastBaseAdapter(BaseAdapter):
             Fitted adapter
         """
         self.regressor_columns = regressors
-
-        self._encode_categoricals(df)
-        self._check_df(df)
+        self._check_not_used_columns(df)
 
         endog_data = df["target"].values
         exog_data = self._select_regressors(df)
+
         self._model.fit(y=endog_data, X=exog_data)
 
         self._freq = determine_freq(timestamps=df["timestamp"])
@@ -137,11 +143,6 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         if self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        horizon = len(df)
-        self._encode_categoricals(df)
-        self._check_df(df, horizon)
-
-        exog_data = self._select_regressors(df)
         start_timestamp = df["timestamp"].min()
         end_timestamp = df["timestamp"].max()
 
@@ -166,6 +167,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
             )
 
         h = end_idx
+        exog_data = self._select_regressors(df)
         if prediction_interval and self._support_prediction_intervals:
             levels = []
             for quantile in quantiles:
@@ -213,10 +215,6 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         """
         if self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
-
-        horizon = len(df)
-        self._encode_categoricals(df)
-        self._check_df(df, horizon)
 
         start_timestamp = df["timestamp"].min()
         end_timestamp = df["timestamp"].max()
@@ -525,10 +523,6 @@ class StatsForecastAutoARIMAModel(
     Class for holding :py:class:`statsforecast.models.AutoARIMA`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoarima>`_.
-
-    Method ``forecast`` only works on ouf-of-sample data that goes right after training data.
-
-    Method ``predict`` only works on in-sample data.
     """
 
     def __init__(
@@ -627,10 +621,6 @@ class StatsForecastARIMAModel(
     Class for holding :py:class:`statsforecast.models.ARIMA`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#arima>`_.
-
-    Method ``forecast`` only works on ouf-of-sample data that goes right after training data.
-
-    Method ``predict`` only works on in-sample data.
     """
 
     def __init__(
@@ -706,10 +696,6 @@ class StatsForecastAutoThetaModel(
     Class for holding :py:class:`statsforecast.models.AutoTheta`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autotheta>`_.
-
-    Method ``forecast`` only works on ouf-of-sample data that goes right after training data.
-
-    Method ``predict`` only works on in-sample data.
     """
 
     def __init__(
@@ -748,10 +734,6 @@ class StatsForecastAutoCESModel(
     Class for holding :py:class:`statsforecast.models.AutoCES`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoces>`_.
-
-    Method ``forecast`` only works on ouf-of-sample data that goes right after training data.
-
-    Method ``predict`` only works on in-sample data.
     """
 
     def __init__(self, season_length: int = 1, model: str = "Z"):
@@ -778,10 +760,6 @@ class StatsForecastAutoETSModel(
     Class for holding :py:class:`statsforecast.models.AutoETS`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoets>`_.
-
-    Method ``forecast`` only works on ouf-of-sample data that goes right after training data.
-
-    Method ``predict`` only works on in-sample data.
     """
 
     def __init__(self, season_length: int = 1, model: str = "ZZZ", damped: Optional[bool] = None):

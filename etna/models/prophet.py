@@ -1,3 +1,4 @@
+import warnings
 from copy import deepcopy
 from datetime import datetime
 from typing import Dict
@@ -98,6 +99,47 @@ class _ProphetAdapter(BaseAdapter):
 
         return model
 
+    def _check_not_used_columns(self, df: pd.DataFrame):
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+
+        columns_not_used = [col for col in df.columns if col not in ["target", "timestamp"] + self.regressor_columns]
+        if columns_not_used:
+            warnings.warn(
+                message=f"This model doesn't work with exogenous features unknown in future. "
+                f"Columns {columns_not_used} won't be used."
+            )
+
+    def _select_regressors(self, df: pd.DataFrame) -> Optional[pd.DataFrame]:
+        """Select data with regressors.
+
+        During fit there can't be regressors with NaNs, they are removed at higher level.
+        Look at the issue: https://github.com/tinkoff-ai/etna/issues/557
+
+        During prediction without validation NaNs in regressors lead to exception from the underlying model.
+
+        This model requires data to be in numeric dtype.
+        """
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+
+        regressors_with_nans = [regressor for regressor in self.regressor_columns if df[regressor].isna().sum() > 0]
+        if regressors_with_nans:
+            raise ValueError(
+                f"Regressors {regressors_with_nans} contain NaN values. "
+                "Try to lower horizon value, or drop these regressors."
+            )
+
+        if self.regressor_columns:
+            try:
+                result = df[self.regressor_columns].apply(pd.to_numeric)
+            except ValueError as e:
+                raise ValueError(f"Only convertible to numeric features are allowed! Error: {str(e)}")
+        else:
+            result = None
+
+        return result
+
     def fit(self, df: pd.DataFrame, regressors: List[str]) -> "_ProphetAdapter":
         """
         Fits a Prophet model.
@@ -110,6 +152,8 @@ class _ProphetAdapter(BaseAdapter):
             List of the columns with regressors
         """
         self.regressor_columns = regressors
+        self._check_not_used_columns(df)
+
         prophet_df = self._prepare_prophet_df(df=df)
         for regressor in self.regressor_columns:
             if regressor not in self.predefined_regressors_names:
@@ -159,7 +203,11 @@ class _ProphetAdapter(BaseAdapter):
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
         prophet_df["ds"] = df["timestamp"]
-        prophet_df[self.regressor_columns] = df[self.regressor_columns]
+
+        regressors_data = self._select_regressors(df)
+        if regressors_data is not None:
+            prophet_df[self.regressor_columns] = regressors_data[self.regressor_columns]
+
         return prophet_df
 
     @staticmethod
