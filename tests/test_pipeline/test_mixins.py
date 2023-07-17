@@ -130,7 +130,7 @@ def test_predict_mixin_predict_inverse_transform_called(start_timestamp, end_tim
         ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
     )
 
-    result.inverse_transform.assert_called_once_with(transforms=mixin.transforms)
+    result.inverse_transform.assert_called_once_with(mixin.transforms)
 
 
 @pytest.mark.parametrize(
