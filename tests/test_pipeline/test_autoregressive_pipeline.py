@@ -260,7 +260,7 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
         (ProphetModel(), []),
     ],
 )
-def test_predict(model, transforms, example_tsds):
+def test_predict_format(model, transforms, example_tsds):
     ts = example_tsds
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=7)
     pipeline.fit(ts)
@@ -280,6 +280,23 @@ def test_predict(model, transforms, example_tsds):
 
     assert not np.any(result_df["target"].isna())
     assert len(result_df) == len(example_tsds.segments) * num_points
+
+
+def test_predict_values(example_tsds):
+    original_ts = deepcopy(example_tsds)
+
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds)
+    predictions_pipeline = pipeline.predict(ts=original_ts)
+
+    original_ts.fit_transform(transforms)
+    model.fit(original_ts)
+    predictions_manual = model.predict(original_ts)
+    predictions_manual.inverse_transform(transforms)
+
+    pd.testing.assert_frame_equal(predictions_pipeline.to_pandas(), predictions_manual.to_pandas())
 
 
 @pytest.mark.parametrize("load_ts", [True, False])
