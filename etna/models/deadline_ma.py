@@ -91,6 +91,15 @@ class DeadlineMovingAverageModel(
         """
         return self
 
+    def _check_not_used_columns(self, ts: TSDataset):
+        columns = set(ts.columns.get_level_values("feature"))
+        columns_not_used = columns.difference({"target"})
+        if columns_not_used:
+            warnings.warn(
+                message=f"This model doesn't work with exogenous features. "
+                f"Columns {columns_not_used} won't be used."
+            )
+
     def fit(self, ts: TSDataset) -> "DeadlineMovingAverageModel":
         """Fit model.
 
@@ -109,14 +118,8 @@ class DeadlineMovingAverageModel(
         if freq not in self._freqs_available:
             raise ValueError(f"Freq {freq} is not supported! Use daily or hourly frequency!")
 
+        self._check_not_used_columns(ts)
         self._freq = freq
-
-        columns = set(ts.columns.get_level_values("feature"))
-        if columns != {"target"}:
-            warnings.warn(
-                message=f"{type(self).__name__} does not work with any exogenous series or features. "
-                f"It uses only target series for predict/\n "
-            )
         return self
 
     @staticmethod

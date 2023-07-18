@@ -149,12 +149,17 @@ class TestForecastInSampleFullNoTarget:
         with pytest.raises(ValueError, match="There are NaNs in features"):
             self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
-    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -188,22 +193,6 @@ class TestForecastInSampleFullNoTarget:
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
-
-    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-        ],
-    )
-    def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample_2(
-        self, model, transforms, example_tsds
-    ):
         self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
 
 
@@ -281,12 +270,17 @@ class TestForecastInSampleFull:
         with pytest.raises(ValueError, match="Given context isn't big enough"):
             _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
-    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -320,20 +314,6 @@ class TestForecastInSampleFull:
         ],
     )
     def test_forecast_in_sample_full_not_implemented(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
-
-    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-        ],
-    )
-    def test_forecast_in_sample_full_not_implemented_2(self, model, transforms, example_tsds):
         _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
 
 
@@ -404,12 +384,17 @@ class TestForecastInSampleSuffixNoTarget:
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
         self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
 
-    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -443,22 +428,6 @@ class TestForecastInSampleSuffixNoTarget:
         ],
     )
     def test_forecast_in_sample_suffix_no_target_failed_not_implemented_in_sample(
-        self, model, transforms, example_tsds
-    ):
-        self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
-
-    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-        ],
-    )
-    def test_forecast_in_sample_suffix_no_target_failed_not_implemented_in_sample_2(
         self, model, transforms, example_tsds
     ):
         self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
@@ -511,12 +480,17 @@ class TestForecastInSampleSuffix:
     def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
         _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
 
-    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -550,20 +524,6 @@ class TestForecastInSampleSuffix:
         ],
     )
     def test_forecast_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
-
-    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-        ],
-    )
-    def test_forecast_in_sample_suffix_failed_not_implemented_in_sample_2(self, model, transforms, example_tsds):
         _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
 
 
@@ -808,11 +768,16 @@ class TestForecastOutSampleSuffix:
 
     @to_be_fixed(
         raises=NotImplementedError,
-        match="You can only forecast from the next point after the last one in the training dataset",
+        match="This model can't make forecast on out-of-sample data that goes after training data with a gap",
     )
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -846,23 +811,6 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
-
-    @to_be_fixed(
-        raises=NotImplementedError,
-        match="This model can't make forecast on out-of-sample data that goes after training data with a gap",
-    )
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-        ],
-    )
-    def test_forecast_out_sample_suffix_failed_not_implemented_2(self, model, transforms, example_tsds):
         self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
 
 
@@ -936,12 +884,17 @@ class TestForecastMixedInOutSample:
     def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
         self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
-    @to_be_fixed(raises=NotImplementedError, match="It is not possible to make in-sample predictions")
+    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
         "model, transforms",
         [
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -975,20 +928,6 @@ class TestForecastMixedInOutSample:
         ],
     )
     def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
-
-    @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-        ],
-    )
-    def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample_2(self, model, transforms, example_tsds):
         self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
 
 

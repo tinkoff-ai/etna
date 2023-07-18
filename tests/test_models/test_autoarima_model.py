@@ -15,7 +15,7 @@ def _check_forecast(ts, model, horizon):
     res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
-    assert not res.isnull().values.any()
+    assert not res["target"].isnull().values.any()
     assert len(res) == horizon * 2
 
 
@@ -24,13 +24,22 @@ def _check_predict(ts, model):
     res = model.predict(ts)
     res = res.to_pandas(flatten=True)
 
-    assert not res.isnull().values.any()
+    assert not res["target"].isnull().values.any()
     assert len(res) == len(ts.index) * 2
 
 
-def test_prediction(example_tsds):
-    _check_forecast(ts=deepcopy(example_tsds), model=AutoARIMAModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_tsds), model=AutoARIMAModel())
+def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    model = AutoARIMAModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
+
+
+def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
+    model = AutoARIMAModel()
+    ts = ts_with_non_convertable_category_regressor
+    with pytest.raises(ValueError, match="Only convertible to float features are allowed"):
+        model.fit(ts)
 
 
 def test_save_regressors_on_fit(example_reg_tsds):
@@ -50,9 +59,20 @@ def test_select_regressors_correctly(example_reg_tsds):
         assert (segment_regressors == segment_regressors_expected).all().all()
 
 
+def test_prediction(example_tsds):
+    _check_forecast(ts=deepcopy(example_tsds), model=AutoARIMAModel(), horizon=7)
+    _check_predict(ts=deepcopy(example_tsds), model=AutoARIMAModel())
+
+
 def test_prediction_with_reg(example_reg_tsds):
     _check_forecast(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel(), horizon=7)
     _check_predict(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel())
+
+
+def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
+    ts = ts_with_short_regressor
+    with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
+        _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=20)
 
 
 def test_prediction_with_params(example_reg_tsds):
@@ -105,7 +125,7 @@ def test_forecast_prediction_interval_infuture(example_tsds):
 
 
 @pytest.mark.parametrize("method_name", ["forecast", "predict"])
-def test_prediction_raise_error_if_not_fitted_autoarima(example_tsds, method_name):
+def test_prediction_raise_error_if_not_fitted(example_tsds, method_name):
     """Test that AutoARIMA raise error when calling prediction without being fit."""
     model = AutoARIMAModel()
     with pytest.raises(ValueError, match="model is not fitted!"):
@@ -113,7 +133,7 @@ def test_prediction_raise_error_if_not_fitted_autoarima(example_tsds, method_nam
         _ = method(ts=example_tsds)
 
 
-def test_get_model_before_training_autoarima():
+def test_get_model_before_training():
     """Check that get_model method throws an error if per-segment model is not fitted yet."""
     etna_model = AutoARIMAModel()
     with pytest.raises(ValueError, match="Can not get the dict with base models, the model is not fitted!"):

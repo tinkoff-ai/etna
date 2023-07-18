@@ -6,7 +6,6 @@ from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
 
-from etna.datasets import TSDataset
 from etna.libs.statsforecast import ARIMA
 from etna.models import StatsForecastARIMAModel
 from etna.models import StatsForecastAutoARIMAModel
@@ -16,46 +15,6 @@ from etna.models import StatsForecastAutoThetaModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
-
-
-@pytest.fixture
-def ts_with_non_convertable_category(example_tsds) -> TSDataset:
-    ts = example_tsds
-    df = ts.to_pandas(flatten=True)
-    df_exog = deepcopy(df)
-    df_exog["cat"] = "a"
-    df_exog["cat"] = df_exog["cat"].astype("category")
-    df_exog.drop(columns=["target"], inplace=True)
-    df_wide = TSDataset.to_dataset(df).iloc[:-10]
-    df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=ts.freq, known_future="all")
-    return ts
-
-
-@pytest.fixture
-def ts_with_short_category(example_tsds) -> TSDataset:
-    ts = example_tsds
-    df = ts.to_pandas(flatten=True)
-    df_exog = deepcopy(df)
-    df_exog["cat"] = 1
-    df_exog.drop(columns=["target"], inplace=True)
-    df_wide = TSDataset.to_dataset(df).iloc[:-10]
-    df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=ts.freq, known_future="all")
-    return ts
-
-
-@pytest.fixture
-def ts_with_exog(example_tsds) -> TSDataset:
-    ts = example_tsds
-    df = ts.to_pandas(flatten=True)
-    df_exog = deepcopy(df)
-    df_exog["cat"] = 1
-    df_exog.drop(columns=["target"], inplace=True)
-    df_wide = TSDataset.to_dataset(df).iloc[:-10]
-    df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=ts.freq)
-    return ts
 
 
 @pytest.mark.parametrize(
@@ -68,9 +27,41 @@ def ts_with_exog(example_tsds) -> TSDataset:
         StatsForecastAutoThetaModel(),
     ],
 )
-def test_fit_str_category_fail(model, ts_with_non_convertable_category):
-    ts = ts_with_non_convertable_category
-    with pytest.raises(ValueError, match="Categorical columns .* can not be converted to int"):
+def test_save_regressors_on_fit(model, example_reg_tsds):
+    model.fit(ts=example_reg_tsds)
+    for segment_model in model._models.values():
+        assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        StatsForecastARIMAModel(),
+        StatsForecastAutoARIMAModel(),
+        StatsForecastAutoCESModel(),
+        StatsForecastAutoETSModel(),
+        StatsForecastAutoThetaModel(),
+    ],
+)
+def test_fit_with_exogs_warning(model, ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        StatsForecastARIMAModel(),
+        StatsForecastAutoARIMAModel(),
+        StatsForecastAutoCESModel(),
+        StatsForecastAutoETSModel(),
+        StatsForecastAutoThetaModel(),
+    ],
+)
+def test_fit_str_category_fail(model, ts_with_non_convertable_category_regressor):
+    ts = ts_with_non_convertable_category_regressor
+    with pytest.raises(ValueError, match="Only convertible to float features are allowed"):
         model.fit(ts)
 
 
@@ -173,23 +164,6 @@ def test_predict_train_with_regressors(model, example_reg_tsds):
         StatsForecastAutoThetaModel(),
     ],
 )
-def test_predict_train_with_exogs_warn(model, ts_with_exog):
-    ts = ts_with_exog
-    model.fit(ts)
-    with pytest.warns(UserWarning, match="Model from statsforecast does not work with exogenous features"):
-        _ = model.predict(ts)
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        StatsForecastARIMAModel(),
-        StatsForecastAutoARIMAModel(),
-        StatsForecastAutoCESModel(),
-        StatsForecastAutoETSModel(),
-        StatsForecastAutoThetaModel(),
-    ],
-)
 def test_predict_before_train_fail(model, example_tsds):
     train_ts = deepcopy(example_tsds)
     train_ts.df = train_ts.df.iloc[10:]
@@ -270,32 +244,13 @@ def test_forecast_future_with_regressors(model, example_reg_tsds):
         StatsForecastAutoThetaModel(),
     ],
 )
-def test_forecast_future_with_exogs_warn(model, ts_with_exog):
-    horizon = 7
-    ts = ts_with_exog
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    with pytest.warns(UserWarning, match="Model from statsforecast does not work with exogenous features"):
-        _ = model.forecast(future_ts)
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        StatsForecastARIMAModel(),
-        StatsForecastAutoARIMAModel(),
-        StatsForecastAutoCESModel(),
-        StatsForecastAutoETSModel(),
-        StatsForecastAutoThetaModel(),
-    ],
-)
-def test_forecast_future_with_short_regressors_fail(model, ts_with_short_category):
+def test_forecast_future_with_short_regressors_fail(model, ts_with_short_regressor):
     horizon = 20
-    ts = ts_with_short_category
+    ts = ts_with_short_regressor
     model.fit(ts)
     future_ts = ts.make_future(future_steps=horizon)
 
-    with pytest.raises(ValueError, match="Regressors .* are too short for chosen horizon value"):
+    with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
         _ = model.forecast(future_ts)
 
 

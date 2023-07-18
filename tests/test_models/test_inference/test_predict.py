@@ -332,8 +332,6 @@ class TestPredictOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -390,6 +388,8 @@ class TestPredictOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
             (StatsForecastARIMAModel(), []),
             (StatsForecastAutoARIMAModel(), []),
             (StatsForecastAutoCESModel(), []),
@@ -462,8 +462,6 @@ class TestPredictOutSamplePrefix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -520,6 +518,8 @@ class TestPredictOutSamplePrefix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
             (StatsForecastARIMAModel(), []),
             (StatsForecastAutoARIMAModel(), []),
             (StatsForecastAutoCESModel(), []),
@@ -593,8 +593,6 @@ class TestPredictOutSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -661,6 +659,8 @@ class TestPredictOutSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
             (StatsForecastARIMAModel(), []),
             (StatsForecastAutoARIMAModel(), []),
             (StatsForecastAutoCESModel(), []),
@@ -748,8 +748,6 @@ class TestPredictMixedInOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -806,6 +804,8 @@ class TestPredictMixedInOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
             (StatsForecastARIMAModel(), []),
             (StatsForecastAutoARIMAModel(), []),
             (StatsForecastAutoCESModel(), []),

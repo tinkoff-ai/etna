@@ -33,16 +33,11 @@ def const_ts():
         SimpleExpSmoothingModel(),
     ],
 )
-def test_holt_winters_simple(model, example_tsds):
-    """Test that Holt-Winters' models make predictions in simple case."""
-    horizon = 7
-    model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == 14
+def test_holt_winters_fit_with_exog_warning(model, example_reg_tsds):
+    """Test that Holt-Winters' models fits with exog with warning."""
+    ts = example_reg_tsds
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
 
 
 @pytest.mark.parametrize(
@@ -53,13 +48,12 @@ def test_holt_winters_simple(model, example_tsds):
         SimpleExpSmoothingModel(),
     ],
 )
-def test_holt_winters_with_exog_warning(model, example_reg_tsds):
-    """Test that Holt-Winters' models make predictions with exog with warning."""
+def test_holt_winters_simple(model, example_tsds):
+    """Test that Holt-Winters' models make predictions in simple case."""
     horizon = 7
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    with pytest.warns(UserWarning, match="This model does not work with exogenous features and regressors"):
-        res = model.forecast(future_ts)
+    model.fit(example_tsds)
+    future_ts = example_tsds.make_future(future_steps=horizon)
+    res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
@@ -213,7 +207,7 @@ def test_check_mul_components(seasonal_dfs, trend, seasonal, components_method_n
     components_method = getattr(model, components_method_name)
     pred_df = test if use_future else train
 
-    with pytest.raises(ValueError, match="Forecast decomposition is only supported for additive components!"):
+    with pytest.raises(NotImplementedError, match="Forecast decomposition is only supported for additive components!"):
         components_method(df=pred_df)
 
 
@@ -299,7 +293,7 @@ def test_forecast_decompose_timestamp_error(seasonal_dfs):
     model = _HoltWintersAdapter()
     model.fit(train, [])
 
-    with pytest.raises(ValueError, match="To estimate in-sample prediction decomposition use `predict` method."):
+    with pytest.raises(NotImplementedError, match="This model can't make forecast decomposition on history data."):
         model.forecast_components(df=train)
 
 
@@ -315,7 +309,9 @@ def test_predict_decompose_timestamp_error(outliers_df, train_slice, decompose_s
     model = _HoltWintersAdapter()
     model.fit(outliers_df.iloc[train_slice], [])
 
-    with pytest.raises(ValueError, match="To estimate out-of-sample prediction decomposition use `forecast` method."):
+    with pytest.raises(
+        NotImplementedError, match="This model can't make prediction decomposition on future out-of-sample data"
+    ):
         model.predict_components(df=outliers_df.iloc[decompose_slice])
 
 
