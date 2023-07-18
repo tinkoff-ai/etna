@@ -205,8 +205,8 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     )
 
 
-def test_forecast(example_tsds):
-    """Test that the forecast from the Pipeline is correct."""
+def test_forecast_values(example_tsds):
+    """Test that the forecast from the Pipeline generates correct values."""
     original_ts = deepcopy(example_tsds)
 
     model = LinearPerSegmentModel()
@@ -221,7 +221,7 @@ def test_forecast(example_tsds):
     forecast_manual = model.forecast(future)
     forecast_manual.inverse_transform(transforms)
 
-    assert np.all(forecast_pipeline.df.values == forecast_manual.df.values)
+    pd.testing.assert_frame_equal(forecast_pipeline.to_pandas(), forecast_manual.to_pandas())
 
 
 @pytest.mark.parametrize(
@@ -1121,7 +1121,7 @@ def test_pipeline_with_deepmodel(example_tsds):
         (ProphetModel(), []),
     ],
 )
-def test_predict(model, transforms, example_tsds):
+def test_predict_format(model, transforms, example_tsds):
     ts = example_tsds
     pipeline = Pipeline(model=model, transforms=transforms, horizon=7)
     pipeline.fit(ts)
@@ -1141,6 +1141,23 @@ def test_predict(model, transforms, example_tsds):
 
     assert not np.any(result_df["target"].isna())
     assert len(result_df) == len(example_tsds.segments) * num_points
+
+
+def test_predict_values(example_tsds):
+    original_ts = deepcopy(example_tsds)
+
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds)
+    predictions_pipeline = pipeline.predict(ts=original_ts)
+
+    original_ts.fit_transform(transforms)
+    model.fit(original_ts)
+    predictions_manual = model.predict(original_ts)
+    predictions_manual.inverse_transform(transforms)
+
+    pd.testing.assert_frame_equal(predictions_pipeline.to_pandas(), predictions_manual.to_pandas())
 
 
 @pytest.mark.parametrize("load_ts", [True, False])

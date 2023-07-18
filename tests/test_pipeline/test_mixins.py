@@ -122,6 +122,26 @@ def test_predict_mixin_predict_create_ts_called(start_timestamp, end_timestamp, 
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
     ],
 )
+def test_predict_mixin_predict_inverse_transform_called(start_timestamp, end_timestamp, example_tsds):
+    ts = MagicMock()
+    mixin = make_mixin()
+
+    result = mixin._predict(
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp, prediction_interval=False, quantiles=[]
+    )
+
+    result.inverse_transform.assert_called_once_with(mixin.transforms)
+
+
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+    ],
+)
 def test_predict_mixin_predict_determine_prediction_size_called(start_timestamp, end_timestamp, example_tsds):
     ts = MagicMock()
     mixin = make_mixin()
