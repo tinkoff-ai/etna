@@ -84,12 +84,11 @@ sqlalchemy = {version = "^1.1.0", optional = true}
 
 statsforecast = {version = "1.4", optional = true}
 
-sphinx-mathjax-offline = {version = "^0.0.1", optional = true}
-nbsphinx = {version = "^0.8.2", optional = true}
-Sphinx = {version = "^4.1", optional = true}
-numpydoc = {version = "^1.1.0", optional = true}
-sphinx-rtd-theme = {version = "^0.5.1", optional = true}
-myst-parser = {version = "^0.15.0", optional = true}
+sphinx-mathjax-offline = {version = "^0.0.2", optional = true}
+nbsphinx = {version = "^0.9.0", optional = true}
+Sphinx = {version = "^6.2", optional = true}
+pydata-sphinx-theme = {version = "^0.13.3", optional = true}
+myst-parser = {version = "^1.0", optional = true}
 GitPython = {version = "^3.1.20", optional = true}
 
 pytest = {version = "^6.2", optional = true}
@@ -117,7 +116,6 @@ pyts = {version = "^0.12.0", optional = true}
 tsfresh = {version = "~0.20.0", optional = true}
 types-setuptools = {version = "^65.7.0", optional = true}
 
-
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
@@ -128,7 +126,7 @@ classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
 # dev deps
 release = ["click", "semver"]
-docs = ["Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython"]
+docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme"]
 tests = ["pytest-cov", "coverage", "pytest"]
 jupyter = ["jupyter", "nbconvert", "black"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools"]
@@ -148,7 +146,7 @@ all-dev = [
     "wandb",
     "optuna", "sqlalchemy",
     "click", "semver",
-    "Sphinx", "numpydoc", "sphinx-rtd-theme", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython",
+    "Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme",
     "pytest-cov", "coverage", "pytest",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools",
     "click", "semver",

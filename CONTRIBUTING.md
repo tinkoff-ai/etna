@@ -84,10 +84,7 @@ Length of a line inside docstrings block must be limited to 100 characters to fi
 
 You could check the docs with:
 ```bash
-cp examples/*.ipynb docs/source/tutorials
-cd docs
-make clean
-make html
+make build-docs
 ```
 
 Now you could open them into your browser, for example with
