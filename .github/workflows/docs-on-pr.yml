@@ -5,51 +5,50 @@ on:
     types: [opened, synchronize]
     
 jobs:
-   build-docs:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v2
-       - name: Set up Python
-         uses: actions/setup-python@v2
-         with:
-           python-version: "3.8"
-       - name: Install Poetry
-         uses: snok/install-poetry@v1
-         with:
-           virtualenvs-create: true
-           virtualenvs-in-project: true
-       - name: Load cached venv
-         id: cached-poetry-dependencies
-         uses: actions/cache@v2
-         with:
-           path: .venv
-           key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
-       - name: Install dependencies
-         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-         run: |
-           poetry install -E "all docs" -vv
-       - name: Install apt docs dependencies
-         run: |
-           sudo apt install pandoc
-       - name: Build docs
-         run: |
-           cd docs
-           cp ../examples/*.ipynb source/tutorials
-           poetry run make clean ; poetry run make html
-           mv build/html/ ../site
-         env:
-           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
-           WORKFLOW_NAME: ${{ github.workflow }}
-       - name: Deploy to Netlify
-         uses: nwtgck/actions-netlify@v1.2
-         with:
-           publish-dir: './site'
-           production-branch: master
-           alias: deploy-preview-${{ github.event.number }}
-           production-deploy: false
-           deploy-message: "Deploy from GitHub Actions"
-           github-token: ${{ secrets.GITHUB_TOKEN }}
-           enable-commit-comment: true
-         env:
-           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install -E "all docs" -vv
+      - name: Install apt docs dependencies
+        run: |
+          sudo apt install pandoc
+      - name: Build docs
+        run: |
+          cd docs
+          poetry run make build-docs
+          mv build/html/ ../site
+        env:
+          CI_COMMIT_SHORT_SHA: ${{ github.sha }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v1.2
+        with:
+          publish-dir: './site'
+          production-branch: master
+          alias: deploy-preview-${{ github.event.number }}
+          production-deploy: false
+          deploy-message: "Deploy from GitHub Actions"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

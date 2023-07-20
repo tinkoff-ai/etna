@@ -8,17 +8,22 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
 
-clean:
-	rm -rf source/api
-	rm -rf build/
-
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help Makefile
+.PHONY: help clean copy-tutorials html build-docs Makefile
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
+clean:
+	@rm -rf source/api
+	@rm -rf build/
+	@rm -rf "$(SOURCEDIR)/tutorials"
+
+copy-tutorials:
+	@mkdir -p "$(SOURCEDIR)/tutorials"
+	@cp ../examples/*.ipynb "$(SOURCEDIR)/tutorials"
+
+html:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+build-docs: clean copy-tutorials html
