@@ -192,7 +192,9 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         df_flat["target"] = df_flat["target"].fillna(0)
 
         inference_min_timestamp = df_flat["timestamp"].min()
-        time_idx_shift = determine_num_steps(start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq)
+        time_idx_shift = determine_num_steps(
+            start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq
+        )
         mapping_time_idx = {x: i + time_idx_shift for i, x in enumerate(ts.index)}
         df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
 
