@@ -38,6 +38,7 @@ from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
+from etna.models.nn import PatchTSModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
@@ -118,6 +119,7 @@ class TestForecastInSampleFullNoTarget:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
@@ -252,6 +254,7 @@ class TestForecastInSampleFull:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
@@ -363,6 +366,7 @@ class TestForecastInSampleSuffixNoTarget:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -459,6 +463,7 @@ class TestForecastInSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -586,6 +591,7 @@ class TestForecastOutSamplePrefix:
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -711,6 +717,7 @@ class TestForecastOutSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -863,6 +870,7 @@ class TestForecastMixedInOutSample:
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -1006,6 +1014,7 @@ class TestForecastSubsetSegments:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -1099,6 +1108,7 @@ class TestForecastNewSegments:
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],

@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` ([#1295](https://github.com/tinkoff-ai/etna/pull/1297))
 - Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
 - 
-- 
+- Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
 
 ### Changed
 - 
