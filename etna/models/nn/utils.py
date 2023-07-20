@@ -125,16 +125,15 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         """
         df_flat = ts.to_pandas(flatten=True)
         df_flat = df_flat.dropna()
-        self.min_timestamp = df_flat.timestamp.min()
+
+        mapping_time_idx = {x: i for i, x in enumerate(ts.index)}
+        df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
+
+        self.min_timestamp = df_flat["timestamp"].min()
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
                 df_flat[feature_name] = df_flat[feature_name].astype(str)
-
-        # making time_idx feature.
-        # it's needed for pytorch-forecasting for proper train-test split.
-        # it should be incremented by 1 for every new timestamp.
-        df_flat["time_idx"] = df_flat["timestamp"].apply(lambda x: determine_num_steps(self.min_timestamp, x, ts.freq))
 
         pf_dataset = TimeSeriesDataSet(
             df_flat,
@@ -192,7 +191,10 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
         df_flat["target"] = df_flat["target"].fillna(0)
 
-        df_flat["time_idx"] = df_flat["timestamp"].apply(lambda x: determine_num_steps(self.min_timestamp, x, ts.freq))
+        inference_min_timestamp = df_flat["timestamp"].min()
+        time_idx_shift = determine_num_steps(start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq)
+        mapping_time_idx = {x: i + time_idx_shift for i, x in enumerate(ts.index)}
+        df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
