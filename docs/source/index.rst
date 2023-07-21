@@ -19,13 +19,6 @@ Contents
    :maxdepth: 1
    :titlesonly:
 
+   installation
    tutorials
-   user_guide
-   api
-
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   api_reference

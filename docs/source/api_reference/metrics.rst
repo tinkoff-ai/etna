@@ -1,0 +1,64 @@
+.. _metrics:
+
+Metrics
+========
+
+.. automodule:: etna.metrics
+    :no-members:
+    :no-inherited-members:
+
+API details
+-----------
+
+.. currentmodule:: etna.metrics
+
+Base class:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   Metric
+
+Scalar metrics:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   MAE
+   MAPE
+   MSE
+   MSLE
+   R2
+   RMSE
+   SMAPE
+   WAPE
+   MaxDeviation
+   MedAE
+   Sign
+
+Interval metrics:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   Coverage
+   Width
+
+Aggregation mode:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   MetricAggregationMode
+
+Utilities:
+
+.. autosummary::
+   :toctree: api/
+   :template: base.rst
+
+   compute_metrics

@@ -345,11 +345,11 @@ class Auto(AutoBase):
         There are two stages:
 
         - Pool stage: trying every pipeline in a pool
-        - Tuning stage: tuning `tune_size` best pipelines from a previous stage by using :py:class`~etna.auto.auto.Tune`.
+        - Tuning stage: tuning ``tune_size`` best pipelines from a previous stage by using :py:class`~etna.auto.auto.Tune`.
 
-        Tuning stage starts only if limits on `n_trials` and `timeout` aren't exceeded.
+        Tuning stage starts only if limits on ``n_trials`` and ``timeout`` aren't exceeded.
         Tuning goes from the best pipeline to the worst, and
-        trial limits (`n_trials`, `timeout`) are divided evenly between each pipeline.
+        trial limits (``n_trials``, ``timeout``) are divided evenly between each pipeline.
         If there are no limits on number of trials only the first pipeline will be tuned until user stops the process.
 
         Parameters
@@ -587,7 +587,7 @@ class Auto(AutoBase):
 class Tune(AutoBase):
     """Automatic tuning of custom pipeline.
 
-    This class takes given pipelines and tries to optimize its hyperparameters by using `params_to_tune`.
+    This class takes given pipelines and tries to optimize its hyperparameters by using ``params_to_tune``.
 
     Trials with duplicate parameters are skipped and previously computed results are returned.
     """
@@ -636,7 +636,7 @@ class Tune(AutoBase):
             Optuna sampler to use. By default, TPE sampler is used.
         params_to_tune:
             Parameters of pipeline that should be tuned with corresponding tuning distributions.
-            By default, `pipeline.params_to_tune()` is used.
+            By default, ``pipeline.params_to_tune()`` is used.
         """
         super().__init__(
             target_metric=target_metric,

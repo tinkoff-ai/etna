@@ -1,3 +1,5 @@
+"""Module for clustering utilities."""
+
 from etna.clustering.base import Clustering
 from etna.clustering.distances.base import Distance
 from etna.clustering.distances.distance_matrix import DistanceMatrix

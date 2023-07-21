@@ -1,5 +1,11 @@
+.. _commands:
+
 CLI commands
 =============
+
+.. automodule:: etna.commands
+    :no-members:
+    :no-inherited-members:
 
 Basic ``forecast`` usage:
 -------------------------
