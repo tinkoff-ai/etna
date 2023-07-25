@@ -30,6 +30,7 @@ imported-deps-check:
 
 notebooks-check:
 	black --check examples/*.ipynb
+	nbqa isort --sl -c examples/
 
 format-examples:
 	isort --sl examples/**/*.py
@@ -38,6 +39,7 @@ format-examples:
 format:
 	isort --skip etna/libs --sl etna/
 	isort --skip etna/libs --sl tests/
+	nbqa isort --sl examples/
 	black etna/
 	black tests/
 	black examples/*.ipynb
