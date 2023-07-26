@@ -44,6 +44,14 @@ def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TS
     return horizon
 
 
+def update_horizon(pipeline_configs: Dict[str, Any], forecast_params: Dict[str, Any], tsdataset: TSDataset):
+    """Update the ``horizon`` parameter in the pipeline config if ``start_timestamp`` is set."""
+    for config in pipeline_configs.get("pipelines", [pipeline_configs]):
+        horizon: int = config["horizon"]  # type: ignore
+        horizon = compute_horizon(horizon=horizon, forecast_params=forecast_params, tsdataset=tsdataset)
+        config["horizon"] = horizon  # type: ignore
+
+
 def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> TSDataset:
     """Filter out forecasts before `start_timestamp` if `start_timestamp` presented in `forecast_params`.."""
     if "start_timestamp" in forecast_params:
@@ -122,9 +130,7 @@ def forecast(
 
     tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
 
-    horizon: int = pipeline_configs["horizon"]  # type: ignore
-    horizon = compute_horizon(horizon=horizon, forecast_params=forecast_params, tsdataset=tsdataset)
-    pipeline_configs["horizon"] = horizon  # type: ignore
+    update_horizon(pipeline_configs=pipeline_configs, forecast_params=forecast_params, tsdataset=tsdataset)
 
     pipeline_args = remove_params(params=pipeline_configs, to_remove=ADDITIONAL_PIPELINE_PARAMETERS)
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_args)
