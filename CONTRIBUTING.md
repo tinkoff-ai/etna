@@ -12,13 +12,13 @@ Every good PR usually consists of:
 
 ## Step-by-step guide
 
-### Before the PR
+### 1. Before the PR
 Please ensure that you have read the following docs:
 - [documentation](https://etna-docs.netlify.app/)
 - [tutorials](https://github.com/tinkoff-ai/etna/tree/master/examples)
 - [changelog](https://github.com/tinkoff-ai/etna/blob/master/CHANGELOG.md)
 
-### Setting up your development environment
+### 2. Setting up your development environment
 
 Before writing any code it is useful to set up a development environment.
 1. Clone etna library to some folder and go inside:
@@ -37,7 +37,7 @@ poetry shell
 
 To connect virtual environment interpreter to IDE the `which python` command can be useful.
 
-### Suggesting a feature (optional)
+### 3. Suggesting a feature (optional)
 
 This is an optional step, you could skip it if you want to take some of the existing tasks.
 
@@ -45,11 +45,14 @@ This is an optional step, you could skip it if you want to take some of the exis
 2. We shall discuss the design and its implementation details;
 3. Once we agree that the plan looks good, go ahead and implement it.
 
-### Doging a task
+### 4. Choosing a task
 
 1. Goto [GitHub issues](https://github.com/tinkoff-ai/etna/issues);
-2. Pick an issue and comment on the task that you want to work on this task;
-3. If you need more context on a specific issue, please ask, and we will discuss the details.
+2. Pick an issue with status "Todo" on a [board](https://github.com/orgs/tinkoff-ai/projects/2)
+3. Leave a comment in the issue that you want to work on this task;
+4. If you need more context on a specific issue, please ask, and we will discuss the details.
+
+### 5. Doing a task
 
 You can also join our [ETNA Community telegram chat](https://t.me/etna_support) to make it easier to discuss.
 Once you finish implementing a feature or bugfix, please send a Pull Request.
@@ -58,7 +61,7 @@ If you are not familiar with creating a Pull Request, here are some guides:
 - [Creating a pull request](https://help.github.com/articles/creating-a-pull-request/);
 - [Creating a pull request from a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
 
-### Tests
+### 6. Writing tests
 
 Do not forget to check that your code passes the unit tests.
 ```bash
@@ -74,7 +77,7 @@ make format
 
 If any of checks fails, the CI will fail and your Pull Request won't be merged.
 
-### Documentation
+### 7. Writing a documentation
 
 ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings. 
 The documentation is written in ReST.
@@ -98,7 +101,10 @@ Useful links:
 4. [Matplotlib Cheetsheet](https://matplotlib.org/sampledoc/cheatsheet.html)
 5. [Sklearn example](https://github.com/scikit-learn/scikit-learn/blob/37ac6788c/sklearn/linear_model/_ridge.py#L321)
 
-#### Tutorials
+The simplest way to check how documentation is rendered is to make a pull request. 
+CI will build it, publish and attach a link to the pull request.
+
+#### Adding tutorials (optional)
 
 If you are going to add a jupyter notebook tutorial:
 1. Add the notebook into `examples` folder with its prepended number.
@@ -109,8 +115,9 @@ If you are going to add a jupyter notebook tutorial:
 6. Add new notebook with its table of contents to the `examples/README.md`
 7. Add new notebook with to the `README.md`
 
-#### Building
+#### Building locally (optional)
 
+You can also build the documentation locally.
 Before building the documentation you may need to install a pandoc package ([pandoc installation guide](https://pandoc.org/installing.html)):
 ```bash
 # Ubuntu
