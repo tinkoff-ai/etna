@@ -97,7 +97,6 @@ Outliers analysis utilities:
 
    plot_anomalies
    plot_anomalies_interactive
-   absolute_difference_distance
    get_anomalies_density
    get_anomalies_hist
    get_anomalies_median
