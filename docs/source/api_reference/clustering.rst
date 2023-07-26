@@ -20,6 +20,15 @@ Base classes:
 
    Distance
    Clustering
+   HierarchicalClustering
+
+Enums:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   ClusteringLinkageMode
 
 Clustering methods:
 
@@ -27,7 +36,6 @@ Clustering methods:
    :toctree: api/
    :template: class.rst
 
-   HierarchicalClustering
    DTWClustering
    EuclideanClustering
 
