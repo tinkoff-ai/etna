@@ -37,8 +37,12 @@
    {% endif %}
    {% endfor %}
 
-   {% if allowed_attributes %}
+   {% if allowed_attributes or "to_dict" in methods %}
    .. rubric:: {{ _('Attributes') }}
+
+   {% if "to_dict" in methods %}
+   This class stores its :code:`__init__` parameters as attributes.
+   {% endif %}
 
    .. autosummary::
    {% for item in allowed_attributes %}
