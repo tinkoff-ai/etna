@@ -26,7 +26,7 @@ Base classes:
    ReversiblePerSegmentWrapper
    OneSegmentTransform
 
-Change-point transforms:
+Decomposition transforms:
 
 .. autosummary::
    :toctree: api/
@@ -40,13 +40,6 @@ Change-point transforms:
    STLTransform
    TheilSenTrendTransform
    TrendTransform
-
-Decomposition transforms:
-
-.. autosummary::
-   :toctree: api/
-   :template: class.rst
-
    ChangePointsLevelTransform
    ChangePointsSegmentationTransform
    ChangePointsTrendTransform
