@@ -45,9 +45,6 @@ Statistical models:
    HoltWintersModel
    HoltModel
    SimpleExpSmoothingModel
-   SimpleExpSmoothingModel
-   SimpleExpSmoothingModel
-   SimpleExpSmoothingModel
    ProphetModel
    TBATSModel
    BATSModel
