@@ -2,12 +2,17 @@ from pathlib import Path
 from subprocess import run
 from tempfile import NamedTemporaryFile
 
+import hydra_slayer
 import numpy as np
 import pandas as pd
 import pytest
+from omegaconf import OmegaConf
 
+from etna.commands.forecast_command import ADDITIONAL_PIPELINE_PARAMETERS
 from etna.commands.forecast_command import compute_horizon
 from etna.commands.forecast_command import filter_forecast
+from etna.commands.forecast_command import update_horizon
+from etna.commands.utils import remove_params
 from etna.datasets import TSDataset
 
 
@@ -217,11 +222,28 @@ def test_filter_forecast(forecast_params, expected, example_tsds):
 
 
 @pytest.mark.parametrize(
-    "model_pipeline",
-    [
-        "elementary_linear_model_pipeline",
-        "elementary_boosting_model_pipeline",
-    ],
+    "forecast_params,pipeline_path_name,expected",
+    (
+        ({"start_timestamp": "2020-04-10"}, "base_pipeline_with_context_size_yaml_path", 4),
+        ({"start_timestamp": "2020-04-12"}, "base_pipeline_with_context_size_yaml_path", 6),
+        ({"start_timestamp": "2020-04-11"}, "base_ensemble_yaml_path", 5),
+    ),
+)
+def test_update_horizon(pipeline_path_name, forecast_params, example_tsds, expected, request):
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
+    pipeline_conf = OmegaConf.to_object(OmegaConf.load(pipeline_path))
+
+    update_horizon(pipeline_configs=pipeline_conf, forecast_params=forecast_params, tsdataset=example_tsds)
+
+    pipeline_conf = remove_params(params=pipeline_conf, to_remove=ADDITIONAL_PIPELINE_PARAMETERS)
+    pipeline = hydra_slayer.get_from_params(**pipeline_conf)
+
+    assert pipeline.horizon == expected
+
+
+@pytest.mark.parametrize(
+    "pipeline_path_name",
+    ("base_pipeline_with_context_size_yaml_path", "base_ensemble_yaml_path"),
 )
 def test_forecast_start_timestamp(
     pipeline_path_name,
