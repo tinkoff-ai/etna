@@ -49,4 +49,5 @@ class PoolGenerator:
 class Pool(Enum):
     """Predefined pools of pipelines."""
 
+    #: Default pool of pipelines
     default = PoolGenerator(configs_template=DEFAULT)  # type: ignore

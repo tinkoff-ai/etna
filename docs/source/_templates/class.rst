@@ -39,6 +39,9 @@
 
    {% if allowed_attributes %}
    .. rubric:: {{ _('Attributes') }}
+
+   This list of attributes may not include parameters saved in ``__init__``. This saving happens for all subclasses of :py:class:`etna.core.mixins.BaseMixin`.
+
    .. autosummary::
    {% for item in allowed_attributes %}
       ~{{ name }}.{{ item }}

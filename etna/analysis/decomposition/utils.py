@@ -37,17 +37,12 @@ def _get_labels_names(trend_transform, segments):
 
 
 class SeasonalPlotAlignment(str, Enum):
-    """Enum for types of alignment in a seasonal plot.
+    """Enum for types of alignment in a seasonal plot."""
 
-    Attributes
-    ----------
-    first:
-        make first period full, allow last period to have NaNs in the ending
-    last:
-        make last period full, allow first period to have NaNs in the beginning
-    """
-
+    #: Make first period full, allow last period to have NaNs in the ending
     first = "first"
+
+    #: Make last period full, allow first period to have NaNs in the beginning.
     last = "last"
 
     @classmethod
@@ -60,7 +55,10 @@ class SeasonalPlotAlignment(str, Enum):
 class SeasonalPlotAggregation(str, Enum):
     """Enum for types of aggregation in a seasonal plot."""
 
+    #: Mean aggregation.
     mean = "mean"
+
+    #: Sum aggregation.
     sum = "sum"
 
     @classmethod
@@ -93,11 +91,22 @@ class SeasonalPlotAggregation(str, Enum):
 class SeasonalPlotCycle(str, Enum):
     """Enum for types of cycles in a seasonal plot."""
 
+    #: Hour cycle.
     hour = "hour"
+
+    #: Day cycle.
     day = "day"
+
+    #: Week cycle.
     week = "week"
+
+    #: Month cycle.
     month = "month"
+
+    #: Quarter cycle.
     quarter = "quarter"
+
+    #: Year cycle.
     year = "year"
 
     @classmethod
