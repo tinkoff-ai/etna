@@ -51,6 +51,42 @@ def base_pipeline_with_context_size_yaml_path():
 
 
 @pytest.fixture
+def base_ensemble_yaml_path():
+    tmp = NamedTemporaryFile("w")
+    tmp.write(
+        """
+        _target_: etna.ensembles.VotingEnsemble
+        pipelines:
+        - _target_: etna.pipeline.Pipeline
+          horizon: 4
+          model:
+            _target_: etna.models.SeasonalMovingAverageModel
+            seasonality: 4
+            window: 1
+          transforms: []
+        - _target_: etna.pipeline.Pipeline
+          horizon: 4
+          model:
+            _target_: etna.models.SeasonalMovingAverageModel
+            seasonality: 7
+            window: 2
+          transforms: []
+        - _target_: etna.pipeline.Pipeline
+          horizon: 4
+          model:
+            _target_: etna.models.SeasonalMovingAverageModel
+            seasonality: 7
+            window: 7
+          transforms: []
+        context_size: 49
+        """
+    )
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
 def elementary_linear_model_pipeline():
     tmp = NamedTemporaryFile("w")
     tmp.write(

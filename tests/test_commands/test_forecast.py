@@ -59,14 +59,16 @@ def base_forecast_with_folds_estimation_omegaconf_path():
     tmp.close()
 
 
-def test_dummy_run_with_exog(base_pipeline_yaml_path, base_timeseries_path, base_timeseries_exog_path):
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
+def test_dummy_run_with_exog(pipeline_path_name, base_timeseries_path, base_timeseries_exog_path, request):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
     run(
         [
             "etna",
             "forecast",
-            str(base_pipeline_yaml_path),
+            str(pipeline_path),
             str(base_timeseries_path),
             "D",
             str(tmp_output_path),
@@ -103,16 +105,18 @@ def test_dummy_run(base_pipeline_yaml_path, base_timeseries_path):
     assert len(df_output) == 2 * 4
 
 
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
 def test_run_with_predictive_intervals(
-    base_pipeline_yaml_path, base_timeseries_path, base_timeseries_exog_path, base_forecast_omegaconf_path
+    pipeline_path_name, base_timeseries_path, base_timeseries_exog_path, base_forecast_omegaconf_path, request
 ):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
     run(
         [
             "etna",
             "forecast",
-            str(base_pipeline_yaml_path),
+            str(pipeline_path),
             str(base_timeseries_path),
             "D",
             str(tmp_output_path),
@@ -220,17 +224,21 @@ def test_filter_forecast(forecast_params, expected, example_tsds):
     ],
 )
 def test_forecast_start_timestamp(
-    model_pipeline, base_timeseries_path, base_timeseries_exog_path, start_timestamp_forecast_omegaconf_path, request
+    pipeline_path_name,
+    base_timeseries_path,
+    base_timeseries_exog_path,
+    start_timestamp_forecast_omegaconf_path,
+    request,
 ):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
-    model_pipeline = request.getfixturevalue(model_pipeline)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
 
     run(
         [
             "etna",
             "forecast",
-            str(model_pipeline),
+            str(pipeline_path),
             str(base_timeseries_path),
             "D",
             str(tmp_output_path),
@@ -240,24 +248,28 @@ def test_forecast_start_timestamp(
     )
     df_output = pd.read_csv(tmp_output_path)
 
-    assert len(df_output) == 3 * 2  # 3 predictions for 2 segments
+    assert len(df_output) == 4 * 2  # 4 predictions for 2 segments
     assert df_output["timestamp"].min() == "2021-09-10"  # start_timestamp
     assert not np.any(df_output.isna().values)
 
 
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_with_context_size_yaml_path", "base_ensemble_yaml_path"))
 def test_forecast_estimate_n_folds(
-    base_pipeline_with_context_size_yaml_path,
+    pipeline_path_name,
     base_forecast_with_folds_estimation_omegaconf_path,
     base_timeseries_path,
     base_timeseries_exog_path,
+    request,
 ):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
+
     run(
         [
             "etna",
             "forecast",
-            str(base_pipeline_with_context_size_yaml_path),
+            str(pipeline_path),
             str(base_timeseries_path),
             "D",
             str(tmp_output_path),
