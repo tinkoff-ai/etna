@@ -20,6 +20,14 @@ Base class:
 
    Metric
 
+Enums:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   MetricAggregationMode
+
 Scalar metrics:
 
 .. autosummary::
@@ -46,14 +54,6 @@ Interval metrics:
 
    Coverage
    Width
-
-Aggregation mode:
-
-.. autosummary::
-   :toctree: api/
-   :template: class.rst
-
-   MetricAggregationMode
 
 Utilities:
 
