@@ -20,7 +20,7 @@ Base mixin:
 
    BaseMixin
 
-Saving utilities:
+Saving/loading utilities:
 
 .. autosummary::
    :toctree: api/
