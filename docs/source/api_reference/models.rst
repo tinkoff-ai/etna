@@ -69,7 +69,20 @@ ML-models:
    SklearnMultiSegmentModel
    SklearnPerSegmentModel
 
-Neural network models:
+Native neural network models:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   nn.RNNModel
+   nn.MLPModel
+   nn.DeepStateModel
+   nn.NBeatsGenericModel
+   nn.NBeatsInterpretableModel
+   nn.PatchTSModel
+
+Neural network models based on :code:`pytorch_forecasting`:
 
 .. autosummary::
    :toctree: api/
@@ -77,12 +90,6 @@ Neural network models:
 
    nn.DeepARModel
    nn.TFTModel
-   nn.RNNModel
-   nn.MLPModel
-   nn.DeepStateModel
-   nn.NBeatsGenericModel
-   nn.NBeatsInterpretableModel
-   nn.PatchTSModel
 
 Utilities for neural network models based on :code:`pytorch_forecasting`:
 
