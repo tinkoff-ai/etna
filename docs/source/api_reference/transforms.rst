@@ -12,16 +12,14 @@ API details
 
 .. currentmodule:: etna.transforms
 
-Base classes:
+Base:
 
 .. autosummary::
    :toctree: api/
    :template: class.rst
 
-   Transform
    IrreversibleTransform
    ReversibleTransform
-   PerSegmentWrapper
    IrreversiblePerSegmentWrapper
    ReversiblePerSegmentWrapper
    OneSegmentTransform

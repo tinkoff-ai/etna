@@ -12,7 +12,7 @@ API details
 
 .. currentmodule:: etna.metrics
 
-Base class:
+Base:
 
 .. autosummary::
    :toctree: api/

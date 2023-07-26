@@ -12,6 +12,14 @@ API details
 
 .. currentmodule:: etna.pipeline
 
+Base:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   BasePipeline
+
 Pipelines:
 
 .. autosummary::

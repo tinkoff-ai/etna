@@ -12,7 +12,7 @@ API details
 
 .. currentmodule:: etna.models
 
-Interfaces:
+Base:
 
 .. autosummary::
    :toctree: api/
