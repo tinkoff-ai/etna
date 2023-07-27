@@ -67,14 +67,16 @@ def backtest_with_stride_yaml_path():
     tmp.close()
 
 
-def test_dummy_run(base_pipeline_yaml_path, base_backtest_yaml_path, base_timeseries_path):
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
+def test_dummy_run(pipeline_path_name, base_backtest_yaml_path, base_timeseries_path, request):
     tmp_output = TemporaryDirectory()
     tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
     run(
         [
             "etna",
             "backtest",
-            str(base_pipeline_yaml_path),
+            str(pipeline_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_path),
             "D",
@@ -85,16 +87,18 @@ def test_dummy_run(base_pipeline_yaml_path, base_backtest_yaml_path, base_timese
         assert Path.exists(tmp_output_path / file_name)
 
 
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
 def test_dummy_run_with_exog(
-    base_pipeline_yaml_path, base_backtest_yaml_path, base_timeseries_path, base_timeseries_exog_path
+    pipeline_path_name, base_backtest_yaml_path, base_timeseries_path, base_timeseries_exog_path, request
 ):
     tmp_output = TemporaryDirectory()
     tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
     run(
         [
             "etna",
             "backtest",
-            str(base_pipeline_yaml_path),
+            str(pipeline_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_path),
             "D",
@@ -126,16 +130,18 @@ def test_forecast_format(base_pipeline_yaml_path, base_backtest_yaml_path, base_
 
 
 @pytest.mark.parametrize(
-    "backtest_config_path_name,expected",
+    "pipeline_path_name,backtest_config_path_name,expected",
     (
-        ("backtest_with_folds_estimation_yaml_path", 24),
-        ("backtest_with_stride_yaml_path", 1),
+        ("base_pipeline_with_context_size_yaml_path", "backtest_with_folds_estimation_yaml_path", 24),
+        ("base_ensemble_yaml_path", "backtest_with_folds_estimation_yaml_path", 12),
+        ("base_pipeline_with_context_size_yaml_path", "backtest_with_stride_yaml_path", 1),
     ),
 )
 def test_backtest_estimate_n_folds(
-    base_pipeline_with_context_size_yaml_path, backtest_config_path_name, base_timeseries_path, expected, request
+    pipeline_path_name, backtest_config_path_name, base_timeseries_path, expected, request
 ):
     backtest_config_path = request.getfixturevalue(backtest_config_path_name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
 
     tmp_output = TemporaryDirectory()
     tmp_output_path = Path(tmp_output.name)
@@ -143,7 +149,7 @@ def test_backtest_estimate_n_folds(
         [
             "etna",
             "backtest",
-            str(base_pipeline_with_context_size_yaml_path),
+            str(pipeline_path),
             str(backtest_config_path),
             str(base_timeseries_path),
             "D",
