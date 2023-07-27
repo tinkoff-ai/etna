@@ -630,7 +630,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
 
 
 class SaveNNMixin(SaveMixin):
-    """Implementation of ``AbstractSaveable``  torch related classes.
+    """Implementation of ``AbstractSaveable`` torch related classes.
 
     It saves object to the zip archive with 2 files:
 
@@ -642,7 +642,7 @@ class SaveNNMixin(SaveMixin):
     def _save_state(self, archive: zipfile.ZipFile):
         import torch
 
-        with archive.open("object.pt", "w") as output_file:
+        with archive.open("object.pt", "w", force_zip64=True) as output_file:
             torch.save(self, output_file, pickle_module=dill)
 
     @classmethod
