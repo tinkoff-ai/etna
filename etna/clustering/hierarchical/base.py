@@ -16,9 +16,16 @@ from etna.datasets import TSDataset
 class ClusteringLinkageMode(str, Enum):
     """Modes allowed for clustering distance computation."""
 
+    #: Minimize the variance of the clusters being merged.
     ward = "ward"
+
+    #: Use the maximum distances between all observations of the two sets.
     complete = "complete"
+
+    #: Use the average of the distances of each observation of the two sets.
     average = "average"
+
+    #: Use the minimum of the distances between all observations of the two sets
     single = "single"
 
 
@@ -45,8 +52,6 @@ class HierarchicalClustering(Clustering):
         ----------
         ts:
             TSDataset with series to build distance matrix
-        distance:
-            instance if distance to compute matrix
         """
         self.ts = ts
         self.distance_matrix = DistanceMatrix(distance=self.distance)

@@ -1,3 +1,5 @@
+"""Module with dataset and its utilities."""
+
 from etna.datasets.datasets_generation import generate_ar_df
 from etna.datasets.datasets_generation import generate_const_df
 from etna.datasets.datasets_generation import generate_from_patterns_df

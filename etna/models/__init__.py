@@ -1,3 +1,32 @@
+"""
+Module with models for time-series forecasting.
+
+Basic usage
+-----------
+
+Models are used to make predictions. Let's look at the basic example of usage:
+
+>>> import pandas as pd
+>>> from etna.datasets import TSDataset, generate_ar_df
+>>> from etna.transforms import LagTransform
+>>> from etna.models import LinearPerSegmentModel
+>>>
+>>> df = generate_ar_df(periods=100, start_time="2021-01-01", ar_coef=[1/2], n_segments=2)
+>>> ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+>>> lag_transform = LagTransform(in_column="target", lags=[3, 4, 5])
+>>> ts.fit_transform(transforms=[lag_transform])
+>>> future_ts = ts.make_future(future_steps=3, transforms=[lag_transform])
+>>> model = LinearPerSegmentModel()
+>>> model.fit(ts)
+LinearPerSegmentModel(fit_intercept = True, )
+>>> forecast_ts = model.forecast(future_ts)
+>>> forecast_ts is future_ts
+True
+
+There is a key note to mention: :code:`future_ts` and :code:`forecast_ts` are the same objects.
+Method :code:`forecast` only fills 'target' columns in :code:`future_ts` and return reference to it.
+"""
+
 from etna import SETTINGS
 from etna.models.autoarima import AutoARIMAModel
 from etna.models.base import BaseAdapter

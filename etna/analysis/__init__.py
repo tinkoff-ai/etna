@@ -1,3 +1,6 @@
+from etna.analysis.decomposition import SeasonalPlotAggregation
+from etna.analysis.decomposition import SeasonalPlotAlignment
+from etna.analysis.decomposition import SeasonalPlotCycle
 from etna.analysis.decomposition import find_change_points
 from etna.analysis.decomposition import plot_change_points_interactive
 from etna.analysis.decomposition import plot_time_series_with_change_points
@@ -20,6 +23,8 @@ from etna.analysis.feature_relevance.relevance import StatisticsRelevanceTable
 from etna.analysis.feature_relevance.relevance_table import get_model_relevance_table
 from etna.analysis.feature_relevance.relevance_table import get_statistics_relevance_table
 from etna.analysis.feature_selection.mrmr_selection import AggregationMode
+from etna.analysis.forecast import MetricPlotType
+from etna.analysis.forecast import PerFoldAggregation
 from etna.analysis.forecast import get_residuals
 from etna.analysis.forecast import metric_per_segment_distribution_plot
 from etna.analysis.forecast import plot_backtest

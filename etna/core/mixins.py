@@ -10,7 +10,6 @@ from typing import Callable
 from typing import Dict
 from typing import Sequence
 from typing import Tuple
-from typing import TypeVar
 from typing import cast
 
 import dill
@@ -19,8 +18,6 @@ from sklearn.base import BaseEstimator
 from typing_extensions import Self
 
 from etna.core.saving import AbstractSaveable
-
-TMixin = TypeVar("TMixin", bound="BaseMixin")
 
 
 class BaseMixin:
@@ -140,7 +137,7 @@ class BaseMixin:
 
         return new_structure
 
-    def set_params(self: TMixin, **params: dict) -> TMixin:
+    def set_params(self, **params: dict) -> Self:
         """Return new object instance with modified parameters.
 
         Method also allows to change parameters of nested objects within the current object.

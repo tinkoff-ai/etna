@@ -616,7 +616,10 @@ def qq_plot(
 class PerFoldAggregation(str, Enum):
     """Enum for types of aggregation in a metric per-segment plot."""
 
+    #: Mean aggregation.
     mean = "mean"
+
+    #: Median aggregation.
     sum = "median"
 
     @classmethod
@@ -705,20 +708,15 @@ def plot_metric_per_segment(
 
 
 class MetricPlotType(str, Enum):
-    """Enum for types of plot in :py:func:`~etna.analysis.forecast.plots.metric_per_segment_distribution_plot`.
+    """Enum for types of plot in :py:func:`~etna.analysis.forecast.plots.metric_per_segment_distribution_plot`."""
 
-    Attributes
-    ----------
-    hist:
-        Histogram plot, :py:func:`seaborn.histplot` is used
-    box:
-        Boxplot, :py:func:`seaborn.boxplot` is used
-    violin:
-        Violin plot, :py:func:`seaborn.violinplot` is used
-    """
-
+    #: Histogram plot, :py:func:`seaborn.histplot` is used.
     hist = "hist"
+
+    #: Boxplot, :py:func:`seaborn.boxplot` is used.
     box = "box"
+
+    #: Violin plot, :py:func:`seaborn.violinplot` is used.
     violin = "violin"
 
     @classmethod

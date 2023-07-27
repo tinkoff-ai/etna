@@ -1,3 +1,5 @@
+"""Module for command-line interface (CLI)."""
+
 from omegaconf import OmegaConf
 
 from etna.commands.backtest_command import backtest

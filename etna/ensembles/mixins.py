@@ -74,9 +74,6 @@ class SaveEnsembleMixin(SaveMixin):
     * pipelines: folder with saved pipelines.
     """
 
-    pipelines: List[BasePipeline]
-    ts: Optional[TSDataset]
-
     def save(self, path: pathlib.Path):
         """Save the object.
 
@@ -85,6 +82,9 @@ class SaveEnsembleMixin(SaveMixin):
         path:
             Path to save object to.
         """
+        self.pipelines: List[BasePipeline]
+        self.ts: Optional[TSDataset]
+
         pipelines = self.pipelines
         ts = self.ts
         try:
