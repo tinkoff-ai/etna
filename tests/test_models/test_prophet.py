@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -13,45 +15,50 @@ from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
 
 
-def test_run(new_format_df):
-    df = new_format_df
+def _check_forecast(ts, model, horizon):
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
+    res = model.forecast(future_ts)
+    res = res.to_pandas(flatten=True)
 
-    ts = TSDataset(df, "1d")
+    assert not res["target"].isnull().values.any()
+    assert len(res) == horizon * 2
 
+
+def _check_predict(ts, model):
+    model.fit(ts)
+    res = model.predict(ts)
+    res = res.to_pandas(flatten=True)
+
+    assert not res["target"].isnull().values.any()
+    assert len(res) == len(ts.index) * 2
+
+
+def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
     model = ProphetModel()
-    model.fit(ts)
-    future_ts = ts.make_future(3)
-    model.forecast(future_ts)
-    if not future_ts.isnull().values.any():
-        assert True
-    else:
-        assert False
+    ts = ts_with_non_convertable_category_regressor
+    with pytest.raises(ValueError, match="Only convertible to numeric features are allowed"):
+        model.fit(ts)
 
 
-def test_run_with_reg(new_format_df, new_format_exog):
-    df = new_format_df
-
-    regressors = new_format_exog.copy()
-    regressors.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
-    regressors_floor = new_format_exog.copy()
-    regressors_floor.columns.set_levels(["floor"], level="feature", inplace=True)
-    regressors_cap = regressors_floor.copy() + 1
-    regressors_cap.columns.set_levels(["cap"], level="feature", inplace=True)
-    exog = pd.concat([regressors, regressors_floor, regressors_cap], axis=1)
-
-    ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
-
-    model = ProphetModel(growth="logistic")
-    model.fit(ts)
-    future_ts = ts.make_future(3)
-    model.forecast(future_ts)
-    if not future_ts.isnull().values.any():
-        assert True
-    else:
-        assert False
+def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
+    ts = ts_with_non_regressor_exog
+    model = ProphetModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features unknown in future"):
+        model.fit(ts)
 
 
-def test_run_with_cap_floor():
+def test_prediction(example_tsds):
+    _check_forecast(ts=deepcopy(example_tsds), model=ProphetModel(), horizon=7)
+    _check_predict(ts=deepcopy(example_tsds), model=ProphetModel())
+
+
+def test_prediction_with_reg(example_reg_tsds):
+    _check_forecast(ts=deepcopy(example_reg_tsds), model=ProphetModel(), horizon=7)
+    _check_predict(ts=deepcopy(example_reg_tsds), model=ProphetModel())
+
+
+def test_prediction_with_cap_floor():
     cap = 101
     floor = -1
 
@@ -82,6 +89,12 @@ def test_run_with_cap_floor():
     assert np.all(df_future["target"] < cap)
 
 
+def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
+    ts = ts_with_short_regressor
+    with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
+        _check_forecast(ts=deepcopy(ts), model=ProphetModel(), horizon=20)
+
+
 def test_prediction_interval_run_insample(example_tsds):
     model = ProphetModel()
     model.fit(example_tsds)
@@ -103,7 +116,7 @@ def test_prediction_interval_run_infuture(example_tsds):
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
 
-def test_prophet_save_regressors_on_fit(example_reg_tsds):
+def test_save_regressors_on_fit(example_reg_tsds):
     model = ProphetModel()
     model.fit(ts=example_reg_tsds)
     for segment_model in model._models.values():

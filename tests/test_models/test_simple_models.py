@@ -77,6 +77,13 @@ def long_periodic_ts():
     return ts
 
 
+def test_sma_model_fit_with_exogs_warning(example_reg_tsds):
+    ts = example_reg_tsds
+    model = SeasonalMovingAverageModel()
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
+
+
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_forecast(simple_df, model):
     _check_forecast(ts=simple_df, model=model(), horizon=7)
@@ -117,6 +124,13 @@ def test_sma_model_predict_fail_nans_in_context(simple_df):
     simple_df.df.iloc[-1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a target column"):
         _ = sma_model.predict(simple_df, prediction_size=7)
+
+
+def test_deadline_model_fit_with_exogs_warning(example_reg_tsds):
+    ts = example_reg_tsds
+    model = DeadlineMovingAverageModel(window=1)
+    with pytest.warns(UserWarning, match="This model doesn't work with exogenous features"):
+        model.fit(ts)
 
 
 @pytest.mark.parametrize(

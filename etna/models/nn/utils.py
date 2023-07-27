@@ -125,16 +125,15 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         """
         df_flat = ts.to_pandas(flatten=True)
         df_flat = df_flat.dropna()
-        self.min_timestamp = df_flat.timestamp.min()
+
+        mapping_time_idx = {x: i for i, x in enumerate(ts.index)}
+        df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
+
+        self.min_timestamp = df_flat["timestamp"].min()
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
                 df_flat[feature_name] = df_flat[feature_name].astype(str)
-
-        # making time_idx feature.
-        # it's needed for pytorch-forecasting for proper train-test split.
-        # it should be incremented by 1 for every new timestamp.
-        df_flat["time_idx"] = df_flat["timestamp"].apply(lambda x: determine_num_steps(self.min_timestamp, x, ts.freq))
 
         pf_dataset = TimeSeriesDataSet(
             df_flat,
@@ -192,7 +191,12 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         df_flat = df_flat[df_flat.timestamp >= self.min_timestamp]
         df_flat["target"] = df_flat["target"].fillna(0)
 
-        df_flat["time_idx"] = df_flat["timestamp"].apply(lambda x: determine_num_steps(self.min_timestamp, x, ts.freq))
+        inference_min_timestamp = df_flat["timestamp"].min()
+        time_idx_shift = determine_num_steps(
+            start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq
+        )
+        mapping_time_idx = {x: i + time_idx_shift for i, x in enumerate(ts.index)}
+        df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
 
         if self.time_varying_known_categoricals:
             for feature_name in self.time_varying_known_categoricals:
@@ -270,12 +274,13 @@ class PytorchForecastingMixin:
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
         if self._is_in_sample_prediction(ts=ts, horizon=horizon):
             raise NotImplementedError(
-                "It is not possible to make in-sample predictions with DeepAR model! "
-                "In-sample predictions aren't supported by current implementation."
+                "This model can't make forecast on history data! "
+                "In-sample forecast isn't supported by current implementation."
             )
         elif self._is_prediction_with_gap(ts=ts, horizon=horizon):
             first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
             raise NotImplementedError(
+                "This model can't make forecast on out-of-sample data that goes after training data with a gap! "
                 "You can only forecast from the next point after the last one in the training dataset: "
                 f"last train timestamp: {self._last_train_timestamp}, first prediction timestamp is {first_prediction_timestamp}"
             )
