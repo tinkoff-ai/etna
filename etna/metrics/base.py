@@ -146,7 +146,7 @@ class Metric(AbstractMetric, BaseMixin):
             )
         for segment in segments_true:
             for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):
-                if "target" not in dataset.loc[:, segment].columns:
+                if (segment, "target") not in dataset.columns:
                     raise ValueError(
                         f"All the segments in {name} should contain 'target' column. Segment {segment} doesn't."
                     )
@@ -231,13 +231,12 @@ class Metric(AbstractMetric, BaseMixin):
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
         for segment in segments:
+            df_true = y_true[:, segment, "target"]
+            df_pred = y_pred[:, segment, "target"]
             self._validate_timestamp_columns(
-                timestamp_true=y_true[:, segment, "target"].dropna().index,
-                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
+                timestamp_true=df_true.dropna().index, timestamp_pred=df_pred.dropna().index
             )
-            metrics_per_segment[segment] = self.metric_fn(
-                y_true=y_true[:, segment, "target"].values, y_pred=y_pred[:, segment, "target"].values, **self.kwargs
-            )
+            metrics_per_segment[segment] = self.metric_fn(y_true=df_true.values, y_pred=df_pred.values, **self.kwargs)
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
 
