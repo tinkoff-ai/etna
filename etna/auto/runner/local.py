@@ -14,7 +14,13 @@ T = TypeVar("T")
 
 
 class LocalRunner(AbstractRunner):
-    """LocalRunner for one threaded run."""
+    """LocalRunner for one threaded run.
+
+    Notes
+    -----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __call__(self, func: Callable[..., T], *args, **kwargs) -> T:
         """Call given ``func`` with ``*args`` and ``**kwargs``."""
@@ -26,6 +32,9 @@ class ParallelLocalRunner(AbstractRunner):
 
     Notes
     -----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+
     Global objects behavior could be different while parallel usage because platform dependent new process start.
     Be sure that new process is started with ``fork`` via ``multiprocessing.set_start_method``.
     If it's not possible you should try define all globals before ``if __name__ == "__main__"`` scope.

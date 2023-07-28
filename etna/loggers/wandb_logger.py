@@ -22,7 +22,13 @@ if SETTINGS.wandb_required:
 
 
 class WandbLogger(BaseLogger):
-    """Weights&Biases logger."""
+    """Weights&Biases logger.
+
+    Notes
+    -----
+    This logger requires ``prophet`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,

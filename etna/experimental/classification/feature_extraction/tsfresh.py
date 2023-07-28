@@ -18,7 +18,8 @@ class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
 
     Notes
     -----
-    `tsfresh` should be installed separately using `pip install tsfresh`.
+    This class requires ``classification`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
     """
 
     def __init__(

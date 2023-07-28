@@ -18,6 +18,10 @@ Change-point utilities:
 
 Classification of time-series:
 
+.. note::
+    This module requires ``classification`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
+
 .. autosummary::
    :toctree: api/
    :template: class.rst

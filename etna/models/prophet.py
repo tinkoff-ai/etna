@@ -322,6 +322,9 @@ class ProphetModel(
 
     Notes
     -----
+    This model requires ``prophet`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+
     Original Prophet can use features 'cap' and 'floor',
     they should be added to the known_future list on dataset initialization.
 

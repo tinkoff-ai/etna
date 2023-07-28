@@ -1,10 +1,63 @@
+.. _installation:
+
 Installation
 ============
 
-TODO
+Installing from PyPi
+-------------------------
+
+ETNA is available on `PyPI <https://pypi.org/project/etna>`_, so you can use ``pip`` to install it.
+
+Install default version:
+
+.. code-block:: console
+
+    pip install --upgrade pip
+    pip install etna
+
+The default version doesn't contain all the dependencies, because some of them are needed only for specific models, e.g. Prophet, PyTorch.
+Available user extensions are the following:
+* ``prophet``: adds prophet model`,
+* ``torch``: adds models based on neural nets,
+* ``wandb``: adds wandb logger,
+* ``auto``: adds AutoML functionality,
+* ``statsforecast``: adds models from `statsforecast <https://nixtla.github.io/statsforecast/>`_,
+* ``classiciation``: adds time series classification functionality.
+
+Install extension:
+
+.. code-block:: console
+
+    pip install etna[extension-name]
+
+Install all the extensions:
+
+.. code-block:: console
+
+    pip install etna[all]
+
+Installing from the repository
+------------------------------
+
+ETNA can also be installed from the repository. It allows you to get the latest version of the library or version from a specific commit. It can be done by a command:
+
+.. code-block:: console
+
+    pip install 'etna[all]@git+https://github.com/tinkoff-ai/etna.git@master'
+
+where you could replace ``master`` branch with some other identifier.
+
+Installing on computing platforms
+---------------------------------
+
+The library can be installed on Google Colab and Kaggle platforms. You could use any of the instructions above for this.
+
+On Google Colab you should don't forget to restart the environment after installing the library.
+
+On Kaggle for some versions of the library you should add ``import numba`` before installation.
 
 
-Installation guide for Apple M1 (ARM)
+Installing on Apple M1 (ARM)
 -------------------------------------
 
 We are trying to make ETNA work with Apple M1 and other ARM chips.

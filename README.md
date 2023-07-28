@@ -143,6 +143,7 @@ Available user extensions are the following:
 * `torch`: adds models based on neural nets,
 * `wandb`: adds wandb logger,
 * `auto`: adds AutoML functionality,
+* `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/)
 * `classiciation`: adds time series classification functionality.
 
 Install extension:
@@ -150,7 +151,7 @@ Install extension:
 pip install etna[extension-name]
 ```
 
-Install all extensions:
+Install all the extensions:
 ```bash
 pip install etna[all]
 ```
