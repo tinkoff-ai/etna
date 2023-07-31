@@ -269,8 +269,8 @@ class CustomWEASEL(WEASEL):
 class WEASELFeatureExtractor(BaseTimeSeriesFeatureExtractor):
     """Class to extract features with WEASEL algorithm.
 
-    Notes
-    -----
+    Note
+    ----
     This class requires ``classification`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """

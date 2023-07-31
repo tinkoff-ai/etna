@@ -524,8 +524,8 @@ class StatsForecastAutoARIMAModel(
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoarima>`_.
 
-    Notes
-    -----
+    Note
+    ----
     This model requires ``statsforecast`` extension to be installed.
     Read more about this at :ref:`installation instruction <installation>`.
     """
@@ -627,8 +627,8 @@ class StatsForecastARIMAModel(
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#arima>`_.
 
-    Notes
-    -----
+    Note
+    ----
     This model requires ``statsforecast`` extension to be installed.
     Read more about this at :ref:`installation instruction <installation>`.
     """
@@ -707,8 +707,8 @@ class StatsForecastAutoThetaModel(
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autotheta>`_.
 
-    Notes
-    -----
+    Note
+    ----
     This model requires ``statsforecast`` extension to be installed.
     Read more about this at :ref:`installation instruction <installation>`.
     """
@@ -750,8 +750,8 @@ class StatsForecastAutoCESModel(
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoces>`_.
 
-    Notes
-    -----
+    Note
+    ----
     This model requires ``statsforecast`` extension to be installed.
     Read more about this at :ref:`installation instruction <installation>`.
     """
@@ -781,8 +781,8 @@ class StatsForecastAutoETSModel(
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoets>`_.
 
-    Notes
-    -----
+    Note
+    ----
     This model requires ``statsforecast`` extension to be installed.
     Read more about this at :ref:`installation instruction <installation>`.
     """

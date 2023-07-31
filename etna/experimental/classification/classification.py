@@ -18,8 +18,8 @@ from etna.loggers import tslogger
 class TimeSeriesBinaryClassifier(BaseMixin, PickleSerializable):
     """Class for holding time series binary classification.
 
-    Notes
-    -----
+    Note
+    ----
     This class requires ``classification`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """

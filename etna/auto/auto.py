@@ -201,8 +201,8 @@ class AutoBase(AutoAbstract):
 class Auto(AutoBase):
     """Automatic pipeline selection via defined or custom pipeline pool.
 
-    Notes
-    -----
+    Note
+    ----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """
@@ -597,8 +597,8 @@ class Tune(AutoBase):
 
     Trials with duplicate parameters are skipped and previously computed results are returned.
 
-    Notes
-    -----
+    Note
+    ----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """

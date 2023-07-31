@@ -16,8 +16,8 @@ T = TypeVar("T")
 class LocalRunner(AbstractRunner):
     """LocalRunner for one threaded run.
 
-    Notes
-    -----
+    Note
+    ----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """
@@ -30,11 +30,13 @@ class LocalRunner(AbstractRunner):
 class ParallelLocalRunner(AbstractRunner):
     """ParallelLocalRunner for multiple parallel runs with joblib.
 
-    Notes
+    Note
     -----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
 
+    Notes
+    -----
     Global objects behavior could be different while parallel usage because platform dependent new process start.
     Be sure that new process is started with ``fork`` via ``multiprocessing.set_start_method``.
     If it's not possible you should try define all globals before ``if __name__ == "__main__"`` scope.

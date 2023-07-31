@@ -11,8 +11,8 @@ T = TypeVar("T")
 class AbstractRunner(ABC):
     """Abstract class for Runner.
 
-    Notes
-    -----
+    Note
+    ----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """

@@ -239,8 +239,8 @@ class DeepStateNet(DeepBaseNet):
 class DeepStateModel(DeepBaseModel):
     """DeepState model.
 
-    Notes
-    -----
+    Note
+    ----
     This model requires ``torch`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """
