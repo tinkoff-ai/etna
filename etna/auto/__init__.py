@@ -1,10 +1,6 @@
 """
 Module for AutoML utilities.
 
-.. note::
-    This module requires ``auto`` extension to be installed.
-    Read more about this at :ref:`installation page <installation>`.
-
 Basic usage
 -----------
 
