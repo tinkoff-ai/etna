@@ -1,6 +1,3 @@
-# Some code in conf.py and `_templates` are used from
-# `github.com/jdb78/pytorch-forecasting/tree/v0.9.2/docs/source` under MIT License
-
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -12,10 +9,6 @@ from pathlib import Path
 import sys
 
 import toml
-from sphinx.application import Sphinx
-from sphinx.ext.autosummary import Autosummary
-
-import etna  # isort:skip
 
 # -- Path setup --------------------------------------------------------------
 
@@ -30,6 +23,8 @@ COMMIT_SHORT_SHA = os.environ.get("CI_COMMIT_SHORT_SHA", None)
 WORKFLOW_NAME = os.environ.get("WORKFLOW_NAME", None)
 
 sys.path.insert(0, str(PROJECT_PATH))  # noqa
+
+import etna  # isort:skip
 
 # -- Project information -----------------------------------------------------
 
@@ -131,9 +126,10 @@ autodoc_typehints = "both"
 autodoc_typehints_description_target = "all"
 
 autodoc_default_options = {
-    "members": True,
     "inherited-members": True,
+    "show-inheritance": True,
     "member-order": "groupwise",
+    "special-members": "__call__",
 }
 
 apidoc_output_folder = SOURCE_PATH.joinpath("api")
@@ -202,61 +198,3 @@ def linkcode_resolve(domain, info):
         release,
         filename,
     )
-
-# -- Setup configuration -----------------------------------------------------
-
-
-def skip(app, what, name, obj, skip, options):
-    """
-    Document __init__ methods
-    """
-    if name == "__init__":
-        return True
-    return skip
-
-
-PACKAGES = [etna.__name__]
-
-
-def get_by_name(string: str):
-    """Import by name and return imported module/function/class
-
-    Args:
-        string:
-            module/function/class to import, e.g. 'pandas.read_csv' will return read_csv function as
-        defined by pandas
-
-    Returns:
-        imported object
-    """
-    class_name = string.split(".")[-1]
-    module_name = ".".join(string.split(".")[:-1])
-
-    if module_name == "":
-        return getattr(sys.modules[__name__], class_name)
-
-    mod = __import__(module_name, fromlist=[class_name])
-    return getattr(mod, class_name)
-
-
-class ModuleAutoSummary(Autosummary):
-    def get_items(self, names):
-        new_names = []
-        for name in names:
-            mod = sys.modules[name]
-            mod_items = getattr(mod, "__all__", mod.__dict__)
-            for t in mod_items:
-                if "." not in t and not t.startswith("_"):
-                    obj = get_by_name(f"{name}.{t}")
-                    if hasattr(obj, "__module__"):
-                        mod_name = obj.__module__
-                        t = f"{mod_name}.{t}"
-                    if t.startswith("etna"):
-                        new_names.append(t)
-        new_items = super().get_items(sorted(new_names, key=lambda x:  x.split(".")[-1]))
-        return new_items
-
-
-def setup(app: Sphinx):
-    app.connect("autodoc-skip-member", skip)
-    app.add_directive("moduleautosummary", ModuleAutoSummary)

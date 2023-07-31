@@ -1,3 +1,5 @@
+"""Module for some common parts of the library."""
+
 from etna.core.mixins import BaseMixin
 from etna.core.mixins import SaveMixin
 from etna.core.mixins import StringEnumWithRepr

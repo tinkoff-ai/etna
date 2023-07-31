@@ -132,7 +132,7 @@ poetry.toml
 *.html
 *.db
 .devcontainer
-/docs/source/api/
+/docs/source/api_reference/api/
 tmp
 wandb
 !examples/wandb

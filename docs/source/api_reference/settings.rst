@@ -1,5 +1,11 @@
+.. _settings:
+
 Settings
 ==========
+
+.. automodule:: etna.settings
+    :no-members:
+    :no-inherited-members:
 
 .. note::
    At the package init by default etna checks availability of all packages
@@ -11,8 +17,11 @@ All available installation options:
 
         pip install etna
         pip install etna[prophet]
-        pip install etna[pytorch]
+        pip install etna[torch]
         pip install etna[wandb]
+        pip install etna[auto]
+        pip install etna[classification]
+        pip install etna[statsforecast]
         pip install etna[all]
 
 .. note::
@@ -30,20 +39,15 @@ Example `.etna` file:
         prophet_required = true
         wandb_required = false
 
-.. _etna:
+API details
+-----------
 
-.. currentmodule:: etna
+.. currentmodule:: etna.settings
 
-Details and available algorithms
---------------------------------
-
-See the API documentation for further details on setting up your etna environment:
-
-.. currentmodule:: etna
-
-.. moduleautosummary::
+.. autosummary::
    :toctree: api/
-   :template: custom-module-template.rst
-   :recursive:
+   :template: class.rst
 
-   etna.settings
+   Settings
+
+There is global object :code:`SETTINGS` that can be imported.

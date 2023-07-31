@@ -9,9 +9,16 @@ import pandas as pd
 class AggregationMode(str, Enum):
     """Enum for different aggregation modes."""
 
+    #: Mean aggregation.
     mean = "mean"
+
+    #: Maximum aggregation.
     max = "max"
+
+    #: Minimum aggregation.
     min = "min"
+
+    #: Median aggregation.
     median = "median"
 
 

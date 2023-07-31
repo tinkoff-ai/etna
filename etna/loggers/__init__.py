@@ -1,4 +1,5 @@
-"""Module with loggers.
+"""
+Module with loggers.
 
 Implementation of global logger ``tslogger`` is inspired by loguru.
 

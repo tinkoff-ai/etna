@@ -17,7 +17,10 @@ from etna.loggers import tslogger
 class MetricAggregationMode(str, Enum):
     """Enum for different metric aggregation modes."""
 
+    #: Metric is calculated for each segment and averaged.
     macro = "macro"
+
+    #: Metric is calculated for each segment.
     per_segment = "per-segment"
 
     @classmethod

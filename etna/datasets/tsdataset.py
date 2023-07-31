@@ -38,6 +38,7 @@ TTimestamp = Union[str, pd.Timestamp]
 
 class TSDataset:
     """TSDataset is the main class to handle your time series data.
+
     It prepares the series for exploration analyzing, implements feature generation with Transforms
     and generation of future points.
 
@@ -102,6 +103,7 @@ class TSDataset:
     2021-01-05     -1.40      0.28      0.68      0.48
     """
 
+    #: Shortcut for :py:class:`pd.core.indexing.IndexSlice`
     idx = pd.IndexSlice
 
     def __init__(

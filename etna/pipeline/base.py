@@ -321,6 +321,14 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     """Base class for pipeline."""
 
     def __init__(self, horizon: int):
+        """
+        Create instance of BasePipeline with given parameters.
+
+        Parameters
+        ----------
+        horizon:
+            Number of timestamps in the future for forecasting
+        """
         self._validate_horizon(horizon=horizon)
         self.horizon = horizon
         self.ts: Optional[TSDataset] = None
