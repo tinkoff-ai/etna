@@ -69,12 +69,6 @@ ML-models:
    SklearnMultiSegmentModel
    SklearnPerSegmentModel
 
-The following models are neural networks.
-
-.. note::
-    Module ``etna.models.nn`` requires ``torch`` extension to be installed.
-    Read more about this at :ref:`installation instruction <installation>`.
-
 Native neural network models:
 
 .. autosummary::
