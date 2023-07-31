@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 
-- 
+- Enhance `HolidayTransform` ([#763](https://github.com/tinkoff-ai/etna/pull/763))
 - Unify errors, warnings and checks in models ([#1312](https://github.com/tinkoff-ai/etna/pull/1312))
 - Remove upper limitation on version of numba ([#1321](https://github.com/tinkoff-ai/etna/pull/1321))
 

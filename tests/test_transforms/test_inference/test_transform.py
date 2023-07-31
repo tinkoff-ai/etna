@@ -211,7 +211,8 @@ class TestTransformTrainSubsetSegments:
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (FourierTransform(period=7, order=2), "regular_ts"),
-            (HolidayTransform(), "regular_ts"),
+            (HolidayTransform(mode="binary"), "regular_ts"),
+            (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
         ],
@@ -409,7 +410,8 @@ class TestTransformFutureSubsetSegments:
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (FourierTransform(period=7, order=2), "regular_ts"),
-            (HolidayTransform(), "regular_ts"),
+            (HolidayTransform(mode="binary"), "regular_ts"),
+            (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
         ],
