@@ -56,7 +56,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform data from df with HolidayTransform and generate a column of holidays flags, or its titles
+        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles.
 
         Parameters
         ----------
