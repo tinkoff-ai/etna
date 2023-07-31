@@ -230,7 +230,7 @@ class SaveMixin(AbstractSaveable):
             output_file.write(metadata_bytes)
 
     def _save_state(self, archive: zipfile.ZipFile):
-        with archive.open("object.pkl", "w") as output_file:
+        with archive.open("object.pkl", "w", force_zip64=True) as output_file:
             dill.dump(self, output_file)
 
     def save(self, path: pathlib.Path):

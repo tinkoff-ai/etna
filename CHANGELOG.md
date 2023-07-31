@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 
+- Add sorting by timestamp before the fit in `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` ([#1337](https://github.com/tinkoff-ai/etna/pull/1337))
 - Speed up metrics computation by optimizing segment validation ([#1338](https://github.com/tinkoff-ai/etna/pull/1338))
 - Unify errors, warnings and checks in models ([#1312](https://github.com/tinkoff-ai/etna/pull/1312))
 - Remove upper limitation on version of numba ([#1321](https://github.com/tinkoff-ai/etna/pull/1321))
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mrmr` feature selection working with categoricals ([#1311](https://github.com/tinkoff-ai/etna/pull/1311))
 - Fix version of `statsforecast` to 1.4 to avoid dependency conflicts during installation ([#1313](https://github.com/tinkoff-ai/etna/pull/1313))
 - Add inverse transformation into `predict` method of pipelines ([#1314](https://github.com/tinkoff-ai/etna/pull/1314))
+- Allow saving large pipelines ([#1335](https://github.com/tinkoff-ai/etna/pull/1335))
 
 ### Removed
 - Building docker images with cuda 10.2 ([#1306](https://github.com/tinkoff-ai/etna/pull/1306))
