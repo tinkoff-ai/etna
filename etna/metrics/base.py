@@ -152,23 +152,32 @@ class Metric(AbstractMetric, BaseMixin):
                     )
 
     @staticmethod
-    def _validate_timestamp_columns(timestamp_true: pd.Series, timestamp_pred: pd.Series):
+    def _validate_timestamp_columns(y_true: TSDataset, y_pred: TSDataset):
         """
-        Check that ``y_true`` and ``y_pred`` have the same timestamp.
+        Check that ``y_true`` and ``y_pred`` have the same timestamps.
 
         Parameters
         ----------
-        timestamp_true:
-            y_true's timestamp column
-        timestamp_pred:
-            y_pred's timestamp column
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
 
         Raises
         ------
         ValueError:
             If there are mismatches in ``y_true`` and ``y_pred`` timestamps
         """
-        if set(timestamp_pred) != set(timestamp_true):
+        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
+        df_pred = y_pred.df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
+
+        df_true_isna = df_true.isna()
+        df_true_isna = df_true_isna[df_true_isna.first_valid_index() : df_true_isna.last_valid_index()]
+
+        df_pred_isna = df_pred.isna()
+        df_pred_isna = df_pred_isna[df_pred_isna.first_valid_index() : df_pred_isna.last_valid_index()]
+
+        if not df_pred_isna.equals(df_true_isna):
             raise ValueError("y_true and y_pred have different timestamps")
 
     @staticmethod
@@ -227,16 +236,18 @@ class Metric(AbstractMetric, BaseMixin):
         """
         self._log_start()
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_timestamp_columns(y_true=y_true, y_pred=y_pred)
 
-        segments = set(y_true.df.columns.get_level_values("segment"))
+        df_true = y_true[:, :, "target"].sort_index(axis=1)
+        df_pred = y_pred[:, :, "target"].sort_index(axis=1)
+
         metrics_per_segment = {}
-        for segment in segments:
-            df_true = y_true[:, segment, "target"]
-            df_pred = y_pred[:, segment, "target"]
-            self._validate_timestamp_columns(
-                timestamp_true=df_true.dropna().index, timestamp_pred=df_pred.dropna().index
-            )
-            metrics_per_segment[segment] = self.metric_fn(y_true=df_true.values, y_pred=df_pred.values, **self.kwargs)
+        segments = df_true.columns.get_level_values("segment").unique()
+
+        for i, segment in enumerate(segments):
+            cur_y_true = df_true.iloc[:, i]
+            cur_y_pred = df_pred.iloc[:, i]
+            metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
 

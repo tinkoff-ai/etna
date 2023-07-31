@@ -68,15 +68,12 @@ class Coverage(Metric, _QuantileMetricMixin):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_timestamp_columns(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
         for segment in segments:
-            self._validate_timestamp_columns(
-                timestamp_true=y_true[:, segment, "target"].dropna().index,
-                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
-            )
             upper_quantile_flag = y_true[:, segment, "target"] <= y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"]
             lower_quantile_flag = y_true[:, segment, "target"] >= y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"]
 
@@ -136,15 +133,12 @@ class Width(Metric, _QuantileMetricMixin):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_timestamp_columns(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
         segments = set(y_true.df.columns.get_level_values("segment"))
         metrics_per_segment = {}
         for segment in segments:
-            self._validate_timestamp_columns(
-                timestamp_true=y_true[:, segment, "target"].dropna().index,
-                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
-            )
             upper_quantile = y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"]
             lower_quantile = y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"]
 
