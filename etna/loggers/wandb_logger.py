@@ -26,7 +26,7 @@ class WandbLogger(BaseLogger):
 
     Notes
     -----
-    This logger requires ``prophet`` extension to be installed.
+    This logger requires ``wandb`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """
 
