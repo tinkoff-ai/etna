@@ -79,6 +79,7 @@ class _CatBoostAdapter(BaseAdapter):
         :
             Fitted model
         """
+        df = df.sort_values(by="timestamp")
         features = df.drop(columns=["timestamp", "target"])
         target = df["target"]
         train_pool = self._prepare_pool(features, target.values)
