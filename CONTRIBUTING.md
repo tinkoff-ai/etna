@@ -104,18 +104,18 @@ Useful links:
 The simplest way to check how documentation is rendered is to make a pull request. 
 CI will build it, publish and attach a link to the pull request.
 
-#### Adding tutorials (optional)
+#### 7.1 Adding tutorials (optional)
 
 If you are going to add a jupyter notebook tutorial:
 1. Add the notebook into `examples` folder with its prepended number.
 2. Add "launch binder" button to the notebook.
 3. Add "Table of contents" for headings of the levels 2 and 3.
-4. List extensions that are necessary for this notebook to run.
+4. Install extensions that are necessary for this notebook to run.
 5. Add imports that are unrelated to the topic of the tutorial at the very top.
 6. Add new notebook with its table of contents to the `examples/README.md`
 7. Add new notebook with to the `README.md`
 
-#### Building locally (optional)
+#### 7.2 Building locally (optional)
 
 You can also build the documentation locally.
 Before building the documentation you may need to install a pandoc package ([pandoc installation guide](https://pandoc.org/installing.html)):
