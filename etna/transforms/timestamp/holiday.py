@@ -13,7 +13,7 @@ from etna.transforms.base import IrreversibleTransform
 class HolidayTransform(IrreversibleTransform, FutureMixin):
     """HolidayTransform generates series that indicates holidays in given dataframe."""
 
-    def __init__(self, iso_code: str = "RUS", out_column: Optional[str] = None):
+    def __init__(self, iso_code: str = "RUS", mode: str = "binary", out_column: Optional[str] = None):
         """
         Create instance of HolidayTransform.
 
@@ -21,12 +21,20 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         ----------
         iso_code:
             internationally recognised codes, designated to country for which we want to find the holidays
+        mode:
+            `binary` to indicate holidays, `category` to specify which holiday do we have at each day
         out_column:
             name of added column. Use ``self.__repr__()`` if not given.
         """
         super().__init__(required_features=["target"])
         self.iso_code = iso_code
-        self.holidays = holidays.CountryHoliday(iso_code)
+        if mode == "category":
+            self.show_categories = True
+        elif mode == "binary":
+            self.show_categories = False
+        else:
+            raise ValueError("Mode should be either `binary` or `category`")
+        self.holidays = holidays.country_holidays(iso_code)
         self.out_column = out_column
 
     def _get_column_name(self) -> str:
@@ -48,7 +56,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform data from df with HolidayTransform and generate a column of holidays flags.
+        Transform data from df with HolidayTransform and generate a column of holidays flags, or its titles
 
         Parameters
         ----------
@@ -66,7 +74,10 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         cols = df.columns.get_level_values("segment").unique()
 
         out_column = self._get_column_name()
-        encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
+        if self.show_categories:
+            encoded_matrix = np.array([self.holidays[x] if x in self.holidays else "NO_HOLIDAY" for x in df.index])
+        else:
+            encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)
         encoded_df = pd.DataFrame(
             encoded_matrix,
