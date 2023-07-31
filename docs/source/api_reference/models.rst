@@ -82,6 +82,20 @@ Native neural network models:
    nn.NBeatsInterpretableModel
    nn.PatchTSModel
 
+Utilities for :py:class:`~etna.models.nn.deepstate.deepstate.DeepStateModel`
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   nn.deepstate.CompositeSSM
+   nn.deepstate.LevelSSM
+   nn.deepstate.LevelTrendSSM
+   nn.deepstate.SeasonalitySSM
+   nn.deepstate.DaylySeasonalitySSM
+   nn.deepstate.SeasonalitySSM
+   nn.deepstate.YearlySeasonalitySSM
+
 Neural network models based on :code:`pytorch_forecasting`:
 
 .. autosummary::
