@@ -153,8 +153,6 @@ def test_rus_holidays_day_category(rus_holiday_names_daily: np.array, two_segmen
     ts = holidays_finder.fit_transform(two_segments_simple_ts_daily)
     df = ts.to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
-        print(df)
-        print(rus_holiday_names_daily)
         assert np.array_equal(df[segment]["regressor_holidays"].values, rus_holiday_names_daily)
 
 
