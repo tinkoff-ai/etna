@@ -148,9 +148,23 @@ notebook_url = (
     f"https://github.com/tinkoff-ai/etna/tree/{release}/examples/{notebook_file}"  # noqa
 )
 
-nbsphinx_prolog = f"""
+nbsphinx_prolog_css_fix = """
+.. raw:: html
+
+    <style>
+        table {
+            margin-left: 0;
+            width: auto;
+        }
+    </style>
+"""
+
+nbsphinx_prolog_notebook_link = f"""
 View Jupyter notebook on the `GitHub <{notebook_url}>`_.
 """
+
+nbsphinx_prolog = nbsphinx_prolog_css_fix + nbsphinx_prolog_notebook_link
+
 
 # -- Options for linkcode extension ------------------------------------------
 # Reference: https://www.sphinx-doc.org/en/master/usage/extensions/linkcode.html
