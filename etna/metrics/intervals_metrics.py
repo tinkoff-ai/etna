@@ -67,8 +67,10 @@ class Coverage(Metric, _QuantileMetricMixin):
         -------
             metric's value aggregated over segments or not (depends on mode)
         """
-        self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
-        self._validate_timestamp_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_segments(y_true=y_true, y_pred=y_pred)
+        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_index(y_true=y_true, y_pred=y_pred)
+        self._validate_nans(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
         segments = set(y_true.df.columns.get_level_values("segment"))
@@ -132,8 +134,10 @@ class Width(Metric, _QuantileMetricMixin):
         -------
             metric's value aggregated over segments or not (depends on mode)
         """
-        self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
-        self._validate_timestamp_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_segments(y_true=y_true, y_pred=y_pred)
+        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_index(y_true=y_true, y_pred=y_pred)
+        self._validate_nans(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
         segments = set(y_true.df.columns.get_level_values("segment"))

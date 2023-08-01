@@ -120,17 +120,6 @@ def test_metrics_invalid_aggregation(metric_class):
 @pytest.mark.parametrize(
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
-def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
-    """Check metrics behavior in case of invalid timeranges"""
-    forecast_df, true_df = two_dfs_with_different_timestamps
-    metric = metric_class()
-    with pytest.raises(ValueError, match="y_true and y_pred have different timestamps"):
-        _ = metric(y_true=true_df, y_pred=forecast_df)
-
-
-@pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
-)
 def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
     forecast_df, true_df = two_dfs_with_different_segments_sets
@@ -142,7 +131,7 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
 @pytest.mark.parametrize(
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
-def test_invalid_segments_target(metric_class, train_test_dfs):
+def test_invalid_target_columns(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
     forecast_df, true_df = train_test_dfs
     columns = forecast_df.df.columns.to_list()
@@ -150,6 +139,41 @@ def test_invalid_segments_target(metric_class, train_test_dfs):
     forecast_df.df.columns = pd.MultiIndex.from_tuples(columns, names=["segment", "feature"])
     metric = metric_class()
     with pytest.raises(ValueError, match="All the segments in .* should contain 'target' column"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_index(metric_class, two_dfs_with_different_timestamps):
+    """Check metrics behavior in case of invalid index"""
+    forecast_df, true_df = two_dfs_with_different_timestamps
+    metric = metric_class()
+    with pytest.raises(ValueError, match="y_true and y_pred have different timestamps"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_nans_pred(metric_class, train_test_dfs):
+    """Check metrics behavior in case of nans in prediction."""
+    forecast_df, true_df = train_test_dfs
+    forecast_df.df.iloc[0, 0] = np.NaN
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_pred"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_nans_true(metric_class, train_test_dfs):
+    """Check metrics behavior in case of nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[0, 0] = np.NaN
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
