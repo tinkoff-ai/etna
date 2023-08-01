@@ -47,7 +47,13 @@ class PoolGenerator:
 
 
 class Pool(Enum):
-    """Predefined pools of pipelines."""
+    """Predefined pools of pipelines.
+
+    Note
+    ----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     #: Default pool of pipelines
     default = PoolGenerator(configs_template=DEFAULT)  # type: ignore

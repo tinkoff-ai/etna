@@ -14,7 +14,13 @@ T = TypeVar("T")
 
 
 class LocalRunner(AbstractRunner):
-    """LocalRunner for one threaded run."""
+    """LocalRunner for one threaded run.
+
+    Note
+    ----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __call__(self, func: Callable[..., T], *args, **kwargs) -> T:
         """Call given ``func`` with ``*args`` and ``**kwargs``."""
@@ -23,6 +29,11 @@ class LocalRunner(AbstractRunner):
 
 class ParallelLocalRunner(AbstractRunner):
     """ParallelLocalRunner for multiple parallel runs with joblib.
+
+    Note
+    -----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
 
     Notes
     -----

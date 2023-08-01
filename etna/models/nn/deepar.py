@@ -30,6 +30,11 @@ if SETTINGS.torch_required:
 class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+
     Notes
     -----
     We save :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` in instance to use it in the model.

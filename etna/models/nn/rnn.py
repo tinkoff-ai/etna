@@ -202,7 +202,13 @@ class RNNNet(DeepBaseNet):
 
 
 class RNNModel(DeepBaseModel):
-    """RNN based model on LSTM cell."""
+    """RNN based model on LSTM cell.
+
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,

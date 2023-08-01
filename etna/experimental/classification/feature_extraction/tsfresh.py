@@ -16,9 +16,10 @@ from etna.experimental.classification.feature_extraction.base import BaseTimeSer
 class TSFreshFeatureExtractor(BaseTimeSeriesFeatureExtractor):
     """Class to hold tsfresh features extraction from tsfresh.
 
-    Notes
-    -----
-    `tsfresh` should be installed separately using `pip install tsfresh`.
+    Note
+    ----
+    This class requires ``classification`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
     """
 
     def __init__(

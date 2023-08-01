@@ -12,7 +12,13 @@ from etna.experimental.classification.utils import crop_nans_single_series
 
 
 class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
-    """Class for holding time series predictability prediction."""
+    """Class for holding time series predictability prediction.
+
+    Note
+    ----
+    This class requires ``classification`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self, feature_extractor: BaseTimeSeriesFeatureExtractor, classifier: ClassifierMixin, threshold: float = 0.5

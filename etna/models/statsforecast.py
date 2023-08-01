@@ -523,6 +523,11 @@ class StatsForecastAutoARIMAModel(
     Class for holding :py:class:`statsforecast.models.AutoARIMA`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoarima>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(
@@ -621,6 +626,11 @@ class StatsForecastARIMAModel(
     Class for holding :py:class:`statsforecast.models.ARIMA`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#arima>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(
@@ -696,6 +706,11 @@ class StatsForecastAutoThetaModel(
     Class for holding :py:class:`statsforecast.models.AutoTheta`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autotheta>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(
@@ -734,6 +749,11 @@ class StatsForecastAutoCESModel(
     Class for holding :py:class:`statsforecast.models.AutoCES`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoces>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(self, season_length: int = 1, model: str = "Z"):
@@ -760,6 +780,11 @@ class StatsForecastAutoETSModel(
     Class for holding :py:class:`statsforecast.models.AutoETS`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoets>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(self, season_length: int = 1, model: str = "ZZZ", damped: Optional[bool] = None):

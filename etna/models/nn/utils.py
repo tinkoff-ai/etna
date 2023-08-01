@@ -52,7 +52,13 @@ class _DeepCopyMixin:
 
 
 class PytorchForecastingDatasetBuilder(BaseMixin):
-    """Builder for PytorchForecasting dataset."""
+    """Builder for PytorchForecasting dataset.
+
+    Notes
+    -----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,

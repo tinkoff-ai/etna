@@ -199,7 +199,13 @@ class AutoBase(AutoAbstract):
 
 
 class Auto(AutoBase):
-    """Automatic pipeline selection via defined or custom pipeline pool."""
+    """Automatic pipeline selection via defined or custom pipeline pool.
+
+    Note
+    ----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,
@@ -590,6 +596,11 @@ class Tune(AutoBase):
     This class takes given pipelines and tries to optimize its hyperparameters by using ``params_to_tune``.
 
     Trials with duplicate parameters are skipped and previously computed results are returned.
+
+    Note
+    ----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
     """
 
     def __init__(

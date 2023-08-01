@@ -90,6 +90,11 @@ class NBeatsInterpretableModel(NBeatsBaseModel):
     Paper: https://arxiv.org/pdf/1905.10437.pdf
 
     Official implementation: https://github.com/ServiceNow/N-BEATS
+
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
     """
 
     def __init__(
@@ -260,6 +265,11 @@ class NBeatsGenericModel(NBeatsBaseModel):
     Paper: https://arxiv.org/pdf/1905.10437.pdf
 
     Official implementation: https://github.com/ServiceNow/N-BEATS
+
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
     """
 
     def __init__(

@@ -39,6 +39,9 @@ Basic usage
       print(auto.summary())
 """
 
-from etna.auto.auto import Auto
-from etna.auto.auto import Tune
-from etna.auto.pool import Pool
+from etna import SETTINGS
+
+if SETTINGS.auto_required:
+    from etna.auto.auto import Auto
+    from etna.auto.auto import Tune
+    from etna.auto.pool import Pool

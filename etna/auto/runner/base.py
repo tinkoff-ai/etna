@@ -9,7 +9,13 @@ T = TypeVar("T")
 
 
 class AbstractRunner(ABC):
-    """Abstract class for Runner."""
+    """Abstract class for Runner.
+
+    Note
+    ----
+    This class requires ``auto`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     @abstractmethod
     def __call__(self, func: Callable[..., T], *args, **kwargs) -> Union[T, List[T]]:
