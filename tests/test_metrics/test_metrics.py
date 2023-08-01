@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -181,6 +184,26 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
             y_pred=forecast_df.loc[:, pd.IndexSlice[segment, "target"]],
         )
         assert value == true_metric_value
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
+    forecast_df, true_df = train_test_dfs
+    forecast_df_new, true_df_new = deepcopy(train_test_dfs)
+    segments = np.array(forecast_df.segments)
+
+    forecast_segment_order = segments[[3, 2, 0, 1, 4]]
+    forecast_df_new.df = forecast_df_new.df.loc[:, pd.IndexSlice[forecast_segment_order, :]]
+    true_segment_order = segments[[4, 1, 3, 2, 0]]
+    true_df_new.df = true_df_new.df.loc[:, pd.IndexSlice[true_segment_order, :]]
+
+    metric = metric_class(mode="per-segment")
+    metrics_initial = metric(y_pred=forecast_df, y_true=true_df)
+    metrics_changed_order = metric(y_pred=forecast_df_new, y_true=true_df_new)
+
+    assert metrics_initial == metrics_changed_order
 
 
 @pytest.mark.parametrize(
