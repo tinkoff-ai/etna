@@ -48,7 +48,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         self.iso_code = iso_code
         self.mode = mode
         self._mode = HolidayTransformMode(mode)
-        self.holidays = holidays.country_holidays(iso_code, language="en_US ")
+        self.holidays = holidays.country_holidays(iso_code, language="en")
         self.out_column = out_column
 
     def _get_column_name(self) -> str:

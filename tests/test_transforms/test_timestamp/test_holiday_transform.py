@@ -88,8 +88,8 @@ def two_segments_simple_ts_min(simple_constant_df_min: pd.DataFrame):
 
 
 @pytest.fixture()
-def ru_holiday_names_daily():
-    values = ["Новогодние каникулы"] * 6 + ["Рождество Христово"] + ["Новогодние каникулы"] + ["NO_HOLIDAY"] * 7
+def uk_holiday_names_daily():
+    values = ["New Year's Day"] + ["New Year Holiday [Scotland]"] + ["NO_HOLIDAY"] * 13
     return np.array(values)
 
 
@@ -148,14 +148,12 @@ def test_holidays_day(iso_code: str, answer: np.array, two_segments_simple_ts_da
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
 
 
-def test_ru_holidays_day_category(ru_holiday_names_daily: np.array, two_segments_simple_ts_daily: TSDataset):
-    holidays_finder = HolidayTransform(iso_code="RUS", mode="category", out_column="regressor_holidays")
+def test_uk_holidays_day_category(uk_holiday_names_daily: np.array, two_segments_simple_ts_daily: TSDataset):
+    holidays_finder = HolidayTransform(iso_code="UK", mode="category", out_column="regressor_holidays")
     ts = holidays_finder.fit_transform(two_segments_simple_ts_daily)
     df = ts.to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
-        print(ru_holiday_names_daily)
-        print(df[segment]["regressor_holidays"].values)
-        assert np.array_equal(df[segment]["regressor_holidays"].values, ru_holiday_names_daily)
+        assert np.array_equal(df[segment]["regressor_holidays"].values, uk_holiday_names_daily)
 
 
 def test_us_holidays_day_category(us_holiday_names_daily: np.array, two_segments_simple_ts_daily: TSDataset):
