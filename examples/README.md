@@ -2,7 +2,9 @@
 
 We have prepared a set of tutorials for an easy introduction:
 
-## Notebooks
+[Quickstart](https://github.com/tinkoff-ai/etna/tree/master/examples/quick_start.ipynb)
+
+## Tutorials
 
 ### 01. [Get started](https://github.com/tinkoff-ai/etna/tree/master/examples/01-get_started.ipynb) 
 - Loading dataset

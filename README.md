@@ -45,7 +45,7 @@ The library started as an internal product in our company -
 we use it in over 10+ projects now, so we often release updates. 
 Contributions are welcome - check our [Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md).
 
-## Get started
+## Quickstart
 
 Let's load and prepare the data.
 ```python
@@ -116,16 +116,22 @@ from etna.analysis import plot_forecast
 plot_forecast(forecast_ts=forecast_ts, test_ts=test_ts, train_ts=train_ts, n_train_samples=50)
 ```
 
-![](examples/assets/readme/get_started.png)
+![](examples/assets/readme/quickstart.png)
 
 Print the metric value across the segments:
 ```python
 from etna.metrics import SMAPE
 
-metric = SMAPE(mode="macro")
+metric = SMAPE()
 metric_value = metric(y_true=test_ts, y_pred=forecast_ts)
->>> {'segment_b': 3.3017151519000967, 'segment_c': 5.270557433427279, 'segment_a': 5.272811627335398, 'segment_d': 4.689085450895735}
+metric_value
 ```
+
+```bash
+{'segment_a': 4.799114474387907, 'segment_b': 3.271014290441896, 'segment_c': 6.758606238307858, 'segment_d': 4.512871862697337}
+```
+
+Notebook with this example is [available](examples/quickstart.ipynb).
 
 ## Installation 
 
