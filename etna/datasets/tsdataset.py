@@ -1320,25 +1320,35 @@ class TSDataset:
 
         return common_dict
 
-    def _gather_segments_data(self, segments: Sequence[str]) -> Dict[str, List[Any]]:
+    def _gather_segments_data(self, segments: Optional[Sequence[str]]) -> Dict[str, pd.Series]:
         """Gather information about each segment."""
-        # gather segment information
-        segments_dict: Dict[str, list] = {
-            "start_timestamp": [],
-            "end_timestamp": [],
-            "length": [],
-            "num_missing": [],
-        }
+        if segments is None:
+            segments_slice = slice(None)
+            segments = self.segments
+        else:
+            segments_slice = segments
+            segments = segments
 
-        for segment in segments:
-            segment_series = self[:, segment, "target"]
-            first_index = segment_series.first_valid_index()
-            last_index = segment_series.last_valid_index()
-            segment_series = segment_series.loc[first_index:last_index]
-            segments_dict["start_timestamp"].append(first_index)
-            segments_dict["end_timestamp"].append(last_index)
-            segments_dict["length"].append(segment_series.shape[0])
-            segments_dict["num_missing"].append(pd.isna(segment_series).sum())
+        df = self.df.loc[:, (segments_slice, "target")]
+
+        size = df.shape[0]
+        not_na = ~np.isnan(df.values)
+        min_idx = np.argmax(not_na, axis=0)
+        max_idx = size - np.argmax(not_na[::-1, :], axis=0) - 1
+
+        segments_dict = {}
+        segments_dict["start_timestamp"] = df.index[min_idx].to_series(index=segments)
+        segments_dict["end_timestamp"] = df.index[max_idx].to_series(index=segments)
+        size_borders = min_idx + (size - max_idx - 1)
+        segments_dict["length"] = pd.Series(size - size_borders, dtype="Int64", index=segments)
+        segments_dict["num_missing"] = pd.Series(np.sum(~not_na, axis=0) - size_borders, dtype="Int64", index=segments)
+
+        # handle all-nans series
+        all_nans_mask = np.all(~not_na, axis=0)
+        segments_dict["start_timestamp"][all_nans_mask] = None
+        segments_dict["end_timestamp"][all_nans_mask] = None
+        segments_dict["length"][all_nans_mask] = None
+        segments_dict["num_missing"][all_nans_mask] = None
 
         return segments_dict
 
@@ -1400,14 +1410,14 @@ class TSDataset:
         segment_0      2021-06-01    2021-06-30      30            0             2          1               1                 1    D
         segment_1      2021-06-01    2021-06-30      30            0             2          1               1                 1    D
         """
-        if segments is None:
-            segments = self.segments
-
         # gather common information
         common_dict = self._gather_common_data()
 
         # gather segment information
         segments_dict = self._gather_segments_data(segments)
+
+        if segments is None:
+            segments = self.segments
 
         # combine information
         segments_dict["num_segments"] = [common_dict["num_segments"]] * len(segments)
