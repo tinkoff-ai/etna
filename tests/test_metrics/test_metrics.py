@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -117,34 +120,60 @@ def test_metrics_invalid_aggregation(metric_class):
 @pytest.mark.parametrize(
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
-def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
-    """Check metrics behavior in case of invalid timeranges"""
-    forecast_df, true_df = two_dfs_with_different_timestamps
-    metric = metric_class()
-    with pytest.raises(ValueError):
-        _ = metric(y_true=true_df, y_pred=forecast_df)
-
-
-@pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
-)
 def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
     forecast_df, true_df = two_dfs_with_different_segments_sets
     metric = metric_class()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="There are segments in .* that are not in .*"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
 @pytest.mark.parametrize(
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
-def test_invalid_segments_target(metric_class, train_test_dfs):
+def test_invalid_target_columns(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
     forecast_df, true_df = train_test_dfs
-    forecast_df.df.drop(columns=[("segment_1", "target")], inplace=True)
+    columns = forecast_df.df.columns.to_list()
+    columns[0] = ("segment_1", "not_target")
+    forecast_df.df.columns = pd.MultiIndex.from_tuples(columns, names=["segment", "feature"])
     metric = metric_class()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="All the segments in .* should contain 'target' column"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_index(metric_class, two_dfs_with_different_timestamps):
+    """Check metrics behavior in case of invalid index"""
+    forecast_df, true_df = two_dfs_with_different_timestamps
+    metric = metric_class()
+    with pytest.raises(ValueError, match="y_true and y_pred have different timestamps"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_nans_pred(metric_class, train_test_dfs):
+    """Check metrics behavior in case of nans in prediction."""
+    forecast_df, true_df = train_test_dfs
+    forecast_df.df.iloc[0, 0] = np.NaN
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_pred"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_nans_true(metric_class, train_test_dfs):
+    """Check metrics behavior in case of nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[0, 0] = np.NaN
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
@@ -179,6 +208,26 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
             y_pred=forecast_df.loc[:, pd.IndexSlice[segment, "target"]],
         )
         assert value == true_metric_value
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
+    forecast_df, true_df = train_test_dfs
+    forecast_df_new, true_df_new = deepcopy(train_test_dfs)
+    segments = np.array(forecast_df.segments)
+
+    forecast_segment_order = segments[[3, 2, 0, 1, 4]]
+    forecast_df_new.df = forecast_df_new.df.loc[:, pd.IndexSlice[forecast_segment_order, :]]
+    true_segment_order = segments[[4, 1, 3, 2, 0]]
+    true_df_new.df = true_df_new.df.loc[:, pd.IndexSlice[true_segment_order, :]]
+
+    metric = metric_class(mode="per-segment")
+    metrics_initial = metric(y_pred=forecast_df, y_true=true_df)
+    metrics_changed_order = metric(y_pred=forecast_df_new, y_true=true_df_new)
+
+    assert metrics_initial == metrics_changed_order
 
 
 @pytest.mark.parametrize(

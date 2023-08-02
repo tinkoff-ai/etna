@@ -111,9 +111,8 @@ class Metric(AbstractMetric, BaseMixin):
         return self.__class__.__name__
 
     @staticmethod
-    def _validate_segment_columns(y_true: TSDataset, y_pred: TSDataset):
-        """
-        Check if all the segments from ``y_true`` are in ``y_pred`` and vice versa.
+    def _validate_segments(y_true: TSDataset, y_pred: TSDataset):
+        """Check that segments in ``y_true`` and ``y_pred`` are the same.
 
         Parameters
         ----------
@@ -125,9 +124,7 @@ class Metric(AbstractMetric, BaseMixin):
         Raises
         ------
         ValueError:
-            if there are mismatches in y_true and y_pred segments,
-        ValueError:
-            if one of segments in y_true or y_pred doesn't contain 'target' column.
+            if there are mismatches in y_true and y_pred segments
         """
         segments_true = set(y_true.df.columns.get_level_values("segment"))
         segments_pred = set(y_pred.df.columns.get_level_values("segment"))
@@ -144,32 +141,77 @@ class Metric(AbstractMetric, BaseMixin):
                 f"There are segments in y_true that are not in y_pred, for example: "
                 f"{', '.join(list(true_diff_pred)[:5])}"
             )
-        for segment in segments_true:
+
+    @staticmethod
+    def _validate_target_columns(y_true: TSDataset, y_pred: TSDataset):
+        """Check that all the segments from ``y_true`` and ``y_pred`` has 'target' column.
+
+        Parameters
+        ----------
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
+
+        Raises
+        ------
+        ValueError:
+            if one of segments in y_true or y_pred doesn't contain 'target' column.
+        """
+        segments = set(y_true.df.columns.get_level_values("segment"))
+
+        for segment in segments:
             for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):
-                if "target" not in dataset.loc[:, segment].columns:
+                if (segment, "target") not in dataset.columns:
                     raise ValueError(
                         f"All the segments in {name} should contain 'target' column. Segment {segment} doesn't."
                     )
 
     @staticmethod
-    def _validate_timestamp_columns(timestamp_true: pd.Series, timestamp_pred: pd.Series):
-        """
-        Check that ``y_true`` and ``y_pred`` have the same timestamp.
+    def _validate_index(y_true: TSDataset, y_pred: TSDataset):
+        """Check that ``y_true`` and ``y_pred`` have the same timestamps.
 
         Parameters
         ----------
-        timestamp_true:
-            y_true's timestamp column
-        timestamp_pred:
-            y_pred's timestamp column
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
 
         Raises
         ------
         ValueError:
             If there are mismatches in ``y_true`` and ``y_pred`` timestamps
         """
-        if set(timestamp_pred) != set(timestamp_true):
+        if not y_true.index.equals(y_pred.index):
             raise ValueError("y_true and y_pred have different timestamps")
+
+    @staticmethod
+    def _validate_nans(y_true: TSDataset, y_pred: TSDataset):
+        """Check that ``y_true`` and ``y_pred`` doesn't have NaNs.
+
+        Parameters
+        ----------
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
+
+        Raises
+        ------
+        ValueError:
+            If there are NaNs in ``y_true`` or ``y_pred``
+        """
+        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]]
+        df_pred = y_pred.df.loc[:, pd.IndexSlice[:, "target"]]
+
+        df_true_isna = df_true.isna().any().any()
+        if df_true_isna > 0:
+            raise ValueError("There are NaNs in y_true")
+
+        df_pred_isna = df_pred.isna().any().any()
+        if df_pred_isna > 0:
+            raise ValueError("There are NaNs in y_pred")
 
     @staticmethod
     def _macro_average(metrics_per_segments: Dict[str, float]) -> Union[float, Dict[str, float]]:
@@ -226,18 +268,21 @@ class Metric(AbstractMetric, BaseMixin):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._log_start()
-        self._validate_segment_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_segments(y_true=y_true, y_pred=y_pred)
+        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_index(y_true=y_true, y_pred=y_pred)
+        self._validate_nans(y_true=y_true, y_pred=y_pred)
 
-        segments = set(y_true.df.columns.get_level_values("segment"))
+        df_true = y_true[:, :, "target"].sort_index(axis=1)
+        df_pred = y_pred[:, :, "target"].sort_index(axis=1)
+
         metrics_per_segment = {}
-        for segment in segments:
-            self._validate_timestamp_columns(
-                timestamp_true=y_true[:, segment, "target"].dropna().index,
-                timestamp_pred=y_pred[:, segment, "target"].dropna().index,
-            )
-            metrics_per_segment[segment] = self.metric_fn(
-                y_true=y_true[:, segment, "target"].values, y_pred=y_pred[:, segment, "target"].values, **self.kwargs
-            )
+        segments = df_true.columns.get_level_values("segment").unique()
+
+        for i, segment in enumerate(segments):
+            cur_y_true = df_true.iloc[:, i]
+            cur_y_pred = df_pred.iloc[:, i]
+            metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
 
