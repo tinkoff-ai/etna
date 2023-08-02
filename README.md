@@ -195,6 +195,7 @@ We have also prepared a set of tutorials for an easy introduction:
 | [Hierarchical time series](https://github.com/tinkoff-ai/etna/blob/master/examples/14-hierarchical_pipeline.ipynb)          |      [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/14-hierarchical_pipeline.ipynb) |
 | [Classification](https://github.com/tinkoff-ai/etna/blob/master/examples/15-classification.ipynb)                           |             [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/15-classification.ipynb) |
 | [Feature selection](https://github.com/tinkoff-ai/etna/blob/master/examples/16-feature_selection.ipynb)                     |          [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/16-feature_selection.ipynb) |
+| [Mechanics of forecasting](https://github.com/tinkoff-ai/etna/blob/master/examples/17-mechanics_of_forecasting.ipynb)       |          [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/17-mechanics_of_forecasting.ipynb) |
 
 ## Documentation
 
