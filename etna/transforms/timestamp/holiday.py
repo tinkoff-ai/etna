@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 from typing import List
 from typing import Optional
 
@@ -10,10 +11,27 @@ from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
+class HolidayTransformMode(str, Enum):
+    """Enum for different imputation strategy."""
+
+    binary = "binary"
+    category = "category"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Supported mode: {', '.join([repr(m.value) for m in cls])}"
+        )
+
+
 class HolidayTransform(IrreversibleTransform, FutureMixin):
     """HolidayTransform generates series that indicates holidays in given dataframe."""
 
-    def __init__(self, iso_code: str = "RUS", mode: str = "binary", out_column: Optional[str] = None):
+    NO_HOLIDAY: str = "NO_HOLIDAY"
+
+    def __init__(
+        self, iso_code: str = "RUS", mode: str = HolidayTransformMode.binary, out_column: Optional[str] = None
+    ):
         """
         Create instance of HolidayTransform.
 
@@ -28,13 +46,9 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         """
         super().__init__(required_features=["target"])
         self.iso_code = iso_code
-        if mode == "category":
-            self.show_categories = True
-        elif mode == "binary":
-            self.show_categories = False
-        else:
-            raise ValueError("Mode should be either `binary` or `category`")
-        self.holidays = holidays.country_holidays(iso_code)
+        self.mode = mode
+        self._mode = HolidayTransformMode(mode)
+        self.holidays = holidays.country_holidays(iso_code, language="en_US ")
         self.out_column = out_column
 
     def _get_column_name(self) -> str:
@@ -56,7 +70,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles.
+        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles (NO_HOLIDAY if none).
 
         Parameters
         ----------
@@ -74,8 +88,8 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         cols = df.columns.get_level_values("segment").unique()
 
         out_column = self._get_column_name()
-        if self.show_categories:
-            encoded_matrix = np.array([self.holidays[x] if x in self.holidays else "NO_HOLIDAY" for x in df.index])
+        if self._mode is HolidayTransformMode.category:
+            encoded_matrix = np.array([self.holidays[x] if x in self.holidays else self.NO_HOLIDAY for x in df.index])
         else:
             encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)

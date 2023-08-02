@@ -608,6 +608,7 @@ class TestTransformTrainNewSegments:
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (HolidayTransform(out_column="res"), "regular_ts", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -928,6 +929,7 @@ class TestTransformFutureNewSegments:
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (HolidayTransform(out_column="res"), "regular_ts", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1329,6 +1331,7 @@ class TestTransformFutureWithTarget:
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (HolidayTransform(out_column="res"), "regular_ts", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1708,6 +1711,7 @@ class TestTransformFutureWithoutTarget:
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (HolidayTransform(out_column="res"), "regular_ts", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
