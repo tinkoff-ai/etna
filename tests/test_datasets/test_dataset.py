@@ -875,9 +875,7 @@ def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
 
 def test_gather_common_data(ts_info):
     """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
-    df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    common_data = ts._gather_common_data()
+    common_data = ts_info._gather_common_data()
     assert common_data["num_segments"] == 3
     assert common_data["num_exogs"] == 2
     assert common_data["num_regressors"] == 2
