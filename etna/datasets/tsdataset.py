@@ -1322,14 +1322,15 @@ class TSDataset:
 
     def _gather_segments_data(self, segments: Optional[Sequence[str]]) -> Dict[str, pd.Series]:
         """Gather information about each segment."""
+        segments_index: Union[slice, Sequence[str]]
         if segments is None:
-            segments_slice = slice(None)
+            segments_index = slice(None)
             segments = self.segments
         else:
-            segments_slice = segments
+            segments_index = segments
             segments = segments
 
-        df = self.df.loc[:, (segments_slice, "target")]
+        df = self.df.loc[:, (segments_index, "target")]
 
         num_timestamps = df.shape[0]
         not_na = ~np.isnan(df.values)
