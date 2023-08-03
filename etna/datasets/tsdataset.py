@@ -1331,17 +1331,18 @@ class TSDataset:
 
         df = self.df.loc[:, (segments_slice, "target")]
 
-        size = df.shape[0]
+        num_timestamps = df.shape[0]
         not_na = ~np.isnan(df.values)
         min_idx = np.argmax(not_na, axis=0)
-        max_idx = size - np.argmax(not_na[::-1, :], axis=0) - 1
+        max_idx = num_timestamps - np.argmax(not_na[::-1, :], axis=0) - 1
 
         segments_dict = {}
         segments_dict["start_timestamp"] = df.index[min_idx].to_series(index=segments)
         segments_dict["end_timestamp"] = df.index[max_idx].to_series(index=segments)
-        size_borders = min_idx + (size - max_idx - 1)
-        segments_dict["length"] = pd.Series(size - size_borders, dtype="Int64", index=segments)
-        segments_dict["num_missing"] = pd.Series(np.sum(~not_na, axis=0) - size_borders, dtype="Int64", index=segments)
+        segments_dict["length"] = pd.Series(max_idx - min_idx + 1, dtype="Int64", index=segments)
+        segments_dict["num_missing"] = pd.Series(
+            segments_dict["length"] - np.sum(not_na, axis=0), dtype="Int64", index=segments
+        )
 
         # handle all-nans series
         all_nans_mask = np.all(~not_na, axis=0)

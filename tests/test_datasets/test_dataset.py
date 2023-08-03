@@ -890,7 +890,6 @@ def test_gather_segments_data(ts_info):
     segments_dict = ts_info._gather_segments_data(ts_info.segments)
     segment_df = pd.DataFrame(segments_dict, index=ts_info.segments)
 
-    assert np.all(segment_df.index == ts_info.segments)
     assert segment_df.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert segment_df.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
     assert segment_df.loc["3", "start_timestamp"] is pd.NaT
