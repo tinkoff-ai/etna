@@ -207,6 +207,12 @@ class SaveModelPipelineMixin(SaveMixin):
     def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Self:
         """Load an object.
 
+        Warning
+        -------
+        This method uses :py:mod:`dill` module which is not secure.
+        It is possible to construct malicious data which will execute arbitrary code during loading.
+        Never load data that could have come from an untrusted source, or that could have been tampered with.
+
         Parameters
         ----------
         path:
