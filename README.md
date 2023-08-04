@@ -131,7 +131,7 @@ metric_value
 {'segment_a': 4.799114474387907, 'segment_b': 3.271014290441896, 'segment_c': 6.758606238307858, 'segment_d': 4.512871862697337}
 ```
 
-Notebook with this example is [available](examples/quickstart.ipynb).
+Notebook with this example is available [here](examples/quickstart.ipynb).
 
 ## Installation 
 
