@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unify errors, warnings and checks in models ([#1312](https://github.com/tinkoff-ai/etna/pull/1312))
 - Remove upper limitation on version of numba ([#1321](https://github.com/tinkoff-ai/etna/pull/1321))
 - Optimize `TSDataset.describe` and `TSDataset.info` by vectorization ([#1344](https://github.com/tinkoff-ai/etna/pull/1344))
+- Add documentation warning about using dill during loading ([#1346](https://github.com/tinkoff-ai/etna/pull/1346))
 
 ### Fixed
 - Pipeline ensembles fail in `etna forecast` CLI ([#1331](https://github.com/tinkoff-ai/etna/pull/1331))
