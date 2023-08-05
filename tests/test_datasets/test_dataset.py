@@ -53,6 +53,31 @@ def df_and_regressors() -> Tuple[pd.DataFrame, pd.DataFrame, List[str]]:
 
 
 @pytest.fixture
+def ts_info() -> TSDataset:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "target": 12, "segment": "2"})
+    df_3 = pd.DataFrame({"timestamp": timestamp, "target": np.NaN, "segment": "3"})
+    df = pd.concat([df_1, df_2, df_3], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    timestamp = pd.date_range("2020-12-01", "2021-02-11")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 1, "regressor_2": 2, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp[5:], "regressor_1": 3, "regressor_2": 4, "segment": "2"})
+    df_3 = pd.DataFrame({"timestamp": timestamp, "regressor_1": 5, "regressor_2": 6, "segment": "3"})
+    df_exog = pd.concat([df_1, df_2, df_3], ignore_index=True)
+    df_exog = TSDataset.to_dataset(df_exog)
+
+    # add NaN in the middle
+    df.iloc[-5, 0] = np.NaN
+    # add NaNs at the end
+    df.iloc[-3:, 1] = np.NaN
+
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=["regressor_1", "regressor_2"])
+    return ts
+
+
+@pytest.fixture
 def df_update_add_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-12")
     df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "segment": "1"})
@@ -848,61 +873,53 @@ def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
         ts_diff_endings.fit_transform([])
 
 
-def test_gather_common_data(df_and_regressors):
+def test_gather_common_data(ts_info):
     """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
-    df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    common_data = ts._gather_common_data()
-    assert common_data["num_segments"] == 2
+    common_data = ts_info._gather_common_data()
+    assert common_data["num_segments"] == 3
     assert common_data["num_exogs"] == 2
     assert common_data["num_regressors"] == 2
     assert common_data["num_known_future"] == 2
     assert common_data["freq"] == "D"
 
 
-def test_gather_segments_data(df_and_regressors):
+def test_gather_segments_data(ts_info):
     """Check that TSDataset._gather_segments_data correctly finds segment data for info/describe methods."""
-    df, df_exog, known_future = df_and_regressors
-    # add NaN in the middle
-    df.iloc[-5, 0] = np.NaN
-    # add NaNs at the end
-    df.iloc[-3:, 1] = np.NaN
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    segments = ts.segments
-    segments_dict = ts._gather_segments_data(segments)
-    segment_df = pd.DataFrame(segments_dict, index=segments)
+    segments_dict = ts_info._gather_segments_data(ts_info.segments)
+    segment_df = pd.DataFrame(segments_dict, index=ts_info.segments)
 
-    assert np.all(segment_df.index == ts.segments)
     assert segment_df.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert segment_df.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
+    assert segment_df.loc["3", "start_timestamp"] is pd.NaT
     assert segment_df.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
     assert segment_df.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
+    assert segment_df.loc["3", "end_timestamp"] is pd.NaT
     assert segment_df.loc["1", "length"] == 32
     assert segment_df.loc["2", "length"] == 24
+    assert segment_df.loc["3", "length"] is pd.NA
     assert segment_df.loc["1", "num_missing"] == 1
     assert segment_df.loc["2", "num_missing"] == 0
+    assert segment_df.loc["3", "num_missing"] is pd.NA
 
 
-def test_describe(df_and_regressors):
+def test_describe(ts_info):
     """Check that TSDataset.describe works correctly."""
-    df, df_exog, known_future = df_and_regressors
-    # add NaN in the middle
-    df.iloc[-5, 0] = np.NaN
-    # add NaNs at the end
-    df.iloc[-3:, 1] = np.NaN
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    description = ts.describe()
+    description = ts_info.describe()
 
-    assert np.all(description.index == ts.segments)
+    assert np.all(description.index == ts_info.segments)
     assert description.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert description.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
+    assert description.loc["3", "start_timestamp"] is pd.NaT
     assert description.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
     assert description.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
+    assert description.loc["3", "end_timestamp"] is pd.NaT
     assert description.loc["1", "length"] == 32
     assert description.loc["2", "length"] == 24
+    assert description.loc["3", "length"] is pd.NA
     assert description.loc["1", "num_missing"] == 1
     assert description.loc["2", "num_missing"] == 0
-    assert np.all(description["num_segments"] == 2)
+    assert description.loc["3", "num_missing"] is pd.NA
+    assert np.all(description["num_segments"] == 3)
     assert np.all(description["num_exogs"] == 2)
     assert np.all(description["num_regressors"] == 2)
     assert np.all(description["num_known_future"] == 2)
