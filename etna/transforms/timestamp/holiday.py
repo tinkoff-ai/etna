@@ -25,13 +25,14 @@ class HolidayTransformMode(str, Enum):
 
 
 class HolidayTransform(IrreversibleTransform, FutureMixin):
-    """HolidayTransform generates series that indicates holidays in given dataframe."""
+    """
+    HolidayTransform generates series that indicates holidays in given dataframe.
+    Can either show holiday presence or their names (NO_HOLIDAY indicates absence).
+    """
 
     NO_HOLIDAY: str = "NO_HOLIDAY"
 
-    def __init__(
-        self, iso_code: str = "RUS", mode: str = HolidayTransformMode.binary, out_column: Optional[str] = None
-    ):
+    def __init__(self, iso_code: str = "RUS", mode: str = "binary", out_column: Optional[str] = None):
         """
         Create instance of HolidayTransform.
 
@@ -48,7 +49,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         self.iso_code = iso_code
         self.mode = mode
         self._mode = HolidayTransformMode(mode)
-        self.holidays = holidays.country_holidays(iso_code, language="en")
+        self.holidays = holidays.country_holidays(iso_code)
         self.out_column = out_column
 
     def _get_column_name(self) -> str:
@@ -70,7 +71,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles (NO_HOLIDAY if none).
+        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles.
 
         Parameters
         ----------
