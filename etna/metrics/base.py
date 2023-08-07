@@ -31,7 +31,7 @@ class MetricAggregationMode(str, Enum):
 class MetricFunctionSignature(str, Enum):
     """Enum for different metric function signatures."""
 
-    #: function should expect arrays or y_pred and y_true with length ``n_timestamps`` and return scalar
+    #: function should expect arrays of y_pred and y_true with length ``n_timestamps`` and return scalar
     array_to_scalar = "array_to_scalar"
 
     #: function should expect matrices of y_pred and y_true with shape ``(n_timestamps, n_segments)``
@@ -84,7 +84,6 @@ class AbstractMetric(ABC):
         pass
 
 
-# TODO: add tests on metric_fn_signature
 class Metric(AbstractMetric, BaseMixin):
     """
     Base class for all the multi-segment metrics.

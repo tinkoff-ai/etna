@@ -10,7 +10,6 @@ from typing_extensions import assert_never
 ArrayLike = Union[float, Sequence[float], Sequence[Sequence[float]]]
 
 
-# TODO: протестировать новый режим
 class FunctionalMetricMode(str, Enum):
     """Enum for different functional metric multioutput modes."""
 
@@ -153,7 +152,7 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, mode: str = "joint") -> ArrayLike
     Returns
     -------
     :
-        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        A floating point value, or an array of floating point values,
         one for each individual target.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
