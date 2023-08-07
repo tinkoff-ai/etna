@@ -1,3 +1,5 @@
+from functools import partial
+
 from etna.metrics import mae
 from etna.metrics import mape
 from etna.metrics import max_deviation
@@ -34,7 +36,8 @@ class MAE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=mae, **kwargs)
+        mae_per_output = partial(mae, multioutput="raw_values")
+        super().__init__(mode=mode, metric_fn=mae_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -63,7 +66,8 @@ class MSE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=mse, **kwargs)
+        mse_per_output = partial(mse, multioutput="raw_values")
+        super().__init__(mode=mode, metric_fn=mse_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -92,7 +96,8 @@ class RMSE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=rmse, **kwargs)
+        rmse_per_output = partial(rmse, multioutput="raw_values")
+        super().__init__(mode=mode, metric_fn=rmse_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -120,7 +125,8 @@ class R2(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=r2_score, **kwargs)
+        r2_per_output = partial(r2_score, multioutput="raw_values")
+        super().__init__(mode=mode, metric_fn=r2_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -149,7 +155,8 @@ class MAPE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=mape, **kwargs)
+        mape_per_output = partial(mape, mode="per_output")
+        super().__init__(mode=mode, metric_fn=mape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -178,7 +185,8 @@ class SMAPE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=smape, **kwargs)
+        smape_per_output = partial(smape, mode="per_output")
+        super().__init__(mode=mode, metric_fn=smape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -207,7 +215,8 @@ class MedAE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=medae, **kwargs)
+        medae_per_output = partial(medae, multioutput="raw_values")
+        super().__init__(mode=mode, metric_fn=medae_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -237,7 +246,8 @@ class MSLE(Metric):
             metric's computation arguments
 
         """
-        super().__init__(mode=mode, metric_fn=msle, **kwargs)
+        msle_per_output = partial(msle, multioutput="raw_values")
+        super().__init__(mode=mode, metric_fn=msle_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -266,7 +276,8 @@ class Sign(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=sign, **kwargs)
+        sign_per_output = partial(sign, mode="per_output")
+        super().__init__(mode=mode, metric_fn=sign_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> None:
@@ -295,7 +306,8 @@ class MaxDeviation(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=max_deviation, **kwargs)
+        max_deviation_per_output = partial(max_deviation, mode="per_output")
+        super().__init__(mode=mode, metric_fn=max_deviation_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -323,7 +335,8 @@ class WAPE(Metric):
         kwargs:
             metric's computation arguments
         """
-        super().__init__(mode=mode, metric_fn=wape, **kwargs)
+        wape_per_output = partial(wape, mode="per_output")
+        super().__init__(mode=mode, metric_fn=wape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
     def greater_is_better(self) -> bool:

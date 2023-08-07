@@ -8,6 +8,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from typing_extensions import assert_never
 
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
@@ -24,6 +25,23 @@ class MetricAggregationMode(str, Enum):
     def _missing_(cls, value):
         raise NotImplementedError(
             f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregation allowed"
+        )
+
+
+class MetricFunctionSignature(str, Enum):
+    """Enum for different metric function signatures."""
+
+    #: function should expect arrays or y_pred and y_true with length ``n_timestamps`` and return scalar
+    array_to_scalar = "array_to_scalar"
+
+    #: function should expect matrices of y_pred and y_true with shape ``(n_timestamps, n_segments)``
+    #: and return vector of length ``n_segments``
+    matrix_to_array = "matrix_to_array"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} signatures allowed"
         )
 
 
@@ -66,6 +84,7 @@ class AbstractMetric(ABC):
         pass
 
 
+# TODO: add tests on metric_fn_signature
 class Metric(AbstractMetric, BaseMixin):
     """
     Base class for all the multi-segment metrics.
@@ -74,7 +93,13 @@ class Metric(AbstractMetric, BaseMixin):
     dataset and aggregates it according to mode.
     """
 
-    def __init__(self, metric_fn: Callable[..., float], mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(
+        self,
+        metric_fn: Callable,
+        mode: str = MetricAggregationMode.per_segment,
+        metric_fn_signature: str = "array_to_scalar",
+        **kwargs,
+    ):
         """
         Init Metric.
 
@@ -89,21 +114,29 @@ class Metric(AbstractMetric, BaseMixin):
 
             * if "per-segment" -- does not aggregate metrics
 
+        metric_fn_signature:
+            type of signature of ``metric_fn`` (see :py:class:`~etna.metrics.base.MetricFunctionSignature`)
         kwargs:
             functional metric's params
 
         Raises
         ------
         NotImplementedError:
-            it non existent mode is used
+            If non-existent ``mode`` is used.
+        NotImplementedError:
+            If non-existent ``metric_fn_signature`` is used.
         """
+        if MetricAggregationMode(mode) is MetricAggregationMode.macro:
+            self._aggregate_metrics = self._macro_average
+        elif MetricAggregationMode(mode) is MetricAggregationMode.per_segment:
+            self._aggregate_metrics = self._per_segment_average
+
+        self._metric_fn_signature = MetricFunctionSignature(metric_fn_signature)
+
         self.metric_fn = metric_fn
         self.kwargs = kwargs
-        if MetricAggregationMode(mode) == MetricAggregationMode.macro:
-            self._aggregate_metrics = self._macro_average
-        elif MetricAggregationMode(mode) == MetricAggregationMode.per_segment:
-            self._aggregate_metrics = self._per_segment_average
         self.mode = mode
+        self.metric_fn_signature = metric_fn_signature
 
     @property
     def name(self) -> str:
@@ -276,13 +309,20 @@ class Metric(AbstractMetric, BaseMixin):
         df_true = y_true[:, :, "target"].sort_index(axis=1)
         df_pred = y_pred[:, :, "target"].sort_index(axis=1)
 
-        metrics_per_segment = {}
         segments = df_true.columns.get_level_values("segment").unique()
 
-        for i, segment in enumerate(segments):
-            cur_y_true = df_true.iloc[:, i]
-            cur_y_pred = df_pred.iloc[:, i]
-            metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)
+        if self._metric_fn_signature is MetricFunctionSignature.array_to_scalar:
+            metrics_per_segment = {}
+            for i, segment in enumerate(segments):
+                cur_y_true = df_true.iloc[:, i].values
+                cur_y_pred = df_pred.iloc[:, i].values
+                metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)
+        elif self._metric_fn_signature is MetricFunctionSignature.matrix_to_array:
+            values = self.metric_fn(y_true=df_true.values, y_pred=df_pred.values, **self.kwargs)
+            metrics_per_segment = dict(zip(segments, values))
+        else:
+            assert_never(self._metric_fn_signature)
+
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
 
