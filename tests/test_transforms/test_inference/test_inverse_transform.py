@@ -219,7 +219,8 @@ class TestInverseTransformTrainSubsetSegments:
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (FourierTransform(period=7, order=2), "regular_ts"),
-            (HolidayTransform(), "regular_ts"),
+            (HolidayTransform(mode="binary"), "regular_ts"),
+            (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
         ],
@@ -427,7 +428,8 @@ class TestInverseTransformFutureSubsetSegments:
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (FourierTransform(period=7, order=2), "regular_ts"),
-            (HolidayTransform(), "regular_ts"),
+            (HolidayTransform(mode="binary"), "regular_ts"),
+            (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
         ],
@@ -654,7 +656,8 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
                 {},
             ),
-            (HolidayTransform(out_column="res"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -981,7 +984,8 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
-            (HolidayTransform(out_column="res"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1465,7 +1469,8 @@ class TestInverseTransformFutureWithTarget:
                 "regular_ts",
                 {},
             ),
-            (HolidayTransform(out_column="res"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1883,7 +1888,8 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
-            (HolidayTransform(out_column="res"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",

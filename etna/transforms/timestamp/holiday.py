@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 from typing import List
 from typing import Optional
 
@@ -10,10 +11,30 @@ from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
-class HolidayTransform(IrreversibleTransform, FutureMixin):
-    """HolidayTransform generates series that indicates holidays in given dataframe."""
+class HolidayTransformMode(str, Enum):
+    """Enum for different imputation strategy."""
 
-    def __init__(self, iso_code: str = "RUS", out_column: Optional[str] = None):
+    binary = "binary"
+    category = "category"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Supported mode: {', '.join([repr(m.value) for m in cls])}"
+        )
+
+
+class HolidayTransform(IrreversibleTransform, FutureMixin):
+    """
+    HolidayTransform generates series that indicates holidays in given dataset.
+
+    In ``binary`` mode shows the presence of holiday in that day. In ``category`` mode shows the name of the holiday
+    with value "NO_HOLIDAY" reserved for days without holidays.
+    """
+
+    _no_holiday_name: str = "NO_HOLIDAY"
+
+    def __init__(self, iso_code: str = "RUS", mode: str = "binary", out_column: Optional[str] = None):
         """
         Create instance of HolidayTransform.
 
@@ -21,12 +42,16 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
         ----------
         iso_code:
             internationally recognised codes, designated to country for which we want to find the holidays
+        mode:
+            `binary` to indicate holidays, `category` to specify which holiday do we have at each day
         out_column:
             name of added column. Use ``self.__repr__()`` if not given.
         """
         super().__init__(required_features=["target"])
         self.iso_code = iso_code
-        self.holidays = holidays.CountryHoliday(iso_code)
+        self.mode = mode
+        self._mode = HolidayTransformMode(mode)
+        self.holidays = holidays.country_holidays(iso_code)
         self.out_column = out_column
 
     def _get_column_name(self) -> str:
@@ -48,7 +73,7 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform data from df with HolidayTransform and generate a column of holidays flags.
+        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles.
 
         Parameters
         ----------
@@ -64,9 +89,14 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
             raise ValueError("Frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
-
         out_column = self._get_column_name()
-        encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
+
+        if self._mode is HolidayTransformMode.category:
+            encoded_matrix = np.array(
+                [self.holidays[x] if x in self.holidays else self._no_holiday_name for x in df.index]
+            )
+        else:
+            encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)
         encoded_df = pd.DataFrame(
             encoded_matrix,
