@@ -67,7 +67,7 @@ def test_mle_metric_exception(y_true_1d, y_pred_1d):
 )
 def test_all_wrong_mode(metric, y_true_1d, y_pred_1d):
     with pytest.raises(NotImplementedError):
-        metric(y_true_1d, y_pred_1d, mode="unknown")
+        metric(y_true_1d, y_pred_1d, multioutput="unknown")
 
 
 @pytest.fixture()
