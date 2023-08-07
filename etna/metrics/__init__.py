@@ -2,7 +2,7 @@ from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.base import MetricFunctionSignature
 from etna.metrics.functional_metrics import ArrayLike
-from etna.metrics.functional_metrics import FunctionalMetricMode
+from etna.metrics.functional_metrics import FunctionalMetricMultioutput
 from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import max_deviation

@@ -114,7 +114,7 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_metrics_invalid_aggregation(metric_class):
-    """Check metrics behavior in case of invalid aggregation mode"""
+    """Check metrics behavior in case of invalid aggregation multioutput"""
     with pytest.raises(NotImplementedError):
         _ = metric_class(mode="a")
 
@@ -237,13 +237,13 @@ def _create_metric_class(metric_fn, metric_fn_signature, greater_is_better):
         (mae, {"multioutput": "raw_values"}, False),
         (mse, {"multioutput": "raw_values"}, False),
         (rmse, {"multioutput": "raw_values"}, False),
-        (mape, {"mode": "per_output"}, False),
-        (smape, {"mode": "per_output"}, False),
+        (mape, {"multioutput": "per_output"}, False),
+        (smape, {"multioutput": "per_output"}, False),
         (medae, {"multioutput": "raw_values"}, False),
         (r2_score, {"multioutput": "raw_values"}, True),
-        (sign, {"mode": "per_output"}, None),
-        (max_deviation, {"mode": "per_output"}, False),
-        (wape, {"mode": "per_output"}, False),
+        (sign, {"multioutput": "per_output"}, None),
+        (max_deviation, {"multioutput": "per_output"}, False),
+        (wape, {"multioutput": "per_output"}, False),
     ),
 )
 def test_metrics_equivalence_of_signatures(metric_fn, matrix_to_array_params, greater_is_better, train_test_dfs):

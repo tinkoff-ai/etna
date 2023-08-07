@@ -155,7 +155,7 @@ class MAPE(Metric):
         kwargs:
             metric's computation arguments
         """
-        mape_per_output = partial(mape, mode="per_output")
+        mape_per_output = partial(mape, multioutput="per_output")
         super().__init__(mode=mode, metric_fn=mape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
@@ -185,7 +185,7 @@ class SMAPE(Metric):
         kwargs:
             metric's computation arguments
         """
-        smape_per_output = partial(smape, mode="per_output")
+        smape_per_output = partial(smape, multioutput="per_output")
         super().__init__(mode=mode, metric_fn=smape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
@@ -276,7 +276,7 @@ class Sign(Metric):
         kwargs:
             metric's computation arguments
         """
-        sign_per_output = partial(sign, mode="per_output")
+        sign_per_output = partial(sign, multioutput="per_output")
         super().__init__(mode=mode, metric_fn=sign_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
@@ -306,7 +306,7 @@ class MaxDeviation(Metric):
         kwargs:
             metric's computation arguments
         """
-        max_deviation_per_output = partial(max_deviation, mode="per_output")
+        max_deviation_per_output = partial(max_deviation, multioutput="per_output")
         super().__init__(mode=mode, metric_fn=max_deviation_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property
@@ -335,7 +335,7 @@ class WAPE(Metric):
         kwargs:
             metric's computation arguments
         """
-        wape_per_output = partial(wape, mode="per_output")
+        wape_per_output = partial(wape, multioutput="per_output")
         super().__init__(mode=mode, metric_fn=wape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
 
     @property

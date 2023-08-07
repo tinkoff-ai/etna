@@ -105,13 +105,13 @@ def test_all_2d_metrics_joint(metric, right_metrics_value, y_true_2d, y_pred_2d)
         (mae, {"multioutput": "raw_values"}, [1, 1]),
         (mse, {"multioutput": "raw_values"}, [1, 1]),
         (rmse, {"multioutput": "raw_values"}, [1, 1]),
-        (mape, {"mode": "per_output"}, [9.5454545, 75]),
-        (smape, {"mode": "per_output"}, [9.5238095, 66 + 2 / 3]),
+        (mape, {"multioutput": "per_output"}, [9.5454545, 75]),
+        (smape, {"multioutput": "per_output"}, [9.5238095, 66 + 2 / 3]),
         (medae, {"multioutput": "raw_values"}, [1, 1]),
         (r2_score, {"multioutput": "raw_values"}, [-3, -3]),
-        (sign, {"mode": "per_output"}, [0, 0]),
-        (max_deviation, {"mode": "per_output"}, [1, 1]),
-        (wape, {"mode": "per_output"}, [0.0952381, 2 / 3]),
+        (sign, {"multioutput": "per_output"}, [0, 0]),
+        (max_deviation, {"multioutput": "per_output"}, [1, 1]),
+        (wape, {"multioutput": "per_output"}, [0.0952381, 2 / 3]),
     ),
 )
 def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2d, y_pred_2d):
