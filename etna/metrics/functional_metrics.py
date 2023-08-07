@@ -4,7 +4,11 @@ from typing import Sequence
 from typing import Union
 
 import numpy as np
+from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import mean_squared_log_error as msle
+from sklearn.metrics import median_absolute_error as medae
+from sklearn.metrics import r2_score
 from typing_extensions import assert_never
 
 ArrayLike = Union[float, Sequence[float], Sequence[Sequence[float]]]
@@ -67,11 +71,13 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, mode: str = "
 
     mode_enum = FunctionalMetricMode(mode)
     if mode_enum is FunctionalMetricMode.joint:
-        return np.mean(np.abs((y_true_array - y_pred_array) / y_true_array)) * 100
+        axis = None
     elif mode_enum is FunctionalMetricMode.per_output:
-        return np.mean(np.abs((y_true_array - y_pred_array) / y_true_array), axis=0) * 100
+        axis = 0
     else:
         assert_never(mode_enum)
+
+    return np.mean(np.abs((y_true_array - y_pred_array) / y_true_array), axis=axis) * 100
 
 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, mode: str = "joint") -> ArrayLike:
@@ -116,15 +122,15 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, mode: str = 
 
     mode_enum = FunctionalMetricMode(mode)
     if mode_enum is FunctionalMetricMode.joint:
-        return 100 * np.mean(
-            2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps)
-        )
+        axis = None
     elif mode_enum is FunctionalMetricMode.per_output:
-        return 100 * np.mean(
-            2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps), axis=0
-        )
+        axis = 0
     else:
         assert_never(mode_enum)
+
+    return 100 * np.mean(
+        2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps), axis=axis
+    )
 
 
 def sign(y_true: ArrayLike, y_pred: ArrayLike, mode: str = "joint") -> ArrayLike:
@@ -162,11 +168,13 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, mode: str = "joint") -> ArrayLike
 
     mode_enum = FunctionalMetricMode(mode)
     if mode_enum is FunctionalMetricMode.joint:
-        return np.mean(np.sign(y_true_array - y_pred_array))
+        axis = None
     elif mode_enum is FunctionalMetricMode.per_output:
-        return np.mean(np.sign(y_true_array - y_pred_array), axis=0)
+        axis = 0
     else:
         assert_never(mode_enum)
+
+    return np.mean(np.sign(y_true_array - y_pred_array), axis=axis)
 
 
 def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, mode: str = "joint") -> ArrayLike:
@@ -201,13 +209,14 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, mode: str = "joint") -> 
 
     mode_enum = FunctionalMetricMode(mode)
     if mode_enum is FunctionalMetricMode.joint:
-        prefix_error_sum = np.cumsum(y_pred_array - y_true_array)
-        return np.max(np.abs(prefix_error_sum))
+        axis = None
     elif mode_enum is FunctionalMetricMode.per_output:
-        prefix_error_sum = np.cumsum(y_pred_array - y_true_array, axis=0)
-        return np.max(np.abs(prefix_error_sum), axis=0)
+        axis = 0
     else:
         assert_never(mode_enum)
+
+    prefix_error_sum = np.cumsum(y_pred_array - y_true_array, axis=axis)
+    return np.max(np.abs(prefix_error_sum), axis=axis)
 
 
 rmse = partial(mse, squared=False)
@@ -248,8 +257,13 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, mode: str = "joint") -> ArrayLike
 
     mode_enum = FunctionalMetricMode(mode)
     if mode_enum is FunctionalMetricMode.joint:
-        return np.sum(np.abs(y_true_array - y_pred_array)) / np.sum(np.abs(y_true_array))
+        axis = None
     elif mode_enum is FunctionalMetricMode.per_output:
-        return np.sum(np.abs(y_true_array - y_pred_array), axis=0) / np.sum(np.abs(y_true_array), axis=0)
+        axis = 0
     else:
         assert_never(mode_enum)
+
+    return np.sum(np.abs(y_true_array - y_pred_array), axis=axis) / np.sum(np.abs(y_true_array), axis=axis)  # type: ignore
+
+
+__all__ = ["mae", "mse", "msle", "medae", "r2_score", "mape", "smape", "sign", "max_deviation", "rmse", "wape"]

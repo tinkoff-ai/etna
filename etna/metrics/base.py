@@ -1,13 +1,13 @@
 from abc import ABC
 from abc import abstractmethod
 from enum import Enum
-from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Union
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Protocol
 from typing_extensions import assert_never
 
 from etna.core import BaseMixin
@@ -44,6 +44,14 @@ class MetricFunctionSignature(str, Enum):
         raise NotImplementedError(
             f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} signatures allowed"
         )
+
+
+class MetricFunction(Protocol):
+    """Protocol for ``metric_fn`` parameter."""
+
+    @abstractmethod
+    def __call__(self, y_true: ArrayLike, y_pred: ArrayLike) -> ArrayLike:
+        pass
 
 
 class AbstractMetric(ABC):
@@ -95,7 +103,7 @@ class Metric(AbstractMetric, BaseMixin):
 
     def __init__(
         self,
-        metric_fn: Callable[[ArrayLike, ArrayLike], ArrayLike],
+        metric_fn: MetricFunction,
         mode: str = MetricAggregationMode.per_segment,
         metric_fn_signature: str = "array_to_scalar",
         **kwargs,
@@ -311,15 +319,16 @@ class Metric(AbstractMetric, BaseMixin):
 
         segments = df_true.columns.get_level_values("segment").unique()
 
+        metrics_per_segment: Dict[str, float]
         if self._metric_fn_signature is MetricFunctionSignature.array_to_scalar:
             metrics_per_segment = {}
             for i, segment in enumerate(segments):
                 cur_y_true = df_true.iloc[:, i].values
                 cur_y_pred = df_pred.iloc[:, i].values
-                metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)
+                metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)  # type: ignore
         elif self._metric_fn_signature is MetricFunctionSignature.matrix_to_array:
             values = self.metric_fn(y_true=df_true.values, y_pred=df_pred.values, **self.kwargs)
-            metrics_per_segment = dict(zip(segments, values))
+            metrics_per_segment = dict(zip(segments, values))  # type: ignore
         else:
             assert_never(self._metric_fn_signature)
 

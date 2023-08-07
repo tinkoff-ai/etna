@@ -1,18 +1,18 @@
 from functools import partial
 
-from etna.metrics import mae
-from etna.metrics import mape
-from etna.metrics import max_deviation
-from etna.metrics import medae
-from etna.metrics import mse
-from etna.metrics import msle
-from etna.metrics import r2_score
-from etna.metrics import rmse
-from etna.metrics import sign
-from etna.metrics import smape
-from etna.metrics import wape
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.functional_metrics import mae
+from etna.metrics.functional_metrics import mape
+from etna.metrics.functional_metrics import max_deviation
+from etna.metrics.functional_metrics import medae
+from etna.metrics.functional_metrics import mse
+from etna.metrics.functional_metrics import msle
+from etna.metrics.functional_metrics import r2_score
+from etna.metrics.functional_metrics import rmse
+from etna.metrics.functional_metrics import sign
+from etna.metrics.functional_metrics import smape
+from etna.metrics.functional_metrics import wape
 
 
 class MAE(Metric):

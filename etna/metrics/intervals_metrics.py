@@ -8,9 +8,10 @@ import numpy as np
 from etna.datasets import TSDataset
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.functional_metrics import ArrayLike
 
 
-def dummy():
+def dummy(y_true: ArrayLike, y_pred: ArrayLike) -> ArrayLike:
     return np.nan
 
 

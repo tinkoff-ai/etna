@@ -25,6 +25,7 @@ from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
+from etna.metrics import ArrayLike
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 
@@ -301,7 +302,7 @@ class _DummyMetric(Metric):
         super().__init__(mode=mode, metric_fn=self._compute_metric, **kwargs)
 
     @staticmethod
-    def _compute_metric(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    def _compute_metric(y_true: ArrayLike, y_pred: ArrayLike) -> float:
         return 0.0
 
     @property
