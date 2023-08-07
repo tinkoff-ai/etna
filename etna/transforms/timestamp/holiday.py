@@ -26,11 +26,13 @@ class HolidayTransformMode(str, Enum):
 
 class HolidayTransform(IrreversibleTransform, FutureMixin):
     """
-    HolidayTransform generates series that indicates holidays in given dataframe.
-    Can either show holiday presence or their names (NO_HOLIDAY indicates absence).
+    HolidayTransform generates series that indicates holidays in given dataset.
+
+    In ``binary`` mode shows the presence of holiday in that day. In ``category`` mode shows the name of the holiday
+    with value "NO_HOLIDAY" reserved for days without holidays.
     """
 
-    NO_HOLIDAY: str = "NO_HOLIDAY"
+    _no_holiday_name: str = "NO_HOLIDAY"
 
     def __init__(self, iso_code: str = "RUS", mode: str = "binary", out_column: Optional[str] = None):
         """
@@ -90,7 +92,9 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
 
         out_column = self._get_column_name()
         if self._mode is HolidayTransformMode.category:
-            encoded_matrix = np.array([self.holidays[x] if x in self.holidays else self.NO_HOLIDAY for x in df.index])
+            encoded_matrix = np.array(
+                [self.holidays[x] if x in self.holidays else self._no_holiday_name for x in df.index]
+            )
         else:
             encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)
