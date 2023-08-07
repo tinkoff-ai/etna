@@ -13,6 +13,7 @@ from typing_extensions import assert_never
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
+from etna.metrics.functional_metrics import ArrayLike
 
 
 class MetricAggregationMode(str, Enum):
@@ -94,7 +95,7 @@ class Metric(AbstractMetric, BaseMixin):
 
     def __init__(
         self,
-        metric_fn: Callable,
+        metric_fn: Callable[[ArrayLike, ArrayLike], ArrayLike],
         mode: str = MetricAggregationMode.per_segment,
         metric_fn_signature: str = "array_to_scalar",
         **kwargs,
