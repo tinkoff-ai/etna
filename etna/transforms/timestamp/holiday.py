@@ -89,8 +89,8 @@ class HolidayTransform(IrreversibleTransform, FutureMixin):
             raise ValueError("Frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
-
         out_column = self._get_column_name()
+
         if self._mode is HolidayTransformMode.category:
             encoded_matrix = np.array(
                 [self.holidays[x] if x in self.holidays else self._no_holiday_name for x in df.index]
