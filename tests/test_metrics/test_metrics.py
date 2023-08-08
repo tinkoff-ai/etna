@@ -237,13 +237,13 @@ def _create_metric_class(metric_fn, metric_fn_signature, greater_is_better):
         (mae, {"multioutput": "raw_values"}, False),
         (mse, {"multioutput": "raw_values"}, False),
         (rmse, {"multioutput": "raw_values"}, False),
-        (mape, {"multioutput": "per_output"}, False),
-        (smape, {"multioutput": "per_output"}, False),
+        (mape, {"multioutput": "raw_values"}, False),
+        (smape, {"multioutput": "raw_values"}, False),
         (medae, {"multioutput": "raw_values"}, False),
         (r2_score, {"multioutput": "raw_values"}, True),
-        (sign, {"multioutput": "per_output"}, None),
-        (max_deviation, {"multioutput": "per_output"}, False),
-        (wape, {"multioutput": "per_output"}, False),
+        (sign, {"multioutput": "raw_values"}, None),
+        (max_deviation, {"multioutput": "raw_values"}, False),
+        (wape, {"multioutput": "raw_values"}, False),
     ),
 )
 def test_metrics_equivalence_of_signatures(metric_fn, matrix_to_array_params, greater_is_better, train_test_dfs):

@@ -22,7 +22,7 @@ class FunctionalMetricMultioutput(str, Enum):
     joint = "joint"
 
     #: Compute one value per each output.
-    per_output = "per_output"
+    raw_values = "raw_values"
 
     @classmethod
     def _missing_(cls, value):
@@ -35,7 +35,7 @@ def _get_axis_by_multioutput(multioutput: str) -> Optional[int]:
     multioutput_enum = FunctionalMetricMultioutput(multioutput)
     if multioutput_enum is FunctionalMetricMultioutput.joint:
         return None
-    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
+    elif multioutput_enum is FunctionalMetricMultioutput.raw_values:
         return 0
     else:
         assert_never(multioutput_enum)
