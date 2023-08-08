@@ -18,7 +18,7 @@ def tsdataset_with_zero_width_quantiles(example_df):
 
 
 @pytest.fixture
-def tsdataset_with_differnt_width_and_shifted_quantiles(example_df):
+def tsdataset_with_different_width_and_shifted_quantiles(example_df):
 
     ts_train = TSDataset.to_dataset(example_df)
     ts_train = TSDataset(ts_train, freq="H")
@@ -45,8 +45,8 @@ def test_width_metric_with_zero_width_quantiles(tsdataset_with_zero_width_quanti
         assert width_metric[segment] == expected_metric
 
 
-def test_width_metric_with_differnt_width_and_shifted_quantiles(tsdataset_with_differnt_width_and_shifted_quantiles):
-    ts_train, ts_test = tsdataset_with_differnt_width_and_shifted_quantiles
+def test_width_metric_with_different_width_and_shifted_quantiles(tsdataset_with_different_width_and_shifted_quantiles):
+    ts_train, ts_test = tsdataset_with_different_width_and_shifted_quantiles
 
     expected_metric = {"segment_1": 1.0, "segment_2": 0.0}
     width_metric = Width(mode="per-segment")(ts_train, ts_test)
@@ -55,8 +55,10 @@ def test_width_metric_with_differnt_width_and_shifted_quantiles(tsdataset_with_d
         assert width_metric[segment] == expected_metric[segment]
 
 
-def test_coverage_metric_with_differnt_width_and_shifted_quantiles(tsdataset_with_differnt_width_and_shifted_quantiles):
-    ts_train, ts_test = tsdataset_with_differnt_width_and_shifted_quantiles
+def test_coverage_metric_with_different_width_and_shifted_quantiles(
+    tsdataset_with_different_width_and_shifted_quantiles,
+):
+    ts_train, ts_test = tsdataset_with_different_width_and_shifted_quantiles
 
     expected_metric = {"segment_1": 0.0, "segment_2": 1.0}
     coverage_metric = Coverage(mode="per-segment")(ts_train, ts_test)

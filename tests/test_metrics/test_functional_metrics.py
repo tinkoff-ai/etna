@@ -1,3 +1,4 @@
+import numpy.testing as npt
 import pytest
 
 from etna.metrics import mae
@@ -20,12 +21,12 @@ def right_mae_value():
 
 @pytest.fixture()
 def y_true_1d():
-    return [1, 1]
+    return [1, 3]
 
 
 @pytest.fixture()
 def y_pred_1d():
-    return [2, 2]
+    return [2, 4]
 
 
 @pytest.mark.parametrize(
@@ -34,17 +35,17 @@ def y_pred_1d():
         (mae, 1),
         (mse, 1),
         (rmse, 1),
-        (mape, 100),
-        (smape, 66.6666666667),
+        (mape, 66 + 2 / 3),
+        (smape, 47.6190476),
         (medae, 1),
         (r2_score, 0),
         (sign, -1),
         (max_deviation, 2),
-        (wape, 1),
+        (wape, 1 / 2),
     ),
 )
 def test_all_1d_metrics(metric, right_metrics_value, y_true_1d, y_pred_1d):
-    assert round(metric(y_true_1d, y_pred_1d), 10) == right_metrics_value
+    npt.assert_almost_equal(metric(y_true_1d, y_pred_1d), right_metrics_value)
 
 
 def test_mle_metric_exception(y_true_1d, y_pred_1d):
@@ -54,14 +55,29 @@ def test_mle_metric_exception(y_true_1d, y_pred_1d):
         msle(y_true_1d, y_pred_1d)
 
 
+@pytest.mark.parametrize(
+    "metric",
+    (
+        mape,
+        smape,
+        sign,
+        max_deviation,
+        wape,
+    ),
+)
+def test_all_wrong_mode(metric, y_true_1d, y_pred_1d):
+    with pytest.raises(NotImplementedError):
+        metric(y_true_1d, y_pred_1d, multioutput="unknown")
+
+
 @pytest.fixture()
 def y_true_2d():
-    return [[1, 1], [1, 1]]
+    return [[10, 1], [11, 2]]
 
 
 @pytest.fixture()
 def y_pred_2d():
-    return [[2, 2], [2, 2]]
+    return [[11, 2], [10, 1]]
 
 
 @pytest.mark.parametrize(
@@ -70,14 +86,33 @@ def y_pred_2d():
         (mae, 1),
         (mse, 1),
         (rmse, 1),
-        (mape, 100),
-        (smape, 66.6666666667),
+        (mape, 42 + 3 / 11),
+        (smape, 38.0952380),
         (medae, 1),
-        (r2_score, 0.0),
-        (sign, -1),
-        (max_deviation, 4),
-        (wape, 1),
+        (r2_score, -3),
+        (sign, 0),
+        (max_deviation, 2),
+        (wape, 1 / 6),
     ),
 )
-def test_all_2d_metrics(metric, right_metrics_value, y_true_2d, y_pred_2d):
-    assert round(metric(y_true_2d, y_pred_2d), 10) == right_metrics_value
+def test_all_2d_metrics_joint(metric, right_metrics_value, y_true_2d, y_pred_2d):
+    npt.assert_almost_equal(metric(y_true_2d, y_pred_2d), right_metrics_value)
+
+
+@pytest.mark.parametrize(
+    "metric, params, right_metrics_value",
+    (
+        (mae, {"multioutput": "raw_values"}, [1, 1]),
+        (mse, {"multioutput": "raw_values"}, [1, 1]),
+        (rmse, {"multioutput": "raw_values"}, [1, 1]),
+        (mape, {"multioutput": "raw_values"}, [9.5454545, 75]),
+        (smape, {"multioutput": "raw_values"}, [9.5238095, 66 + 2 / 3]),
+        (medae, {"multioutput": "raw_values"}, [1, 1]),
+        (r2_score, {"multioutput": "raw_values"}, [-3, -3]),
+        (sign, {"multioutput": "raw_values"}, [0, 0]),
+        (max_deviation, {"multioutput": "raw_values"}, [1, 1]),
+        (wape, {"multioutput": "raw_values"}, [0.0952381, 2 / 3]),
+    ),
+)
+def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2d, y_pred_2d):
+    npt.assert_almost_equal(metric(y_true_2d, y_pred_2d, **params), right_metrics_value)

@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
 from etna.metrics import wape
+from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE
@@ -112,7 +114,7 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_metrics_invalid_aggregation(metric_class):
-    """Check metrics behavior in case of invalid aggregation mode"""
+    """Check metrics behavior in case of invalid aggregation multioutput"""
     with pytest.raises(NotImplementedError):
         _ = metric_class(mode="a")
 
@@ -208,6 +210,59 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
             y_pred=forecast_df.loc[:, pd.IndexSlice[segment, "target"]],
         )
         assert value == true_metric_value
+
+
+def _create_metric_class(metric_fn, metric_fn_signature, greater_is_better):
+    def make_init(metric_fn, metric_fn_signature):
+        def init(self, mode):
+            Metric.__init__(self=self, mode=mode, metric_fn=metric_fn, metric_fn_signature=metric_fn_signature)
+
+        return init
+
+    new_class = type(
+        "NewMetric",
+        (Metric,),
+        {
+            "__init__": make_init(metric_fn=metric_fn, metric_fn_signature=metric_fn_signature),
+            "greater_is_better": lambda: greater_is_better,
+        },
+    )
+
+    return new_class
+
+
+@pytest.mark.parametrize(
+    "metric_fn, matrix_to_array_params, greater_is_better",
+    (
+        (mae, {"multioutput": "raw_values"}, False),
+        (mse, {"multioutput": "raw_values"}, False),
+        (rmse, {"multioutput": "raw_values"}, False),
+        (mape, {"multioutput": "raw_values"}, False),
+        (smape, {"multioutput": "raw_values"}, False),
+        (medae, {"multioutput": "raw_values"}, False),
+        (r2_score, {"multioutput": "raw_values"}, True),
+        (sign, {"multioutput": "raw_values"}, None),
+        (max_deviation, {"multioutput": "raw_values"}, False),
+        (wape, {"multioutput": "raw_values"}, False),
+    ),
+)
+def test_metrics_equivalence_of_signatures(metric_fn, matrix_to_array_params, greater_is_better, train_test_dfs):
+    forecast_df, true_df = train_test_dfs
+
+    metric_1_class = _create_metric_class(
+        metric_fn=metric_fn, metric_fn_signature="array_to_scalar", greater_is_better=greater_is_better
+    )
+    metric_1 = metric_1_class(mode="per-segment")
+    metric_fn_matrix_to_array = partial(metric_fn, **matrix_to_array_params)
+    metric_2_class = _create_metric_class(
+        metric_fn=metric_fn_matrix_to_array, metric_fn_signature="matrix_to_array", greater_is_better=greater_is_better
+    )
+    metric_2 = metric_2_class(mode="per-segment")
+
+    metric_1_values = metric_1(y_pred=forecast_df, y_true=true_df)
+    metric_2_values = metric_2(y_pred=forecast_df, y_true=true_df)
+
+    assert metric_1_values == metric_2_values
 
 
 @pytest.mark.parametrize(

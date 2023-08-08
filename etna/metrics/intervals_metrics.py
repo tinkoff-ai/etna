@@ -8,9 +8,10 @@ import numpy as np
 from etna.datasets import TSDataset
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.functional_metrics import ArrayLike
 
 
-def dummy():
+def dummy(y_true: ArrayLike, y_pred: ArrayLike) -> ArrayLike:
     return np.nan
 
 
@@ -73,13 +74,17 @@ class Coverage(Metric, _QuantileMetricMixin):
         self._validate_nans(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
-        segments = set(y_true.df.columns.get_level_values("segment"))
-        metrics_per_segment = {}
-        for segment in segments:
-            upper_quantile_flag = y_true[:, segment, "target"] <= y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"]
-            lower_quantile_flag = y_true[:, segment, "target"] >= y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"]
+        df_true = y_true[:, :, "target"].sort_index(axis=1)
+        df_pred_lower = y_pred[:, :, f"target_{self.quantiles[0]:.4g}"].sort_index(axis=1)
+        df_pred_upper = y_pred[:, :, f"target_{self.quantiles[1]:.4g}"].sort_index(axis=1)
 
-            metrics_per_segment[segment] = np.mean(upper_quantile_flag * lower_quantile_flag)
+        segments = df_true.columns.get_level_values("segment").unique()
+
+        upper_quantile_flag = df_true.values <= df_pred_upper.values
+        lower_quantile_flag = df_true.values >= df_pred_lower.values
+        values = np.mean(upper_quantile_flag * lower_quantile_flag, axis=0)
+        metrics_per_segment = dict(zip(segments, values))
+
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
 
@@ -140,13 +145,14 @@ class Width(Metric, _QuantileMetricMixin):
         self._validate_nans(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
 
-        segments = set(y_true.df.columns.get_level_values("segment"))
-        metrics_per_segment = {}
-        for segment in segments:
-            upper_quantile = y_pred[:, segment, f"target_{self.quantiles[1]:.4g}"]
-            lower_quantile = y_pred[:, segment, f"target_{self.quantiles[0]:.4g}"]
+        df_true = y_true[:, :, "target"].sort_index(axis=1)
+        df_pred_lower = y_pred[:, :, f"target_{self.quantiles[0]:.4g}"].sort_index(axis=1)
+        df_pred_upper = y_pred[:, :, f"target_{self.quantiles[1]:.4g}"].sort_index(axis=1)
 
-            metrics_per_segment[segment] = np.abs(lower_quantile - upper_quantile).mean()
+        segments = df_true.columns.get_level_values("segment").unique()
+
+        values = np.mean(np.abs(df_pred_upper.values - df_pred_lower.values), axis=0)
+        metrics_per_segment = dict(zip(segments, values))
 
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
