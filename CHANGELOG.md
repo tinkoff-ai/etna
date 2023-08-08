@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
 - 
 - Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
+- Create documentation page with links to external resources ([#1350](https://github.com/tinkoff-ai/etna/pull/1350))
 
 ### Changed
 - 
