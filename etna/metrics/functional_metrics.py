@@ -1,5 +1,6 @@
 from enum import Enum
 from functools import partial
+from typing import Optional
 from typing import Sequence
 from typing import Union
 
@@ -28,6 +29,16 @@ class FunctionalMetricMultioutput(str, Enum):
         raise NotImplementedError(
             f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} options allowed"
         )
+
+
+def _get_axis_by_multioutput(multioutput: str) -> Optional[int]:
+    multioutput_enum = FunctionalMetricMultioutput(multioutput)
+    if multioutput_enum is FunctionalMetricMultioutput.joint:
+        return None
+    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
+        return 0
+    else:
+        assert_never(multioutput_enum)
 
 
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
@@ -69,13 +80,7 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
 
     y_true_array = y_true_array.clip(eps)
 
-    multioutput_enum = FunctionalMetricMultioutput(multioutput)
-    if multioutput_enum is FunctionalMetricMultioutput.joint:
-        axis = None
-    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
-        axis = 0
-    else:
-        assert_never(multioutput_enum)
+    axis = _get_axis_by_multioutput(multioutput)
 
     return np.mean(np.abs((y_true_array - y_pred_array) / y_true_array), axis=axis) * 100
 
@@ -120,13 +125,7 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput:
     if len(y_true_array.shape) != len(y_pred_array.shape):
         raise ValueError("Shapes of the labels must be the same")
 
-    multioutput_enum = FunctionalMetricMultioutput(multioutput)
-    if multioutput_enum is FunctionalMetricMultioutput.joint:
-        axis = None
-    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
-        axis = 0
-    else:
-        assert_never(multioutput_enum)
+    axis = _get_axis_by_multioutput(multioutput)
 
     return 100 * np.mean(
         2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps), axis=axis
@@ -166,13 +165,7 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     if len(y_true_array.shape) != len(y_pred_array.shape):
         raise ValueError("Shapes of the labels must be the same")
 
-    multioutput_enum = FunctionalMetricMultioutput(multioutput)
-    if multioutput_enum is FunctionalMetricMultioutput.joint:
-        axis = None
-    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
-        axis = 0
-    else:
-        assert_never(multioutput_enum)
+    axis = _get_axis_by_multioutput(multioutput)
 
     return np.mean(np.sign(y_true_array - y_pred_array), axis=axis)
 
@@ -207,13 +200,7 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     if len(y_true_array.shape) != len(y_pred_array.shape):
         raise ValueError("Shapes of the labels must be the same")
 
-    multioutput_enum = FunctionalMetricMultioutput(multioutput)
-    if multioutput_enum is FunctionalMetricMultioutput.joint:
-        axis = None
-    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
-        axis = 0
-    else:
-        assert_never(multioutput_enum)
+    axis = _get_axis_by_multioutput(multioutput)
 
     prefix_error_sum = np.cumsum(y_pred_array - y_true_array, axis=axis)
     return np.max(np.abs(prefix_error_sum), axis=axis)
@@ -255,13 +242,7 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     if len(y_true_array.shape) != len(y_pred_array.shape):
         raise ValueError("Shapes of the labels must be the same")
 
-    multioutput_enum = FunctionalMetricMultioutput(multioutput)
-    if multioutput_enum is FunctionalMetricMultioutput.joint:
-        axis = None
-    elif multioutput_enum is FunctionalMetricMultioutput.per_output:
-        axis = 0
-    else:
-        assert_never(multioutput_enum)
+    axis = _get_axis_by_multioutput(multioutput)
 
     return np.sum(np.abs(y_true_array - y_pred_array), axis=axis) / np.sum(np.abs(y_true_array), axis=axis)  # type: ignore
 
