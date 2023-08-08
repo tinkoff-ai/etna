@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix version of `statsforecast` to 1.4 to avoid dependency conflicts during installation ([#1313](https://github.com/tinkoff-ai/etna/pull/1313))
 - Add inverse transformation into `predict` method of pipelines ([#1314](https://github.com/tinkoff-ai/etna/pull/1314))
 - Allow saving large pipelines ([#1335](https://github.com/tinkoff-ai/etna/pull/1335))
+- Fix link for dataset in classification notebook ([#1351](https://github.com/tinkoff-ai/etna/pull/1351))
 
 ### Removed
 - Building docker images with cuda 10.2 ([#1306](https://github.com/tinkoff-ai/etna/pull/1306))
