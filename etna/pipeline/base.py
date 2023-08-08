@@ -25,9 +25,9 @@ from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
-from etna.metrics import ArrayLike
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
+from etna.metrics.functional_metrics import ArrayLike
 
 Timestamp = Union[str, pd.Timestamp]
 
