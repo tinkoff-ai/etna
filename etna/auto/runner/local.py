@@ -29,6 +29,10 @@ class ParallelLocalRunner(AbstractRunner):
     Global objects behavior could be different while parallel usage because platform dependent new process start.
     Be sure that new process is started with ``fork`` via ``multiprocessing.set_start_method``.
     If it's not possible you should try define all globals before ``if __name__ == "__main__"`` scope.
+
+    Warning
+    -------
+    This class uses :py:mod:`dill` module during serialization which might be not secure.
     """
 
     def __init__(
