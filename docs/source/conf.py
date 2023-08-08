@@ -80,6 +80,10 @@ autodoc_typehints = "both"
 autodoc_typehints_description_target = "all"
 add_module_names = False
 
+autodoc_default_options = {
+    "inherited-members": True,
+}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
