@@ -7,15 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- `DeseasonalityTransform` ([#1307](https://github.com/tinkoff-ai/etna/pull/1307))
-- 
-- Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` ([#1295](https://github.com/tinkoff-ai/etna/pull/1297))
-- Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
-- 
-- Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
+-
+-
+-
+-
 
 ### Changed
 -
+-
+-
+-
+
+### Fixed
+-
+-
+-
+-
+
+### Removed
+-
+
+## [2.2.0] - 2023-08-08
+### Added
+- `DeseasonalityTransform` ([#1307](https://github.com/tinkoff-ai/etna/pull/1307))
+- Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` ([#1295](https://github.com/tinkoff-ai/etna/pull/1297))
+- Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
+- Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
+
+### Changed
 - Add modes `binary` and `category` to `HolidayTransform` ([#763](https://github.com/tinkoff-ai/etna/pull/763))
 - Add sorting by timestamp before the fit in `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` ([#1337](https://github.com/tinkoff-ai/etna/pull/1337))
 - Speed up metrics computation by optimizing segment validation, forbid NaNs during metrics computation ([#1338](https://github.com/tinkoff-ai/etna/pull/1338))
@@ -27,7 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Pipeline ensembles fail in `etna forecast` CLI ([#1331](https://github.com/tinkoff-ai/etna/pull/1331))
-- 
 - Fix performance of `DeepARModel` and `TFTModel` ([#1322](https://github.com/tinkoff-ai/etna/pull/1322))
 - `mrmr` feature selection working with categoricals ([#1311](https://github.com/tinkoff-ai/etna/pull/1311))
 - Fix version of `statsforecast` to 1.4 to avoid dependency conflicts during installation ([#1313](https://github.com/tinkoff-ai/etna/pull/1313))
