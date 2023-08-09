@@ -3,7 +3,7 @@ API Reference
 
 In this section you can examine the interfaces of the :code:`etna` library.
 Here we describe the API of available modules, classes and functions.
-For more user-friendly manual please use :ref:`tutorials` section.
+For more user-friendly manual please use :doc:`tutorials` section.
 
 .. toctree::
    :titlesonly:
