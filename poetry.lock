@@ -5073,6 +5073,30 @@ lint = ["docutils-stubs", "flake8 (>=3.5.0)", "flake8-simplify", "isort", "mypy 
 test = ["cython", "filelock", "html5lib", "pytest (>=4.6)"]
 
 [[package]]
+name = "sphinx-design"
+version = "0.5.0"
+description = "A sphinx extension for designing beautiful, view size responsive web components."
+category = "main"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "sphinx_design-0.5.0-py3-none-any.whl", hash = "sha256:1af1267b4cea2eedd6724614f19dcc88fe2e15aff65d06b2f6252cee9c4f4c1e"},
+    {file = "sphinx_design-0.5.0.tar.gz", hash = "sha256:e8e513acea6f92d15c6de3b34e954458f245b8e761b45b63950f65373352ab00"},
+]
+
+[package.dependencies]
+sphinx = ">=5,<8"
+
+[package.extras]
+code-style = ["pre-commit (>=3,<4)"]
+rtd = ["myst-parser (>=1,<3)"]
+testing = ["myst-parser (>=1,<3)", "pytest (>=7.1,<8.0)", "pytest-cov", "pytest-regressions"]
+theme-furo = ["furo (>=2023.7.0,<2023.8.0)"]
+theme-pydata = ["pydata-sphinx-theme (>=0.13.0,<0.14.0)"]
+theme-rtd = ["sphinx-rtd-theme (>=1.0,<2.0)"]
+theme-sbt = ["sphinx-book-theme (>=1.0,<2.0)"]
+
+[[package]]
 name = "sphinx-mathjax-offline"
 version = "0.0.2"
 description = "MathJax offline support for Sphinx"
@@ -6220,10 +6244,10 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 
 [extras]
 all = ["optuna", "prophet", "pytorch-forecasting", "pytorch-lightning", "pyts", "sqlalchemy", "statsforecast", "torch", "tsfresh", "wandb"]
-all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "coverage", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbqa", "nbsphinx", "optuna", "pep8-naming", "prophet", "pydata-sphinx-theme", "pytest", "pytest-cov", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-mathjax-offline", "sqlalchemy", "statsforecast", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
+all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "coverage", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbqa", "nbsphinx", "optuna", "pep8-naming", "prophet", "pydata-sphinx-theme", "pytest", "pytest-cov", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-design", "sphinx-mathjax-offline", "sqlalchemy", "statsforecast", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
-docs = ["GitPython", "Sphinx", "myst-parser", "nbsphinx", "pydata-sphinx-theme", "sphinx-mathjax-offline"]
+docs = ["GitPython", "Sphinx", "myst-parser", "nbsphinx", "pydata-sphinx-theme", "sphinx-design", "sphinx-mathjax-offline"]
 jupyter = ["black", "jupyter", "nbconvert"]
 prophet = ["prophet"]
 release = ["click", "semver"]
@@ -6236,4 +6260,4 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0, <3.11.0"
-content-hash = "63363c03e1decd77ffa7df02f34aa1db521c442fca0e301baf42c38b79abd239"
+content-hash = "3d320a0513cc7d9c0d92a03cad7fd1589792d9b530ab2b838556e589d088a1d0"

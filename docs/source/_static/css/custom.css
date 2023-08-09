@@ -1,0 +1,12 @@
+#tutorials .card-tutorial-basic {
+    background-color: var(--pst-color-primary);
+}
+
+#tutorials .card-tutorial-intermediate {
+    background-color: var(--pst-color-secondary);
+}
+
+#tutorials .card-tutorial-advanced {
+    background-color: var(--pst-color-target);
+}
+
