@@ -19,6 +19,7 @@ Contents
    :maxdepth: 1
    :titlesonly:
 
+   user_guide
    installation
    tutorials/quickstart
    tutorials
