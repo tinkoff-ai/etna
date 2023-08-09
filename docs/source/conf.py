@@ -50,6 +50,7 @@ else:
 extensions = [
     "nbsphinx",   # integration of notebooks
     "myst_parser",  # markdown support
+    "sphinx_design",  # for ready styling blocks
     "sphinx.ext.napoleon",  # support for NumPy and Google style docstrings
     "sphinx.ext.autodoc",  # include documentation from docstrings
     "sphinx.ext.autosummary",  # generate autodoc summaries
@@ -81,6 +82,9 @@ html_theme = "pydata_sphinx_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = [
+    "css/custom.css",
+]
 
 html_logo = "_static/etna_logo.png"
 html_favicon = "_static/etna_favicon.ico"
