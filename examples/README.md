@@ -2,17 +2,18 @@
 
 We have prepared a set of tutorials for an easy introduction:
 
-## Notebooks
+[Quickstart](https://github.com/tinkoff-ai/etna/tree/master/examples/quick_start.ipynb)
+
+## Tutorials
 
 ### 01. [Get started](https://github.com/tinkoff-ai/etna/tree/master/examples/01-get_started.ipynb) 
 - Loading dataset
 - Plotting
 - Forecasting single time series
-  - Simple forecast
+  - Naive forecast
   - Prophet 
   - Catboost
 - Forecasting multiple time series 
-- Pipelin
 
 ### 02. [Backtest](https://github.com/tinkoff-ai/etna/tree/master/examples/02-backtest.ipynb)
 - What is backtest and how it works
@@ -162,6 +163,14 @@ We have prepared a set of tutorials for an easy introduction:
   - `TreeFeatureSelectionTransform`
   - `GaleShapleyFeatureSelectionTransform`
   - `MRMRFeatureSelectionTransform`
+- Summary
+
+### 17. [Mechanics of forecasting](https://github.com/tinkoff-ai/etna/tree/master/examples/17-mechanics_of_forecasting.ipynb)
+- Loading dataset
+- Forecasting
+  - Context-free models
+  - Context-required models
+  - ML models
 - Summary
 
 ## Scripts

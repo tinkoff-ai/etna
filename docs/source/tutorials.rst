@@ -23,3 +23,4 @@ Tutorials
    tutorials/14-hierarchical_pipeline
    tutorials/15-classification
    tutorials/16-feature_selection
+   tutorials/17-mechanics_of_forecasting
