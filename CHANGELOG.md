@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
 - 
 - Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
+- Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 
 ### Changed
 - 
@@ -20,10 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unify errors, warnings and checks in models ([#1312](https://github.com/tinkoff-ai/etna/pull/1312))
 - Merge User Guide and API sections in documentation, limit classes to show in API section ([#1324](https://github.com/tinkoff-ai/etna/pull/1324))
 - Unify example notebooks, rerun example notebooks ([#1330](https://github.com/tinkoff-ai/etna/pull/1330))
+- Rework `get_started` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 
 ### Fixed
 - 
-- 
+- Rendering table of contents in notebooks ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - 
 - `mrmr` feature selection working with categoricals ([#1311](https://github.com/tinkoff-ai/etna/pull/1311))
 - Fix version of `statsforecast` to 1.4 to avoid dependency conflicts during installation ([#1313](https://github.com/tinkoff-ai/etna/pull/1313))

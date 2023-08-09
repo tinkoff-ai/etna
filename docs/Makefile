@@ -22,6 +22,7 @@ clean:
 copy-tutorials:
 	@mkdir -p "$(SOURCEDIR)/tutorials"
 	@cp ../examples/*.ipynb "$(SOURCEDIR)/tutorials"
+	@cp -r ../examples/assets "$(SOURCEDIR)/tutorials/assets"
 
 html:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

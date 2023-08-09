@@ -20,5 +20,6 @@ Contents
    :titlesonly:
 
    installation
+   tutorials/quickstart
    tutorials
    api_reference
